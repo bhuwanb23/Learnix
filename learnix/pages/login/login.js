@@ -17,7 +17,6 @@ import BlurView from '../../components/BlurView';
 
 // Import components
 import LoginCard from './components/LoginCard';
-import SocialLogin from './components/SocialLogin';
 import AnimatedBackground from './components/AnimatedBackground';
 import FloatingElements from './components/FloatingElements';
 
@@ -57,10 +56,6 @@ export default function LoginScreen({ navigation }) {
     }, 2000);
   };
 
-  const handleSocialLogin = (provider) => {
-    console.log(`Login with ${provider}`);
-    // Handle social login
-  };
 
   const handleForgotPassword = () => {
     console.log('Forgot password');
@@ -86,15 +81,10 @@ export default function LoginScreen({ navigation }) {
         {/* Floating Elements */}
         <FloatingElements />
         
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
+        <View style={styles.content}>
           <Animated.View
             style={[
-              styles.content,
+              styles.animatedContent,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
@@ -114,9 +104,6 @@ export default function LoginScreen({ navigation }) {
               isLoading={isLoading}
             />
 
-            {/* Social Login */}
-            <SocialLogin onSocialLogin={handleSocialLogin} />
-
             {/* Sign Up Link */}
             <TouchableOpacity style={styles.signUpContainer} onPress={handleSignUp}>
               <Text style={styles.signUpText}>
@@ -124,7 +111,7 @@ export default function LoginScreen({ navigation }) {
               </Text>
             </TouchableOpacity>
           </Animated.View>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -138,26 +125,22 @@ const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
   },
-  scrollView: {
+  content: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 40,
-    paddingBottom: 60, // Extra padding for bottom navigation bar
+    paddingVertical: 20,
   },
-  content: {
+  animatedContent: {
     flex: 1,
     justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
   },
   logo: {
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: 'bold',
     color: COLORS.white,
     textAlign: 'center',
@@ -171,7 +154,7 @@ const styles = StyleSheet.create({
   },
   signUpContainer: {
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 20,
   },
   signUpText: {
     fontSize: 14,

@@ -8,23 +8,36 @@ import {
   Animated,
   ActivityIndicator,
   Dimensions,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import BlurView from '../../../components/BlurView';
 
 import { COLORS, TYPOGRAPHY, ANIMATIONS } from '../constants/theme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
+
+const roles = [
+  { id: 'student', name: 'Student', icon: '🎓' },
+  { id: 'teacher', name: 'Teacher', icon: '👨‍🏫' },
+  { id: 'admin', name: 'Administrator', icon: '👨‍💼' },
+  { id: 'staff', name: 'Staff', icon: '👩‍💼' },
+];
 
 export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState(roles[0]);
   const [showPassword, setShowPassword] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [roleFocused, setRoleFocused] = useState(false);
+  const [showRoleModal, setShowRoleModal] = useState(false);
 
   const cardAnim = useRef(new Animated.Value(0)).current;
   const emailAnim = useRef(new Animated.Value(0)).current;
+  const roleAnim = useRef(new Animated.Value(0)).current;
   const passwordAnim = useRef(new Animated.Value(0)).current;
   const buttonAnim = useRef(new Animated.Value(0)).current;
 
@@ -38,29 +51,44 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
       }),
       Animated.timing(emailAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(roleAnim, {
+        toValue: 1,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(passwordAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.timing(buttonAnim, {
         toValue: 1,
-        duration: 400,
+        duration: 300,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
   const handleLogin = () => {
-    if (email && password) {
-      onLogin({ email, password });
+    if (email && password && selectedRole) {
+      onLogin({ email, password, role: selectedRole.id });
     }
   };
 
+  const handleRoleSelect = (role) => {
+    setSelectedRole(role);
+    setShowRoleModal(false);
+  };
+
   const emailScale = emailAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.8, 1],
+  });
+
+  const roleScale = roleAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0.8, 1],
   });
@@ -132,6 +160,34 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
             </View>
           </Animated.View>
 
+          {/* Role Selection */}
+          <Animated.View
+            style={[
+              styles.inputContainer,
+              {
+                opacity: roleAnim,
+                transform: [{ scale: roleScale }],
+              },
+            ]}
+          >
+            <Text style={styles.label}>Role</Text>
+            <TouchableOpacity
+              style={[
+                styles.inputWrapper,
+                styles.roleWrapper,
+                roleFocused && styles.inputFocused,
+              ]}
+              onPress={() => setShowRoleModal(true)}
+              onPressIn={() => setRoleFocused(true)}
+              onPressOut={() => setRoleFocused(false)}
+            >
+              <Text style={styles.roleText}>
+                {selectedRole.icon} {selectedRole.name}
+              </Text>
+              <Text style={styles.dropdownIcon}>▼</Text>
+            </TouchableOpacity>
+          </Animated.View>
+
           {/* Password Input */}
           <Animated.View
             style={[
@@ -193,12 +249,12 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
             <TouchableOpacity
               style={styles.loginButton}
               onPress={handleLogin}
-              disabled={isLoading || !email || !password}
+              disabled={isLoading || !email || !password || !selectedRole}
               activeOpacity={0.8}
             >
               <LinearGradient
                 colors={
-                  email && password
+                  email && password && selectedRole
                     ? [COLORS.accent, COLORS.accentLight]
                     : [COLORS.textLight, COLORS.textLight]
                 }
@@ -216,53 +272,89 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
           </Animated.View>
         </LinearGradient>
       </BlurView>
+
+      {/* Role Selection Modal */}
+      <Modal
+        visible={showRoleModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowRoleModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Select Your Role</Text>
+            <FlatList
+              data={roles}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.roleItem,
+                    selectedRole.id === item.id && styles.selectedRoleItem,
+                  ]}
+                  onPress={() => handleRoleSelect(item)}
+                >
+                  <Text style={styles.roleItemIcon}>{item.icon}</Text>
+                  <Text style={styles.roleItemText}>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowRoleModal(false)}
+            >
+              <Text style={styles.modalCloseText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 30,
+    marginBottom: 20,
   },
   blurContainer: {
     borderRadius: 20,
     overflow: 'hidden',
   },
   card: {
-    padding: 24,
+    padding: 20,
     borderRadius: 20,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.white,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    color: COLORS.textLight,
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
     fontSize: 14,
     color: COLORS.textLight,
-    marginBottom: 8,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 12,
+    color: COLORS.textLight,
+    marginBottom: 6,
     fontWeight: '500',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   inputFocused: {
     borderColor: COLORS.accent,
@@ -270,29 +362,40 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 14,
     color: COLORS.white,
+  },
+  roleWrapper: {
+    justifyContent: 'space-between',
+  },
+  roleText: {
+    fontSize: 14,
+    color: COLORS.white,
+  },
+  dropdownIcon: {
+    fontSize: 12,
+    color: COLORS.textLight,
   },
   eyeButton: {
     padding: 4,
   },
   eyeIcon: {
-    fontSize: 18,
+    fontSize: 16,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   forgotPasswordText: {
-    fontSize: 14,
+    fontSize: 12,
     color: COLORS.accent,
     fontWeight: '500',
   },
   buttonContainer: {
-    marginTop: 8,
+    marginTop: 6,
   },
   loginButton: {
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
     elevation: 4,
     shadowColor: COLORS.accent,
@@ -301,13 +404,64 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   buttonGradient: {
-    paddingVertical: 16,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.white,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 20,
+    width: width * 0.8,
+    maxHeight: height * 0.6,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  roleItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  selectedRoleItem: {
+    backgroundColor: COLORS.primary + '20',
+  },
+  roleItemIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  roleItemText: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+  },
+  modalCloseButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
 });
