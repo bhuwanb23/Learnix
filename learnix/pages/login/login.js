@@ -48,12 +48,19 @@ export default function LoginScreen({ navigation }) {
 
   const handleLogin = async (credentials) => {
     setIsLoading(true);
+    
     // Simulate login process
     setTimeout(() => {
       setIsLoading(false);
-      // Navigate to main app
-      navigation.navigate('Main');
-    }, 2000);
+      
+      // Navigate based on role
+      if (credentials.role === 'student') {
+        navigation.navigate('Student');
+      } else {
+        // For other roles, navigate to main app
+        navigation.navigate('Main');
+      }
+    }, 1000);
   };
 
 

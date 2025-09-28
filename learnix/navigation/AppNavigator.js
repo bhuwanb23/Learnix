@@ -4,6 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 // Import screens
 import SplashScreen from '../components/SplashScreen';
 import LoginScreen from '../pages/login/login';
+import StudentsScreen from '../users/students/students';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -26,6 +27,8 @@ export default function AppNavigator() {
         return <SplashScreen onAnimationComplete={handleSplashComplete} />;
       case 'Login':
         return <LoginScreen navigation={{ navigate }} />;
+      case 'Student':
+        return <StudentsScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:

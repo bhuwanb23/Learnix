@@ -73,7 +73,8 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
   }, []);
 
   const handleLogin = () => {
-    if (email && password && selectedRole) {
+    // For now, only role is required
+    if (selectedRole) {
       onLogin({ email, password, role: selectedRole.id });
     }
   };
@@ -125,40 +126,42 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
           colors={['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
           style={styles.card}
         >
-          <Text style={styles.title}>Sign In</Text>
-          <Text style={styles.subtitle}>Enter your credentials to continue</Text>
+          <Text style={styles.title}>Select Your Role</Text>
+          <Text style={styles.subtitle}>Choose your role to continue</Text>
 
-          {/* Email Input */}
-          <Animated.View
-            style={[
-              styles.inputContainer,
-              {
-                opacity: emailAnim,
-                transform: [{ scale: emailScale }],
-              },
-            ]}
-          >
-            <Text style={styles.label}>Email</Text>
-            <View
+          {/* Email Input - Hidden for now */}
+          {false && (
+            <Animated.View
               style={[
-                styles.inputWrapper,
-                emailFocused && styles.inputFocused,
+                styles.inputContainer,
+                {
+                  opacity: emailAnim,
+                  transform: [{ scale: emailScale }],
+                },
               ]}
             >
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                placeholderTextColor={COLORS.textLight}
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-          </Animated.View>
+              <Text style={styles.label}>Email</Text>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  emailFocused && styles.inputFocused,
+                ]}
+              >
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor={COLORS.textLight}
+                  value={email}
+                  onChangeText={setEmail}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            </Animated.View>
+          )}
 
           {/* Role Selection */}
           <Animated.View
@@ -188,53 +191,57 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Password Input */}
-          <Animated.View
-            style={[
-              styles.inputContainer,
-              {
-                opacity: passwordAnim,
-                transform: [{ scale: passwordScale }],
-              },
-            ]}
-          >
-            <Text style={styles.label}>Password</Text>
-            <View
+          {/* Password Input - Hidden for now */}
+          {false && (
+            <Animated.View
               style={[
-                styles.inputWrapper,
-                passwordFocused && styles.inputFocused,
+                styles.inputContainer,
+                {
+                  opacity: passwordAnim,
+                  transform: [{ scale: passwordScale }],
+                },
               ]}
             >
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                placeholderTextColor={COLORS.textLight}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword(!showPassword)}
+              <Text style={styles.label}>Password</Text>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  passwordFocused && styles.inputFocused,
+                ]}
               >
-                <Text style={styles.eyeIcon}>
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your password"
+                  placeholderTextColor={COLORS.textLight}
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setPasswordFocused(true)}
+                  onBlur={() => setPasswordFocused(false)}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Text style={styles.eyeIcon}>
+                    {showPassword ? '👁️' : '👁️‍🗨️'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Animated.View>
+          )}
 
-          {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={onForgotPassword}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+          {/* Forgot Password - Hidden for now */}
+          {false && (
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={onForgotPassword}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Login Button */}
           <Animated.View
@@ -249,12 +256,12 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
             <TouchableOpacity
               style={styles.loginButton}
               onPress={handleLogin}
-              disabled={isLoading || !email || !password || !selectedRole}
+              disabled={isLoading || !selectedRole}
               activeOpacity={0.8}
             >
               <LinearGradient
                 colors={
-                  email && password && selectedRole
+                  selectedRole
                     ? [COLORS.accent, COLORS.accentLight]
                     : [COLORS.textLight, COLORS.textLight]
                 }
@@ -265,7 +272,7 @@ export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
                 {isLoading ? (
                   <ActivityIndicator color={COLORS.white} size="small" />
                 ) : (
-                  <Text style={styles.buttonText}>Sign In</Text>
+                  <Text style={styles.buttonText}>Continue</Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
