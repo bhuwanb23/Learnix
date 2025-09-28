@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import BlurView from '../../../components/BlurView';
 
 import { COLORS, TYPOGRAPHY, ANIMATIONS } from '../constants/theme';
 

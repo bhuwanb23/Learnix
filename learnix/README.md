@@ -61,6 +61,8 @@ A modern, visually stunning React Native application built with Expo for campus 
 ```
 learnix/
 ├── App.js                          # Main app entry point
+├── components/
+│   └── BlurView.js                 # Custom blur component
 ├── navigation/
 │   └── AppNavigator.js             # Navigation management
 ├── pages/
@@ -148,6 +150,7 @@ The app is designed to work seamlessly across different screen sizes:
 - **Adaptive typography** that scales with screen size
 - **Flexible grid systems** for different content types
 - **Touch-friendly interactions** with proper spacing
+- **Safe Area support** to prevent overlap with device UI elements (status bar, navigation bar)
 
 ## 🚀 Performance Optimizations
 
@@ -178,7 +181,8 @@ Each component is modular and can be easily customized:
 
 - **expo**: React Native framework
 - **expo-linear-gradient**: Gradient backgrounds
-- **expo-blur**: Glassmorphism effects
+- **react-native-safe-area-context**: Safe area handling for device UI
+- **Custom BlurView**: Glassmorphism effects (manual implementation)
 - **react-native**: Core React Native components
 
 ## 🎯 Future Enhancements

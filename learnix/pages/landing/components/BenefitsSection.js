@@ -7,7 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import BlurView from '../../../components/BlurView';
 
 import { COLORS, TYPOGRAPHY } from '../constants/theme';
 

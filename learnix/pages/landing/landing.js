@@ -9,8 +9,9 @@ import {
   Dimensions,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import BlurView from '../../components/BlurView';
 
 // Import components
 import HeroSection from './components/HeroSection';
@@ -51,7 +52,7 @@ export default function LandingScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       {/* Animated Background */}
@@ -92,7 +93,7 @@ export default function LandingScreen({ navigation }) {
           </View>
         </Animated.View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -11,8 +11,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import BlurView from '../../components/BlurView';
 
 // Import components
 import LoginCard from './components/LoginCard';
@@ -72,58 +73,60 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      {/* Animated Background */}
-      <AnimatedBackground />
-      
-      {/* Floating Elements */}
-      <FloatingElements />
-      
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        
+        {/* Animated Background */}
+        <AnimatedBackground />
+        
+        {/* Floating Elements */}
+        <FloatingElements />
+        
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.logo}>Learnix</Text>
-            <Text style={styles.subtitle}>Welcome back to your campus</Text>
-          </View>
+          <Animated.View
+            style={[
+              styles.content,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.logo}>Learnix</Text>
+              <Text style={styles.subtitle}>Welcome back to your campus</Text>
+            </View>
 
-          {/* Login Card */}
-          <LoginCard
-            onLogin={handleLogin}
-            onForgotPassword={handleForgotPassword}
-            isLoading={isLoading}
-          />
+            {/* Login Card */}
+            <LoginCard
+              onLogin={handleLogin}
+              onForgotPassword={handleForgotPassword}
+              isLoading={isLoading}
+            />
 
-          {/* Social Login */}
-          <SocialLogin onSocialLogin={handleSocialLogin} />
+            {/* Social Login */}
+            <SocialLogin onSocialLogin={handleSocialLogin} />
 
-          {/* Sign Up Link */}
-          <TouchableOpacity style={styles.signUpContainer} onPress={handleSignUp}>
-            <Text style={styles.signUpText}>
-              Don't have an account? <Text style={styles.signUpLink}>Sign up</Text>
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            {/* Sign Up Link */}
+            <TouchableOpacity style={styles.signUpContainer} onPress={handleSignUp}>
+              <Text style={styles.signUpText}>
+                Don't have an account? <Text style={styles.signUpLink}>Sign up</Text>
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -131,6 +134,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.primary,
+  },
+  keyboardContainer: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
