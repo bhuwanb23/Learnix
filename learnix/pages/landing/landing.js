@@ -111,6 +111,7 @@ const styles = StyleSheet.create({
   ctaSection: {
     paddingHorizontal: 20,
     paddingVertical: 40,
+    paddingBottom: 60, // Extra padding for bottom navigation bar
     alignItems: 'center',
   },
 });

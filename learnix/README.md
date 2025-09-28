@@ -150,7 +150,8 @@ The app is designed to work seamlessly across different screen sizes:
 - **Adaptive typography** that scales with screen size
 - **Flexible grid systems** for different content types
 - **Touch-friendly interactions** with proper spacing
-- **Safe Area support** to prevent overlap with device UI elements (status bar, navigation bar)
+- **Safe Area support** to prevent overlap with device UI elements (status bar, navigation bar, bottom navigation)
+- **Bottom navigation bar protection** with extra padding for better UX
 
 ## 🚀 Performance Optimizations
 
