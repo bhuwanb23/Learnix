@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // Import components
 import StudentHeader from './components/StudentHeader';
 import StudentBottomNavbar from './components/StudentBottomNavbar';
+import Dashboard from './pages/dashboard/dashboard';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -24,12 +25,7 @@ export default function StudentsScreen() {
   const renderContent = () => {
     switch (activeTab) {
       case 'Home':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.placeholderText}>Home Dashboard</Text>
-            <Text style={styles.placeholderSubtext}>Attendance, schedule, notifications, AI Study Buddy</Text>
-          </View>
-        );
+        return <Dashboard navigation={{ navigate: handleTabChange }} />;
       case 'Classes':
         return (
           <View style={styles.content}>
@@ -59,24 +55,21 @@ export default function StudentsScreen() {
           </View>
         );
       default:
-        return (
-          <View style={styles.content}>
-            <Text style={styles.placeholderText}>Home Dashboard</Text>
-            <Text style={styles.placeholderSubtext}>Attendance, schedule, notifications, AI Study Buddy</Text>
-          </View>
-        );
+        return <Dashboard navigation={{ navigate: handleTabChange }} />;
     }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
-      {/* Header */}
+      {/* Fixed Header - Always visible */}
       <StudentHeader activeTab={activeTab} />
       
       {/* Main Content */}
-      {renderContent()}
+      <View style={styles.contentContainer}>
+        {renderContent()}
+      </View>
       
       {/* Bottom Navigation */}
       <StudentBottomNavbar 
@@ -91,6 +84,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  contentContainer: {
+    flex: 1,
+    paddingTop: 80, // Account for fixed header height
   },
   content: {
     flex: 1,

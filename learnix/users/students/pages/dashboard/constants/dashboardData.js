@@ -1,0 +1,200 @@
+// Dashboard data constants
+export const DASHBOARD_DATA = {
+  user: {
+    name: 'Sarah',
+    avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg',
+    greeting: 'Ready to learn today?',
+  },
+  
+  attendance: {
+    thisWeek: 94,
+    thisMonth: 87,
+    overall: 91,
+    dailyData: [
+      { day: 'Mon', percentage: 100 },
+      { day: 'Tue', percentage: 85 },
+      { day: 'Wed', percentage: 100 },
+      { day: 'Thu', percentage: 95 },
+      { day: 'Fri', percentage: 90 },
+    ],
+  },
+  
+  schedule: [
+    {
+      id: 1,
+      subject: 'Mathematics',
+      room: 'Room 204',
+      professor: 'Prof. Johnson',
+      time: '9:00 AM',
+      status: 'next',
+      isActive: true,
+    },
+    {
+      id: 2,
+      subject: 'Physics Lab',
+      room: 'Lab 301',
+      professor: 'Dr. Smith',
+      time: '11:30 AM',
+      status: 'upcoming',
+      isActive: false,
+    },
+    {
+      id: 3,
+      subject: 'Chemistry',
+      room: 'Room 105',
+      professor: 'Prof. Davis',
+      time: '2:00 PM',
+      status: 'upcoming',
+      isActive: false,
+    },
+  ],
+  
+  aiBuddy: {
+    message: "Hey Sarah! Ready for your Math quiz tomorrow? I can help you review quadratic equations.",
+    placeholder: "Ask me anything...",
+  },
+  
+  performance: {
+    subjects: ['Chemistry', 'Physics', 'Math'],
+    weeks: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    heatmapData: [
+      { subject: 'Chemistry', week: 'Week 1', score: 82 },
+      { subject: 'Chemistry', week: 'Week 2', score: 78 },
+      { subject: 'Chemistry', week: 'Week 3', score: 85 },
+      { subject: 'Chemistry', week: 'Week 4', score: 87 },
+      { subject: 'Physics', week: 'Week 1', score: 88 },
+      { subject: 'Physics', week: 'Week 2', score: 85 },
+      { subject: 'Physics', week: 'Week 3', score: 91 },
+      { subject: 'Physics', week: 'Week 4', score: 89 },
+      { subject: 'Math', week: 'Week 1', score: 95 },
+      { subject: 'Math', week: 'Week 2', score: 92 },
+      { subject: 'Math', week: 'Week 3', score: 98 },
+      { subject: 'Math', week: 'Week 4', score: 94 },
+    ],
+    grades: [
+      { subject: 'Math', grade: 'A+', color: 'green' },
+      { subject: 'Physics', grade: 'A', color: 'blue' },
+      { subject: 'Chemistry', grade: 'B+', color: 'yellow' },
+    ],
+  },
+  
+  notifications: [
+    {
+      id: 1,
+      type: 'urgent',
+      icon: '⚠️',
+      title: 'Assignment Due Tomorrow',
+      message: 'Physics Lab Report - Due 11:59 PM',
+      time: '2 hours ago',
+      isRead: false,
+    },
+    {
+      id: 2,
+      type: 'info',
+      icon: 'ℹ️',
+      title: 'Class Rescheduled',
+      message: 'Chemistry moved to 3:00 PM today',
+      time: '1 hour ago',
+      isRead: false,
+    },
+    {
+      id: 3,
+      type: 'success',
+      icon: '✅',
+      title: 'Grade Posted',
+      message: 'Math Quiz #3: 95% - Great job!',
+      time: '30 minutes ago',
+      isRead: true,
+    },
+  ],
+  
+  quickActions: [
+    {
+      id: 'classes',
+      label: 'Classes',
+      icon: '🎓',
+      color: 'blue',
+      description: 'Access your courses',
+    },
+    {
+      id: 'assignments',
+      label: 'Assignments',
+      icon: '📝',
+      color: 'purple',
+      description: 'View assignments',
+    },
+    {
+      id: 'events',
+      label: 'Events',
+      icon: '📅',
+      color: 'green',
+      description: 'Campus events',
+    },
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: '👤',
+      color: 'orange',
+      description: 'Your profile',
+    },
+  ],
+};
+
+export const COLORS = {
+  primary: '#2563eb',
+  secondary: '#3b82f6',
+  accent: '#60a5fa',
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
+  gray: {
+    50: '#f9fafb',
+    100: '#f3f4f6',
+    200: '#e5e7eb',
+    300: '#d1d5db',
+    400: '#9ca3af',
+    500: '#6b7280',
+    600: '#4b5563',
+    700: '#374151',
+    800: '#1f2937',
+    900: '#111827',
+  },
+  blue: {
+    50: '#eff6ff',
+    100: '#dbeafe',
+    500: '#3b82f6',
+    600: '#2563eb',
+  },
+  green: {
+    50: '#f0fdf4',
+    100: '#dcfce7',
+    500: '#22c55e',
+    600: '#16a34a',
+  },
+  purple: {
+    50: '#faf5ff',
+    100: '#f3e8ff',
+    500: '#a855f7',
+    600: '#9333ea',
+  },
+  orange: {
+    50: '#fff7ed',
+    100: '#ffedd5',
+    500: '#f97316',
+    600: '#ea580c',
+  },
+  red: {
+    50: '#fef2f2',
+    100: '#fee2e2',
+    400: '#f87171',
+    500: '#ef4444',
+    600: '#dc2626',
+  },
+  yellow: {
+    50: '#fefce8',
+    100: '#fef3c7',
+    500: '#eab308',
+    600: '#ca8a04',
+  },
+};

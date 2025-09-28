@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
@@ -18,20 +19,15 @@ export default function StudentHeader({ activeTab }) {
     return 'Good Evening';
   };
 
-  const getTabTitle = () => {
-    switch (activeTab) {
-      case 'Home': return 'Dashboard';
-      case 'Classes': return 'Classes';
-      case 'Assignments': return 'Assignments & Exams';
-      case 'Events': return 'Events & Campus Life';
-      case 'Profile': return 'Profile & Wallet';
-      default: return 'Dashboard';
-    }
-  };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+    <LinearGradient
+      colors={['#667eea', '#764ba2']}
+      start={{x: 0, y: 0}}
+      end={{x: 1, y: 1}}
+      style={styles.container}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       
       {/* Top Section */}
       <View style={styles.topSection}>
@@ -58,34 +54,26 @@ export default function StudentHeader({ activeTab }) {
         </View>
       </View>
       
-      {/* Page Title */}
-      <View style={styles.titleSection}>
-        <Text style={styles.pageTitle}>{getTabTitle()}</Text>
-        <Text style={styles.pageSubtitle}>
-          {activeTab === 'Home' && 'Track your academic progress'}
-          {activeTab === 'Classes' && 'Manage your courses and materials'}
-          {activeTab === 'Assignments' && 'Submit work and track performance'}
-          {activeTab === 'Events' && 'Stay connected with campus life'}
-          {activeTab === 'Profile' && 'Manage your account and achievements'}
-        </Text>
-      </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomWidth: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
   },
   topSection: {
     flexDirection: 'row',
@@ -98,13 +86,13 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.textSecondary,
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 2,
   },
   studentName: {
     fontSize: TYPOGRAPHY.fontSize.xl,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textPrimary,
+    color: '#FFFFFF',
   },
   headerActions: {
     flexDirection: 'row',
@@ -116,52 +104,43 @@ const styles = StyleSheet.create({
     padding: SPACING.sm,
   },
   actionIcon: {
-    fontSize: 20,
+    fontSize: 22,
+    color: '#FFFFFF',
   },
   notificationBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: COLORS.error,
+    top: 2,
+    right: 2,
+    backgroundColor: '#EF4444',
     borderRadius: BORDER_RADIUS.full,
-    minWidth: 18,
-    height: 18,
+    minWidth: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#3B82F6',
   },
   badgeText: {
     fontSize: 10,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.white,
+    color: '#FFFFFF',
   },
   avatarButton: {
     padding: 2,
   },
   avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   avatarText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.white,
-  },
-  titleSection: {
-    marginTop: SPACING.sm,
-  },
-  pageTitle: {
-    fontSize: TYPOGRAPHY.fontSize['2xl'],
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-  },
-  pageSubtitle: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.textSecondary,
-    lineHeight: TYPOGRAPHY.lineHeight.relaxed,
+    color: '#FFFFFF',
   },
 });
