@@ -1,42 +1,59 @@
-// Color palette
+// Color palette - Clean ERP Style
 export const COLORS = {
   // Primary colors
-  primary: '#1e3a8a', // Deep blue
-  primaryDark: '#1e40af',
-  secondary: '#3b82f6', // Blue
-  accent: '#8b5cf6', // Purple
-  accentLight: '#a78bfa',
+  primary: '#2563eb', // Professional blue
+  primaryDark: '#1d4ed8',
+  primaryLight: '#3b82f6',
+  secondary: '#64748b', // Neutral gray
+  accent: '#0ea5e9', // Light blue accent
   
   // Neutral colors
   white: '#ffffff',
-  black: '#000000',
-  textLight: '#e2e8f0',
-  textDark: '#1e293b',
+  black: '#0f172a',
+  gray50: '#f8fafc',
+  gray100: '#f1f5f9',
+  gray200: '#e2e8f0',
+  gray300: '#cbd5e1',
+  gray400: '#94a3b8',
+  gray500: '#64748b',
+  gray600: '#475569',
+  gray700: '#334155',
+  gray800: '#1e293b',
+  gray900: '#0f172a',
+  
+  // Text colors
+  textPrimary: '#0f172a',
+  textSecondary: '#475569',
+  textTertiary: '#64748b',
+  textLight: '#94a3b8',
   
   // Status colors
-  success: '#10b981',
-  warning: '#f59e0b',
-  error: '#ef4444',
-  info: '#3b82f6',
+  success: '#059669',
+  warning: '#d97706',
+  error: '#dc2626',
+  info: '#0284c7',
   
   // Background colors
-  background: '#0f172a',
-  surface: 'rgba(255, 255, 255, 0.1)',
-  surfaceLight: 'rgba(255, 255, 255, 0.05)',
+  background: '#ffffff',
+  backgroundSecondary: '#f8fafc',
+  surface: '#ffffff',
+  surfaceHover: '#f1f5f9',
+  border: '#e2e8f0',
+  borderLight: '#f1f5f9',
 };
 
-// Gradient definitions
+// Gradient definitions - Minimal and professional
 export const GRADIENTS = {
-  primary: ['#1e3a8a', '#3b82f6', '#8b5cf6'],
-  secondary: ['#3b82f6', '#8b5cf6', '#ec4899'],
-  accent: ['#8b5cf6', '#a78bfa', '#c4b5fd'],
-  background: ['#0f172a', '#1e293b', '#334155'],
-  card: ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)'],
-  button: ['#8b5cf6', '#a78bfa'],
-  wave: ['rgba(59, 130, 246, 0.2)', 'rgba(147, 51, 234, 0.1)', 'transparent'],
+  primary: ['#2563eb', '#3b82f6'],
+  secondary: ['#64748b', '#94a3b8'],
+  accent: ['#0ea5e9', '#38bdf8'],
+  background: ['#ffffff', '#f8fafc'],
+  card: ['#ffffff', '#f8fafc'],
+  button: ['#2563eb', '#1d4ed8'],
+  subtle: ['rgba(37, 99, 235, 0.05)', 'rgba(37, 99, 235, 0.02)'],
 };
 
-// Typography
+// Typography - Clean and readable
 export const TYPOGRAPHY = {
   // Font families
   fontFamily: {
@@ -72,9 +89,9 @@ export const TYPOGRAPHY = {
   
   // Line heights
   lineHeight: {
-    tight: 1.25,
-    normal: 1.5,
-    relaxed: 1.75,
+    tight: 1.2,
+    normal: 1.4,
+    relaxed: 1.6,
   },
   
   // Letter spacing
@@ -87,15 +104,15 @@ export const TYPOGRAPHY = {
   },
 };
 
-// Animation configurations
+// Animation configurations - Subtle and professional
 export const ANIMATIONS = {
   // Durations
   duration: {
-    fast: 200,
-    normal: 300,
-    slow: 500,
-    slower: 800,
-    slowest: 1000,
+    fast: 150,
+    normal: 250,
+    slow: 350,
+    slower: 500,
+    slowest: 700,
   },
   
   // Easing functions
@@ -107,40 +124,35 @@ export const ANIMATIONS = {
     easeInOut: 'ease-in-out',
   },
   
-  // Animation presets
+  // Animation presets - Minimal
   fadeIn: {
     from: { opacity: 0 },
     to: { opacity: 1 },
   },
   
   slideUp: {
-    from: { transform: [{ translateY: 50 }] },
+    from: { transform: [{ translateY: 20 }] },
     to: { transform: [{ translateY: 0 }] },
   },
   
   slideDown: {
-    from: { transform: [{ translateY: -50 }] },
+    from: { transform: [{ translateY: -20 }] },
     to: { transform: [{ translateY: 0 }] },
   },
   
   slideLeft: {
-    from: { transform: [{ translateX: 50 }] },
+    from: { transform: [{ translateX: 20 }] },
     to: { transform: [{ translateX: 0 }] },
   },
   
   slideRight: {
-    from: { transform: [{ translateX: -50 }] },
+    from: { transform: [{ translateX: -20 }] },
     to: { transform: [{ translateX: 0 }] },
   },
   
   scale: {
-    from: { transform: [{ scale: 0.8 }] },
+    from: { transform: [{ scale: 0.95 }] },
     to: { transform: [{ scale: 1 }] },
-  },
-  
-  rotate: {
-    from: { transform: [{ rotate: '0deg' }] },
-    to: { transform: [{ rotate: '360deg' }] },
   },
 };
 
@@ -157,19 +169,19 @@ export const SPACING = {
   '5xl': 96,
 };
 
-// Border radius
+// Border radius - Clean and minimal
 export const BORDER_RADIUS = {
   none: 0,
   sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  '2xl': 20,
-  '3xl': 24,
+  md: 6,
+  lg: 8,
+  xl: 12,
+  '2xl': 16,
+  '3xl': 20,
   full: 9999,
 };
 
-// Shadows
+// Shadows - Subtle and professional
 export const SHADOWS = {
   sm: {
     shadowColor: '#000',
@@ -181,21 +193,21 @@ export const SHADOWS = {
   md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   lg: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
   },
   xl: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.12,
     shadowRadius: 16,
     elevation: 8,
   },

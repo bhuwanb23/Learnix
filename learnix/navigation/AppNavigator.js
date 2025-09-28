@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 // Import screens
-import LandingScreen from '../pages/landing/landing';
+import SplashScreen from '../components/SplashScreen';
 import LoginScreen from '../pages/login/login';
 
 // Import theme
@@ -10,22 +10,26 @@ import { COLORS } from '../constants/theme';
 
 // Simple navigation state management
 export default function AppNavigator() {
-  const [currentScreen, setCurrentScreen] = useState('Landing');
+  const [currentScreen, setCurrentScreen] = useState('Splash');
 
   const navigate = (screenName) => {
     setCurrentScreen(screenName);
   };
 
+  const handleSplashComplete = () => {
+    setCurrentScreen('Login');
+  };
+
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'Landing':
-        return <LandingScreen navigation={{ navigate }} />;
+      case 'Splash':
+        return <SplashScreen onAnimationComplete={handleSplashComplete} />;
       case 'Login':
         return <LoginScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:
-        return <LandingScreen navigation={{ navigate }} />;
+        return <SplashScreen onAnimationComplete={handleSplashComplete} />;
     }
   };
 
@@ -75,25 +79,25 @@ function MainScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.background,
   },
   mainContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.background,
     paddingHorizontal: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     textAlign: 'center',
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 40,
   },
@@ -106,13 +110,18 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     width: '48%',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: COLORS.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   featureIcon: {
     fontSize: 32,
@@ -121,13 +130,13 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.white,
+    color: COLORS.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   featureDescription: {
     fontSize: 12,
-    color: COLORS.textLight,
+    color: COLORS.textSecondary,
     textAlign: 'center',
     lineHeight: 16,
   },
