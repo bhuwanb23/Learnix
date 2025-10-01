@@ -7,6 +7,7 @@ import {
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
@@ -15,31 +16,36 @@ const navigationItems = [
   {
     id: 'Home',
     label: 'Home',
-    icon: '🏠',
+    icon: 'home-outline',
+    activeIcon: 'home',
     description: 'Dashboard, attendance, schedule, AI Study Buddy',
   },
   {
     id: 'Classes',
     label: 'Classes',
-    icon: '📖',
+    icon: 'book-outline',
+    activeIcon: 'book',
     description: 'Lecture notes, syllabus, quizzes, weak-topic alerts',
   },
   {
     id: 'Assignments',
     label: 'Assignments',
-    icon: '✏️',
+    icon: 'create-outline',
+    activeIcon: 'create',
     description: 'Submit work, take quizzes, exam schedule, analytics',
   },
   {
     id: 'Events',
     label: 'Events',
-    icon: '🎊',
+    icon: 'calendar-outline',
+    activeIcon: 'calendar',
     description: 'Event registration, RSVPs, hostel info, collaborations',
   },
   {
     id: 'Profile',
     label: 'Profile',
-    icon: '👨‍🎓',
+    icon: 'person-outline',
+    activeIcon: 'person',
     description: 'Personal info, habit tracker, wallet, achievements',
   },
 ];
@@ -53,140 +59,83 @@ export default function StudentBottomNavbar({ activeTab, onTabChange }) {
     navigationItems.forEach((item, index) => {
       if (activeTab === item.id) {
         Animated.spring(scaleAnimations[index], {
-          toValue: 1.2,
+          toValue: 1.1,
           useNativeDriver: true,
-          tension: 100,
-          friction: 8,
+          tension: 150,
+          friction: 7,
         }).start();
       } else {
         Animated.spring(scaleAnimations[index], {
           toValue: 1,
           useNativeDriver: true,
-          tension: 100,
-          friction: 8,
+          tension: 150,
+          friction: 7,
         }).start();
       }
     });
   }, [activeTab]);
 
   return (
-    <LinearGradient
-      colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
-      style={styles.container}
-    >
-        <View style={styles.navbar}>
-          {navigationItems.map((item, index) => (
-            <TouchableOpacity
-              key={item.id}
+    <View style={styles.container}>
+      <View style={styles.navbar}>
+        {navigationItems.map((item, index) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[
+              styles.navItem,
+              activeTab === item.id && styles.activeNavItem,
+            ]}
+            onPress={() => onTabChange(item.id)}
+            activeOpacity={0.8}
+          >
+            <Animated.View 
               style={[
-                styles.navItem,
-                activeTab === item.id && styles.activeNavItem,
+                styles.iconContainer,
+                { transform: [{ scale: scaleAnimations[index] }] }
               ]}
-              onPress={() => onTabChange(item.id)}
-              activeOpacity={0.7}
             >
-              <Animated.View 
-                style={[
-                  styles.iconContainer,
-                  { transform: [{ scale: scaleAnimations[index] }] }
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.icon,
-                    activeTab === item.id && styles.activeIcon,
-                  ]}
-                >
-                  {item.icon}
-                </Text>
-                {activeTab === item.id && (
-                  <Animated.View 
-                    style={[
-                      styles.activeIndicator,
-                      {
-                        opacity: scaleAnimations[index].interpolate({
-                          inputRange: [1, 1.2],
-                          outputRange: [0, 1],
-                        })
-                      }
-                    ]} 
-                  />
-                )}
-              </Animated.View>
-            </TouchableOpacity>
-          ))}
-        </View>
-    </LinearGradient>
+              <Ionicons
+                name={activeTab === item.id ? item.activeIcon : item.icon}
+                size={18}
+                color={activeTab === item.id ? '#FFFFFF' : '#6B7280'}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 16,
-    backdropFilter: 'blur(20px)',
+    backgroundColor: '#F8FAFC',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
   },
   navbar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: SPACING.xs,
+    paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.xs,
-    paddingBottom: SPACING.sm,
+    paddingBottom: SPACING.sm + 4,
   },
   navItem: {
-    flex: 1,
     alignItems: 'center',
     paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.xs,
-    borderRadius: BORDER_RADIUS.lg,
-    minHeight: 32,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: 20,
+    minHeight: 40,
+    minWidth: 40,
     justifyContent: 'center',
-    marginHorizontal: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginHorizontal: SPACING.xs,
   },
   activeNavItem: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: 'rgba(59, 130, 246, 0.4)',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    backgroundColor: '#3B82F6',
   },
   iconContainer: {
-    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
-    height: 28,
-  },
-  icon: {
-    fontSize: 18,
-    opacity: 0.6,
-  },
-  activeIcon: {
-    opacity: 1,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: -6,
-    left: '50%',
-    marginLeft: -3,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#3B82F6',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 4,
   },
 });

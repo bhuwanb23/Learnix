@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
@@ -21,13 +21,8 @@ export default function StudentHeader({ activeTab }) {
 
 
   return (
-    <LinearGradient
-      colors={['#667eea', '#764ba2']}
-      start={{x: 0, y: 0}}
-      end={{x: 1, y: 1}}
-      style={styles.container}
-    >
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
       
       {/* Top Section */}
       <View style={styles.topSection}>
@@ -39,68 +34,52 @@ export default function StudentHeader({ activeTab }) {
         <View style={styles.headerActions}>
           {/* Notifications */}
           <TouchableOpacity style={styles.actionButton}>
-            <Text style={styles.actionIcon}>🔔</Text>
+            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
             <View style={styles.notificationBadge}>
               <Text style={styles.badgeText}>3</Text>
-            </View>
-          </TouchableOpacity>
-          
-          {/* Profile Avatar */}
-          <TouchableOpacity style={styles.avatarButton}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>JD</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
       
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#3B82F6',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.sm,
-    paddingBottom: SPACING.md,
-    borderBottomWidth: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
+    paddingTop: SPACING.xs,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2563EB',
   },
   topSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
   },
   greetingContainer: {
     flex: 1,
   },
   greeting: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 2,
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 1,
   },
   studentName: {
-    fontSize: TYPOGRAPHY.fontSize.xl,
+    fontSize: 22,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
   },
   actionButton: {
     position: 'relative',
-    padding: SPACING.sm,
-  },
-  actionIcon: {
-    fontSize: 22,
-    color: '#FFFFFF',
+    padding: SPACING.xs,
   },
   notificationBadge: {
     position: 'absolute',
@@ -108,33 +87,15 @@ const styles = StyleSheet.create({
     right: 2,
     backgroundColor: '#EF4444',
     borderRadius: BORDER_RADIUS.full,
-    minWidth: 20,
-    height: 20,
+    minWidth: 18,
+    height: 18,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#3B82F6',
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#FFFFFF',
-  },
-  avatarButton: {
-    padding: 2,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  avatarText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontSize: 9,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
   },
