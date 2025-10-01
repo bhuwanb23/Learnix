@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import StudentHeader from './components/StudentHeader';
 import StudentBottomNavbar from './components/StudentBottomNavbar';
 import Dashboard from './pages/dashboard/dashboard';
+import AssignmentPage from './pages/assignments/assignment';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -33,12 +34,7 @@ export default function StudentsScreen() {
           </View>
         );
       case 'Assignments':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.placeholderText}>Assignments & Exams</Text>
-            <Text style={styles.placeholderSubtext}>Submit assignments, take quizzes, exam schedule</Text>
-          </View>
-        );
+        return <AssignmentPage />;
       case 'Events':
         return (
           <View style={styles.content}>
