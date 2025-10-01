@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -60,10 +59,8 @@ export default function StudentsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
-      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
-      {/* Fixed Header - Always visible */}
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      {/* Header */}
       <StudentHeader activeTab={activeTab} />
       
       {/* Main Content */}
@@ -87,7 +84,6 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingTop: 80, // Account for fixed header height
   },
   content: {
     flex: 1,

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -71,11 +70,10 @@ export default function StudentBottomNavbar({ activeTab, onTabChange }) {
   }, [activeTab]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <LinearGradient
-        colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
-        style={styles.container}
-      >
+    <LinearGradient
+      colors={['rgba(255, 255, 255, 0.9)', 'rgba(255, 255, 255, 0.7)']}
+      style={styles.container}
+    >
         <View style={styles.navbar}>
           {navigationItems.map((item, index) => (
             <TouchableOpacity
@@ -118,15 +116,11 @@ export default function StudentBottomNavbar({ activeTab, onTabChange }) {
             </TouchableOpacity>
           ))}
         </View>
-      </LinearGradient>
-    </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    backgroundColor: 'transparent',
-  },
   container: {
     borderTopWidth: 0,
     shadowColor: '#000',
@@ -140,17 +134,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.sm,
-    paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.xs,
+    paddingVertical: SPACING.xs,
+    paddingBottom: SPACING.sm,
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.xs,
-    borderRadius: BORDER_RADIUS.xl,
-    minHeight: 40,
+    borderRadius: BORDER_RADIUS.lg,
+    minHeight: 32,
     justifyContent: 'center',
     marginHorizontal: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -170,11 +164,11 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
   },
   icon: {
-    fontSize: 20,
+    fontSize: 18,
     opacity: 0.6,
   },
   activeIcon: {

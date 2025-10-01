@@ -7,7 +7,6 @@ import {
 } from 'react-native';
 
 // Import components
-import WelcomeHeader from './components/WelcomeHeader';
 import QuickActions from './components/QuickActions';
 import AttendanceWidget from './components/AttendanceWidget';
 import ScheduleWidget from './components/ScheduleWidget';
@@ -73,12 +72,6 @@ export default function Dashboard({ navigation }) {
           />
         }
       >
-        {/* Welcome Header */}
-        <WelcomeHeader 
-          user={dashboardData.user}
-          notificationCount={dashboardData.notifications.filter(n => !n.isRead).length}
-        />
-
         {/* Quick Actions */}
         <QuickActions
           actions={dashboardData.quickActions}
