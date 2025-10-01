@@ -7,30 +7,53 @@ import {
   Image,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../constants/dashboardData';
+
+// Professional bell icon component
+const BellIcon = () => (
+  <View style={styles.bellIcon}>
+    <View style={styles.bellBody} />
+    <View style={styles.bellClapper} />
+  </View>
+);
 
 export default function WelcomeHeader({ user, notificationCount = 3 }) {
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(-30)).current;
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, []);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Subtle pulse for notification badge
+    if (notificationCount > 0) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+    }
+  }, [notificationCount]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -40,12 +63,7 @@ export default function WelcomeHeader({ user, notificationCount = 3 }) {
   };
 
   return (
-    <LinearGradient
-      colors={[COLORS.primary, COLORS.secondary]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.container}
-    >
+    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.content}>
         <View style={styles.leftSection}>
           <View style={styles.avatarContainer}>
@@ -64,23 +82,24 @@ export default function WelcomeHeader({ user, notificationCount = 3 }) {
         </View>
 
         <TouchableOpacity style={styles.notificationButton}>
-          <Animated.View style={[styles.bellContainer, { transform: [{ scale: pulseAnim }] }]}>
-            <Text style={styles.bellIcon}>🔔</Text>
-          </Animated.View>
+          <View style={styles.bellContainer}>
+            <BellIcon />
+          </View>
           {notificationCount > 0 && (
-            <View style={styles.badge}>
+            <Animated.View style={[styles.badge, { transform: [{ scale: pulseAnim }] }]}>
               <Text style={styles.badgeText}>{notificationCount}</Text>
-            </View>
+            </Animated.View>
           )}
         </TouchableOpacity>
       </View>
-    </LinearGradient>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 16,
     paddingVertical: 16,
     paddingTop: 20,
   },
@@ -105,64 +124,88 @@ const styles = StyleSheet.create({
   },
   avatarBorder: {
     position: 'absolute',
-    top: -2,
-    left: -2,
-    right: -2,
-    bottom: -2,
+    top: -1.5,
+    left: -1.5,
+    right: -1.5,
+    bottom: -1.5,
     borderRadius: 22,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   textContainer: {
     flex: 1,
   },
   greeting: {
-    fontSize: 14,
-    color: COLORS.blue[100],
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '500',
-    marginBottom: 2,
+    marginBottom: 1,
+    fontFamily: 'Inter-Medium',
+    letterSpacing: 0.2,
   },
   userName: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'white',
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '700',
+    marginBottom: 1,
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.3,
   },
   subtitle: {
-    fontSize: 14,
-    color: COLORS.blue[100],
-    fontWeight: '400',
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontWeight: '500',
+    fontFamily: 'Inter-Medium',
+    letterSpacing: 0.2,
   },
   notificationButton: {
     position: 'relative',
-    padding: 8,
+    padding: 6,
   },
   bellContainer: {
     width: 32,
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
   },
   bellIcon: {
-    fontSize: 20,
-    color: 'white',
+    width: 16,
+    height: 16,
+  },
+  bellBody: {
+    width: 12,
+    height: 12,
+    backgroundColor: 'white',
+    borderRadius: 6,
+    position: 'relative',
+  },
+  bellClapper: {
+    position: 'absolute',
+    bottom: -1.5,
+    left: 5.5,
+    width: 1.5,
+    height: 3,
+    backgroundColor: 'white',
+    borderRadius: 0.75,
   },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: COLORS.error,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    top: 1,
+    right: 1,
+    backgroundColor: '#ef4444',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'white',
+    borderWidth: 1.5,
+    borderColor: '#2563eb',
   },
   badgeText: {
     color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 8,
+    fontWeight: '700',
   },
 });

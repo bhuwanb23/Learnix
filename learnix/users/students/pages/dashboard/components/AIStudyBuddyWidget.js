@@ -7,12 +7,78 @@ import {
   TouchableOpacity,
   Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../constants/dashboardData';
+
+// Professional AI icon component
+const AIIcon = () => (
+  <View style={styles.aiIcon}>
+    <View style={styles.aiHead}>
+      <View style={styles.aiEyes}>
+        <View style={styles.aiEye} />
+        <View style={styles.aiEye} />
+      </View>
+      <View style={styles.aiMouth} />
+    </View>
+  </View>
+);
+
+// Professional send icon component
+const SendIcon = ({ isTyping }) => (
+  <View style={styles.sendIcon}>
+    {isTyping ? (
+      <View style={styles.typingIndicator}>
+        <View style={styles.typingDot} />
+        <View style={styles.typingDot} />
+        <View style={styles.typingDot} />
+      </View>
+    ) : (
+      <View style={styles.arrowContainer}>
+        <View style={styles.arrowHead} />
+        <View style={styles.arrowBody} />
+      </View>
+    )}
+  </View>
+);
 
 export default function AIStudyBuddyWidget({ aiData, onSendMessage }) {
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(30)).current;
+  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Subtle pulse animation for AI icon
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+
+    return () => pulse.stop();
+  }, []);
 
   const handleSend = () => {
     if (message.trim()) {
@@ -28,15 +94,12 @@ export default function AIStudyBuddyWidget({ aiData, onSendMessage }) {
   };
 
   return (
-    <LinearGradient
-      colors={[COLORS.purple[500], COLORS.secondary]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.container}
-    >
+    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.header}>
         <Text style={styles.title}>AI Study Buddy</Text>
-        <Text style={styles.robotIcon}>🤖</Text>
+        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+          <AIIcon />
+        </Animated.View>
       </View>
 
       <View style={styles.messageContainer}>
@@ -47,36 +110,37 @@ export default function AIStudyBuddyWidget({ aiData, onSendMessage }) {
         <TextInput
           style={styles.textInput}
           placeholder={aiData.placeholder}
-          placeholderTextColor={COLORS.purple[200]}
+          placeholderTextColor="#9ca3af"
           value={message}
           onChangeText={setMessage}
           multiline={false}
         />
         <TouchableOpacity
-          style={styles.sendButton}
+          style={[styles.sendButton, (!message.trim() || isTyping) && styles.sendButtonDisabled]}
           onPress={handleSend}
           disabled={!message.trim() || isTyping}
         >
-          <Text style={styles.sendIcon}>
-            {isTyping ? '⏳' : '✈️'}
-          </Text>
+          <SendIcon isTyping={isTyping} />
         </TouchableOpacity>
       </View>
-    </LinearGradient>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 20,
-    marginVertical: 8,
-    borderRadius: 16,
+    backgroundColor: 'white',
+    marginHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
   },
   header: {
     flexDirection: 'row',
@@ -85,25 +149,59 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.3,
   },
-  robotIcon: {
-    fontSize: 20,
+  aiIcon: {
+    width: 24,
+    height: 24,
+  },
+  aiHead: {
+    width: 24,
+    height: 24,
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    position: 'relative',
+  },
+  aiEyes: {
+    position: 'absolute',
+    top: 6,
+    left: 4.5,
+    right: 4.5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  aiEye: {
+    width: 3,
+    height: 3,
+    backgroundColor: 'white',
+    borderRadius: 1.5,
+  },
+  aiMouth: {
+    position: 'absolute',
+    bottom: 6,
+    left: 7.5,
+    right: 7.5,
+    height: 1.5,
+    backgroundColor: 'white',
+    borderRadius: 0.75,
   },
   messageContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: '#e5e7eb',
   },
   messageText: {
-    fontSize: 14,
-    color: COLORS.purple[100],
-    lineHeight: 20,
+    fontSize: 12,
+    color: '#374151',
+    lineHeight: 16,
+    fontWeight: '500',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -112,26 +210,66 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#f8fafc',
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: 'white',
-    fontSize: 14,
+    paddingVertical: 8,
+    color: '#1f2937',
+    fontSize: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: '#e5e7eb',
+    fontWeight: '500',
   },
   sendButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#2563eb',
     borderRadius: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    minWidth: 40,
+    padding: 8,
+    minWidth: 36,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#9ca3af',
   },
   sendIcon: {
-    fontSize: 16,
-    color: 'white',
+    width: 16,
+    height: 16,
+  },
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 1.5,
+  },
+  typingDot: {
+    width: 3,
+    height: 3,
+    backgroundColor: 'white',
+    borderRadius: 1.5,
+  },
+  arrowContainer: {
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  arrowHead: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderBottomWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: 'white',
+    transform: [{ rotate: '90deg' }],
+  },
+  arrowBody: {
+    position: 'absolute',
+    left: 6,
+    width: 3,
+    height: 6,
+    backgroundColor: 'white',
+    borderRadius: 1.5,
   },
 });

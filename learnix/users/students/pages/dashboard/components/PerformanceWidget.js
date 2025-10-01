@@ -3,25 +3,55 @@ import {
   View,
   Text,
   StyleSheet,
+  Animated,
 } from 'react-native';
-import { COLORS } from '../constants/dashboardData';
+
+// Professional chart icon component
+const ChartIcon = () => (
+  <View style={styles.chartIcon}>
+    <View style={styles.chartBars}>
+      <View style={[styles.chartBar, styles.bar1]} />
+      <View style={[styles.chartBar, styles.bar2]} />
+      <View style={[styles.chartBar, styles.bar3]} />
+      <View style={[styles.chartBar, styles.bar4]} />
+    </View>
+  </View>
+);
 
 export default function PerformanceWidget({ performanceData }) {
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(30)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Performance Trends</Text>
-        <Text style={styles.chartIcon}>📈</Text>
+        <ChartIcon />
       </View>
 
       <PerformanceHeatmap data={performanceData} />
 
       <View style={styles.gradesContainer}>
         {performanceData.grades.map((grade, index) => (
-          <GradeCard key={index} grade={grade} />
+          <GradeCard key={index} grade={grade} delay={index * 150} />
         ))}
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -47,10 +77,10 @@ function PerformanceHeatmap({ data }) {
   const matrix = createHeatmapMatrix();
 
   const getScoreColor = (score) => {
-    if (score >= 90) return COLORS.green[500];
-    if (score >= 80) return COLORS.yellow[500];
-    if (score >= 70) return COLORS.orange[500];
-    return COLORS.red[500];
+    if (score >= 90) return '#10b981';
+    if (score >= 80) return '#f59e0b';
+    if (score >= 70) return '#f97316';
+    return '#ef4444';
   };
 
   return (
@@ -87,37 +117,61 @@ function PerformanceHeatmap({ data }) {
   );
 }
 
-function GradeCard({ grade }) {
+function GradeCard({ grade, delay = 0 }) {
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [delay]);
+
   const getGradeColor = (color) => {
     const colorMap = {
-      green: COLORS.green,
-      blue: COLORS.blue,
-      yellow: COLORS.yellow,
+      green: '#10b981',
+      blue: '#2563eb',
+      yellow: '#f59e0b',
     };
-    return colorMap[color] || COLORS.gray;
+    return colorMap[color] || '#6b7280';
   };
 
   const gradeColor = getGradeColor(grade.color);
 
   return (
-    <View style={[styles.gradeCard, { backgroundColor: gradeColor[50] }]}>
-      <Text style={[styles.gradeText, { color: gradeColor[600] }]}>
+    <Animated.View style={[
+      styles.gradeCard, 
+      { borderLeftColor: gradeColor, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }
+    ]}>
+      <Text style={[styles.gradeText, { color: gradeColor }]}>
         {grade.grade}
       </Text>
       <Text style={styles.gradeSubject}>{grade.subject}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
-    marginHorizontal: 20,
-    marginVertical: 8,
-    borderRadius: 16,
+    marginHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
@@ -129,14 +183,31 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.gray[800],
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.3,
   },
   chartIcon: {
-    fontSize: 18,
-    color: COLORS.green[500],
+    width: 20,
+    height: 20,
   },
+  chartBars: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 20,
+    gap: 1.5,
+  },
+  chartBar: {
+    width: 3,
+    backgroundColor: '#10b981',
+    borderRadius: 1.5,
+  },
+  bar1: { height: 6 },
+  bar2: { height: 12 },
+  bar3: { height: 9 },
+  bar4: { height: 16 },
   heatmapContainer: {
     marginBottom: 16,
   },
@@ -145,28 +216,29 @@ const styles = StyleSheet.create({
   },
   heatmapRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 3,
+    gap: 3,
   },
   heatmapCell: {
     flex: 1,
-    height: 20,
-    marginHorizontal: 2,
+    height: 18,
     borderRadius: 4,
   },
   heatmapLabels: {
     flexDirection: 'row',
   },
   subjectLabels: {
-    width: 60,
+    width: 50,
     paddingRight: 8,
   },
   subjectLabel: {
-    fontSize: 10,
-    color: COLORS.gray[500],
+    fontSize: 9,
+    color: '#6b7280',
     textAlign: 'right',
-    marginBottom: 4,
-    height: 20,
-    lineHeight: 20,
+    marginBottom: 3,
+    height: 18,
+    lineHeight: 18,
+    fontWeight: '500',
   },
   weekLabels: {
     flex: 1,
@@ -174,10 +246,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   weekLabel: {
-    fontSize: 10,
-    color: COLORS.gray[500],
+    fontSize: 9,
+    color: '#6b7280',
     textAlign: 'center',
     flex: 1,
+    fontWeight: '500',
   },
   gradesContainer: {
     flexDirection: 'row',
@@ -186,19 +259,23 @@ const styles = StyleSheet.create({
   },
   gradeCard: {
     flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    backgroundColor: '#f8fafc',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2563eb',
+    alignItems: 'center',
   },
   gradeText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontWeight: '800',
+    marginBottom: 2,
   },
   gradeSubject: {
-    fontSize: 12,
-    color: COLORS.gray[600],
+    fontSize: 10,
+    color: '#6b7280',
     textAlign: 'center',
+    fontWeight: '500',
   },
 });

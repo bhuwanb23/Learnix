@@ -5,36 +5,32 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
-import { COLORS } from '../constants/dashboardData';
 
 export default function AttendanceWidget({ attendanceData }) {
-  const pulseAnim = React.useRef(new Animated.Value(1)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const slideAnim = React.useRef(new Animated.Value(30)).current;
 
   React.useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, []);
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Attendance Overview</Text>
         <View style={styles.liveIndicator}>
-          <Animated.View style={[styles.pulseDot, { transform: [{ scale: pulseAnim }] }]} />
+          <View style={styles.liveDot} />
           <Text style={styles.liveText}>Live</Text>
         </View>
       </View>
@@ -43,29 +39,29 @@ export default function AttendanceWidget({ attendanceData }) {
         <StatCard
           value={attendanceData.thisWeek}
           label="This Week"
-          color={COLORS.green}
+          color="#10b981"
         />
         <StatCard
           value={attendanceData.thisMonth}
           label="This Month"
-          color={COLORS.blue}
+          color="#2563eb"
         />
         <StatCard
           value={attendanceData.overall}
           label="Overall"
-          color={COLORS.purple}
+          color="#7c3aed"
         />
       </View>
 
       <AttendanceChart data={attendanceData.dailyData} />
-    </View>
+    </Animated.View>
   );
 }
 
 function StatCard({ value, label, color }) {
   return (
-    <View style={[styles.statCard, { backgroundColor: color[50] }]}>
-      <Text style={[styles.statValue, { color: color[600] }]}>{value}%</Text>
+    <View style={[styles.statCard, { borderLeftColor: color }]}>
+      <Text style={[styles.statValue, { color }]}>{value}%</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -96,7 +92,7 @@ function AttendanceChart({ data }) {
 }
 
 function BarItem({ item, maxValue, index }) {
-  const height = (item.percentage / maxValue) * 60; // Max height 60
+  const height = (item.percentage / maxValue) * 50; // Max height 50
 
   return (
     <View style={styles.barContainer}>
@@ -105,7 +101,7 @@ function BarItem({ item, maxValue, index }) {
           styles.bar,
           {
             height: height,
-            backgroundColor: COLORS.blue[500],
+            backgroundColor: '#2563eb',
           },
         ]}
       />
@@ -116,12 +112,12 @@ function BarItem({ item, maxValue, index }) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
-    marginHorizontal: 20,
-    marginVertical: 8,
-    borderRadius: 16,
+    marginHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
@@ -133,79 +129,90 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.gray[800],
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.3,
   },
   liveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
-  pulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.green[500],
-    marginRight: 6,
+  liveDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#10b981',
+    marginRight: 4,
   },
   liveText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: COLORS.green[600],
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#10b981',
   },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
+    gap: 8,
   },
   statCard: {
     flex: 1,
-    alignItems: 'center',
+    backgroundColor: '#f8fafc',
     paddingVertical: 12,
     paddingHorizontal: 8,
-    marginHorizontal: 4,
-    borderRadius: 12,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2563eb',
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 2,
   },
   statLabel: {
-    fontSize: 12,
-    color: COLORS.gray[600],
+    fontSize: 10,
+    color: '#6b7280',
     textAlign: 'center',
+    fontWeight: '500',
   },
   chartContainer: {
-    height: 80,
+    height: 60,
   },
   chart: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 60,
+    height: 40,
     marginBottom: 8,
+    paddingHorizontal: 2,
   },
   barContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginHorizontal: 2,
+    marginHorizontal: 1,
   },
   bar: {
-    width: 20,
-    borderRadius: 4,
-    minHeight: 4,
+    width: 12,
+    borderRadius: 6,
+    minHeight: 3,
   },
   chartLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingHorizontal: 2,
   },
   chartLabel: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 10,
-    color: COLORS.gray[500],
-    marginHorizontal: 2,
+    fontSize: 9,
+    color: '#6b7280',
+    fontWeight: '500',
   },
 });
