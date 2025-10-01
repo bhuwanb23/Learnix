@@ -22,7 +22,7 @@ export default function StudentHeader({ activeTab }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
+      <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
       
       {/* Top Section */}
       <View style={styles.topSection}>
@@ -48,12 +48,12 @@ export default function StudentHeader({ activeTab }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#2563eb',
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.xs,
     paddingBottom: SPACING.sm,
     borderBottomWidth: 1,
-    borderBottomColor: '#2563EB',
+    borderBottomColor: '#1d4ed8',
   },
   topSection: {
     flexDirection: 'row',
@@ -67,11 +67,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 1,
+    fontFamily: 'Inter-Medium',
+    letterSpacing: 0.2,
   },
   studentName: {
     fontSize: 22,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.3,
   },
   headerActions: {
     flexDirection: 'row',
@@ -92,11 +96,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#3B82F6',
+    borderColor: '#2563eb',
   },
   badgeText: {
     fontSize: 9,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.1,
   },
 });

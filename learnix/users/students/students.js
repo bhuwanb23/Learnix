@@ -11,6 +11,8 @@ import StudentHeader from './components/StudentHeader';
 import StudentBottomNavbar from './components/StudentBottomNavbar';
 import Dashboard from './pages/dashboard/dashboard';
 import AssignmentPage from './pages/assignments/assignment';
+import ProfilePage from './pages/profile/profile';
+import EventsPage from './pages/events/events';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -36,19 +38,9 @@ export default function StudentsScreen() {
       case 'Assignments':
         return <AssignmentPage />;
       case 'Events':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.placeholderText}>Events & Campus Life</Text>
-            <Text style={styles.placeholderSubtext}>Event registration, RSVPs, hostel info, collaborations</Text>
-          </View>
-        );
+        return <EventsPage />;
       case 'Profile':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.placeholderText}>Profile & Wallet</Text>
-            <Text style={styles.placeholderSubtext}>Personal info, habit tracker, campus wallet, achievements</Text>
-          </View>
-        );
+        return <ProfilePage />;
       default:
         return <Dashboard navigation={{ navigate: handleTabChange }} />;
     }
