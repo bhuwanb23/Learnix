@@ -23,6 +23,7 @@ export default function StudentHeader({ activeTab, currentScreen, onBackPress })
     if (currentScreen === 'LectureNotes') return 'Lecture Notes';
     if (currentScreen === 'QuizArena') return 'Quiz Arena';
     if (currentScreen === 'SubjectTracker') return 'Subject Tracker';
+    if (currentScreen === 'WeakTopics') return 'Weak Topics';
     return null;
   };
 
@@ -30,6 +31,7 @@ export default function StudentHeader({ activeTab, currentScreen, onBackPress })
     if (currentScreen === 'LectureNotes') return 'book-outline';
     if (currentScreen === 'QuizArena') return 'help-circle-outline';
     if (currentScreen === 'SubjectTracker') return 'list-outline';
+    if (currentScreen === 'WeakTopics') return 'analytics-outline';
     return 'book-outline';
   };
 

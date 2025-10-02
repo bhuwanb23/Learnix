@@ -17,6 +17,7 @@ import ClassPage from './pages/class/class';
 import LectureNotesPage from './pages/class/features/lecture_notes/lecture_notes';
 import QuizArenaPage from './pages/class/features/quizzes/quiz_arena';
 import SubjectTrackerPage from './pages/class/features/subject_tracker/subject_tracker';
+import WeakTopicsPage from './pages/class/features/weak_topics/weak_topics';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -48,6 +49,9 @@ export default function StudentsScreen() {
     }
     if (currentScreen === 'SubjectTracker') {
       return <SubjectTrackerPage navigation={{ goBack: handleGoBack }} />;
+    }
+    if (currentScreen === 'WeakTopics') {
+      return <WeakTopicsPage navigation={{ goBack: handleGoBack }} />;
     }
 
     // Handle main tabs

@@ -63,13 +63,27 @@ export const TYPOGRAPHY = {
     light: 'System',
   },
   
-  // Font sizes
+  // Font sizes (with both naming conventions for compatibility)
   fontSize: {
     xs: 12,
     sm: 14,
     base: 16,
     lg: 18,
     xl: 20,
+    xxl: 24,
+    '2xl': 24,
+    '3xl': 30,
+    '4xl': 36,
+    '5xl': 48,
+    '6xl': 60,
+  },
+  sizes: {
+    xs: 12,
+    sm: 14,
+    base: 16,
+    lg: 18,
+    xl: 20,
+    xxl: 24,
     '2xl': 24,
     '3xl': 30,
     '4xl': 36,
@@ -77,8 +91,16 @@ export const TYPOGRAPHY = {
     '6xl': 60,
   },
   
-  // Font weights
+  // Font weights (with both naming conventions for compatibility)
   fontWeight: {
+    light: '300',
+    normal: '400',
+    medium: '500',
+    semibold: '600',
+    bold: '700',
+    extrabold: '800',
+  },
+  weights: {
     light: '300',
     normal: '400',
     medium: '500',

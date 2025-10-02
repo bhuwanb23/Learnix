@@ -26,6 +26,9 @@ export const useClassActions = (navigation) => {
         case QUICK_ACTION_TYPES.WEAK_TOPICS:
           console.log('Opening weak topics...');
           // Navigate to weak topics analysis
+          if (navigation?.navigate) {
+            navigation.navigate('WeakTopics');
+          }
           break;
         case QUICK_ACTION_TYPES.SYLLABUS_TRACKER:
           console.log('Opening syllabus tracker...');
