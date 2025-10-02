@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,71 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function SubjectProgress({ subjects, onSubjectPress }) {
-  const fadeAnims = useRef([]).current;
-  const progressAnims = useRef([]).current;
-  const scaleAnims = useRef([]).current;
-
-  useEffect(() => {
-    if (!subjects || subjects.length === 0) return;
-
-    subjects.forEach((subject, index) => {
-      if (!fadeAnims[index]) {
-        fadeAnims[index] = new Animated.Value(0);
-      }
-      if (!progressAnims[index]) {
-        progressAnims[index] = new Animated.Value(0);
-      }
-      if (!scaleAnims[index]) {
-        scaleAnims[index] = new Animated.Value(0.9);
-      }
-    });
-
-    // Stagger animations
-    const animations = subjects.map((_, index) =>
-      Animated.parallel([
-        Animated.timing(fadeAnims[index], {
-          toValue: 1,
-          duration: 300,
-          delay: index * 75,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnims[index], {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          delay: index * 75,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    Animated.parallel(animations).start(() => {
-      // Animate progress bars after cards appear
-      const progressAnimations = subjects.map((subject, index) =>
-        Animated.timing(progressAnims[index], {
-          toValue: subject.progress,
-          duration: 600,
-          delay: index * 50,
-          useNativeDriver: false,
-        })
-      );
-      Animated.parallel(progressAnimations).start();
-    });
-  }, [subjects]);
-
-  const handlePress = (subject, index) => {
-    Animated.sequence([
-      Animated.timing(scaleAnims[index], {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnims[index], {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handlePress = (subject) => {
     onSubjectPress(subject);
   };
 
@@ -88,19 +23,10 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
       <Text style={styles.sectionTitle}>Subject Progress</Text>
       <View style={styles.subjectsList}>
         {subjects.map((subject, index) => (
-          <Animated.View
-            key={subject.id}
-            style={[
-              styles.animatedWrapper,
-              {
-                opacity: fadeAnims[index] || 0,
-                transform: [{ scale: scaleAnims[index] || 1 }],
-              },
-            ]}
-          >
+          <View key={subject.id} style={styles.subjectWrapper}>
             <TouchableOpacity
               style={styles.subjectCard}
-              onPress={() => handlePress(subject, index)}
+              onPress={() => handlePress(subject)}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -119,7 +45,7 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
                     >
                       <Ionicons
                         name={subject.icon}
-                        size={24}
+                        size={18}
                         color="#FFFFFF"
                       />
                     </LinearGradient>
@@ -133,22 +59,18 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
                       {subject.progress}%
                     </Text>
                     <View style={styles.progressCircle}>
-                      <Ionicons name="trending-up" size={16} color="#3B82F6" />
+                      <Ionicons name="trending-up" size={12} color="#3B82F6" />
                     </View>
                   </View>
                 </View>
                 
                 <View style={styles.progressBarContainer}>
                   <View style={styles.progressBarBackground}>
-                    <Animated.View
+                    <View
                       style={[
                         styles.progressBarFill,
                         {
-                          width: progressAnims[index] ? progressAnims[index].interpolate({
-                            inputRange: [0, 100],
-                            outputRange: ['0%', '100%'],
-                            extrapolate: 'clamp',
-                          }) : '0%',
+                          width: `${subject.progress}%`,
                         },
                       ]}
                     >
@@ -158,7 +80,7 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
                         end={{ x: 1, y: 0 }}
                         style={styles.progressGradient}
                       />
-                    </Animated.View>
+                    </View>
                   </View>
                 </View>
 
@@ -166,7 +88,7 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
                 <View style={styles.decorativeShape} />
               </LinearGradient>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
         ))}
       </View>
     </View>
@@ -175,6 +97,7 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.sm,
   },
@@ -185,9 +108,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   subjectsList: {
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
-  animatedWrapper: {
+  subjectWrapper: {
     shadowColor: '#3B82F6',
     shadowOffset: {
       width: 0,
@@ -202,14 +125,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardGradient: {
-    padding: SPACING.md,
+    padding: SPACING.sm,
     position: 'relative',
   },
   subjectHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   subjectInfo: {
     flexDirection: 'row',
@@ -217,9 +140,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.sm,
@@ -228,13 +151,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   subjectName: {
-    fontSize: TYPOGRAPHY.fontSize.md,
+    fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
   },
   subjectChapter: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontSize: TYPOGRAPHY.fontSize.xs,
     color: COLORS.textSecondary,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
   },
@@ -243,14 +166,14 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   progressPercentage: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#3B82F6',
   },
   progressCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#EBF4FF',
     justifyContent: 'center',
     alignItems: 'center',
@@ -260,19 +183,19 @@ const styles = StyleSheet.create({
   },
   progressBarBackground: {
     width: '100%',
-    height: 12,
+    height: 8,
     backgroundColor: '#E5E7EB',
-    borderRadius: 6,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 6,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressGradient: {
     flex: 1,
-    borderRadius: 6,
+    borderRadius: 4,
   },
   decorativeShape: {
     position: 'absolute',

@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,55 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function UpcomingTests({ tests, onTestPress }) {
-  const fadeAnims = useRef([]).current;
-  const scaleAnims = useRef([]).current;
-
-  useEffect(() => {
-    if (!tests || tests.length === 0) return;
-
-    tests.forEach((_, index) => {
-      if (!fadeAnims[index]) {
-        fadeAnims[index] = new Animated.Value(0);
-      }
-      if (!scaleAnims[index]) {
-        scaleAnims[index] = new Animated.Value(0.9);
-      }
-    });
-
-    const animations = tests.map((_, index) =>
-      Animated.parallel([
-        Animated.timing(fadeAnims[index], {
-          toValue: 1,
-          duration: 300,
-          delay: index * 100 + 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnims[index], {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          delay: index * 100 + 200,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    Animated.parallel(animations).start();
-  }, [tests]);
-
-  const handlePress = (test, index) => {
-    Animated.sequence([
-      Animated.timing(scaleAnims[index], {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnims[index], {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handlePress = (test) => {
     onTestPress(test);
   };
 
@@ -72,19 +23,10 @@ export default function UpcomingTests({ tests, onTestPress }) {
       <Text style={styles.sectionTitle}>Upcoming Tests</Text>
       <View style={styles.testsList}>
         {tests.map((test, index) => (
-          <Animated.View
-            key={test.id}
-            style={[
-              styles.animatedWrapper,
-              {
-                opacity: fadeAnims[index] || 0,
-                transform: [{ scale: scaleAnims[index] || 1 }],
-              },
-            ]}
-          >
+          <View key={test.id} style={styles.testWrapper}>
             <TouchableOpacity
               style={styles.testCard}
-              onPress={() => handlePress(test, index)}
+              onPress={() => handlePress(test)}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -98,14 +40,14 @@ export default function UpcomingTests({ tests, onTestPress }) {
                     <View style={styles.iconContainer}>
                       <Ionicons
                         name="document-text"
-                        size={20}
+                        size={16}
                         color="#3B82F6"
                       />
                     </View>
                     <View style={styles.testDetails}>
                       <Text style={styles.testSubject}>{test.subject}</Text>
                       <View style={styles.dateContainer}>
-                        <Ionicons name="time-outline" size={14} color={COLORS.textSecondary} />
+                        <Ionicons name="time-outline" size={12} color={COLORS.textSecondary} />
                         <Text style={styles.testDate}>{test.date}</Text>
                       </View>
                     </View>
@@ -121,7 +63,7 @@ export default function UpcomingTests({ tests, onTestPress }) {
                 <View style={[styles.decorativeLine, { backgroundColor: test.priorityColor }]} />
               </LinearGradient>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
         ))}
       </View>
     </View>
@@ -130,6 +72,7 @@ export default function UpcomingTests({ tests, onTestPress }) {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.sm,
   },
@@ -140,9 +83,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   testsList: {
-    gap: SPACING.md,
+    gap: SPACING.sm,
   },
-  animatedWrapper: {
+  testWrapper: {
     shadowColor: '#3B82F6',
     shadowOffset: {
       width: 0,
@@ -157,7 +100,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardGradient: {
-    padding: SPACING.md,
+    padding: SPACING.sm,
     position: 'relative',
   },
   testContent: {
@@ -171,19 +114,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#EBF4FF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: SPACING.sm,
   },
   testDetails: {
     flex: 1,
   },
   testSubject: {
-    fontSize: TYPOGRAPHY.fontSize.md,
+    fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
@@ -194,17 +137,17 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   testDate: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontSize: TYPOGRAPHY.fontSize.xs,
     color: COLORS.textSecondary,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
   },
   priorityBadge: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
     borderRadius: BORDER_RADIUS.full,
   },
   priorityText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontSize: TYPOGRAPHY.fontSize.xs,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
   },
   decorativeLine: {

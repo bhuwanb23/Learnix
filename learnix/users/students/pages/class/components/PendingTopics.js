@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,70 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function PendingTopics({ topics, onStudyPress }) {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
-  const topicAnims = useRef([]).current;
-
-  useEffect(() => {
-    if (!topics || topics.length === 0) return;
-
-    // Initialize topic animations
-    topics.forEach((_, index) => {
-      if (!topicAnims[index]) {
-        topicAnims[index] = new Animated.Value(0);
-      }
-    });
-
-    // Main card animation
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        delay: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        delay: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 200,
-        delay: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Stagger topic animations
-      const topicAnimations = topics.map((_, index) =>
-        Animated.timing(topicAnims[index], {
-          toValue: 1,
-          duration: 200,
-          delay: index * 50,
-          useNativeDriver: true,
-        })
-      );
-      Animated.parallel(topicAnimations).start();
-    });
-  }, [topics]);
-
   const handleStudyPress = (topic) => {
-    // Add a small bounce animation
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.98,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
     onStudyPress(topic);
   };
 
@@ -85,18 +21,7 @@ export default function PendingTopics({ topics, onStudyPress }) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Pending Topics</Text>
-      <Animated.View
-        style={[
-          styles.animatedWrapper,
-          {
-            opacity: fadeAnim,
-            transform: [
-              { scale: scaleAnim },
-              { translateY: slideAnim },
-            ],
-          },
-        ]}
-      >
+      <View style={styles.topicsWrapper}>
         <View style={styles.topicsCard}>
           <LinearGradient
             colors={['#FFFFFF', '#F8FAFC']}
@@ -106,23 +31,7 @@ export default function PendingTopics({ topics, onStudyPress }) {
           >
             <View style={styles.topicsList}>
               {topics.map((topic, index) => (
-                <Animated.View
-                  key={topic.id}
-                  style={[
-                    styles.topicItemWrapper,
-                    {
-                      opacity: topicAnims[index] || 0,
-                      transform: [
-                        {
-                          translateX: topicAnims[index] ? topicAnims[index].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [20, 0],
-                          }) : 0,
-                        },
-                      ],
-                    },
-                  ]}
-                >
+                <View key={topic.id} style={styles.topicItemWrapper}>
                   <View style={styles.topicItem}>
                     <View style={styles.topicInfo}>
                       <View style={styles.topicIconContainer}>
@@ -150,7 +59,7 @@ export default function PendingTopics({ topics, onStudyPress }) {
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
-                </Animated.View>
+                </View>
               ))}
             </View>
             
@@ -159,13 +68,14 @@ export default function PendingTopics({ topics, onStudyPress }) {
             <View style={styles.decorativeShape2} />
           </LinearGradient>
         </View>
-      </Animated.View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.sm,
   },
@@ -175,7 +85,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
-  animatedWrapper: {
+  topicsWrapper: {
     shadowColor: '#3B82F6',
     shadowOffset: {
       width: 0,

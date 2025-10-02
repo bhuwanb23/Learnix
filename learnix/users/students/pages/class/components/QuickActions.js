@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,9 +12,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function QuickActions({ onActionPress }) {
-  const fadeAnims = useRef([]).current;
-  const scaleAnims = useRef([]).current;
-
   const quickActions = [
     {
       id: 'notes',
@@ -47,54 +43,7 @@ export default function QuickActions({ onActionPress }) {
     },
   ];
 
-  // Initialize animations
-  useEffect(() => {
-    if (quickActions.length === 0) return;
-
-    quickActions.forEach((_, index) => {
-      if (!fadeAnims[index]) {
-        fadeAnims[index] = new Animated.Value(0);
-      }
-      if (!scaleAnims[index]) {
-        scaleAnims[index] = new Animated.Value(0.8);
-      }
-    });
-
-    // Stagger the animations
-    const animations = quickActions.map((_, index) =>
-      Animated.parallel([
-        Animated.timing(fadeAnims[index], {
-          toValue: 1,
-          duration: 300,
-          delay: index * 50,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnims[index], {
-          toValue: 1,
-          tension: 120,
-          friction: 8,
-          delay: index * 50,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    Animated.parallel(animations).start();
-  }, []);
-
-  const handlePress = (actionId, index) => {
-    Animated.sequence([
-      Animated.timing(scaleAnims[index], {
-        toValue: 0.9,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnims[index], {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handlePress = (actionId) => {
     onActionPress(actionId);
   };
 
@@ -102,19 +51,10 @@ export default function QuickActions({ onActionPress }) {
     <View style={styles.container}>
       <View style={styles.grid}>
         {quickActions.map((action, index) => (
-          <Animated.View
-            key={action.id}
-            style={[
-              styles.animatedWrapper,
-              {
-                opacity: fadeAnims[index] || 0,
-                transform: [{ scale: scaleAnims[index] || 1 }],
-              },
-            ]}
-          >
+          <View key={action.id} style={styles.actionWrapper}>
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => handlePress(action.id, index)}
+              onPress={() => handlePress(action.id)}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -139,7 +79,7 @@ export default function QuickActions({ onActionPress }) {
                 <View style={styles.decorativeCircle2} />
               </LinearGradient>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
         ))}
       </View>
     </View>
@@ -157,7 +97,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: SPACING.sm,
   },
-  animatedWrapper: {
+  actionWrapper: {
     width: '48%',
     shadowColor: '#3B82F6',
     shadowOffset: {
