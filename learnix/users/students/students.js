@@ -13,6 +13,7 @@ import Dashboard from './pages/dashboard/dashboard';
 import AssignmentPage from './pages/assignments/assignment';
 import ProfilePage from './pages/profile/profile';
 import EventsPage from './pages/events/events';
+import ClassPage from './pages/class/class';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -29,12 +30,7 @@ export default function StudentsScreen() {
       case 'Home':
         return <Dashboard navigation={{ navigate: handleTabChange }} />;
       case 'Classes':
-        return (
-          <View style={styles.content}>
-            <Text style={styles.placeholderText}>Classes</Text>
-            <Text style={styles.placeholderSubtext}>Lecture notes, syllabus, quizzes, weak-topic alerts</Text>
-          </View>
-        );
+        return <ClassPage />;
       case 'Assignments':
         return <AssignmentPage />;
       case 'Events':
