@@ -8,12 +8,18 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Import components
+import ProgressOverview from './components/ProgressOverview';
+import TabNavigation from './components/TabNavigation';
 import QuickActions from './components/QuickActions';
 import AssignmentCard from './components/AssignmentCard';
 import UploadCard from './components/UploadCard';
 import ExamCard from './components/ExamCard';
+import QuizInterface from './components/QuizInterface';
+import ExamPreparation from './components/ExamPreparation';
+import PerformanceAnalytics from './components/PerformanceAnalytics';
 
 // Import hooks
 import { useAssignments } from './hooks/useAssignments';
@@ -28,7 +34,8 @@ import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
 
 export default function AssignmentPage() {
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState('assignments');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
 
   // Custom hooks
   const {
@@ -83,6 +90,92 @@ export default function AssignmentPage() {
   const handleRemoveFile = (fileId) => {
     removeFile(fileId);
   };
+
+  const handleTabPress = (tabId) => {
+    setActiveTab(tabId);
+  };
+
+  const handleQuizAnswer = (answerIndex) => {
+    setSelectedAnswer(answerIndex);
+  };
+
+  const handleNextQuestion = () => {
+    // Handle next question logic
+    setSelectedAnswer(null);
+  };
+
+  const handleAIHint = () => {
+    // Handle AI hint logic
+    console.log('AI Hint requested');
+  };
+
+  const handleExamPrepItem = (item) => {
+    console.log('Exam prep item pressed:', item.title);
+  };
+
+  const renderDashboardTab = () => (
+    <ScrollView
+      style={styles.tabContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      {/* Progress Overview Header */}
+      <LinearGradient
+        colors={['#3B82F6', '#8B5CF6']}
+        style={styles.headerGradient}
+      >
+        <ProgressOverview progress={78} title="Weekly Progress" />
+      </LinearGradient>
+
+      {/* Quick Actions */}
+      {mockQuickActions && mockQuickActions.length > 0 && (
+        <QuickActions
+          actions={mockQuickActions}
+          onActionPress={handleQuickAction}
+        />
+      )}
+
+      {/* Pending Tasks */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Pending Tasks</Text>
+        {assignmentsLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3B82F6" />
+          </View>
+        ) : assignmentsError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{assignmentsError}</Text>
+          </View>
+        ) : (
+          assignments && assignments
+            .filter(assignment => assignment.status !== 'submitted')
+            .slice(0, 2) // Show only first 2 for dashboard
+            .map((assignment) => (
+              <AssignmentCard
+                key={assignment.id}
+                assignment={assignment}
+                onPress={handleAssignmentPress}
+                onActionPress={handleAssignmentAction}
+              />
+            ))
+        )}
+      </View>
+
+      {/* Upcoming Exams */}
+      {mockUpcomingExams && mockUpcomingExams.length > 0 && (
+        <ExamCard
+          exam={mockUpcomingExams[0]}
+          onPastPapers={handlePastPapers}
+          onAIPrep={handleAIPrep}
+        />
+      )}
+
+      {/* Performance Analytics */}
+      <PerformanceAnalytics />
+    </ScrollView>
+  );
 
   const renderAssignmentsTab = () => (
     <ScrollView
@@ -173,49 +266,55 @@ export default function AssignmentPage() {
     </ScrollView>
   );
 
+  const renderExamsTab = () => (
+    <ScrollView
+      style={styles.tabContent}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      {/* Quiz Interface */}
+      <QuizInterface
+        onAnswerSelect={handleQuizAnswer}
+        onNextQuestion={handleNextQuestion}
+        onAIHint={handleAIHint}
+      />
+
+      {/* Exam Preparation */}
+      <ExamPreparation onItemPress={handleExamPrepItem} />
+    </ScrollView>
+  );
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return renderDashboardTab();
+      case 'assignments':
+        return renderAssignmentsTab();
+      case 'exams':
+        return renderExamsTab();
+      default:
+        return renderDashboardTab();
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Tab Navigation */}
-      <View style={styles.tabNavigation}>
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              activeTab === 'assignments' && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab('assignments')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'assignments' && styles.activeTabText,
-              ]}
-            >
-              Assignments
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.tab,
-              activeTab === 'submitted' && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab('submitted')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'submitted' && styles.activeTabText,
-              ]}
-            >
-              Submitted
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <TabNavigation
+        tabs={[
+          { id: 'dashboard', title: 'Dashboard' },
+          { id: 'assignments', title: 'Assignments' },
+          { id: 'exams', title: 'Exams' },
+        ]}
+        activeTab={activeTab}
+        onTabPress={handleTabPress}
+      />
 
       {/* Tab Content */}
       <View style={styles.tabContentContainer}>
-        {activeTab === 'assignments' ? renderAssignmentsTab() : renderSubmittedTab()}
+        {renderTabContent()}
       </View>
 
       {/* Loading Overlay */}
@@ -238,32 +337,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  tabNavigation: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  tabContainer: {
-    flexDirection: 'row',
+  headerGradient: {
+    marginHorizontal: -SPACING.lg,
+    marginTop: -SPACING.md,
     paddingHorizontal: SPACING.lg,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: SPACING.md,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: '#3B82F6',
-  },
-  tabText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
-    color: COLORS.textSecondary,
-  },
-  activeTabText: {
-    color: '#3B82F6',
+    paddingTop: SPACING.md,
+    marginBottom: SPACING.lg,
   },
   tabContentContainer: {
     flex: 1,
