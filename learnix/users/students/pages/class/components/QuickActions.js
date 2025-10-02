@@ -35,9 +35,9 @@ export default function QuickActions({ onActionPress }) {
       iconColor: '#FFFFFF',
     },
     {
-      id: 'ai-buddy',
-      title: 'AI Buddy',
-      icon: 'hardware-chip-outline',
+      id: 'syllabus-tracker',
+      title: 'Syllabus Tracker',
+      icon: 'list-outline',
       gradientColors: ['#8B5CF6', '#7C3AED'],
       iconColor: '#FFFFFF',
     },

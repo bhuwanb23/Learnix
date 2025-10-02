@@ -21,8 +21,16 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Subject Progress</Text>
-      <View style={styles.subjectsList}>
-        {subjects.map((subject, index) => (
+      <View style={styles.subjectsWrapper}>
+        <View style={styles.subjectsCard}>
+          <LinearGradient
+            colors={['#FFFFFF', '#F8FAFC']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardGradient}
+          >
+            <View style={styles.subjectsList}>
+              {subjects.map((subject, index) => (
           <View key={subject.id} style={styles.subjectWrapper}>
             <TouchableOpacity
               style={styles.subjectCard}
@@ -89,7 +97,10 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        ))}
+              ))}
+            </View>
+          </LinearGradient>
+        </View>
       </View>
     </View>
   );
@@ -107,10 +118,7 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
-  subjectsList: {
-    gap: SPACING.sm,
-  },
-  subjectWrapper: {
+  subjectsWrapper: {
     shadowColor: '#3B82F6',
     shadowOffset: {
       width: 0,
@@ -120,12 +128,22 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
+  subjectsCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+  },
+  subjectsList: {
+    gap: SPACING.sm,
+  },
+  subjectWrapper: {
+    marginBottom: SPACING.sm,
+  },
   subjectCard: {
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
   },
   cardGradient: {
-    padding: SPACING.sm,
+    padding: SPACING.md,
     position: 'relative',
   },
   subjectHeader: {

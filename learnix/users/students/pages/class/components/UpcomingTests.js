@@ -21,8 +21,16 @@ export default function UpcomingTests({ tests, onTestPress }) {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Upcoming Tests</Text>
-      <View style={styles.testsList}>
-        {tests.map((test, index) => (
+      <View style={styles.testsWrapper}>
+        <View style={styles.testsCard}>
+          <LinearGradient
+            colors={['#FFFFFF', '#F8FAFC']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cardGradient}
+          >
+            <View style={styles.testsList}>
+              {tests.map((test, index) => (
           <View key={test.id} style={styles.testWrapper}>
             <TouchableOpacity
               style={styles.testCard}
@@ -64,7 +72,10 @@ export default function UpcomingTests({ tests, onTestPress }) {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        ))}
+              ))}
+            </View>
+          </LinearGradient>
+        </View>
       </View>
     </View>
   );
@@ -82,25 +93,32 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     marginBottom: SPACING.md,
   },
+  testsWrapper: {
+    shadowColor: '#3B82F6',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  testsCard: {
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
+  },
   testsList: {
     gap: SPACING.sm,
   },
   testWrapper: {
-    shadowColor: '#3B82F6',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 6,
+    marginBottom: SPACING.sm,
   },
   testCard: {
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
   },
   cardGradient: {
-    padding: SPACING.sm,
+    padding: SPACING.md,
     position: 'relative',
   },
   testContent: {
