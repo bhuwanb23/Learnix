@@ -87,7 +87,7 @@ export default function HeatmapSection({ heatmapData }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md, // Reduced padding
     paddingBottom: SPACING.lg,
   },
   card: {

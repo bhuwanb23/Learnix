@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +11,43 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
 
 export default function AIRecommendations({ recommendations }) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (recommendations && recommendations.length > 0) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Glow animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [recommendations]);
+
   if (!recommendations || recommendations.length === 0) {
     return null;
   }
@@ -28,16 +66,36 @@ export default function AIRecommendations({ recommendations }) {
   };
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[
+      styles.container,
+      {
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }],
+      },
+    ]}>
       <LinearGradient
-        colors={['#3B82F6', '#2563EB']}
+        colors={['#3B82F6', '#2563EB', '#1E40AF']}
         style={styles.card}
       >
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerIcon}>
-            <Ionicons name="bulb-outline" size={20} color="#BFDBFE" />
-          </View>
+          <Animated.View style={[
+            styles.headerIcon,
+            {
+              opacity: glowAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.7, 1],
+              }),
+              transform: [{
+                scale: glowAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [1, 1.1],
+                }),
+              }],
+            },
+          ]}>
+            <Ionicons name="bulb-outline" size={22} color="#BFDBFE" />
+          </Animated.View>
           <Text style={styles.headerTitle}>AI Study Plan</Text>
         </View>
         
@@ -80,29 +138,31 @@ export default function AIRecommendations({ recommendations }) {
           ))}
         </View>
         
-        {/* Decorative Elements */}
+        {/* Enhanced Decorative Elements */}
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
+        <View style={styles.decorativeCircle3} />
+        <View style={styles.decorativeWave} />
       </LinearGradient>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md, // Reduced padding
     paddingBottom: SPACING.lg,
   },
   card: {
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS['2xl'],
+    padding: SPACING.xl,
     position: 'relative',
     overflow: 'hidden',
     shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   header: {
     flexDirection: 'row',
@@ -184,20 +244,38 @@ const styles = StyleSheet.create({
   },
   decorativeCircle1: {
     position: 'absolute',
-    top: -20,
-    right: -20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    top: -25,
+    right: -25,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   decorativeCircle2: {
     position: 'absolute',
-    bottom: -15,
-    left: -15,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    bottom: -20,
+    left: -20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  decorativeCircle3: {
+    position: 'absolute',
+    top: 60,
+    left: -10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  decorativeWave: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 100,
+    height: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderTopLeftRadius: 50,
   },
 });

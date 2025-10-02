@@ -102,7 +102,7 @@ export default function StrengthsWeaknesses({ subjects }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md, // Reduced padding
     paddingBottom: SPACING.lg,
   },
   sectionTitle: {
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   subjectCard: {
     borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
+    padding: SPACING.md, // Reduced padding
     borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm, // Reduced margin
   },
   subjectName: {
     fontSize: TYPOGRAPHY.sizes.sm,
@@ -136,8 +136,8 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   statusBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.xs, // Reduced padding
+    paddingVertical: 2, // Reduced padding
     borderRadius: BORDER_RADIUS.full,
   },
   statusText: {
@@ -146,16 +146,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   progressContainer: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm, // Reduced margin
   },
   progressBackground: {
-    height: 8,
-    borderRadius: 4,
+    height: 6, // Reduced height
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 3,
   },
   subjectFooter: {
     gap: SPACING.sm,
@@ -179,8 +179,8 @@ const styles = StyleSheet.create({
   },
   weakTopicTag: {
     backgroundColor: '#F3F4F6',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.xs, // Reduced padding
+    paddingVertical: 2, // Reduced padding
     borderRadius: BORDER_RADIUS.sm,
   },
   weakTopicText: {
