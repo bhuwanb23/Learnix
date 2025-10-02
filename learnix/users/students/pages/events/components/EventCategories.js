@@ -75,10 +75,10 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: 4,
   },
   scrollContent: {
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: 4,
     gap: 6,
   },
   categoryCard: {

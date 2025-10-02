@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   ActivityIndicator,
 } from 'react-native';
 
@@ -22,14 +21,6 @@ export default function EventList({
   onRefresh,
   refreshing 
 }) {
-  const renderEvent = ({ item }) => (
-    <EventCard
-      event={item}
-      onPress={onEventPress}
-      onJoin={onEventJoin}
-    />
-  );
-
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyTitle}>No Events Found</Text>
@@ -58,29 +49,27 @@ export default function EventList({
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={events}
-        renderItem={renderEvent}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={renderEmpty}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
-      />
+      {events && events.length > 0 ? (
+        events.map((event) => (
+          <EventCard
+            key={event.id}
+            event={event}
+            onPress={onEventPress}
+            onJoin={onEventJoin}
+          />
+        ))
+      ) : (
+        renderEmpty()
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  listContent: {
     paddingBottom: SPACING.xl,
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: SPACING.xl,
@@ -91,7 +80,6 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
   },
   errorContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: SPACING.xl,
@@ -108,7 +96,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: SPACING.xl,

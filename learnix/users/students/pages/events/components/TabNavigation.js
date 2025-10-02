@@ -53,13 +53,13 @@ export default function TabNavigation({ activeTab, onTabChange }) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.xs,
     paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
   },
   scrollContent: {
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.xs,
     gap: SPACING.xs,
   },
   tab: {
