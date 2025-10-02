@@ -21,7 +21,16 @@ export default function StudentHeader({ activeTab, currentScreen, onBackPress })
 
   const getScreenTitle = () => {
     if (currentScreen === 'LectureNotes') return 'Lecture Notes';
+    if (currentScreen === 'QuizArena') return 'Quiz Arena';
+    if (currentScreen === 'SubjectTracker') return 'Subject Tracker';
     return null;
+  };
+
+  const getScreenIcon = () => {
+    if (currentScreen === 'LectureNotes') return 'book-outline';
+    if (currentScreen === 'QuizArena') return 'help-circle-outline';
+    if (currentScreen === 'SubjectTracker') return 'list-outline';
+    return 'book-outline';
   };
 
   const screenTitle = getScreenTitle();
@@ -44,7 +53,7 @@ export default function StudentHeader({ activeTab, currentScreen, onBackPress })
                 <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
               </TouchableOpacity>
               <View style={styles.titleSection}>
-                <Ionicons name="book-outline" size={20} color="#FFFFFF" />
+                <Ionicons name={getScreenIcon()} size={20} color="#FFFFFF" />
                 <Text style={styles.screenTitle}>{screenTitle}</Text>
               </View>
             </View>

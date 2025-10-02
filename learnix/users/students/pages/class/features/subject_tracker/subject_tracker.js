@@ -3,11 +3,9 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
 
 // Components
-import TrackerHeader from './components/TrackerHeader';
 import OverallProgress from './components/OverallProgress';
 import SubjectCard from './components/SubjectCard';
 import FloatingAIButton from './components/FloatingAIButton';
@@ -16,7 +14,7 @@ import AIChatModal from './components/AIChatModal';
 // Hooks
 import { useSubjectTracker } from './hooks/useSubjectTracker';
 
-export default function SubjectTracker() {
+export default function SubjectTracker({ navigation }) {
   const {
     data,
     expandedSubjects,
@@ -31,10 +29,7 @@ export default function SubjectTracker() {
   } = useSubjectTracker();
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <TrackerHeader />
-
+    <View style={styles.container}>
       {/* Main Content */}
       <ScrollView 
         style={styles.scrollView}
@@ -74,7 +69,7 @@ export default function SubjectTracker() {
         messages={chatMessages}
         onSendMessage={sendAiMessage}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

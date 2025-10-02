@@ -18,7 +18,10 @@ export const useClassActions = (navigation) => {
           break;
         case QUICK_ACTION_TYPES.QUIZZES:
           console.log('Opening quizzes...');
-          // Navigate to quizzes page
+          // Navigate to quiz arena page
+          if (navigation?.navigate) {
+            navigation.navigate('QuizArena');
+          }
           break;
         case QUICK_ACTION_TYPES.WEAK_TOPICS:
           console.log('Opening weak topics...');
@@ -26,7 +29,10 @@ export const useClassActions = (navigation) => {
           break;
         case QUICK_ACTION_TYPES.SYLLABUS_TRACKER:
           console.log('Opening syllabus tracker...');
-          // Navigate to syllabus tracker
+          // Navigate to subject tracker page
+          if (navigation?.navigate) {
+            navigation.navigate('SubjectTracker');
+          }
           break;
         default:
           console.log('Unknown action:', actionId);

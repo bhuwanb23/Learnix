@@ -72,7 +72,7 @@ export default function SubjectCard({
             <View style={styles.subjectDetails}>
               <Text style={styles.subjectName}>{subject.name}</Text>
               <Text style={styles.subjectMeta}>
-                {subject.units} units • {subject.topics} topics
+                {subject.unitsCount} units • {subject.topics} topics
               </Text>
             </View>
           </View>

@@ -10,7 +10,7 @@ export const SUBJECT_TRACKER_DATA = {
       id: 'math',
       name: 'Mathematics',
       icon: 'calculator-outline',
-      units: 4,
+      unitsCount: 4,
       topics: 12,
       progress: 75,
       units: [
@@ -72,7 +72,7 @@ export const SUBJECT_TRACKER_DATA = {
       id: 'physics',
       name: 'Physics',
       icon: 'nuclear-outline',
-      units: 3,
+      unitsCount: 3,
       topics: 9,
       progress: 60,
       units: [
@@ -100,7 +100,7 @@ export const SUBJECT_TRACKER_DATA = {
       id: 'chemistry',
       name: 'Chemistry',
       icon: 'flask-outline',
-      units: 3,
+      unitsCount: 3,
       topics: 8,
       progress: 50,
       units: [],

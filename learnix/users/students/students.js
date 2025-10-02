@@ -15,6 +15,8 @@ import ProfilePage from './pages/profile/profile';
 import EventsPage from './pages/events/events';
 import ClassPage from './pages/class/class';
 import LectureNotesPage from './pages/class/features/lecture_notes/lecture_notes';
+import QuizArenaPage from './pages/class/features/quizzes/quiz_arena';
+import SubjectTrackerPage from './pages/class/features/subject_tracker/subject_tracker';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -40,6 +42,12 @@ export default function StudentsScreen() {
     // Handle sub-screens first
     if (currentScreen === 'LectureNotes') {
       return <LectureNotesPage navigation={{ goBack: handleGoBack }} />;
+    }
+    if (currentScreen === 'QuizArena') {
+      return <QuizArenaPage navigation={{ goBack: handleGoBack }} />;
+    }
+    if (currentScreen === 'SubjectTracker') {
+      return <SubjectTrackerPage navigation={{ goBack: handleGoBack }} />;
     }
 
     // Handle main tabs
