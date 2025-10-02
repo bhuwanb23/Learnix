@@ -124,8 +124,8 @@ export default function TodayOverview({ schedule, onPress }) {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: SPACING.sm,
     paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.md,
     paddingBottom: SPACING.sm,
   },
   animatedContainer: {

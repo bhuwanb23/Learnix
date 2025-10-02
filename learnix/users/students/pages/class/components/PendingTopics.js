@@ -167,7 +167,7 @@ export default function PendingTopics({ topics, onStudyPress }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.fontSize.lg,
@@ -190,11 +190,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardGradient: {
-    padding: SPACING.lg,
+    padding: SPACING.md,
     position: 'relative',
   },
   topicsList: {
-    gap: SPACING.md,
+    gap: SPACING.sm,
     zIndex: 1,
   },
   topicItemWrapper: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: SPACING.md,
+    padding: SPACING.sm,
     backgroundColor: 'rgba(59, 130, 246, 0.05)',
     borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,

@@ -176,7 +176,7 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.fontSize.lg,
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardGradient: {
-    padding: SPACING.lg,
+    padding: SPACING.md,
     position: 'relative',
   },
   subjectHeader: {
@@ -217,18 +217,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: SPACING.sm,
   },
   subjectDetails: {
     flex: 1,
   },
   subjectName: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     gap: SPACING.xs,
   },
   progressPercentage: {
-    fontSize: TYPOGRAPHY.fontSize.xl,
+    fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#3B82F6',
   },

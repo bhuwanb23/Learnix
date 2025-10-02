@@ -131,7 +131,7 @@ export default function UpcomingTests({ tests, onTestPress }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   sectionTitle: {
     fontSize: TYPOGRAPHY.fontSize.lg,
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   cardGradient: {
-    padding: SPACING.lg,
+    padding: SPACING.md,
     position: 'relative',
   },
   testContent: {
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   testSubject: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,

@@ -180,7 +180,7 @@ export default function AIRecommendations({ recommendations, onRecommendationPre
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   animatedWrapper: {
     shadowColor: '#1E40AF',
@@ -193,8 +193,8 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   gradientCard: {
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
     overflow: 'hidden',
     position: 'relative',
   },
