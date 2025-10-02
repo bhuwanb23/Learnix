@@ -23,7 +23,7 @@ import { useClassActions } from './hooks/useClassActions';
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
 
-export default function ClassPage() {
+export default function ClassPage({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
   // Custom hooks
@@ -43,7 +43,7 @@ export default function ClassPage() {
     handleTestPress,
     handleTopicStudy,
     handleAIRecommendation,
-  } = useClassActions();
+  } = useClassActions(navigation);
 
   const onRefresh = async () => {
     setRefreshing(true);

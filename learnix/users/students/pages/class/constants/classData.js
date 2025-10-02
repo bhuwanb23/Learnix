@@ -32,9 +32,9 @@ export const mockQuickActions = [
     iconColor: '#DC2626',
   },
   {
-    id: 'ai-buddy',
-    title: 'AI Buddy',
-    icon: 'hardware-chip-outline',
+    id: 'syllabus-tracker',
+    title: 'Syllabus Tracker',
+    icon: 'list-outline',
     backgroundColor: '#F3E8FF',
     iconColor: '#9333EA',
   },
@@ -151,5 +151,5 @@ export const QUICK_ACTION_TYPES = {
   NOTES: 'notes',
   QUIZZES: 'quizzes',
   WEAK_TOPICS: 'weak-topics',
-  AI_BUDDY: 'ai-buddy',
+  SYLLABUS_TRACKER: 'syllabus-tracker',
 };

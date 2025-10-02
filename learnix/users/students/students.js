@@ -14,23 +14,40 @@ import AssignmentPage from './pages/assignments/assignment';
 import ProfilePage from './pages/profile/profile';
 import EventsPage from './pages/events/events';
 import ClassPage from './pages/class/class';
+import LectureNotesPage from './pages/class/features/lecture_notes/lecture_notes';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
 
 export default function StudentsScreen() {
   const [activeTab, setActiveTab] = useState('Home');
+  const [currentScreen, setCurrentScreen] = useState(null);
 
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
+    setCurrentScreen(null); // Reset sub-screen when changing tabs
+  };
+
+  const handleNavigate = (screenName) => {
+    setCurrentScreen(screenName);
+  };
+
+  const handleGoBack = () => {
+    setCurrentScreen(null);
   };
 
   const renderContent = () => {
+    // Handle sub-screens first
+    if (currentScreen === 'LectureNotes') {
+      return <LectureNotesPage navigation={{ goBack: handleGoBack }} />;
+    }
+
+    // Handle main tabs
     switch (activeTab) {
       case 'Home':
         return <Dashboard navigation={{ navigate: handleTabChange }} />;
       case 'Classes':
-        return <ClassPage />;
+        return <ClassPage navigation={{ navigate: handleNavigate }} />;
       case 'Assignments':
         return <AssignmentPage />;
       case 'Events':
@@ -44,19 +61,21 @@ export default function StudentsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Header */}
-      <StudentHeader activeTab={activeTab} />
+      {/* Header - Hide on sub-screens */}
+      {!currentScreen && <StudentHeader activeTab={activeTab} />}
       
       {/* Main Content */}
       <View style={styles.contentContainer}>
         {renderContent()}
       </View>
       
-      {/* Bottom Navigation */}
-      <StudentBottomNavbar 
-        activeTab={activeTab} 
-        onTabChange={handleTabChange} 
-      />
+      {/* Bottom Navigation - Hide on sub-screens */}
+      {!currentScreen && (
+        <StudentBottomNavbar 
+          activeTab={activeTab} 
+          onTabChange={handleTabChange} 
+        />
+      )}
     </SafeAreaView>
   );
 }

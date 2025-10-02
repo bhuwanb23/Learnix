@@ -23,12 +23,7 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
       <Text style={styles.sectionTitle}>Subject Progress</Text>
       <View style={styles.subjectsWrapper}>
         <View style={styles.subjectsCard}>
-          <LinearGradient
-            colors={['#FFFFFF', '#F8FAFC']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.cardGradient}
-          >
+          <View style={styles.cardGradient}>
             <View style={styles.subjectsList}>
               {subjects.map((subject, index) => (
           <View key={subject.id} style={styles.subjectWrapper}>
@@ -37,12 +32,7 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
               onPress={() => handlePress(subject)}
               activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={['#FFFFFF', '#F8FAFC']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.cardGradient}
-              >
+              <View style={styles.individualCardGradient}>
                 <View style={styles.subjectHeader}>
                   <View style={styles.subjectInfo}>
                     <LinearGradient
@@ -94,12 +84,12 @@ export default function SubjectProgress({ subjects, onSubjectPress }) {
 
                 {/* Decorative elements */}
                 <View style={styles.decorativeShape} />
-              </LinearGradient>
+              </View>
             </TouchableOpacity>
           </View>
               ))}
             </View>
-          </LinearGradient>
+          </View>
         </View>
       </View>
     </View>
@@ -131,6 +121,7 @@ const styles = StyleSheet.create({
   subjectsCard: {
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
+    backgroundColor: '#eff6ff',
   },
   subjectsList: {
     gap: SPACING.sm,
@@ -145,6 +136,14 @@ const styles = StyleSheet.create({
   cardGradient: {
     padding: SPACING.md,
     position: 'relative',
+  },
+  individualCardGradient: {
+    padding: SPACING.md,
+    position: 'relative',
+    backgroundColor: '#ffffff',
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: '#dbeafe',
   },
   subjectHeader: {
     flexDirection: 'row',
@@ -220,7 +219,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
     top: -15,
     right: -15,
   },

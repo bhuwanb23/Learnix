@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { QUICK_ACTION_TYPES } from '../constants/classData';
 
-export const useClassActions = () => {
+export const useClassActions = (navigation) => {
   const [loading, setLoading] = useState(false);
 
   const handleQuickAction = async (actionId) => {
@@ -11,7 +11,10 @@ export const useClassActions = () => {
       switch (actionId) {
         case QUICK_ACTION_TYPES.NOTES:
           console.log('Opening notes...');
-          // Navigate to notes page or open notes modal
+          // Navigate to lecture notes page
+          if (navigation?.navigate) {
+            navigation.navigate('LectureNotes');
+          }
           break;
         case QUICK_ACTION_TYPES.QUIZZES:
           console.log('Opening quizzes...');
@@ -21,9 +24,9 @@ export const useClassActions = () => {
           console.log('Opening weak topics...');
           // Navigate to weak topics analysis
           break;
-        case QUICK_ACTION_TYPES.AI_BUDDY:
-          console.log('Opening AI buddy...');
-          // Navigate to AI study buddy
+        case QUICK_ACTION_TYPES.SYLLABUS_TRACKER:
+          console.log('Opening syllabus tracker...');
+          // Navigate to syllabus tracker
           break;
         default:
           console.log('Unknown action:', actionId);
