@@ -97,7 +97,7 @@ export default function StudentBottomNavbar({ activeTab, onTabChange }) {
               <Ionicons
                 name={activeTab === item.id ? item.activeIcon : item.icon}
                 size={18}
-                color={activeTab === item.id ? '#FFFFFF' : '#6B7280'}
+                color={activeTab === item.id ? '#2563eb' : 'rgba(255, 255, 255, 0.7)'}
               />
             </Animated.View>
           </TouchableOpacity>
@@ -109,9 +109,14 @@ export default function StudentBottomNavbar({ activeTab, onTabChange }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#2563eb',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#1d4ed8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
   },
   navbar: {
     flexDirection: 'row',
@@ -132,7 +137,12 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.xs,
   },
   activeNavItem: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   iconContainer: {
     alignItems: 'center',
