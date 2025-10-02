@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 
-export default function StudentHeader({ activeTab }) {
+export default function StudentHeader({ activeTab, currentScreen, onBackPress }) {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -19,6 +19,12 @@ export default function StudentHeader({ activeTab }) {
     return 'Good Evening';
   };
 
+  const getScreenTitle = () => {
+    if (currentScreen === 'LectureNotes') return 'Lecture Notes';
+    return null;
+  };
+
+  const screenTitle = getScreenTitle();
 
   return (
     <View style={styles.container}>
@@ -27,8 +33,28 @@ export default function StudentHeader({ activeTab }) {
       {/* Top Section */}
       <View style={styles.topSection}>
         <View style={styles.greetingContainer}>
-          <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.studentName}>John Doe</Text>
+          {currentScreen && onBackPress ? (
+            // Sub-screen header with back button and title
+            <View style={styles.subScreenHeader}>
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={onBackPress}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+              <View style={styles.titleSection}>
+                <Ionicons name="book-outline" size={20} color="#FFFFFF" />
+                <Text style={styles.screenTitle}>{screenTitle}</Text>
+              </View>
+            </View>
+          ) : (
+            // Main header with greeting
+            <>
+              <Text style={styles.greeting}>{getGreeting()}</Text>
+              <Text style={styles.studentName}>John Doe</Text>
+            </>
+          )}
         </View>
         
         <View style={styles.headerActions}>
@@ -104,5 +130,26 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Inter-Bold',
     letterSpacing: 0.1,
+  },
+  subScreenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  backButton: {
+    marginRight: SPACING.md,
+    padding: SPACING.xs,
+  },
+  titleSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  screenTitle: {
+    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: '#FFFFFF',
+    fontFamily: 'Inter-Bold',
+    letterSpacing: 0.3,
   },
 });

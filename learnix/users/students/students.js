@@ -61,21 +61,23 @@ export default function StudentsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      {/* Header - Hide on sub-screens */}
-      {!currentScreen && <StudentHeader activeTab={activeTab} />}
+      {/* Header - Always visible */}
+      <StudentHeader 
+        activeTab={activeTab} 
+        currentScreen={currentScreen}
+        onBackPress={currentScreen ? handleGoBack : null}
+      />
       
       {/* Main Content */}
       <View style={styles.contentContainer}>
         {renderContent()}
       </View>
       
-      {/* Bottom Navigation - Hide on sub-screens */}
-      {!currentScreen && (
-        <StudentBottomNavbar 
-          activeTab={activeTab} 
-          onTabChange={handleTabChange} 
-        />
-      )}
+      {/* Bottom Navigation - Always visible */}
+      <StudentBottomNavbar 
+        activeTab={activeTab} 
+        onTabChange={handleTabChange} 
+      />
     </SafeAreaView>
   );
 }

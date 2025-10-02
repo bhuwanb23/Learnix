@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 
 // Import components
-import NotesHeader from './components/NotesHeader';
 import SearchSection from './components/SearchSection';
 import AISummarizeSection from './components/AISummarizeSection';
 import TabsSection from './components/TabsSection';
@@ -64,11 +63,6 @@ export default function LectureNotesPage({ navigation }) {
     }
   };
 
-  const handleNotificationPress = () => {
-    console.log('Notifications pressed');
-    // Navigate to notifications
-  };
-
   const renderNoteCard = ({ item }) => (
     <NoteCard
       note={item}
@@ -107,10 +101,6 @@ export default function LectureNotesPage({ navigation }) {
   if (loading) {
     return (
       <View style={styles.container}>
-        <NotesHeader
-          onBackPress={handleBackPress}
-          onNotificationPress={handleNotificationPress}
-        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>Loading lecture notes...</Text>
@@ -122,10 +112,6 @@ export default function LectureNotesPage({ navigation }) {
   if (error) {
     return (
       <View style={styles.container}>
-        <NotesHeader
-          onBackPress={handleBackPress}
-          onNotificationPress={handleNotificationPress}
-        />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
         </View>
@@ -135,11 +121,6 @@ export default function LectureNotesPage({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <NotesHeader
-        onBackPress={handleBackPress}
-        onNotificationPress={handleNotificationPress}
-      />
-      
       <FlatList
         data={notes}
         renderItem={renderNoteCard}
