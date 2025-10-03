@@ -49,7 +49,7 @@ export default function TeacherClassPage() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB' },
   scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { padding: 8, paddingBottom: 32 },
   gap: { height: 12 },
 });
 
