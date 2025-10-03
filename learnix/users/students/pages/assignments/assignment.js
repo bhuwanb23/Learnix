@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
 } from 'react-native';
 
 // Import components
 import TabNavigation from './components/TabNavigation';
+import Dashboard from './components/Dashboard';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
@@ -19,40 +19,31 @@ export default function AssignmentPage() {
     setActiveTab(tabId);
   };
 
+  const handleQuickActionPress = (actionId) => {
+    console.log('Quick action pressed:', actionId);
+    // Handle quick actions from dashboard
+  };
+
   const renderDashboardTab = () => (
-    <ScrollView
-      style={styles.tabContent}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.placeholderContainer}>
-        <Text style={styles.placeholderText}>Dashboard Tab</Text>
-        <Text style={styles.placeholderSubtext}>Content will be added here</Text>
-      </View>
-    </ScrollView>
+    <Dashboard onQuickActionPress={handleQuickActionPress} />
   );
 
   const renderAssignmentsTab = () => (
-    <ScrollView
-      style={styles.tabContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.tabContent}>
       <View style={styles.placeholderContainer}>
         <Text style={styles.placeholderText}>Assignments Tab</Text>
         <Text style={styles.placeholderSubtext}>Content will be added here</Text>
       </View>
-    </ScrollView>
+    </View>
   );
 
   const renderExamsTab = () => (
-    <ScrollView
-      style={styles.tabContent}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.tabContent}>
       <View style={styles.placeholderContainer}>
         <Text style={styles.placeholderText}>Exams Tab</Text>
         <Text style={styles.placeholderSubtext}>Content will be added here</Text>
       </View>
-    </ScrollView>
+    </View>
   );
 
   const renderTabContent = () => {
