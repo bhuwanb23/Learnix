@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
-import { getStatusColor, getStatusText, getPriceColor, formatDate } from '../constants/eventData';
+import { getStatusColor, getStatusText, getPriceColor, formatDate, formatDateForDisplay } from '../constants/eventData';
 
 const { width } = Dimensions.get('window');
 
@@ -113,7 +113,7 @@ export default function EventCard({ event, onPress, onJoin }) {
               </Text>
             </View>
             <Text style={styles.dateTime}>
-              {formatDate(event.date)} • {event.time}
+              {formatDateForDisplay(event.date)} • {event.time}
             </Text>
           </View>
 

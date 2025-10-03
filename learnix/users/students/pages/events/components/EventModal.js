@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
+import { formatDateForDisplay } from '../constants/eventData';
 
 export default function EventModal({ event, visible, onClose, onJoin, onShare }) {
   if (!event) return null;
@@ -50,7 +51,7 @@ export default function EventModal({ event, visible, onClose, onJoin, onShare })
               <View style={styles.metaItem}>
                 <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} />
                 <Text style={styles.metaText}>
-                  {event.date} • {event.time}
+                  {formatDateForDisplay(event.date)} • {event.time}
                 </Text>
               </View>
               

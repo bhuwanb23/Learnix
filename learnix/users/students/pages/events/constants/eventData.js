@@ -163,7 +163,7 @@ export const getPriceColor = (price) => {
 
 export const formatDate = (date) => {
   const now = new Date();
-  const eventDate = new Date(date);
+  const eventDate = date instanceof Date ? date : new Date(date);
   const diffTime = eventDate - now;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -179,7 +179,7 @@ export const formatDate = (date) => {
 };
 
 export const formatTime = (date, time) => {
-  const eventDate = new Date(date);
+  const eventDate = date instanceof Date ? new Date(date) : new Date(date);
   const [hours, minutes] = time.split(':');
   eventDate.setHours(parseInt(hours), parseInt(minutes));
   
@@ -187,5 +187,14 @@ export const formatTime = (date, time) => {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
+  });
+};
+
+export const formatDateForDisplay = (date) => {
+  const eventDate = date instanceof Date ? date : new Date(date);
+  return eventDate.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   });
 };

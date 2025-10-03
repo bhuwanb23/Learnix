@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 // Import components
+import ProfileHeader from './components/ProfileHeader';
 import ProfileStats from './components/ProfileStats';
 import QuickActions from './components/QuickActions';
 import HabitTracker from './components/HabitTracker';
@@ -93,11 +94,9 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* User Profile Section */}
-        <Settings
+        {/* User Profile Header */}
+        <ProfileHeader
           user={user}
-          onNotificationPress={handleNotificationPress}
-          onSettingsPress={handleSettingsPress}
         />
         
         {/* Stats Overview */}
@@ -128,6 +127,12 @@ export default function Profile() {
         <Achievements
           achievements={achievements}
           onViewAll={handleViewAllAchievements}
+        />
+        
+        {/* Settings */}
+        <Settings
+          onNotificationPress={handleNotificationPress}
+          onSettingsPress={handleSettingsPress}
         />
       </ScrollView>
 
