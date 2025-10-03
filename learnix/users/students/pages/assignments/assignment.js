@@ -8,6 +8,7 @@ import {
 // Import components
 import TabNavigation from './components/TabNavigation';
 import Dashboard from './components/Dashboard';
+import AssignmentSubmission from './pages/assignment/assignment_submission';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
@@ -29,12 +30,7 @@ export default function AssignmentPage() {
   );
 
   const renderAssignmentsTab = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.placeholderContainer}>
-        <Text style={styles.placeholderText}>Assignments Tab</Text>
-        <Text style={styles.placeholderSubtext}>Content will be added here</Text>
-      </View>
-    </View>
+    <AssignmentSubmission />
   );
 
   const renderExamsTab = () => (
