@@ -56,6 +56,8 @@ export default function LoginScreen({ navigation }) {
       // Navigate based on role
       if (credentials.role === 'student') {
         navigation.navigate('Student');
+      } else if (credentials.role === 'teacher') {
+        navigation.navigate('Teacher');
       } else {
         // For other roles, navigate to main app
         navigation.navigate('Main');

@@ -5,6 +5,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import SplashScreen from '../components/SplashScreen';
 import LoginScreen from '../pages/login/login';
 import StudentsScreen from '../users/students/students';
+import TeacherScreen from '../users/teachers/teacher';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -29,6 +30,8 @@ export default function AppNavigator() {
         return <LoginScreen navigation={{ navigate }} />;
       case 'Student':
         return <StudentsScreen navigation={{ navigate }} />;
+      case 'Teacher':
+        return <TeacherScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:

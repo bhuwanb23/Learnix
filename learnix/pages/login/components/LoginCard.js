@@ -21,8 +21,6 @@ const { width, height } = Dimensions.get('window');
 const roles = [
   { id: 'student', name: 'Student', icon: '🎓' },
   { id: 'teacher', name: 'Teacher', icon: '👨‍🏫' },
-  { id: 'admin', name: 'Administrator', icon: '👨‍💼' },
-  { id: 'staff', name: 'Staff', icon: '👩‍💼' },
 ];
 
 export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {
