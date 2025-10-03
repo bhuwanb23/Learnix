@@ -10,7 +10,6 @@ import {
 import { useDashboardData } from '../hooks/useDashboardData';
 
 // Import child components
-import DashboardHeader from './DashboardHeader';
 import QuickActions from './QuickActions';
 import ProgressOverview from './ProgressOverview';
 import PendingAssignments from './PendingAssignments';
@@ -73,9 +72,6 @@ export default function Dashboard({ onQuickActionPress }) {
         />
       }
     >
-      {/* Header */}
-      <DashboardHeader profile={dashboardData.profile} />
-
       {/* Quick Actions */}
       <QuickActions 
         actions={dashboardData.quickActions}
