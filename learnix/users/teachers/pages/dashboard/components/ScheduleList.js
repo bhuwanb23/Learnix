@@ -28,7 +28,7 @@ export default function ScheduleList({ items, onPressAll }) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.md,
+    // marginHorizontal: SPACING.md,
     marginBottom: SPACING.sm,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,

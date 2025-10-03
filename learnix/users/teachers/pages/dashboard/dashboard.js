@@ -34,13 +34,14 @@ export default function TeacherDashboard() {
   return (
     <ScrollView
       style={styles.container}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} colors={[COLORS.primary]} />}
     >
       <HeroHeader header={data.header} />
       <QuickActions actions={data.quickActions} onPress={handleQuickAction} />
-      <ScheduleList items={data.schedule} onPressAll={() => {}} />
-      <NavCards cards={data.navCards} onPress={() => {}} />
+      <ScheduleList items={data.schedule} onPressAll={() => { }} />
+      <NavCards cards={data.navCards} onPress={() => { }} />
       <Reminders items={data.reminders} />
       <RecentNotifications items={data.notifications} />
     </ScrollView>
@@ -49,6 +50,7 @@ export default function TeacherDashboard() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  content: { paddingBottom: SPACING.lg, paddingTop: 0 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
   stateText: { marginTop: SPACING.sm, color: '#6B7280' },
 });

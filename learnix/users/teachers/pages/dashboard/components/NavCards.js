@@ -8,11 +8,13 @@ export default function NavCards({ cards, onPress }) {
     <View style={styles.grid}>
       {cards.map(card => (
         <TouchableOpacity key={card.id} style={styles.card} onPress={() => onPress(card.id)} activeOpacity={0.85}>
-          <View style={[styles.iconCircle, { backgroundColor: card.bg }]}>
-            <Ionicons name={toIcon(card.icon)} size={22} color={card.color} />
+          <View style={styles.cardInner}>
+            <View style={[styles.iconCircle, { backgroundColor: card.bg }]}>
+              <Ionicons name={toIcon(card.icon)} size={22} color={card.color} />
+            </View>
+            <Text style={styles.title}>{card.title}</Text>
+            <Text style={styles.subtitle}>{card.subtitle}</Text>
           </View>
-          <Text style={styles.title}>{card.title}</Text>
-          <Text style={styles.subtitle}>{card.subtitle}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -41,11 +43,13 @@ const styles = StyleSheet.create({
     width: '48%',
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
     ...SHADOWS.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  cardInner: { alignItems: 'center', justifyContent: 'center' },
   iconCircle: {
     width: 56,
     height: 56,
@@ -58,11 +62,13 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.sizes.sm,
     fontWeight: TYPOGRAPHY.weights.semibold,
     color: COLORS.textPrimary,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: TYPOGRAPHY.sizes.xs,
     color: COLORS.textSecondary,
     marginTop: 2,
+    textAlign: 'center',
   },
 });
 
