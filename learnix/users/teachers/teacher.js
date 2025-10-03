@@ -5,6 +5,7 @@ import TeacherHeader from './components/TeacherHeader';
 import TeacherBottomNavbar from './components/TeacherBottomNavbar';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
+import TeacherDashboard from './pages/dashboard/dashboard';
 
 export default function TeacherScreen() {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -13,40 +14,27 @@ export default function TeacherScreen() {
   const renderContent = () => {
     switch (activeTab) {
       case 'Dashboard':
-        return (
-          <View style={styles.card}> 
-            <Text style={styles.cardTitle}>Teacher Dashboard</Text>
-            <Text style={styles.cardText}>Overview of classes, assignments, and exams.</Text>
-          </View>
-        );
+        return <TeacherDashboard />;
       case 'Classes':
-        return (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Your Classes</Text>
-            <Text style={styles.cardText}>Manage schedules, attendance, and materials.</Text>
-          </View>
-        );
+        {
+          const TeacherClassPage = require('./pages/class/class').default;
+          return <TeacherClassPage />;
+        }
       case 'Assignments':
-        return (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Assignments</Text>
-            <Text style={styles.cardText}>Create, review, and grade submissions.</Text>
-          </View>
-        );
+        {
+          const AssignmentExamsPage = require('./pages/assignment_exams/assignment_exams').default;
+          return <AssignmentExamsPage />;
+        }
       case 'Exams':
-        return (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Exams</Text>
-            <Text style={styles.cardText}>Schedule and publish results.</Text>
-          </View>
-        );
+        {
+          const AssignmentExamsPage = require('./pages/assignment_exams/assignment_exams').default;
+          return <AssignmentExamsPage />;
+        }
       case 'Profile':
-        return (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Profile</Text>
-            <Text style={styles.cardText}>Update your information and settings.</Text>
-          </View>
-        );
+        {
+          const TeacherProfilePage = require('./pages/profile/profile').default;
+          return <TeacherProfilePage />;
+        }
       default:
         return null;
     }
@@ -70,7 +58,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: SPACING.md,
+    padding: 10,
   },
   card: {
     backgroundColor: COLORS.white,

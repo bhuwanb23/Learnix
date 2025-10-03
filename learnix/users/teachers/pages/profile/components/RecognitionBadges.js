@@ -20,13 +20,13 @@ export default function RecognitionBadges({ items }) {
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: SPACING.lg },
-  title: { fontSize: TYPOGRAPHY.sizes.md, fontWeight: TYPOGRAPHY.weights.semibold, color: COLORS.textPrimary, marginBottom: SPACING.sm },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
-  badge: { flexBasis: '48%', borderRadius: BORDER_RADIUS.lg, padding: SPACING.md, ...SHADOWS.sm },
-  badgeIcon: { fontSize: 18, color: COLORS.white, marginBottom: 6 },
-  badgeTitle: { color: COLORS.white, fontWeight: TYPOGRAPHY.weights.semibold },
-  badgeSubtitle: { color: 'rgba(255,255,255,0.9)', fontSize: TYPOGRAPHY.sizes.xs },
+  container: { marginBottom: SPACING.md },
+  title: { fontSize: TYPOGRAPHY.sizes.md, fontWeight: TYPOGRAPHY.weights.semibold, color: COLORS.textPrimary, marginBottom: SPACING.xs },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.xs },
+  badge: { flexBasis: '48%', borderRadius: BORDER_RADIUS.lg, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.md, ...SHADOWS.sm, alignItems: 'center' },
+  badgeIcon: { fontSize: 14, color: COLORS.white, marginBottom: 2 },
+  badgeTitle: { color: COLORS.white, fontWeight: TYPOGRAPHY.weights.medium, fontSize: TYPOGRAPHY.sizes.xs, textAlign: 'center' },
+  badgeSubtitle: { color: 'rgba(255,255,255,0.9)', fontSize: 10, textAlign: 'center' },
 });
 
 

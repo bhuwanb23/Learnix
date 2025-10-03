@@ -23,7 +23,7 @@ export default function TeacherProfile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: SPACING.md,
+    padding: 5,
     backgroundColor: COLORS.background,
   },
 });
