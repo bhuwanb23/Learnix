@@ -4,176 +4,30 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  TouchableOpacity,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 // Import components
-import ProgressOverview from './components/ProgressOverview';
 import TabNavigation from './components/TabNavigation';
-import QuickActions from './components/QuickActions';
-import AssignmentCard from './components/AssignmentCard';
-import UploadCard from './components/UploadCard';
-import ExamCard from './components/ExamCard';
-import QuizInterface from './components/QuizInterface';
-import ExamPreparation from './components/ExamPreparation';
-import PerformanceAnalytics from './components/PerformanceAnalytics';
-
-// Import hooks
-import { useAssignments } from './hooks/useAssignments';
-import { useFileUpload } from './hooks/useFileUpload';
-import { useAssignmentActions } from './hooks/useAssignmentActions';
-
-// Import constants
-import { mockQuickActions, mockUpcomingExams } from './constants/assignmentData';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
 
 export default function AssignmentPage() {
-  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-
-  // Custom hooks
-  const {
-    assignments,
-    loading: assignmentsLoading,
-    error: assignmentsError,
-    updateAssignment,
-  } = useAssignments();
-
-  const {
-    uploadedFiles,
-    uploading: fileUploading,
-    error: fileError,
-    pickDocument,
-    removeFile,
-    uploadFiles,
-  } = useFileUpload();
-
-  const {
-    loading: actionLoading,
-    handleQuickAction,
-    handleAssignmentPress,
-    handleAssignmentAction,
-    handleSubmitAssignment,
-    handlePastPapers,
-    handleAIPrep,
-  } = useAssignmentActions();
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    // Simulate refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setRefreshing(false);
-  };
-
-  const handleChooseFiles = async () => {
-    await pickDocument();
-  };
-
-  const handleSubmit = async () => {
-    if (uploadedFiles.length === 0) {
-      return;
-    }
-    
-    const success = await handleSubmitAssignment('current-assignment', uploadedFiles);
-    if (success) {
-      // Clear uploaded files
-      uploadedFiles.forEach(file => removeFile(file.id));
-    }
-  };
-
-  const handleRemoveFile = (fileId) => {
-    removeFile(fileId);
-  };
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
-  };
-
-  const handleQuizAnswer = (answerIndex) => {
-    setSelectedAnswer(answerIndex);
-  };
-
-  const handleNextQuestion = () => {
-    // Handle next question logic
-    setSelectedAnswer(null);
-  };
-
-  const handleAIHint = () => {
-    // Handle AI hint logic
-    console.log('AI Hint requested');
-  };
-
-  const handleExamPrepItem = (item) => {
-    console.log('Exam prep item pressed:', item.title);
   };
 
   const renderDashboardTab = () => (
     <ScrollView
       style={styles.tabContent}
       showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
-      {/* Progress Overview Header */}
-      <LinearGradient
-        colors={['#3B82F6', '#8B5CF6']}
-        style={styles.headerGradient}
-      >
-        <ProgressOverview progress={78} title="Weekly Progress" />
-      </LinearGradient>
-
-      {/* Quick Actions */}
-      {mockQuickActions && mockQuickActions.length > 0 && (
-        <QuickActions
-          actions={mockQuickActions}
-          onActionPress={handleQuickAction}
-        />
-      )}
-
-      {/* Pending Tasks */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pending Tasks</Text>
-        {assignmentsLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-          </View>
-        ) : assignmentsError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{assignmentsError}</Text>
-          </View>
-        ) : (
-          assignments && assignments
-            .filter(assignment => assignment.status !== 'submitted')
-            .slice(0, 2) // Show only first 2 for dashboard
-            .map((assignment) => (
-              <AssignmentCard
-                key={assignment.id}
-                assignment={assignment}
-                onPress={handleAssignmentPress}
-                onActionPress={handleAssignmentAction}
-              />
-            ))
-        )}
+      <View style={styles.placeholderContainer}>
+        <Text style={styles.placeholderText}>Dashboard Tab</Text>
+        <Text style={styles.placeholderSubtext}>Content will be added here</Text>
       </View>
-
-      {/* Upcoming Exams */}
-      {mockUpcomingExams && mockUpcomingExams.length > 0 && (
-        <ExamCard
-          exam={mockUpcomingExams[0]}
-          onPastPapers={handlePastPapers}
-          onAIPrep={handleAIPrep}
-        />
-      )}
-
-      {/* Performance Analytics */}
-      <PerformanceAnalytics />
     </ScrollView>
   );
 
@@ -181,87 +35,10 @@ export default function AssignmentPage() {
     <ScrollView
       style={styles.tabContent}
       showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
-      {/* Quick Actions */}
-      {mockQuickActions && mockQuickActions.length > 0 && (
-        <QuickActions
-          actions={mockQuickActions}
-          onActionPress={handleQuickAction}
-        />
-      )}
-
-      {/* Upload Section */}
-      <UploadCard
-        onChooseFiles={handleChooseFiles}
-        uploadedFiles={uploadedFiles}
-        onRemoveFile={handleRemoveFile}
-      />
-
-      {/* Pending Assignments */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pending Tasks</Text>
-        {assignmentsLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-          </View>
-        ) : assignmentsError ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{assignmentsError}</Text>
-          </View>
-            ) : (
-              assignments && assignments
-                .filter(assignment => assignment.status !== 'submitted')
-                .map((assignment) => (
-                  <AssignmentCard
-                    key={assignment.id}
-                    assignment={assignment}
-                    onPress={handleAssignmentPress}
-                    onActionPress={handleAssignmentAction}
-                  />
-                ))
-            )}
-      </View>
-
-      {/* Upcoming Exams */}
-      {mockUpcomingExams && mockUpcomingExams.length > 0 && (
-        <ExamCard
-          exam={mockUpcomingExams[0]}
-          onPastPapers={handlePastPapers}
-          onAIPrep={handleAIPrep}
-        />
-      )}
-    </ScrollView>
-  );
-
-  const renderSubmittedTab = () => (
-    <ScrollView
-      style={styles.tabContent}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Submitted Assignments</Text>
-        {assignmentsLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-          </View>
-            ) : (
-              assignments && assignments
-                .filter(assignment => assignment.status === 'submitted')
-                .map((assignment) => (
-                  <AssignmentCard
-                    key={assignment.id}
-                    assignment={assignment}
-                    onPress={handleAssignmentPress}
-                    onActionPress={handleAssignmentAction}
-                  />
-                ))
-            )}
+      <View style={styles.placeholderContainer}>
+        <Text style={styles.placeholderText}>Assignments Tab</Text>
+        <Text style={styles.placeholderSubtext}>Content will be added here</Text>
       </View>
     </ScrollView>
   );
@@ -270,19 +47,11 @@ export default function AssignmentPage() {
     <ScrollView
       style={styles.tabContent}
       showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
     >
-      {/* Quiz Interface */}
-      <QuizInterface
-        onAnswerSelect={handleQuizAnswer}
-        onNextQuestion={handleNextQuestion}
-        onAIHint={handleAIHint}
-      />
-
-      {/* Exam Preparation */}
-      <ExamPreparation onItemPress={handleExamPrepItem} />
+      <View style={styles.placeholderContainer}>
+        <Text style={styles.placeholderText}>Exams Tab</Text>
+        <Text style={styles.placeholderSubtext}>Content will be added here</Text>
+      </View>
     </ScrollView>
   );
 
@@ -304,9 +73,9 @@ export default function AssignmentPage() {
       {/* Tab Navigation */}
       <TabNavigation
         tabs={[
-          { id: 'dashboard', title: 'Dashboard' },
-          { id: 'assignments', title: 'Assignments' },
-          { id: 'exams', title: 'Exams' },
+          { id: 'dashboard', title: 'Dashboard', icon: 'grid-outline' },
+          { id: 'assignments', title: 'Assignments', icon: 'document-text-outline' },
+          { id: 'exams', title: 'Exams', icon: 'school-outline' },
         ]}
         activeTab={activeTab}
         onTabPress={handleTabPress}
@@ -316,18 +85,6 @@ export default function AssignmentPage() {
       <View style={styles.tabContentContainer}>
         {renderTabContent()}
       </View>
-
-      {/* Loading Overlay */}
-      {(actionLoading || fileUploading) && (
-        <View style={styles.loadingOverlay}>
-          <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={styles.loadingText}>
-              {fileUploading ? 'Uploading files...' : 'Processing...'}
-            </Text>
-          </View>
-        </View>
-      )}
     </View>
   );
 }
@@ -337,63 +94,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  headerGradient: {
-    marginHorizontal: -SPACING.lg,
-    marginTop: -SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-    marginBottom: SPACING.lg,
-  },
   tabContentContainer: {
     flex: 1,
   },
   tabContent: {
     flex: 1,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
+    backgroundColor: '#FFFFFF',
   },
-  section: {
-    marginBottom: SPACING.lg,
-  },
-  sectionTitle: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
-  loadingContainer: {
-    paddingVertical: SPACING.xl,
-    alignItems: 'center',
-  },
-  errorContainer: {
-    paddingVertical: SPACING.lg,
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: '#EF4444',
-    textAlign: 'center',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  placeholderContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xl,
   },
-  loadingBox: {
-    backgroundColor: '#FFFFFF',
-    padding: SPACING.lg,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 200,
-  },
-  loadingText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
+  placeholderText: {
+    fontSize: TYPOGRAPHY.sizes.xl,
+    fontWeight: TYPOGRAPHY.weights.bold,
     color: COLORS.textPrimary,
-    marginTop: SPACING.sm,
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
+  },
+  placeholderSubtext: {
+    fontSize: TYPOGRAPHY.sizes.md,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
 });

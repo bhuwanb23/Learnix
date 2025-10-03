@@ -859,14 +859,12 @@
     <script>tailwind.config = {
             "theme": {
                 "extend": {
-                    "colors": {
-                        "primary": "#2563eb",
-                        "secondary": "#64748b",
-                        "success": "#10b981",
-                        "warning": "#f59e0b",
-                        "danger": "#ef4444"
-                    },
-                    "fontFamily": {}
+                    "fontFamily": {
+                        "inter": [
+                            "Inter",
+                            "sans-serif"
+                        ]
+                    }
                 }
             }
         };</script>
@@ -1249,10 +1247,6 @@
             display: none
         }
 
-        .fixed {
-            position: fixed
-        }
-
         .absolute {
             position: absolute
         }
@@ -1265,10 +1259,6 @@
             position: sticky
         }
 
-        .inset-0 {
-            inset: 0px
-        }
-
         .-right-1 {
             right: -0.25rem
         }
@@ -1277,33 +1267,12 @@
             top: -0.25rem
         }
 
-        .bottom-0 {
-            bottom: 0px
-        }
-
-        .left-0 {
-            left: 0px
-        }
-
-        .left-1\/2 {
-            left: 50%
-        }
-
-        .right-0 {
-            right: 0px
-        }
-
         .top-0 {
             top: 0px
         }
 
         .z-50 {
             z-index: 50
-        }
-
-        .mx-auto {
-            margin-left: auto;
-            margin-right: auto
         }
 
         .mb-1 {
@@ -1318,28 +1287,20 @@
             margin-bottom: 0.75rem
         }
 
-        .ml-1 {
-            margin-left: 0.25rem
+        .mt-0\.5 {
+            margin-top: 0.125rem
         }
 
-        .mr-1 {
-            margin-right: 0.25rem
-        }
-
-        .mt-1 {
-            margin-top: 0.25rem
+        .mt-2 {
+            margin-top: 0.5rem
         }
 
         .flex {
             display: flex
         }
 
-        .hidden {
-            display: none
-        }
-
-        .h-1\.5 {
-            height: 0.375rem
+        .grid {
+            display: grid
         }
 
         .h-2 {
@@ -1352,14 +1313,6 @@
 
         .h-8 {
             height: 2rem
-        }
-
-        .max-h-\[90vh\] {
-            max-height: 90vh
-        }
-
-        .min-h-screen {
-            min-height: 100vh
         }
 
         .w-2 {
@@ -1378,21 +1331,12 @@
             width: 100%
         }
 
-        .max-w-sm {
-            max-width: 24rem
-        }
-
         .flex-1 {
             flex: 1 1 0%
         }
 
-        .-translate-x-1\/2 {
-            --tw-translate-x: -50%;
-            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
-        }
-
-        .transform {
-            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr))
         }
 
         .flex-col {
@@ -1415,14 +1359,8 @@
             justify-content: space-between
         }
 
-        .justify-around {
-            justify-content: space-around
-        }
-
-        .space-x-1> :not([hidden])~ :not([hidden]) {
-            --tw-space-x-reverse: 0;
-            margin-right: calc(0.25rem * var(--tw-space-x-reverse));
-            margin-left: calc(0.25rem * calc(1 - var(--tw-space-x-reverse)))
+        .gap-3 {
+            gap: 0.75rem
         }
 
         .space-x-2> :not([hidden])~ :not([hidden]) {
@@ -1437,26 +1375,16 @@
             margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)))
         }
 
-        .space-y-1> :not([hidden])~ :not([hidden]) {
+        .space-y-2> :not([hidden])~ :not([hidden]) {
             --tw-space-y-reverse: 0;
-            margin-top: calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));
-            margin-bottom: calc(0.25rem * var(--tw-space-y-reverse))
+            margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+            margin-bottom: calc(0.5rem * var(--tw-space-y-reverse))
         }
 
         .space-y-3> :not([hidden])~ :not([hidden]) {
             --tw-space-y-reverse: 0;
             margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
             margin-bottom: calc(0.75rem * var(--tw-space-y-reverse))
-        }
-
-        .space-y-4> :not([hidden])~ :not([hidden]) {
-            --tw-space-y-reverse: 0;
-            margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
-            margin-bottom: calc(1rem * var(--tw-space-y-reverse))
-        }
-
-        .overflow-y-auto {
-            overflow-y: auto
         }
 
         .rounded-full {
@@ -1471,54 +1399,42 @@
             border-radius: 0.75rem
         }
 
-        .rounded-t-3xl {
-            border-top-left-radius: 1.5rem;
-            border-top-right-radius: 1.5rem
-        }
-
         .border {
             border-width: 1px
-        }
-
-        .border-2 {
-            border-width: 2px
         }
 
         .border-b {
             border-bottom-width: 1px
         }
 
-        .border-t {
-            border-top-width: 1px
-        }
-
-        .border-dashed {
-            border-style: dashed
-        }
-
-        .border-gray-200 {
+        .border-blue-200 {
             --tw-border-opacity: 1;
-            border-color: rgb(229 231 235 / var(--tw-border-opacity, 1))
+            border-color: rgb(191 219 254 / var(--tw-border-opacity, 1))
         }
 
-        .border-gray-300 {
+        .border-gray-100 {
             --tw-border-opacity: 1;
-            border-color: rgb(209 213 219 / var(--tw-border-opacity, 1))
+            border-color: rgb(243 244 246 / var(--tw-border-opacity, 1))
+        }
+
+        .border-green-200 {
+            --tw-border-opacity: 1;
+            border-color: rgb(187 247 208 / var(--tw-border-opacity, 1))
+        }
+
+        .border-purple-200 {
+            --tw-border-opacity: 1;
+            border-color: rgb(233 213 255 / var(--tw-border-opacity, 1))
+        }
+
+        .border-yellow-200 {
+            --tw-border-opacity: 1;
+            border-color: rgb(254 240 138 / var(--tw-border-opacity, 1))
         }
 
         .bg-gray-50 {
             --tw-bg-opacity: 1;
             background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1))
-        }
-
-        .bg-black {
-            --tw-bg-opacity: 1;
-            background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1))
-        }
-
-        .bg-blue-100 {
-            --tw-bg-opacity: 1;
-            background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1))
         }
 
         .bg-blue-50 {
@@ -1536,9 +1452,9 @@
             background-color: rgb(229 231 235 / var(--tw-bg-opacity, 1))
         }
 
-        .bg-green-100 {
+        .bg-green-50 {
             --tw-bg-opacity: 1;
-            background-color: rgb(220 252 231 / var(--tw-bg-opacity, 1))
+            background-color: rgb(240 253 244 / var(--tw-bg-opacity, 1))
         }
 
         .bg-green-500 {
@@ -1546,14 +1462,24 @@
             background-color: rgb(34 197 94 / var(--tw-bg-opacity, 1))
         }
 
-        .bg-primary {
+        .bg-orange-400 {
             --tw-bg-opacity: 1;
-            background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1))
+            background-color: rgb(251 146 60 / var(--tw-bg-opacity, 1))
         }
 
-        .bg-red-100 {
+        .bg-orange-500 {
             --tw-bg-opacity: 1;
-            background-color: rgb(254 226 226 / var(--tw-bg-opacity, 1))
+            background-color: rgb(249 115 22 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-purple-500 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(168 85 247 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-red-400 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(248 113 113 / var(--tw-bg-opacity, 1))
         }
 
         .bg-red-500 {
@@ -1566,22 +1492,37 @@
             background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1))
         }
 
-        .bg-yellow-100 {
+        .bg-yellow-50 {
             --tw-bg-opacity: 1;
-            background-color: rgb(254 249 195 / var(--tw-bg-opacity, 1))
+            background-color: rgb(254 252 232 / var(--tw-bg-opacity, 1))
         }
 
-        .bg-yellow-500 {
-            --tw-bg-opacity: 1;
-            background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1))
+        .bg-gradient-to-r {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops))
         }
 
-        .bg-opacity-50 {
-            --tw-bg-opacity: 0.5
+        .from-blue-50 {
+            --tw-gradient-from: #eff6ff var(--tw-gradient-from-position);
+            --tw-gradient-to: rgb(239 246 255 / 0) var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)
         }
 
-        .p-2 {
-            padding: 0.5rem
+        .from-purple-50 {
+            --tw-gradient-from: #faf5ff var(--tw-gradient-from-position);
+            --tw-gradient-to: rgb(250 245 255 / 0) var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)
+        }
+
+        .to-blue-100 {
+            --tw-gradient-to: #dbeafe var(--tw-gradient-to-position)
+        }
+
+        .to-purple-100 {
+            --tw-gradient-to: #f3e8ff var(--tw-gradient-to-position)
+        }
+
+        .p-1 {
+            padding: 0.25rem
         }
 
         .p-3 {
@@ -1592,33 +1533,14 @@
             padding: 1rem
         }
 
-        .p-6 {
-            padding: 1.5rem
-        }
-
-        .px-1\.5 {
-            padding-left: 0.375rem;
-            padding-right: 0.375rem
-        }
-
         .px-2 {
             padding-left: 0.5rem;
             padding-right: 0.5rem
         }
 
-        .px-3 {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem
-        }
-
         .px-4 {
             padding-left: 1rem;
             padding-right: 1rem
-        }
-
-        .py-0\.5 {
-            padding-top: 0.125rem;
-            padding-bottom: 0.125rem
         }
 
         .py-1 {
@@ -1636,21 +1558,17 @@
             padding-bottom: 0.75rem
         }
 
-        .pb-20 {
-            padding-bottom: 5rem
+        .py-4 {
+            padding-top: 1rem;
+            padding-bottom: 1rem
         }
 
-        .text-center {
-            text-align: center
+        .pb-6 {
+            padding-bottom: 1.5rem
         }
 
         .text-right {
             text-align: right
-        }
-
-        .text-3xl {
-            font-size: 1.875rem;
-            line-height: 2.25rem
         }
 
         .text-lg {
@@ -1668,10 +1586,6 @@
             line-height: 1rem
         }
 
-        .font-bold {
-            font-weight: 700
-        }
-
         .font-medium {
             font-weight: 500
         }
@@ -1683,6 +1597,16 @@
         .text-blue-600 {
             --tw-text-opacity: 1;
             color: rgb(37 99 235 / var(--tw-text-opacity, 1))
+        }
+
+        .text-blue-700 {
+            --tw-text-opacity: 1;
+            color: rgb(29 78 216 / var(--tw-text-opacity, 1))
+        }
+
+        .text-blue-900 {
+            --tw-text-opacity: 1;
+            color: rgb(30 58 138 / var(--tw-text-opacity, 1))
         }
 
         .text-gray-400 {
@@ -1710,9 +1634,34 @@
             color: rgb(22 163 74 / var(--tw-text-opacity, 1))
         }
 
-        .text-primary {
+        .text-green-700 {
             --tw-text-opacity: 1;
-            color: rgb(37 99 235 / var(--tw-text-opacity, 1))
+            color: rgb(21 128 61 / var(--tw-text-opacity, 1))
+        }
+
+        .text-green-900 {
+            --tw-text-opacity: 1;
+            color: rgb(20 83 45 / var(--tw-text-opacity, 1))
+        }
+
+        .text-orange-600 {
+            --tw-text-opacity: 1;
+            color: rgb(234 88 12 / var(--tw-text-opacity, 1))
+        }
+
+        .text-purple-600 {
+            --tw-text-opacity: 1;
+            color: rgb(147 51 234 / var(--tw-text-opacity, 1))
+        }
+
+        .text-purple-700 {
+            --tw-text-opacity: 1;
+            color: rgb(126 34 206 / var(--tw-text-opacity, 1))
+        }
+
+        .text-purple-900 {
+            --tw-text-opacity: 1;
+            color: rgb(88 28 135 / var(--tw-text-opacity, 1))
         }
 
         .text-red-600 {
@@ -1730,459 +1679,323 @@
             color: rgb(202 138 4 / var(--tw-text-opacity, 1))
         }
 
+        .text-yellow-700 {
+            --tw-text-opacity: 1;
+            color: rgb(161 98 7 / var(--tw-text-opacity, 1))
+        }
+
+        .text-yellow-900 {
+            --tw-text-opacity: 1;
+            color: rgb(113 63 18 / var(--tw-text-opacity, 1))
+        }
+
         .shadow-sm {
             --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
             box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
         }
-
-        .hover\:bg-gray-100:hover {
-            --tw-bg-opacity: 1;
-            background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1))
-        }
     </style>
 </head>
 
-<body class="bg-gray-50" data-new-gr-c-s-check-loaded="14.1255.0" data-gr-ext-installed="">
-    <div id="mobile-app" class="max-w-sm mx-auto bg-white min-h-screen">
-
-        <!-- Header -->
-        <header id="header" class="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-50">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <button class="p-2 hover:bg-gray-100 rounded-lg">
-                        <i class="text-gray-600" data-fa-i2svg=""><svg class="svg-inline--fa fa-bars" aria-hidden="true"
-                                focusable="false" data-prefix="fas" data-icon="bars" role="img"
-                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
-                                <path fill="currentColor"
-                                    d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z">
-                                </path>
-                            </svg></i>
-                    </button>
-                    <h1 class="text-lg font-semibold text-gray-900">Assignments</h1>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button class="p-2 hover:bg-gray-100 rounded-lg relative">
-                        <i class="text-gray-600" data-fa-i2svg=""><svg class="svg-inline--fa fa-bell" aria-hidden="true"
-                                focusable="false" data-prefix="fas" data-icon="bell" role="img"
-                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
-                                <path fill="currentColor"
-                                    d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z">
-                                </path>
-                            </svg></i>
-                        <span
-                            class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
-                    </button>
-                    <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg"
-                        alt="Profile" class="w-8 h-8 rounded-full">
+<body class="bg-gray-50 font-custom" data-new-gr-c-s-check-loaded="14.1255.0" data-gr-ext-installed="">
+    <!-- Header -->
+    <header id="header" class="bg-white shadow-sm border-b border-gray-100 px-4 py-3 sticky top-0 z-50">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg" alt="Profile"
+                    class="w-8 h-8 rounded-full">
+                <div>
+                    <h1 class="text-lg font-semibold text-gray-900">Hi, Sarah</h1>
+                    <p class="text-xs text-gray-500">Ready to learn today?</p>
                 </div>
             </div>
-        </header>
-
-        <!-- Tab Navigation -->
-        <nav id="tab-navigation" class="bg-white px-4 py-2 border-b border-gray-200">
-            <div class="flex space-x-1">
-                <button class="tab-btn active flex-1 py-2 px-3 text-sm font-medium rounded-lg text-primary bg-blue-50"
-                    data-tab="pending">
-                    Pending <span class="ml-1 bg-primary text-white text-xs px-1.5 py-0.5 rounded-full">4</span>
-                </button>
-                <button class="tab-btn flex-1 py-2 px-3 text-sm font-medium rounded-lg text-gray-600"
-                    data-tab="submitted">
-                    Submitted <span class="ml-1 bg-gray-200 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">2</span>
-                </button>
-                <button class="tab-btn flex-1 py-2 px-3 text-sm font-medium rounded-lg text-gray-600" data-tab="graded">
-                    Graded <span class="ml-1 bg-green-100 text-green-600 text-xs px-1.5 py-0.5 rounded-full">8</span>
-                </button>
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <i class="text-gray-400 text-lg" data-fa-i2svg=""><svg class="svg-inline--fa fa-bell"
+                            aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bell" role="img"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
+                            <path fill="currentColor"
+                                d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z">
+                            </path>
+                        </svg></i>
+                    <span
+                        class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                </div>
+                <i class="text-gray-400 text-lg" data-fa-i2svg=""><svg class="svg-inline--fa fa-bars" aria-hidden="true"
+                        focusable="false" data-prefix="fas" data-icon="bars" role="img"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
+                        <path fill="currentColor"
+                            d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z">
+                        </path>
+                    </svg></i>
             </div>
-        </nav>
+        </div>
+    </header>
 
-        <!-- Assignment Lists -->
-        <main id="main-content" class="p-4 pb-20">
+    <!-- Quick Actions -->
+    <section id="quick-actions" class="px-4 py-4">
+        <div class="grid grid-cols-3 gap-3">
+            <button class="bg-blue-500 text-white p-3 rounded-xl flex flex-col items-center space-y-2 shadow-sm">
+                <i class="text-lg" data-fa-i2svg=""><svg class="svg-inline--fa fa-upload" aria-hidden="true"
+                        focusable="false" data-prefix="fas" data-icon="upload" role="img"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
+                        <path fill="currentColor"
+                            d="M288 109.3V352c0 17.7-14.3 32-32 32s-32-14.3-32-32V109.3l-73.4 73.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l128-128c12.5-12.5 32.8-12.5 45.3 0l128 128c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 109.3zM64 352H192c0 35.3 28.7 64 64 64s64-28.7 64-64H448c35.3 0 64 28.7 64 64v32c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V416c0-35.3 28.7-64 64-64zM432 456a24 24 0 1 0 0-48 24 24 0 1 0 0 48z">
+                        </path>
+                    </svg></i>
+                <span class="text-xs font-medium">Upload Assignment</span>
+            </button>
+            <button class="bg-green-500 text-white p-3 rounded-xl flex flex-col items-center space-y-2 shadow-sm">
+                <i class="text-lg" data-fa-i2svg=""><svg class="svg-inline--fa fa-video" aria-hidden="true"
+                        focusable="false" data-prefix="fas" data-icon="video" role="img"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" data-fa-i2svg="">
+                        <path fill="currentColor"
+                            d="M0 128C0 92.7 28.7 64 64 64H320c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128zM559.1 99.8c10.4 5.6 16.9 16.4 16.9 28.2V384c0 11.8-6.5 22.6-16.9 28.2s-23 5-32.9-1.6l-96-64L416 337.1V320 192 174.9l14.2-9.5 96-64c9.8-6.5 22.4-7.2 32.9-1.6z">
+                        </path>
+                    </svg></i>
+                <span class="text-xs font-medium">Join Exam</span>
+            </button>
+            <button class="bg-purple-500 text-white p-3 rounded-xl flex flex-col items-center space-y-2 shadow-sm">
+                <i class="text-lg" data-fa-i2svg=""><svg class="svg-inline--fa fa-chart-line" aria-hidden="true"
+                        focusable="false" data-prefix="fas" data-icon="chart-line" role="img"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
+                        <path fill="currentColor"
+                            d="M64 64c0-17.7-14.3-32-32-32S0 46.3 0 64V400c0 44.2 35.8 80 80 80H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H80c-8.8 0-16-7.2-16-16V64zm406.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L320 210.7l-57.4-57.4c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L240 221.3l57.4 57.4c12.5 12.5 32.8 12.5 45.3 0l128-128z">
+                        </path>
+                    </svg></i>
+                <span class="text-xs font-medium">Check Results</span>
+            </button>
+        </div>
+    </section>
 
-            <!-- Pending Tab -->
-            <div id="pending-tab" class="tab-content">
-                <div class="space-y-3">
-                    <!-- Assignment Card 1 -->
-                    <div class="assignment-card bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900 text-sm">Data Structures Final Project</h3>
-                                <p class="text-xs text-gray-500 mt-1">Computer Science • CS301</p>
-                            </div>
-                            <span class="bg-red-100 text-red-600 text-xs px-2 py-1 rounded-full font-medium">Due
-                                Soon</span>
-                        </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-calendar-days"
-                                        aria-hidden="true" focusable="false" data-prefix="fas" data-icon="calendar-days"
-                                        role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
-                                        data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z">
-                                        </path>
-                                    </svg></i>
-                                Due: Oct 15, 2024
-                            </span>
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-clock" aria-hidden="true"
-                                        focusable="false" data-prefix="fas" data-icon="clock" role="img"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z">
-                                        </path>
-                                    </svg></i>
-                                2 days left
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                                <span class="text-xs text-gray-600">Not Started</span>
-                            </div>
-                            <button class="text-primary text-sm font-medium">View Details</button>
-                        </div>
+    <!-- Progress Overview -->
+    <section id="progress-overview" class="px-4 py-2">
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <h2 class="text-sm font-semibold text-gray-900 mb-3">Academic Progress</h2>
+            <div class="space-y-3">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs text-gray-600">Course Completion</span>
+                        <span class="text-xs font-medium text-blue-600">78%</span>
                     </div>
-
-                    <!-- Assignment Card 2 -->
-                    <div class="assignment-card bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900 text-sm">Marketing Research Report</h3>
-                                <p class="text-xs text-gray-500 mt-1">Business • MKT205</p>
-                            </div>
-                            <span class="bg-yellow-100 text-yellow-600 text-xs px-2 py-1 rounded-full font-medium">In
-                                Progress</span>
-                        </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-calendar-days"
-                                        aria-hidden="true" focusable="false" data-prefix="fas" data-icon="calendar-days"
-                                        role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
-                                        data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z">
-                                        </path>
-                                    </svg></i>
-                                Due: Oct 20, 2024
-                            </span>
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-clock" aria-hidden="true"
-                                        focusable="false" data-prefix="fas" data-icon="clock" role="img"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z">
-                                        </path>
-                                    </svg></i>
-                                7 days left
-                            </span>
-                        </div>
-                        <div class="mb-2">
-                            <div class="flex items-center justify-between text-xs mb-1">
-                                <span class="text-gray-600">Progress</span>
-                                <span class="text-gray-600">60%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-1.5">
-                                <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 60%"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                <span class="text-xs text-gray-600">In Progress</span>
-                            </div>
-                            <button class="text-primary text-sm font-medium">Continue</button>
-                        </div>
-                    </div>
-
-                    <!-- Assignment Card 3 -->
-                    <div class="assignment-card bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900 text-sm">Literature Review Essay</h3>
-                                <p class="text-xs text-gray-500 mt-1">English • ENG102</p>
-                            </div>
-                            <span
-                                class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full font-medium">Ready</span>
-                        </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-calendar-days"
-                                        aria-hidden="true" focusable="false" data-prefix="fas" data-icon="calendar-days"
-                                        role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"
-                                        data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zm64 80v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm128 0v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H208c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V272c0-8.8-7.2-16-16-16H336zM64 400v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H80c-8.8 0-16 7.2-16 16zm144-16c-8.8 0-16 7.2-16 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H208zm112 16v32c0 8.8 7.2 16 16 16h32c8.8 0 16-7.2 16-16V400c0-8.8-7.2-16-16-16H336c-8.8 0-16 7.2-16 16z">
-                                        </path>
-                                    </svg></i>
-                                Due: Oct 25, 2024
-                            </span>
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-clock" aria-hidden="true"
-                                        focusable="false" data-prefix="fas" data-icon="clock" role="img"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z">
-                                        </path>
-                                    </svg></i>
-                                12 days left
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span class="text-xs text-gray-600">Ready to Submit</span>
-                            </div>
-                            <button class="text-primary text-sm font-medium">Submit</button>
-                        </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: 78%"></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Submitted Tab -->
-            <div id="submitted-tab" class="tab-content hidden">
-                <div class="space-y-3">
-                    <div class="assignment-card bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900 text-sm">Physics Lab Report</h3>
-                                <p class="text-xs text-gray-500 mt-1">Physics • PHY201</p>
-                            </div>
-                            <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full font-medium">Under
-                                Review</span>
-                        </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-check" aria-hidden="true"
-                                        focusable="false" data-prefix="fas" data-icon="check" role="img"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z">
-                                        </path>
-                                    </svg></i>
-                                Submitted: Oct 8, 2024
-                            </span>
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-file" aria-hidden="true"
-                                        focusable="false" data-prefix="fas" data-icon="file" role="img"
-                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M0 64C0 28.7 28.7 0 64 0H224V128c0 17.7 14.3 32 32 32H384V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V64zm384 64H256V0L384 128z">
-                                        </path>
-                                    </svg></i>
-                                lab-report.pdf
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <span class="text-xs text-gray-600">Awaiting Grade</span>
-                            </div>
-                            <button class="text-primary text-sm font-medium">View Submission</button>
-                        </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs text-gray-600">Assignment Submissions</span>
+                        <span class="text-xs font-medium text-green-600">85%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: 85%"></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Graded Tab -->
-            <div id="graded-tab" class="tab-content hidden">
-                <div class="space-y-3">
-                    <div class="assignment-card bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-                        <div class="flex items-start justify-between mb-2">
-                            <div class="flex-1">
-                                <h3 class="font-semibold text-gray-900 text-sm">Mathematics Quiz 3</h3>
-                                <p class="text-xs text-gray-500 mt-1">Mathematics • MATH101</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-lg font-bold text-green-600">92%</div>
-                                <div class="text-xs text-gray-500">A-</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
-                            <span class="flex items-center">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-calendar-check"
-                                        aria-hidden="true" focusable="false" data-prefix="fas"
-                                        data-icon="calendar-check" role="img" xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 448 512" data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M128 0c17.7 0 32 14.3 32 32V64H288V32c0-17.7 14.3-32 32-32s32 14.3 32 32V64h48c26.5 0 48 21.5 48 48v48H0V112C0 85.5 21.5 64 48 64H96V32c0-17.7 14.3-32 32-32zM0 192H448V464c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V192zM329 305c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-95 95-47-47c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l64 64c9.4 9.4 24.6 9.4 33.9 0L329 305z">
-                                        </path>
-                                    </svg></i>
-                                Graded: Oct 5, 2024
-                            </span>
-                            <span class="flex items-center text-green-600">
-                                <i class="mr-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-trophy"
-                                        aria-hidden="true" focusable="false" data-prefix="fas" data-icon="trophy"
-                                        role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"
-                                        data-fa-i2svg="">
-                                        <path fill="currentColor"
-                                            d="M400 0H176c-26.5 0-48.1 21.8-47.1 48.2c.2 5.3 .4 10.6 .7 15.8H24C10.7 64 0 74.7 0 88c0 92.6 33.5 157 78.5 200.7c44.3 43.1 98.3 64.8 138.1 75.8c23.4 6.5 39.4 26 39.4 45.6c0 20.9-17 37.9-37.9 37.9H192c-17.7 0-32 14.3-32 32s14.3 32 32 32H384c17.7 0 32-14.3 32-32s-14.3-32-32-32H357.9C337 448 320 431 320 410.1c0-19.6 15.9-39.2 39.4-45.6c39.9-11 93.9-32.7 138.2-75.8C542.5 245 576 180.6 576 88c0-13.3-10.7-24-24-24H446.4c.3-5.2 .5-10.4 .7-15.8C448.1 21.8 426.5 0 400 0zM48.9 112h84.4c9.1 90.1 29.2 150.3 51.9 190.6c-24.9-11-50.8-26.5-73.2-48.3c-32-31.1-58-76-63-142.3zM464.1 254.3c-22.4 21.8-48.3 37.3-73.2 48.3c22.7-40.3 42.8-100.5 51.9-190.6h84.4c-5.1 66.3-31.1 111.2-63 142.3z">
-                                        </path>
-                                    </svg></i>
-                                Excellent
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                <span class="text-xs text-gray-600">Completed</span>
-                            </div>
-                            <button class="text-primary text-sm font-medium">View Feedback</button>
-                        </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs text-gray-600">Exam Readiness</span>
+                        <span class="text-xs font-medium text-orange-600">62%</span>
                     </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Assignment Detail Modal -->
-        <div id="assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-            <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto">
-                <div class="p-4 border-b border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-lg font-semibold">Assignment Details</h2>
-                        <button id="close-modal" class="p-2 hover:bg-gray-100 rounded-lg">
-                            <i class="text-gray-600" data-fa-i2svg=""><svg class="svg-inline--fa fa-xmark"
-                                    aria-hidden="true" focusable="false" data-prefix="fas" data-icon="xmark" role="img"
-                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" data-fa-i2svg="">
-                                    <path fill="currentColor"
-                                        d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z">
-                                    </path>
-                                </svg></i>
-                        </button>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-orange-500 h-2 rounded-full" style="width: 62%"></div>
                     </div>
-                </div>
-                <div class="p-4 space-y-4">
-                    <div>
-                        <h3 class="font-semibold text-gray-900 mb-2">Data Structures Final Project</h3>
-                        <p class="text-sm text-gray-600 mb-3">Create a comprehensive data structure implementation
-                            showcasing various algorithms and their time complexities.</p>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <h4 class="font-medium text-sm mb-2">Requirements:</h4>
-                            <ul class="text-sm text-gray-600 space-y-1">
-                                <li>• Implement at least 3 different data structures</li>
-                                <li>• Include time complexity analysis</li>
-                                <li>• Provide test cases and documentation</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="font-medium text-sm mb-2">Upload Assignment</h4>
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                            <i class="text-3xl text-gray-400 mb-2" data-fa-i2svg=""><svg
-                                    class="svg-inline--fa fa-cloud-arrow-up" aria-hidden="true" focusable="false"
-                                    data-prefix="fas" data-icon="cloud-arrow-up" role="img"
-                                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" data-fa-i2svg="">
-                                    <path fill="currentColor"
-                                        d="M144 480C64.5 480 0 415.5 0 336c0-62.8 40.2-116.2 96.2-135.9c-.1-2.7-.2-5.4-.2-8.1c0-88.4 71.6-160 160-160c59.3 0 111 32.2 138.7 80.2C409.9 102 428.3 96 448 96c53 0 96 43 96 96c0 12.2-2.3 23.8-6.4 34.6C596 238.4 640 290.1 640 352c0 70.7-57.3 128-128 128H144zm79-217c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l39-39V392c0 13.3 10.7 24 24 24s24-10.7 24-24V257.9l39 39c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-80-80c-9.4-9.4-24.6-9.4-33.9 0l-80 80z">
-                                    </path>
-                                </svg></i>
-                            <p class="text-sm text-gray-600">Drag &amp; drop files or click to browse</p>
-                            <p class="text-xs text-gray-500 mt-1">Supports: PDF, DOC, ZIP (Max 10MB)</p>
-                        </div>
-                    </div>
-
-                    <button class="w-full bg-primary text-white py-3 rounded-lg font-medium">Submit Assignment</button>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Bottom Navigation -->
-        <nav id="bottom-nav"
-            class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm bg-white border-t border-gray-200 px-4 py-2">
-            <div class="flex justify-around">
-                <button class="flex flex-col items-center py-2 text-primary">
-                    <i class="text-lg mb-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-clipboard-list"
-                            aria-hidden="true" focusable="false" data-prefix="fas" data-icon="clipboard-list" role="img"
-                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" data-fa-i2svg="">
-                            <path fill="currentColor"
-                                d="M192 0c-41.8 0-77.4 26.7-90.5 64H64C28.7 64 0 92.7 0 128V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H282.5C269.4 26.7 233.8 0 192 0zm0 64a32 32 0 1 1 0 64 32 32 0 1 1 0-64zM72 272a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm104-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16s7.2-16 16-16zM72 368a24 24 0 1 1 48 0 24 24 0 1 1 -48 0zm88 0c0-8.8 7.2-16 16-16H304c8.8 0 16 7.2 16 16s-7.2 16-16 16H176c-8.8 0-16-7.2-16-16z">
-                            </path>
-                        </svg></i>
-                    <span class="text-xs">Assignments</span>
-                </button>
-                <button class="flex flex-col items-center py-2 text-gray-400">
-                    <i class="text-lg mb-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-calendar" aria-hidden="true"
-                            focusable="false" data-prefix="fas" data-icon="calendar" role="img"
-                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
-                            <path fill="currentColor"
-                                d="M96 32V64H48C21.5 64 0 85.5 0 112v48H448V112c0-26.5-21.5-48-48-48H352V32c0-17.7-14.3-32-32-32s-32 14.3-32 32V64H160V32c0-17.7-14.3-32-32-32S96 14.3 96 32zM448 192H0V464c0 26.5 21.5 48 48 48H400c26.5 0 48-21.5 48-48V192z">
-                            </path>
-                        </svg></i>
-                    <span class="text-xs">Schedule</span>
-                </button>
-                <button class="flex flex-col items-center py-2 text-gray-400">
-                    <i class="text-lg mb-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-comments" aria-hidden="true"
-                            focusable="false" data-prefix="fas" data-icon="comments" role="img"
-                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512" data-fa-i2svg="">
-                            <path fill="currentColor"
-                                d="M208 352c114.9 0 208-78.8 208-176S322.9 0 208 0S0 78.8 0 176c0 38.6 14.7 74.3 39.6 103.4c-3.5 9.4-8.7 17.7-14.2 24.7c-4.8 6.2-9.7 11-13.3 14.3c-1.8 1.6-3.3 2.9-4.3 3.7c-.5 .4-.9 .7-1.1 .8l-.2 .2 0 0 0 0C1 327.2-1.4 334.4 .8 340.9S9.1 352 16 352c21.8 0 43.8-5.6 62.1-12.5c9.2-3.5 17.8-7.4 25.3-11.4C134.1 343.3 169.8 352 208 352zM448 176c0 112.3-99.1 196.9-216.5 207C255.8 457.4 336.4 512 432 512c38.2 0 73.9-8.7 104.7-23.9c7.5 4 16 7.9 25.2 11.4c18.3 6.9 40.3 12.5 62.1 12.5c6.9 0 13.1-4.5 15.2-11.1c2.1-6.6-.2-13.8-5.8-17.9l0 0 0 0-.2-.2c-.2-.2-.6-.4-1.1-.8c-1-.8-2.5-2-4.3-3.7c-3.6-3.3-8.5-8.1-13.3-14.3c-5.5-7-10.7-15.4-14.2-24.7c24.9-29 39.6-64.7 39.6-103.4c0-92.8-84.9-168.9-192.6-175.5c.4 5.1 .6 10.3 .6 15.5z">
-                            </path>
-                        </svg></i>
-                    <span class="text-xs">Discussion</span>
-                </button>
-                <button class="flex flex-col items-center py-2 text-gray-400">
-                    <i class="text-lg mb-1" data-fa-i2svg=""><svg class="svg-inline--fa fa-chart-line"
-                            aria-hidden="true" focusable="false" data-prefix="fas" data-icon="chart-line" role="img"
+    <!-- Pending Assignments -->
+    <section id="pending-assignments" class="px-4 py-2">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-900">Pending Assignments</h2>
+            <span class="text-xs text-gray-500">3 due soon</span>
+        </div>
+        <div class="space-y-2">
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h3 class="text-sm font-medium text-gray-900">Mathematics Essay</h3>
+                        <p class="text-xs text-gray-500">Calculus &amp; Applications</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-medium text-red-600">Due Tomorrow</span>
+                        <p class="text-xs text-gray-500">Oct 4, 2024</p>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-red-400 rounded-full"></div>
+                    <span class="text-xs text-gray-600">High Priority</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h3 class="text-sm font-medium text-gray-900">Physics Lab Report</h3>
+                        <p class="text-xs text-gray-500">Quantum Mechanics</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-medium text-orange-600">Due in 3 days</span>
+                        <p class="text-xs text-gray-500">Oct 6, 2024</p>
+                    </div>
+                </div>
+                <div class="mt-2 flex items-center space-x-2">
+                    <div class="w-2 h-2 bg-orange-400 rounded-full"></div>
+                    <span class="text-xs text-gray-600">Medium Priority</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upcoming Exams -->
+    <section id="upcoming-exams" class="px-4 py-2">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-gray-900">Upcoming Exams</h2>
+            <span class="text-xs text-gray-500">2 this week</span>
+        </div>
+        <div class="space-y-2">
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-blue-900">Chemistry Final</h3>
+                    <i class="text-blue-600 text-sm" data-fa-i2svg=""><svg class="svg-inline--fa fa-clock"
+                            aria-hidden="true" focusable="false" data-prefix="fas" data-icon="clock" role="img"
                             xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
                             <path fill="currentColor"
-                                d="M64 64c0-17.7-14.3-32-32-32S0 46.3 0 64V400c0 44.2 35.8 80 80 80H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H80c-8.8 0-16-7.2-16-16V64zm406.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L320 210.7l-57.4-57.4c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L240 221.3l57.4 57.4c12.5 12.5 32.8 12.5 45.3 0l128-128z">
+                                d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z">
                             </path>
                         </svg></i>
-                    <span class="text-xs">Grades</span>
-                </button>
+                </div>
+                <p class="text-xs text-blue-700 mb-2">Organic Chemistry - Room 205</p>
+                <div class="flex items-center justify-between">
+                    <div class="text-xs text-blue-600">
+                        <span class="font-semibold">2 days 14 hours</span>
+                        <p>Oct 5, 2024 at 2:00 PM</p>
+                    </div>
+                    <div class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
+                        Ready: 75%
+                    </div>
+                </div>
             </div>
-        </nav>
-    </div>
+            <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-purple-900">History Midterm</h3>
+                    <i class="text-purple-600 text-sm" data-fa-i2svg=""><svg class="svg-inline--fa fa-clock"
+                            aria-hidden="true" focusable="false" data-prefix="fas" data-icon="clock" role="img"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
+                            <path fill="currentColor"
+                                d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z">
+                            </path>
+                        </svg></i>
+                </div>
+                <p class="text-xs text-purple-700 mb-2">World War II - Online</p>
+                <div class="flex items-center justify-between">
+                    <div class="text-xs text-purple-600">
+                        <span class="font-semibold">5 days 8 hours</span>
+                        <p>Oct 8, 2024 at 10:00 AM</p>
+                    </div>
+                    <div class="bg-purple-500 text-white px-2 py-1 rounded-full text-xs">
+                        Ready: 60%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <script>
-        // Tab switching functionality
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
+    <!-- Recent Completions -->
+    <section id="recent-completions" class="px-4 py-2">
+        <h2 class="text-sm font-semibold text-gray-900 mb-3">Recently Completed</h2>
+        <div class="space-y-2">
+            <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-green-500 rounded-full p-1">
+                        <i class="text-white text-xs" data-fa-i2svg=""><svg class="svg-inline--fa fa-check"
+                                aria-hidden="true" focusable="false" data-prefix="fas" data-icon="check" role="img"
+                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
+                                <path fill="currentColor"
+                                    d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z">
+                                </path>
+                            </svg></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-sm font-medium text-green-900">Biology Quiz</h3>
+                        <p class="text-xs text-green-700">Score: 92% • Submitted 2 hours ago</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-green-500 rounded-full p-1">
+                        <i class="text-white text-xs" data-fa-i2svg=""><svg class="svg-inline--fa fa-check"
+                                aria-hidden="true" focusable="false" data-prefix="fas" data-icon="check" role="img"
+                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
+                                <path fill="currentColor"
+                                    d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z">
+                                </path>
+                            </svg></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-sm font-medium text-green-900">English Essay</h3>
+                        <p class="text-xs text-green-700">Grade: A- • Submitted yesterday</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const targetTab = btn.getAttribute('data-tab');
-
-                tabBtns.forEach(b => {
-                    b.classList.remove('active', 'text-primary', 'bg-blue-50');
-                    b.classList.add('text-gray-600');
-                });
-
-                btn.classList.add('active', 'text-primary', 'bg-blue-50');
-                btn.classList.remove('text-gray-600');
-
-                tabContents.forEach(content => {
-                    content.classList.add('hidden');
-                });
-
-                document.getElementById(targetTab + '-tab').classList.remove('hidden');
-            });
-        });
-
-        // Modal functionality
-        const modal = document.getElementById('assignment-modal');
-        const closeModal = document.getElementById('close-modal');
-        const viewDetailsBtns = document.querySelectorAll('.assignment-card button');
-
-        viewDetailsBtns.forEach(btn => {
-            if (btn.textContent === 'View Details') {
-                btn.addEventListener('click', () => {
-                    modal.classList.remove('hidden');
-                });
-            }
-        });
-
-        closeModal.addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
-            }
-        });
-    </script>
+    <!-- Notifications Panel -->
+    <section id="notifications" class="px-4 py-2 pb-6">
+        <h2 class="text-sm font-semibold text-gray-900 mb-3">Notifications</h2>
+        <div class="space-y-2">
+            <div class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
+                <div class="flex items-start space-x-3">
+                    <i class="text-yellow-600 text-sm mt-0.5" data-fa-i2svg=""><svg
+                            class="svg-inline--fa fa-triangle-exclamation" aria-hidden="true" focusable="false"
+                            data-prefix="fas" data-icon="triangle-exclamation" role="img"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
+                            <path fill="currentColor"
+                                d="M256 32c14.2 0 27.3 7.5 34.5 19.8l216 368c7.3 12.4 7.3 27.7 .2 40.1S486.3 480 472 480H40c-14.3 0-27.6-7.7-34.7-20.1s-7-27.8 .2-40.1l216-368C228.7 39.5 241.8 32 256 32zm0 128c-13.3 0-24 10.7-24 24V296c0 13.3 10.7 24 24 24s24-10.7 24-24V184c0-13.3-10.7-24-24-24zm32 224a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z">
+                            </path>
+                        </svg></i>
+                    <div class="flex-1">
+                        <p class="text-xs font-medium text-yellow-900">Assignment Reminder</p>
+                        <p class="text-xs text-yellow-700">Mathematics Essay due tomorrow at 11:59 PM</p>
+                        <span class="text-xs text-yellow-600">5 minutes ago</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <div class="flex items-start space-x-3">
+                    <i class="text-blue-600 text-sm mt-0.5" data-fa-i2svg=""><svg class="svg-inline--fa fa-message"
+                            aria-hidden="true" focusable="false" data-prefix="fas" data-icon="message" role="img"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
+                            <path fill="currentColor"
+                                d="M64 0C28.7 0 0 28.7 0 64V352c0 35.3 28.7 64 64 64h96v80c0 6.1 3.4 11.6 8.8 14.3s11.9 2.1 16.8-1.5L309.3 416H448c35.3 0 64-28.7 64-64V64c0-35.3-28.7-64-64-64H64z">
+                            </path>
+                        </svg></i>
+                    <div class="flex-1">
+                        <p class="text-xs font-medium text-blue-900">Teacher Feedback</p>
+                        <p class="text-xs text-blue-700">Great work on your Biology presentation!</p>
+                        <span class="text-xs text-blue-600">1 hour ago</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-green-50 rounded-lg p-3 border border-green-200">
+                <div class="flex items-start space-x-3">
+                    <i class="text-green-600 text-sm mt-0.5" data-fa-i2svg=""><svg class="svg-inline--fa fa-circle-info"
+                            aria-hidden="true" focusable="false" data-prefix="fas" data-icon="circle-info" role="img"
+                            xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" data-fa-i2svg="">
+                            <path fill="currentColor"
+                                d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z">
+                            </path>
+                        </svg></i>
+                    <div class="flex-1">
+                        <p class="text-xs font-medium text-green-900">Course Update</p>
+                        <p class="text-xs text-green-700">New study materials added to Chemistry course</p>
+                        <span class="text-xs text-green-600">3 hours ago</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
 </body><grammarly-desktop-integration data-grammarly-shadow-root="true"><template shadowrootmode="open">
         <style>
