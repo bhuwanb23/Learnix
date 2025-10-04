@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 
 const ProgressBar = ({ 
   presentCount, 
@@ -18,12 +17,7 @@ const ProgressBar = ({
       
       <View style={styles.progressBarContainer}>
         <View style={styles.progressBarBackground}>
-          <LinearGradient
-            colors={['#3B82F6', '#2563EB']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.progressBarFill, { width: `${percentage}%` }]}
-          />
+          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
         </View>
       </View>
     </View>
@@ -66,7 +60,8 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 4
+    borderRadius: 4,
+    backgroundColor: '#3B82F6'
   }
 });
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 
 const SummaryCards = ({ 
   presentCount, 
@@ -11,12 +10,7 @@ const SummaryCards = ({
       <View style={styles.cardsRow}>
         {/* Present Card */}
         <View style={styles.card}>
-          <LinearGradient
-            colors={['#3B82F6', '#2563EB']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.cardGradient}
-          >
+          <View style={[styles.cardGradient, styles.presentCard]}>
             <View style={styles.cardContent}>
               <View style={styles.cardLeft}>
                 <Text style={styles.cardLabel}>Present Today</Text>
@@ -26,17 +20,12 @@ const SummaryCards = ({
                 <Text style={styles.iconText}>✓</Text>
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </View>
 
         {/* Absent Card */}
         <View style={styles.card}>
-          <LinearGradient
-            colors={['#60A5FA', '#3B82F6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.cardGradient}
-          >
+          <View style={[styles.cardGradient, styles.absentCard]}>
             <View style={styles.cardContent}>
               <View style={styles.cardLeft}>
                 <Text style={styles.cardLabel}>Absent Today</Text>
@@ -46,7 +35,7 @@ const SummaryCards = ({
                 <Text style={styles.iconText}>✕</Text>
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </View>
       </View>
     </View>
@@ -69,6 +58,12 @@ const styles = StyleSheet.create({
   },
   cardGradient: {
     padding: 16
+  },
+  presentCard: {
+    backgroundColor: '#3B82F6'
+  },
+  absentCard: {
+    backgroundColor: '#60A5FA'
   },
   cardContent: {
     flexDirection: 'row',

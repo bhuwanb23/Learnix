@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 
 const QuickActions = ({ 
   actions, 
@@ -15,15 +14,10 @@ const QuickActions = ({
           onPress={() => onActionPress(action.id)}
           activeOpacity={0.8}
         >
-          <LinearGradient
-            colors={['#3B82F6', '#2563EB']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.primaryButtonGradient}
-          >
+          <View style={styles.primaryButtonGradient}>
             <Text style={styles.primaryButtonIcon}>{action.icon}</Text>
             <Text style={styles.primaryButtonText}>{action.label}</Text>
-          </LinearGradient>
+          </View>
         </TouchableOpacity>
       );
     }
@@ -72,7 +66,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 16
+    paddingHorizontal: 16,
+    backgroundColor: '#3B82F6',
+    borderRadius: 8
   },
   primaryButtonIcon: {
     fontSize: 14,

@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 
 const BottomActionBar = ({ 
   onSave, 
@@ -14,16 +13,11 @@ const BottomActionBar = ({
         disabled={saving}
         activeOpacity={0.8}
       >
-        <LinearGradient
-          colors={['#3B82F6', '#2563EB']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.saveButtonGradient}
-        >
+        <View style={styles.saveButtonGradient}>
           <Text style={styles.saveButtonText}>
             {saving ? 'Saving...' : 'Save Attendance'}
           </Text>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -53,7 +47,9 @@ const styles = StyleSheet.create({
   saveButtonGradient: {
     paddingVertical: 12,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    backgroundColor: '#3B82F6',
+    borderRadius: 8
   },
   saveButtonText: {
     fontSize: 16,

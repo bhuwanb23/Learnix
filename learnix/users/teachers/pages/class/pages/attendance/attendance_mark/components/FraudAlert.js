@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { getFraudAlertStyle } from '../constants/attendanceData';
 
 const FraudAlert = ({ 
@@ -14,12 +13,7 @@ const FraudAlert = ({
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#FFF7ED', '#FEF2F2']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.alertGradient}
-      >
+      <View style={styles.alertGradient}>
         <View style={styles.alertContent}>
           <View style={styles.alertLeft}>
             <Text style={styles.alertIcon}>⚠️</Text>
@@ -37,7 +31,7 @@ const FraudAlert = ({
             <Text style={styles.dismissIcon}>✕</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 };
@@ -52,7 +46,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
   alertGradient: {
-    padding: 12
+    padding: 12,
+    backgroundColor: '#FFF7ED'
   },
   alertContent: {
     flexDirection: 'row',
