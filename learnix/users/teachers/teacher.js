@@ -6,35 +6,34 @@ import TeacherBottomNavbar from './components/TeacherBottomNavbar';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 import TeacherDashboard from './pages/dashboard/dashboard';
+import AttendancePage from './pages/class/pages/attendance/attendance';
+import TeacherClassPage from './pages/class/class';
+import AssignmentExamsPage from './pages/assignment_exams/assignment_exams';
+import TeacherProfilePage from './pages/profile/profile';
+import StudentPerformancePage from './pages/student_performance/student_performance';
 
 export default function TeacherScreen() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();
 
   const renderContent = () => {
+    // Handle attendance screen
+    if (currentScreen === 'Attendance') {
+      return <AttendancePage navigation={{ navigate: setCurrentScreen }} />;
+    }
+
     switch (activeTab) {
       case 'Dashboard':
         return <TeacherDashboard />;
       case 'Classes':
-        {
-          const TeacherClassPage = require('./pages/class/class').default;
-          return <TeacherClassPage />;
-        }
+        return <TeacherClassPage navigation={{ navigate: setCurrentScreen }} />;
       case 'Assignments':
-        {
-          const AssignmentExamsPage = require('./pages/assignment_exams/assignment_exams').default;
-          return <AssignmentExamsPage />;
-        }
+        return <AssignmentExamsPage />;
       case 'Profile':
-        {
-          const TeacherProfilePage = require('./pages/profile/profile').default;
-          return <TeacherProfilePage />;
-        }
+        return <TeacherProfilePage />;
       case 'Performance':
-        {
-          const StudentPerformancePage = require('./pages/student_performance/student_performance').default;
-          return <StudentPerformancePage />;
-        }
+        return <StudentPerformancePage />;
       default:
         return null;
     }

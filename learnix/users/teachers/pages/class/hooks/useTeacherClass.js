@@ -17,7 +17,11 @@ export function useTeacherClass() {
   }, []);
 
   const handleActionPress = useCallback((id) => {
-    // stub: integrate navigation or actions here
+    if (id === 'attendance') {
+      // Navigate to attendance class list
+      console.log('Navigate to attendance class list');
+      // This will be handled by the parent component
+    }
   }, []);
 
   const handleNavPress = useCallback((id) => {

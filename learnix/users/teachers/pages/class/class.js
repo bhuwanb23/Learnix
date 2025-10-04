@@ -8,7 +8,7 @@ import NavButtons from './components/NavButtons';
 import RecentActivity from './components/RecentActivity';
 import { useTeacherClass } from './hooks/useTeacherClass';
 
-export default function TeacherClassPage() {
+export default function TeacherClassPage({ navigation }) {
   const {
     timetable,
     quickActions,
@@ -18,9 +18,14 @@ export default function TeacherClassPage() {
     recent,
     refreshing,
     onRefresh,
-    handleActionPress,
     handleNavPress,
   } = useTeacherClass();
+
+  const handleActionPress = (id) => {
+    if (id === 'attendance') {
+      navigation.navigate('Attendance');
+    }
+  };
 
   return (
     <View style={styles.container}>
