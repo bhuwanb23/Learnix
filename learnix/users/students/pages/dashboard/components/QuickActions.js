@@ -7,80 +7,51 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
-// Modern gradient icon components
+// Simple icon components with solid colors
 const ClassIcon = () => (
-  <LinearGradient
-    colors={['#667eea', '#764ba2']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.gradientIcon}
-  >
-    <View style={styles.iconInner}>
-      <View style={styles.classIcon}>
-        <View style={styles.classBoard} />
-        <View style={styles.classDesk} />
-      </View>
+  <View style={[styles.iconContainer, { backgroundColor: '#667eea' }]}>
+    <View style={styles.classIcon}>
+      <View style={styles.classBoard} />
+      <View style={styles.classDesk} />
     </View>
-  </LinearGradient>
+  </View>
 );
 
 const AssignmentIcon = () => (
-  <LinearGradient
-    colors={['#f093fb', '#f5576c']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.gradientIcon}
-  >
-    <View style={styles.iconInner}>
-      <View style={styles.assignmentIcon}>
-        <View style={styles.docLines}>
-          <View style={styles.docLine} />
-          <View style={styles.docLine} />
-          <View style={[styles.docLine, styles.docLineShort]} />
-        </View>
+  <View style={[styles.iconContainer, { backgroundColor: '#f093fb' }]}>
+    <View style={styles.assignmentIcon}>
+      <View style={styles.docLines}>
+        <View style={styles.docLine} />
+        <View style={styles.docLine} />
+        <View style={[styles.docLine, styles.docLineShort]} />
       </View>
     </View>
-  </LinearGradient>
+  </View>
 );
 
 const EventIcon = () => (
-  <LinearGradient
-    colors={['#4facfe', '#00f2fe']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.gradientIcon}
-  >
-    <View style={styles.iconInner}>
-      <View style={styles.eventIcon}>
-        <View style={styles.calendarFrame}>
-          <View style={styles.calendarHeader} />
-          <View style={styles.calendarBody}>
-            <View style={styles.calendarDot} />
-          </View>
+  <View style={[styles.iconContainer, { backgroundColor: '#4facfe' }]}>
+    <View style={styles.eventIcon}>
+      <View style={styles.calendarFrame}>
+        <View style={styles.calendarHeader} />
+        <View style={styles.calendarBody}>
+          <View style={styles.calendarDot} />
         </View>
       </View>
     </View>
-  </LinearGradient>
+  </View>
 );
 
 const ProfileIcon = () => (
-  <LinearGradient
-    colors={['#43e97b', '#38f9d7']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    style={styles.gradientIcon}
-  >
-    <View style={styles.iconInner}>
-      <View style={styles.profileIcon}>
-        <View style={styles.profileHead} />
-        <View style={styles.profileBody} />
-      </View>
+  <View style={[styles.iconContainer, { backgroundColor: '#43e97b' }]}>
+    <View style={styles.profileIcon}>
+      <View style={styles.profileHead} />
+      <View style={styles.profileBody} />
     </View>
-  </LinearGradient>
+  </View>
 );
 
 const getIconComponent = (actionId) => {
@@ -116,9 +87,7 @@ export default function QuickActions({ actions, onActionPress }) {
     <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Quick Actions</Text>
-        <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitle}>Access your most used features</Text>
-        </View>
+        <Text style={styles.subtitle}>Access your most used features</Text>
       </View>
       
       <View style={styles.grid}>
@@ -180,6 +149,7 @@ function ActionButton({ action, IconComponent, onPress, delay = 0 }) {
   return (
     <Animated.View 
       style={[
+        styles.actionButtonWrapper,
         { 
           opacity: opacityAnim, 
           transform: [{ translateY: slideAnim }] 
@@ -193,10 +163,8 @@ function ActionButton({ action, IconComponent, onPress, delay = 0 }) {
         onPressOut={handlePressOut}
         activeOpacity={0.8}
       >
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <View style={styles.iconContainer}>
-            <IconComponent />
-          </View>
+        <Animated.View style={[styles.buttonContent, { transform: [{ scale: scaleAnim }] }]}>
+          <IconComponent />
           <Text style={styles.label}>{action.label}</Text>
           <Text style={styles.description}>{action.description || 'Tap to access'}</Text>
         </Animated.View>
@@ -223,40 +191,37 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 20,
+    alignItems: 'center',
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: 4,
-  },
-  subtitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
     color: '#6b7280',
     fontWeight: '500',
+    textAlign: 'center',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 8,
+    alignItems: 'center',
+  },
+  actionButtonWrapper: {
+    width: '48%', // 2 items per row with gap
+    marginBottom: 16,
   },
   actionButton: {
-    display: 'flex',
-    width: 150, // Calculate exact width for 2 columns with margins
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    borderRadius: 12,
     backgroundColor: '#f8fafc',
     borderWidth: 1,
     borderColor: '#e5e7eb',
-    height: 100,
+    borderRadius: 12,
+    height: 120,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -266,15 +231,20 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  iconContainer: {
-    marginBottom: 8,
-  },
-  gradientIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  buttonContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -284,47 +254,41 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  iconInner: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   // Class Icon Styles
   classIcon: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   classBoard: {
-    width: 12,
-    height: 8,
+    width: 14,
+    height: 10,
     backgroundColor: 'white',
     borderRadius: 1,
-    marginBottom: 1,
+    marginBottom: 2,
   },
   classDesk: {
-    width: 8,
-    height: 3,
+    width: 10,
+    height: 4,
     backgroundColor: 'white',
     borderRadius: 1,
   },
   // Assignment Icon Styles
   assignmentIcon: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   docLines: {
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     justifyContent: 'space-between',
-    paddingVertical: 1,
+    paddingVertical: 2,
   },
   docLine: {
-    height: 1.5,
+    height: 2,
     backgroundColor: 'white',
     borderRadius: 1,
   },
@@ -333,21 +297,21 @@ const styles = StyleSheet.create({
   },
   // Event Icon Styles
   eventIcon: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   calendarFrame: {
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     backgroundColor: 'transparent',
   },
   calendarHeader: {
-    height: 3,
+    height: 4,
     backgroundColor: 'white',
     borderRadius: 1,
-    marginBottom: 1,
+    marginBottom: 2,
   },
   calendarBody: {
     flex: 1,
@@ -355,45 +319,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   calendarDot: {
-    width: 3,
-    height: 3,
+    width: 4,
+    height: 4,
     backgroundColor: 'white',
-    borderRadius: 1.5,
+    borderRadius: 2,
   },
   // Profile Icon Styles
   profileIcon: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   profileHead: {
-    width: 8,
+    width: 10,
+    height: 10,
+    backgroundColor: 'white',
+    borderRadius: 5,
+    marginBottom: 2,
+  },
+  profileBody: {
+    width: 12,
     height: 8,
     backgroundColor: 'white',
     borderRadius: 4,
-    marginBottom: 1,
-  },
-  profileBody: {
-    width: 10,
-    height: 6,
-    backgroundColor: 'white',
-    borderRadius: 3,
   },
   label: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
     color: '#374151',
     textAlign: 'center',
-    marginBottom: 2,
-    fontFamily: 'Inter-SemiBold',
+    marginBottom: 4,
   },
   description: {
-    fontSize: 9,
+    fontSize: 11,
     color: '#9ca3af',
     textAlign: 'center',
     fontWeight: '500',
-    fontFamily: 'Inter-Medium',
   },
 });
 
