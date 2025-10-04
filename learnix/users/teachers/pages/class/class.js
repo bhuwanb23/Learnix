@@ -27,6 +27,11 @@ export default function TeacherClassPage({ navigation }) {
     }
   };
 
+  const handleNotificationPress = () => {
+    console.log('Notification pressed');
+    // Navigate to notifications screen
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -35,7 +40,7 @@ export default function TeacherClassPage({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2563EB"]} tintColor="#2563EB" />}
         contentContainerStyle={styles.content}
       >
-        <TimetableSection data={timetable} />
+        <TimetableSection data={timetable} onNotificationPress={handleNotificationPress} />
         <View style={styles.gap} />
         <QuickActions actions={quickActions} onPress={handleActionPress} />
         <View style={styles.gap} />
