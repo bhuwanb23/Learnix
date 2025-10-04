@@ -6,6 +6,7 @@ import SplashScreen from '../components/SplashScreen';
 import LoginScreen from '../pages/login/login';
 import StudentsScreen from '../users/students/students';
 import TeacherScreen from '../users/teachers/teacher';
+import AdminScreen from '../users/admin/admin';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -32,6 +33,8 @@ export default function AppNavigator() {
         return <StudentsScreen navigation={{ navigate }} />;
       case 'Teacher':
         return <TeacherScreen navigation={{ navigate }} />;
+      case 'Admin':
+        return <AdminScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:
