@@ -4,7 +4,8 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Text
+  Text,
+  TouchableOpacity
 } from 'react-native';
 import { useUploadNotes } from './hooks/useUploadNotes';
 import TabNavigation from './components/TabNavigation';
@@ -142,6 +143,19 @@ export default function UploadNotes({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Header with Back Button */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={handleBackPress}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Upload Notes</Text>
+        <View style={styles.headerSpacer} />
+      </View>
+
       {/* Tab Navigation */}
       <TabNavigation
         tabs={tabs}
@@ -185,6 +199,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9FAFB'
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB'
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  backIcon: {
+    fontSize: 18,
+    color: '#374151'
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827'
+  },
+  headerSpacer: {
+    width: 40,
+    height: 40
   },
   scrollView: {
     flex: 1

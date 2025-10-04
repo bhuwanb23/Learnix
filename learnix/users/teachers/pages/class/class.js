@@ -18,7 +18,6 @@ export default function TeacherClassPage({ navigation }) {
     recent,
     refreshing,
     onRefresh,
-    handleNavPress,
   } = useTeacherClass();
 
   const handleActionPress = (id) => {
@@ -26,6 +25,15 @@ export default function TeacherClassPage({ navigation }) {
       navigation.navigate('Attendance');
     } else if (id === 'upload') {
       navigation.navigate('UploadNotes');
+    }
+  };
+
+  const handleNavPress = (id) => {
+    if (id === 'syllabus') {
+      navigation.navigate('SyllabusProgress');
+    } else if (id === 'ai') {
+      console.log('AI Suggestions pressed');
+      // Navigate to AI suggestions screen
     }
   };
 
