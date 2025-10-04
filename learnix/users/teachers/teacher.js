@@ -25,15 +25,15 @@ export default function TeacherScreen() {
           const AssignmentExamsPage = require('./pages/assignment_exams/assignment_exams').default;
           return <AssignmentExamsPage />;
         }
-      case 'Exams':
-        {
-          const AssignmentExamsPage = require('./pages/assignment_exams/assignment_exams').default;
-          return <AssignmentExamsPage />;
-        }
       case 'Profile':
         {
           const TeacherProfilePage = require('./pages/profile/profile').default;
           return <TeacherProfilePage />;
+        }
+      case 'Performance':
+        {
+          const StudentPerformancePage = require('./pages/student_performance/student_performance').default;
+          return <StudentPerformancePage />;
         }
       default:
         return null;

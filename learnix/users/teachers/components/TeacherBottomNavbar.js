@@ -7,7 +7,7 @@ const navigationItems = [
   { id: 'Dashboard', icon: 'home-outline', activeIcon: 'home' },
   { id: 'Classes', icon: 'book-outline', activeIcon: 'book' },
   { id: 'Assignments', icon: 'create-outline', activeIcon: 'create' },
-  { id: 'Exams', icon: 'calendar-outline', activeIcon: 'calendar' },
+  { id: 'Performance', icon: 'analytics-outline', activeIcon: 'analytics' },
   { id: 'Profile', icon: 'person-outline', activeIcon: 'person' },
 ];
 
