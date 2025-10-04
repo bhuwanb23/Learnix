@@ -94,24 +94,13 @@ export default function StudentPerformance({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.quickActionsGrid}>
-            <View style={styles.quickActionsRow}>
-              {performanceData.quickActions.slice(0, 2).map((item) => (
-                <QuickActionCard 
-                  key={item.id}
-                  action={item} 
-                  onPress={handleQuickAction}
-                />
-              ))}
-            </View>
-            <View style={styles.quickActionsRow}>
-              {performanceData.quickActions.slice(2, 4).map((item) => (
-                <QuickActionCard 
-                  key={item.id}
-                  action={item} 
-                  onPress={handleQuickAction}
-                />
-              ))}
-            </View>
+            {performanceData.quickActions.map((item) => (
+              <QuickActionCard 
+                key={item.id}
+                action={item} 
+                onPress={handleQuickAction}
+              />
+            ))}
           </View>
         </View>
 
@@ -147,14 +136,17 @@ const styles = StyleSheet.create({
     gap: SPACING.sm
   },
   quickActionsGrid: {
-    marginTop: SPACING.sm
+    marginTop: SPACING.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    width: '100%'
   },
   quickActionsRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    justifyContent: 'space-between',
     marginBottom: SPACING.sm,
-    gap: SPACING.sm,
-    width: '100'
+    width: '100%'
   },
   searchResults: {
     backgroundColor: COLORS.white,
