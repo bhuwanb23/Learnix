@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -41,6 +41,8 @@ export default function SyllabusProgress({ navigation }) {
     calculateDaysRemaining
   } = useSyllabusProgress();
 
+  const [expandedSubjects, setExpandedSubjects] = useState(new Set());
+
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -60,6 +62,18 @@ export default function SyllabusProgress({ navigation }) {
   const handleAddSubject = () => {
     console.log('Add subject pressed');
     // Navigate to add subject screen
+  };
+
+  const handleToggleExpanded = (subjectId) => {
+    setExpandedSubjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(subjectId)) {
+        newSet.delete(subjectId);
+      } else {
+        newSet.add(subjectId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -111,6 +125,8 @@ export default function SyllabusProgress({ navigation }) {
                 onChapterToggle={handleChapterToggle}
                 getProgressColor={getProgressColor}
                 getStatusColor={getStatusColor}
+                isExpanded={expandedSubjects.has(subject.id)}
+                onToggleExpanded={handleToggleExpanded}
               />
             ))
           ) : (
@@ -123,8 +139,10 @@ export default function SyllabusProgress({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <FloatingActionButton onPress={handleAddSubject} />
+      {/* Floating Action Button - Fixed Position */}
+      <View style={styles.floatingButtonContainer}>
+        <FloatingActionButton onPress={handleAddSubject} />
+      </View>
     </View>
   );
 }
@@ -138,7 +156,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
-    paddingBottom: 100 // Space for floating action button
+    paddingBottom: 120 // Space for floating action button
   },
   subjectsList: {
     paddingTop: 16
@@ -155,5 +173,11 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     lineHeight: 24
+  },
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    zIndex: 1000,
   }
 });

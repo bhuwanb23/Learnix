@@ -18,10 +18,7 @@ const FloatingActionButton = ({ onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    zIndex: 1000,
+    // Position handled by parent container
   },
   button: {
     width: 56,

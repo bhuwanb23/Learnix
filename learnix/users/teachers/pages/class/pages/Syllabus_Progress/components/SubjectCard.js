@@ -1,13 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../../../constants/theme';
 
-const SubjectCard = ({ subject, onChapterToggle, getProgressColor, getStatusColor }) => {
+const SubjectCard = ({ subject, onChapterToggle, getProgressColor, getStatusColor, isExpanded, onToggleExpanded }) => {
   const progressColor = getProgressColor(subject.progress);
   const statusColor = getStatusColor(subject.status);
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={styles.container}
+      onPress={() => onToggleExpanded(subject.id)}
+      activeOpacity={0.7}
+    >
       <View style={styles.header}>
         <View style={styles.subjectInfo}>
           <View style={[styles.iconContainer, { backgroundColor: subject.backgroundColor }]}>
@@ -24,6 +28,9 @@ const SubjectCard = ({ subject, onChapterToggle, getProgressColor, getStatusColo
           </Text>
           <Text style={[styles.statusText, { color: statusColor }]}>
             {subject.status}
+          </Text>
+          <Text style={styles.expandIcon}>
+            {isExpanded ? '▼' : '▶'}
           </Text>
         </View>
       </View>
@@ -49,8 +56,8 @@ const SubjectCard = ({ subject, onChapterToggle, getProgressColor, getStatusColo
         <Text style={styles.dueDate}>Due: {subject.dueDate}</Text>
       </View>
 
-      {/* Chapter List for Physics (expanded view) */}
-      {subject.id === 'physics' && (
+      {/* Chapter List (expanded view) */}
+      {isExpanded && (
         <View style={styles.chapterList}>
           {subject.chapters.map((chapter) => (
             <TouchableOpacity
@@ -65,18 +72,26 @@ const SubjectCard = ({ subject, onChapterToggle, getProgressColor, getStatusColo
             >
               <View style={styles.chapterContent}>
                 <View style={styles.chapterCheckbox}>
-                  <Text style={styles.checkboxIcon}>
+                  <Text style={[
+                    styles.checkboxIcon,
+                    { color: chapter.completed ? '#10B981' : '#6B7280' }
+                  ]}>
                     {chapter.completed ? '✓' : '○'}
                   </Text>
                 </View>
-                <Text 
-                  style={[
-                    styles.chapterName,
-                    chapter.completed && styles.completedText
-                  ]}
-                >
-                  {chapter.name}
-                </Text>
+                <View style={styles.chapterTextContainer}>
+                  <Text 
+                    style={[
+                      styles.chapterName,
+                      chapter.completed && styles.completedText
+                    ]}
+                  >
+                    {chapter.name}
+                  </Text>
+                  <Text style={styles.chapterStatus}>
+                    {chapter.completed ? 'Completed' : chapter.current ? 'Current' : 'Pending'}
+                  </Text>
+                </View>
               </View>
               {chapter.current && (
                 <View style={styles.currentBadge}>
@@ -87,7 +102,7 @@ const SubjectCard = ({ subject, onChapterToggle, getProgressColor, getStatusColo
           ))}
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -149,6 +164,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
   },
+  expandIcon: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
+  },
   progressBar: {
     marginBottom: 12,
   },
@@ -185,16 +205,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 8,
-    marginBottom: 4,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   completedChapter: {
     backgroundColor: '#F0FDF4',
+    borderColor: '#10B981',
   },
   currentChapter: {
     backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
   },
   chapterContent: {
     flexDirection: 'row',
@@ -206,7 +230,14 @@ const styles = StyleSheet.create({
   },
   checkboxIcon: {
     fontSize: 16,
-    color: '#10B981',
+  },
+  chapterTextContainer: {
+    flex: 1,
+  },
+  chapterStatus: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
   },
   chapterName: {
     fontSize: 14,
