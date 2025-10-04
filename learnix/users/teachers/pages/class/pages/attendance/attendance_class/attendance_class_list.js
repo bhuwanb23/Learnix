@@ -39,8 +39,8 @@ export default function AttendanceClassList({ navigation }) {
 
   const handleBackPress = () => {
     console.log('Back pressed');
-    if (navigation && navigation.goBack) {
-      navigation.goBack();
+    if (navigation && navigation.navigate) {
+      navigation.navigate('main'); // Go back to main (Classes tab)
     }
   };
 
