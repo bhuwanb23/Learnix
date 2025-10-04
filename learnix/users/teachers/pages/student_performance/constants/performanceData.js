@@ -47,7 +47,7 @@ export const QUICK_ACTIONS = [
     id: 1,
     title: 'Class Performance',
     subtitle: 'Overall analytics',
-    icon: 'users',
+    icon: 'analytics',
     color: 'purple',
     gradient: ['purple-500', 'purple-600']
   },
@@ -55,7 +55,7 @@ export const QUICK_ACTIONS = [
     id: 2,
     title: 'Student Profiles',
     subtitle: 'Individual tracking',
-    icon: 'user-graduate',
+    icon: 'person',
     color: 'emerald',
     gradient: ['emerald-500', 'emerald-600']
   },
@@ -63,7 +63,7 @@ export const QUICK_ACTIONS = [
     id: 3,
     title: 'Topic Analysis',
     subtitle: 'Weakness insights',
-    icon: 'chart-pie',
+    icon: 'trending-down',
     color: 'orange',
     gradient: ['orange-500', 'orange-600']
   },
@@ -71,7 +71,7 @@ export const QUICK_ACTIONS = [
     id: 4,
     title: 'Auto Reports',
     subtitle: 'Generated insights',
-    icon: 'file-lines',
+    icon: 'document-text',
     color: 'cyan',
     gradient: ['cyan-500', 'cyan-600']
   }

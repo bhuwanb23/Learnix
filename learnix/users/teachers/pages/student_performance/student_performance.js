@@ -31,10 +31,8 @@ export default function StudentPerformance({ navigation }) {
 
 
   return (
-    <SafeAreaView style={styles.container}>
-      <PerformanceHeader 
-        onNotificationPress={() => console.log('Notification pressed')}
-      />
+    <View style={styles.container}>
+      <PerformanceHeader />
       
       <SearchBar 
         value={searchQuery}
@@ -122,7 +120,7 @@ export default function StudentPerformance({ navigation }) {
           <RecentActivityCard activities={performanceData.recentActivity} />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -152,8 +150,11 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm
   },
   quickActionsRow: {
-    justifyContent: 'space-between',
-    marginBottom: SPACING.sm
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: SPACING.sm,
+    gap: SPACING.sm,
+    width: '100'
   },
   searchResults: {
     backgroundColor: COLORS.white,

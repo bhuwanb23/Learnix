@@ -16,7 +16,7 @@ export default function QuickActionCard({ action, onPress }) {
       <View style={styles.iconContainer}>
         <Ionicons 
           name={action.icon} 
-          size={24} 
+          size={28} 
           color={colorConfig.light} 
         />
       </View>
@@ -29,21 +29,35 @@ export default function QuickActionCard({ action, onPress }) {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    height: 120,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md,
+    justifyContent: 'space-between',
+    alignItems: 'center',
     ...SHADOWS.sm
   },
   iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: SPACING.sm
   },
   title: {
-    fontSize: TYPOGRAPHY.sizes.md,
+    fontSize: TYPOGRAPHY.sizes.sm,
     fontWeight: TYPOGRAPHY.weights.semibold,
     color: COLORS.white,
-    marginBottom: SPACING.xs
+    marginBottom: SPACING.xs,
+    textAlign: 'center',
+    lineHeight: 18
   },
   subtitle: {
     fontSize: TYPOGRAPHY.sizes.xs,
-    color: 'rgba(255, 255, 255, 0.8)'
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 14
   }
 });

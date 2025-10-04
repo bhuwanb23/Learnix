@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
-export default function PerformanceHeader({ onNotificationPress }) {
+export default function PerformanceHeader() {
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
@@ -15,10 +15,6 @@ export default function PerformanceHeader({ onNotificationPress }) {
           <Text style={styles.subtitle}>Class 10-A Analytics</Text>
         </View>
       </View>
-      
-      <TouchableOpacity style={styles.notificationButton} onPress={onNotificationPress}>
-        <Ionicons name="notifications-outline" size={20} color={COLORS.textSecondary} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -61,13 +57,5 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.sizes.xs,
     color: COLORS.textSecondary,
     marginTop: 2
-  },
-  notificationButton: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center'
   }
 });

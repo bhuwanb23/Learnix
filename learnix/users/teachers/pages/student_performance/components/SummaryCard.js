@@ -33,6 +33,7 @@ export default function SummaryCard({ data, color }) {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md,
     ...SHADOWS.sm
