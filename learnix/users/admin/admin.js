@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AdminHeader from './components/AdminHeader';
 import AdminBottomNavbar from './components/AdminBottomNavbar';
 
+// Import pages
+import AcademicsExaminations from './pages/AcademicsExaminations/academicsExaminations';
+
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
 
@@ -83,6 +86,15 @@ export default function AdminScreen({ navigation }) {
             <Text style={styles.quickActionLabel}>Create Course</Text>
           </TouchableOpacity>
           
+          <TouchableOpacity 
+            style={styles.quickActionCard}
+            onPress={() => setCurrentScreen('AcademicsExaminations')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="school" size={32} color="#7c3aed" />
+            <Text style={styles.quickActionLabel}>Academics & Exams</Text>
+          </TouchableOpacity>
+          
           <TouchableOpacity style={styles.quickActionCard}>
             <Ionicons name="document-text" size={32} color="#d97706" />
             <Text style={styles.quickActionLabel}>Generate Report</Text>
@@ -129,6 +141,12 @@ export default function AdminScreen({ navigation }) {
   );
 
   const renderContent = () => {
+    // Handle sub-screens first
+    if (currentScreen === 'AcademicsExaminations') {
+      return <AcademicsExaminations navigation={{ navigate: setCurrentScreen }} />;
+    }
+
+    // Handle main tabs
     switch (activeTab) {
       case 'Dashboard':
         return renderDashboardContent();
