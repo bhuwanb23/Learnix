@@ -7,12 +7,13 @@ import {
   Text
 } from 'react-native';
 import { useUploadNotes } from './hooks/useUploadNotes';
-import UploadHeader from './components/UploadHeader';
 import TabNavigation from './components/TabNavigation';
 import UploadArea from './components/UploadArea';
 import FileCategories from './components/FileCategories';
 import AISuggestedTags from './components/AISuggestedTags';
 import RecentUploads from './components/RecentUploads';
+import MyNotesPage from './components/MyNotesPage';
+import SharedPage from './components/SharedPage';
 import UploadButton from './components/UploadButton';
 
 export default function UploadNotes({ navigation }) {
@@ -25,6 +26,8 @@ export default function UploadNotes({ navigation }) {
     uploadForm,
     selectedTags,
     recentUploads,
+    myNotes,
+    sharedNotes,
     
     // Data
     tabs,
@@ -41,6 +44,8 @@ export default function UploadNotes({ navigation }) {
     handleAddCustomTag,
     handleUpload,
     handleRecentUploadAction,
+    handleMyNoteAction,
+    handleSharedNoteAction,
     resetForm
   } = useUploadNotes();
 
@@ -112,18 +117,22 @@ export default function UploadNotes({ navigation }) {
       
       case 'myNotes':
         return (
-          <View style={styles.placeholderContainer}>
-            <Text style={styles.placeholderText}>My Notes</Text>
-            <Text style={styles.placeholderSubtext}>Your uploaded notes will appear here</Text>
-          </View>
+          <MyNotesPage
+            myNotes={myNotes}
+            onRefresh={handleRefresh}
+            refreshing={false}
+            onNoteAction={handleMyNoteAction}
+          />
         );
       
       case 'shared':
         return (
-          <View style={styles.placeholderContainer}>
-            <Text style={styles.placeholderText}>Shared Notes</Text>
-            <Text style={styles.placeholderSubtext}>Notes shared with you will appear here</Text>
-          </View>
+          <SharedPage
+            sharedNotes={sharedNotes}
+            onRefresh={handleRefresh}
+            refreshing={false}
+            onNoteAction={handleSharedNoteAction}
+          />
         );
       
       default:
@@ -133,9 +142,6 @@ export default function UploadNotes({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <UploadHeader onBackPress={handleBackPress} />
-
       {/* Tab Navigation */}
       <TabNavigation
         tabs={tabs}
@@ -146,7 +152,10 @@ export default function UploadNotes({ navigation }) {
       {/* Main Content */}
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: activeTab === 'upload' ? 100 : 20 }
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={false}
@@ -181,7 +190,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   scrollContent: {
-    paddingBottom: 100 // Space for upload button
+    paddingBottom: 20
   },
   placeholderContainer: {
     flex: 1,

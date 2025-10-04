@@ -3,6 +3,8 @@ import {
   UPLOAD_TABS,
   AI_SUGGESTED_TAGS,
   RECENT_UPLOADS,
+  MY_NOTES,
+  SHARED_NOTES,
   UPLOAD_STATES,
   SUBJECTS,
   FILE_TYPES,
@@ -26,6 +28,8 @@ export const useUploadNotes = () => {
     AI_SUGGESTED_TAGS.filter(tag => tag.selected).map(tag => tag.id)
   );
   const [recentUploads, setRecentUploads] = useState(RECENT_UPLOADS);
+  const [myNotes, setMyNotes] = useState(MY_NOTES);
+  const [sharedNotes, setSharedNotes] = useState(SHARED_NOTES);
 
   // Tab handling
   const handleTabChange = useCallback((tabId) => {
@@ -130,6 +134,18 @@ export const useUploadNotes = () => {
     // Implement share, delete, etc.
   }, []);
 
+  // My notes actions
+  const handleMyNoteAction = useCallback((noteId, action) => {
+    console.log(`Action ${action} on my note ${noteId}`);
+    // Implement edit, delete, share, etc.
+  }, []);
+
+  // Shared notes actions
+  const handleSharedNoteAction = useCallback((noteId, action) => {
+    console.log(`Action ${action} on shared note ${noteId}`);
+    // Implement download, bookmark, etc.
+  }, []);
+
   // Reset form
   const resetForm = useCallback(() => {
     setUploadForm({
@@ -151,6 +167,8 @@ export const useUploadNotes = () => {
     uploadForm,
     selectedTags,
     recentUploads,
+    myNotes,
+    sharedNotes,
     
     // Data
     tabs: UPLOAD_TABS,
@@ -167,6 +185,8 @@ export const useUploadNotes = () => {
     handleAddCustomTag,
     handleUpload,
     handleRecentUploadAction,
+    handleMyNoteAction,
+    handleSharedNoteAction,
     resetForm
   };
 };

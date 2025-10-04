@@ -66,6 +66,108 @@ export const RECENT_UPLOADS = [
   }
 ];
 
+export const MY_NOTES = [
+  {
+    id: '1',
+    title: 'Advanced Calculus - Chapter 5',
+    subject: 'Mathematics',
+    date: 'Oct 25, 2024',
+    size: '2.4 MB',
+    views: 24,
+    icon: '📄',
+    color: '#EF4444',
+    tags: ['Calculus', 'Derivatives', 'Chapter 5']
+  },
+  {
+    id: '2',
+    title: 'Organic Chemistry Reactions',
+    subject: 'Chemistry',
+    date: 'Oct 24, 2024',
+    size: '3.8 MB',
+    views: 18,
+    icon: '📊',
+    color: '#F97316',
+    tags: ['Organic', 'Reactions', 'Mechanisms']
+  },
+  {
+    id: '3',
+    title: 'Quantum Physics Fundamentals',
+    subject: 'Physics',
+    date: 'Oct 23, 2024',
+    size: '5.2 MB',
+    views: 31,
+    icon: '▶️',
+    color: '#3B82F6',
+    tags: ['Quantum', 'Physics', 'Fundamentals']
+  },
+  {
+    id: '4',
+    title: 'Cell Biology Structure',
+    subject: 'Biology',
+    date: 'Oct 22, 2024',
+    size: '4.1 MB',
+    views: 15,
+    icon: '📄',
+    color: '#10B981',
+    tags: ['Cell', 'Biology', 'Structure']
+  }
+];
+
+export const SHARED_NOTES = [
+  {
+    id: '1',
+    title: 'Machine Learning Algorithms',
+    subject: 'Computer Science',
+    author: 'Dr. Sarah Johnson',
+    sharedTime: '2 hours ago',
+    size: '6.2 MB',
+    downloads: 45,
+    icon: '📄',
+    color: '#8B5CF6',
+    tags: ['ML', 'Algorithms', 'AI'],
+    featured: true
+  },
+  {
+    id: '2',
+    title: 'Data Structures Implementation',
+    subject: 'Computer Science',
+    author: 'Prof. Michael Chen',
+    sharedTime: '5 hours ago',
+    size: '3.5 MB',
+    downloads: 32,
+    icon: '📊',
+    color: '#F59E0B',
+    tags: ['Data Structures', 'Implementation'],
+    featured: true
+  },
+  {
+    id: '3',
+    title: 'Database Design Principles',
+    subject: 'Computer Science',
+    author: 'Dr. Emily Rodriguez',
+    sharedTime: '1 day ago',
+    size: '4.8 MB',
+    downloads: 28,
+    icon: '📄',
+    color: '#EF4444',
+    tags: ['Database', 'Design', 'SQL'],
+    featured: false
+  },
+  {
+    id: '4',
+    title: 'Software Engineering Patterns',
+    subject: 'Computer Science',
+    author: 'Prof. David Kim',
+    sharedTime: '2 days ago',
+    size: '5.1 MB',
+    downloads: 19,
+    icon: '📊',
+    color: '#3B82F6',
+    tags: ['Software Engineering', 'Patterns'],
+    featured: false
+  }
+];
+
 export const UPLOAD_STATES = {
   IDLE: 'idle',
   UPLOADING: 'uploading',
