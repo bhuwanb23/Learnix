@@ -6,7 +6,8 @@ const ClassCard = ({
   classItem, 
   onPress, 
   onMarkAttendance, 
-  onViewReports 
+  onViewReports,
+  navigation 
 }) => {
   const attendanceStatus = getAttendanceStatus(classItem.attendanceRate);
 
@@ -50,7 +51,13 @@ const ClassCard = ({
       {/* Action Button */}
       <TouchableOpacity
         style={styles.actionButton}
-        onPress={() => onMarkAttendance(classItem.id)}
+        onPress={() => {
+          if (navigation && navigation.navigate) {
+            navigation.navigate('AttendanceMarks');
+          } else {
+            onMarkAttendance(classItem.id);
+          }
+        }}
         activeOpacity={0.8}
       >
         <Text style={styles.actionButtonText}>Take Attendance</Text>

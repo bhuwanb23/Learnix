@@ -7,6 +7,7 @@ import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 import TeacherDashboard from './pages/dashboard/dashboard';
 import AttendancePage from './pages/class/pages/attendance/attendance';
+import AttendanceMarksPage from './pages/class/pages/attendance/attendance_mark/attendance_marks';
 import TeacherClassPage from './pages/class/class';
 import AssignmentExamsPage from './pages/assignment_exams/assignment_exams';
 import TeacherProfilePage from './pages/profile/profile';
@@ -18,9 +19,12 @@ export default function TeacherScreen() {
   const insets = useSafeAreaInsetsWithPadding();
 
   const renderContent = () => {
-    // Handle attendance screen
+    // Handle attendance screens
     if (currentScreen === 'Attendance') {
       return <AttendancePage navigation={{ navigate: setCurrentScreen }} />;
+    }
+    if (currentScreen === 'AttendanceMarks') {
+      return <AttendanceMarksPage navigation={{ navigate: setCurrentScreen }} />;
     }
 
     switch (activeTab) {

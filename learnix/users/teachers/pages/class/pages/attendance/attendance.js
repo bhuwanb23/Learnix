@@ -2,10 +2,10 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import AttendanceClassList from './attendance_class/attendance_class_list';
 
-export default function Attendance() {
+export default function Attendance({ navigation }) {
   return (
     <View style={styles.container}>
-      <AttendanceClassList />
+      <AttendanceClassList navigation={navigation} />
     </View>
   );
 }

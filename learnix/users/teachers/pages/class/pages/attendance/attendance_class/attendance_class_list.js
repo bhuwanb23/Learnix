@@ -13,7 +13,7 @@ import SummaryStats from './components/SummaryStats';
 import ClassCard from './components/ClassCard';
 import FloatingActionButton from './components/FloatingActionButton';
 
-export default function AttendanceClassList() {
+export default function AttendanceClassList({ navigation }) {
   const {
     classes,
     activeTab,
@@ -39,7 +39,9 @@ export default function AttendanceClassList() {
 
   const handleBackPress = () => {
     console.log('Back pressed');
-    // Navigate back to previous screen
+    if (navigation && navigation.goBack) {
+      navigation.goBack();
+    }
   };
 
   return (
@@ -86,6 +88,7 @@ export default function AttendanceClassList() {
                 onPress={handleClassPress}
                 onMarkAttendance={handleMarkAttendance}
                 onViewReports={handleViewReports}
+                navigation={navigation}
               />
             ))
           ) : (
