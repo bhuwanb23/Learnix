@@ -24,6 +24,8 @@ export default function TeacherClassPage({ navigation }) {
   const handleActionPress = (id) => {
     if (id === 'attendance') {
       navigation.navigate('Attendance');
+    } else if (id === 'upload') {
+      navigation.navigate('UploadNotes');
     }
   };
 
