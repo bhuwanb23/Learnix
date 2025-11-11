@@ -1,17 +1,31 @@
-const mongoose = require('mongoose');
+const { Sequelize } = require('sequelize');
+const logger = require('./logger');
 
+// Initialize SQLite database
+const sequelize = new Sequelize({
+  dialect: process.env.DB_DIALECT || 'sqlite',
+  storage: process.env.DB_STORAGE || './database.sqlite',
+  logging: (msg) => logger.debug(msg),
+  define: {
+    timestamps: true,
+    underscored: true,
+    freezeTableName: true
+  }
+});
+
+// Test database connection
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.DB_HOST || 'mongodb://localhost:27017/learnix_academic', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    await sequelize.authenticate();
+    console.log('✅ SQLite database connection established successfully');
+    
+    // Sync all models
+    await sequelize.sync({ alter: true });
+    console.log('✅ Database synchronized');
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error('❌ Unable to connect to the database:', error);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+module.exports = { sequelize, connectDB };

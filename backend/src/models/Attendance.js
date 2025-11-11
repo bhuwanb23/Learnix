@@ -1,65 +1,79 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const attendanceSchema = new mongoose.Schema({
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
+const Attendance = sequelize.define('attendance', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class',
-    required: true
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
   },
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject',
-    required: true
+  class_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'classes',
+      key: 'id'
+    }
   },
-  teacherId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  subject_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'subjects',
+      key: 'id'
+    }
   },
-  studentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  teacher_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  student_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   date: {
-    type: Date,
-    required: true
+    type: DataTypes.DATE,
+    allowNull: false
   },
   status: {
-    type: String,
-    enum: ['present', 'absent', 'late', 'excused'],
-    required: true
+    type: DataTypes.ENUM('present', 'absent', 'late', 'excused'),
+    allowNull: false
   },
   method: {
-    type: String,
-    enum: ['manual', 'qr', 'nfc', 'face_recognition'],
-    default: 'manual'
+    type: DataTypes.ENUM('manual', 'qr', 'nfc', 'face_recognition'),
+    defaultValue: 'manual'
   },
-  recordedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  recorded_by: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   notes: {
-    type: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+    type: DataTypes.TEXT
   }
+}, {
+  tableName: 'attendances',
+  timestamps: true,
+  underscored: true
 });
 
-attendanceSchema.index({ classId: 1, date: 1 });
-attendanceSchema.index({ studentId: 1, date: 1 });
-attendanceSchema.index({ subjectId: 1, date: 1 });
-
-module.exports = mongoose.model('Attendance', attendanceSchema);
+module.exports = Attendance;

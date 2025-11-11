@@ -1,56 +1,51 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const subjectSchema = new mongoose.Schema({
+const Subject = sequelize.define('subject', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   name: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   code: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true
   },
   description: {
-    type: String
+    type: DataTypes.TEXT
   },
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
   },
   semester: {
-    type: Number,
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
   credits: {
-    type: Number,
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
-  syllabus: [{
-    topic: String,
-    description: String,
-    duration: Number // in hours
-  }],
-  prerequisites: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject'
-  }],
-  isActive: {
-    type: Boolean,
-    default: true
+  syllabus: {
+    type: DataTypes.JSON
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
+}, {
+  tableName: 'subjects',
+  timestamps: true,
+  underscored: true
 });
 
-subjectSchema.index({ code: 1 });
-subjectSchema.index({ courseId: 1 });
-subjectSchema.index({ semester: 1 });
-
-module.exports = mongoose.model('Subject', subjectSchema);
+module.exports = Subject;

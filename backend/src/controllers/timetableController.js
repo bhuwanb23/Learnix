@@ -6,18 +6,16 @@ const { realTimeService } = require('../../server');
 const getAllTimetables = async (req, res) => {
   try {
     const { courseId, classId, teacherId } = req.query;
-    let filter = {};
+    let where = {};
     
-    if (courseId) filter.courseId = courseId;
-    if (classId) filter.classId = classId;
-    if (teacherId) filter.teacherId = teacherId;
+    if (courseId) where.course_id = courseId;
+    if (classId) where.class_id = classId;
+    if (teacherId) where.teacher_id = teacherId;
     
-    const timetables = await Timetable.find(filter)
-      .populate('courseId')
-      .populate('classId')
-      .populate('subjectId')
-      .populate('teacherId')
-      .sort({ dayOfWeek: 1, startTime: 1 });
+    const timetables = await Timetable.findAll({
+      where,
+      order: [['day_of_week', 'ASC'], ['start_time', 'ASC']]
+    });
     
     res.json(timetables);
   } catch (error) {
@@ -30,11 +28,7 @@ const getAllTimetables = async (req, res) => {
 const getTimetableById = async (req, res) => {
   try {
     const { id } = req.params;
-    const timetable = await Timetable.findById(id)
-      .populate('courseId')
-      .populate('classId')
-      .populate('subjectId')
-      .populate('teacherId');
+    const timetable = await Timetable.findByPk(id);
     
     if (!timetable) {
       return res.status(404).json({ error: 'Timetable not found' });
@@ -50,24 +44,29 @@ const getTimetableById = async (req, res) => {
 // Create new timetable
 const createTimetable = async (req, res) => {
   try {
-    const timetableData = req.body;
-    const timetable = new Timetable(timetableData);
-    await timetable.save();
+    const timetableData = {
+      course_id: req.body.courseId,
+      class_id: req.body.classId,
+      subject_id: req.body.subjectId,
+      teacher_id: req.body.teacherId,
+      room_id: req.body.roomId,
+      day_of_week: req.body.dayOfWeek,
+      start_time: req.body.startTime,
+      end_time: req.body.endTime,
+      start_date: req.body.startDate,
+      end_date: req.body.endDate,
+      is_active: req.body.isActive
+    };
     
-    // Populate references
-    const populatedTimetable = await Timetable.findById(timetable._id)
-      .populate('courseId')
-      .populate('classId')
-      .populate('subjectId')
-      .populate('teacherId');
+    const timetable = await Timetable.create(timetableData);
     
     // Broadcast real-time update
     realTimeService.broadcastTimetableUpdate({
       action: 'created',
-      data: populatedTimetable
+      data: timetable
     });
     
-    res.status(201).json(populatedTimetable);
+    res.status(201).json(timetable);
   } catch (error) {
     logger.error('Error creating timetable:', error);
     res.status(500).json({ error: 'Failed to create timetable' });
@@ -78,32 +77,38 @@ const createTimetable = async (req, res) => {
 const updateTimetable = async (req, res) => {
   try {
     const { id } = req.params;
-    const timetableData = req.body;
+    const timetableData = {
+      course_id: req.body.courseId,
+      class_id: req.body.classId,
+      subject_id: req.body.subjectId,
+      teacher_id: req.body.teacherId,
+      room_id: req.body.roomId,
+      day_of_week: req.body.dayOfWeek,
+      start_time: req.body.startTime,
+      end_time: req.body.endTime,
+      start_date: req.body.startDate,
+      end_date: req.body.endDate,
+      is_active: req.body.isActive
+    };
     
-    const timetable = await Timetable.findByIdAndUpdate(
-      id,
-      timetableData,
-      { new: true, runValidators: true }
-    );
+    const timetable = await Timetable.update(timetableData, {
+      where: { id },
+      returning: true
+    });
     
-    if (!timetable) {
+    if (!timetable[0]) {
       return res.status(404).json({ error: 'Timetable not found' });
     }
     
-    // Populate references
-    const populatedTimetable = await Timetable.findById(timetable._id)
-      .populate('courseId')
-      .populate('classId')
-      .populate('subjectId')
-      .populate('teacherId');
+    const updatedTimetable = await Timetable.findByPk(id);
     
     // Broadcast real-time update
     realTimeService.broadcastTimetableUpdate({
       action: 'updated',
-      data: populatedTimetable
+      data: updatedTimetable
     });
     
-    res.json(populatedTimetable);
+    res.json(updatedTimetable);
   } catch (error) {
     logger.error('Error updating timetable:', error);
     res.status(500).json({ error: 'Failed to update timetable' });
@@ -114,7 +119,9 @@ const updateTimetable = async (req, res) => {
 const deleteTimetable = async (req, res) => {
   try {
     const { id } = req.params;
-    const timetable = await Timetable.findByIdAndDelete(id);
+    const timetable = await Timetable.destroy({
+      where: { id }
+    });
     
     if (!timetable) {
       return res.status(404).json({ error: 'Timetable not found' });
@@ -137,10 +144,10 @@ const deleteTimetable = async (req, res) => {
 const getClassTimetable = async (req, res) => {
   try {
     const { classId } = req.params;
-    const timetables = await Timetable.find({ classId })
-      .populate('subjectId')
-      .populate('teacherId')
-      .sort({ dayOfWeek: 1, startTime: 1 });
+    const timetables = await Timetable.findAll({
+      where: { class_id: classId },
+      order: [['day_of_week', 'ASC'], ['start_time', 'ASC']]
+    });
     
     res.json(timetables);
   } catch (error) {

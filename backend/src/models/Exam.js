@@ -1,79 +1,87 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const examSchema = new mongoose.Schema({
+const Exam = sequelize.define('exam', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   title: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   description: {
-    type: String
+    type: DataTypes.TEXT
   },
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
   },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class'
+  class_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'classes',
+      key: 'id'
+    }
   },
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject'
+  subject_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'subjects',
+      key: 'id'
+    }
   },
-  scheduledBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  scheduled_by: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
-  examDate: {
-    type: Date,
-    required: true
+  exam_date: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
-  startTime: {
-    type: String,
-    required: true
+  start_time: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  endTime: {
-    type: String,
-    required: true
+  end_time: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
   duration: {
-    type: Number // in minutes
+    type: DataTypes.INTEGER // in minutes
   },
-  maxPoints: {
-    type: Number,
-    default: 100
+  max_points: {
+    type: DataTypes.INTEGER,
+    defaultValue: 100
   },
-  examType: {
-    type: String,
-    enum: ['midterm', 'final', 'quiz', 'practical'],
-    required: true
+  exam_type: {
+    type: DataTypes.ENUM('midterm', 'final', 'quiz', 'practical'),
+    allowNull: false
   },
-  roomNumber: {
-    type: String
+  room_number: {
+    type: DataTypes.STRING
   },
-  isPublished: {
-    type: Boolean,
-    default: false
+  is_published: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
-  resultsPublished: {
-    type: Boolean,
-    default: false
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  results_published: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
+}, {
+  tableName: 'exams',
+  timestamps: true,
+  underscored: true
 });
 
-examSchema.index({ courseId: 1 });
-examSchema.index({ classId: 1 });
-examSchema.index({ subjectId: 1 });
-examSchema.index({ examDate: 1 });
-
-module.exports = mongoose.model('Exam', examSchema);
+module.exports = Exam;

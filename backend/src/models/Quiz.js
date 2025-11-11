@@ -1,96 +1,80 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const questionSchema = new mongoose.Schema({
-  questionText: {
-    type: String,
-    required: true
+const Quiz = sequelize.define('quiz', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-  questionType: {
-    type: String,
-    enum: ['mcq', 'true_false', 'short_answer', 'long_answer'],
-    required: true
-  },
-  options: [{
-    text: String,
-    isCorrect: Boolean
-  }],
-  correctAnswer: {
-    type: String
-  },
-  points: {
-    type: Number,
-    default: 1
-  },
-  explanation: {
-    type: String
-  }
-});
-
-const quizSchema = new mongoose.Schema({
   title: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   description: {
-    type: String
+    type: DataTypes.TEXT
   },
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
   },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class'
+  class_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'classes',
+      key: 'id'
+    }
   },
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject'
+  subject_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'subjects',
+      key: 'id'
+    }
   },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  created_by: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
-  assignedTo: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  questions: [questionSchema],
+  assigned_to: {
+    type: DataTypes.JSON
+  },
+  questions: {
+    type: DataTypes.JSON
+  },
   duration: {
-    type: Number // in minutes
+    type: DataTypes.INTEGER // in minutes
   },
-  startDate: {
-    type: Date
+  start_date: {
+    type: DataTypes.DATE
   },
-  endDate: {
-    type: Date
+  end_date: {
+    type: DataTypes.DATE
   },
-  isPublished: {
-    type: Boolean,
-    default: false
+  is_published: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
-  isGraded: {
-    type: Boolean,
-    default: true
+  is_graded: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
-  maxAttempts: {
-    type: Number,
-    default: 1
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  max_attempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   }
+}, {
+  tableName: 'quizzes',
+  timestamps: true,
+  underscored: true
 });
 
-quizSchema.index({ courseId: 1 });
-quizSchema.index({ classId: 1 });
-quizSchema.index({ subjectId: 1 });
-quizSchema.index({ createdBy: 1 });
-
-module.exports = mongoose.model('Quiz', quizSchema);
+module.exports = Quiz;

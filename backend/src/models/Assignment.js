@@ -1,106 +1,79 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const submissionSchema = new mongoose.Schema({
-  studentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+const Assignment = sequelize.define('assignment', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-  filePath: {
-    type: String
-  },
-  fileName: {
-    type: String
-  },
-  fileContent: {
-    type: String
-  },
-  submissionDate: {
-    type: Date,
-    default: Date.now
-  },
-  grade: {
-    type: Number
-  },
-  feedback: {
-    type: String
-  },
-  isGraded: {
-    type: Boolean,
-    default: false
-  },
-  plagiarismScore: {
-    type: Number
-  }
-});
-
-const assignmentSchema = new mongoose.Schema({
   title: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   description: {
-    type: String,
-    required: true
+    type: DataTypes.TEXT,
+    allowNull: false
   },
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
   },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class'
+  class_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'classes',
+      key: 'id'
+    }
   },
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject'
+  subject_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'subjects',
+      key: 'id'
+    }
   },
-  assignedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  assigned_by: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
-  assignedTo: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  dueDate: {
-    type: Date,
-    required: true
+  assigned_to: {
+    type: DataTypes.JSON
   },
-  assignedDate: {
-    type: Date,
-    default: Date.now
+  due_date: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
-  maxPoints: {
-    type: Number,
-    default: 100
+  assigned_date: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   },
-  attachments: [{
-    fileName: String,
-    filePath: String,
-    fileSize: Number
-  }],
-  submissions: [submissionSchema],
-  isPublished: {
-    type: Boolean,
-    default: false
+  max_points: {
+    type: DataTypes.INTEGER,
+    defaultValue: 100
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  attachments: {
+    type: DataTypes.JSON
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  submissions: {
+    type: DataTypes.JSON
+  },
+  is_published: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
+}, {
+  tableName: 'assignments',
+  timestamps: true,
+  underscored: true
 });
 
-assignmentSchema.index({ courseId: 1 });
-assignmentSchema.index({ classId: 1 });
-assignmentSchema.index({ subjectId: 1 });
-assignmentSchema.index({ assignedBy: 1 });
-assignmentSchema.index({ dueDate: 1 });
-
-module.exports = mongoose.model('Assignment', assignmentSchema);
+module.exports = Assignment;

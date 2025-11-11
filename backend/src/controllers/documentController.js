@@ -5,22 +5,17 @@ const logger = require('../config/logger');
 // Get all documents
 const getAllDocuments = async (req, res) => {
   try {
-    const { courseId, classId, subjectId, tags } = req.query;
-    let filter = {};
+    const { courseId, classId, subjectId } = req.query;
+    let where = {};
     
-    if (courseId) filter.courseId = courseId;
-    if (classId) filter.classId = classId;
-    if (subjectId) filter.subjectId = subjectId;
-    if (tags) {
-      filter.tags = { $in: tags.split(',') };
-    }
+    if (courseId) where.course_id = courseId;
+    if (classId) where.class_id = classId;
+    if (subjectId) where.subject_id = subjectId;
     
-    const documents = await Document.find(filter)
-      .populate('courseId')
-      .populate('classId')
-      .populate('subjectId')
-      .populate('uploadedBy')
-      .sort({ createdAt: -1 });
+    const documents = await Document.findAll({
+      where,
+      order: [['created_at', 'DESC']]
+    });
     
     res.json(documents);
   } catch (error) {
@@ -33,11 +28,7 @@ const getAllDocuments = async (req, res) => {
 const getDocumentById = async (req, res) => {
   try {
     const { id } = req.params;
-    const document = await Document.findById(id)
-      .populate('courseId')
-      .populate('classId')
-      .populate('subjectId')
-      .populate('uploadedBy');
+    const document = await Document.findByPk(id);
     
     if (!document) {
       return res.status(404).json({ error: 'Document not found' });
@@ -65,25 +56,25 @@ const uploadDocument = async (req, res) => {
       
       // Create document record
       const documentData = {
-        ...req.body,
-        fileName: req.file.filename,
-        filePath: req.file.path,
-        fileSize: req.file.size,
-        fileType: req.file.mimetype || 'application/octet-stream',
-        uploadedBy: req.user.id
+        title: req.body.title,
+        description: req.body.description,
+        course_id: req.body.courseId,
+        class_id: req.body.classId,
+        subject_id: req.body.subjectId,
+        uploaded_by: req.user.id,
+        file_type: req.file.mimetype || 'application/octet-stream',
+        file_name: req.file.filename,
+        file_path: req.file.path,
+        file_size: req.file.size,
+        version: req.body.version || 1,
+        is_public: req.body.isPublic || false,
+        tags: req.body.tags ? JSON.parse(req.body.tags) : [],
+        metadata: req.body.metadata ? JSON.parse(req.body.metadata) : {}
       };
       
-      const document = new Document(documentData);
-      await document.save();
+      const document = await Document.create(documentData);
       
-      // Populate references
-      const populatedDocument = await Document.findById(document._id)
-        .populate('courseId')
-        .populate('classId')
-        .populate('subjectId')
-        .populate('uploadedBy');
-      
-      res.status(201).json(populatedDocument);
+      res.status(201).json(document);
     });
   } catch (error) {
     logger.error('Error uploading document:', error);
@@ -95,26 +86,34 @@ const uploadDocument = async (req, res) => {
 const updateDocument = async (req, res) => {
   try {
     const { id } = req.params;
-    const documentData = req.body;
+    const documentData = {
+      title: req.body.title,
+      description: req.body.description,
+      course_id: req.body.courseId,
+      class_id: req.body.classId,
+      subject_id: req.body.subjectId,
+      file_type: req.body.fileType,
+      file_name: req.body.fileName,
+      file_path: req.body.filePath,
+      file_size: req.body.fileSize,
+      version: req.body.version,
+      is_public: req.body.isPublic,
+      tags: req.body.tags ? JSON.parse(req.body.tags) : [],
+      metadata: req.body.metadata ? JSON.parse(req.body.metadata) : {}
+    };
     
-    const document = await Document.findByIdAndUpdate(
-      id,
-      documentData,
-      { new: true, runValidators: true }
-    );
+    const document = await Document.update(documentData, {
+      where: { id },
+      returning: true
+    });
     
-    if (!document) {
+    if (!document[0]) {
       return res.status(404).json({ error: 'Document not found' });
     }
     
-    // Populate references
-    const populatedDocument = await Document.findById(document._id)
-      .populate('courseId')
-      .populate('classId')
-      .populate('subjectId')
-      .populate('uploadedBy');
+    const updatedDocument = await Document.findByPk(id);
     
-    res.json(populatedDocument);
+    res.json(updatedDocument);
   } catch (error) {
     logger.error('Error updating document:', error);
     res.status(500).json({ error: 'Failed to update document' });
@@ -125,7 +124,9 @@ const updateDocument = async (req, res) => {
 const deleteDocument = async (req, res) => {
   try {
     const { id } = req.params;
-    const document = await Document.findByIdAndDelete(id);
+    const document = await Document.destroy({
+      where: { id }
+    });
     
     if (!document) {
       return res.status(404).json({ error: 'Document not found' });
@@ -142,7 +143,7 @@ const deleteDocument = async (req, res) => {
 const downloadDocument = async (req, res) => {
   try {
     const { id } = req.params;
-    const document = await Document.findById(id);
+    const document = await Document.findByPk(id);
     
     if (!document) {
       return res.status(404).json({ error: 'Document not found' });
@@ -151,10 +152,10 @@ const downloadDocument = async (req, res) => {
     // In a real implementation, you would stream the file from storage
     // For now, we'll just return the file information
     res.json({
-      fileName: document.fileName,
-      filePath: document.filePath,
-      fileSize: document.fileSize,
-      fileType: document.fileType
+      fileName: document.file_name,
+      filePath: document.file_path,
+      fileSize: document.file_size,
+      fileType: document.file_type
     });
   } catch (error) {
     logger.error('Error downloading document:', error);

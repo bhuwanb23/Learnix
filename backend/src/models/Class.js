@@ -1,55 +1,59 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const classSchema = new mongoose.Schema({
+const Class = sequelize.define('class', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   name: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   code: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true
   },
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
   },
   semester: {
-    type: Number,
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
   section: {
-    type: String
+    type: DataTypes.STRING
   },
-  academicYear: {
-    type: String,
-    required: true
+  academic_year: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  teacherId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+  teacher_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
-  studentCount: {
-    type: Number,
-    default: 0
+  student_count: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
+}, {
+  tableName: 'classes',
+  timestamps: true,
+  underscored: true
 });
 
-classSchema.index({ code: 1 });
-classSchema.index({ courseId: 1 });
-classSchema.index({ academicYear: 1 });
-
-module.exports = mongoose.model('Class', classSchema);
+module.exports = Class;

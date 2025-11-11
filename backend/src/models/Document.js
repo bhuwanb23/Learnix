@@ -1,74 +1,81 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const documentSchema = new mongoose.Schema({
+const Document = sequelize.define('document', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   title: {
-    type: String,
-    required: true
+    type: DataTypes.STRING,
+    allowNull: false
   },
   description: {
-    type: String
+    type: DataTypes.TEXT
   },
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course'
+  course_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'courses',
+      key: 'id'
+    }
   },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class'
+  class_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'classes',
+      key: 'id'
+    }
   },
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject'
+  subject_id: {
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'subjects',
+      key: 'id'
+    }
   },
-  uploadedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  uploaded_by: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
-  fileType: {
-    type: String,
-    required: true
+  file_type: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  fileName: {
-    type: String,
-    required: true
+  file_name: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  filePath: {
-    type: String,
-    required: true
+  file_path: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  fileSize: {
-    type: Number
+  file_size: {
+    type: DataTypes.INTEGER
   },
   version: {
-    type: Number,
-    default: 1
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   },
-  isPublic: {
-    type: Boolean,
-    default: false
+  is_public: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
-  tags: [{
-    type: String
-  }],
+  tags: {
+    type: DataTypes.JSON
+  },
   metadata: {
-    type: Map,
-    of: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+    type: DataTypes.JSON
   }
+}, {
+  tableName: 'documents',
+  timestamps: true,
+  underscored: true
 });
 
-documentSchema.index({ courseId: 1 });
-documentSchema.index({ classId: 1 });
-documentSchema.index({ subjectId: 1 });
-documentSchema.index({ uploadedBy: 1 });
-documentSchema.index({ tags: 1 });
-
-module.exports = mongoose.model('Document', documentSchema);
+module.exports = Document;

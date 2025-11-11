@@ -1,92 +1,91 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
-    required: true
+const User = sequelize.define('user', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-  lastName: {
-    type: String,
-    required: true
+  first_name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  last_name: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
   email: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true,
-    lowercase: true
+    validate: {
+      isEmail: true
+    }
   },
   password: {
-    type: String,
-    required: true,
-    minlength: 6
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [6, 100]
+    }
   },
   role: {
-    type: String,
-    enum: ['student', 'teacher', 'admin'],
-    required: true
+    type: DataTypes.ENUM('student', 'teacher', 'admin'),
+    allowNull: false
   },
-  studentId: {
-    type: String,
-    unique: true,
-    sparse: true
+  student_id: {
+    type: DataTypes.STRING,
+    unique: true
   },
-  employeeId: {
-    type: String,
-    unique: true,
-    sparse: true
+  employee_id: {
+    type: DataTypes.STRING,
+    unique: true
   },
   department: {
-    type: String
+    type: DataTypes.STRING
   },
   course: {
-    type: String
+    type: DataTypes.STRING
   },
   class: {
-    type: String
+    type: DataTypes.STRING
   },
   avatar: {
-    type: String
+    type: DataTypes.STRING
   },
-  isActive: {
-    type: Boolean,
-    default: true
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
-  lastLogin: {
-    type: Date
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  last_login: {
+    type: DataTypes.DATE
   }
+}, {
+  tableName: 'users',
+  timestamps: true,
+  underscored: true
 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
+User.beforeCreate(async (user) => {
+  if (user.password) {
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+    user.password = await bcrypt.hash(user.password, salt);
+  }
+});
+
+User.beforeUpdate(async (user) => {
+  if (user.changed('password')) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
   }
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+User.prototype.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Indexes
-userSchema.index({ email: 1 });
-userSchema.index({ studentId: 1 });
-userSchema.index({ employeeId: 1 });
-userSchema.index({ role: 1 });
-
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;

@@ -1,68 +1,80 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
 
-const timetableSchema = new mongoose.Schema({
-  courseId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
-    required: true
+const Timetable = sequelize.define('timetable', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
   },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class',
-    required: true
+  course_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'courses',
+      key: 'id'
+      }
   },
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject',
-    required: true
+  class_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'classes',
+      key: 'id'
+    }
   },
-  teacherId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+  subject_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'subjects',
+      key: 'id'
+    }
   },
-  roomId: {
-    type: String,
-    required: true
+  teacher_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
-  dayOfWeek: {
-    type: Number,
-    required: true,
-    min: 0,
-    max: 6 // 0 = Sunday, 6 = Saturday
+  room_id: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  startTime: {
-    type: String,
-    required: true
+  day_of_week: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      min: 0,
+      max: 6
+    }
   },
-  endTime: {
-    type: String,
-    required: true
+  start_time: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  startDate: {
-    type: Date,
-    required: true
+  end_time: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
-  endDate: {
-    type: Date,
-    required: true
+  start_date: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
-  isActive: {
-    type: Boolean,
-    default: true
+  end_date: {
+    type: DataTypes.DATE,
+    allowNull: false
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   }
+}, {
+  tableName: 'timetables',
+  timestamps: true,
+  underscored: true
 });
 
-timetableSchema.index({ classId: 1, dayOfWeek: 1 });
-timetableSchema.index({ teacherId: 1, dayOfWeek: 1 });
-timetableSchema.index({ roomId: 1, dayOfWeek: 1, startTime: 1 });
-
-module.exports = mongoose.model('Timetable', timetableSchema);
+module.exports = Timetable;
