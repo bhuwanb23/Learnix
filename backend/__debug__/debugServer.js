@@ -55,6 +55,12 @@ app.get('/health', healthCheck);
 // Authentication routes
 app.use('/api/auth', require('./src/routes/authRoutes'));
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`DEBUG: ${req.method} ${req.url}`);
+  next();
+});
+
 // API Routes
 app.use('/api/timetables', require('./src/routes/timetableRoutes'));
 app.use('/api/timetable-subscriptions', require('./src/routes/timetableSubscriptionRoutes'));
