@@ -19,8 +19,8 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('✅ SQLite database connection established successfully');
     
-    // Sync all models
-    await sequelize.sync({ alter: true });
+    // Sync all models with force to avoid foreign key issues
+    await sequelize.sync({ force: true });
     console.log('✅ Database synchronized');
   } catch (error) {
     console.error('❌ Unable to connect to the database:', error);

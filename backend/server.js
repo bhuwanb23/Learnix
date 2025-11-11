@@ -57,6 +57,7 @@ app.use('/api/auth', require('./src/routes/authRoutes'));
 
 // API Routes
 app.use('/api/timetables', require('./src/routes/timetableRoutes'));
+app.use('/api/timetable-subscriptions', require('./src/routes/timetableSubscriptionRoutes'));
 app.use('/api/attendance', require('./src/routes/attendanceRoutes'));
 app.use('/api/documents', require('./src/routes/documentRoutes'));
 

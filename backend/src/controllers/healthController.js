@@ -1,11 +1,10 @@
-const mongoose = require('mongoose');
+const { sequelize } = require('../config/db');
 const logger = require('../config/logger');
 
 const healthCheck = async (req, res) => {
   try {
     // Check database connection
-    const dbState = mongoose.connection.readyState;
-    const dbStatus = dbState === 1 ? 'connected' : dbState === 0 ? 'disconnected' : dbState === 2 ? 'connecting' : 'disconnecting';
+    await sequelize.authenticate();
     
     // Check uptime
     const uptime = process.uptime();
@@ -18,8 +17,8 @@ const healthCheck = async (req, res) => {
       timestamp: new Date().toISOString(),
       uptime: `${Math.floor(uptime / 60)}m ${Math.floor(uptime % 60)}s`,
       database: {
-        status: dbStatus,
-        name: mongoose.connection.name || 'N/A'
+        status: 'connected',
+        dialect: sequelize.getDialect()
       },
       memory: {
         rss: `${Math.round(memoryUsage.rss / 1024 / 1024)} MB`,
