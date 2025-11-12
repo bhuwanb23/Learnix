@@ -111,11 +111,13 @@ async function seedDatabase() {
     console.log('Created/Found class:', classRecord.toJSON());
     
     console.log('✅ Database seeding completed successfully!');
+    console.log('Course ID:', course.id);
     console.log('Subject ID:', subject.id);
     console.log('Class ID:', classRecord.id);
     console.log('Teacher ID:', teacher.id);
     
     return {
+      courseId: course.id,
       subjectId: subject.id,
       classId: classRecord.id,
       teacherId: teacher.id

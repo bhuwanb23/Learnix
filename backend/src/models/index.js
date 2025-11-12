@@ -10,6 +10,7 @@ const Question = require('./Question');
 const QuizAttempt = require('./QuizAttempt');
 const AIContent = require('./AIContent');
 const Assignment = require('./Assignment');
+const AssignmentSubmission = require('./AssignmentSubmission');
 const Attendance = require('./Attendance');
 const Document = require('./Document');
 const Exam = require('./Exam');
@@ -29,6 +30,7 @@ const models = {
   QuizAttempt,
   AIContent,
   Assignment,
+  AssignmentSubmission,
   Attendance,
   Document,
   Exam,
@@ -38,14 +40,15 @@ const models = {
   StudentPerformance
 };
 
-// Call associate function on all models if it exists
+// Define associations
 Object.keys(models).forEach(modelName => {
   if (models[modelName].associate) {
     models[modelName].associate(models);
   }
 });
 
-// Add sequelize instance to models
-models.sequelize = sequelize;
-
-module.exports = models;
+// Export sequelize instance and models
+module.exports = {
+  sequelize,
+  ...models
+};

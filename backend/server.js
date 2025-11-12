@@ -5,7 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const { connectDB } = require('./src/config/db');
 const logger = require('./src/config/logger');
-const realTimeService = require('./src/services/realTimeService');
+const RealTimeService = require('./src/services/realTimeService');
 
 // Load environment variables
 dotenv.config();
@@ -45,55 +45,51 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// API Routes
 app.use('/api/auth', require('./src/routes/authRoutes'));
-app.use('/api/attendance', require('./src/routes/attendanceRoutes'));
-app.use('/api/timetables', require('./src/routes/timetableRoutes'));
-app.use('/api/notifications', require('./src/routes/notificationRoutes'));
-app.use('/api/documents', require('./src/routes/documentRoutes'));
 app.use('/api/syllabus', require('./src/routes/syllabusRoutes'));
 app.use('/api/ai', require('./src/routes/aiRoutes'));
 app.use('/api/quizzes', require('./src/routes/quizRoutes'));
+app.use('/api/documents', require('./src/routes/documentRoutes'));
+app.use('/api/attendance', require('./src/routes/attendanceRoutes'));
+app.use('/api/timetable', require('./src/routes/timetableRoutes'));
 app.use('/api/performance', require('./src/routes/performanceRoutes'));
+app.use('/api/assignments', require('./src/routes/assignmentRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error', {
-    error: err.message,
-    stack: err.stack,
-    url: req.url,
-    method: req.method
-  });
-  
-  // Don't send stack trace to client in production
-  const errorMessage = process.env.NODE_ENV === 'production' 
-    ? 'Something went wrong!' 
-    : err.message;
-    
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: errorMessage 
-  });
+  logger.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 // 404 handler
 app.use((req, res) => {
-  logger.warn('Route not found', {
-    method: req.method,
-    url: req.url
-  });
-  
-  res.status(404).json({ 
-    error: 'Route not found' 
-  });
+  res.status(404).json({ error: 'Route not found' });
 });
 
-// Only start the server if this file is run directly
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  server.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-  });
-}
+const PORT = process.env.PORT || 3000;
 
-module.exports = { app, io, realTimeService, server };
+// Start server function
+const startServer = async () => {
+  try {
+    server.listen(PORT, () => {
+      logger.info(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+// Initialize real-time service
+const realTimeService = new RealTimeService(io);
+
+// Start the server
+startServer();
+
+module.exports = { app, server, realTimeService };
