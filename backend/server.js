@@ -1,24 +1,22 @@
 const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const dotenv = require('dotenv');
-const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const { connectDB } = require('./src/config/db');
+const logger = require('./src/config/logger');
+const realTimeService = require('./src/services/realTimeService');
 
 // Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config();
 
-// Debug environment variables
-console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
-console.log('PORT:', process.env.PORT || 3000);
-
-// Create Express app
+// Initialize Express app
 const app = express();
+
+// Create HTTP server
 const server = http.createServer(app);
 
-// Create Socket.io instance
+// Initialize Socket.IO
 const io = socketIo(server, {
   cors: {
     origin: "*",
@@ -26,47 +24,31 @@ const io = socketIo(server, {
   }
 });
 
-// Initialize real-time service
-const RealTimeService = require('./src/services/realTimeService');
-const realTimeService = new RealTimeService(io);
+// Make io available to routes
+app.set('io', io);
 
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(morgan('combined'));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
-
-// Custom logging middleware
-const requestLogger = require('./src/middleware/logging');
-app.use(requestLogger);
-
-// Database connection
-const { connectDB } = require('./src/config/db');
+// Connect to database
 connectDB();
 
-// Routes
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Learnix Academic & Classroom Management API', 
-    version: '1.0.0' 
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Logging middleware
+app.use((req, res, next) => {
+  logger.info('Incoming request', {
+    method: req.method,
+    url: req.url,
+    ip: req.ip
   });
+  next();
 });
 
-// Health check endpoint
-const { healthCheck } = require('./src/controllers/healthController');
-app.get('/health', healthCheck);
-
-// Authentication routes
+// Routes
 app.use('/api/auth', require('./src/routes/authRoutes'));
-
-// API Routes
-app.use('/api/timetables', require('./src/routes/timetableRoutes'));
-app.use('/api/timetable-subscriptions', require('./src/routes/timetableSubscriptionRoutes'));
 app.use('/api/attendance', require('./src/routes/attendanceRoutes'));
-app.use('/api/attendance-automation', require('./src/routes/attendanceAutomationRoutes'));
-app.use('/api/attendance-analytics', require('./src/routes/attendanceAnalyticsRoutes'));
-app.use('/api/attendance-fraud', require('./src/routes/attendanceFraudRoutes'));
+app.use('/api/timetables', require('./src/routes/timetableRoutes'));
 app.use('/api/notifications', require('./src/routes/notificationRoutes'));
 app.use('/api/documents', require('./src/routes/documentRoutes'));
 app.use('/api/syllabus', require('./src/routes/syllabusRoutes'));
@@ -74,23 +56,42 @@ app.use('/api/ai', require('./src/routes/aiRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method
+  });
+  
+  // Don't send stack trace to client in production
+  const errorMessage = process.env.NODE_ENV === 'production' 
+    ? 'Something went wrong!' 
+    : err.message;
+    
   res.status(500).json({ 
     error: 'Something went wrong!',
-    message: err.message 
+    message: errorMessage 
   });
 });
 
 // 404 handler
 app.use((req, res) => {
+  logger.warn('Route not found', {
+    method: req.method,
+    url: req.url
+  });
+  
   res.status(404).json({ 
     error: 'Route not found' 
   });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Only start the server if this file is run directly
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  server.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+  });
+}
 
-module.exports = { app, io, realTimeService };
+module.exports = { app, io, realTimeService, server };

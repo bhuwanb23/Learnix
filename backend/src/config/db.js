@@ -20,13 +20,13 @@ const sequelize = new Sequelize({
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ SQLite database connection established successfully');
+    logger.info('✅ SQLite database connection established successfully');
     
     // Sync all models without force to preserve existing data
     await sequelize.sync({ force: false });
-    console.log('✅ Database synchronized');
+    logger.info('✅ Database synchronized');
   } catch (error) {
-    console.error('❌ Unable to connect to the database:', error);
+    logger.error('❌ Unable to connect to the database:', error);
     process.exit(1);
   }
 };

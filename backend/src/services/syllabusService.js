@@ -24,8 +24,6 @@ class SyllabusService {
   // Create or update syllabus progress
   async updateSyllabusProgress(subjectId, classId, teacherId, progressData) {
     try {
-      console.log('DEBUG: updateSyllabusProgress called with:', { subjectId, classId, teacherId });
-      
       // First, check if a progress record already exists
       let progress = await SyllabusProgress.findOne({
         where: {
@@ -34,18 +32,13 @@ class SyllabusService {
         }
       });
       
-      console.log('DEBUG: Existing progress record:', progress);
-      
       // Get the subject to access its syllabus structure
       const subject = await Subject.findByPk(subjectId);
-      console.log('DEBUG: Subject lookup result:', subject);
       
       // Prepare progress data
       const progressDetails = progressData.progress_details || {};
       const overallProgress = this.calculateOverallProgress(progressDetails);
       const status = this.determineStatus(overallProgress, progressData.expected_end_date);
-      
-      console.log('DEBUG: Calculated progress:', { overallProgress, status });
       
       const syllabusData = {
         subject_id: subjectId,
@@ -62,22 +55,16 @@ class SyllabusService {
         is_active: progressData.is_active !== undefined ? progressData.is_active : true
       };
       
-      console.log('DEBUG: Syllabus data to save:', syllabusData);
-      
       if (progress) {
         // Update existing record
-        console.log('DEBUG: Updating existing progress record');
         await progress.update(syllabusData);
       } else {
         // Create new record
-        console.log('DEBUG: Creating new progress record');
         progress = await SyllabusProgress.create(syllabusData);
       }
       
-      console.log('DEBUG: Progress record saved successfully');
       return progress;
     } catch (error) {
-      console.log('DEBUG: Error in updateSyllabusProgress:', error);
       logger.error('Error updating syllabus progress:', error);
       throw error;
     }
