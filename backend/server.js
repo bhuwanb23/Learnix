@@ -3,11 +3,16 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
+// Debug environment variables
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'Set' : 'Not set');
+console.log('PORT:', process.env.PORT || 3000);
 
 // Create Express app
 const app = express();
@@ -65,6 +70,7 @@ app.use('/api/attendance-fraud', require('./src/routes/attendanceFraudRoutes'));
 app.use('/api/notifications', require('./src/routes/notificationRoutes'));
 app.use('/api/documents', require('./src/routes/documentRoutes'));
 app.use('/api/syllabus', require('./src/routes/syllabusRoutes'));
+app.use('/api/ai', require('./src/routes/aiRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

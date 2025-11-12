@@ -5,6 +5,7 @@ require('../models/Subject');
 require('../models/Class');
 require('../models/User');
 require('../models/SyllabusProgress');
+const bcrypt = require('bcryptjs');
 
 async function seedDatabase() {
   try {
@@ -66,7 +67,7 @@ async function seedDatabase() {
     console.log('Created/Found subject:', subject.toJSON());
     
     // Create a sample teacher user
-    const [teacher] = await sequelize.models.user.findOrCreate({
+    let [teacher] = await sequelize.models.user.findOrCreate({
       where: { email: 'john.doe@learnix.edu' },
       defaults: {
         first_name: 'John',
@@ -79,6 +80,15 @@ async function seedDatabase() {
         is_active: true
       }
     });
+    
+    // Ensure the password is properly hashed
+    if (teacher && !await bcrypt.compare('password123', teacher.password)) {
+      // Password is not properly hashed, update it
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('password123', salt);
+      await teacher.update({ password: hashedPassword });
+      teacher = await sequelize.models.user.findByPk(teacher.id);
+    }
     
     console.log('Created/Found teacher:', teacher.toJSON());
     
