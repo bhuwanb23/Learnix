@@ -14,6 +14,7 @@ const AssignmentSubmission = require('./AssignmentSubmission');
 const Attendance = require('./Attendance');
 const Document = require('./Document');
 const Exam = require('./Exam');
+const ExamResult = require('./ExamResult');
 const SyllabusProgress = require('./SyllabusProgress');
 const Timetable = require('./Timetable');
 const TimetableHistory = require('./TimetableHistory');
@@ -34,6 +35,7 @@ const models = {
   Attendance,
   Document,
   Exam,
+  ExamResult,
   SyllabusProgress,
   Timetable,
   TimetableHistory,

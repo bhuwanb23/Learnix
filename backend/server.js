@@ -60,6 +60,7 @@ app.use('/api/attendance', require('./src/routes/attendanceRoutes'));
 app.use('/api/timetable', require('./src/routes/timetableRoutes'));
 app.use('/api/performance', require('./src/routes/performanceRoutes'));
 app.use('/api/assignments', require('./src/routes/assignmentRoutes'));
+app.use('/api/exams', require('./src/routes/examRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
