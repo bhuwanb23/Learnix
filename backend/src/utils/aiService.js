@@ -369,6 +369,63 @@ class AIService {
     
     return feedback;
   }
+
+  // New method for generating MCQs
+  async generateMCQs(topic, count = 5, difficulty = 'intermediate') {
+    try {
+      const processedTopic = this.preprocessText(topic);
+      
+      if (!this.apiKey || !this.endpoint) {
+        // Return mock data if AI service is not configured
+        const mcqs = [];
+        for (let i = 1; i <= count; i++) {
+          mcqs.push({
+            question: `What is the correct answer for question ${i} about ${processedTopic}?`,
+            options: [
+              `Option A for ${processedTopic} question ${i}`,
+              `Option B for ${processedTopic} question ${i}`,
+              `Option C for ${processedTopic} question ${i}`,
+              `Option D for ${processedTopic} question ${i}`
+            ],
+            correctAnswer: `Correct answer for ${processedTopic} question ${i}`,
+            explanation: `This is an explanation for ${processedTopic} question ${i}`,
+            difficulty: difficulty
+          });
+        }
+        return { mcqs };
+      }
+
+      // In a real implementation, you would call the AI service API here
+      // const response = await axios.post(`${this.endpoint}/mcqs`, {
+      //   topic: processedTopic,
+      //   count: count,
+      //   difficulty: difficulty,
+      //   apiKey: this.apiKey
+      // });
+      // 
+      // return response.data;
+      
+      // For now, return mock data
+      const mcqs = [];
+      for (let i = 1; i <= count; i++) {
+        mcqs.push({
+          question: `AI-generated MCQ ${i} about ${processedTopic}?`,
+          options: [
+            `Option A for ${processedTopic} MCQ ${i}`,
+            `Option B for ${processedTopic} MCQ ${i}`,
+            `Option C for ${processedTopic} MCQ ${i}`,
+            `Option D for ${processedTopic} MCQ ${i}`
+          ],
+          correctAnswer: `Correct answer for ${processedTopic} MCQ ${i}`,
+          explanation: `This is an AI-generated explanation for ${processedTopic} MCQ ${i}`,
+          difficulty: difficulty
+        });
+      }
+      return { mcqs };
+    } catch (error) {
+      throw new Error(`MCQ generation error: ${error.message}`);
+    }
+  }
 }
 
 module.exports = new AIService();

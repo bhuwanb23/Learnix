@@ -16,19 +16,22 @@ const sequelize = new Sequelize({
   }
 });
 
-// Test database connection
+// Function to connect to database
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    logger.info('✅ SQLite database connection established successfully');
+    logger.info('Database connection established successfully');
     
-    // Sync all models without force to preserve existing data
-    await sequelize.sync({ force: false });
-    logger.info('✅ Database synchronized');
+    // Sync all models
+    await sequelize.sync({ alter: true });
+    logger.info('Database synchronized successfully');
   } catch (error) {
-    logger.error('❌ Unable to connect to the database:', error);
+    logger.error('Unable to connect to the database:', error);
     process.exit(1);
   }
 };
 
-module.exports = { sequelize, connectDB };
+module.exports = {
+  sequelize,
+  connectDB
+};

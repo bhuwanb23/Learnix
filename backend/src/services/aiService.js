@@ -1,6 +1,5 @@
 const AIServiceUtil = require('../utils/aiService');
-const AIContent = require('../models/AIContent');
-const Subject = require('../models/Subject');
+const { AIContent, Subject } = require('../models');
 const logger = require('../config/logger');
 
 class AIService {
@@ -198,11 +197,13 @@ class AIService {
       
       if (subject.syllabus && subject.syllabus.chapters) {
         for (const chapter of subject.syllabus.chapters) {
-          if (chapter.id === chapterId && chapter.topics) {
-            const topic = chapter.topics.find(t => t.id === topicId);
-            if (topic) {
-              topicTitle = topic.title;
-              break;
+          if (chapter.id === chapterId) {
+            if (chapter.topics) {
+              const topic = chapter.topics.find(t => t.id === topicId);
+              if (topic) {
+                topicTitle = topic.title;
+                break;
+              }
             }
           }
         }
@@ -221,9 +222,9 @@ class AIService {
         chapter_id: chapterId,
         topic_id: topicId,
         content_type: 'example',
-        title: `${topicTitle} - Examples`,
+        title: topicTitle,
         content: aiResponse.examples.join('\n\n'),
-        keywords: [topicTitle, 'examples'],
+        keywords: this.extractKeywords(aiResponse.examples.join(' ')),
         generation_metadata: {
           exampleCount: count
         },
@@ -239,10 +240,10 @@ class AIService {
     }
   }
 
-  // Generate or retrieve cached practice questions
-  async getPracticeQuestions(subjectId, chapterId, topicId, count = 5) {
+  // Generate or retrieve cached MCQs
+  async getTopicMCQs(subjectId, chapterId, topicId, count = 5, difficulty = 'intermediate') {
     try {
-      // Check if we have cached content for questions
+      // Check if we have cached content
       const cachedContent = await AIContent.findOne({
         where: {
           subject_id: subjectId,
@@ -257,7 +258,7 @@ class AIService {
       });
 
       if (cachedContent) {
-        logger.info('Returning cached practice questions', { subjectId, chapterId, topicId });
+        logger.info('Returning cached topic MCQs', { subjectId, chapterId, topicId });
         return cachedContent;
       }
 
@@ -272,11 +273,13 @@ class AIService {
       
       if (subject.syllabus && subject.syllabus.chapters) {
         for (const chapter of subject.syllabus.chapters) {
-          if (chapter.id === chapterId && chapter.topics) {
-            const topic = chapter.topics.find(t => t.id === topicId);
-            if (topic) {
-              topicTitle = topic.title;
-              break;
+          if (chapter.id === chapterId) {
+            if (chapter.topics) {
+              const topic = chapter.topics.find(t => t.id === topicId);
+              if (topic) {
+                topicTitle = topic.title;
+                break;
+              }
             }
           }
         }
@@ -286,9 +289,17 @@ class AIService {
         throw new Error('Topic not found in subject syllabus');
       }
 
-      // Generate practice questions using AI service
-      const aiResponse = await AIServiceUtil.generatePracticeQuestions(topicTitle, count);
+      // Generate MCQs using AI service
+      const aiResponse = await AIServiceUtil.generateMCQs(topicTitle, count, difficulty);
       
+      // Format MCQs for storage
+      const formattedContent = aiResponse.mcqs.map((mcq, index) => {
+        return `Question ${index + 1}: ${mcq.question}\n` +
+               `Options: ${mcq.options.join(', ')}\n` +
+               `Correct Answer: ${mcq.correctAnswer}\n` +
+               `Explanation: ${mcq.explanation}`;
+      }).join('\n\n');
+
       // Save to cache
       const aiContent = await AIContent.create({
         subject_id: subjectId,
@@ -296,19 +307,21 @@ class AIService {
         topic_id: topicId,
         content_type: 'exercise',
         title: `${topicTitle} - Practice Questions`,
-        content: JSON.stringify(aiResponse.questions),
-        keywords: [topicTitle, 'questions', 'practice'],
+        content: formattedContent,
+        difficulty_level: difficulty,
+        keywords: this.extractKeywords(formattedContent),
         generation_metadata: {
-          questionCount: count
+          questionCount: count,
+          questions: aiResponse.mcqs
         },
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         is_cached: true
       });
 
-      logger.info('Generated and cached new practice questions', { subjectId, chapterId, topicId });
+      logger.info('Generated and cached new topic MCQs', { subjectId, chapterId, topicId });
       return aiContent;
     } catch (error) {
-      logger.error('Error getting practice questions:', error);
+      logger.error('Error getting topic MCQs:', error);
       throw error;
     }
   }
@@ -373,6 +386,27 @@ class AIService {
       logger.error('Error cleaning up expired content:', error);
       throw error;
     }
+  }
+
+  // Extract keywords from text
+  extractKeywords(text, count = 5) {
+    // Simple keyword extraction (in a real implementation, this would use NLP libraries)
+    const words = text.toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 3); // Only consider words longer than 3 characters
+    
+    // Count word frequencies
+    const wordFreq = {};
+    words.forEach(word => {
+      wordFreq[word] = (wordFreq[word] || 0) + 1;
+    });
+    
+    // Sort by frequency and return top keywords
+    return Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, count)
+      .map(([word]) => word);
   }
 }
 
