@@ -64,6 +64,7 @@ app.use('/api/attendance-analytics', require('./src/routes/attendanceAnalyticsRo
 app.use('/api/attendance-fraud', require('./src/routes/attendanceFraudRoutes'));
 app.use('/api/notifications', require('./src/routes/notificationRoutes'));
 app.use('/api/documents', require('./src/routes/documentRoutes'));
+app.use('/api/syllabus', require('./src/routes/syllabusRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
