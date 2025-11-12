@@ -51,6 +51,15 @@ const Question = sequelize.define('question', {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
+  // Add topic information for performance analysis
+  topic_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  chapter_id: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

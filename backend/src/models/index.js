@@ -16,6 +16,7 @@ const Exam = require('./Exam');
 const SyllabusProgress = require('./SyllabusProgress');
 const Timetable = require('./Timetable');
 const TimetableHistory = require('./TimetableHistory');
+const StudentPerformance = require('./StudentPerformance');
 
 // Create models object
 const models = {
@@ -33,7 +34,8 @@ const models = {
   Exam,
   SyllabusProgress,
   Timetable,
-  TimetableHistory
+  TimetableHistory,
+  StudentPerformance
 };
 
 // Call associate function on all models if it exists
