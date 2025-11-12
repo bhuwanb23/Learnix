@@ -21,16 +21,23 @@ const sequelize = new Sequelize({
   }
 });
 
-// Function to connect to database
+// Function to connect to database with graceful handling
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
     logger.info('Database connection established successfully');
     
-    // Sync all models - use alter only in non-test environments
+    // Try to sync with alter first (for development)
     if (process.env.NODE_ENV !== 'test') {
-      await sequelize.sync({ alter: true });
-      logger.info('Database synchronized successfully');
+      try {
+        await sequelize.sync({ alter: true });
+        logger.info('Database synchronized successfully with schema updates');
+      } catch (syncError) {
+        logger.warn('Failed to sync with alter, falling back to regular sync:', syncError.message);
+        // If alter fails, try regular sync
+        await sequelize.sync({ force: false });
+        logger.info('Database synchronized without schema changes');
+      }
     } else {
       // In test environment, just sync without altering
       await sequelize.sync({ force: false });

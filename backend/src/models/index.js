@@ -19,6 +19,7 @@ const SyllabusProgress = require('./SyllabusProgress');
 const Timetable = require('./Timetable');
 const TimetableHistory = require('./TimetableHistory');
 const StudentPerformance = require('./StudentPerformance');
+const Draft = require('./Draft');
 
 // Create models object
 const models = {
@@ -39,7 +40,8 @@ const models = {
   SyllabusProgress,
   Timetable,
   TimetableHistory,
-  StudentPerformance
+  StudentPerformance,
+  Draft
 };
 
 // Define associations

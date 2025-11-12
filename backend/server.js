@@ -3,7 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { connectDB } = require('./src/config/db');
+const { connectDB, sequelize } = require('./src/config/db');
 const logger = require('./src/config/logger');
 const RealTimeService = require('./src/services/realTimeService');
 
@@ -26,9 +26,6 @@ const io = socketIo(server, {
 
 // Make io available to routes
 app.set('io', io);
-
-// Connect to database
-connectDB();
 
 // Middleware
 app.use(cors());
@@ -61,6 +58,7 @@ app.use('/api/timetable', require('./src/routes/timetableRoutes'));
 app.use('/api/performance', require('./src/routes/performanceRoutes'));
 app.use('/api/assignments', require('./src/routes/assignmentRoutes'));
 app.use('/api/exams', require('./src/routes/examRoutes'));
+app.use('/api/drafts', require('./src/routes/draftRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -75,12 +73,18 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Start server function
+// Start server function with proper database handling
 const startServer = async () => {
   try {
-    server.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-    });
+    // Connect to database
+    await connectDB();
+    
+    // Only start listening when this file is run directly, not when imported
+    if (require.main === module) {
+      server.listen(PORT, () => {
+        logger.info(`Server running on port ${PORT}`);
+      });
+    }
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);
@@ -90,7 +94,9 @@ const startServer = async () => {
 // Initialize real-time service
 const realTimeService = new RealTimeService(io);
 
-// Start the server
-startServer();
+// Start the server only when this file is run directly
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = { app, server, realTimeService };

@@ -326,6 +326,228 @@ class AIService {
     }
   }
 
+  // New method for analyzing draft content
+  async analyzeDraft(draftContent, draftType = 'essay') {
+    try {
+      const processedContent = AIServiceUtil.preprocessText(draftContent);
+      const stats = AIServiceUtil.getTextStatistics(processedContent);
+      const keywords = AIServiceUtil.extractKeywords(processedContent);
+      
+      // Get plagiarism check
+      const plagiarismResult = await AIServiceUtil.checkPlagiarism(processedContent);
+      
+      // Get grammar and clarity scores
+      const grammarScore = this.calculateGrammarScore(processedContent);
+      const clarityScore = this.calculateClarityScore(processedContent);
+      const coherenceScore = this.calculateCoherenceScore(processedContent);
+      const originalityScore = 100 - plagiarismResult.score;
+      
+      // Overall analysis score
+      const analysisScore = (
+        grammarScore * 0.25 + 
+        clarityScore * 0.25 + 
+        coherenceScore * 0.25 + 
+        originalityScore * 0.25
+      );
+      
+      return {
+        analysisScore: parseFloat(analysisScore.toFixed(2)),
+        grammarScore: parseFloat(grammarScore.toFixed(2)),
+        clarityScore: parseFloat(clarityScore.toFixed(2)),
+        coherenceScore: parseFloat(coherenceScore.toFixed(2)),
+        originalityScore: parseFloat(originalityScore.toFixed(2)),
+        plagiarismScore: parseFloat(plagiarismResult.score.toFixed(2)),
+        statistics: stats,
+        keywords: keywords,
+        plagiarismSources: plagiarismResult.sources
+      };
+    } catch (error) {
+      logger.error('Error analyzing draft:', error);
+      throw error;
+    }
+  }
+
+  // New method for generating draft feedback
+  async generateDraftFeedback(draftContent, draftType = 'essay') {
+    try {
+      const processedContent = AIServiceUtil.preprocessText(draftContent);
+      
+      // Get feedback from AI service utility
+      const feedbackResult = await AIServiceUtil.generateFeedback(processedContent);
+      
+      return {
+        feedback: feedbackResult.feedback,
+        suggestions: feedbackResult.suggestions,
+        statistics: feedbackResult.statistics
+      };
+    } catch (error) {
+      logger.error('Error generating draft feedback:', error);
+      throw error;
+    }
+  }
+
+  // New method for generating improvement suggestions
+  async generateImprovementSuggestions(draftContent, draftType = 'essay', focusAreas = []) {
+    try {
+      const processedContent = AIServiceUtil.preprocessText(draftContent);
+      
+      // Generate improvement suggestions
+      const suggestions = [];
+      
+      // Grammar suggestions
+      if (focusAreas.includes('grammar') || focusAreas.length === 0) {
+        suggestions.push({
+          area: 'grammar',
+          title: 'Grammar Improvements',
+          suggestions: [
+            'Review sentence structures for grammatical correctness',
+            'Check subject-verb agreement throughout the document',
+            'Ensure proper punctuation usage'
+          ]
+        });
+      }
+      
+      // Clarity suggestions
+      if (focusAreas.includes('clarity') || focusAreas.length === 0) {
+        suggestions.push({
+          area: 'clarity',
+          title: 'Clarity Enhancements',
+          suggestions: [
+            'Break down complex sentences into simpler ones',
+            'Define technical terms for better understanding',
+            'Use active voice instead of passive voice where possible'
+          ]
+        });
+      }
+      
+      // Structure suggestions
+      if (focusAreas.includes('structure') || focusAreas.length === 0) {
+        suggestions.push({
+          area: 'structure',
+          title: 'Structure Improvements',
+          suggestions: [
+            'Ensure a clear introduction, body, and conclusion',
+            'Use topic sentences at the beginning of paragraphs',
+            'Maintain logical flow between ideas'
+          ]
+        });
+      }
+      
+      // Vocabulary suggestions
+      if (focusAreas.includes('vocabulary') || focusAreas.length === 0) {
+        suggestions.push({
+          area: 'vocabulary',
+          title: 'Vocabulary Enhancement',
+          suggestions: [
+            'Replace repetitive words with synonyms',
+            'Use more precise vocabulary where appropriate',
+            'Avoid informal language in academic writing'
+          ]
+        });
+      }
+      
+      return suggestions;
+    } catch (error) {
+      logger.error('Error generating improvement suggestions:', error);
+      throw error;
+    }
+  }
+
+  // Helper method to calculate grammar score
+  calculateGrammarScore(content) {
+    // In a real implementation, this would use a grammar checking library
+    // For now, we'll simulate a grammar score based on content characteristics
+    const stats = AIServiceUtil.getTextStatistics(content);
+    
+    // Simple heuristic for grammar score
+    let score = 100;
+    
+    // Deduct points for very short or very long sentences
+    if (stats.avgWordsPerSentence < 5) {
+      score -= 10;
+    } else if (stats.avgWordsPerSentence > 25) {
+      score -= 15;
+    }
+    
+    // Deduct points for lack of sentence variety
+    if (stats.sentenceCount < 3) {
+      score -= 20;
+    }
+    
+    return Math.max(0, Math.min(100, score));
+  }
+
+  // Helper method to calculate clarity score
+  calculateClarityScore(content) {
+    // In a real implementation, this would use NLP techniques
+    // For now, we'll simulate a clarity score based on content characteristics
+    const stats = AIServiceUtil.getTextStatistics(content);
+    const keywords = AIServiceUtil.extractKeywords(content);
+    
+    // Simple heuristic for clarity score
+    let score = 100;
+    
+    // Deduct points for lack of paragraphs
+    if (stats.paragraphCount < 2) {
+      score -= 20;
+    }
+    
+    // Deduct points for very long paragraphs
+    if (stats.paragraphCount > 0 && stats.wordCount / stats.paragraphCount > 200) {
+      score -= 10;
+    }
+    
+    // Deduct points for lack of keywords (indicates vague content)
+    if (keywords.length < 3) {
+      score -= 15;
+    }
+    
+    return Math.max(0, Math.min(100, score));
+  }
+
+  // Helper method to calculate coherence score
+  calculateCoherenceScore(content) {
+    // In a real implementation, this would analyze logical connections
+    // For now, we'll simulate a coherence score based on structure
+    const stats = AIServiceUtil.getTextStatistics(content);
+    
+    // Simple heuristic for coherence score
+    let score = 100;
+    
+    // Deduct points for lack of structure
+    if (stats.paragraphCount < 2) {
+      score -= 30;
+    }
+    
+    // Deduct points for insufficient content
+    if (stats.wordCount < 50) {
+      score -= 25;
+    }
+    
+    return Math.max(0, Math.min(100, score));
+  }
+
+  // Extract keywords from text
+  extractKeywords(text, count = 5) {
+    // Simple keyword extraction (in a real implementation, this would use NLP libraries)
+    const words = text.toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 3); // Only consider words longer than 3 characters
+    
+    // Count word frequencies
+    const wordFreq = {};
+    words.forEach(word => {
+      wordFreq[word] = (wordFreq[word] || 0) + 1;
+    });
+    
+    // Sort by frequency and return top keywords
+    return Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, count)
+      .map(([word]) => word);
+  }
+
   // Get all AI content for a subject
   async getSubjectAIContent(subjectId) {
     try {
@@ -340,6 +562,25 @@ class AIService {
       return aiContent;
     } catch (error) {
       logger.error('Error getting subject AI content:', error);
+      throw error;
+    }
+  }
+
+  // Delete expired cached content
+  async cleanupExpiredContent() {
+    try {
+      const deletedCount = await AIContent.destroy({
+        where: {
+          expires_at: {
+            [require('sequelize').Op.lt]: new Date()
+          }
+        }
+      });
+
+      logger.info(`Cleaned up ${deletedCount} expired AI content records`);
+      return deletedCount;
+    } catch (error) {
+      logger.error('Error cleaning up expired content:', error);
       throw error;
     }
   }
@@ -367,46 +608,6 @@ class AIService {
       logger.error('Error assessing content quality:', error);
       throw error;
     }
-  }
-
-  // Delete expired cached content
-  async cleanupExpiredContent() {
-    try {
-      const deletedCount = await AIContent.destroy({
-        where: {
-          expires_at: {
-            [require('sequelize').Op.lt]: new Date()
-          }
-        }
-      });
-
-      logger.info(`Cleaned up ${deletedCount} expired AI content records`);
-      return deletedCount;
-    } catch (error) {
-      logger.error('Error cleaning up expired content:', error);
-      throw error;
-    }
-  }
-
-  // Extract keywords from text
-  extractKeywords(text, count = 5) {
-    // Simple keyword extraction (in a real implementation, this would use NLP libraries)
-    const words = text.toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .split(/\s+/)
-      .filter(word => word.length > 3); // Only consider words longer than 3 characters
-    
-    // Count word frequencies
-    const wordFreq = {};
-    words.forEach(word => {
-      wordFreq[word] = (wordFreq[word] || 0) + 1;
-    });
-    
-    // Sort by frequency and return top keywords
-    return Object.entries(wordFreq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, count)
-      .map(([word]) => word);
   }
 }
 
