@@ -6,13 +6,14 @@ import {
   RefreshControl,
 } from 'react-native';
 
-// Import components
-import QuickActions from './components/QuickActions';
+// Import new components
+import HeroHeader from './components/HeroHeader';
+import QuickActionCards from './components/QuickActionCards';
+import PerformanceHeatmap from './components/PerformanceHeatmap';
 import AttendanceWidget from './components/AttendanceWidget';
-import ScheduleWidget from './components/ScheduleWidget';
-import AIStudyBuddyWidget from './components/AIStudyBuddyWidget';
-import PerformanceWidget from './components/PerformanceWidget';
-import NotificationsWidget from './components/NotificationsWidget';
+import ScheduleSection from './components/ScheduleSection';
+import NotificationsPanel from './components/NotificationsPanel';
+import AIStudyBuddyChat from './components/AIStudyBuddyChat';
 
 // Import data
 import { DASHBOARD_DATA } from './constants/dashboardData';
@@ -54,11 +55,6 @@ export default function Dashboard({ navigation }) {
     // Handle AI message sending
   };
 
-  const handleNotificationPress = (notificationId) => {
-    console.log('Notification pressed:', notificationId);
-    // Handle notification press
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -68,38 +64,44 @@ export default function Dashboard({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#2563eb"
+            tintColor="#0050d4"
           />
         }
       >
-        {/* Quick Actions */}
-        <QuickActions
-          actions={dashboardData.quickActions}
-          onActionPress={handleQuickAction}
-        />
+        {/* Hero Header */}
+        <HeroHeader userData={dashboardData.user} />
 
-        {/* Dashboard Content */}
-        <View style={styles.content}>
-          {/* Attendance Widget */}
-          <AttendanceWidget attendanceData={dashboardData.attendance} />
+        {/* Quick Action Cards & Performance Heatmap - Side by side */}
+        <View style={styles.topGrid}>
+          <View style={styles.leftColumn}>
+            <QuickActionCards
+              actions={dashboardData.quickActions}
+              onActionPress={handleQuickAction}
+            />
+            <PerformanceHeatmap performanceData={dashboardData.performance} />
+          </View>
+          
+          <View style={styles.rightColumn}>
+            {/* Attendance Widget */}
+            <AttendanceWidget attendanceData={dashboardData.attendance} />
 
-          {/* Schedule Widget */}
-          <ScheduleWidget scheduleData={dashboardData.schedule} />
+            {/* Schedule Section */}
+            <ScheduleSection scheduleData={dashboardData.schedule} />
+          </View>
+        </View>
 
-          {/* AI Study Buddy Widget */}
-          <AIStudyBuddyWidget
-            aiData={dashboardData.aiBuddy}
-            onSendMessage={handleAIMessage}
-          />
-
-          {/* Performance Widget */}
-          <PerformanceWidget performanceData={dashboardData.performance} />
-
-          {/* Notifications Widget */}
-          <NotificationsWidget
-            notifications={dashboardData.notifications}
-            onNotificationPress={handleNotificationPress}
-          />
+        {/* Notifications & AI Study Buddy - Bottom section */}
+        <View style={styles.bottomGrid}>
+          <View style={styles.bottomLeft}>
+            <NotificationsPanel notifications={dashboardData.notifications} />
+          </View>
+          
+          <View style={styles.bottomRight}>
+            <AIStudyBuddyChat
+              aiData={dashboardData.aiBuddy}
+              onSendMessage={handleAIMessage}
+            />
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -109,13 +111,36 @@ export default function Dashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f5f7f9',
   },
   scrollView: {
     flex: 1,
   },
-  content: {
+  topGrid: {
+    flexDirection: 'row',
     paddingHorizontal: 0,
-    paddingBottom: 20,
+    gap: 0,
+  },
+  leftColumn: {
+    width: '33.33%',
+    paddingRight: 6,
+  },
+  rightColumn: {
+    width: '66.67%',
+    paddingLeft: 6,
+  },
+  bottomGrid: {
+    flexDirection: 'row',
+    paddingHorizontal: 0,
+    paddingBottom: 16,
+    gap: 0,
+  },
+  bottomLeft: {
+    width: '50%',
+    paddingRight: 6,
+  },
+  bottomRight: {
+    width: '50%',
+    paddingLeft: 6,
   },
 });
