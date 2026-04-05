@@ -51,7 +51,7 @@ export default function ClassPage({ navigation }) {
         <TodaysOverview liveClass={mockClassData.liveClass} />
 
         {/* Quick Actions Bento Grid */}
-        <QuickActionsBento actions={mockQuickActions} navigation={navigation} />
+        <QuickActionsBento actions={mockQuickActions} />
 
         {/* Course Progression Cards */}
         <CourseProgression courses={mockCourses} />

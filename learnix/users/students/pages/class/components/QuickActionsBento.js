@@ -6,26 +6,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-export default function QuickActionsBento({ actions, navigation }) {
+export default function QuickActionsBento({ actions }) {
   const handlePress = (actionId) => {
     console.log('Quick action pressed:', actionId);
-    // Navigate based on action
-    if (navigation) {
-      switch(actionId) {
-        case 'lecture-notes':
-          navigation.navigate('LectureNotes');
-          break;
-        case 'practice-quizzes':
-          navigation.navigate('QuizArena');
-          break;
-        case 'syllabus-tracker':
-          navigation.navigate('SubjectTracker');
-          break;
-        case 'weak-topics':
-          navigation.navigate('WeakTopics');
-          break;
-      }
-    }
+    // TODO: Add navigation when features are redesigned
   };
 
   return (
