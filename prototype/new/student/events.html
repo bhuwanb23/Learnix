@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffefeb",
+                        "surface-container-high": "#dfe3e6",
+                        "secondary-dim": "#6411d5",
+                        "on-error": "#ffefee",
+                        "on-surface": "#2c2f31",
+                        "on-tertiary-fixed": "#310b00",
+                        "on-primary-fixed": "#000000",
+                        "tertiary": "#a23800",
+                        "on-surface-variant": "#595c5e",
+                        "outline": "#747779",
+                        "outline-variant": "#abadaf",
+                        "on-primary-fixed-variant": "#00266e",
+                        "error": "#b31b25",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "primary": "#0050d4",
+                        "on-secondary-container": "#5b00c7",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-secondary": "#f8f0ff",
+                        "on-primary": "#f1f2ff",
+                        "primary-fixed-dim": "#658eff",
+                        "tertiary-fixed": "#ff956a",
+                        "inverse-on-surface": "#9a9d9f",
+                        "error-dim": "#9f0519",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "surface-container-highest": "#d9dde0",
+                        "background": "#f5f7f9",
+                        "secondary-container": "#dcc9ff",
+                        "tertiary-container": "#ff956a",
+                        "error-container": "#fb5151",
+                        "on-error-container": "#570008",
+                        "on-primary-container": "#001e5a",
+                        "surface-variant": "#d9dde0",
+                        "primary-dim": "#0046bb",
+                        "on-secondary-fixed": "#430097",
+                        "surface-bright": "#f5f7f9",
+                        "inverse-surface": "#0b0f10",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "secondary": "#702ae1",
+                        "primary-fixed": "#7b9cff",
+                        "surface-container-low": "#eef1f3",
+                        "surface-tint": "#0050d4",
+                        "inverse-primary": "#618bff",
+                        "surface-container": "#e5e9eb",
+                        "primary-container": "#7b9cff",
+                        "surface-dim": "#d0d5d8",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "tertiary-dim": "#8e3000",
+                        "surface": "#f5f7f9",
+                        "on-background": "#2c2f31"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface leading-relaxed">
+    <!-- TopAppBar -->
+    <header
+        class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl fixed top-0 w-full z-50 shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
+        <div class="flex justify-between items-center px-6 h-16 w-full">
+            <div class="flex items-center gap-3">
+                <img class="w-8 h-8 rounded-full"
+                    data-alt="student profile photo of a smiling young scholar in a library setting"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHpU7BHJtm65cEhg1279OcQrP4QlI3qwNncJH1iaKrXqQtXeAvJKVaGnOZvmQ9lxLIXwQfoYBnqXdHm3Cea3MO1WXZR1QslbbsukiLB_zvVoTT4dAH4m4aL6t6QrI0VUYN-3xmKWb1ZQ-LbdXOhpzMvjl2zXMRarvuaTy2YoOaemBEvLvePPTD0fKQeuDuugSSgKr5VXCzeCpW2KFEM2xKhDpezq8ZRZOST5E97oFM8BAeLwb3JinQp-uPyuj88ZaWN9YUCqDqgzk" />
+                <span
+                    class="text-xl font-extrabold text-blue-700 dark:text-blue-400 font-plus-jakarta-sans tracking-tight">Campus
+                    Curator</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span
+                    class="material-symbols-outlined text-slate-500 hover:opacity-80 transition-opacity cursor-pointer"
+                    data-icon="notifications">notifications</span>
+                <div class="hidden md:flex gap-6 items-center">
+                    <span class="text-slate-500 font-semibold cursor-pointer">Explore</span>
+                    <span class="text-blue-700 font-bold cursor-pointer">Events</span>
+                    <span class="text-slate-500 font-semibold cursor-pointer">Community</span>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="pt-16 pb-32">
+        <!-- Hero Section -->
+        <section class="relative h-[530px] md:h-[618px] w-full overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <img class="w-full h-full object-cover"
+                    data-alt="vibrant campus tech symposium event with colorful neon stage lights and excited audience in a modern auditorium"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7YuFWevwcsyOM-rgIzJrYkxQq-Vtq9fETdgjJrpCBRvJcvFDi8v7HermZbPc46BD90XjxQcHSGyk0d6Ajd-UqasKRd4R6DgHmkXYc2CBptQAxidMSd5rssKWoKGTsWtMSCWJoWyFQQaSFmpjm9KnFLnm8Aqk1ApXfQC-RqUfbAT_iAKwpXPTtxKu7Zc0i0RjZjkWQW2BJdnpSJwxoJtb2FwvZYaqpxhwvXwtGAuhKeJx9VNxvYD4hpaOx0E6dN7f5tJsxHg5VKlY" />
+                <div class="absolute inset-0 bg-gradient-to-r from-on-primary-container/80 to-transparent"></div>
+            </div>
+            <div class="relative z-10 h-full flex flex-col justify-center px-8 md:px-20 max-w-5xl">
+                <span
+                    class="bg-tertiary/20 text-on-tertiary-container text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full w-fit mb-4">Featured
+                    Event</span>
+                <h1 class="text-4xl md:text-7xl font-extrabold text-white leading-tight tracking-tighter mb-6">
+                    Innovate-X: 2024 Tech Symposium</h1>
+                <p class="text-on-primary text-lg md:text-xl max-w-2xl mb-8 opacity-90">Join the brightest minds on
+                    campus for three days of AI workshops, hardware hacks, and keynote speeches from industry giants.
+                </p>
+                <div class="flex gap-4">
+                    <button
+                        class="bg-primary hover:bg-primary-dim text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg active:scale-95">
+                        Register Now
+                        <span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+                    </button>
+                    <button
+                        class="glass-card px-8 py-4 rounded-xl font-bold text-on-surface transition-all active:scale-95">
+                        View Schedule
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- Search & Filter Bar -->
+        <section class="px-6 -mt-10 relative z-20">
+            <div class="max-w-6xl mx-auto">
+                <div
+                    class="bg-surface-container-lowest p-4 rounded-2xl shadow-xl flex flex-col md:flex-row gap-4 items-center">
+                    <div class="flex-1 w-full relative">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                            data-icon="search">search</span>
+                        <input
+                            class="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-on-surface font-medium"
+                            placeholder="Search events, workshops, or clubs..." type="text" />
+                    </div>
+                    <div class="flex gap-3 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto no-scrollbar">
+                        <button
+                            class="bg-primary text-on-primary px-5 py-2.5 rounded-full whitespace-nowrap font-semibold">All
+                            Events</button>
+                        <button
+                            class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full whitespace-nowrap font-semibold hover:bg-surface-container-high">Academic</button>
+                        <button
+                            class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full whitespace-nowrap font-semibold hover:bg-surface-container-high">Cultural</button>
+                        <button
+                            class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full whitespace-nowrap font-semibold hover:bg-surface-container-high">Sports</button>
+                        <button
+                            class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full whitespace-nowrap font-semibold hover:bg-surface-container-high">Career</button>
+                        <button
+                            class="bg-surface-container-low text-on-surface-variant px-5 py-2.5 rounded-full whitespace-nowrap font-semibold hover:bg-surface-container-high">Workshops</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Content Grid -->
+        <section class="px-6 mt-16 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Events Discovery (Masonry-like Columns) -->
+            <div class="lg:col-span-8">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-3xl font-bold tracking-tight text-on-surface">Upcoming Discoveries</h2>
+                        <p class="text-on-surface-variant">Selected curated events based on your interests</p>
+                    </div>
+                    <button class="text-primary font-bold flex items-center gap-1 hover:underline">
+                        View Map <span class="material-symbols-outlined text-sm" data-icon="map">map</span>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Event Card 1 -->
+                    <div
+                        class="group relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-outline-variant/10">
+                        <div class="relative h-56 overflow-hidden">
+                            <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                data-alt="outdoor spring music festival with colorful ribbons and students dancing in a green campus lawn"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBP6IqqI1hRQW5sW2Wbb05Mo73WN4dtUCgKmjJD3VX3ZobyeD1dgF21lXOLD5f3UP557hMdnqcsWMatkr2dsy3fFa60wvdFGtSGNfgrdP2991S6CsvHXotd5fZ-E7YiRT9_3I4vr8eW-UmF_RP3MJSXLsybwKKRKmRYYa9sdZiSkprZ2ZYKo7Stc_xbbtVJboCeN6MUqqthOKNbi__tt6NxugisueWxFxPOvNjXb_OkC3_luy-aGutZfj29VIFSN6CmPAaXvqN9Lk" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div
+                                class="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-lg p-2 text-center min-w-[50px]">
+                                <span class="block text-primary font-black leading-none">12</span>
+                                <span class="text-[10px] uppercase font-bold text-slate-500">APR</span>
+                            </div>
+                            <button
+                                class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl p-2 rounded-full text-white transition-colors">
+                                <span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span
+                                    class="px-2 py-0.5 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded uppercase">Cultural</span>
+                                <span class="text-xs text-on-surface-variant font-medium flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]"
+                                        data-icon="schedule">schedule</span> 4:00 PM
+                                </span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors">Spring Fest:
+                                Harmony '24</h3>
+                            <p class="text-on-surface-variant text-sm mb-4 line-clamp-2">The biggest annual celebration
+                                of arts, music, and student talent. Outdoor stages, food trucks, and local bands.</p>
+                            <div class="flex justify-between items-center">
+                                <div class="flex -space-x-2">
+                                    <img class="w-7 h-7 rounded-full ring-2 ring-white"
+                                        data-alt="student profile avatar"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwuHljW12s7TwQSMIfRQHlDj7kPwQVslDl50YQ81SbrgfyfKhrozqnJbz3c47x0RmChKCRGMqU9qkS0oRlJQjriO3C6dAYDwOoQfDdbg-MPfzGsrLM3_IlEK_YNgPHysP4V1SFqZWEdRV6ZInPiw9WYcJ_CEuV2P4zxUU-bwBLY-Ua2pFkIFYgmWT-hbJt9SCvrgnJQibkPN4sDM3pD6N6eGLop5LToB7hkbU4BAwciqt29J9do9TLKIi_o4KJnrt1cCwj9d2ZZjA" />
+                                    <img class="w-7 h-7 rounded-full ring-2 ring-white"
+                                        data-alt="student profile avatar"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqwg86yfUN7_5kOoW8GqWIkWFP-uZxVeHo5jHNMjocmYs1C0HvoQb8o1ppMRO20-q7Cm2Nv_X2JNsl57oiwrrTub4cWPWvjhvgcKanjn7_hepPMB5DVnIVL32OdCyxhYG9zKcahqfT99JweFMnpBVBLZJQmr-UZHJa63Rut43BK2BgfaRa4ZgX7WvnmGTPrYGTIcIaqjv0vBpUW67ijvD8AwxKuGLV4081lb626eac4jILbBBCr63fq461K6yJRBheBjaLpYVT2pk" />
+                                    <img class="w-7 h-7 rounded-full ring-2 ring-white"
+                                        data-alt="student profile avatar"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkVUqPNUQ9ClrSz6XOM9K--8nwYuXhaxD7JIieGTxZMEVl3n_neuiXOp2q9omMyzTsvrLaVb6PK5-79xFsDUjVknDN1qDTo_WGUPfLhehYjob5n8HMUc7Ors7JtTBkSbdcfHxK9bakdhE1uqOkrpc8JmTzbotM1NxCPaIR0zZepnmGXfcinZiqsdKWQCEAO0NOyCwxQdMNpR5QH9zRJCJeQhTjI3xLPUWNLaiJrXeAqwWoabE0UhF8D8_3v1kKCBj7PcBZwnP2lBc" />
+                                    <div
+                                        class="w-7 h-7 rounded-full bg-surface-container-high ring-2 ring-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">
+                                        +42</div>
+                                </div>
+                                <span class="text-xs font-semibold text-on-surface-variant flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm"
+                                        data-icon="location_on">location_on</span> Central Lawn
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Event Card 2 -->
+                    <div
+                        class="group relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-outline-variant/10">
+                        <div class="relative h-56 overflow-hidden">
+                            <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                data-alt="collaborative workshop setting with students working around tables with laptops and colorful post-it notes"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-YG34wb9Th2FJcf_7rfDXKLIwqTQBIC6GpMPHDuHSF7ckvKVdc8kIKQ9HAFLg3WNu-I26Tx_RThGKHKuoqY1rsO4SazJnr8zMncwuft4sFbQyE0kCPF-B34hFj6H41sfgkea0vZG3Dw3QfZ1RSUXTOf8J-zpp72SerfNtJZe3NZjMZG17ksF0jhjmwt7GJ6d2YisG5VrmxBgUH5P1wzEmxVSBeVy0i-pXjRsA33_KmHs1D60r2VgTbmYOfeYZYgMbhJFiZxxgD_s" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div
+                                class="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-lg p-2 text-center min-w-[50px]">
+                                <span class="block text-primary font-black leading-none">15</span>
+                                <span class="text-[10px] uppercase font-bold text-slate-500">APR</span>
+                            </div>
+                            <button
+                                class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl p-2 rounded-full text-white transition-colors">
+                                <span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span
+                                    class="px-2 py-0.5 bg-primary-container text-on-primary-container text-[10px] font-bold rounded uppercase">Workshop</span>
+                                <span class="text-xs text-on-surface-variant font-medium flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]"
+                                        data-icon="schedule">schedule</span> 10:30 AM
+                                </span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors">UI Design Deep
+                                Dive</h3>
+                            <p class="text-on-surface-variant text-sm mb-4 line-clamp-2">Master Figma and learn about
+                                visual systems in this hands-on 4-hour workshop for creative minds.</p>
+                            <div class="flex justify-between items-center">
+                                <div class="flex -space-x-2">
+                                    <img class="w-7 h-7 rounded-full ring-2 ring-white"
+                                        data-alt="student profile avatar"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwnKfhtRXpb7G1hYpwQhLj6M3eepaZfAius5sKZRDxS7RolxCMrMRbIRERI9wzGPqyEo0Y4GjTIbS6DFNL6avaAfOTyjq5UE8zi7c6V1Byq3_GaCnUwok3KTM87ocRT2XvIPKqpVHdqZFSQuy5TZlg7O1ULER47YqSaY_RlSj_D8LJcWtMcFhrkDRRf7lRYoo_R0eoJ-otywPb4xMqs2eI_uOlXTun5Ce-DRpCMzL87Bv4DcfK9eJnt0PX4Cw-bLxwE1sglGiRW_s" />
+                                    <img class="w-7 h-7 rounded-full ring-2 ring-white"
+                                        data-alt="student profile avatar"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJ-uyewRCkTkPl9jjTKbb2HDlP2o7d3bWvICchCfLTsl-CkbEXY6Ozn--YgLf65e1juHLrrsM6XzFpw6fXtPn34YBvirdHzRz268qxDhV3mz8rqImVaC028TuJ3sSpPyobXMNb0DBfA7QdO9lvghVd9ur1slEBeMVxJeuFxeJRkC0N0wKkhRThQwdvFnIbistunUzHZwW-4Q_7rkYnggZsKlSUOK2hTTKLk5TxvNmgIuXuzXNi_Z9RZaCsBIZK21dbtmxLajlqEWY" />
+                                    <div
+                                        class="w-7 h-7 rounded-full bg-surface-container-high ring-2 ring-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">
+                                        +12</div>
+                                </div>
+                                <span class="text-xs font-semibold text-on-surface-variant flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm"
+                                        data-icon="location_on">location_on</span> Media Lab 2
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Event Card 3 -->
+                    <div
+                        class="group relative bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-outline-variant/10">
+                        <div class="relative h-56 overflow-hidden">
+                            <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                data-alt="night time campus basketball game with high intensity lighting and a packed student section cheering"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb_94hU1UX6UTc1sDbOCkKgF6p6mfXh4_mLkAEttvbO3ia_mSgsQwzYhTGpb_QmhH1O1CFV_gNp-KMLYyXIcE0bQurlr1uCHYmacZrVNKee3k8FZKXmsHy2zZTizN6pxDQiSKFaFXxn60T0cMxSzV6gfnxwHqb7Nh9R11SlurR_i9KDN8-Mx6KuAMXQfYmlF3e38l56Yc4BZ-inGtiGxyBJTYAGvkQbWB5odgScxOK5hi-Jnf9Mxtewc6hq18qPFeYJd_S6mms1M8" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div
+                                class="absolute top-4 left-4 bg-white/90 backdrop-blur-md rounded-lg p-2 text-center min-w-[50px]">
+                                <span class="block text-primary font-black leading-none">18</span>
+                                <span class="text-[10px] uppercase font-bold text-slate-500">APR</span>
+                            </div>
+                            <button
+                                class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-xl p-2 rounded-full text-white transition-colors">
+                                <span class="material-symbols-outlined" data-icon="favorite">favorite</span>
+                            </button>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span
+                                    class="px-2 py-0.5 bg-tertiary-container text-on-tertiary-container text-[10px] font-bold rounded uppercase">Sports</span>
+                                <span class="text-xs text-on-surface-variant font-medium flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px]"
+                                        data-icon="schedule">schedule</span> 7:00 PM
+                                </span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors">Varsity
+                                Finals: Lions vs. Hawks</h3>
+                            <p class="text-on-surface-variant text-sm mb-4 line-clamp-2">The ultimate showdown. Come
+                                support the home team as they battle for the conference title.</p>
+                            <div class="flex justify-between items-center">
+                                <div class="flex -space-x-2">
+                                    <img class="w-7 h-7 rounded-full ring-2 ring-white"
+                                        data-alt="student profile avatar"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGC1iCnQ4ahiwtRJQNv04b2TjOH-XPLXqPy6CWdBYRRjZX4TxyyF84wp1iZZKJwqz1R3zHZ5x0sDNNPm1i801-vh2RRrltbHT2ZVITB0ZlTMm7g-KwYDdzKS58Yu71rfwX_BkkEtuiGz8pFJvFZ_nfpd5iUv2g_gNALb6nO4uMBvRKhD-TgRCL4ppoMRiX7ul-IGFQuRxDiPPIuXJtBOYwIVZLiCj02NSTgj_tWbNztMsIGgA87WLSmldcTmlqRR5BN9nn92KEs5A" />
+                                    <img class="w-7 h-7 rounded-full ring-2 ring-white"
+                                        data-alt="student profile avatar"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAB6xJIaV5hrPfs3cB9p6cCLyriFrEP-c-OtIBImQzHdphLAtjQgvR1NovclepPDAOPoy98Q6s0MnJ1Cl5B2HcFvVtqlTbo7zTlyKN44FSubv5bJUeDDxwrDigiku8tN4MqN4xApYpFd42vlZ_xmvD9CUCkRbZaW2crm1PGff1Otkncw2SS6_BAmtehd24neymY-XT1_YTtGX8LP-iJLZxA_UhB8Kw319oe8R3SCWRg7Wzt5aGiN3bW1HHW9V74qAnEtGK2EW7Eutk" />
+                                    <div
+                                        class="w-7 h-7 rounded-full bg-surface-container-high ring-2 ring-white flex items-center justify-center text-[10px] font-bold text-on-surface-variant">
+                                        +150</div>
+                                </div>
+                                <span class="text-xs font-semibold text-on-surface-variant flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-sm"
+                                        data-icon="location_on">location_on</span> Main Arena
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Side Section: Registrations & Stats -->
+            <div class="lg:col-span-4 space-y-8">
+                <!-- My Registrations -->
+                <div class="bg-surface-container-low rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary"
+                            data-icon="confirmation_number">confirmation_number</span>
+                        My Registrations
+                    </h2>
+                    <div class="space-y-4">
+                        <!-- Ticket 1 -->
+                        <div class="bg-surface-container-lowest p-4 rounded-xl border-l-4 border-primary shadow-sm">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="font-bold text-sm">Startup Pitch Night</h4>
+                                    <p class="text-[10px] text-on-surface-variant">Tomorrow, 6:00 PM • Aud. A</p>
+                                </div>
+                                <button class="text-slate-400">
+                                    <span class="material-symbols-outlined text-sm"
+                                        data-icon="more_vert">more_vert</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="bg-slate-100 p-2 rounded-lg">
+                                    <img class="w-10 h-10 opacity-50" data-alt="stylized QR code for event check-in"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTpXEiu3qoX16bg7F0jcOLDmPEm7iadV_fUbWzitNr2M1jijWg-pSiJHrxrkqfy36ZPmJVPinXJ5O54hoUeIAEX9xdf3TiYNynhGBPqieUytcMWy6V4DV4crTmGXH3TNmDLzk85wilLYDCr0RmxYbxsu5INjhvlynL7Xb2mpOMj1PK2wz27Hmqg9eZjDiDcB4ARfFBrb85MffPCIB0VFk3MP0u7Zxnhe4LNKDyqulsmpEnNGLr7mfch8LShQ5CE7ULd2nc5CHNLJA" />
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-[10px] font-bold uppercase text-slate-400">Reminder</span>
+                                        <div class="w-8 h-4 bg-primary rounded-full relative">
+                                            <div class="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] font-medium text-primary">Scan QR at the entrance</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Ticket 2 -->
+                        <div class="bg-surface-container-lowest p-4 rounded-xl border-l-4 border-secondary shadow-sm">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h4 class="font-bold text-sm">Jazz on the Green</h4>
+                                    <p class="text-[10px] text-on-surface-variant">Fri, Apr 19 • South Park</p>
+                                </div>
+                                <button class="text-slate-400">
+                                    <span class="material-symbols-outlined text-sm"
+                                        data-icon="more_vert">more_vert</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="bg-slate-100 p-2 rounded-lg">
+                                    <img class="w-10 h-10 opacity-50" data-alt="stylized QR code for event check-in"
+                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyORv2p7il4gvGf1x3cvVLUsEgMkp-XPnBmn154YSBeUSGC5veNY9X1u92iP_8TfLWkHmHA7vM5jKWlLwXeDEB54lUWwMIZqFjvTxh3y4k9oIg_udlIFejhEB31ouEVQnUev6MhXWiP85QV3mz9ZGRcb7GDqQ49-c8rKZne08SaKLFsWe45hd3AO-qgB3mzvIzo_Xovqg-PO_i_pZWRiWJLYMx4Ph9nuauIAsNczX1VA1-YkpVfAfOXWpCshEBHekmFaPk2MD_bT0" />
+                                </div>
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center mb-1">
+                                        <span class="text-[10px] font-bold uppercase text-slate-400">Reminder</span>
+                                        <div class="w-8 h-4 bg-slate-200 rounded-full relative">
+                                            <div
+                                                class="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow-sm">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-[10px] font-medium text-slate-400">Notified 2h before</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        class="w-full mt-6 py-3 text-sm font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors border border-primary/20">
+                        View All Tickets
+                    </button>
+                </div>
+                <!-- Bento-style Stats -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-primary/10 p-4 rounded-xl">
+                        <span class="material-symbols-outlined text-primary mb-2"
+                            data-icon="calendar_month">calendar_month</span>
+                        <div class="text-2xl font-black text-primary">12</div>
+                        <div class="text-[10px] font-bold uppercase text-primary/60">Upcoming</div>
+                    </div>
+                    <div class="bg-secondary/10 p-4 rounded-xl">
+                        <span class="material-symbols-outlined text-secondary mb-2" data-icon="stars">stars</span>
+                        <div class="text-2xl font-black text-secondary">250</div>
+                        <div class="text-[10px] font-bold uppercase text-secondary/60">XP Earned</div>
+                    </div>
+                </div>
+                <!-- Trending Topics -->
+                <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10">
+                    <h3 class="font-bold mb-4">Trending Tags</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span
+                            class="px-3 py-1 bg-surface-container-low rounded-full text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">#Hackathon2024</span>
+                        <span
+                            class="px-3 py-1 bg-surface-container-low rounded-full text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">#EcoCampus</span>
+                        <span
+                            class="px-3 py-1 bg-surface-container-low rounded-full text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">#CareerFair</span>
+                        <span
+                            class="px-3 py-1 bg-surface-container-low rounded-full text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">#OpenMic</span>
+                        <span
+                            class="px-3 py-1 bg-surface-container-low rounded-full text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">#Workshop</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-6 left-4 right-4 rounded-full w-[calc(100%-2rem)] z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
+        <div class="flex justify-around items-center h-20 px-2">
+            <div
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors scale-110 active:duration-200 transition-transform cursor-pointer">
+                <span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-1">Dashboard</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors scale-110 active:duration-200 transition-transform cursor-pointer">
+                <span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+                <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-1">Classes</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors scale-110 active:duration-200 transition-transform cursor-pointer">
+                <span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+                <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-1">Assignments</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full py-2 px-4 scale-110 active:duration-200 transition-transform cursor-pointer">
+                <span class="material-symbols-outlined" data-icon="event"
+                    style="font-variation-settings: 'FILL' 1;">event</span>
+                <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-1">Events</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-4 hover:text-blue-600 dark:hover:text-blue-300 transition-colors scale-110 active:duration-200 transition-transform cursor-pointer">
+                <span class="material-symbols-outlined" data-icon="person">person</span>
+                <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-1">Profile</span>
+            </div>
+        </div>
+    </nav>
+    <!-- FAB -->
+    <button
+        class="fixed right-8 bottom-28 md:bottom-32 bg-primary hover:bg-primary-dim text-white w-14 h-14 rounded-2xl shadow-xl flex items-center justify-center transition-all active:scale-90 z-40 group">
+        <span class="material-symbols-outlined" data-icon="add">add</span>
+        <span
+            class="absolute right-full mr-4 bg-on-surface text-white text-xs font-bold py-2 px-4 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Host
+            Event</span>
+    </button>
+</body>
+
+</html>

@@ -1,159 +1,100 @@
-export const dashboardConstants = {
-  // Profile data
-  userProfile: {
-    name: "Sarah",
-    greeting: "Ready to learn today?",
-    avatar: "https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg",
-    notifications: 3
+// Assignment page data matching assignment.html prototype
+
+export const weeklyVelocity = {
+  percentage: 84,
+  trend: '+12% vs last week',
+  chart: [40, 60, 35, 85, 75, 55, 90], // Bar heights for graph
+};
+
+export const subjectAllocation = {
+  totalTasks: 14,
+  categories: [
+    { name: 'STEM', color: '#0050d4' },
+    { name: 'Arts', color: '#702ae1' },
+  ],
+};
+
+export const statsCards = [
+  {
+    id: 'due-today',
+    value: '03',
+    label: 'Due Today',
+    icon: 'alarm',
+    color: '#0050d4',
+    bgColor: 'rgba(0, 80, 212, 0.1)',
   },
+  {
+    id: 'completed',
+    value: '28',
+    label: 'Completed',
+    icon: 'check_circle',
+    color: '#702ae1',
+    bgColor: 'rgba(112, 42, 225, 0.1)',
+  },
+  {
+    id: 'avg-grade',
+    value: '3.8',
+    label: 'Avg Grade',
+    icon: 'star',
+    color: '#a23800',
+    bgColor: 'rgba(162, 56, 0, 0.1)',
+  },
+  {
+    id: 'in-review',
+    value: '12',
+    label: 'In Review',
+    icon: 'pending_actions',
+    color: '#0050d4',
+    bgColor: 'rgba(0, 80, 212, 0.1)',
+  },
+];
 
-  // Quick actions data
-  quickActions: [
-    {
-      id: 'upload',
-      title: 'Upload Assignment',
-      icon: 'cloud-upload-outline',
-      color: '#3B82F6',
-      backgroundColor: '#3B82F6'
-    },
-    {
-      id: 'join',
-      title: 'Join Exam',
-      icon: 'videocam-outline',
-      color: '#10B981',
-      backgroundColor: '#10B981'
-    },
-    {
-      id: 'results',
-      title: 'Check Results',
-      icon: 'analytics-outline',
-      color: '#8B5CF6',
-      backgroundColor: '#8B5CF6'
-    }
-  ],
+export const assignments = [
+  {
+    id: 1,
+    title: 'Multivariable Integration Project',
+    subject: 'Calculus III • Dr. Aris',
+    priority: 'Urgent',
+    priorityColor: '#a23800',
+    priorityBg: '#ffefeb',
+    timeLeft: '4h left',
+    files: 2,
+    progress: 90,
+    progressColor: '#a23800',
+  },
+  {
+    id: 2,
+    title: 'Wave-Particle Duality Essay',
+    subject: 'Quantum Mechanics • Prof. Schmidt',
+    priority: 'Physics',
+    priorityColor: '#0050d4',
+    priorityBg: 'rgba(123, 156, 255, 0.2)',
+    dueDate: 'Oct 24',
+    teamTask: true,
+    progress: 15,
+    progressColor: '#0050d4',
+  },
+];
 
-  // Progress data
-  progressData: [
-    {
-      id: 'course',
-      title: 'Course Completion',
-      percentage: 78,
-      color: '#3B82F6'
-    },
-    {
-      id: 'submissions',
-      title: 'Assignment Submissions',
-      percentage: 85,
-      color: '#10B981'
-    },
-    {
-      id: 'exam-readiness',
-      title: 'Exam Readiness',
-      percentage: 62,
-      color: '#F97316'
-    }
-  ],
-
-  // Pending assignments
-  pendingAssignments: [
-    {
-      id: 1,
-      title: 'Mathematics Essay',
-      subject: 'Calculus & Applications',
-      dueDate: new Date('2024-10-04'),
-      priority: 'high',
-      priorityColor: '#F87171'
-    },
-    {
-      id: 2,
-      title: 'Physics Lab Report',
-      subject: 'Quantum Mechanics',
-      dueDate: new Date('2024-10-06'),
-      priority: 'medium',
-      priorityColor: '#FB923C'
-    }
-  ],
-
-  // Upcoming exams
-  upcomingExams: [
-    {
-      id: 1,
-      title: 'Chemistry Final',
-      subject: 'Organic Chemistry - Room 205',
-      examDate: new Date('2024-10-05T14:00:00'),
-      readiness: 75,
-      color: '#3B82F6',
-      gradientFrom: '#EFF6FF',
-      gradientTo: '#DBEAFE'
-    },
-    {
-      id: 2,
-      title: 'History Midterm',
-      subject: 'World War II - Online',
-      examDate: new Date('2024-10-08T10:00:00'),
-      readiness: 60,
-      color: '#8B5CF6',
-      gradientFrom: '#FAF5FF',
-      gradientTo: '#F3E8FF'
-    }
-  ],
-
-  // Recent completions
-  recentCompletions: [
-    {
-      id: 1,
-      title: 'Biology Quiz',
-      score: 92,
-      date: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      type: 'quiz'
-    },
-    {
-      id: 2,
-      title: 'English Essay',
-      grade: 'A-',
-      date: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      type: 'assignment'
-    }
-  ],
-
-  // Notifications
-  notifications: [
-    {
-      id: 1,
-      type: 'warning',
-      title: 'Assignment Reminder',
-      message: 'Mathematics Essay due tomorrow at 11:59 PM',
-      time: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-      color: '#F59E0B',
-      icon: 'warning-outline'
-    },
-    {
-      id: 2,
-      type: 'info',
-      title: 'Teacher Feedback',
-      message: 'Great work on your Biology presentation!',
-      time: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
-      color: '#3B82F6',
-      icon: 'chatbubble-outline'
-    },
-    {
-      id: 3,
-      type: 'success',
-      title: 'Course Update',
-      message: 'New study materials added to Chemistry course',
-      time: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
-      color: '#10B981',
-      icon: 'information-circle-outline'
-    }
-  ]
-};
-
-export const mockDashboardData = {
-  profile: dashboardConstants.userProfile,
-  quickActions: dashboardConstants.quickActions,
-  progress: dashboardConstants.progressData,
-  pendingAssignments: dashboardConstants.pendingAssignments,
-  upcomingExams: dashboardConstants.upcomingExams,
-  recentCompletions: dashboardConstants.recentCompletions,
-  notifications: dashboardConstants.notifications
-};
+export const recentCompletions = [
+  {
+    id: 1,
+    subject: 'Art History',
+    grade: '98%',
+    title: 'Modernism in Berlin',
+    feedback: '"Excellent depth in your analysis of the Bauhaus influence. Try to expand on the socio-political context."',
+    suggestion: 'Review 1920s Weimar history',
+    suggestionIcon: 'lightbulb',
+    borderColor: '#702ae1',
+  },
+  {
+    id: 2,
+    subject: 'Data Science',
+    grade: '85%',
+    title: 'Neural Network Optimizers',
+    feedback: '"Strong implementation of SGD. Accuracy could be improved by tuning the learning rate decay."',
+    suggestion: 'Hyperparameter Tuning',
+    suggestionIcon: 'trending_up',
+    borderColor: '#0050d4',
+  },
+];
