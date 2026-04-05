@@ -110,36 +110,37 @@ function ActionCard({ action, onPress, delay = 0 }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
-    marginBottom: 12,
+    marginHorizontal: 24,
+    marginBottom: 20,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 16,
   },
   cardWrapper: {
     width: '48%',
   },
   card: {
-    borderRadius: 14,
-    padding: 14,
-    height: 75,
+    borderRadius: 16,
+    padding: 20,
+    height: 90,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 3,
   },
   icon: {
-    fontSize: 26,
-    marginBottom: 4,
+    fontSize: 30,
+    marginBottom: 6,
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Plus Jakarta Sans',
   },
 });
