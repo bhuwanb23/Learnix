@@ -117,15 +117,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 10,
   },
   cardWrapper: {
     width: '48%',
   },
   card: {
-    borderRadius: 12,
-    padding: 16,
-    height: 80,
+    borderRadius: 14,
+    padding: 14,
+    height: 75,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -135,11 +135,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   icon: {
-    fontSize: 28,
-    marginBottom: 6,
+    fontSize: 26,
+    marginBottom: 4,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
 });

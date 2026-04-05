@@ -82,8 +82,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 14,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -91,15 +91,15 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   title: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: '#595c5e',
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginBottom: 16,
+    letterSpacing: 1.2,
+    marginBottom: 14,
   },
   content: {
-    gap: 12,
+    gap: 10,
   },
   row: {
     flexDirection: 'row',
@@ -116,8 +116,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   weekBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 5,
   },
 });

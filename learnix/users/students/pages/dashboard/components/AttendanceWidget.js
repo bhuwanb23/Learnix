@@ -127,8 +127,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     marginHorizontal: 16,
     marginBottom: 12,
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 14,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 16,
   },
   circularSection: {
     flex: 1,
@@ -161,12 +161,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   percentageText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#2c2f31',
   },
   attendanceLabel: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '700',
     color: '#595c5e',
     textTransform: 'uppercase',
@@ -176,14 +176,14 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   chartContainer: {
-    height: 128,
+    height: 110,
   },
   bars: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 100,
-    gap: 6,
+    height: 90,
+    gap: 5,
   },
   barWrapper: {
     flex: 1,
@@ -191,18 +191,18 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: '100%',
-    borderRadius: 6,
-    minHeight: 8,
+    borderRadius: 5,
+    minHeight: 6,
   },
   labels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 6,
   },
   label: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     color: '#595c5e',
   },

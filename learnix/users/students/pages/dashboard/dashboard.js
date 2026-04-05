@@ -71,38 +71,29 @@ export default function Dashboard({ navigation }) {
         {/* Hero Header */}
         <HeroHeader userData={dashboardData.user} />
 
-        {/* Quick Action Cards & Performance Heatmap - Side by side */}
-        <View style={styles.topGrid}>
-          <View style={styles.leftColumn}>
-            <QuickActionCards
-              actions={dashboardData.quickActions}
-              onActionPress={handleQuickAction}
-            />
-            <PerformanceHeatmap performanceData={dashboardData.performance} />
-          </View>
-          
-          <View style={styles.rightColumn}>
-            {/* Attendance Widget */}
-            <AttendanceWidget attendanceData={dashboardData.attendance} />
+        {/* Quick Action Cards */}
+        <QuickActionCards
+          actions={dashboardData.quickActions}
+          onActionPress={handleQuickAction}
+        />
 
-            {/* Schedule Section */}
-            <ScheduleSection scheduleData={dashboardData.schedule} />
-          </View>
-        </View>
+        {/* Attendance Widget */}
+        <AttendanceWidget attendanceData={dashboardData.attendance} />
 
-        {/* Notifications & AI Study Buddy - Bottom section */}
-        <View style={styles.bottomGrid}>
-          <View style={styles.bottomLeft}>
-            <NotificationsPanel notifications={dashboardData.notifications} />
-          </View>
-          
-          <View style={styles.bottomRight}>
-            <AIStudyBuddyChat
-              aiData={dashboardData.aiBuddy}
-              onSendMessage={handleAIMessage}
-            />
-          </View>
-        </View>
+        {/* Schedule Section */}
+        <ScheduleSection scheduleData={dashboardData.schedule} />
+
+        {/* Performance Heatmap */}
+        <PerformanceHeatmap performanceData={dashboardData.performance} />
+
+        {/* Notifications Panel */}
+        <NotificationsPanel notifications={dashboardData.notifications} />
+
+        {/* AI Study Buddy Chat */}
+        <AIStudyBuddyChat
+          aiData={dashboardData.aiBuddy}
+          onSendMessage={handleAIMessage}
+        />
       </ScrollView>
     </View>
   );
@@ -115,32 +106,5 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  topGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: 0,
-    gap: 0,
-  },
-  leftColumn: {
-    width: '33.33%',
-    paddingRight: 6,
-  },
-  rightColumn: {
-    width: '66.67%',
-    paddingLeft: 6,
-  },
-  bottomGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: 0,
-    paddingBottom: 16,
-    gap: 0,
-  },
-  bottomLeft: {
-    width: '50%',
-    paddingRight: 6,
-  },
-  bottomRight: {
-    width: '50%',
-    paddingLeft: 6,
   },
 });
