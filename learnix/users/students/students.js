@@ -17,6 +17,9 @@ import ClassPage from './pages/class/class';
 import StudentHeader from './components/StudentHeader';
 import StudentBottomNavbar from './components/StudentBottomNavbar';
 
+// Import theme
+import { COLORS } from '../../constants/theme';
+
 export default function StudentsScreen() {
   const [activeTab, setActiveTab] = useState('Home');
 
