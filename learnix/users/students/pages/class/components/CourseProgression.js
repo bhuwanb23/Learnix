@@ -7,45 +7,23 @@ import {
 } from 'react-native';
 
 const CircularProgress = ({ percentage, color }) => {
-  const size = 64;
-  const strokeWidth = 4;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
   return (
-    <View style={[styles.progressContainer, { width: size, height: size }]}>
-      {/* Background circle */}
+    <View style={styles.progressWrapper}>
+      {/* Outer colored ring */}
       <View
         style={[
-          styles.circleBackground,
+          styles.outerRing,
           {
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: strokeWidth,
-            borderColor: '#e5e9eb',
-          },
-        ]}
-      />
-      {/* Progress circle - simplified representation */}
-      <View
-        style={[
-          styles.circleProgress,
-          {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: 'transparent',
+            borderColor: color,
           },
         ]}
       >
-        <Text style={[styles.percentageText, { color }]}>
-          {percentage}%
-        </Text>
+        {/* Inner white circle */}
+        <View style={styles.innerCircle}>
+          <Text style={[styles.percentageText, { color }]}>
+            {percentage}%
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -56,43 +34,41 @@ export default function CourseProgression({ courses }) {
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Course Progression</Text>
       
-      {courses.map((course) => (
+      {courses.map((course, index) => (
         <View
           key={course.id}
           style={[
             styles.courseCard,
-            {
-              backgroundColor: `${course.color}08`,
-              borderColor: `${course.color}1a`,
-            },
+            index < courses.length - 1 && styles.cardSpacing,
           ]}
         >
-          <View style={styles.progressSection}>
+          {/* Left: Progress Circle & Grade Badge */}
+          <View style={styles.leftSection}>
             <CircularProgress percentage={course.progress} color={course.color} />
             <View style={[styles.gradeBadge, { backgroundColor: course.color }]}>
               <Text style={styles.gradeText}>{course.grade}</Text>
             </View>
           </View>
 
-          <View style={styles.infoSection}>
+          {/* Middle: Course Information */}
+          <View style={styles.middleSection}>
             <Text style={styles.courseName}>{course.name}</Text>
-            <View style={styles.professorInfo}>
+            <View style={styles.professorRow}>
               <Image
                 source={{ uri: course.professorImage }}
-                style={styles.professorImage}
+                style={styles.professorAvatar}
               />
               <Text style={styles.professorName}>{course.professor}</Text>
             </View>
           </View>
 
-          <View style={styles.milestoneBox}>
+          {/* Right: Next Milestone */}
+          <View style={styles.milestoneContainer}>
             <Text style={[styles.milestoneLabel, { color: course.color }]}>
               Next Milestone
             </Text>
-            <Text style={styles.milestoneText}>
-              {course.milestone.title}
-              <Text style={styles.milestoneDate}> • {course.milestone.date}</Text>
-            </Text>
+            <Text style={styles.milestoneTitle}>{course.milestone.title}</Text>
+            <Text style={styles.milestoneDate}>{course.milestone.date}</Text>
           </View>
         </View>
       ))}
@@ -109,106 +85,140 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
+    letterSpacing: -0.3,
     marginBottom: 16,
   },
   courseCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 24,
-    marginBottom: 16,
-    borderWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
   },
-  progressSection: {
-    alignItems: 'center',
-    marginRight: 16,
+  cardSpacing: {
+    marginBottom: 16,
   },
-  progressContainer: {
+  leftSection: {
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  progressWrapper: {
+    width: 64,
+    height: 64,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  circleBackground: {
-    position: 'absolute',
-  },
-  circleProgress: {
+  outerRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  innerCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#ffffff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   percentageText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '900',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
+    letterSpacing: -0.3,
   },
   gradeBadge: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   gradeText: {
-    fontSize: 9,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
     color: '#ffffff',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-ExtraBold',
   },
-  infoSection: {
+  middleSection: {
     flex: 1,
+    marginRight: 16,
   },
   courseName: {
     fontSize: 17,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Plus Jakarta Sans',
-    marginBottom: 4,
+    fontFamily: 'PlusJakartaSans-Bold',
+    letterSpacing: -0.2,
+    marginBottom: 6,
   },
-  professorInfo: {
+  professorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  professorImage: {
+  professorAvatar: {
     width: 24,
     height: 24,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   professorName: {
     fontSize: 13,
     color: '#595c5e',
     fontWeight: '600',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-SemiBold',
   },
-  milestoneBox: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+  milestoneContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.05)',
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    minWidth: 140,
+    alignItems: 'flex-start',
   },
   milestoneLabel: {
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
     textTransform: 'uppercase',
+    letterSpacing: 0.8,
     marginBottom: 4,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-ExtraBold',
   },
-  milestoneText: {
+  milestoneTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
+    marginBottom: 2,
   },
   milestoneDate: {
     fontSize: 11,
     color: '#595c5e',
-    fontWeight: '500',
+    fontWeight: '600',
+    fontFamily: 'Manrope-SemiBold',
   },
 });

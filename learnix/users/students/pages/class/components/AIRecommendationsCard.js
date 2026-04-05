@@ -63,14 +63,14 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   message: {
     fontSize: 14,
     color: '#595c5e',
     lineHeight: 22,
     fontWeight: '500',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
     marginBottom: 24,
   },
   highlight: {
@@ -100,11 +100,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   resourceTitle: {
     fontSize: 11,
     color: '#595c5e',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
 });

@@ -55,13 +55,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 2,
     marginBottom: 8,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-ExtraBold',
   },
   gpaValue: {
     fontSize: 48,
     fontWeight: '900',
     color: '#ffffff',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
     marginBottom: 8,
   },
   trendContainer: {
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#7b9cff',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   chartContainer: {
     flexDirection: 'row',

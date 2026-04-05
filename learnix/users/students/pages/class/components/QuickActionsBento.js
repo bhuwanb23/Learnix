@@ -84,6 +84,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2c2f31',
     textAlign: 'center',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
 });

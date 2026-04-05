@@ -67,13 +67,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   viewAll: {
     fontSize: 11,
     fontWeight: '700',
     color: '#0050d4',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   timeline: {
     position: 'relative',
@@ -111,19 +111,19 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-ExtraBold',
   },
   testTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#2c2f31',
     marginBottom: 2,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   testDate: {
     fontSize: 12,
     color: '#595c5e',
     fontWeight: '500',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
 });

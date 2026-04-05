@@ -83,20 +83,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   subjectName: {
     fontSize: 22,
     fontWeight: '700',
     color: '#ffffff',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: 8,
   },
   details: {
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '500',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
   actionSection: {
     flexDirection: 'row',
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#ffffff',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   materialsLabel: {
     fontSize: 9,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.7)',
     textTransform: 'uppercase',
     marginTop: 2,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   joinButton: {
     flex: 1.5,
@@ -141,6 +141,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#0050d4',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
 });

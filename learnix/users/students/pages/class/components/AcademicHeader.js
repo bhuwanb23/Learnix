@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '800',
     color: '#2c2f31',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
     letterSpacing: -0.5,
     marginBottom: 4,
   },
@@ -44,6 +44,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#595c5e',
     fontWeight: '500',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
 });
