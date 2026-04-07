@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#7b9cff",
+                        "on-surface-variant": "#595c5e",
+                        "on-primary": "#f1f2ff",
+                        "outline": "#747779",
+                        "on-error-container": "#570008",
+                        "error": "#b31b25",
+                        "primary-dim": "#0046bb",
+                        "surface-container": "#e5e9eb",
+                        "inverse-primary": "#618bff",
+                        "on-tertiary": "#ffefeb",
+                        "primary": "#0050d4",
+                        "tertiary": "#a23800",
+                        "surface-variant": "#d9dde0",
+                        "surface-bright": "#f5f7f9",
+                        "on-secondary-container": "#5b00c7",
+                        "error-container": "#fb5151",
+                        "surface-container-highest": "#d9dde0",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary-fixed": "#310b00",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "primary-container": "#7b9cff",
+                        "tertiary-dim": "#8e3000",
+                        "surface-tint": "#0050d4",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#000000",
+                        "secondary": "#702ae1",
+                        "on-primary-container": "#001e5a",
+                        "primary-fixed-dim": "#658eff",
+                        "on-tertiary-container": "#5a1c00",
+                        "background": "#f5f7f9",
+                        "surface-container-high": "#dfe3e6",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "error-dim": "#9f0519",
+                        "tertiary-fixed": "#ff956a",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "secondary-container": "#dcc9ff",
+                        "on-background": "#2c2f31",
+                        "on-error": "#ffefee",
+                        "tertiary-container": "#ff956a",
+                        "surface": "#f5f7f9",
+                        "on-surface": "#2c2f31",
+                        "secondary-dim": "#6411d5",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "inverse-surface": "#0b0f10",
+                        "surface-container-low": "#eef1f3",
+                        "on-secondary-fixed": "#430097",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary": "#f8f0ff",
+                        "surface-dim": "#d0d5d8"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .font-headline {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header
+        class="w-full sticky top-0 z-50 bg-slate-50 dark:bg-slate-900 flex items-center justify-between px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+            <button
+                class="hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full active:scale-95 duration-200 flex items-center justify-center">
+                <span class="material-symbols-outlined text-blue-700 dark:text-blue-400"
+                    data-icon="arrow_back">arrow_back</span>
+            </button>
+            <h1 class="font-plus-jakarta-sans font-bold tracking-tight text-lg text-blue-700 dark:text-blue-400">Account
+                Settings</h1>
+        </div>
+        <div class="flex items-center">
+            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
+                <img alt="User profile photo" class="w-full h-full object-cover"
+                    data-alt="Professional headshot of a smiling university student in a bright modern studio setting with soft lighting"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDlt0yBR5Cc7Bkyz9Z0NCLUYx6GQaKYZX6qS0KdEFEry-HQ_osNegE4bntSfufWLK8TWhCZJ1d4PkebxYUHlka515kG5FWWWKMKtBJFYuq8seg6dZhaUXRCxOCOAqsLPQltg0j0eKjbeuDVmGQPb0pmIuUZo5x5bankjUvd_DQls1jX2hmO-WoWQb7PrC0_yk08Ko8mO8zUlhfcKsTl_Zg9dPSKG2u2ksPd_4whUlmv53IBwwLlhZp9UWquLw9t6hOxrjBWdah-EQ" />
+            </div>
+        </div>
+    </header>
+    <main class="max-w-2xl mx-auto px-6 mt-8">
+        <!-- User Identity Section (Bento Style Intro) -->
+        <section class="mb-10 bg-surface-container-low p-6 rounded-xl flex items-center gap-6">
+            <div class="w-20 h-20 rounded-xl overflow-hidden shadow-sm">
+                <img alt="User Avatar" class="w-full h-full object-cover"
+                    data-alt="High quality 3D avatar of a young professional wearing glasses and a collegiate sweater on a soft blue background"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT001KHWAl4IwgJK1_ULgURqVXG1flTf3x79o1aXth_qI2xRu_nvND2v40PWZSj_A-wnsYpCpXH5FZogdL5t6ITwu4ZwI0Fz1uZMKpe6nO5HeWmwZWj2LK9886NZOVOMKvyRxbdd7wXf2sEcvRVbZOwdvYyO52-t6pObj-5mdl8HlxTYsr4BmU0IRHwrcEIMl6DgJpti5_DxVPBF5saRidZJOkunr8W91O7OV7F_RpGghA56a6IWPiTp-pT04azZMh0cTuJdPdZyA" />
+            </div>
+            <div>
+                <h2 class="font-headline text-2xl font-bold tracking-tight text-on-surface">Alex Thompson</h2>
+                <p class="text-on-surface-variant font-medium">alex.thompson@scholarflow.edu</p>
+                <span
+                    class="inline-flex mt-2 px-3 py-1 bg-primary-container/20 text-primary text-xs font-bold rounded-full">Premium
+                    Student Tier</span>
+            </div>
+        </section>
+        <!-- Main Settings Group -->
+        <div class="space-y-6">
+            <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+                <!-- Security Group -->
+                <div class="px-6 py-4 border-b border-surface-container">
+                    <h3
+                        class="font-headline text-sm font-extrabold uppercase tracking-widest text-on-surface-variant/70">
+                        Security &amp; Privacy</h3>
+                </div>
+                <a class="flex items-center justify-between px-6 py-5 hover:bg-surface-container-low transition-colors group"
+                    href="#">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined" data-icon="lock">lock</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-on-surface">Change Password</p>
+                            <p class="text-sm text-on-surface-variant">Update your account credentials</p>
+                        </div>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-outline-variant group-hover:translate-x-1 transition-transform"
+                        data-icon="chevron_right">chevron_right</span>
+                </a>
+                <a class="flex items-center justify-between px-6 py-5 hover:bg-surface-container-low transition-colors group"
+                    href="#">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary">
+                            <span class="material-symbols-outlined" data-icon="shield">shield</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-on-surface">Privacy Settings</p>
+                            <p class="text-sm text-on-surface-variant">Control your data and visibility</p>
+                        </div>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-outline-variant group-hover:translate-x-1 transition-transform"
+                        data-icon="chevron_right">chevron_right</span>
+                </a>
+            </div>
+            <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.03)]">
+                <!-- Preferences Group -->
+                <div class="px-6 py-4 border-b border-surface-container">
+                    <h3
+                        class="font-headline text-sm font-extrabold uppercase tracking-widest text-on-surface-variant/70">
+                        System Preferences</h3>
+                </div>
+                <a class="flex items-center justify-between px-6 py-5 hover:bg-surface-container-low transition-colors group"
+                    href="#">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-lg bg-tertiary/10 flex items-center justify-center text-tertiary">
+                            <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-on-surface">Notifications</p>
+                            <p class="text-sm text-on-surface-variant">Manage push and email alerts</p>
+                        </div>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-outline-variant group-hover:translate-x-1 transition-transform"
+                        data-icon="chevron_right">chevron_right</span>
+                </a>
+                <a class="flex items-center justify-between px-6 py-5 hover:bg-surface-container-low transition-colors group"
+                    href="#">
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-on-surface">
+                            <span class="material-symbols-outlined" data-icon="help">help</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-on-surface">Help &amp; Support</p>
+                            <p class="text-sm text-on-surface-variant">Get assistance and browse FAQs</p>
+                        </div>
+                    </div>
+                    <span
+                        class="material-symbols-outlined text-outline-variant group-hover:translate-x-1 transition-transform"
+                        data-icon="chevron_right">chevron_right</span>
+                </a>
+            </div>
+            <!-- Danger Zone -->
+            <div class="pt-8 space-y-4">
+                <button
+                    class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl border-2 border-surface-container-high font-bold text-on-surface hover:bg-surface-container-low transition-all active:scale-[0.98]">
+                    <span class="material-symbols-outlined" data-icon="exit_to_app">exit_to_app</span>
+                    Logout
+                </button>
+                <button
+                    class="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-error-container/10 text-error font-bold hover:bg-error-container/20 transition-all active:scale-[0.98]">
+                    <span class="material-symbols-outlined" data-icon="delete_forever">delete_forever</span>
+                    Delete Account
+                </button>
+            </div>
+        </div>
+        <!-- System Version Info -->
+        <footer class="mt-12 text-center pb-12">
+            <p class="text-xs font-semibold text-outline-variant tracking-widest uppercase">Scholar Flow v4.2.1-Premium
+            </p>
+        </footer>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] rounded-full z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] flex justify-around items-center p-2">
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-6 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
+            <span class="font-manrope text-[10px] font-semibold">Dashboard</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-6 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="auto_stories">auto_stories</span>
+            <span class="font-manrope text-[10px] font-semibold">Courses</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-6 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="calendar_today">calendar_today</span>
+            <span class="font-manrope text-[10px] font-semibold">Calendar</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full py-2 px-6 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+            <span class="font-manrope text-[10px] font-semibold">Settings</span>
+        </a>
+    </nav>
+</body>
+
+</html>
