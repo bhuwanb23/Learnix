@@ -8,7 +8,7 @@ import {
 
 export default function AttendanceWidget({ attendanceData }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const slideAnim = React.useRef(new Animated.Value(30)).current;
+  const slideAnim = React.useRef(new Animated.Value(20)).current;
 
   React.useEffect(() => {
     Animated.parallel([
@@ -26,193 +26,188 @@ export default function AttendanceWidget({ attendanceData }) {
   }, []);
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Attendance Overview</Text>
-        <View style={styles.liveIndicator}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>Live</Text>
+    <Animated.View 
+      style={[
+        styles.container, 
+        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }
+      ]}
+    >
+      <View style={styles.content}>
+        {/* Circular Progress */}
+        <View style={styles.circularSection}>
+          <CircularProgress percentage={attendanceData.percentage} />
+        </View>
+
+        {/* Bar Chart */}
+        <View style={styles.chartSection}>
+          <BarChart data={attendanceData.dailyData} />
         </View>
       </View>
-
-      <View style={styles.statsGrid}>
-        <StatCard
-          value={attendanceData.thisWeek}
-          label="This Week"
-          color="#10b981"
-        />
-        <StatCard
-          value={attendanceData.thisMonth}
-          label="This Month"
-          color="#2563eb"
-        />
-        <StatCard
-          value={attendanceData.overall}
-          label="Overall"
-          color="#7c3aed"
-        />
-      </View>
-
-      <AttendanceChart data={attendanceData.dailyData} />
     </Animated.View>
   );
 }
 
-function StatCard({ value, label, color }) {
+function CircularProgress({ percentage }) {
+  const size = 128;
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
   return (
-    <View style={[styles.statCard, { borderLeftColor: color }]}>
-      <Text style={[styles.statValue, { color }]}>{value}%</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+    <View style={styles.circularContainer}>
+      <View style={{ width: size, height: size }}>
+        {/* Background circle */}
+        <View
+          style={[
+            styles.circleBackground,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderWidth: strokeWidth,
+              borderColor: '#e5e9eb',
+            },
+          ]}
+        />
+        {/* Progress circle */}
+        <View
+          style={[
+            styles.circleProgress,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderWidth: strokeWidth,
+              borderColor: '#0050d4',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+            },
+          ]}
+        />
+      </View>
+      <View style={styles.percentageContainer}>
+        <Text style={styles.percentageText}>{percentage}%</Text>
+        <Text style={styles.attendanceLabel}>Attendance</Text>
+      </View>
     </View>
   );
 }
 
-function AttendanceChart({ data }) {
-  const maxValue = Math.max(...data.map(item => item.percentage));
-
+function BarChart({ data }) {
   return (
     <View style={styles.chartContainer}>
-      <View style={styles.chart}>
+      <View style={styles.bars}>
         {data.map((item, index) => (
-          <BarItem
-            key={index}
-            item={item}
-            maxValue={maxValue}
-            index={index}
-          />
+          <View key={index} style={styles.barWrapper}>
+            <View 
+              style={[
+                styles.bar, 
+                { 
+                  height: item.height,
+                  backgroundColor: index % 2 === 0 ? 'rgba(0, 80, 212, 0.2)' : '#0050d4'
+                }
+              ]} 
+            />
+          </View>
         ))}
       </View>
-      <View style={styles.chartLabels}>
+      <View style={styles.labels}>
         {data.map((item, index) => (
-          <Text key={index} style={styles.chartLabel}>{item.day}</Text>
+          <Text key={index} style={styles.label}>{item.day}</Text>
         ))}
       </View>
-    </View>
-  );
-}
-
-function BarItem({ item, maxValue, index }) {
-  const height = (item.percentage / maxValue) * 50; // Max height 50
-
-  return (
-    <View style={styles.barContainer}>
-      <View
-        style={[
-          styles.bar,
-          {
-            height: height,
-            backgroundColor: '#2563eb',
-          },
-        ]}
-      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
-    marginHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#ffffff',
+    marginHorizontal: 24,
+    marginBottom: 20,
+    borderRadius: 16,
+    padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  header: {
+  content: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    gap: 24,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1f2937',
-    fontFamily: 'Inter-Bold',
-    letterSpacing: 0.3,
-  },
-  liveIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0fdf4',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  liveDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#10b981',
-    marginRight: 4,
-  },
-  liveText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#10b981',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    gap: 8,
-  },
-  statCard: {
+  circularSection: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#2563eb',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 2,
+  circularContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  statLabel: {
-    fontSize: 10,
-    color: '#6b7280',
-    textAlign: 'center',
-    fontWeight: '500',
+  circleBackground: {
+    position: 'absolute',
+  },
+  circleProgress: {
+    position: 'absolute',
+  },
+  percentageContainer: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  percentageText: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#2c2f31',
+    fontFamily: 'Plus Jakarta Sans',
+  },
+  attendanceLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#595c5e',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontFamily: 'Manrope',
+  },
+  chartSection: {
+    flex: 1.5,
+    justifyContent: 'flex-end',
   },
   chartContainer: {
-    height: 60,
+    height: 128,
   },
-  chart: {
+  bars: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    height: 40,
-    marginBottom: 8,
-    paddingHorizontal: 2,
+    height: 100,
+    gap: 6,
   },
-  barContainer: {
+  barWrapper: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginHorizontal: 1,
   },
   bar: {
-    width: 12,
+    width: '100%',
     borderRadius: 6,
-    minHeight: 3,
+    minHeight: 8,
   },
-  chartLabels: {
+  labels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 2,
+    marginTop: 8,
   },
-  chartLabel: {
+  label: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 9,
-    color: '#6b7280',
-    fontWeight: '500',
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#595c5e',
+    fontFamily: 'Manrope',
   },
 });

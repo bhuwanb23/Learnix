@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Academic Curator | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#310b00",
+                        "error": "#b31b25",
+                        "secondary-dim": "#6411d5",
+                        "surface-container-highest": "#d9dde0",
+                        "surface": "#f5f7f9",
+                        "surface-container-low": "#eef1f3",
+                        "tertiary-fixed": "#ff956a",
+                        "primary-dim": "#0046bb",
+                        "on-tertiary": "#ffefeb",
+                        "inverse-primary": "#618bff",
+                        "on-surface": "#2c2f31",
+                        "primary-fixed": "#7b9cff",
+                        "on-secondary-fixed": "#430097",
+                        "outline-variant": "#abadaf",
+                        "surface-bright": "#f5f7f9",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-surface-variant": "#595c5e",
+                        "tertiary": "#a23800",
+                        "surface-tint": "#0050d4",
+                        "inverse-surface": "#0b0f10",
+                        "on-secondary-container": "#5b00c7",
+                        "error-container": "#fb5151",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-background": "#2c2f31",
+                        "inverse-on-surface": "#9a9d9f",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-error": "#ffefee",
+                        "tertiary-dim": "#8e3000",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "secondary": "#702ae1",
+                        "error-dim": "#9f0519",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "surface-variant": "#d9dde0",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-primary": "#f1f2ff",
+                        "primary": "#0050d4",
+                        "outline": "#747779",
+                        "on-secondary": "#f8f0ff",
+                        "surface-container": "#e5e9eb",
+                        "background": "#f5f7f9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-error-container": "#570008",
+                        "tertiary-container": "#ff956a",
+                        "secondary-container": "#dcc9ff",
+                        "surface-container-high": "#dfe3e6",
+                        "on-primary-container": "#001e5a",
+                        "surface-dim": "#d0d5d8",
+                        "on-primary-fixed": "#000000",
+                        "primary-fixed-dim": "#658eff",
+                        "primary-container": "#7b9cff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .glass {
+            backdrop-filter: blur(20px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface mb-32">
+    <!-- TopAppBar -->
+    <header
+        class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex items-center justify-between px-6 h-16 w-full">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+                <img alt="student profile photo" class="w-full h-full object-cover"
+                    data-alt="portrait of a young college student with a friendly expression in a modern sunlit campus setting"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsClPfNvd3jS54p9_Rrcod9wYqiEkFEydYeEfGQ3MP5Bt17rxMQlxeng1YRBuxEzUExa-ak11HiLTz8c2hOXtQ6tERWfTCJlKeJX_8F4Aah-GRYnv9b2dbDmWj5gVUlgAN5n7CPcwQnxP3T9GrZQmy8lSH0DGMDf3A4Gq3N-8XgbHzmWpJ0kqJs2F5iPt3nMmyhhDmMY703OSDDqNu6uX12hY_zCrU6C8bNZ4sgPVbTw-UI2bsR5pvaXRIYcjwldSAyjv461k3X18" />
+            </div>
+            <span
+                class="text-xl font-bold bg-gradient-to-br from-blue-600 to-blue-800 bg-clip-text text-transparent font-['Plus_Jakarta_Sans'] tracking-tight">Academic
+                Curator</span>
+        </div>
+        <div
+            class="relative group cursor-pointer hover:bg-slate-100/50 p-2 rounded-full transition-colors active:scale-95 duration-200">
+            <span class="material-symbols-outlined text-blue-600" data-icon="notifications">notifications</span>
+            <span class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-error"></span>
+            </span>
+        </div>
+    </header>
+    <main class="mt-20 px-6 max-w-7xl mx-auto space-y-6">
+        <!-- Hero Header -->
+        <section
+            class="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#2563eb] to-[#1d4ed8] p-8 text-on-primary shadow-lg">
+            <div class="relative z-10">
+                <h1 class="text-3xl font-extrabold tracking-tight mb-2">Good Morning, Alex</h1>
+                <p class="text-on-primary/80 font-medium">Ready to continue your Advanced Mathematics journey?</p>
+            </div>
+            <!-- Abstract background shape -->
+            <div class="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute -left-8 -bottom-8 w-48 h-48 bg-primary-container/20 rounded-full blur-2xl"></div>
+        </section>
+        <!-- Bento Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Left Column: Quick Actions & Performance Heatmap -->
+            <div class="md:col-span-1 space-y-6">
+                <!-- Quick Action Cards (2x2) -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div
+                        class="bg-primary-container/20 hover:bg-primary-container/30 transition-all p-4 rounded-xl flex flex-col items-center justify-center gap-2 group">
+                        <div class="text-3xl group-hover:scale-110 transition-transform">📚</div>
+                        <span class="font-bold text-primary text-sm">Classes</span>
+                    </div>
+                    <div
+                        class="bg-secondary-container/30 hover:bg-secondary-container/40 transition-all p-4 rounded-xl flex flex-col items-center justify-center gap-2 group">
+                        <div class="text-3xl group-hover:scale-110 transition-transform">📝</div>
+                        <span class="font-bold text-secondary text-sm">Assignments</span>
+                    </div>
+                    <div
+                        class="bg-green-100 hover:bg-green-200 transition-all p-4 rounded-xl flex flex-col items-center justify-center gap-2 group">
+                        <div class="text-3xl group-hover:scale-110 transition-transform">📅</div>
+                        <span class="font-bold text-green-700 text-sm">Events</span>
+                    </div>
+                    <div
+                        class="bg-orange-100 hover:bg-orange-200 transition-all p-4 rounded-xl flex flex-col items-center justify-center gap-2 group">
+                        <div class="text-3xl group-hover:scale-110 transition-transform">👤</div>
+                        <span class="font-bold text-orange-700 text-sm">Profile</span>
+                    </div>
+                </div>
+                <!-- Performance Heatmap -->
+                <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+                    <h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4">Subject
+                        Performance</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold">Mathematics</span>
+                            <div class="flex gap-1">
+                                <div class="w-6 h-6 rounded-md bg-primary"></div>
+                                <div class="w-6 h-6 rounded-md bg-primary"></div>
+                                <div class="w-6 h-6 rounded-md bg-primary"></div>
+                                <div class="w-6 h-6 rounded-md bg-primary/20"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold">Literature</span>
+                            <div class="flex gap-1">
+                                <div class="w-6 h-6 rounded-md bg-tertiary"></div>
+                                <div class="w-6 h-6 rounded-md bg-tertiary"></div>
+                                <div class="w-6 h-6 rounded-md bg-tertiary/40"></div>
+                                <div class="w-6 h-6 rounded-md bg-tertiary/20"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold">Physics</span>
+                            <div class="flex gap-1">
+                                <div class="w-6 h-6 rounded-md bg-error"></div>
+                                <div class="w-6 h-6 rounded-md bg-error/40"></div>
+                                <div class="w-6 h-6 rounded-md bg-error/20"></div>
+                                <div class="w-6 h-6 rounded-md bg-error/10"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Middle Column: Attendance & Schedule -->
+            <div class="md:col-span-2 space-y-6">
+                <!-- Attendance Widget -->
+                <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="relative w-32 h-32">
+                            <svg class="w-full h-full transform -rotate-90">
+                                <circle class="text-surface-container-high/20" cx="64" cy="64" fill="transparent" r="56"
+                                    stroke="currentColor" stroke-width="8"></circle>
+                                <circle class="text-primary" cx="64" cy="64" fill="transparent" r="56"
+                                    stroke="currentColor" stroke-dasharray="351.8" stroke-dashoffset="52"
+                                    stroke-width="8"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-2xl font-bold">85%</span>
+                                <span class="text-[10px] text-on-surface-variant font-bold uppercase">Attendance</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col justify-end">
+                        <div class="flex items-end gap-2 h-32 w-full">
+                            <div class="bg-primary-container h-[40%] flex-1 rounded-t-lg"></div>
+                            <div class="bg-primary h-[80%] flex-1 rounded-t-lg"></div>
+                            <div class="bg-primary-container h-[60%] flex-1 rounded-t-lg"></div>
+                            <div class="bg-primary h-[95%] flex-1 rounded-t-lg"></div>
+                            <div class="bg-primary-container h-[50%] flex-1 rounded-t-lg"></div>
+                            <div class="bg-primary h-[70%] flex-1 rounded-t-lg"></div>
+                        </div>
+                        <div class="flex justify-between mt-2 text-[10px] font-bold text-on-surface-variant">
+                            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Schedule Section -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-bold px-2">Upcoming Classes</h2>
+                    <div class="space-y-3">
+                        <!-- Class 1 -->
+                        <div
+                            class="bg-surface-container-lowest p-5 rounded-xl flex items-center gap-4 group hover:translate-x-2 transition-transform">
+                            <div class="bg-primary-container/20 p-3 rounded-xl">
+                                <span class="material-symbols-outlined text-primary"
+                                    data-icon="functions">functions</span>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-lg">Advanced Calculus</h4>
+                                <p class="text-sm text-on-surface-variant">Prof. Eleanor Vance • Room 402</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="block font-bold text-primary">09:00 AM</span>
+                                <span
+                                    class="text-xs font-semibold text-on-surface-variant bg-surface-container px-2 py-1 rounded-full">60
+                                    mins</span>
+                            </div>
+                        </div>
+                        <!-- Class 2 -->
+                        <div
+                            class="bg-surface-container-lowest p-5 rounded-xl flex items-center gap-4 group hover:translate-x-2 transition-transform">
+                            <div class="bg-secondary-container/20 p-3 rounded-xl">
+                                <span class="material-symbols-outlined text-secondary"
+                                    data-icon="psychology">psychology</span>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="font-bold text-lg">Cognitive Science</h4>
+                                <p class="text-sm text-on-surface-variant">Dr. Marcus Thorne • Lab 12</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="block font-bold text-secondary">11:30 AM</span>
+                                <span
+                                    class="text-xs font-semibold text-on-surface-variant bg-surface-container px-2 py-1 rounded-full">90
+                                    mins</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Lower Section: Notifications & AI Tutor -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+            <!-- Notifications Panel -->
+            <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-bold">Alerts &amp; Notifications</h3>
+                    <button class="text-primary text-xs font-bold hover:underline">Mark all as read</button>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex gap-4 items-start p-3 rounded-lg bg-error-container/10">
+                        <span class="material-symbols-outlined text-error mt-1" data-icon="error">error</span>
+                        <div>
+                            <p class="text-sm font-bold">Physics Assignment Due Today</p>
+                            <p class="text-xs text-on-surface-variant">Submit by 11:59 PM to avoid late penalty.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start p-3 rounded-lg bg-tertiary-container/10">
+                        <span class="material-symbols-outlined text-tertiary mt-1"
+                            data-icon="celebration">celebration</span>
+                        <div>
+                            <p class="text-sm font-bold">New Grade Released: Biology</p>
+                            <p class="text-xs text-on-surface-variant">You scored 94% in the Semester Final.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start p-3 rounded-lg bg-primary-container/10">
+                        <span class="material-symbols-outlined text-primary mt-1" data-icon="campaign">campaign</span>
+                        <div>
+                            <p class="text-sm font-bold">Campus Library Update</p>
+                            <p class="text-xs text-on-surface-variant">Opening hours extended to 2:00 AM for finals.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- AI Study Buddy Chat Widget -->
+            <div
+                class="bg-gradient-to-br from-on-surface to-inverse-surface p-6 rounded-xl text-white flex flex-col justify-between relative overflow-hidden group">
+                <!-- Sparkle backgrounds -->
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-primary/20 blur-3xl rounded-full"></div>
+                <div>
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-primary/20 p-2 rounded-lg">
+                            <span class="material-symbols-outlined text-primary" data-icon="smart_toy">smart_toy</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold leading-tight">AI Study Buddy</h3>
+                            <span class="text-[10px] font-bold text-primary-fixed uppercase tracking-wider">Online &amp;
+                                Thinking</span>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 mb-4 border border-white/5">
+                        <p class="text-sm italic text-white/90">"Hey Alex! I see you have a calculus class coming up.
+                            Want to review the Taylor Series before you head in?"</p>
+                    </div>
+                </div>
+                <div class="relative">
+                    <input
+                        class="w-full bg-white/5 border border-white/10 rounded-full py-3 px-6 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pr-12"
+                        placeholder="Ask anything..." type="text" />
+                    <button
+                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-primary p-1.5 rounded-full hover:scale-110 active:scale-95 transition-all">
+                        <span class="material-symbols-outlined text-sm" data-icon="send">send</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav class="fixed bottom-0 w-full z-50 px-6 pb-8 flex justify-between items-center pointer-events-none">
+        <div
+            class="pointer-events-auto mx-auto bg-white/90 backdrop-blur-2xl shadow-[0_8px_24px_rgba(0,0,0,0.1)] rounded-full border border-white/20 flex items-center justify-between px-6 py-2 w-full max-w-md">
+            <!-- Dashboard (Active) -->
+            <a class="flex flex-col items-center justify-center bg-blue-600 text-white rounded-full h-12 w-12 shadow-lg shadow-blue-500/30 active:scale-90 duration-300 ease-out"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="grid_view"
+                    style="font-variation-settings: 'FILL' 1;">grid_view</span>
+            </a>
+            <!-- Courses -->
+            <a class="flex flex-col items-center justify-center text-slate-400 h-12 w-12 hover:text-blue-500 transition-all active:scale-90 duration-300 ease-out"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="auto_stories">auto_stories</span>
+            </a>
+            <!-- Calendar -->
+            <a class="flex flex-col items-center justify-center text-slate-400 h-12 w-12 hover:text-blue-500 transition-all active:scale-90 duration-300 ease-out"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+            </a>
+            <!-- AI Tutor -->
+            <a class="flex flex-col items-center justify-center text-slate-400 h-12 w-12 hover:text-blue-500 transition-all active:scale-90 duration-300 ease-out"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+            </a>
+            <!-- Profile -->
+            <a class="flex flex-col items-center justify-center text-slate-400 h-12 w-12 hover:text-blue-500 transition-all active:scale-90 duration-300 ease-out"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="person">person</span>
+            </a>
+        </div>
+    </nav>
+</body>
+
+</html>

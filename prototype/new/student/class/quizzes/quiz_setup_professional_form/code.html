@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quiz Setup - The Academic Curator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffefeb",
+                    "secondary-fixed-dim": "#d0b8ff",
+                    "on-primary-container": "#001e5a",
+                    "outline": "#747779",
+                    "tertiary-fixed-dim": "#ff7e48",
+                    "surface-container-highest": "#d9dde0",
+                    "on-surface": "#2c2f31",
+                    "secondary-fixed": "#dcc9ff",
+                    "on-secondary-container": "#5b00c7",
+                    "on-secondary-fixed": "#430097",
+                    "tertiary": "#a23800",
+                    "tertiary-dim": "#8e3000",
+                    "secondary-dim": "#6411d5",
+                    "secondary": "#702ae1",
+                    "error-dim": "#9f0519",
+                    "error": "#b31b25",
+                    "primary-fixed": "#7b9cff",
+                    "surface-tint": "#0050d4",
+                    "on-tertiary-container": "#5a1c00",
+                    "on-secondary-fixed-variant": "#6514d6",
+                    "secondary-container": "#dcc9ff",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#dfe3e6",
+                    "surface-container": "#e5e9eb",
+                    "surface-dim": "#d0d5d8",
+                    "inverse-surface": "#0b0f10",
+                    "on-tertiary-fixed-variant": "#692200",
+                    "inverse-on-surface": "#9a9d9f",
+                    "surface": "#f5f7f9",
+                    "inverse-primary": "#618bff",
+                    "surface-bright": "#f5f7f9",
+                    "on-error-container": "#570008",
+                    "tertiary-fixed": "#ff956a",
+                    "on-surface-variant": "#595c5e",
+                    "on-primary-fixed": "#000000",
+                    "surface-variant": "#d9dde0",
+                    "on-primary-fixed-variant": "#00266e",
+                    "on-tertiary-fixed": "#310b00",
+                    "on-background": "#2c2f31",
+                    "error-container": "#fb5151",
+                    "primary-dim": "#0046bb",
+                    "primary": "#0050d4",
+                    "primary-container": "#7b9cff",
+                    "on-primary": "#f1f2ff",
+                    "tertiary-container": "#ff956a",
+                    "background": "#f5f7f9",
+                    "primary-fixed-dim": "#658eff",
+                    "outline-variant": "#abadaf",
+                    "surface-container-low": "#eef1f3",
+                    "on-error": "#ffefee",
+                    "on-secondary": "#f8f0ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3 { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface selection:bg-primary-container min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 w-full px-6 py-4 flex justify-between items-center bg-[#f5f7f9] dark:bg-[#0f172a]">
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#eef1f3] dark:hover:bg-slate-800 transition-colors active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#0050d4] dark:text-[#7b9cff]">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-[#2c2f31] dark:text-white text-xl">Quiz Setup</h1>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/15">
+<img alt="Student Profile" class="w-full h-full object-cover" data-alt="close-up portrait of a professional student with a focused and friendly expression, clean minimalist background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPkqtOin5B87Fd6WEb_o8hWpIGITZ03jo6gkp08ppqdXna-4ZbFb-q456-xvw0iM6Cz7l77-WbYdr5boIH5UHGt741O5Nh8ZhYkBUTDdAudemW12fw_uTHOPueurGKUlD71vSCxpXEQnVqPQxd322shX60DLj8Pf4NKv9En8vITqgQvw1tKutMvOju3spgdUy_xGAK2LgiPDzbvaZOK1lQqWMp3JHuql_ZOcsskJcv_yX_88j4UELpcRFwpwuOt6Lhx654ndIJWuE"/>
+</div>
+</header>
+<main class="max-w-4xl mx-auto px-6 mt-8">
+<!-- Hero Section -->
+<section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="max-w-xl">
+<p class="text-primary font-bold tracking-widest text-xs uppercase mb-2">Subject: Advanced Neurobiology</p>
+<h2 class="text-4xl font-extrabold tracking-tight leading-tight">Tailor Your <span class="text-primary">Learning</span> Experience.</h2>
+<p class="text-on-surface-variant mt-4 text-lg">Configure your session parameters to align with your current study goals. Practice for mastery or test for precision.</p>
+</div>
+<div class="hidden md:block w-32 h-32 bg-primary-container/20 rounded-xl relative">
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: 'FILL' 1;">quiz</span>
+</div>
+</div>
+</section>
+<!-- Configuration Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Mode Selection: Asymmetric Span -->
+<div class="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Practice Mode -->
+<div class="group relative p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/10 hover:border-primary/30 transition-all cursor-pointer">
+<input checked="" class="sr-only peer" id="mode_practice" name="mode" type="radio"/>
+<div class="absolute top-6 right-6 w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary transition-all flex items-center justify-center">
+<div class="w-2 h-2 bg-white rounded-full"></div>
+</div>
+<div class="flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4 text-secondary">
+<span class="material-symbols-outlined">auto_stories</span>
+</div>
+<h3 class="text-xl font-bold mb-2">Practice Mode</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Unlimited time, immediate feedback after every answer, and detailed explanations for each concept.</p>
+</div>
+<label class="absolute inset-0 cursor-pointer" for="mode_practice"></label>
+</div>
+<!-- Exam Mode -->
+<div class="group relative p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/10 hover:border-primary/30 transition-all cursor-pointer">
+<input class="sr-only peer" id="mode_exam" name="mode" type="radio"/>
+<div class="absolute top-6 right-6 w-6 h-6 rounded-full border-2 border-outline-variant peer-checked:border-primary peer-checked:bg-primary transition-all flex items-center justify-center">
+<div class="w-2 h-2 bg-white rounded-full"></div>
+</div>
+<div class="flex flex-col h-full">
+<div class="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center mb-4 text-tertiary">
+<span class="material-symbols-outlined">timer</span>
+</div>
+<h3 class="text-xl font-bold mb-2">Exam Mode</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Simulate a real test environment. Strictly timed, no hints, and results revealed only at the end.</p>
+</div>
+<label class="absolute inset-0 cursor-pointer" for="mode_exam"></label>
+</div>
+</div>
+<!-- Number of Questions & Difficulty -->
+<div class="md:col-span-7 flex flex-col gap-6">
+<!-- Question Count Card -->
+<div class="p-8 rounded-xl bg-surface-container-low border border-outline-variant/5">
+<h4 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-6">Question Volume</h4>
+<div class="flex gap-4">
+<label class="flex-1">
+<input class="sr-only peer" name="q_count" type="radio" value="5"/>
+<div class="h-14 flex items-center justify-center rounded-lg bg-surface-container-lowest border border-outline-variant/15 text-lg font-bold peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-all cursor-pointer">5</div>
+</label>
+<label class="flex-1">
+<input checked="" class="sr-only peer" name="q_count" type="radio" value="10"/>
+<div class="h-14 flex items-center justify-center rounded-lg bg-surface-container-lowest border border-outline-variant/15 text-lg font-bold peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-all cursor-pointer">10</div>
+</label>
+<label class="flex-1">
+<input class="sr-only peer" name="q_count" type="radio" value="20"/>
+<div class="h-14 flex items-center justify-center rounded-lg bg-surface-container-lowest border border-outline-variant/15 text-lg font-bold peer-checked:bg-primary peer-checked:text-on-primary peer-checked:border-primary transition-all cursor-pointer">20</div>
+</label>
+</div>
+</div>
+<!-- Difficulty Card -->
+<div class="p-8 rounded-xl bg-surface-container-low border border-outline-variant/5">
+<h4 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-6">Challenge Level</h4>
+<div class="flex p-1.5 bg-surface-container-highest/30 rounded-xl">
+<label class="flex-1">
+<input class="sr-only peer" name="difficulty" type="radio" value="easy"/>
+<div class="py-3 text-center rounded-lg font-semibold cursor-pointer peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm transition-all">Easy</div>
+</label>
+<label class="flex-1">
+<input checked="" class="sr-only peer" name="difficulty" type="radio" value="medium"/>
+<div class="py-3 text-center rounded-lg font-semibold cursor-pointer peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm transition-all">Medium</div>
+</label>
+<label class="flex-1">
+<input class="sr-only peer" name="difficulty" type="radio" value="hard"/>
+<div class="py-3 text-center rounded-lg font-semibold cursor-pointer peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm transition-all">Hard</div>
+</label>
+</div>
+</div>
+</div>
+<!-- Timer & Additional Options -->
+<div class="md:col-span-5 flex flex-col gap-6">
+<div class="p-8 rounded-xl bg-surface-container-lowest border border-outline-variant/15 h-full flex flex-col">
+<h4 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant mb-8">Performance Tweaks</h4>
+<div class="space-y-8 flex-grow">
+<!-- Timer Toggle -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-bold">Active Timer</span>
+<span class="text-xs text-on-surface-variant">Recommended for Exam mode</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- Dark Mode Sync -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-bold">Focus Mode</span>
+<span class="text-xs text-on-surface-variant">Hide UI during questions</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<!-- Audio Toggle -->
+<div class="flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-bold">Audio Cues</span>
+<span class="text-xs text-on-surface-variant">Sound for correct/incorrect</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Start Button -->
+<div class="mt-12 flex justify-center">
+<button class="w-full max-w-md bg-gradient-to-br from-primary to-primary-dim py-5 rounded-xl text-white font-bold text-xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3">
+                Start Quiz
+                <span class="material-symbols-outlined">play_arrow</span>
+</button>
+</div>
+</main>
+<!-- BottomNavBar (The "Island" Layout) -->
+<nav class="fixed bottom-6 left-0 right-0 z-50 flex justify-around items-center px-4 py-2 mx-auto bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Manrope'] text-[10px] font-semibold tracking-wide">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-['Manrope'] text-[10px] font-semibold tracking-wide">Library</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full px-5 py-2 scale-110" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">quiz</span>
+<span class="font-['Manrope'] text-[10px] font-semibold tracking-wide">Practice</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Manrope'] text-[10px] font-semibold tracking-wide">Profile</span>
+</a>
+</nav>
+</body></html>

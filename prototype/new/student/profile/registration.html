@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>My Registrations - Scholar Flow</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#570008",
+                        "secondary-dim": "#6411d5",
+                        "surface-container": "#e5e9eb",
+                        "background": "#f5f7f9",
+                        "surface-container-low": "#eef1f3",
+                        "on-surface": "#2c2f31",
+                        "inverse-on-surface": "#9a9d9f",
+                        "secondary-fixed": "#dcc9ff",
+                        "error-dim": "#9f0519",
+                        "primary-fixed": "#7b9cff",
+                        "on-secondary-fixed": "#430097",
+                        "on-background": "#2c2f31",
+                        "outline-variant": "#abadaf",
+                        "secondary-container": "#dcc9ff",
+                        "surface-dim": "#d0d5d8",
+                        "tertiary": "#a23800",
+                        "primary-container": "#7b9cff",
+                        "inverse-surface": "#0b0f10",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-dim": "#8e3000",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "surface-container-high": "#dfe3e6",
+                        "secondary": "#702ae1",
+                        "primary": "#0050d4",
+                        "tertiary-fixed": "#ff956a",
+                        "on-tertiary": "#ffefeb",
+                        "tertiary-container": "#ff956a",
+                        "on-tertiary-fixed": "#310b00",
+                        "on-error": "#ffefee",
+                        "on-secondary-container": "#5b00c7",
+                        "error": "#b31b25",
+                        "outline": "#747779",
+                        "surface-container-highest": "#d9dde0",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "inverse-primary": "#618bff",
+                        "on-primary-container": "#001e5a",
+                        "primary-fixed-dim": "#658eff",
+                        "surface-bright": "#f5f7f9",
+                        "on-primary": "#f1f2ff",
+                        "surface-variant": "#d9dde0",
+                        "on-primary-fixed": "#000000",
+                        "on-tertiary-container": "#5a1c00",
+                        "surface": "#f5f7f9",
+                        "error-container": "#fb5151",
+                        "on-secondary": "#f8f0ff",
+                        "primary-dim": "#0046bb",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-surface-variant": "#595c5e",
+                        "surface-tint": "#0050d4",
+                        "on-secondary-fixed-variant": "#6514d6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .tonal-shift {
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(245, 247, 249, 1) 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface font-body min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="w-full sticky top-0 z-50 bg-white/80 backdrop-blur-md">
+        <div class="flex items-center justify-between px-6 h-16 w-full max-w-5xl mx-auto">
+            <div class="flex items-center gap-4">
+                <button class="material-symbols-outlined text-[#0050d4] active:scale-95 duration-200"
+                    data-icon="arrow_back">arrow_back</button>
+                <h1 class="font-headline font-bold tracking-tight text-xl text-[#0050d4]">My Registrations</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-on-surface-variant"
+                    data-icon="notifications">notifications</span>
+                <div class="w-8 h-8 rounded-full bg-primary-container overflow-hidden">
+                    <img class="w-full h-full object-cover"
+                        data-alt="close-up portrait of a professional student with soft lighting and neutral background"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0Z5QnPUIA-yDj-2aRYto9zf3t7TN_mD69MRGEkKydA5vlVZ_8yyuaNWc0FIloAscAPmBqGeSWhdocpj0D8UFgnqJT3I4nrx_RXw35PDSo2w5SVKMEDmt0xlLN1hsUVEmOpuaJgtX67luKsT96tmjB9_en6o5VH4228z7idZVFKyGzni8zfRa_Iap3D-X95zgF3XcTQPPiYmTzYGKMaj35bqO3NS1zEufES94Nb0PdvMwC8vFFT6EUK3BJQWYqsPf20AUexVclc4Y" />
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-6 pt-6 space-y-8">
+        <!-- Search & Filter Section -->
+        <section class="space-y-6">
+            <div class="relative group">
+                <span
+                    class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors"
+                    data-icon="search">search</span>
+                <input
+                    class="w-full pl-12 pr-4 py-4 bg-surface-container-lowest rounded-xl border-none shadow-[0_4px_12px_rgba(0,0,0,0.03)] focus:ring-2 focus:ring-primary/20 placeholder:text-on-surface-variant/50 transition-all"
+                    placeholder="Search registered events..." type="text" />
+            </div>
+            <div class="flex items-center gap-3">
+                <button
+                    class="px-6 py-2.5 rounded-full bg-primary text-white font-semibold text-sm shadow-lg shadow-primary/20 transition-all active:scale-95">Upcoming</button>
+                <button
+                    class="px-6 py-2.5 rounded-full bg-surface-container-high text-on-surface-variant font-semibold text-sm hover:bg-surface-container-highest transition-all active:scale-95">Past</button>
+            </div>
+        </section>
+        <!-- Registrations List -->
+        <section class="space-y-4">
+            <!-- Card 1: Checked-in -->
+            <div
+                class="group relative bg-surface-container-lowest p-5 md:p-6 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] hover:shadow-[0_12px_32px_rgba(44,47,49,0.08)] transition-all duration-300">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- Image/Visual Anchor -->
+                    <div class="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            data-alt="futuristic holographic brain display in a dark high-tech research facility with neon blue accents"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoy_-D85Xj5Du6bWu_6BR4_HXMRwIFtlkpweaFGOe6DYhj0t29zr1R_VJ6eqC5gNCE_pKa0LId5dJ0VGfm0AW4onr1RmdyVS1YS8tT3Qb5YA2Mj8TVNSbVOgW255ODPuwkMsC26X5TP9jbWuxbO7HHfuX6W9CwyciMhr95K6shI7poANxQXdYCHWsf4inxl9rnxzktYD3ANp6EtjXIuC-1JeBZ4Ap7tDEEGHucuO6Jo-7Tc6qB8g112cTJCI8gRcC_NtQgamWadQ8" />
+                    </div>
+                    <!-- Content Area -->
+                    <div class="flex-grow space-y-4">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold mb-2">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Checked-in
+                                </span>
+                                <h2 class="font-headline font-bold text-xl text-on-surface leading-tight">The Future of
+                                    Neural Interfaces</h2>
+                            </div>
+                            <div class="hidden md:block p-2 bg-surface-container-low rounded-lg shrink-0">
+                                <img class="w-12 h-12 opacity-80 group-hover:opacity-100 transition-opacity"
+                                    data-alt="minimalist clean black and white QR code for digital event check-in"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdS69C-9Xhti_OmC24BwkUvVDt-la5MxuWTBk2gnOaDZcAE077DqBbehHDDOBOT-q2h-INnoynwCvB5NeNzuahDw1-0n8pPpRgDzk6ghSMDFFvrvKc0LizudiNK6R_D_WWpuSR6mSIyQx50K11qjBj0LzZr9JoPPW1pXJ21PtZwLbyo4jzmAC0mov_m8nBAGuJqcgU7SYgc30xogQc9Ll-tFISGCCKDcxp2GCyL2T0J43gjZWvuWDS9sFZlDWOAtqU3QfXatWpe10" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8">
+                            <div class="flex items-center gap-3 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-primary text-xl"
+                                    data-icon="calendar_today">calendar_today</span>
+                                <span class="text-sm font-medium">Oct 24, 2024 • 09:00 AM</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-primary text-xl"
+                                    data-icon="location_on">location_on</span>
+                                <span class="text-sm font-medium">Main Innovation Hub</span>
+                            </div>
+                        </div>
+                        <div class="pt-4 flex items-center justify-between border-t border-outline-variant/10">
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Reminder</span>
+                                <button class="w-10 h-5 bg-primary rounded-full relative transition-colors">
+                                    <span class="absolute right-1 top-1 w-3 h-3 bg-white rounded-full"></span>
+                                </button>
+                            </div>
+                            <button class="flex items-center gap-2 text-primary font-bold text-sm hover:underline">
+                                View Details
+                                <span class="material-symbols-outlined text-sm"
+                                    data-icon="arrow_forward">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Card 2: Not Checked-in -->
+            <div
+                class="group relative bg-surface-container-lowest p-5 md:p-6 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] hover:shadow-[0_12px_32px_rgba(44,47,49,0.08)] transition-all duration-300">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0">
+                        <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            data-alt="students collaborating around a modern wooden table in a brightly lit architectural glass building"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEKtf_gX9IDSW74DAHdrk8lMWvfFAi7ZQoi4XcQM-3FT-sLSnC59h2ReGlxXBsKGQ_lKlpd3DlvmG4013Phm01E3CD6FmC1OwQkDvOFuJv4KMFRgDqdltDQX2F3A7sBbls0YjPUADt5or5EmoJrYnW3YAxW6bwKiB5WenvWRgi_6HWFgvLOPF2Pf_A8JaNTBhaVjMNc-LvyRX_c2CaBzpw487v9oer-uAIPuZBw9dKvIybX3RMALyjgLOQybb3jjXciOupsUXaPC8" />
+                    </div>
+                    <div class="flex-grow space-y-4">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-xs font-bold mb-2">
+                                    Not Checked-in
+                                </span>
+                                <h2 class="font-headline font-bold text-xl text-on-surface leading-tight">Ethics in AI:
+                                    A Student Symposium</h2>
+                            </div>
+                            <div class="hidden md:block p-2 bg-surface-container-low rounded-lg shrink-0">
+                                <img class="w-12 h-12 opacity-80"
+                                    data-alt="minimalist clean black and white QR code for digital event check-in"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa52i3O-M4KGlYpR1oHUiZYlJcBvexC9HNW0bdWICZaCnfwADps3557IeiaVmj4W9hBlRkptKS-yWGLtx2GdVwkx_9LNqXIJuQF2Egffmqn11d2hmAlYYsAXTKeVPLn7EfgONfV0YKoIsDYCeAHOzbc5Ju5cKJVSErQIGTQzxK3t2zavM4VHkj6y4T1IckhL39T2I7fPod_sNPeXYo7cxl2cTfTEJgKUkEXptx-kOOwQ4K5VjifsQp4sYbEEEJGvDFumCZN4DcHUA" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8">
+                            <div class="flex items-center gap-3 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-primary text-xl"
+                                    data-icon="calendar_today">calendar_today</span>
+                                <span class="text-sm font-medium">Nov 02, 2024 • 02:30 PM</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-on-surface-variant">
+                                <span class="material-symbols-outlined text-primary text-xl"
+                                    data-icon="location_on">location_on</span>
+                                <span class="text-sm font-medium">Philosophy Hall, Rm 302</span>
+                            </div>
+                        </div>
+                        <div class="pt-4 flex items-center justify-between border-t border-outline-variant/10">
+                            <div class="flex items-center gap-3">
+                                <span
+                                    class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Reminder</span>
+                                <button
+                                    class="w-10 h-5 bg-surface-container-highest rounded-full relative transition-colors">
+                                    <span class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full"></span>
+                                </button>
+                            </div>
+                            <button class="flex items-center gap-2 text-primary font-bold text-sm hover:underline">
+                                View Details
+                                <span class="material-symbols-outlined text-sm"
+                                    data-icon="arrow_forward">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Card 3: Completed -->
+            <div
+                class="group relative bg-surface-container-lowest/60 p-5 md:p-6 rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.02)] transition-all duration-300 opacity-80">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div
+                        class="w-full md:w-48 h-32 rounded-lg overflow-hidden shrink-0 grayscale transition-all group-hover:grayscale-0">
+                        <img class="w-full h-full object-cover"
+                            data-alt="blurred bokeh background of an audience in a dark auditorium with vibrant stage lighting"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTNd-xd1yx7hYITMpuLLl1p5Ho93EbXPYzXCeXa344NukMgxxUPIhylyOePXfLzaerwFO36ON9TYhuJE-Unjt1dTQ0prkpVuJ0s8ASyeYXxmQ8aYenldcDWL0pfwC4yYV_OgQ91AUgAVdnDKUojRTX42Xivl548QmguYDrMpCmb7cicu8V9SzN09qLBx1moChf6WJPqpAOrBruKgUZdFnKi_Ex5fGveJo8pW7m4aglW7DYMco9nVv2zsRe1cbwkU5kSKlEM2ira-w" />
+                    </div>
+                    <div class="flex-grow space-y-4">
+                        <div class="flex justify-between items-start gap-4">
+                            <div>
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold mb-2">
+                                    Completed
+                                </span>
+                                <h2 class="font-headline font-bold text-xl text-on-surface leading-tight">Quantum
+                                    Computing Workshop</h2>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8">
+                            <div class="flex items-center gap-3 text-on-surface-variant/60">
+                                <span class="material-symbols-outlined text-xl"
+                                    data-icon="calendar_today">calendar_today</span>
+                                <span class="text-sm font-medium">Sep 15, 2024 • 10:00 AM</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-on-surface-variant/60">
+                                <span class="material-symbols-outlined text-xl"
+                                    data-icon="history_edu">history_edu</span>
+                                <span class="text-sm font-medium">Certificate Issued</span>
+                            </div>
+                        </div>
+                        <div class="pt-4 flex items-center justify-between border-t border-outline-variant/10">
+                            <div class="flex items-center gap-2 text-on-surface-variant text-sm italic">
+                                Event ended 2 weeks ago
+                            </div>
+                            <button class="flex items-center gap-2 text-secondary font-bold text-sm hover:underline">
+                                Download Materials
+                                <span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- BottomNavBar (Floating Island) -->
+    <nav
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] md:w-[400px] rounded-full z-50 overflow-hidden bg-white/90 dark:bg-[#1a1c1e]/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex justify-around items-center h-20 px-4">
+        <!-- Home -->
+        <a class="flex flex-col items-center justify-center text-[#2c2f31]/60 dark:text-[#e2e2e6]/60 px-5 py-2 hover:text-[#0050d4] transition-all active:scale-90 duration-300"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Home</span>
+        </a>
+        <!-- Courses -->
+        <a class="flex flex-col items-center justify-center text-[#2c2f31]/60 dark:text-[#e2e2e6]/60 px-5 py-2 hover:text-[#0050d4] transition-all active:scale-90 duration-300"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="school">school</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Courses</span>
+        </a>
+        <!-- Events (Active) -->
+        <a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full px-5 py-2 active:scale-90 transition-transform duration-300"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="event_available"
+                style="font-variation-settings: 'FILL' 1;">event_available</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Events</span>
+        </a>
+        <!-- Profile -->
+        <a class="flex flex-col items-center justify-center text-[#2c2f31]/60 dark:text-[#e2e2e6]/60 px-5 py-2 hover:text-[#0050d4] transition-all active:scale-90 duration-300"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="person">person</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Profile</span>
+        </a>
+    </nav>
+    <!-- Contextual FAB (Hidden on this specific scroll-heavy list view but defined as a template) -->
+    <button
+        class="fixed bottom-32 right-6 w-14 h-14 rounded-2xl bg-primary text-white shadow-xl shadow-primary/30 flex items-center justify-center hover:scale-110 active:scale-90 transition-all z-40 md:hidden">
+        <span class="material-symbols-outlined" data-icon="add">add</span>
+    </button>
+</body>
+
+</html>

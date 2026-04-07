@@ -5,113 +5,65 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 
 // Import components
-import TodayOverview from './components/TodayOverview';
-import QuickActions from './components/QuickActions';
-import SubjectProgress from './components/SubjectProgress';
-import UpcomingTests from './components/UpcomingTests';
-import PendingTopics from './components/PendingTopics';
-import AIRecommendations from './components/AIRecommendations';
+import AcademicHeader from './components/AcademicHeader';
+import TodaysOverview from './components/TodaysOverview';
+import QuickActionsBento from './components/QuickActionsBento';
+import CourseProgression from './components/CourseProgression';
+import AIRecommendationsCard from './components/AIRecommendationsCard';
+import UpcomingTestsTimeline from './components/UpcomingTestsTimeline';
+import PerformanceStats from './components/PerformanceStats';
 
-// Import hooks
-import { useClassData } from './hooks/useClassData';
-import { useClassActions } from './hooks/useClassActions';
-
-// Import theme
-import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
+// Import data
+import {
+  mockClassData,
+  mockQuickActions,
+  mockCourses,
+  mockAIRecommendations,
+  mockUpcomingTests,
+  mockPerformanceStats,
+} from './constants/classData';
 
 export default function ClassPage({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
 
-  // Custom hooks
-  const {
-    todaySchedule,
-    subjects,
-    upcomingTests,
-    pendingTopics,
-    aiRecommendations,
-    loading,
-    error,
-  } = useClassData();
-
-  const {
-    handleQuickAction,
-    handleSubjectPress,
-    handleTestPress,
-    handleTopicStudy,
-    handleAIRecommendation,
-  } = useClassActions(navigation);
-
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate refresh
     await new Promise(resolve => setTimeout(resolve, 1000));
     setRefreshing(false);
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#3B82F6" />
-        <Text style={styles.loadingText}>Loading class data...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Error loading class data</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <ScrollView
-        style={styles.content}
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Today's Overview */}
-        <TodayOverview
-          schedule={todaySchedule}
-          onPress={() => console.log('Schedule pressed')}
-        />
+        {/* Academic Header */}
+        <AcademicHeader semester={mockClassData.semester} credits={mockClassData.credits} />
 
-        {/* Quick Actions */}
-        <QuickActions
-          onActionPress={handleQuickAction}
-        />
+        {/* Today's Overview - Glassmorphism */}
+        <TodaysOverview liveClass={mockClassData.liveClass} />
 
-        {/* Subject Progress */}
-        <SubjectProgress
-          subjects={subjects}
-          onSubjectPress={handleSubjectPress}
-        />
+        {/* Quick Actions Bento Grid */}
+        <QuickActionsBento actions={mockQuickActions} />
 
-        {/* Upcoming Tests */}
-        <UpcomingTests
-          tests={upcomingTests}
-          onTestPress={handleTestPress}
-        />
+        {/* Course Progression Cards */}
+        <CourseProgression courses={mockCourses} />
 
-        {/* Pending Topics */}
-        <PendingTopics
-          topics={pendingTopics}
-          onStudyPress={handleTopicStudy}
-        />
+        {/* AI Recommendations & Sidebar */}
+        <AIRecommendationsCard data={mockAIRecommendations} />
 
-        {/* AI Recommendations */}
-        <AIRecommendations
-          recommendations={aiRecommendations}
-          onRecommendationPress={handleAIRecommendation}
-        />
+        {/* Upcoming Tests Timeline */}
+        <UpcomingTestsTimeline tests={mockUpcomingTests} />
+
+        {/* Performance Statistics */}
+        <PerformanceStats stats={mockPerformanceStats} />
       </ScrollView>
     </View>
   );
@@ -120,32 +72,9 @@ export default function ClassPage({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#f5f7f9',
   },
-  content: {
+  scrollView: {
     flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-  },
-  loadingText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.sm,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: SPACING.lg,
-  },
-  errorText: {
-    fontSize: TYPOGRAPHY.fontSize.md,
-    color: '#EF4444',
-    textAlign: 'center',
   },
 });

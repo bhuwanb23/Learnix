@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Academic Curator | Event Registration</title>
+    <!-- Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#a23800",
+                        "surface-variant": "#d9dde0",
+                        "primary-fixed": "#7b9cff",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "outline": "#747779",
+                        "tertiary-fixed": "#ff956a",
+                        "tertiary-dim": "#8e3000",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-secondary-container": "#5b00c7",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-error-container": "#570008",
+                        "primary-container": "#7b9cff",
+                        "on-surface": "#2c2f31",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#702ae1",
+                        "on-primary-fixed-variant": "#00266e",
+                        "surface-container-high": "#dfe3e6",
+                        "surface-container-highest": "#d9dde0",
+                        "on-secondary": "#f8f0ff",
+                        "on-primary-fixed": "#000000",
+                        "surface-container": "#e5e9eb",
+                        "inverse-primary": "#618bff",
+                        "error-container": "#fb5151",
+                        "primary-fixed-dim": "#658eff",
+                        "primary-dim": "#0046bb",
+                        "secondary-dim": "#6411d5",
+                        "error": "#b31b25",
+                        "inverse-on-surface": "#9a9d9f",
+                        "surface-container-low": "#eef1f3",
+                        "on-primary": "#f1f2ff",
+                        "on-background": "#2c2f31",
+                        "on-tertiary-fixed": "#310b00",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "secondary-container": "#dcc9ff",
+                        "primary": "#0050d4",
+                        "surface-bright": "#f5f7f9",
+                        "on-secondary-fixed": "#430097",
+                        "background": "#f5f7f9",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "tertiary-container": "#ff956a",
+                        "on-tertiary": "#ffefeb",
+                        "error-dim": "#9f0519",
+                        "on-primary-container": "#001e5a",
+                        "on-surface-variant": "#595c5e",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-error": "#ffefee",
+                        "surface": "#f5f7f9",
+                        "surface-dim": "#d0d5d8",
+                        "inverse-surface": "#0b0f10",
+                        "surface-tint": "#0050d4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface">
+    <!-- TopAppBar -->
+    <header class="w-full sticky top-0 z-50 bg-[#f5f7f9] dark:bg-slate-900">
+        <div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-[#0050d4] dark:text-[#7b9cff]"
+                    style="font-size: 28px;">school</span>
+                <h1 class="text-xl font-extrabold text-[#0050d4] dark:text-[#7b9cff] font-headline tracking-tight">
+                    Academic Curator</h1>
+            </div>
+            <div class="flex items-center gap-6">
+                <nav class="hidden md:flex gap-8 items-center">
+                    <a class="text-[#2c2f31] dark:text-slate-400 font-semibold hover:text-[#0050d4] transition-colors"
+                        href="#">Home</a>
+                    <a class="text-[#0050d4] dark:text-[#7b9cff] font-bold" href="#">Events</a>
+                    <a class="text-[#2c2f31] dark:text-slate-400 font-semibold hover:text-[#0050d4] transition-colors"
+                        href="#">Library</a>
+                </nav>
+                <div
+                    class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden ring-2 ring-primary/20">
+                    <img alt="student profile" class="w-full h-full object-cover"
+                        data-alt="professional headshot of a smiling young male student with glasses in a library setting with soft focus books"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkOPyYTAb-jjuOcNdk0L7_hD9q4Cgm9hIv2bRT-tSqC5nw9mVqfxhgjrEH_P4phTwLB_5sK-8uEgf3inzqbGmeIHu3QcYZmzJWuj88ZhQtXy01jclpz8_ZjKsXEhPB5TNljmR5CxRxUW1KilV3CxNwZc66zkMhy-TAKBI0-5d9OM0pMSOSWaeT5Rh4-xilE163dW4Y24P4e4Jy33ytc3P7BdMkTM9-FWj97KnDvoLG-G_13IVATY7nofvtw3hL5H8MqRUQZd55c-Y" />
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-12 lg:py-20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+            <!-- Left Column: Registration & Branding -->
+            <div class="lg:col-span-7 space-y-12">
+                <section>
+                    <span class="text-primary font-bold tracking-widest text-sm uppercase mb-4 block">Immersive Workshop
+                        2024</span>
+                    <h2 class="text-5xl lg:text-7xl font-headline font-extrabold tracking-tight leading-tight mb-6">
+                        Quantum <span class="text-primary">Linguistics</span> &amp; AI Seminar
+                    </h2>
+                    <p class="text-xl text-on-surface-variant max-w-xl leading-relaxed">
+                        Join an elite cohort of scholars exploring the intersection of neural networks and semantic
+                        theory.
+                    </p>
+                </section>
+                <!-- Registration Form -->
+                <section
+                    class="bg-surface-container-lowest rounded-xl p-8 lg:p-10 shadow-[0_8px_24px_rgba(44,47,49,0.04)]">
+                    <div class="flex items-center gap-4 mb-8">
+                        <div class="p-3 bg-primary-container/20 rounded-lg">
+                            <span class="material-symbols-outlined text-primary">person_add</span>
+                        </div>
+                        <h3 class="text-2xl font-headline font-bold">Quick Registration</h3>
+                    </div>
+                    <form class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-on-surface-variant px-1">Full Name</label>
+                                <input
+                                    class="w-full bg-surface-container-low border-none rounded-lg p-4 font-semibold text-on-surface focus:ring-2 focus:ring-primary transition-all"
+                                    readonly="" type="text" value="Alexander Sterling" />
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-sm font-semibold text-on-surface-variant px-1">Student ID</label>
+                                <input
+                                    class="w-full bg-surface-container-low border-none rounded-lg p-4 font-semibold text-on-surface focus:ring-2 focus:ring-primary transition-all"
+                                    readonly="" type="text" value="U-9042231" />
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-on-surface-variant px-1">Preferred Lab
+                                Track</label>
+                            <select
+                                class="w-full bg-surface border-none ring-1 ring-outline-variant/30 rounded-lg p-4 font-medium text-on-surface focus:ring-2 focus:ring-primary appearance-none transition-all">
+                                <option>Neural Semantic Mapping (Track A)</option>
+                                <option>Recursive Syntax Models (Track B)</option>
+                                <option>Advanced NLP &amp; Ethics (Track C)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-3 py-2">
+                            <input checked=""
+                                class="w-5 h-5 rounded text-primary focus:ring-primary border-outline-variant/50"
+                                type="checkbox" />
+                            <span class="text-sm text-on-surface-variant">Send confirmation materials to <span
+                                    class="font-bold text-on-surface">a.sterling@academy.edu</span></span>
+                        </div>
+                        <button
+                            class="w-full py-5 rounded-full bg-gradient-to-br from-[#0050d4] to-[#0046bb] text-white font-bold text-lg shadow-lg shadow-primary/20 active:scale-[0.98] transition-transform flex items-center justify-center gap-3"
+                            type="submit">
+                            <span>Register Now</span>
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </button>
+                    </form>
+                </section>
+            </div>
+            <!-- Right Column: Immersive Content -->
+            <div class="lg:col-span-5 space-y-8">
+                <!-- Bento Content: What to Expect -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2 relative h-64 rounded-xl overflow-hidden shadow-xl">
+                        <img alt="workshop environment" class="w-full h-full object-cover"
+                            data-alt="modern collaborative workspace with glass walls, high-tech monitors, and students engaged in deep discussion under soft warm lighting"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIcDi-tdK1GVZ1OyrI8De7prTSqN_wqCOumbo2xUtiCp3UCWYEzSbM1M30kYd4b-IuydNtPnOGRs-0fWWnvNzqtM644MHAZ_H6YVZYDFzOU6Al8Q74-te69w86cfLAEFH3pI4wINmuAhnBpQeV7HrNxMPqnlfQOXXoE4nzxQnFKF5evgsJLWAESDKUXnkmVmjvXLfM7esdqw1Fgt1sw600IOGMXrzlE-qY2Pj3SVhkCFTIw3Z5tZHzioI3t_RaUQ0teL3CcgoCzlU" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
+                            <p class="text-white font-bold text-lg">Main Symposium Hall</p>
+                        </div>
+                    </div>
+                    <div class="bg-secondary-container p-6 rounded-xl space-y-3">
+                        <span class="material-symbols-outlined text-secondary"
+                            style="font-variation-settings: 'FILL' 1;">restaurant</span>
+                        <h4 class="font-bold text-on-secondary-container">Catered</h4>
+                        <p class="text-xs text-secondary-dim/70 leading-relaxed">Organic breakfast and networking lunch
+                            included.</p>
+                    </div>
+                    <div class="bg-tertiary-container p-6 rounded-xl space-y-3">
+                        <span class="material-symbols-outlined text-tertiary"
+                            style="font-variation-settings: 'FILL' 1;">local_activity</span>
+                        <h4 class="font-bold text-on-tertiary-container">CPD Credits</h4>
+                        <p class="text-xs text-tertiary-dim/70 leading-relaxed">Earn 12 hours toward your research
+                            certification.</p>
+                    </div>
+                </div>
+                <!-- Agenda Summary -->
+                <div class="bg-surface-container-low rounded-xl p-8 space-y-6">
+                    <h3 class="text-xl font-headline font-bold">The Agenda Summary</h3>
+                    <div class="space-y-6 relative border-l-2 border-primary/20 ml-2 pl-6">
+                        <div class="relative">
+                            <div class="absolute -left-8 top-1 w-4 h-4 bg-primary rounded-full border-4 border-surface">
+                            </div>
+                            <p class="text-xs font-bold text-primary mb-1">09:00 AM</p>
+                            <h5 class="font-bold">Opening Plenary</h5>
+                            <p class="text-sm text-on-surface-variant">Keynote: Dr. Elena Vace on Morphological Shift.
+                            </p>
+                        </div>
+                        <div class="relative">
+                            <div
+                                class="absolute -left-8 top-1 w-4 h-4 bg-surface-container-high rounded-full border-4 border-surface">
+                            </div>
+                            <p class="text-xs font-bold text-on-surface-variant mb-1">11:30 AM</p>
+                            <h5 class="font-bold">Deep Dive Lab</h5>
+                            <p class="text-sm text-on-surface-variant">Hands-on semantic parsing with transformer
+                                models.</p>
+                        </div>
+                        <div class="relative">
+                            <div
+                                class="absolute -left-8 top-1 w-4 h-4 bg-surface-container-high rounded-full border-4 border-surface">
+                            </div>
+                            <p class="text-xs font-bold text-on-surface-variant mb-1">03:00 PM</p>
+                            <h5 class="font-bold">Research Mixer</h5>
+                            <p class="text-sm text-on-surface-variant">Open floor for collaboration and project pitches.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Map Widget -->
+                <div class="rounded-xl h-48 overflow-hidden relative group">
+                    <img alt="map"
+                        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        data-alt="stylized architectural map of a modern university campus with clean lines and soft blue highlighting on the main hall"
+                        data-location="University of Zurich"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuA43qAV_lcCpn3EB_7zTZhHOh4ehysPBX5j9J2VaYwt-MEVuc2fjspNkfLA_fpOQDhNdHnFQ1GvwrSp_4n_UKzFnKAJ7f2ZheNWJffneqdqeFc5bkp896rxiw7F0YKPA-uDWSalwEpT8losTz4_WB56Wn7ANHCJISOoje0fdze-3u41uSY529vMg5K3Q2pJGwcaedQa5BJAMhdwxlVLkcHOxvrRK7EUpZqRg0JUUuVV32N7h2xBSBa1DnPBDsXLFx_FopdLJPxCg3k" />
+                    <div class="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                        <div class="glass-card px-4 py-2 rounded-full flex items-center gap-2 shadow-lg">
+                            <span class="material-symbols-outlined text-primary">location_on</span>
+                            <span class="text-sm font-bold">Science Hub, Hall 4</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] border border-white/20">
+        <div class="flex justify-around items-center p-2">
+            <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold">Home</span>
+            </a>
+            <a class="flex flex-col items-center justify-center bg-gradient-to-br from-[#0050d4] to-[#0046bb] text-white rounded-full p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined">event_available</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold">Events</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined">menu_book</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold">Library</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined">person</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold">Profile</span>
+            </a>
+        </div>
+    </nav>
+    <!-- Floating Action Button (Optional for Mobile Scroll Context) -->
+    <button
+        class="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-secondary text-white shadow-xl flex items-center justify-center active:scale-95 duration-200 md:hidden">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">share</span>
+    </button>
+</body>
+
+</html>

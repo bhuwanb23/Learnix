@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#2c2f31",
+                        "surface-bright": "#f5f7f9",
+                        "primary-container": "#7b9cff",
+                        "on-error": "#ffefee",
+                        "error-container": "#fb5151",
+                        "on-secondary-fixed": "#430097",
+                        "primary-fixed": "#7b9cff",
+                        "tertiary-dim": "#8e3000",
+                        "on-primary-container": "#001e5a",
+                        "background": "#f5f7f9",
+                        "primary": "#0050d4",
+                        "surface-container-low": "#eef1f3",
+                        "inverse-primary": "#618bff",
+                        "surface-dim": "#d0d5d8",
+                        "error": "#b31b25",
+                        "error-dim": "#9f0519",
+                        "on-primary-fixed": "#000000",
+                        "surface-container": "#e5e9eb",
+                        "secondary-fixed": "#dcc9ff",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-primary": "#f1f2ff",
+                        "on-tertiary-fixed": "#310b00",
+                        "surface-tint": "#0050d4",
+                        "surface-container-highest": "#d9dde0",
+                        "inverse-on-surface": "#9a9d9f",
+                        "secondary-container": "#dcc9ff",
+                        "on-background": "#2c2f31",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "on-tertiary": "#ffefeb",
+                        "primary-fixed-dim": "#658eff",
+                        "on-error-container": "#570008",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-secondary": "#f8f0ff",
+                        "tertiary": "#a23800",
+                        "tertiary-fixed": "#ff956a",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#747779",
+                        "primary-dim": "#0046bb",
+                        "inverse-surface": "#0b0f10",
+                        "surface-variant": "#d9dde0",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-surface-variant": "#595c5e",
+                        "outline-variant": "#abadaf",
+                        "secondary": "#702ae1",
+                        "on-secondary-container": "#5b00c7",
+                        "secondary-dim": "#6411d5",
+                        "surface": "#f5f7f9",
+                        "tertiary-container": "#ff956a",
+                        "surface-container-high": "#dfe3e6",
+                        "on-secondary-fixed-variant": "#6514d6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .font-headline {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="w-full sticky top-0 z-50 bg-[#f5f7f9] dark:bg-[#0f172a] flex items-center px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+            <button
+                class="active:scale-95 duration-200 hover:bg-[#eef1f3] dark:hover:bg-slate-800 transition-colors p-2 rounded-full">
+                <span class="material-symbols-outlined text-[#0050d4] dark:text-[#3b82f6]">arrow_back</span>
+            </button>
+            <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-on-surface text-xl">Certifications</h1>
+        </div>
+        <div class="ml-auto flex items-center gap-3">
+            <div class="hidden md:flex gap-6 mr-6">
+                <a class="text-[#2c2f31] dark:text-slate-400 hover:text-[#0050d4] font-semibold text-sm transition-colors"
+                    href="#">Dashboard</a>
+                <a class="text-[#2c2f31] dark:text-slate-400 hover:text-[#0050d4] font-semibold text-sm transition-colors"
+                    href="#">Events</a>
+                <a class="text-[#0050d4] dark:text-[#3b82f6] font-semibold text-sm transition-colors"
+                    href="#">Certificates</a>
+                <a class="text-[#2c2f31] dark:text-slate-400 hover:text-[#0050d4] font-semibold text-sm transition-colors"
+                    href="#">Profile</a>
+            </div>
+            <div class="h-10 w-10 rounded-full bg-surface-container-high overflow-hidden">
+                <img alt="Profile" class="w-full h-full object-cover"
+                    data-alt="Close-up portrait of a young professional student with a warm smile, natural lighting, soft bokeh background"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOeb9vz5bVFiZDtRiXQ3tbqxd-plMEyQIrs8bl27Pdo2JPtabxBez0bMu-e7Ei20-EdmYNsEX1ZK_2hfWwuAKb1j3LtmlZih8n9xMSDoRB5lqASbAHZ1z5d5rRvNFwgvGilmEHiqm_1m5FdBBA5RbM9w2qKh-rbjFDT48pxRpAh2-n6NRu3uJ8U0jowOPyKBo23qHWuRiO8xLAD_7iEaQ9BroLWE1-60RvVWiqcKvgIvTSPolpCNNPYHdFs7bBK9kuXWu8vHySdi0" />
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pt-8">
+        <!-- Summary Section: The Academic Curator Hero -->
+        <section class="mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Achievement Bento Card -->
+                <div
+                    class="md:col-span-2 relative overflow-hidden bg-gradient-to-br from-primary to-primary-dim p-8 rounded-3xl text-on-primary flex flex-col justify-between min-h-[240px]">
+                    <div class="z-10">
+                        <p class="font-headline font-semibold text-on-primary/80 tracking-wide mb-2">ACADEMIC EXCELLENCE
+                        </p>
+                        <h2 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight mb-4">Your
+                            achievements, <br />curated.</h2>
+                    </div>
+                    <div class="flex items-center gap-4 z-10">
+                        <div class="bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl">
+                            <span class="block text-3xl font-extrabold">12</span>
+                            <span class="text-xs font-bold uppercase tracking-widest opacity-80">Total
+                                Certificates</span>
+                        </div>
+                        <div class="bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl">
+                            <span class="block text-3xl font-extrabold">04</span>
+                            <span class="text-xs font-bold uppercase tracking-widest opacity-80">Current Term</span>
+                        </div>
+                    </div>
+                    <!-- Decorative Background Element -->
+                    <div class="absolute -right-12 -top-12 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl">
+                    </div>
+                    <div class="absolute right-12 bottom-0 w-32 h-32 bg-secondary/20 rounded-full blur-2xl"></div>
+                </div>
+                <!-- Circular Progress Bento Card -->
+                <div
+                    class="bg-surface-container-lowest p-8 rounded-3xl flex flex-col items-center justify-center text-center shadow-sm">
+                    <p class="font-headline font-bold text-on-surface/60 text-sm mb-6 uppercase tracking-widest">Mastery
+                        Progress</p>
+                    <div class="relative w-32 h-32 mb-6">
+                        <svg class="w-full h-full" viewbox="0 0 100 100">
+                            <circle class="text-surface-container-high/10" cx="50" cy="50" fill="transparent" r="40"
+                                stroke="currentColor" stroke-width="10"></circle>
+                            <circle class="text-primary" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor"
+                                stroke-dasharray="251.2" stroke-dashoffset="62.8" stroke-linecap="round"
+                                stroke-width="10" style="transform-origin: center; transform: rotate(-90deg);"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="font-headline text-3xl font-bold">75%</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-on-surface-variant font-medium leading-relaxed">
+                        You're in the top <span class="text-secondary font-bold">5%</span> of learners this month.
+                    </p>
+                </div>
+            </div>
+        </section>
+        <!-- Certificate Grid -->
+        <section>
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="font-headline text-2xl font-bold tracking-tight text-on-surface">Recent Certifications</h3>
+                <div class="flex gap-2">
+                    <button
+                        class="px-4 py-2 bg-surface-container-low hover:bg-surface-container-high transition-colors rounded-xl text-sm font-bold text-on-surface">All</button>
+                    <button
+                        class="px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors text-sm font-bold">2024</button>
+                    <button
+                        class="px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors text-sm font-bold">2023</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Certificate Card 1 -->
+                <div
+                    class="bg-surface-container-lowest rounded-3xl overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col">
+                    <div class="h-48 relative overflow-hidden">
+                        <img alt="UI Design Workshop"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            data-alt="Close-up of a digital design workspace with high-end monitor showing colorful UI layouts and vibrant gradients"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuClCbsNIGDIPmr-AIrUla8XqGgfdxzGquRPMcA6o9DYyNXZgOWIzysq3Gy0BebmZTafNV1CB2LnWST1UUAo_Hc30Eo5xEJc94mJ3aPRl5kuF9hTgKCacrL9hA7_JBY42xTLIbpQSjcawelpEN0_mbaEr9QAR615anErucVLSTdmUVRSCyhSNTkT7yakzGtG6qeHr_JaHEp78KlrAkC01WOi7bNfphr-k-jwS5F7TNpcQBlF67nNtaOt0sLP6rjpQ7uHh2qs44ZGrdM" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute bottom-4 left-6">
+                            <span
+                                class="bg-primary/20 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-bold tracking-wider uppercase">Design</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-headline text-xl font-bold text-on-surface leading-tight">Advanced UI/UX
+                                Systems</h4>
+                            <span class="material-symbols-outlined text-primary"
+                                style="font-variation-settings: 'FILL' 1;">verified</span>
+                        </div>
+                        <p class="text-on-surface-variant text-sm mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            Completed Oct 24, 2023
+                        </p>
+                        <div class="mt-auto">
+                            <button
+                                class="w-full flex items-center justify-center gap-2 py-4 bg-surface-container-low hover:bg-primary hover:text-on-primary transition-all duration-300 rounded-2xl font-bold text-sm">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                                Download Certificate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Certificate Card 2 -->
+                <div
+                    class="bg-surface-container-lowest rounded-3xl overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col">
+                    <div class="h-48 relative overflow-hidden">
+                        <img alt="Javascript Workshop"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            data-alt="Minimalist coding setup with dark themed IDE and vibrant neon syntax highlighting on a crisp screen"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkjEB-unYMg-rz0MrhHJ8xjyUGu4CzAx0EW7P6bktB3th0i3DTkwCVl73HF2dG1PmdJ37XLUQvHXbiAUbEcf0f5x4ySzjyRZ32DdY7jpAeVcAJEiQjwBI5R2v9CLLVS4SmOB6hEEeY6OGodCjYLkLeYmHBlGAKd_hv7SIdIEVXXtzGtmJaPfAhkVwdbeQvq1_jYamLSzJmDWmcHIOYqy6iCtRn0QibDaeUXw_X8l4sH-EUX0fSqRepS15nFvpUJRXIzN67IP0BIX0" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute bottom-4 left-6">
+                            <span
+                                class="bg-secondary/20 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-bold tracking-wider uppercase">Development</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-headline text-xl font-bold text-on-surface leading-tight">Modern JavaScript
+                                Mastery</h4>
+                            <span class="material-symbols-outlined text-primary"
+                                style="font-variation-settings: 'FILL' 1;">verified</span>
+                        </div>
+                        <p class="text-on-surface-variant text-sm mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            Completed Sep 12, 2023
+                        </p>
+                        <div class="mt-auto">
+                            <button
+                                class="w-full flex items-center justify-center gap-2 py-4 bg-surface-container-low hover:bg-primary hover:text-on-primary transition-all duration-300 rounded-2xl font-bold text-sm">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                                Download Certificate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Certificate Card 3 -->
+                <div
+                    class="bg-surface-container-lowest rounded-3xl overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col">
+                    <div class="h-48 relative overflow-hidden">
+                        <img alt="Data Science"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            data-alt="Abstract data visualization with flowing lines and particles in shades of deep blue and orange"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4rXwpWc_NzDYgrHgpMoHGrdjuquSkxQ_Rbkh6BP0AHYepkooMRNTfb1-5dMx_sNTIl8Rwfxxqffu64nvoq9oTx3CFAo0ba2JeFX5u0AP2xwmm1hK-dSXmf1V8qVHHhIiJkmlIwlYFWsiwcOMn2RQrpYjclzXzjrelqsKCh1ht-muLA6_Ej4fUl3M6Uk2lzOQdieqv_wy_pcleRZD9INu-B1eEF3pLNXGfqt2HMMbcKFSUaG7PafgfUcL4_18TSIZJLgxPYmVMo-8" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute bottom-4 left-6">
+                            <span
+                                class="bg-tertiary/20 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-bold tracking-wider uppercase">Data</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-headline text-xl font-bold text-on-surface leading-tight">Data Structures
+                                &amp; Analysis</h4>
+                            <span class="material-symbols-outlined text-primary"
+                                style="font-variation-settings: 'FILL' 1;">verified</span>
+                        </div>
+                        <p class="text-on-surface-variant text-sm mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            Completed Aug 05, 2023
+                        </p>
+                        <div class="mt-auto">
+                            <button
+                                class="w-full flex items-center justify-center gap-2 py-4 bg-surface-container-low hover:bg-primary hover:text-on-primary transition-all duration-300 rounded-2xl font-bold text-sm">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                                Download Certificate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Certificate Card 4 -->
+                <div
+                    class="bg-surface-container-lowest rounded-3xl overflow-hidden group hover:shadow-xl transition-all duration-300 flex flex-col">
+                    <div class="h-48 relative overflow-hidden">
+                        <img alt="Business Workshop"
+                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            data-alt="Top-down view of a modern business meeting table with neat documents, pencils, and a coffee cup"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWdPysssS3Z6H2WYAE12vuE029XLab5uQBrm8qPqakK1GFYCqlYCQHnwAiaXD6c1brid7qqnnwy_KZmnEUUXY_rVZ_dwgCi1kayETnUv3Knw87cQOSiNOB478qRP56O4lsQ_C4r3rLB3SwDqkqby692pzcWkhG4X-6emfDWNlDLboNvvPkKUHzkINUcgIeE5Qmlmwp2uLzgYDsXqE7CuGvcp6Jn_FqS4H-Quh4AEzcmoatuVnZvD0oD6rPbwg0eFChzJNnV6ph7E0" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                        <div class="absolute bottom-4 left-6">
+                            <span
+                                class="bg-primary/20 backdrop-blur-md text-white px-3 py-1 rounded-lg text-xs font-bold tracking-wider uppercase">Business</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-headline text-xl font-bold text-on-surface leading-tight">Strategic
+                                Management</h4>
+                            <span class="material-symbols-outlined text-primary"
+                                style="font-variation-settings: 'FILL' 1;">verified</span>
+                        </div>
+                        <p class="text-on-surface-variant text-sm mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            Completed Jul 19, 2023
+                        </p>
+                        <div class="mt-auto">
+                            <button
+                                class="w-full flex items-center justify-center gap-2 py-4 bg-surface-container-low hover:bg-primary hover:text-on-primary transition-all duration-300 rounded-2xl font-bold text-sm">
+                                <span class="material-symbols-outlined text-lg">download</span>
+                                Download Certificate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl z-50 rounded-t-[24px] shadow-[0_-8px_24px_rgba(44,47,49,0.06)]">
+        <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+            href="#">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="font-['Manrope'] text-xs font-semibold">Dashboard</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+            href="#">
+            <span class="material-symbols-outlined">event</span>
+            <span class="font-['Manrope'] text-xs font-semibold">Events</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-[#7b9cff]/20 text-[#0050d4] dark:text-[#3b82f6] rounded-[24px] px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+            href="#">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified</span>
+            <span class="font-['Manrope'] text-xs font-semibold">Certificates</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-200"
+            href="#">
+            <span class="material-symbols-outlined">person</span>
+            <span class="font-['Manrope'] text-xs font-semibold">Profile</span>
+        </a>
+    </nav>
+</body>
+
+</html>

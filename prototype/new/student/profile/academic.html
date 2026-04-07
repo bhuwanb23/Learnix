@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e5e9eb",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "primary": "#0050d4",
+                        "inverse-surface": "#0b0f10",
+                        "tertiary-fixed": "#ff956a",
+                        "on-primary-fixed-variant": "#00266e",
+                        "error": "#b31b25",
+                        "on-secondary-fixed": "#430097",
+                        "on-surface-variant": "#595c5e",
+                        "surface-bright": "#f5f7f9",
+                        "primary-fixed": "#7b9cff",
+                        "on-primary-container": "#001e5a",
+                        "tertiary-dim": "#8e3000",
+                        "on-error-container": "#570008",
+                        "inverse-primary": "#618bff",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-tertiary-fixed": "#310b00",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-tertiary": "#ffefeb",
+                        "on-primary-fixed": "#000000",
+                        "surface-container-highest": "#d9dde0",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#2c2f31",
+                        "surface-variant": "#d9dde0",
+                        "on-secondary-container": "#5b00c7",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-primary": "#f1f2ff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "tertiary-container": "#ff956a",
+                        "surface": "#f5f7f9",
+                        "error-container": "#fb5151",
+                        "outline": "#747779",
+                        "on-error": "#ffefee",
+                        "secondary-dim": "#6411d5",
+                        "on-background": "#2c2f31",
+                        "surface-tint": "#0050d4",
+                        "outline-variant": "#abadaf",
+                        "error-dim": "#9f0519",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "primary-dim": "#0046bb",
+                        "secondary-container": "#dcc9ff",
+                        "primary-container": "#7b9cff",
+                        "surface-container-high": "#dfe3e6",
+                        "surface-dim": "#d0d5d8",
+                        "surface-container-low": "#eef1f3",
+                        "on-secondary": "#f8f0ff",
+                        "background": "#f5f7f9",
+                        "secondary": "#702ae1",
+                        "tertiary": "#a23800",
+                        "primary-fixed-dim": "#658eff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+
+        .lush-gradient {
+            background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface">
+    <!-- Top Navigation -->
+    <header class="w-full top-0 sticky z-50 bg-surface-container-low">
+        <div class="flex items-center justify-between px-6 py-4 w-full">
+            <div class="flex items-center gap-4">
+                <button class="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full">
+                    <span class="material-symbols-outlined text-blue-600">arrow_back</span>
+                </button>
+                <h1 class="font-headline text-2xl font-bold tracking-tight text-on-surface">Academic Profile</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="p-2 hover:bg-slate-100 transition-colors active:scale-95 duration-200 rounded-full">
+                    <span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pt-8 pb-32">
+        <!-- Department Hero Section -->
+        <section class="mb-10 relative overflow-hidden rounded-xl lush-gradient p-8 text-on-primary shadow-lg">
+            <div class="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                <div>
+                    <span
+                        class="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-widest mb-4">Department
+                        of Science</span>
+                    <h2 class="font-headline text-4xl md:text-5xl font-extrabold mb-2 leading-tight">Artificial
+                        Intelligence &amp; <br />Machine Learning</h2>
+                    <p class="text-on-primary/80 max-w-lg text-lg">School of Advanced Computing · Class of 2025</p>
+                </div>
+                <div
+                    class="bg-white/10 backdrop-blur-md rounded-xl p-4 flex flex-col items-center border border-white/10">
+                    <span class="text-xs uppercase font-bold tracking-widest opacity-70 mb-1">Current Status</span>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></span>
+                        <span class="text-xl font-bold">Semester 06</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Stats Overview Bento -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <!-- GPA Card -->
+            <div
+                class="md:col-span-1 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+                <p class="text-on-surface-variant font-semibold text-sm uppercase tracking-wider mb-4">Cumulative GPA
+                </p>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-5xl font-headline font-extrabold text-primary">3.92</span>
+                    <span class="text-on-surface-variant">/ 4.0</span>
+                </div>
+                <div class="mt-4 flex items-center gap-1 text-green-600 font-bold text-sm">
+                    <span class="material-symbols-outlined text-sm">trending_up</span>
+                    <span>+0.05 vs last sem</span>
+                </div>
+            </div>
+            <!-- Credits Progress -->
+            <div
+                class="md:col-span-2 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col justify-between">
+                <div>
+                    <p class="text-on-surface-variant font-semibold text-sm uppercase tracking-wider mb-2">Academic
+                        Progress</p>
+                    <div class="flex justify-between items-end mb-4">
+                        <h3 class="text-2xl font-bold">114 / 140 Credits</h3>
+                        <span class="text-primary font-bold">81% Complete</span>
+                    </div>
+                    <div class="w-full h-3 bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full" style="width: 81%"></div>
+                    </div>
+                </div>
+                <p class="text-on-surface-variant text-sm mt-4">26 credits remaining for graduation in Spring 2025</p>
+            </div>
+            <!-- Attendance Badge -->
+            <div
+                class="md:col-span-1 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col justify-center items-center text-center">
+                <div class="relative w-20 h-20 mb-4">
+                    <svg class="w-full h-full transform -rotate-90">
+                        <circle class="text-surface-container-high" cx="40" cy="40" fill="transparent" r="34"
+                            stroke="currentColor" stroke-width="8"></circle>
+                        <circle class="text-secondary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor"
+                            stroke-dasharray="213.6" stroke-dashoffset="21.36" stroke-width="8"></circle>
+                    </svg>
+                    <span class="absolute inset-0 flex items-center justify-center font-bold text-lg">90%</span>
+                </div>
+                <span class="text-on-surface-variant font-semibold text-sm uppercase tracking-wider">Attendance</span>
+            </div>
+        </div>
+        <!-- Subjects List -->
+        <section>
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="font-headline text-2xl font-bold">Enrolled Subjects</h3>
+                <button class="flex items-center gap-2 text-primary font-bold hover:underline">
+                    <span class="material-symbols-outlined">filter_list</span>
+                    <span>Spring 2024</span>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 gap-4">
+                <!-- Subject Card 1 -->
+                <div
+                    class="group flex flex-col md:flex-row items-center bg-surface-container-lowest hover:bg-surface-container-low transition-all duration-300 rounded-xl p-5 shadow-sm border border-outline-variant/10">
+                    <div
+                        class="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center text-primary mb-4 md:mb-0 md:mr-6">
+                        <span class="material-symbols-outlined text-3xl">psychology</span>
+                    </div>
+                    <div class="flex-grow text-center md:text-left">
+                        <h4 class="text-lg font-bold">Neural Networks &amp; Deep Learning</h4>
+                        <p class="text-on-surface-variant text-sm">Course Code: CS-402 • Prof. Sarah Jenkins</p>
+                    </div>
+                    <div class="flex items-center gap-8 mt-4 md:mt-0">
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Credits
+                            </p>
+                            <p class="font-bold text-lg">4.0</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Grade
+                            </p>
+                            <span
+                                class="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full font-bold">A+</span>
+                        </div>
+                        <button class="p-2 text-on-surface-variant hover:text-primary">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Subject Card 2 -->
+                <div
+                    class="group flex flex-col md:flex-row items-center bg-surface-container-lowest hover:bg-surface-container-low transition-all duration-300 rounded-xl p-5 shadow-sm border border-outline-variant/10">
+                    <div
+                        class="w-14 h-14 bg-secondary/10 rounded-lg flex items-center justify-center text-secondary mb-4 md:mb-0 md:mr-6">
+                        <span class="material-symbols-outlined text-3xl">database</span>
+                    </div>
+                    <div class="flex-grow text-center md:text-left">
+                        <h4 class="text-lg font-bold">Advanced Database Systems</h4>
+                        <p class="text-on-surface-variant text-sm">Course Code: CS-405 • Prof. Robert Chen</p>
+                    </div>
+                    <div class="flex items-center gap-8 mt-4 md:mt-0">
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Credits
+                            </p>
+                            <p class="font-bold text-lg">3.0</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Grade
+                            </p>
+                            <span
+                                class="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">A</span>
+                        </div>
+                        <button class="p-2 text-on-surface-variant hover:text-primary">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Subject Card 3 -->
+                <div
+                    class="group flex flex-col md:flex-row items-center bg-surface-container-lowest hover:bg-surface-container-low transition-all duration-300 rounded-xl p-5 shadow-sm border border-outline-variant/10">
+                    <div
+                        class="w-14 h-14 bg-tertiary/10 rounded-lg flex items-center justify-center text-tertiary mb-4 md:mb-0 md:mr-6">
+                        <span class="material-symbols-outlined text-3xl">terminal</span>
+                    </div>
+                    <div class="flex-grow text-center md:text-left">
+                        <h4 class="text-lg font-bold">Cybersecurity Fundamentals</h4>
+                        <p class="text-on-surface-variant text-sm">Course Code: CS-412 • Prof. Alan Turing (Guest)</p>
+                    </div>
+                    <div class="flex items-center gap-8 mt-4 md:mt-0">
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Credits
+                            </p>
+                            <p class="font-bold text-lg">4.0</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Grade
+                            </p>
+                            <span
+                                class="inline-block px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full font-bold italic">In
+                                Progress</span>
+                        </div>
+                        <button class="p-2 text-on-surface-variant hover:text-primary">
+                            <span class="material-symbols-outlined">chevron_right</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Upcoming Deadlines Asymmetric Section -->
+        <section class="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <h3 class="font-headline text-2xl font-bold mb-6">Course Material</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-primary">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h5 class="font-bold">Neural Networks Lab</h5>
+                                <p class="text-sm text-on-surface-variant">Due: Friday, 4:00 PM</p>
+                            </div>
+                            <span class="material-symbols-outlined text-primary">lab_profile</span>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low p-6 rounded-xl border-l-4 border-secondary">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h5 class="font-bold">Ethics in AI Essay</h5>
+                                <p class="text-sm text-on-surface-variant">Due: Monday, 10:00 AM</p>
+                            </div>
+                            <span class="material-symbols-outlined text-secondary">history_edu</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-on-surface rounded-xl p-6 text-white overflow-hidden relative group">
+                <img class="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:scale-110 transition-transform duration-700"
+                    data-alt="close-up of university student library books and graduation cap in warm cinematic lighting"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnhTzjR9qwF_5Wx6TQabTQSxPqaEwEeOVeTkiHuHnIc6ChhyvNz2OhUqDNflpGYkcuF_2o2Hi6eSFmnWcc7TMHWYmdjBGiWILTbhqv2inR5Z8C7iYnIft3df4URc-vzfNPflgysaEDxzJoPcOAg0m03MPB2mwFjOThSjh5f09nmfLJ-z6T027FBrnq7Q5NM6NCjjFlnnQ2EysRt6F4I9xf6JGEwdjXYx6HqgYaHJWQb89Pi-VLjoQx2V7xp942odmgl9_QT8mTbF0" />
+                <div class="relative z-10 flex flex-col h-full justify-between">
+                    <div>
+                        <h4 class="font-headline text-xl font-bold mb-2">Request Transcripts</h4>
+                        <p class="text-white/70 text-sm">Apply for official academic records for internship
+                            applications.</p>
+                    </div>
+                    <button
+                        class="mt-8 bg-white text-on-surface font-bold py-3 rounded-xl hover:bg-surface-container transition-colors">
+                        Apply Now
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Bottom Navigation Bar -->
+    <nav
+        class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-[0_-8px_24px_rgba(44,47,49,0.06)] rounded-t-[24px] z-50">
+        <a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-blue-500 transition-transform duration-200 active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1">grid_view</span>
+            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider">Dashboard</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-blue-50 text-blue-700 rounded-full px-5 py-2 font-bold transition-transform duration-200 active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1">menu_book</span>
+            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider">Academics</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-blue-500 transition-transform duration-200 active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1">analytics</span>
+            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider">Insights</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-blue-500 transition-transform duration-200 active:scale-90"
+            href="#">
+            <span class="material-symbols-outlined mb-1">person</span>
+            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider">Profile</span>
+        </a>
+    </nav>
+</body>
+
+</html>

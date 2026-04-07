@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lecture Notes - Study Central</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-dim": "#6411d5",
+                    "on-secondary-container": "#5b00c7",
+                    "on-tertiary-fixed-variant": "#692200",
+                    "on-primary": "#f1f2ff",
+                    "surface-container": "#e5e9eb",
+                    "secondary-fixed": "#dcc9ff",
+                    "tertiary-fixed": "#ff956a",
+                    "inverse-surface": "#0b0f10",
+                    "error-container": "#fb5151",
+                    "surface-container-low": "#eef1f3",
+                    "tertiary": "#a23800",
+                    "secondary-container": "#dcc9ff",
+                    "surface-container-high": "#dfe3e6",
+                    "surface": "#f5f7f9",
+                    "outline-variant": "#abadaf",
+                    "primary": "#0050d4",
+                    "secondary-fixed-dim": "#d0b8ff",
+                    "tertiary-dim": "#8e3000",
+                    "on-primary-container": "#001e5a",
+                    "primary-dim": "#0046bb",
+                    "surface-bright": "#f5f7f9",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed": "#430097",
+                    "on-secondary-fixed-variant": "#6514d6",
+                    "on-primary-fixed-variant": "#00266e",
+                    "primary-container": "#7b9cff",
+                    "error-dim": "#9f0519",
+                    "surface-tint": "#0050d4",
+                    "primary-fixed-dim": "#658eff",
+                    "on-secondary": "#f8f0ff",
+                    "error": "#b31b25",
+                    "on-error-container": "#570008",
+                    "on-tertiary-container": "#5a1c00",
+                    "tertiary-fixed-dim": "#ff7e48",
+                    "on-primary-fixed": "#000000",
+                    "on-surface-variant": "#595c5e",
+                    "tertiary-container": "#ff956a",
+                    "on-surface": "#2c2f31",
+                    "surface-variant": "#d9dde0",
+                    "surface-container-highest": "#d9dde0",
+                    "surface-dim": "#d0d5d8",
+                    "on-tertiary": "#ffefeb",
+                    "secondary": "#702ae1",
+                    "on-background": "#2c2f31",
+                    "inverse-on-surface": "#9a9d9f",
+                    "background": "#f5f7f9",
+                    "primary-fixed": "#7b9cff",
+                    "on-error": "#ffefee",
+                    "inverse-primary": "#618bff",
+                    "on-tertiary-fixed": "#310b00",
+                    "outline": "#747779"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "1rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; background-color: #f5f7f9; color: #2c2f31; }
+        .headline-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-effect { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-[#f5f7f9] dark:bg-[#0f172a] flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 transition-transform duration-200 text-[#0050d4] dark:text-[#7b9cff]">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-on-surface text-xl">Lecture Notes</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:opacity-80 transition-opacity p-2 bg-surface-container-low rounded-full active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="close up portrait of a young college student with a friendly expression in a modern bright campus setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVgG1m9PkOGi3_nXeNzinB2C8wb0BpyNUYkXr4LalN033r-tMPO8HUgE5A-mZc4JKLL6lKv5JJUGxnq4zrUy69kXDO0BH1BkyWig2u45m7Xlh2DH4mX2bQU_kO8dKuuUpqoQZ7-emTBRkk9whMsEmQutsLYEi8B9rpzfnUWrdPGWGm6eDQYFINDqFO3B3BLacj3Qbk2dpHehngzLJQE40tTEJ60nZRwoEsSTf97iVqJV6qMsTouVGk43RDj96Yd6GzXu2oWpFPz48"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="px-6 pt-4 max-w-4xl mx-auto space-y-8">
+<!-- Filter Chip Group -->
+<section class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+<button class="px-6 py-2.5 rounded-full bg-primary text-on-primary font-bold text-sm shadow-lg shadow-primary/20 transition-all active:scale-95">All</button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-low text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95">Core</button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-low text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95">Electives</button>
+<button class="px-6 py-2.5 rounded-full bg-surface-container-low text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95">Archived</button>
+</section>
+<!-- Continue Studying: Large Feature Card -->
+<section>
+<div class="relative overflow-hidden rounded-xl bg-gradient-to-br from-[#0050d4] to-[#0046bb] p-8 text-white shadow-2xl shadow-primary/30 group">
+<!-- Decorative background elements -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
+<div class="absolute -bottom-12 -left-12 w-48 h-48 bg-secondary/20 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-700"></div>
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="space-y-4 max-w-md">
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/10">
+<span class="material-symbols-outlined text-xs" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="text-[10px] font-bold uppercase tracking-widest font-['Manrope']">Continue Studying</span>
+</div>
+<h2 class="text-3xl font-bold headline-font leading-tight">Operating Systems</h2>
+<div class="space-y-2">
+<div class="flex justify-between text-sm font-medium text-primary-fixed">
+<span>80% Complete</span>
+<span>4/5 Modules</span>
+</div>
+<div class="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-white rounded-full transition-all duration-1000" style="width: 80%"></div>
+</div>
+</div>
+</div>
+<button class="flex items-center justify-center gap-3 px-8 py-4 bg-white text-primary font-bold rounded-xl shadow-xl hover:shadow-2xl hover:-translate-y-1 active:scale-95 transition-all w-full md:w-auto">
+<span>Resume</span>
+<span class="material-symbols-outlined" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Subject Directory -->
+<section class="space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-bold headline-font">Subject Directory</h3>
+<button class="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
+                    View All <span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<!-- Subject Card 1 -->
+<div class="group bg-surface-container-lowest rounded-xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant/10">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-secondary-container/30 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl" data-icon="data_object">data_object</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-3">
+<h4 class="font-bold text-lg">Algorithms &amp; Data Structures</h4>
+<span class="px-2 py-0.5 bg-surface-container-low text-[10px] font-bold rounded text-on-surface-variant uppercase tracking-wider">Core</span>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> 65% Progress</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span> Last opened Oct 14</span>
+</div>
+</div>
+</div>
+<button class="p-3 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<!-- Subject Card 2 -->
+<div class="group bg-surface-container-lowest rounded-xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant/10">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-tertiary-container/30 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-3xl" data-icon="database">database</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-3">
+<h4 class="font-bold text-lg">Database Management</h4>
+<span class="px-2 py-0.5 bg-surface-container-low text-[10px] font-bold rounded text-on-surface-variant uppercase tracking-wider">Core</span>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> 42% Progress</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span> Last opened Oct 12</span>
+</div>
+</div>
+</div>
+<button class="p-3 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+<!-- Subject Card 3 -->
+<div class="group bg-surface-container-lowest rounded-xl p-5 flex items-center justify-between shadow-sm hover:shadow-md transition-all border border-transparent hover:border-outline-variant/10">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 rounded-xl bg-primary-container/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-3xl" data-icon="brush">brush</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-3">
+<h4 class="font-bold text-lg">UI/UX Design Systems</h4>
+<span class="px-2 py-0.5 bg-surface-container-low text-[10px] font-bold rounded text-on-surface-variant uppercase tracking-wider">Elective</span>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span> 95% Progress</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span> Last opened Oct 10</span>
+</div>
+</div>
+</div>
+<button class="p-3 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors active:scale-90">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Bento Style Stats (Bonus Section) -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-low p-6 rounded-xl space-y-2">
+<p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Study Streak</p>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-extrabold headline-font">12</span>
+<span class="text-tertiary font-bold pb-1 text-sm">days</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl space-y-2">
+<p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Total Notes</p>
+<div class="flex items-end gap-2">
+<span class="text-3xl font-extrabold headline-font">248</span>
+<span class="text-secondary font-bold pb-1 text-sm">pages</span>
+</div>
+</div>
+<div class="col-span-2 bg-surface-container-low p-6 rounded-xl flex items-center justify-between">
+<div class="space-y-2">
+<p class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Weekly Goal</p>
+<span class="text-xl font-bold headline-font">18 / 20 Hours</span>
+</div>
+<div class="w-12 h-12 relative">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-surface-container-high" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="25.12" stroke-width="4"></circle>
+</svg>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pointer-events-none">
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full shadow-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl flex justify-around items-center h-16 px-6 pointer-events-auto shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 p-2 hover:bg-[#eef1f3] dark:hover:bg-slate-800 rounded-full transition-all active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-[10px] font-['Manrope'] font-semibold uppercase tracking-wider">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 p-2 hover:bg-[#eef1f3] dark:hover:bg-slate-800 rounded-full transition-all active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+<span class="text-[10px] font-['Manrope'] font-semibold uppercase tracking-wider">Classes</span>
+</a>
+<!-- Active Tab -->
+<a class="flex flex-col items-center justify-center bg-gradient-to-br from-[#0050d4] to-[#0046bb] text-white rounded-full p-3 w-12 h-12 shadow-lg -translate-y-4 active:scale-90 transition-all duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="description" style="font-variation-settings: 'FILL' 1;">description</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 p-2 hover:bg-[#eef1f3] dark:hover:bg-slate-800 rounded-full transition-all active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-['Manrope'] font-semibold uppercase tracking-wider">Profile</span>
+</a>
+</div>
+</nav>
+<!-- FAB for New Note (Contextual) -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-secondary text-white rounded-2xl shadow-xl shadow-secondary/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+</body></html>

@@ -6,13 +6,14 @@ import {
   RefreshControl,
 } from 'react-native';
 
-// Import components
-import QuickActions from './components/QuickActions';
+// Import new components
+import HeroHeader from './components/HeroHeader';
+import QuickActionCards from './components/QuickActionCards';
+import PerformanceHeatmap from './components/PerformanceHeatmap';
 import AttendanceWidget from './components/AttendanceWidget';
-import ScheduleWidget from './components/ScheduleWidget';
-import AIStudyBuddyWidget from './components/AIStudyBuddyWidget';
-import PerformanceWidget from './components/PerformanceWidget';
-import NotificationsWidget from './components/NotificationsWidget';
+import ScheduleSection from './components/ScheduleSection';
+import NotificationsPanel from './components/NotificationsPanel';
+import AIStudyBuddyChat from './components/AIStudyBuddyChat';
 
 // Import data
 import { DASHBOARD_DATA } from './constants/dashboardData';
@@ -54,11 +55,6 @@ export default function Dashboard({ navigation }) {
     // Handle AI message sending
   };
 
-  const handleNotificationPress = (notificationId) => {
-    console.log('Notification pressed:', notificationId);
-    // Handle notification press
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -68,39 +64,36 @@ export default function Dashboard({ navigation }) {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#2563eb"
+            tintColor="#0050d4"
           />
         }
       >
-        {/* Quick Actions */}
-        <QuickActions
+        {/* Hero Header */}
+        <HeroHeader userData={dashboardData.user} />
+
+        {/* Quick Action Cards */}
+        <QuickActionCards
           actions={dashboardData.quickActions}
           onActionPress={handleQuickAction}
         />
 
-        {/* Dashboard Content */}
-        <View style={styles.content}>
-          {/* Attendance Widget */}
-          <AttendanceWidget attendanceData={dashboardData.attendance} />
+        {/* Attendance Widget */}
+        <AttendanceWidget attendanceData={dashboardData.attendance} />
 
-          {/* Schedule Widget */}
-          <ScheduleWidget scheduleData={dashboardData.schedule} />
+        {/* Schedule Section */}
+        <ScheduleSection scheduleData={dashboardData.schedule} />
 
-          {/* AI Study Buddy Widget */}
-          <AIStudyBuddyWidget
-            aiData={dashboardData.aiBuddy}
-            onSendMessage={handleAIMessage}
-          />
+        {/* Performance Heatmap */}
+        <PerformanceHeatmap performanceData={dashboardData.performance} />
 
-          {/* Performance Widget */}
-          <PerformanceWidget performanceData={dashboardData.performance} />
+        {/* Notifications Panel */}
+        <NotificationsPanel notifications={dashboardData.notifications} />
 
-          {/* Notifications Widget */}
-          <NotificationsWidget
-            notifications={dashboardData.notifications}
-            onNotificationPress={handleNotificationPress}
-          />
-        </View>
+        {/* AI Study Buddy Chat */}
+        <AIStudyBuddyChat
+          aiData={dashboardData.aiBuddy}
+          onSendMessage={handleAIMessage}
+        />
       </ScrollView>
     </View>
   );
@@ -109,13 +102,9 @@ export default function Dashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f5f7f9',
   },
   scrollView: {
     flex: 1,
-  },
-  content: {
-    paddingHorizontal: 0,
-    paddingBottom: 20,
   },
 });

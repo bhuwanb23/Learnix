@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Priority Study List - Learning Gaps</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed": "#430097",
+                    "tertiary": "#a23800",
+                    "inverse-on-surface": "#9a9d9f",
+                    "on-tertiary-fixed": "#310b00",
+                    "on-primary-fixed-variant": "#00266e",
+                    "inverse-surface": "#0b0f10",
+                    "surface": "#f5f7f9",
+                    "on-error": "#ffefee",
+                    "surface-tint": "#0050d4",
+                    "tertiary-fixed-dim": "#ff7e48",
+                    "secondary-fixed-dim": "#d0b8ff",
+                    "surface-container-low": "#eef1f3",
+                    "surface-container": "#e5e9eb",
+                    "on-secondary": "#f8f0ff",
+                    "error": "#b31b25",
+                    "on-error-container": "#570008",
+                    "on-primary": "#f1f2ff",
+                    "secondary-container": "#dcc9ff",
+                    "outline-variant": "#abadaf",
+                    "background": "#f5f7f9",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary-fixed": "#dcc9ff",
+                    "on-tertiary-container": "#5a1c00",
+                    "primary-container": "#7b9cff",
+                    "error-container": "#fb5151",
+                    "on-secondary-fixed-variant": "#6514d6",
+                    "inverse-primary": "#618bff",
+                    "error-dim": "#9f0519",
+                    "on-surface-variant": "#595c5e",
+                    "surface-dim": "#d0d5d8",
+                    "tertiary-container": "#ff956a",
+                    "on-surface": "#2c2f31",
+                    "primary": "#0050d4",
+                    "on-background": "#2c2f31",
+                    "secondary": "#702ae1",
+                    "on-primary-fixed": "#000000",
+                    "surface-bright": "#f5f7f9",
+                    "surface-variant": "#d9dde0",
+                    "primary-fixed-dim": "#658eff",
+                    "primary-dim": "#0046bb",
+                    "surface-container-highest": "#d9dde0",
+                    "tertiary-dim": "#8e3000",
+                    "outline": "#747779",
+                    "on-tertiary-fixed-variant": "#692200",
+                    "primary-fixed": "#7b9cff",
+                    "on-primary-container": "#001e5a",
+                    "surface-container-high": "#dfe3e6",
+                    "tertiary-fixed": "#ff956a",
+                    "on-tertiary": "#ffefeb",
+                    "on-secondary-container": "#5b00c7",
+                    "secondary-dim": "#6411d5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "1rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      body {
+        font-family: 'Manrope', sans-serif;
+        background-color: #f8fafc;
+      }
+      h1, h2, h3 {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface">
+<!-- TopAppBar -->
+<nav class="w-full pt-4 pb-2 bg-[#f5f7f9] dark:bg-slate-950 z-50">
+<div class="flex items-center justify-between px-6 w-full max-w-7xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-blue-700 dark:text-blue-400 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-full active:scale-95 duration-150">arrow_back</button>
+<h1 class="text-xl font-bold text-[#2c2f31] dark:text-white font-['Plus_Jakarta_Sans'] tracking-tight">Learning Gaps</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-slate-500 dark:text-slate-400 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors rounded-full active:scale-95 duration-150">more_vert</button>
+</div>
+</div>
+</nav>
+<main class="max-w-7xl mx-auto px-6 py-8 pb-32">
+<!-- Hero & Filters -->
+<header class="mb-10 space-y-6">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<span class="text-primary font-bold text-sm tracking-widest uppercase">Action Center</span>
+<h2 class="text-4xl font-extrabold mt-2 tracking-tight">Priority Study List</h2>
+<p class="text-on-surface-variant mt-2 max-w-md">Focus on these topics to maximize your score. We've prioritized gaps based on your recent exam performance.</p>
+</div>
+<div class="flex flex-wrap gap-3">
+<div class="flex items-center gap-2 bg-surface-container-low px-4 py-3 rounded-xl">
+<span class="material-symbols-outlined text-primary text-xl">filter_list</span>
+<select class="bg-transparent border-none text-sm font-semibold focus:ring-0 p-0 pr-6">
+<option>All Subjects</option>
+<option>Advanced Calculus</option>
+<option>Quantum Physics</option>
+<option>Bio-Chemistry</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Search Bar Section -->
+<div class="relative group">
+<div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full bg-surface-container-lowest border-none py-5 pl-14 pr-6 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.02)] focus:ring-2 focus:ring-primary/20 transition-all text-lg font-medium outline-none placeholder:text-outline/60" placeholder="Search specific topics, formulas, or concepts..." type="text"/>
+</div>
+</header>
+<!-- Topic Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Card 1: Weak -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-6">
+<div class="bg-error-container text-on-error-container px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider">Weak</div>
+<div class="relative flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90">
+<circle class="text-surface-container-high/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-error" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="87.9" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold">30%</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold mb-3 leading-snug">Partial Differential Equations</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Struggling with boundary value problems and separation of variables in second-order equations.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 px-4 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-primary-dim transition-colors active:scale-95">Revise</button>
+<button class="flex-1 py-3 px-4 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-colors active:scale-95">Retry</button>
+</div>
+</div>
+<!-- Card 2: Medium -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-6">
+<div class="bg-tertiary-container text-on-tertiary-container px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider">Medium</div>
+<div class="relative flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90">
+<circle class="text-surface-container-high/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-tertiary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="50.2" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold">60%</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold mb-3 leading-snug">Quantum Wave Functions</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Good understanding of basics, but inconsistent performance on Heisenberg Uncertainty Principle calculations.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 px-4 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-primary-dim transition-colors active:scale-95">Revise</button>
+<button class="flex-1 py-3 px-4 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-colors active:scale-95">Retry</button>
+</div>
+</div>
+<!-- Card 3: Weak -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-6">
+<div class="bg-error-container text-on-error-container px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider">Weak</div>
+<div class="relative flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90">
+<circle class="text-surface-container-high/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-error" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="100.4" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold">20%</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold mb-3 leading-snug">Metabolic Pathways</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Frequent errors in identifying intermediates in the Krebs cycle and oxidative phosphorylation steps.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 px-4 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-primary-dim transition-colors active:scale-95">Revise</button>
+<button class="flex-1 py-3 px-4 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-colors active:scale-95">Retry</button>
+</div>
+</div>
+<!-- Card 4: Strong -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-6">
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider">Strong</div>
+<div class="relative flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90">
+<circle class="text-surface-container-high/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="12.5" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold">90%</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold mb-3 leading-snug">Electromagnetic Induction</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Nearly perfect accuracy. A quick review of Faraday's Law applications is recommended before the final.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 px-4 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-primary-dim transition-colors active:scale-95">Revise</button>
+<button class="flex-1 py-3 px-4 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-colors active:scale-95">Retry</button>
+</div>
+</div>
+<!-- Card 5: Medium -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-6">
+<div class="bg-tertiary-container text-on-tertiary-container px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider">Medium</div>
+<div class="relative flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90">
+<circle class="text-surface-container-high/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-tertiary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="62.8" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold">50%</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold mb-3 leading-snug">Vector Space Theory</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Basis and Dimension concepts are clear, but Linear Transformations still pose a challenge during timed tests.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 px-4 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-primary-dim transition-colors active:scale-95">Revise</button>
+<button class="flex-1 py-3 px-4 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-colors active:scale-95">Retry</button>
+</div>
+</div>
+<!-- Card 6: Strong -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-6">
+<div class="bg-secondary-container text-on-secondary-container px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider">Strong</div>
+<div class="relative flex items-center justify-center">
+<svg class="w-12 h-12 transform -rotate-90">
+<circle class="text-surface-container-high/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="18.8" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold">85%</span>
+</div>
+</div>
+<h3 class="text-2xl font-bold mb-3 leading-snug">Thermodynamics</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed mb-6">Excellent grasp of Entropy and Enthalpy. Minor issues with complex cyclical engine efficiency calculations.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 py-3 px-4 bg-primary text-on-primary rounded-xl font-bold text-sm hover:bg-primary-dim transition-colors active:scale-95">Revise</button>
+<button class="flex-1 py-3 px-4 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm hover:bg-surface-container-highest transition-colors active:scale-95">Retry</button>
+</div>
+</div>
+</div>
+<!-- Analytics Summary Asymmetric Layout -->
+<section class="mt-16 bg-surface-container-low rounded-xl p-8 flex flex-col md:flex-row items-center gap-10 overflow-hidden relative">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+<div class="relative z-10 md:w-1/2">
+<h3 class="text-3xl font-bold tracking-tight mb-4">Study Momentum</h3>
+<p class="text-on-surface-variant mb-6 text-lg">You've closed 12 gaps this week. Focus on the red "Weak" areas today to increase your projected exam score by 8%.</p>
+<div class="flex gap-8">
+<div>
+<span class="block text-3xl font-extrabold text-primary">12</span>
+<span class="text-xs uppercase font-bold tracking-widest text-outline">Resolved</span>
+</div>
+<div>
+<span class="block text-3xl font-extrabold text-tertiary">4</span>
+<span class="text-xs uppercase font-bold tracking-widest text-outline">Critical</span>
+</div>
+<div>
+<span class="block text-3xl font-extrabold text-secondary">18h</span>
+<span class="text-xs uppercase font-bold tracking-widest text-outline">Effort</span>
+</div>
+</div>
+</div>
+<div class="md:w-1/2 w-full">
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<span class="font-bold">Next Target Mastery</span>
+<span class="text-primary font-bold text-sm">82% Overall</span>
+</div>
+<div class="h-3 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-primary-container w-[74%]"></div>
+</div>
+<div class="mt-4 flex justify-between text-xs font-bold text-on-surface-variant">
+<span>Current: 74%</span>
+<span>Target: 85%</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-8">
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] rounded-[9999px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex justify-around items-center py-2 px-2">
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span class="font-['Manrope'] text-[11px] font-semibold">Dashboard</span>
+</a>
+<!-- Results (Active) -->
+<a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full px-5 py-2 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-['Manrope'] text-[11px] font-semibold">Results</span>
+</a>
+<!-- Courses -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined mb-1">school</span>
+<span class="font-['Manrope'] text-[11px] font-semibold">Courses</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-['Manrope'] text-[11px] font-semibold">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>
