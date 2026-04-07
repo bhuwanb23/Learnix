@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Font from 'expo-font';
+import { View, ActivityIndicator, Text } from 'react-native';
 import AppNavigator from './navigation/AppNavigator';
 
 export default function App() {
@@ -27,8 +28,8 @@ export default function App() {
         });
         setFontsLoaded(true);
       } catch (error) {
-        console.warn('Font loading error:', error);
-        // Continue even if fonts fail to load
+        console.warn('Font loading error (fonts not installed yet):', error.message);
+        // Continue even if fonts fail to load - will use system fonts
         setFontsLoaded(true);
       }
     }
@@ -37,7 +38,12 @@ export default function App() {
   }, []);
 
   if (!fontsLoaded) {
-    return null; // Or a loading screen
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' }}>
+        <ActivityIndicator size="large" color="#0050d4" />
+        <Text style={{ marginTop: 16, fontSize: 16, color: '#595c5e' }}>Loading...</Text>
+      </View>
+    );
   }
 
   return (
