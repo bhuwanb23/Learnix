@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#dcc9ff",
+                    "tertiary-dim": "#8e3000",
+                    "surface-container-high": "#dfe3e6",
+                    "surface-container": "#e5e9eb",
+                    "on-tertiary-fixed": "#310b00",
+                    "outline": "#747779",
+                    "on-error-container": "#570008",
+                    "on-tertiary": "#ffefeb",
+                    "on-surface": "#2c2f31",
+                    "on-secondary-fixed": "#430097",
+                    "on-secondary-container": "#5b00c7",
+                    "error-dim": "#9f0519",
+                    "primary-dim": "#0046bb",
+                    "on-primary-container": "#001e5a",
+                    "on-error": "#ffefee",
+                    "surface-container-lowest": "#ffffff",
+                    "background": "#f5f7f9",
+                    "surface": "#f5f7f9",
+                    "on-primary-fixed-variant": "#00266e",
+                    "surface-dim": "#d0d5d8",
+                    "primary-fixed-dim": "#658eff",
+                    "tertiary": "#a23800",
+                    "primary-container": "#7b9cff",
+                    "on-tertiary-fixed-variant": "#692200",
+                    "on-secondary": "#f8f0ff",
+                    "surface-container-highest": "#d9dde0",
+                    "surface-tint": "#0050d4",
+                    "error": "#b31b25",
+                    "surface-bright": "#f5f7f9",
+                    "on-tertiary-container": "#5a1c00",
+                    "error-container": "#fb5151",
+                    "secondary-fixed-dim": "#d0b8ff",
+                    "secondary": "#702ae1",
+                    "on-primary-fixed": "#000000",
+                    "surface-variant": "#d9dde0",
+                    "primary": "#0050d4",
+                    "outline-variant": "#abadaf",
+                    "inverse-on-surface": "#9a9d9f",
+                    "secondary-fixed": "#dcc9ff",
+                    "inverse-surface": "#0b0f10",
+                    "tertiary-container": "#ff956a",
+                    "on-background": "#2c2f31",
+                    "on-surface-variant": "#595c5e",
+                    "on-primary": "#f1f2ff",
+                    "tertiary-fixed-dim": "#ff7e48",
+                    "tertiary-fixed": "#ff956a",
+                    "on-secondary-fixed-variant": "#6514d6",
+                    "inverse-primary": "#618bff",
+                    "secondary-dim": "#6411d5",
+                    "primary-fixed": "#7b9cff",
+                    "surface-container-low": "#eef1f3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .lush-gradient {
+            background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#f5f7f9] dark:bg-[#0f172a] flex justify-between items-center px-6 h-16 w-full">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-[#eef1f3] dark:hover:bg-[#1e293b] transition-colors active:scale-95 duration-200 rounded-full">
+<span class="material-symbols-outlined text-[#0050d4] dark:text-[#3b82f6]">arrow_back</span>
+</button>
+<h1 class="font-headline font-bold tracking-tight text-xl text-[#2c2f31] dark:text-[#f1f2ff]">Unit: Advanced Calculus</h1>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold overflow-hidden">
+<img alt="Student Profile" data-alt="close-up portrait of a student with a neutral expression, professional lighting, soft background blur, academic aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCH8ybv6EkJNVMQxKr3HCcPamKdnmy7V9eZsV0sS4pjeSkKEjY4wnW8WXLZzdDhgqOZ2AnA_NpmJAs-Q-oTcgG2hf6jdXPVf71zOxu7YhG7pqmzReJzsHFm5fEByaTfEJTYaJlE8_Igzl_njh1MTARiIiPZ-mLn3zuDsDxZO72nlQqCVZEc1i1COJwXbzX7zOvSyHfxOEBcINO9sUumF5iqu5LrjwvCy-EiTT-tEyss6KBR_u1qtdUCCMLGru--Kr8hQBZfsu1YOsg"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-5xl mx-auto">
+<!-- Header Hero Section -->
+<section class="mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<span class="text-primary font-bold tracking-widest text-xs uppercase mb-2 block">Curriculum Modules</span>
+<h2 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface leading-tight">
+                        Select Your <br/>Next Challenge
+                    </h2>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl flex items-center gap-4 shadow-sm">
+<div class="w-12 h-12 lush-gradient rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+</div>
+<div>
+<p class="text-xs font-semibold text-on-surface-variant">Overall Progress</p>
+<p class="text-xl font-bold font-headline">72% Mastered</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Topic List - Professional Bento Style -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Card 1: Limits & Continuity -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all border border-outline-variant/10 group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-secondary-container/30 p-3 rounded-lg text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">functions</span>
+</div>
+<span class="px-3 py-1 bg-surface-container-high rounded-full text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Easy</span>
+</div>
+<h3 class="text-xl font-bold font-headline text-on-surface mb-2 group-hover:text-primary transition-colors">Limits &amp; Continuity</h3>
+<div class="flex items-center gap-6 mb-6">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">High Score</p>
+<p class="text-lg font-bold text-on-surface">94%</p>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Last Attempt</p>
+<p class="text-lg font-bold text-on-surface">2 days ago</p>
+</div>
+</div>
+<button class="w-full lush-gradient py-3 rounded-xl text-white font-bold text-sm tracking-wide active:scale-95 duration-200 flex items-center justify-center gap-2">
+                    Start Quiz
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Card 2: Derivatives of Trig Functions -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all border border-outline-variant/10 group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-tertiary-container/30 p-3 rounded-lg text-tertiary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">architecture</span>
+</div>
+<span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold uppercase tracking-wider">Medium</span>
+</div>
+<h3 class="text-xl font-bold font-headline text-on-surface mb-2 group-hover:text-primary transition-colors">Derivatives of Trig Functions</h3>
+<div class="flex items-center gap-6 mb-6">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">High Score</p>
+<p class="text-lg font-bold text-on-surface">82%</p>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Last Attempt</p>
+<p class="text-lg font-bold text-on-surface">Today</p>
+</div>
+</div>
+<button class="w-full lush-gradient py-3 rounded-xl text-white font-bold text-sm tracking-wide active:scale-95 duration-200 flex items-center justify-center gap-2">
+                    Start Quiz
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Card 3: Chain Rule -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all border border-outline-variant/10 group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-primary-container/30 p-3 rounded-lg text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">link</span>
+</div>
+<span class="px-3 py-1 bg-surface-container-high rounded-full text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Easy</span>
+</div>
+<h3 class="text-xl font-bold font-headline text-on-surface mb-2 group-hover:text-primary transition-colors">Chain Rule</h3>
+<div class="flex items-center gap-6 mb-6">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">High Score</p>
+<p class="text-lg font-bold text-on-surface">100%</p>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Last Attempt</p>
+<p class="text-lg font-bold text-on-surface">1 week ago</p>
+</div>
+</div>
+<button class="w-full bg-surface-container-high py-3 rounded-xl text-on-surface font-bold text-sm tracking-wide active:scale-95 duration-200 flex items-center justify-center gap-2">
+                    Review Again
+                    <span class="material-symbols-outlined text-sm">refresh</span>
+</button>
+</div>
+<!-- Card 4: Implicit Differentiation -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-lg transition-all border border-outline-variant/10 group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-error-container/20 p-3 rounded-lg text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">visibility_off</span>
+</div>
+<span class="px-3 py-1 bg-error-container text-on-error-container rounded-full text-[10px] font-bold uppercase tracking-wider">Hard</span>
+</div>
+<h3 class="text-xl font-bold font-headline text-on-surface mb-2 group-hover:text-primary transition-colors">Implicit Differentiation</h3>
+<div class="flex items-center gap-6 mb-6">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">High Score</p>
+<p class="text-lg font-bold text-on-surface">64%</p>
+</div>
+<div class="h-8 w-px bg-outline-variant/30"></div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Last Attempt</p>
+<p class="text-lg font-bold text-on-surface">Yesterday</p>
+</div>
+</div>
+<button class="w-full lush-gradient py-3 rounded-xl text-white font-bold text-sm tracking-wide active:scale-95 duration-200 flex items-center justify-center gap-2">
+                    Start Quiz
+                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Informational Callout (Asymmetric) -->
+<div class="mt-12 bg-primary/5 rounded-xl p-8 flex flex-col md:flex-row items-center gap-8 border border-primary/10">
+<div class="md:w-2/3">
+<h4 class="font-headline text-2xl font-bold text-on-surface mb-3">Mastery Insight</h4>
+<p class="text-on-surface-variant leading-relaxed">
+                    Based on your performance in <span class="font-bold text-primary">Derivatives of Trig Functions</span>, we recommend revisiting the fundamental identities before attempting the <span class="font-bold text-error">Implicit Differentiation</span> quiz.
+                </p>
+</div>
+<div class="md:w-1/3 flex justify-center">
+<div class="relative w-24 h-24">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-high" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-primary" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="62.8" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center font-headline font-bold text-xl">
+                        75%
+                    </div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center pb-8 px-4 bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-xl">
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full shadow-[0_8px_24px_rgba(44,47,49,0.06)] bg-white dark:bg-[#1e293b] flex justify-around items-center p-2">
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-[#94a3b8] p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-['Manrope'] text-xs font-semibold">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">quiz</span>
+<span class="font-['Manrope'] text-xs font-semibold">Quizzes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-[#94a3b8] p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-['Manrope'] text-xs font-semibold">Insights</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-[#94a3b8] p-3 hover:opacity-80 transition-opacity active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Manrope'] text-xs font-semibold">Profile</span>
+</a>
+</div>
+</nav>
+</body></html>
