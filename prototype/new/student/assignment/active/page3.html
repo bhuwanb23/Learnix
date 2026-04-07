@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#595c5e",
+                        "surface-container": "#e5e9eb",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "surface-variant": "#d9dde0",
+                        "on-secondary-fixed": "#430097",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "surface-container-high": "#dfe3e6",
+                        "primary-fixed": "#7b9cff",
+                        "outline": "#747779",
+                        "on-primary": "#f1f2ff",
+                        "tertiary-container": "#ff956a",
+                        "inverse-primary": "#618bff",
+                        "on-tertiary": "#ffefeb",
+                        "error-container": "#fb5151",
+                        "on-surface": "#2c2f31",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-primary-container": "#001e5a",
+                        "on-error-container": "#570008",
+                        "tertiary": "#a23800",
+                        "tertiary-dim": "#8e3000",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "primary-container": "#7b9cff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-primary-fixed": "#000000",
+                        "inverse-on-surface": "#9a9d9f",
+                        "error": "#b31b25",
+                        "secondary": "#702ae1",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "surface-dim": "#d0d5d8",
+                        "secondary-dim": "#6411d5",
+                        "on-secondary-container": "#5b00c7",
+                        "secondary-container": "#dcc9ff",
+                        "primary": "#0050d4",
+                        "tertiary-fixed": "#ff956a",
+                        "primary-fixed-dim": "#658eff",
+                        "background": "#f5f7f9",
+                        "surface": "#f5f7f9",
+                        "on-background": "#2c2f31",
+                        "outline-variant": "#abadaf",
+                        "on-error": "#ffefee",
+                        "on-secondary": "#f8f0ff",
+                        "primary-dim": "#0046bb",
+                        "surface-container-low": "#eef1f3",
+                        "surface-tint": "#0050d4",
+                        "on-tertiary-container": "#5a1c00",
+                        "surface-container-highest": "#d9dde0",
+                        "inverse-surface": "#0b0f10",
+                        "surface-bright": "#f5f7f9",
+                        "on-tertiary-fixed": "#310b00",
+                        "error-dim": "#9f0519"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+    <!-- TopAppBar -->
+    <header
+        class="w-full top-0 sticky z-50 bg-[#f5f7f9] dark:bg-slate-900 flex justify-between items-center px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+            <span
+                class="material-symbols-outlined text-[#0050d4] dark:text-blue-400 cursor-pointer active:scale-95 duration-200">arrow_back</span>
+            <h1 class="font-headline font-bold tracking-tight text-on-surface">Assignment Title</h1>
+        </div>
+        <div class="text-[#0050d4] dark:text-blue-400 font-headline font-bold tracking-tight">
+            00:45:00
+        </div>
+    </header>
+    <!-- Main Content Canvas -->
+    <main class="flex-grow flex items-center justify-center px-6 py-12 md:py-20">
+        <div class="max-w-2xl w-full">
+            <!-- Central Success Card -->
+            <div
+                class="glass-card rounded-xl p-8 md:p-12 text-center shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex flex-col items-center">
+                <!-- Success Icon -->
+                <div class="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-8">
+                    <span class="material-symbols-outlined text-primary text-6xl"
+                        style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                </div>
+                <h2 class="font-headline text-3xl md:text-4xl font-extrabold text-on-surface tracking-tight mb-2">
+                    Submission Successful</h2>
+                <p class="text-on-surface-variant font-medium mb-10">Oct 24, 2023 • 10:45 PM</p>
+                <!-- Files Summary Section (Bento Style Sub-layout) -->
+                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 text-left">
+                    <div class="bg-surface-container-low p-5 rounded-lg flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-surface-container-lowest flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary">description</span>
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-xs font-bold text-primary uppercase tracking-wider mb-0.5">Primary File</p>
+                            <p class="font-bold truncate text-on-surface">Research_Analysis.pdf</p>
+                        </div>
+                    </div>
+                    <div class="bg-surface-container-low p-5 rounded-lg flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-surface-container-lowest flex items-center justify-center">
+                            <span class="material-symbols-outlined text-secondary">analytics</span>
+                        </div>
+                        <div class="overflow-hidden">
+                            <p class="text-xs font-bold text-secondary uppercase tracking-wider mb-0.5">Dataset</p>
+                            <p class="font-bold truncate text-on-surface">Data_Viz_Final.xlsx</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action Area -->
+                <div class="w-full flex flex-col gap-4">
+                    <button
+                        class="w-full py-4 bg-gradient-to-br from-primary to-primary-dim text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all">
+                        Return to Dashboard
+                    </button>
+                    <button
+                        class="w-full py-4 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-variant transition-colors active:scale-[0.98]">
+                        View Submission Details
+                    </button>
+                </div>
+            </div>
+            <!-- Contextual Decorative Elements (Asymmetric Layout) -->
+            <div class="mt-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full overflow-hidden">
+                        <img alt="Avatar" class="w-full h-full object-cover"
+                            data-alt="close-up portrait of a professional academic student with a friendly expression in a brightly lit modern library background"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDfeYnS3_qH6k1_qp1KyQYY_yt83gTQAnrg2PJI_UN9L6aemxWTZBs-Q8bpQ1kWMFL7Z9c11C1B14sY1LuWYOCv8bvr1tk9Fl7GcBUfb9g6AKP1bX3MuC_lNBMhM5htqupngdCITdkV3beptyEPNdE8JOCR8jOV-3wZN8x5VAjUhnuM9rOSKehmoWhR2MUDD7UGTdU4yCP9OvV2WFmBHPRJdmWRIDk17FvBsyNkzDeBlt9yy3vBJ2UK7D8PaToxrVkniBE53DNwf4" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-on-surface">Submitting as Alex Johnson</p>
+                        <p class="text-xs text-on-surface-variant">ID: 29402-SCH</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <span class="px-3 py-1 bg-tertiary/10 text-tertiary text-xs font-bold rounded-full">On Time</span>
+                    <span class="px-3 py-1 bg-secondary/10 text-secondary text-xs font-bold rounded-full">Final
+                        Attempt</span>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar (Suppressed for focused confirmation state based on shell rules, but including semantic placeholder structure if needed for mobile navigation hierarchy) -->
+    <!-- The BottomNavBar is suppressed here to prioritize the submission confirmation focus as per UX Goal rules -->
+    <div class="fixed top-0 left-0 w-full h-full -z-10 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-[-5%] left-[-5%] w-[30%] h-[30%] bg-secondary/5 rounded-full blur-[100px]"></div>
+    </div>
+</body>
+
+</html>

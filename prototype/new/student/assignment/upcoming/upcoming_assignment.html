@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Assignment Details - Multivariable Integration Project</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-dim": "#8e3000",
+                        "inverse-surface": "#0b0f10",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "primary": "#0050d4",
+                        "primary-dim": "#0046bb",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "surface-container-low": "#eef1f3",
+                        "tertiary-fixed": "#ff956a",
+                        "on-surface-variant": "#595c5e",
+                        "on-primary-fixed-variant": "#00266e",
+                        "surface-tint": "#0050d4",
+                        "on-secondary-fixed": "#430097",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-tertiary": "#ffefeb",
+                        "error": "#b31b25",
+                        "surface-container-highest": "#d9dde0",
+                        "primary-container": "#7b9cff",
+                        "secondary": "#702ae1",
+                        "on-primary-fixed": "#000000",
+                        "on-error": "#ffefee",
+                        "surface-container-high": "#dfe3e6",
+                        "secondary-dim": "#6411d5",
+                        "on-secondary-container": "#5b00c7",
+                        "outline-variant": "#abadaf",
+                        "on-error-container": "#570008",
+                        "tertiary": "#a23800",
+                        "on-secondary": "#f8f0ff",
+                        "inverse-primary": "#618bff",
+                        "on-primary": "#f1f2ff",
+                        "surface": "#f5f7f9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#310b00",
+                        "error-container": "#fb5151",
+                        "surface-dim": "#d0d5d8",
+                        "surface-bright": "#f5f7f9",
+                        "primary-fixed": "#7b9cff",
+                        "surface-container": "#e5e9eb",
+                        "primary-fixed-dim": "#658eff",
+                        "background": "#f5f7f9",
+                        "on-primary-container": "#001e5a",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "tertiary-container": "#ff956a",
+                        "outline": "#747779",
+                        "secondary-container": "#dcc9ff",
+                        "error-dim": "#9f0519",
+                        "surface-variant": "#d9dde0",
+                        "on-background": "#2c2f31",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-surface": "#2c2f31",
+                        "inverse-on-surface": "#9a9d9f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f5f7f9;
+        }
+
+        .headline-font {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="text-on-surface bg-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="bg-[#f5f7f9] dark:bg-[#0f172a] docked full-width top-0 z-40">
+        <nav class="flex items-center justify-between px-6 py-4 w-full">
+            <div class="flex items-center gap-4">
+                <button class="active:scale-95 transition-transform duration-200 text-[#0050d4] dark:text-[#3b82f6]">
+                    <span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+                </button>
+                <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-[#0050d4] dark:text-blue-400">
+                    Assignment Details</h1>
+            </div>
+            <button class="active:scale-95 transition-transform duration-200 text-[#0050d4] dark:text-[#3b82f6]">
+                <span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+            </button>
+        </nav>
+    </header>
+    <main class="max-w-5xl mx-auto px-6 mt-8 space-y-6">
+        <!-- Hero Section: Title & Metadata -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 bg-surface-container-lowest p-8 rounded-xl shadow-sm space-y-4">
+                <div
+                    class="inline-flex items-center px-3 py-1 rounded-full bg-primary-container/20 text-primary text-xs font-bold uppercase tracking-wider headline-font">
+                    Calculus III • Dr. Aris
+                </div>
+                <h2 class="text-4xl font-extrabold headline-font tracking-tight text-on-surface">Multivariable
+                    Integration Project</h2>
+                <div class="flex flex-wrap gap-6 pt-2">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary"
+                            data-icon="calendar_today">calendar_today</span>
+                        <span class="text-sm font-semibold text-on-surface-variant">Due Oct 24</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-3 py-1 bg-error-container/10 rounded-lg">
+                        <span class="material-symbols-outlined text-error" data-icon="schedule"
+                            style="font-variation-settings: 'FILL' 1;">schedule</span>
+                        <span class="text-sm font-bold text-error">4h left</span>
+                    </div>
+                </div>
+            </div>
+            <div class="md:col-span-1 flex flex-col gap-4">
+                <div
+                    class="flex-1 bg-gradient-to-br from-primary to-primary-dim p-6 rounded-xl text-on-primary flex flex-col justify-between">
+                    <div class="flex justify-between items-start">
+                        <span class="material-symbols-outlined text-4xl opacity-80"
+                            data-icon="play_arrow">play_arrow</span>
+                        <span class="text-xs font-bold uppercase tracking-widest headline-font opacity-70">Status:
+                            Pending</span>
+                    </div>
+                    <div>
+                        <p class="text-sm opacity-90 mb-1">Current Progress</p>
+                        <p class="text-2xl font-bold headline-font">0% Completed</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Main Content Area: Bento-inspired grid -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- Description & Instructions -->
+            <div class="md:col-span-8 space-y-6">
+                <!-- Description Card -->
+                <div class="bg-surface-container-low p-8 rounded-xl">
+                    <h3 class="text-lg font-bold headline-font mb-4 text-on-surface">Description</h3>
+                    <p class="text-on-surface-variant leading-relaxed text-base">
+                        This project involves a deep dive into triple integrals over general regions. You must
+                        demonstrate a clear understanding of coordinate transformations (Polar, Cylindrical, Spherical)
+                        and their applications in calculating volumes and centroids of complex solids.
+                    </p>
+                </div>
+                <!-- Instructions Card -->
+                <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+                    <h3 class="text-lg font-bold headline-font mb-6 text-on-surface">Instructions</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start gap-4">
+                            <span
+                                class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-sm font-bold headline-font text-primary">1</span>
+                            <p class="text-on-surface-variant">Follow the standard mathematical notation guide.</p>
+                        </li>
+                        <li class="flex items-start gap-4">
+                            <span
+                                class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-sm font-bold headline-font text-primary">2</span>
+                            <p class="text-on-surface-variant">Show all step-by-step calculations.</p>
+                        </li>
+                        <li class="flex items-start gap-4">
+                            <span
+                                class="flex-shrink-0 w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-sm font-bold headline-font text-primary">3</span>
+                            <p class="text-on-surface-variant">Include visual sketches for 3D regions.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <!-- Side Assets & Attachments -->
+            <aside class="md:col-span-4 space-y-6">
+                <!-- Attached Files -->
+                <div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+                    <h3 class="text-base font-bold headline-font mb-4 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary" data-icon="attachment">attachment</span>
+                        Attached Files
+                    </h3>
+                    <div class="space-y-3">
+                        <div
+                            class="group p-3 rounded-lg bg-surface-container-low hover:bg-primary-container/10 transition-colors cursor-pointer flex items-center justify-between">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <span class="material-symbols-outlined text-error"
+                                    data-icon="picture_as_pdf">picture_as_pdf</span>
+                                <span class="text-sm font-medium truncate">Calculus_III_Project_Guide.pdf</span>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                data-icon="download">download</span>
+                        </div>
+                        <div
+                            class="group p-3 rounded-lg bg-surface-container-low hover:bg-primary-container/10 transition-colors cursor-pointer flex items-center justify-between">
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <span class="material-symbols-outlined text-error"
+                                    data-icon="picture_as_pdf">picture_as_pdf</span>
+                                <span class="text-sm font-medium truncate">Coordinate_Transform_Reference.pdf</span>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                data-icon="download">download</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Visual Context (Calculus related image) -->
+                <div class="relative h-48 w-full rounded-xl overflow-hidden group">
+                    <img alt="Mathematical diagrams"
+                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        data-alt="Intricate chalk drawings of 3D multivariable calculus functions and triple integrals on a dark green chalkboard, cinematic lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUWDs_fTv6NIxnUWWt9zN-KnSxeP4IwZSIq89nFQjTChRWNrYEwyUKQCfopZ_O1T1galtV4D_vEamGfGZKAzyTdDwlT_moEs025uLZurJSbtI8yoBnbVuWH0kMW18P6UTABs1_GRS3WMMJa_6_eH9sKVtd1vxCoSESuajUaAj5LJObD2nGbWONDQ_3gdFryy8Q377Y9o_78VGuRh4yS5dbjKNWLX7S0c8EjM8P4AJ3KJYTOWckDrfZVcIN6T3-inWGYJeNC0KA_1I" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+                        <p class="text-white text-xs font-bold headline-font uppercase">Reference Visuals</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <!-- Bottom Actions Bar (Floating Glass Shell) -->
+    <div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl z-50">
+        <div
+            class="bg-white/90 backdrop-blur-xl shadow-[0_-8px_24px_rgba(44,47,49,0.06)] rounded-full px-8 py-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex gap-2">
+                <button
+                    class="flex items-center gap-2 px-6 py-3 rounded-full border border-outline-variant/30 hover:bg-surface-container-high active:scale-95 transition-all text-on-surface font-bold text-sm">
+                    <span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+                    Preview Assignment
+                </button>
+                <button
+                    class="flex items-center gap-2 px-6 py-3 rounded-full border border-outline-variant/30 hover:bg-surface-container-high active:scale-95 transition-all text-on-surface font-bold text-sm">
+                    <span class="material-symbols-outlined text-xl" data-icon="alarm">alarm</span>
+                    Set Reminder
+                </button>
+            </div>
+            <button
+                class="flex items-center gap-2 px-8 py-3 rounded-full bg-gradient-to-r from-primary to-primary-dim text-white font-bold text-sm shadow-lg shadow-primary/20 active:scale-90 transition-all duration-300">
+                <span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+                Start Assignment
+            </button>
+        </div>
+    </div>
+    <!-- Persistent Navigation Shell (BottomNavBar) -->
+    <nav
+        class="fixed bottom-0 w-full rounded-t-[24px] z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_-8px_24px_rgba(44,47,49,0.06)] md:hidden">
+        <div class="flex justify-around items-center w-full px-4 pb-6 pt-3">
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-[#0050d4] transition-all"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider mt-1">Dashboard</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-[#0050d4] transition-all"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider mt-1">Courses</span>
+            </a>
+            <a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-[16px] px-5 py-2 scale-105 active:scale-90 transition-all duration-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider mt-1">Tasks</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-[#0050d4] transition-all"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="person">person</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider mt-1">Profile</span>
+            </a>
+        </div>
+    </nav>
+</body>
+
+</html>
