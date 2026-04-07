@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Event Details | Scholar Flow</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-dim": "#8e3000",
+                        "surface-tint": "#0050d4",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "primary-container": "#7b9cff",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-secondary-container": "#5b00c7",
+                        "surface-bright": "#f5f7f9",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary-fixed": "#310b00",
+                        "error-container": "#fb5151",
+                        "surface-container-highest": "#d9dde0",
+                        "surface-container": "#e5e9eb",
+                        "primary-dim": "#0046bb",
+                        "on-error-container": "#570008",
+                        "error": "#b31b25",
+                        "surface-variant": "#d9dde0",
+                        "tertiary": "#a23800",
+                        "on-tertiary": "#ffefeb",
+                        "primary": "#0050d4",
+                        "inverse-primary": "#618bff",
+                        "primary-fixed": "#7b9cff",
+                        "outline": "#747779",
+                        "on-surface-variant": "#595c5e",
+                        "on-primary": "#f1f2ff",
+                        "surface-container-low": "#eef1f3",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "inverse-surface": "#0b0f10",
+                        "surface": "#f5f7f9",
+                        "on-surface": "#2c2f31",
+                        "secondary-dim": "#6411d5",
+                        "surface-dim": "#d0d5d8",
+                        "on-secondary": "#f8f0ff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed": "#430097",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "tertiary-container": "#ff956a",
+                        "on-error": "#ffefee",
+                        "on-background": "#2c2f31",
+                        "secondary-container": "#dcc9ff",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "error-dim": "#9f0519",
+                        "surface-container-high": "#dfe3e6",
+                        "background": "#f5f7f9",
+                        "tertiary-fixed": "#ff956a",
+                        "on-primary-fixed-variant": "#00266e",
+                        "secondary": "#702ae1",
+                        "on-primary-fixed": "#000000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#5a1c00",
+                        "primary-fixed-dim": "#658eff",
+                        "on-primary-container": "#001e5a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface">
+    <!-- TopAppBar -->
+    <nav
+        class="fixed top-0 w-full z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-sm shadow-blue-900/5 flex items-center justify-between px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+            <button
+                class="hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors p-2 rounded-full active:scale-95 transition-transform duration-200">
+                <span class="material-symbols-outlined text-blue-700 dark:text-blue-400">arrow_back</span>
+            </button>
+            <h1 class="font-['Plus_Jakarta_Sans'] font-bold text-lg tracking-tight text-blue-700 dark:text-blue-400">
+                Event Details</h1>
+        </div>
+        <button
+            class="hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors p-2 rounded-full active:scale-95 transition-transform duration-200">
+            <span class="material-symbols-outlined text-blue-700 dark:text-blue-400">share</span>
+        </button>
+    </nav>
+    <main class="pb-32">
+        <!-- Hero Section -->
+        <section class="relative h-[397px] w-full overflow-hidden">
+            <img class="w-full h-full object-cover"
+                data-alt="Modern university lecture hall with colorful neon lighting and students engaged in a high-tech workshop environment"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCy6PmL57PCUrk-lJaNsNHT2D36xZjqNfgXDTp2Y578Yaty11FVYZyDDTmcBu9_gaaauRu35-bZLo1Du_MlkQBkrkg9ff0IRC2S-n0KK58lSsHaUT-_be15sUEFmifyfA6kOgqH2hffIKG8hSC_HpUQr76MaapQRBpWVjLBjO7PlXbzYFiKZDvp7TNcC0bsdmzlvDu1XSA265k2Cz5HpTgu9OC9uEWL2SnYmo5BdD7FkQDQ_Ce8PbvbSuOV9tlSXtm9x8LzqG36sMo" />
+            <div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-black/20"></div>
+            <div class="absolute bottom-8 left-6 right-6">
+                <div class="flex flex-col gap-3">
+                    <span
+                        class="bg-tertiary-container text-on-tertiary-container px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest w-fit shadow-lg shadow-tertiary/20">
+                        Limited Seats
+                    </span>
+                    <h2
+                        class="font-headline text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight leading-[1.1]">
+                        Future of AI in <br /><span
+                            class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Digital
+                            Design</span>
+                    </h2>
+                </div>
+            </div>
+        </section>
+        <!-- Sticky Secondary Nav -->
+        <div class="sticky top-[68px] z-40 bg-surface/80 backdrop-blur-xl px-6 py-4">
+            <div class="flex gap-8 border-b border-outline-variant/15 font-headline font-bold text-sm tracking-wide">
+                <a class="pb-3 text-primary border-b-2 border-primary" href="#overview">Overview</a>
+                <a class="pb-3 text-on-surface-variant hover:text-primary transition-colors" href="#agenda">Agenda</a>
+                <a class="pb-3 text-on-surface-variant hover:text-primary transition-colors"
+                    href="#speakers">Speakers</a>
+            </div>
+        </div>
+        <div class="px-6 mt-8 space-y-10 max-w-4xl mx-auto">
+            <!-- Overview -->
+            <section class="space-y-4" id="overview">
+                <h3 class="font-headline text-2xl font-bold">About this Event</h3>
+                <div class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.02)]">
+                    <p class="text-on-surface-variant leading-relaxed">
+                        Join us for an immersive workshop exploring how generative AI is reshaping the landscape of
+                        modern digital design. We'll dive deep into automated workflows, neural style transfer in UI,
+                        and the ethics of AI co-creation. Perfect for students looking to stay ahead of the industrial
+                        curve.
+                    </p>
+                </div>
+            </section>
+            <!-- Agenda (Accordion) -->
+            <section class="space-y-4" id="agenda">
+                <h3 class="font-headline text-2xl font-bold">Schedule</h3>
+                <div class="space-y-3">
+                    <!-- Accordion Item 1 -->
+                    <div class="bg-surface-container-low rounded-xl overflow-hidden">
+                        <div class="flex items-center justify-between p-5 bg-surface-container-lowest">
+                            <div class="flex gap-4 items-center">
+                                <div
+                                    class="bg-primary/10 text-primary w-12 h-12 rounded-lg flex flex-col items-center justify-center font-bold">
+                                    <span class="text-xs">09:00</span>
+                                    <span class="text-[10px] uppercase">AM</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-on-surface">Keynote: AI Evolution</h4>
+                                    <p class="text-xs text-on-surface-variant">Main Auditorium</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-outline">expand_more</span>
+                        </div>
+                    </div>
+                    <!-- Accordion Item 2 -->
+                    <div class="bg-surface-container-low rounded-xl overflow-hidden">
+                        <div class="flex items-center justify-between p-5 bg-surface-container-lowest">
+                            <div class="flex gap-4 items-center">
+                                <div
+                                    class="bg-secondary/10 text-secondary w-12 h-12 rounded-lg flex flex-col items-center justify-center font-bold">
+                                    <span class="text-xs">11:30</span>
+                                    <span class="text-[10px] uppercase">AM</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-on-surface">Hands-on Prompting</h4>
+                                    <p class="text-xs text-on-surface-variant">Design Lab 4</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-outline">expand_more</span>
+                        </div>
+                    </div>
+                    <!-- Accordion Item 3 -->
+                    <div class="bg-surface-container-low rounded-xl overflow-hidden border-2 border-primary/20">
+                        <div class="flex items-center justify-between p-5 bg-primary/5">
+                            <div class="flex gap-4 items-center">
+                                <div
+                                    class="bg-primary text-on-primary w-12 h-12 rounded-lg flex flex-col items-center justify-center font-bold">
+                                    <span class="text-xs">02:00</span>
+                                    <span class="text-[10px] uppercase">PM</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-on-surface">Networking Lunch</h4>
+                                    <p class="text-xs text-on-surface-variant">Central Courtyard</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-outlined text-primary">expand_less</span>
+                        </div>
+                        <div class="p-5 text-sm text-on-surface-variant bg-white">
+                            A curated session for students to meet industry professionals. Complimentary refreshments
+                            served.
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Speakers Carousel -->
+            <section class="space-y-4" id="speakers">
+                <div class="flex justify-between items-end">
+                    <h3 class="font-headline text-2xl font-bold">Featured Speakers</h3>
+                    <span class="text-xs font-bold text-primary tracking-widest uppercase">Slide to view</span>
+                </div>
+                <div class="flex gap-4 overflow-x-auto hide-scrollbar pb-4 -mx-6 px-6">
+                    <!-- Speaker 1 -->
+                    <div class="min-w-[200px] bg-surface-container-lowest p-5 rounded-xl text-center shadow-sm">
+                        <img class="w-24 h-24 rounded-full mx-auto mb-4 object-cover ring-4 ring-primary/10"
+                            data-alt="Portrait of a professional female designer with a warm smile, creative studio background with soft lighting"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnS_nwIYKJOF61IolEnpUgY21kj79nTtM_lDP_rCnvmfRA4tZaOzXr9SIWCQly-za6P3oBiys9uBnWd0Rz_gDpBTshFSqQvWqT-bqmiX3ffiLAzoV2IHN_7_471j1ftNRcB6h6iv8DuVAsGk4gs5U19-akadyqo7sIy-T00WRjKj6AgEfn_n5-5jlB435e7mdzDqV6YeEJOMSoCyRvrX8nv6xxKnkgxY6Tm8v3YtZka_z2LXiMYipunkM__EFV_U_EU8wdJcwGQwU" />
+                        <h4 class="font-bold text-on-surface">Elena Vance</h4>
+                        <p class="text-xs text-on-surface-variant mb-3">Lead at Creative AI</p>
+                        <span
+                            class="bg-surface-container-high px-3 py-1 rounded-full text-[10px] font-bold text-primary">UI/UX</span>
+                    </div>
+                    <!-- Speaker 2 -->
+                    <div class="min-w-[200px] bg-surface-container-lowest p-5 rounded-xl text-center shadow-sm">
+                        <img class="w-24 h-24 rounded-full mx-auto mb-4 object-cover ring-4 ring-secondary/10"
+                            data-alt="Close up portrait of a male architect with glasses, modern office setting with bokeh plants in background"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb2G0F9OGyIzFNUd2KOGsqmXviBcIevcI2Wgj61T0smmtsqUuD2ErN3DX-HYx9TWsqsxjioesdijyWTDtjcZlY37gf4iGGeknz2oN7WVD0kSgqnTPQrYLa8S31osFjdnzn4jqP38zbdrtBe0o7LA8_I16YqgwR1aAAE3Iw7J0Sl1ygPHYVEuktQkO-II6OgTqf12XFX5rPee4SkDZSCORhjZjPYkKhCFKGo4iaOYfcD5QtvxOvf1tbt967nB0GMGCIuf9-q5u7X5Y" />
+                        <h4 class="font-bold text-on-surface">Marcus Thorne</h4>
+                        <p class="text-xs text-on-surface-variant mb-3">Systems Architect</p>
+                        <span
+                            class="bg-surface-container-high px-3 py-1 rounded-full text-[10px] font-bold text-secondary">DEV</span>
+                    </div>
+                    <!-- Speaker 3 -->
+                    <div class="min-w-[200px] bg-surface-container-lowest p-5 rounded-xl text-center shadow-sm">
+                        <img class="w-24 h-24 rounded-full mx-auto mb-4 object-cover ring-4 ring-tertiary/10"
+                            data-alt="Professional woman in business attire looking confident, bright high-end office interior"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPC0spHVB5KPJJLPCJcvWDcu7vhuPFIKSBfq4yOV8QSaUZNJOJ8lGJDR_drUlBF5-4p6s5KGUT4IQaDtpHO8nw2mTYVh82azAZJA_BYgxGsGfJVcYEkaTOpLdx6W0-CagJxM5URejBZ9vKFrfPw87B_YGZS2mwYSK3EIqEjs7Nady8TbZcG_dMwh7zUfxBB3OuflITVaYA3y8aCmsoExGBKmEGJSbzKckA_dnrlYvbLoIcD7TgKjJgAhODX9FQcZF9feGh9dpoDXI" />
+                        <h4 class="font-bold text-on-surface">Sarah Drasner</h4>
+                        <p class="text-xs text-on-surface-variant mb-3">Product Strategist</p>
+                        <span
+                            class="bg-surface-container-high px-3 py-1 rounded-full text-[10px] font-bold text-tertiary">STRATEGY</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Location Map Card -->
+            <section class="space-y-4">
+                <h3 class="font-headline text-2xl font-bold">Location</h3>
+                <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+                    <div class="h-48 w-full relative">
+                        <img class="w-full h-full object-cover"
+                            data-alt="Stylized map showing a university campus area with clean pins and soft blue color palette"
+                            data-location="San Francisco"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOUG3ylstFOKPzSCpL4GIh9S46iICLyJ4oIMob9fECpYsVN8Gj7uG6gtPT9OUNcBYXWr0le5F3JnomJdeqXjuxxfFxHuLTqHrSYKAbv_q9i49PbbkxMpGxPcMygLT6PheOkcqTeXHPlKnzQHKvwnjkrsEbA37l0KKdWVOIg3YwxLsj8qWtchHsNcR9K959PhtGA41PlKe94Fi7NN9p-7-3rnULfqqp32adhsBVyOhGRBgw3X8oriD7t6A_9XIC7iT2AbPkum0Ri5g" />
+                        <div class="absolute inset-0 bg-primary/10"></div>
+                    </div>
+                    <div class="p-6 flex flex-col gap-4">
+                        <div class="flex items-start gap-4">
+                            <span class="material-symbols-outlined text-primary mt-1">location_on</span>
+                            <div>
+                                <h4 class="font-bold text-on-surface">Main Innovation Hub</h4>
+                                <p class="text-sm text-on-surface-variant">Building 4, Level 2, Tech Campus Drive, CA
+                                    94043</p>
+                            </div>
+                        </div>
+                        <a class="text-primary font-bold text-sm flex items-center gap-2 hover:underline" href="#">
+                            Open in Google Maps
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <!-- Fixed Bottom Actions -->
+    <div class="fixed bottom-0 left-0 w-full p-6 z-50">
+        <div
+            class="max-w-md mx-auto glass-panel p-4 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.1)] border border-white/20 flex items-center justify-between">
+            <div class="pl-4">
+                <p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Registration ends in
+                </p>
+                <p class="text-lg font-headline font-extrabold text-tertiary">2h 45m</p>
+            </div>
+            <button
+                class="bg-gradient-to-r from-primary to-primary-dim text-on-primary font-headline font-bold px-10 py-4 rounded-full shadow-lg shadow-primary/30 active:scale-95 transition-transform">
+                Register
+            </button>
+        </div>
+    </div>
+    <!-- BottomNavBar (Hidden on Mobile per Shell Visibility & Relevance Rules, but included as per predicted structure) -->
+    <nav class="fixed bottom-0 w-full flex justify-center pb-8 z-50 md:hidden pointer-events-none opacity-0">
+        <div
+            class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(0,0,0,0.06)] fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full px-2 py-2 flex justify-between pointer-events-auto">
+            <div
+                class="flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 w-12 h-12 hover:scale-110 transition-transform tap-highlight-none active:scale-90">
+                <span class="material-symbols-outlined">grid_view</span>
+                <span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold tracking-wide uppercase">Feed</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center bg-blue-600 text-white rounded-full aspect-square w-12 h-12 hover:scale-110 transition-transform tap-highlight-none active:scale-90">
+                <span class="material-symbols-outlined">event_available</span>
+                <span class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold tracking-wide uppercase">Events</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 w-12 h-12 hover:scale-110 transition-transform tap-highlight-none active:scale-90">
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span
+                    class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold tracking-wide uppercase">Schedule</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 w-12 h-12 hover:scale-110 transition-transform tap-highlight-none active:scale-90">
+                <span class="material-symbols-outlined">person</span>
+                <span
+                    class="font-['Plus_Jakarta_Sans'] text-[10px] font-semibold tracking-wide uppercase">Profile</span>
+            </div>
+        </div>
+    </nav>
+</body>
+
+</html>
