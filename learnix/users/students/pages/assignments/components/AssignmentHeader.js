@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   title: {
-    fontSize: 30, // text-3xl
+    fontSize: 20, // text-xl
     fontWeight: '700', // font-bold
     color: '#0050d4', // text-[#0050d4]
     fontFamily: 'PlusJakartaSans-Bold',
