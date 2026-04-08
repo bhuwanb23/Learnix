@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   Alert,
   useWindowDimensions,
 } from 'react-native';
@@ -31,7 +30,7 @@ export default function Profile() {
   const contentPadding = width >= 768 ? 32 : 16;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
@@ -65,7 +64,7 @@ export default function Profile() {
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

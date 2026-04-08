@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   useWindowDimensions,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
 
@@ -35,7 +34,7 @@ export default function AssignmentPage() {
   const isDesktop = width >= 1024;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.gray50} />
       <ScrollView
         style={styles.scrollView}
@@ -79,7 +78,7 @@ export default function AssignmentPage() {
 
       {/* Floating Action Button */}
       <FloatingAddButton />
-    </SafeAreaView>
+    </View>
   );
 }
 

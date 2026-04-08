@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   FlatList,
-  SafeAreaView,
   StatusBar,
   Animated,
   Platform,
@@ -114,7 +113,7 @@ export default function EventsPage() {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
       {/* Animated Sticky Header */}
@@ -171,7 +170,7 @@ export default function EventsPage() {
           <MaterialIcons name="add" size={28} color={COLORS.white} />
         </LinearGradient>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }
 
