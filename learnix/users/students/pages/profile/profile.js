@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
+  useWindowDimensions,
 } from 'react-native';
 
 // Import components
@@ -25,6 +26,9 @@ import {
 } from './constants/profileData';
 
 export default function Profile() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const contentPadding = width >= 768 ? 32 : 16;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,14 +44,18 @@ export default function Profile() {
         <ProfileStats stats={PROFILE_STATS} />
         
         {/* Main Content Area */}
-        <View style={styles.contentGrid}>
+        <View style={[
+          styles.contentGrid, 
+          { paddingHorizontal: contentPadding },
+          isDesktop && styles.contentGridDesktop
+        ]}>
           {/* Left Column: Categories & Honors */}
-          <View style={styles.leftColumn}>
+          <View style={[styles.leftColumn, isDesktop && { flex: 8 }]}>
             <QuickActions categories={CATEGORIES} honors={HONORS} />
           </View>
 
           {/* Right Column: Wallet & Settings Summary */}
-          <View style={styles.rightColumn}>
+          <View style={[styles.rightColumn, isDesktop && { flex: 4 }]}>
             {/* Scholar Wallet */}
             <CampusWallet walletInfo={WALLET_INFO} />
             
@@ -73,13 +81,18 @@ const styles = StyleSheet.create({
     paddingBottom: 120, // pb-32
   },
   contentGrid: {
-    marginHorizontal: 24, // px-6
     marginTop: 32, // gap-8 spacing from stats
     flexDirection: 'column', // stack for mobile
-    gap: 32, // gap-8
+    gap: 24, // gap-8
+    maxWidth: 1280,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  contentGridDesktop: {
+    flexDirection: 'row',
   },
   leftColumn: {
-    gap: 32, // space-y-8
+    gap: 24, // space-y-8
   },
   rightColumn: {
     gap: 24, // space-y-6

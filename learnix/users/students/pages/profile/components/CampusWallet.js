@@ -4,17 +4,21 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function CampusWallet({ walletInfo }) {
+  const { width } = useWindowDimensions();
+  const paddingValue = width >= 768 ? 32 : 24;
+
   return (
     <LinearGradient
       colors={['#0050d4', '#0046bb']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={styles.container}
+      style={[styles.container, { padding: paddingValue }]}
     >
       <View style={styles.bgShape1} />
       <View style={styles.bgShape2} />
@@ -63,7 +67,6 @@ export default function CampusWallet({ walletInfo }) {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12, // rounded-xl
-    padding: 32, // p-8
     position: 'relative',
     overflow: 'hidden',
     shadowColor: '#000',

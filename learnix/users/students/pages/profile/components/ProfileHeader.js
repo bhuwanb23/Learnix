@@ -5,12 +5,17 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function ProfileHeader({ user }) {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const contentPadding = isTablet ? 32 : 16;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingHorizontal: contentPadding }]}>
       <View style={styles.headerContent}>
         {/* Title and Edit Button Row */}
         <View style={styles.topRow}>
@@ -22,7 +27,7 @@ export default function ProfileHeader({ user }) {
         </View>
 
         {/* User Info Row */}
-        <View style={styles.userRow}>
+        <View style={[styles.userRow, isTablet && styles.userRowTablet]}>
           <Image
             source={{ uri: user.avatar }}
             style={styles.avatar}
@@ -57,8 +62,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, // border-b
     borderBottomColor: 'rgba(171, 173, 175, 0.3)', // border-outline-variant/30
     paddingTop: 32, // pt-8
-    paddingBottom: 32, // pb-8
-    paddingHorizontal: 24, // px-6
+    paddingBottom: 48, // Increased pb-8 to 48 so stats can overlap
   },
   headerContent: {
     maxWidth: 1280, // max-w-7xl
@@ -68,8 +72,10 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 32, // mb-8
+    alignItems: 'center',
+    marginBottom: 24, // mb-8
+    flexWrap: 'wrap',
+    gap: 12,
   },
   pageTitle: {
     fontSize: 24, // text-2xl
@@ -95,8 +101,14 @@ const styles = StyleSheet.create({
   },
   userRow: {
     flexDirection: 'column', // flex-col md:flex-row (mobile first)
-    alignItems: 'flex-start', // md:items-center
-    gap: 24, // gap-6
+    alignItems: 'center', // center for mobile
+    gap: 16, // gap-6
+    textAlign: 'center',
+  },
+  userRowTablet: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    textAlign: 'left',
   },
   avatar: {
     width: 96, // w-24
@@ -112,26 +124,29 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flex: 1,
+    alignItems: 'center',
   },
   userName: {
-    fontSize: 30, // text-3xl
+    fontSize: 28, // text-3xl
     fontWeight: '700', // font-bold
     color: '#2c2f31', // text-on-surface
     fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 16, // mb-4
+    marginBottom: 12, // mb-4
+    textAlign: 'center',
   },
   metaInfo: {
-    flexDirection: 'column', // flex-col md:flex-row
+    flexDirection: 'row', // flex-col md:flex-row
     flexWrap: 'wrap',
-    gap: 16, // gap-4 md:gap-6
+    justifyContent: 'center',
+    gap: 12, // gap-4 md:gap-6
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8, // gap-2
+    gap: 4, // gap-2
   },
   metaText: {
-    fontSize: 14, // text-sm
+    fontSize: 13, // text-sm
     color: '#595c5e', // text-on-surface-variant
     fontWeight: '500', // font-medium
     fontFamily: 'Manrope-Medium',

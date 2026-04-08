@@ -4,10 +4,27 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function QuickActions({ categories, honors }) {
+  const { width } = useWindowDimensions();
+
+  const getCategoryWidth = () => {
+    if (width >= 1024) return '31%'; // 3 cols on very large
+    if (width >= 768) return '48%'; // 2 cols on tablet
+    if (width >= 400) return '47%'; // 2 cols on mobile
+    return '100%'; // 1 col on small mobile
+  };
+
+  const getHonorWidth = () => {
+    if (width >= 1024) return '48%'; // 2 cols on desktop
+    if (width >= 768) return '48%'; // 2 cols on tablet
+    if (width >= 400) return '47%'; // 2 cols on mobile
+    return '100%'; // 1 col on small mobile
+  };
+
   return (
     <View style={styles.container}>
       {/* Profile Categories Grid */}
@@ -15,7 +32,7 @@ export default function QuickActions({ categories, honors }) {
         {categories.map((category) => (
           <TouchableOpacity
             key={category.id}
-            style={styles.categoryCard}
+            style={[styles.categoryCard, { width: getCategoryWidth() }]}
             activeOpacity={0.7}
           >
             <View style={[styles.iconContainer, { backgroundColor: category.bgColor }]}>
@@ -38,13 +55,13 @@ export default function QuickActions({ categories, honors }) {
 
         <View style={styles.honorsGrid}>
           {honors.map((honor) => (
-            <View key={honor.id} style={styles.honorCard}>
+            <View key={honor.id} style={[styles.honorCard, { width: getHonorWidth() }]}>
               <View style={[styles.honorIconContainer, { backgroundColor: honor.bgColor }]}>
                 <MaterialIcons name={honor.icon} size={24} color={honor.color} />
               </View>
-              <View>
-                <Text style={styles.honorTitle}>{honor.title}</Text>
-                <Text style={styles.honorSubtitle}>{honor.subtitle}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.honorTitle} numberOfLines={1}>{honor.title}</Text>
+                <Text style={styles.honorSubtitle} numberOfLines={1}>{honor.subtitle}</Text>
               </View>
             </View>
           ))}
@@ -62,9 +79,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap', // grid-cols-2
     gap: 16, // gap-4
+    justifyContent: 'space-between',
   },
   categoryCard: {
-    width: '47%', // half minus gap for mobile
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff', // bg-surface-container-lowest
@@ -121,12 +138,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap', // grid-cols-2
     gap: 16, // gap-4
+    justifyContent: 'space-between',
   },
   honorCard: {
-    width: '47%', // half minus gap
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16, // gap-4
+    gap: 12, // slightly reduced gap
     backgroundColor: '#ffffff', // bg-surface-container-lowest
     padding: 16, // p-4
     borderRadius: 12, // rounded-xl
