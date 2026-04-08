@@ -69,16 +69,16 @@ export default function SearchFilter({
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: SPACING.lg,
-    marginTop: -30,
+    marginTop: -28,
     zIndex: 50,
   },
   container: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
-    padding: 8,
+    padding: 12,
     ...SHADOWS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.gray100,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
   },
   containerTablet: {
     flexDirection: 'row',
@@ -88,16 +88,19 @@ const styles = StyleSheet.create({
   searchSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 44,
+    paddingHorizontal: 16,
+    height: 52,
     flex: 1,
+    backgroundColor: COLORS.gray50,
+    borderRadius: BORDER_RADIUS.lg,
   },
   input: {
     flex: 1,
     marginLeft: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: COLORS.textPrimary,
     fontWeight: '500',
+    fontFamily: 'Manrope-Regular',
     ...Platform.select({
       web: { outlineStyle: 'none' }
     }),
@@ -114,21 +117,31 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.gray50,
+    borderWidth: 1,
+    borderColor: COLORS.gray200,
   },
   categoryPillActive: {
     backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   categoryText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
     color: COLORS.gray600,
+    fontFamily: 'Manrope-SemiBold',
   },
   categoryTextActive: {
     color: COLORS.white,
+    fontFamily: 'Manrope-Bold',
   },
   filterPill: {
     paddingHorizontal: 20,

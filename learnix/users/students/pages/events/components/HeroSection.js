@@ -29,7 +29,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <View style={[styles.heroContainer, { height: isTablet ? 618 : 530 }]}>
+    <View style={[styles.heroContainer, { height: isTablet ? 618 : 480 }]}>
       <Image 
         source={{ uri: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop' }} 
         style={styles.heroImage} 
@@ -54,14 +54,14 @@ export default function HeroSection() {
         
         <Text style={[
           styles.heroTitle, 
-          { fontSize: isDesktop ? 64 : (isTablet ? 48 : 36) }
+          { fontSize: isDesktop ? 64 : (isTablet ? 48 : 32) }
         ]}>
           Innovate-X{'\n'}2024 Tech Symposium
         </Text>
         
         <Text style={[
           styles.heroDescription, 
-          { fontSize: isTablet ? 18 : 16 }
+          { fontSize: isTablet ? 18 : 14 }
         ]}>
           Join the brightest minds on campus for three days of AI workshops, hardware hacks, and keynote speeches.
         </Text>
@@ -115,17 +115,17 @@ const styles = StyleSheet.create({
   heroContent: {
     flex: 1,
     justifyContent: 'center',
-    paddingTop: 40,
+    paddingTop: 32,
   },
   heroBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: BORDER_RADIUS.full,
     alignSelf: 'flex-start',
-    marginBottom: SPACING.md,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
@@ -138,62 +138,67 @@ const styles = StyleSheet.create({
   },
   heroBadgeText: {
     color: '#ef4444',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1,
+    fontFamily: 'Manrope-Bold',
   },
   heroTitle: {
     fontWeight: '800',
     color: COLORS.white,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
-    marginBottom: SPACING.md,
-    lineHeight: Platform.OS === 'ios' ? 0 : undefined,
+    fontFamily: 'PlusJakartaSans-ExtraBold',
+    marginBottom: 12,
     letterSpacing: -1,
   },
   heroDescription: {
     color: COLORS.gray300,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
-    marginBottom: SPACING.xl,
+    fontFamily: 'Manrope-Regular',
+    marginBottom: SPACING.lg,
     maxWidth: 600,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   heroButtons: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 48,
+    gap: 12,
+    marginBottom: 32,
+    flexWrap: 'wrap',
   },
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: BORDER_RADIUS.xl,
     gap: 8,
+    flexShrink: 1,
   },
   primaryBtnText: {
     color: COLORS.white,
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   secondaryBtn: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: BORDER_RADIUS.xl,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
+    flexShrink: 1,
   },
   secondaryBtnText: {
     color: COLORS.white,
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: 'Manrope-SemiBold',
   },
   heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 20,
+    padding: 16,
     borderRadius: BORDER_RADIUS.xxl,
     alignSelf: 'flex-start',
     borderWidth: 1,
@@ -204,13 +209,15 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: COLORS.white,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   statLabel: {
     color: COLORS.gray400,
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
+    fontFamily: 'Manrope-Medium',
   },
   statDivider: {
     width: 1,

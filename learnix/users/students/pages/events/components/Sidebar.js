@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: -0.3,
   },
   registrationCard: {
@@ -152,13 +152,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     marginBottom: 4,
   },
   registrationDate: {
     fontSize: 11,
     color: COLORS.gray500,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    fontFamily: 'Manrope-Regular',
   },
   registrationBody: {
     flexDirection: 'row',
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: COLORS.gray400,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    fontFamily: 'Manrope-Bold',
     letterSpacing: 0.5,
   },
   toggleTrack: {
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   reminderText: {
     fontSize: 11,
     fontWeight: '600',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-SemiBold',
   },
   viewAllBtn: {
     width: '100%',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 13,
     fontWeight: '700',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Bold',
   },
   bentoGrid: {
     flexDirection: 'row',
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     color: COLORS.primary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
     marginBottom: 4,
     letterSpacing: -0.5,
   },
@@ -299,14 +299,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.primary,
     opacity: 0.7,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Bold',
     letterSpacing: 0.5,
   },
   bentoValue2: {
     fontSize: 24,
     fontWeight: '800',
     color: COLORS.accent,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
     marginBottom: 4,
     letterSpacing: -0.5,
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.accent,
     opacity: 0.7,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Bold',
     letterSpacing: 0.5,
   },
   trendingSection: {
@@ -343,6 +343,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: COLORS.gray600,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-SemiBold',
   },
 });

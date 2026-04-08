@@ -114,12 +114,7 @@ export default function EventsPage() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-
-      {/* Animated Sticky Header */}
-      <Animated.View style={[styles.stickyHeader, { opacity: headerOpacity, transform: [{ translateY: headerTranslateY }] }]}>
-        <Text style={styles.stickyHeaderTitle}>Events</Text>
-      </Animated.View>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
       <Animated.FlatList
         data={isDesktop ? [{ id: 'desktop' }] : DISCOVERY_EVENTS}
@@ -136,15 +131,6 @@ export default function EventsPage() {
           )
         }
         contentContainerStyle={styles.listContent}
-        ListFooterComponent={!isDesktop ? () => (
-          <Animated.View style={[styles.mobileSidebarWrapper, { opacity: fadeAnim }]}>
-            <Sidebar
-              registrations={MY_REGISTRATIONS}
-              stats={EVENT_STATS}
-              trendingTags={TRENDING_TAGS}
-            />
-          </Animated.View>
-        ) : null}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -160,16 +146,6 @@ export default function EventsPage() {
           />
         }
       />
-
-      {/* Modern Floating Action Button */}
-      <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
-        <LinearGradient
-          colors={[COLORS.primary, COLORS.primaryDark]}
-          style={styles.fabGradient}
-        >
-          <MaterialIcons name="add" size={28} color={COLORS.white} />
-        </LinearGradient>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -179,35 +155,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.gray50,
   },
-  stickyHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: Platform.OS === 'ios' ? 100 : 80,
-    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    zIndex: 100,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: COLORS.border,
-    ...SHADOWS.sm,
-  },
-  stickyHeaderTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
-  },
+
   listContent: {
-    paddingBottom: 120,
+    paddingBottom: 40,
   },
   discoverHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: 48,
+    marginTop: 32,
     marginBottom: 24,
     maxWidth: 1280,
     alignSelf: 'center',
@@ -222,14 +178,14 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     color: '#1A1A1A',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
     letterSpacing: -0.5,
     marginBottom: 4,
   },
   discoverSubtitle: {
     fontSize: 14,
     color: '#666666',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Medium',
     lineHeight: 20,
   },
   viewMapBtn: {
@@ -245,7 +201,7 @@ const styles = StyleSheet.create({
     color: '#0050d4',
     fontWeight: '700',
     fontSize: 13,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-SemiBold',
   },
   desktopGrid: {
     flexDirection: 'row',
@@ -271,22 +227,5 @@ const styles = StyleSheet.create({
   mobileEventCardWrapper: {
     marginBottom: 24,
     paddingHorizontal: 16,
-  },
-  mobileSidebarWrapper: {
-    marginTop: 16,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 32,
-    right: 24,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    shadowColor: '#0050d4',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-    zIndex: 40,
   },
 });
