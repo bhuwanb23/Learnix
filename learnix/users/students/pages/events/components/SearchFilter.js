@@ -8,26 +8,45 @@ export default function SearchFilter({
   setSearchQuery,
   activeCategory,
   setActiveCategory,
-  categories
+  categories,
+  events,
+  setFilteredEvents
 }) {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
+
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+    
+    // Filter events based on search query
+    if (text.trim() === '') {
+      setFilteredEvents(events);
+    } else {
+      const filtered = events.filter(event => 
+        event.title.toLowerCase().includes(text.toLowerCase()) ||
+        event.description.toLowerCase().includes(text.toLowerCase()) ||
+        event.category.toLowerCase().includes(text.toLowerCase()) ||
+        event.location.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredEvents(filtered);
+    }
+  };
 
   return (
     <View style={styles.wrapper}>
       <View style={[styles.container, isTablet && styles.containerTablet]}>
         <View style={styles.searchSection}>
-          <MaterialIcons name="search" size={20} color={COLORS.gray400} />
+          <MaterialIcons name="search" size={18} color={COLORS.gray400} />
           <TextInput
             style={styles.input}
             placeholder="Search events, workshops..."
             placeholderTextColor={COLORS.gray400}
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={handleSearch}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <MaterialIcons name="close" size={20} color={COLORS.gray400} />
+            <TouchableOpacity onPress={() => handleSearch('')}>
+              <MaterialIcons name="close" size={18} color={COLORS.gray400} />
             </TouchableOpacity>
           )}
         </View>
@@ -69,13 +88,13 @@ export default function SearchFilter({
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: SPACING.lg,
-    marginTop: -28,
+    marginTop: -24,
     zIndex: 50,
   },
   container: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
-    padding: 12,
+    padding: 10,
     ...SHADOWS.lg,
     borderWidth: 2,
     borderColor: COLORS.primary,
@@ -88,16 +107,16 @@ const styles = StyleSheet.create({
   searchSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 52,
+    paddingHorizontal: 14,
+    height: 46,
     flex: 1,
     backgroundColor: COLORS.gray50,
     borderRadius: BORDER_RADIUS.lg,
   },
   input: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
+    marginLeft: 10,
+    fontSize: 14,
     color: COLORS.textPrimary,
     fontWeight: '500',
     fontFamily: 'Manrope-Regular',
@@ -117,8 +136,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryPill: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.gray50,
     borderWidth: 1,
@@ -134,7 +153,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   categoryText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: COLORS.gray600,
     fontFamily: 'Manrope-SemiBold',

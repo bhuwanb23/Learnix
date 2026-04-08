@@ -31,6 +31,7 @@ export default function EventsPage() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filteredEvents, setFilteredEvents] = useState(DISCOVERY_EVENTS);
 
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -81,6 +82,8 @@ export default function EventsPage() {
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
         categories={EVENT_CATEGORIES}
+        events={DISCOVERY_EVENTS}
+        setFilteredEvents={setFilteredEvents}
       />
       <View style={[styles.discoverHeader, { paddingHorizontal: isDesktop ? 0 : (isTablet ? 32 : 16) }]}>
         <View style={styles.discoverTextContainer}>
@@ -117,7 +120,7 @@ export default function EventsPage() {
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
       <Animated.FlatList
-        data={isDesktop ? [{ id: 'desktop' }] : DISCOVERY_EVENTS}
+        data={isDesktop ? [{ id: 'desktop' }] : filteredEvents}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={ListHeader}
         renderItem={({ item, index }) =>
