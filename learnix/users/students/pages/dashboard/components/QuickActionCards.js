@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function QuickActionCards({ actions, onActionPress }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
@@ -79,7 +80,7 @@ function ActionCard({ action, onPress, delay = 0 }) {
         useNativeDriver: true,
       }),
       Animated.spring(iconScaleAnim, {
-        toValue: 1.1,
+        toValue: 1.15,
         useNativeDriver: true,
       }),
     ]).start();
@@ -99,12 +100,7 @@ function ActionCard({ action, onPress, delay = 0 }) {
   };
 
   return (
-    <Animated.View 
-      style={[
-        styles.cardWrapper,
-        { opacity: opacityAnim, transform: [{ translateY: slideAnim }] }
-      ]}
-    >
+    <View style={styles.cardWrapper}>
       <TouchableOpacity
         style={[styles.card, { backgroundColor: action.bgColor }]}
         onPress={onPress}
@@ -112,51 +108,55 @@ function ActionCard({ action, onPress, delay = 0 }) {
         onPressOut={handlePressOut}
         activeOpacity={0.8}
       >
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <Animated.Text style={[styles.icon, { transform: [{ scale: iconScaleAnim }] }]}>{action.icon}</Animated.Text>
+        <Animated.View style={{ 
+          transform: [{ scale: scaleAnim }],
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
+        }}>
+          <Animated.View style={{ 
+            transform: [{ scale: iconScaleAnim }],
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            backgroundColor: 'rgba(255, 255, 255, 0.6)',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <Ionicons name={action.icon} size={26} color={action.iconColor} />
+          </Animated.View>
           <Text style={[styles.label, { color: action.textColor }]}>{action.label}</Text>
         </Animated.View>
       </TouchableOpacity>
-    </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: 24,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: 12,
   },
   cardWrapper: {
     width: '48%',
-    marginBottom: 0,
   },
   card: {
-    borderRadius: 12,
-    padding: 16,
-    height: 110,
+    borderRadius: 16,
+    padding: 20,
+    height: 130,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    // Subtle shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  icon: {
-    fontSize: 36,
-    marginBottom: 4,
   },
   label: {
     fontSize: 14,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
+    letterSpacing: 0.2,
   },
 });
