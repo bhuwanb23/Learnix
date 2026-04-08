@@ -163,8 +163,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: 32,
-    marginBottom: 24,
+    marginTop: 24,
+    marginBottom: 20,
     maxWidth: 1280,
     alignSelf: 'center',
     width: '100%',
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   discoverTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: '#1A1A1A',
     fontFamily: 'PlusJakartaSans-ExtraBold',
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   mobileEventCardWrapper: {
-    marginBottom: 24,
+    marginBottom: 20,
     paddingHorizontal: 16,
   },
 });

@@ -29,7 +29,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <View style={[styles.heroContainer, { height: isTablet ? 618 : 480 }]}>
+    <View style={[styles.heroContainer, { height: isTablet ? 520 : 400 }]}>
       <Image 
         source={{ uri: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop' }} 
         style={styles.heroImage} 
@@ -42,7 +42,7 @@ export default function HeroSection() {
       <Animated.View style={[
         styles.heroContent, 
         { 
-          paddingHorizontal: isDesktop ? 120 : (isTablet ? 60 : 24),
+          paddingHorizontal: isDesktop ? 120 : (isTablet ? 60 : 20),
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }]
         }
@@ -54,14 +54,14 @@ export default function HeroSection() {
         
         <Text style={[
           styles.heroTitle, 
-          { fontSize: isDesktop ? 64 : (isTablet ? 48 : 32) }
+          { fontSize: isDesktop ? 56 : (isTablet ? 42 : 28) }
         ]}>
           Innovate-X{'\n'}2024 Tech Symposium
         </Text>
         
         <Text style={[
           styles.heroDescription, 
-          { fontSize: isTablet ? 18 : 14 }
+          { fontSize: isTablet ? 16 : 13 }
         ]}>
           Join the brightest minds on campus for three days of AI workshops, hardware hacks, and keynote speeches.
         </Text>
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   heroContent: {
     flex: 1,
     justifyContent: 'center',
-    paddingTop: 32,
+    paddingTop: 24,
   },
   heroBadge: {
     flexDirection: 'row',
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: BORDER_RADIUS.full,
     alignSelf: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
@@ -147,28 +147,28 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: COLORS.white,
     fontFamily: 'PlusJakartaSans-ExtraBold',
-    marginBottom: 12,
+    marginBottom: 10,
     letterSpacing: -1,
   },
   heroDescription: {
     color: COLORS.gray300,
     fontFamily: 'Manrope-Regular',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     maxWidth: 600,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   heroButtons: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
+    gap: 10,
+    marginBottom: 24,
     flexWrap: 'wrap',
   },
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
     borderRadius: BORDER_RADIUS.xl,
     gap: 8,
     flexShrink: 1,
@@ -176,13 +176,13 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     color: COLORS.white,
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'PlusJakartaSans-Bold',
   },
   secondaryBtn: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
     borderRadius: BORDER_RADIUS.xl,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -191,14 +191,14 @@ const styles = StyleSheet.create({
   secondaryBtnText: {
     color: COLORS.white,
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Manrope-SemiBold',
   },
   heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 16,
+    padding: 14,
     borderRadius: BORDER_RADIUS.xxl,
     alignSelf: 'flex-start',
     borderWidth: 1,
@@ -209,14 +209,14 @@ const styles = StyleSheet.create({
   },
   statValue: {
     color: COLORS.white,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   statLabel: {
     color: COLORS.gray400,
-    fontSize: 11,
-    marginTop: 4,
+    fontSize: 10,
+    marginTop: 3,
     fontFamily: 'Manrope-Medium',
   },
   statDivider: {
