@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
-    paddingBottom: 120, // Padding for bottom nav bar
+    paddingBottom: 10, // Padding for bottom nav bar
     gap: 32, // Add gap between sections
   },
 });

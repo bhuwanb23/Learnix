@@ -76,24 +76,24 @@ export default function AssignmentPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7f9',
+    backgroundColor: '#f5f7f9', // bg-surface
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120, // Space for FAB and bottom nav
+    paddingBottom: 120, // pb-32 space for FAB and bottom nav
   },
   contentGrid: {
-    marginHorizontal: 24,
-    marginTop: 32,
-    flexDirection: 'row',
-    gap: 32,
+    marginHorizontal: 24, // px-6 from main
+    marginTop: 32, // mt-8
+    flexDirection: 'column', // lg:grid-cols-3
+    gap: 32, // gap-8
   },
   assignmentsColumn: {
-    flex: 2,
+    // lg:col-span-2 in HTML, but for mobile we stack
   },
   sidebarColumn: {
-    flex: 1,
+    // sidebar space-y-6 handled inside component
   },
 });

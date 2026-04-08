@@ -5,8 +5,16 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function AssignmentList({ assignments }) {
+  const hexToRgba = (hex, opacity) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+      `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})` 
+      : null;
+  };
+
   return (
     <View style={styles.container}>
       {assignments.map((assignment) => (
@@ -43,25 +51,25 @@ export default function AssignmentList({ assignments }) {
               <View style={styles.metaRow}>
                 {assignment.timeLeft && (
                   <View style={styles.metaItem}>
-                    <Text style={styles.metaIcon}>⏰</Text>
+                    <MaterialIcons name="schedule" size={16} color="#595c5e" />
                     <Text style={styles.metaText}>{assignment.timeLeft}</Text>
                   </View>
                 )}
                 {assignment.dueDate && (
                   <View style={styles.metaItem}>
-                    <Text style={styles.metaIcon}>📅</Text>
+                    <MaterialIcons name="event" size={16} color="#595c5e" />
                     <Text style={styles.metaText}>{assignment.dueDate}</Text>
                   </View>
                 )}
                 {assignment.files && (
                   <View style={styles.metaItem}>
-                    <Text style={styles.metaIcon}>📎</Text>
+                    <MaterialIcons name="attach-file" size={16} color="#595c5e" />
                     <Text style={styles.metaText}>{assignment.files} Files</Text>
                   </View>
                 )}
                 {assignment.teamTask && (
                   <View style={styles.metaItem}>
-                    <Text style={styles.metaIcon}>👥</Text>
+                    <MaterialIcons name="group" size={16} color="#595c5e" />
                     <Text style={styles.metaText}>Team Task</Text>
                   </View>
                 )}
@@ -71,7 +79,7 @@ export default function AssignmentList({ assignments }) {
             <View
               style={[
                 styles.progressCircle,
-                { borderColor: `${assignment.progressColor}33` },
+                { borderColor: hexToRgba(assignment.progressColor, 0.2) },
               ]}
             >
               <Text
@@ -84,21 +92,22 @@ export default function AssignmentList({ assignments }) {
 
           {/* Action Buttons */}
           <View style={styles.actions}>
-            <Text style={styles.swipeHint}>
-              ← Swipe to dismiss
-            </Text>
+            <View style={styles.swipeHintContainer}>
+              <MaterialIcons name="chevron-left" size={14} color="#595c5e" />
+              <Text style={styles.swipeHint}>Swipe to dismiss</Text>
+            </View>
             <View style={styles.actionButtons}>
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: 'rgba(0, 80, 212, 0.1)' }]}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.actionIcon, { color: '#0050d4' }]}>✓</Text>
+                <MaterialIcons name="done-all" size={14} color="#0050d4" />
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionButton, { backgroundColor: 'rgba(112, 42, 225, 0.1)' }]}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.actionIcon, { color: '#702ae1' }]}>📅</Text>
+                <MaterialIcons name="event-available" size={14} color="#702ae1" />
               </TouchableOpacity>
             </View>
           </View>
@@ -110,16 +119,16 @@ export default function AssignmentList({ assignments }) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 24,
+    gap: 24, // space-y-6
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
+    backgroundColor: '#ffffff', // bg-surface-container-lowest
+    borderRadius: 12, // rounded-xl
+    padding: 24, // p-6
+    shadowColor: '#000', // shadow-sm
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
     elevation: 2,
   },
   header: {
@@ -134,92 +143,91 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 8,
+    gap: 12, // gap-3
+    marginBottom: 8, // mb-2
   },
   priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8, // px-2
+    paddingVertical: 2, // py-0.5
+    borderRadius: 4, // rounded
   },
   priorityText: {
-    fontSize: 10,
-    fontWeight: '900',
+    fontSize: 10, // text-[10px]
+    fontWeight: '900', // font-black
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
+    letterSpacing: 1.5, // tracking-widest
     fontFamily: 'Manrope-ExtraBold',
   },
   subjectText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#595c5e',
+    fontSize: 12, // text-xs
+    fontWeight: '700', // font-bold
+    color: '#595c5e', // text-on-surface-variant
     fontFamily: 'Manrope-Bold',
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 20, // text-xl
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 12,
+    marginBottom: 12, // mb-3
   },
   metaRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 16, // gap-4
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-  },
-  metaIcon: {
-    fontSize: 16,
+    gap: 4, // gap-1
   },
   metaText: {
-    fontSize: 14,
-    color: '#595c5e',
-    fontWeight: '500',
+    fontSize: 14, // text-sm
+    color: '#595c5e', // text-on-surface-variant
+    fontWeight: '500', // font-medium
     fontFamily: 'Manrope-Medium',
   },
   progressCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 4,
+    width: 48, // w-12
+    height: 48, // h-12
+    borderRadius: 24, // rounded-full
+    borderWidth: 4, // border-4
     justifyContent: 'center',
     alignItems: 'center',
   },
   progressText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12, // text-xs
+    fontWeight: '700', // font-bold
     fontFamily: 'Manrope-Bold',
   },
   actions: {
-    marginTop: 24,
+    marginTop: 24, // mt-6
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     opacity: 0.4,
   },
+  swipeHintContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4, // gap-1
+  },
   swipeHint: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#595c5e',
+    fontSize: 10, // text-[10px]
+    fontWeight: '700', // font-bold
+    color: '#595c5e', // assuming inherits or text-on-surface-variant
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
+    letterSpacing: 1.5, // tracking-widest
     fontFamily: 'Manrope-Bold',
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 8, // gap-2
   },
   actionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 32, // w-8
+    height: 32, // h-8
+    borderRadius: 16, // rounded-full
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  actionIcon: {
-    fontSize: 16,
   },
 });

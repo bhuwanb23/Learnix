@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function AssignmentHeader() {
   return (
@@ -24,7 +25,7 @@ export default function AssignmentHeader() {
         </View>
 
         <TouchableOpacity style={styles.calendarButton} activeOpacity={0.7}>
-          <Text style={styles.calendarIcon}>📅</Text>
+          <MaterialIcons name="calendar-today" size={24} color="#2c2f31" />
         </TouchableOpacity>
       </View>
     </View>
@@ -34,43 +35,43 @@ export default function AssignmentHeader() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#f5f7f9',
-    paddingTop: 24,
-    paddingBottom: 8,
-    paddingHorizontal: 24,
+    paddingTop: 24, // pt-6
+    paddingBottom: 8, // pb-2
+    paddingHorizontal: 24, // px-6
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
+    maxWidth: 1280, // max-w-7xl roughly
+    alignSelf: 'center',
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 16, // gap-4
   },
   avatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 48, // w-12
+    height: 48, // h-12
+    borderRadius: 24, // rounded-full
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#7b9cff',
+    borderWidth: 2, // border-2
+    borderColor: '#7b9cff', // border-primary-container
   },
   avatar: {
     width: '100%',
     height: '100%',
   },
   title: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: '#0050d4',
+    fontSize: 30, // text-3xl
+    fontWeight: '700', // font-bold
+    color: '#0050d4', // text-[#0050d4]
     fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.5,
+    letterSpacing: -0.5, // tracking-tight
   },
   calendarButton: {
-    padding: 8,
-  },
-  calendarIcon: {
-    fontSize: 24,
+    padding: 8, // p-2
   },
 });
