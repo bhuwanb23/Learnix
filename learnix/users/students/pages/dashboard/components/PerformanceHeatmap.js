@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginBottom: 16,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   content: {
     gap: 16,
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#2c2f31',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-SemiBold',
   },
   weeksContainer: {
     flexDirection: 'row',

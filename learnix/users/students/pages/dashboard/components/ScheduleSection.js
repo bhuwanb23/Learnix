@@ -117,14 +117,14 @@ const styles = StyleSheet.create({
     color: '#2c2f31',
     marginBottom: 16,
     paddingHorizontal: 2,
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   scheduleList: {
     gap: 12,
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -136,14 +136,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   icon: {
-    fontSize: 26,
+    fontSize: 24,
   },
   content: {
     flex: 1,
@@ -153,13 +153,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2c2f31',
     marginBottom: 4,
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   details: {
     fontSize: 13,
     color: '#595c5e',
     fontWeight: '500',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
   timeSection: {
     alignItems: 'flex-end',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0050d4',
     marginBottom: 4,
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   durationBadge: {
     backgroundColor: '#e5e9eb',
@@ -181,6 +181,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#595c5e',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-SemiBold',
   },
 });

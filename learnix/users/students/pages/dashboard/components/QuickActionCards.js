@@ -121,26 +121,31 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: '48%',
+    marginBottom: 16,
   },
   card: {
-    borderRadius: 16,
-    padding: 20,
-    height: 90,
+    borderRadius: 12,
+    padding: 16,
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
+    // Inner shadow effect using nested shadows
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 4,
+    elevation: 2,
+    // Inner glow effect
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   icon: {
-    fontSize: 30,
-    marginBottom: 6,
+    fontSize: 32,
+    marginBottom: 8,
   },
   label: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
 });

@@ -35,9 +35,9 @@ export default function NotificationsPanel({ notifications }) {
     >
       <View style={styles.header}>
         <Text style={styles.title}>Alerts & Notifications</Text>
-        <TouchableOpacity>
+        {/* <TouchableOpacity>
           <Text style={styles.markReadButton}>Mark all as read</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
       
       <View style={styles.notificationsList}>
@@ -130,13 +130,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   markReadButton: {
     fontSize: 11,
     fontWeight: '700',
     color: '#0050d4',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   notificationsList: {
     gap: 16,
@@ -160,12 +160,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2c2f31',
     marginBottom: 4,
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   notificationMessage: {
     fontSize: 11,
     color: '#595c5e',
     lineHeight: 16,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
 });
