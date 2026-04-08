@@ -96,14 +96,27 @@ export const GRADIENTS = {
   subtle: ['rgba(37, 99, 235, 0.05)', 'rgba(37, 99, 235, 0.02)'],
 };
 
-// Typography - Clean and readable
+// Typography - Clean and readable with Plus Jakarta Sans & Manrope
 export const TYPOGRAPHY = {
-  // Font families
+  // Font families - Match HTML design
   fontFamily: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
-    light: 'System',
+    // Plus Jakarta Sans for headlines/titles
+    headline: 'PlusJakartaSans-Bold',
+    headlineExtraBold: 'PlusJakartaSans-ExtraBold',
+    headlineSemiBold: 'PlusJakartaSans-SemiBold',
+    
+    // Manrope for body text
+    body: 'Manrope-Regular',
+    bodyMedium: 'Manrope-Medium',
+    bodySemiBold: 'Manrope-SemiBold',
+    bodyBold: 'Manrope-Bold',
+    bodyExtraBold: 'Manrope-ExtraBold',
+    
+    // Legacy support
+    regular: 'Manrope-Regular',
+    medium: 'Manrope-Medium',
+    bold: 'PlusJakartaSans-Bold',
+    light: 'Manrope-Regular',
   },
   
   // Font sizes (with both naming conventions for compatibility)
