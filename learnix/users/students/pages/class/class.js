@@ -39,6 +39,7 @@ export default function ClassPage({ navigation }) {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -76,5 +77,10 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    padding: 24,
+    paddingBottom: 120, // Padding for bottom nav bar
+    gap: 32, // Add gap between sections
   },
 });

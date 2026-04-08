@@ -3,14 +3,24 @@ import {
   View,
   Text,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 
 export default function UpcomingTestsTimeline({ tests }) {
+  const hexToRgba = (hex, opacity) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+      `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})` 
+      : null;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Upcoming Tests</Text>
-        <Text style={styles.viewAll}>View All</Text>
+        <TouchableOpacity>
+          <Text style={styles.viewAll}>View All</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.timeline}>
@@ -19,16 +29,20 @@ export default function UpcomingTestsTimeline({ tests }) {
 
         {tests.map((test, index) => (
           <View key={test.id} style={styles.timelineItem}>
-            {/* Dot indicator */}
+            {/* Dot indicator with ring */}
             <View
               style={[
-                styles.dot,
-                {
-                  backgroundColor: test.color,
-                  shadowColor: test.color,
-                },
+                styles.dotRing,
+                { borderColor: hexToRgba(test.color, 0.2) }
               ]}
-            />
+            >
+              <View
+                style={[
+                  styles.dot,
+                  { backgroundColor: test.color }
+                ]}
+              />
+            </View>
 
             <View style={styles.testContent}>
               <Text style={[styles.daysLeft, { color: test.color }]}>
@@ -46,84 +60,87 @@ export default function UpcomingTestsTimeline({ tests }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginBottom: 24,
-    borderRadius: 16,
-    padding: 24,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
+    // Removed margin since parent has padding
+    borderRadius: 12, // rounded-xl
+    padding: 24, // p-6
+    backgroundColor: '#ffffff', // bg-surface-container-lowest
+    shadowColor: '#000', // shadow-sm
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
     elevation: 2,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 24, // mb-6
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 16, // Assuming base size
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'PlusJakartaSans-Bold',
   },
   viewAll: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#0050d4',
+    fontSize: 12, // text-xs
+    fontWeight: '700', // font-bold
+    color: '#0050d4', // text-primary
     fontFamily: 'Manrope-Bold',
   },
   timeline: {
     position: 'relative',
-    paddingLeft: 24,
+    gap: 32, // space-y-8
   },
   timelineLine: {
     position: 'absolute',
-    left: 11,
-    top: 4,
-    bottom: 4,
-    width: 1,
-    backgroundColor: 'rgba(171, 173, 175, 0.3)',
+    left: 16, // left-4
+    top: 8, // top-2
+    bottom: 8, // bottom-2
+    width: 1, // w-px
+    backgroundColor: 'rgba(171, 173, 175, 0.3)', // bg-outline-variant/30
   },
   timelineItem: {
     position: 'relative',
-    marginBottom: 32,
+    paddingLeft: 40, // pl-10
+  },
+  dotRing: {
+    position: 'absolute',
+    left: 12, // left-3
+    top: 4, // top-1
+    width: 10, // w-2.5
+    height: 10, // h-2.5
+    borderRadius: 5, // rounded-full
+    borderWidth: 4, // ring-4
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dot: {
-    position: 'absolute',
-    left: -19,
-    top: 4,
     width: 10,
     height: 10,
     borderRadius: 5,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
   },
   testContent: {
     flex: 1,
   },
   daysLeft: {
-    fontSize: 9,
-    fontWeight: '800',
+    fontSize: 10, // text-[10px]
+    fontWeight: '800', // font-extrabold
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
+    letterSpacing: -0.5, // tracking-tighter
+    marginBottom: 4, // mb-1
     fontFamily: 'Manrope-ExtraBold',
   },
   testTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#2c2f31',
-    marginBottom: 2,
+    fontSize: 14, // text-sm
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'Manrope-Bold',
   },
   testDate: {
-    fontSize: 12,
-    color: '#595c5e',
-    fontWeight: '500',
+    fontSize: 12, // text-xs
+    color: '#595c5e', // text-on-surface-variant
+    fontWeight: '500', // font-medium
     fontFamily: 'Manrope-Medium',
   },
 });
