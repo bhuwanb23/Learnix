@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: SPACING.xs,
   },
   completionCard: {
@@ -76,19 +76,19 @@ const styles = StyleSheet.create({
   subject: {
     fontSize: 11,
     fontWeight: '700',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Medium',
   },
   grade: {
     fontSize: 16,
     fontWeight: '800',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
   },
   assignmentTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Medium',
   },
   feedbackBox: {
     backgroundColor: COLORS.white,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontStyle: 'italic',
     color: COLORS.gray600,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    fontFamily: 'Manrope-Regular',
   },
   suggestion: {
     flexDirection: 'row',
@@ -111,6 +111,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Medium',
   },
 });

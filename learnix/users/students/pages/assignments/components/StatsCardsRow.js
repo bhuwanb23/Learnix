@@ -61,12 +61,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: COLORS.textPrimary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   label: {
     fontSize: 10,
     fontWeight: '600',
     color: COLORS.gray500,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    fontFamily: 'Manrope-Regular',
   },
 });

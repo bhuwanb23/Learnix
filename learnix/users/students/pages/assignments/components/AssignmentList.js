@@ -156,19 +156,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   subjectText: {
     fontSize: 11,
     fontWeight: '600',
     color: COLORS.gray500,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Medium',
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    fontFamily: 'Manrope-Regular',
     marginBottom: SPACING.sm,
   },
   metaRow: {
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.gray500,
     fontWeight: '500',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    fontFamily: 'Manrope-Regular',
   },
   progressCircle: {
     width: 40,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 11,
     fontWeight: '700',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    fontFamily: 'Manrope-Medium',
   },
   actions: {
     marginTop: SPACING.md,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     color: COLORS.gray400,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    fontFamily: 'Manrope-Regular',
   },
   actionButtons: {
     flexDirection: 'row',

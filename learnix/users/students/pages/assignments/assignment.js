@@ -14,7 +14,6 @@ import StatsCardsRow from './components/StatsCardsRow';
 import AssignmentTabs from './components/AssignmentTabs';
 import AssignmentList from './components/AssignmentList';
 import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
-import FloatingAddButton from './components/FloatingAddButton';
 
 // Import theme
 import { COLORS, SPACING } from '../../../../constants/theme';
@@ -35,7 +34,7 @@ export default function AssignmentPage() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.gray50} />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -75,9 +74,6 @@ export default function AssignmentPage() {
           </View>
         </View>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <FloatingAddButton />
     </View>
   );
 }
