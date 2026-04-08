@@ -3,8 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function StatsCardsRow({ stats }) {
   return (
@@ -12,9 +14,9 @@ export default function StatsCardsRow({ stats }) {
       {stats.map((stat) => (
         <View key={stat.id} style={styles.card}>
           <View style={[styles.iconContainer, { backgroundColor: stat.bgColor }]}>
-            <MaterialIcons name={stat.icon.replace('_', '-')} size={24} color={stat.color} />
+            <MaterialIcons name={stat.icon.replace('_', '-')} size={20} color={stat.color} />
           </View>
-          <View>
+          <View style={styles.textContainer}>
             <Text style={styles.value}>{stat.value}</Text>
             <Text style={styles.label}>{stat.label}</Text>
           </View>
@@ -26,40 +28,45 @@ export default function StatsCardsRow({ stats }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24, // px-6 from main
-    marginTop: 24, // mt-6
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
     flexDirection: 'row',
-    flexWrap: 'wrap', // grid-cols-2 md:grid-cols-4
-    gap: 16, // gap-4
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    justifyContent: 'space-between',
   },
   card: {
-    width: '47%', // roughly half width minus gap for 2 cols mobile
-    backgroundColor: '#eef1f3', // bg-surface-container-low
-    borderRadius: 12, // rounded-xl
-    padding: 20, // p-5
+    width: '48%',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16, // gap-4
+    gap: SPACING.sm,
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
   iconContainer: {
-    width: 40, // w-10
-    height: 40, // h-10
-    borderRadius: 20, // rounded-full
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  textContainer: {
+    flex: 1,
+  },
   value: {
-    fontSize: 24, // text-2xl
-    fontWeight: '700', // font-bold
-    color: '#2c2f31',
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
   },
   label: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '700', // font-bold
-    color: '#595c5e', // text-on-surface-variant
-    textTransform: 'uppercase',
-    marginTop: 0,
-    fontFamily: 'Manrope-Bold',
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.gray500,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
 });

@@ -1,59 +1,113 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Platform, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function HeroSection() {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
+  const isDesktop = width >= 1024;
+  
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 20,
+        friction: 7,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   return (
     <View style={[styles.heroContainer, { height: isTablet ? 618 : 530 }]}>
       <Image 
-        source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB7YuFWevwcsyOM-rgIzJrYkxQq-Vtq9fETdgjJrpCBRvJcvFDi8v7HermZbPc46BD90XjxQcHSGyk0d6Ajd-UqasKRd4R6DgHmkXYc2CBptQAxidMSd5rssKWoKGTsWtMSCWJoWyFQQaSFmpjm9KnFLnm8Aqk1ApXfQC-RqUfbAT_iAKwpXPTtxKu7Zc0i0RjZjkWQW2BJdnpSJwxoJtb2FwvZYaqpxhwvXwtGAuhKeJx9VNxvYD4hpaOx0E6dN7f5tJsxHg5VKlY' }} 
+        source={{ uri: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=2070&auto=format&fit=crop' }} 
         style={styles.heroImage} 
       />
       <LinearGradient 
-        colors={['rgba(0, 30, 90, 0.8)', 'transparent']} 
-        start={{ x: 0, y: 0 }} 
-        end={{ x: 1, y: 0 }} 
+        colors={['rgba(15, 23, 42, 0.85)', 'rgba(15, 23, 42, 0.4)', 'rgba(15, 23, 42, 0.95)']} 
         style={styles.heroGradient} 
       />
-      <View style={[styles.heroContent, { paddingHorizontal: isTablet ? 80 : 32 }]}>
-        <View style={styles.heroTag}>
-          <Text style={styles.heroTagText}>FEATURED EVENT</Text>
+      
+      <Animated.View style={[
+        styles.heroContent, 
+        { 
+          paddingHorizontal: isDesktop ? 120 : (isTablet ? 60 : 24),
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }]
+        }
+      ]}>
+        <View style={styles.heroBadge}>
+          <View style={styles.badgeDot} />
+          <Text style={styles.heroBadgeText}>LIVE NOW</Text>
         </View>
-        <Text style={[styles.heroTitle, { fontSize: isTablet ? 72 : 36 }]}>
-          Innovate-X: 2024 Tech Symposium
+        
+        <Text style={[
+          styles.heroTitle, 
+          { fontSize: isDesktop ? 64 : (isTablet ? 48 : 36) }
+        ]}>
+          Innovate-X{'\n'}2024 Tech Symposium
         </Text>
-        <Text style={[styles.heroDescription, { fontSize: isTablet ? 20 : 18 }]}>
-          Join the brightest minds on campus for three days of AI workshops, hardware hacks, and keynote speeches from industry giants.
+        
+        <Text style={[
+          styles.heroDescription, 
+          { fontSize: isTablet ? 18 : 16 }
+        ]}>
+          Join the brightest minds on campus for three days of AI workshops, hardware hacks, and keynote speeches.
         </Text>
+        
         <View style={styles.heroButtons}>
-          <TouchableOpacity style={styles.registerBtn} activeOpacity={0.9}>
-            <Text style={styles.registerBtnText}>Register Now</Text>
-            <MaterialIcons name="arrow-forward" size={20} color="#ffffff" />
+          <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.8}>
+            <Text style={styles.primaryBtnText}>Reserve Spot</Text>
+            <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.scheduleBtn} activeOpacity={0.9}>
-            <Text style={styles.scheduleBtnText}>View Schedule</Text>
+          
+          <TouchableOpacity style={styles.secondaryBtn} activeOpacity={0.8}>
+            <Text style={styles.secondaryBtnText}>Explore Schedule</Text>
           </TouchableOpacity>
         </View>
-      </View>
+        
+        {/* Social Proof / Stats */}
+        <View style={styles.heroStats}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>1.2k+</Text>
+            <Text style={styles.statLabel}>Attendees</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>45</Text>
+            <Text style={styles.statLabel}>Speakers</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statLabel}>Workshops</Text>
+          </View>
+        </View>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   heroContainer: {
-    position: 'relative',
     width: '100%',
     overflow: 'hidden',
+    backgroundColor: COLORS.black,
   },
   heroImage: {
     ...StyleSheet.absoluteFillObject,
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+    opacity: 0.7,
   },
   heroGradient: {
     ...StyleSheet.absoluteFillObject,
@@ -61,42 +115,108 @@ const styles = StyleSheet.create({
   heroContent: {
     flex: 1,
     justifyContent: 'center',
-    maxWidth: 1024,
+    paddingTop: 40,
   },
-  heroTag: {
-    backgroundColor: 'rgba(162, 56, 0, 0.2)',
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.full,
     alignSelf: 'flex-start',
-    marginBottom: 16,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
-  heroTagText: {
-    color: '#5a1c00',
+  badgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#ef4444',
+    marginRight: 8,
+  },
+  heroBadgeText: {
+    color: '#ef4444',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
-    fontFamily: 'Manrope-Bold',
   },
   heroTitle: {
     fontWeight: '800',
-    color: '#ffffff',
-    fontFamily: 'PlusJakartaSans-ExtraBold',
-    marginBottom: 24,
+    color: COLORS.white,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    marginBottom: SPACING.md,
     lineHeight: Platform.OS === 'ios' ? 0 : undefined,
+    letterSpacing: -1,
   },
   heroDescription: {
-    color: '#f1f2ff',
-    fontFamily: 'Manrope-Medium',
-    marginBottom: 32,
-    opacity: 0.9,
-    maxWidth: 672,
-    lineHeight: 28,
+    color: COLORS.gray300,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    marginBottom: SPACING.xl,
+    maxWidth: 600,
+    lineHeight: 24,
   },
   heroButtons: {
     flexDirection: 'row',
     gap: 16,
-    flexWrap: 'wrap',
+    marginBottom: 48,
+  },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: BORDER_RADIUS.xl,
+    gap: 8,
+  },
+  primaryBtnText: {
+    color: COLORS.white,
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  secondaryBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  secondaryBtnText: {
+    color: COLORS.white,
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  heroStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 20,
+    borderRadius: BORDER_RADIUS.xxl,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    color: COLORS.white,
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  statLabel: {
+    color: COLORS.gray400,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginHorizontal: 24,
   },
   registerBtn: {
     backgroundColor: '#0050d4',

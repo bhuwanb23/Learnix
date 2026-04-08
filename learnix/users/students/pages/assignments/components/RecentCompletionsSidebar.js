@@ -3,8 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function RecentCompletionsSidebar({ completions }) {
   return (
@@ -37,7 +39,7 @@ export default function RecentCompletionsSidebar({ completions }) {
           </View>
 
           <View style={styles.suggestion}>
-            <MaterialIcons name={completion.suggestionIcon.replace('_', '-')} size={12} color={completion.borderColor} />
+            <MaterialIcons name={completion.suggestionIcon.replace('_', '-')} size={14} color={completion.borderColor} />
             <Text style={[styles.suggestionText, { color: completion.borderColor }]}>
               {completion.suggestionIcon === 'lightbulb' ? 'Suggestion' : 'Next step'}: {completion.suggestion}
             </Text>
@@ -50,64 +52,65 @@ export default function RecentCompletionsSidebar({ completions }) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 24, // space-y-6
+    gap: SPACING.md,
   },
   title: {
-    fontSize: 18, // text-lg
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // assuming text-on-surface
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    marginBottom: SPACING.xs,
   },
   completionCard: {
-    backgroundColor: '#eef1f3', // bg-surface-container-low
-    borderRadius: 12, // rounded-xl
-    padding: 20, // p-5
-    borderLeftWidth: 4, // border-l-4
+    backgroundColor: COLORS.gray50,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    borderLeftWidth: 4,
   },
   gradeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8, // mb-2
+    marginBottom: SPACING.xs,
   },
   subject: {
-    fontSize: 12, // text-xs
-    fontWeight: '700', // font-bold
-    fontFamily: 'Manrope-Bold',
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   grade: {
-    fontSize: 18, // text-lg
-    fontWeight: '700', // font-bold
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 16,
+    fontWeight: '800',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
   },
   assignmentTitle: {
-    fontSize: 14, // text-sm
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
-    marginBottom: 8, // mb-2
-    fontFamily: 'Manrope-Bold',
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   feedbackBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)', // bg-surface-container-lowest/50
-    borderRadius: 8, // rounded-lg
-    padding: 12, // p-3
-    marginBottom: 12, // mb-3
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   feedbackText: {
-    fontSize: 12, // text-xs
-    fontStyle: 'italic', // italic
-    color: '#595c5e', // text-on-surface-variant
-    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    fontStyle: 'italic',
+    color: COLORS.gray600,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
   suggestion: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8, // gap-2
+    gap: SPACING.sm,
   },
   suggestionText: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '700', // font-bold
-    textTransform: 'uppercase', // uppercase
-    fontFamily: 'Manrope-Bold',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
 });

@@ -3,7 +3,9 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  useWindowDimensions,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 
 // Import components
@@ -14,6 +16,9 @@ import AssignmentTabs from './components/AssignmentTabs';
 import AssignmentList from './components/AssignmentList';
 import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
 import FloatingAddButton from './components/FloatingAddButton';
+
+// Import theme
+import { COLORS, SPACING } from '../../../../constants/theme';
 
 // Import data
 import {
@@ -26,9 +31,12 @@ import {
 
 export default function AssignmentPage() {
   const [activeTab, setActiveTab] = useState('active');
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.gray50} />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -38,62 +46,80 @@ export default function AssignmentPage() {
         <AssignmentHeader />
 
         {/* Progress Overview Bento Grid */}
-        <ProgressOverviewBento
-          velocity={weeklyVelocity}
-          allocation={subjectAllocation}
-        />
+        <View style={isDesktop ? styles.desktopContainer : null}>
+          <ProgressOverviewBento
+            velocity={weeklyVelocity}
+            allocation={subjectAllocation}
+          />
 
-        {/* Stats Cards Row */}
-        <StatsCardsRow stats={statsCards} />
+          {/* Stats Cards Row */}
+          <StatsCardsRow stats={statsCards} />
 
-        {/* Tabbed Navigation */}
-        <AssignmentTabs
-          tabs={['Active Tasks', 'Upcoming', 'Archived']}
-          activeTab={activeTab}
-          onTabPress={setActiveTab}
-        />
+          {/* Tabbed Navigation */}
+          <AssignmentTabs
+            tabs={['Active Tasks', 'Upcoming', 'Archived']}
+            activeTab={activeTab}
+            onTabPress={setActiveTab}
+          />
 
-        {/* Main Content Grid */}
-        <View style={styles.contentGrid}>
-          {/* Assignment Cards List */}
-          <View style={styles.assignmentsColumn}>
-            <AssignmentList assignments={assignments} />
-          </View>
+          {/* Main Content Grid */}
+          <View style={[styles.contentGrid, isDesktop && styles.contentGridDesktop]}>
+            {/* Assignment Cards List */}
+            <View style={[styles.assignmentsColumn, isDesktop && styles.assignmentsColumnDesktop]}>
+              <AssignmentList assignments={assignments} />
+            </View>
 
-          {/* Recent Completions Sidebar */}
-          <View style={styles.sidebarColumn}>
-            <RecentCompletionsSidebar completions={recentCompletions} />
+            {/* Recent Completions Sidebar */}
+            <View style={[styles.sidebarColumn, isDesktop && styles.sidebarColumnDesktop]}>
+              <RecentCompletionsSidebar completions={recentCompletions} />
+            </View>
           </View>
         </View>
       </ScrollView>
 
       {/* Floating Action Button */}
       <FloatingAddButton />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7f9', // bg-surface
+    backgroundColor: COLORS.gray50,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120, // pb-32 space for FAB and bottom nav
+    paddingBottom: 100, 
+  },
+  desktopContainer: {
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
   },
   contentGrid: {
-    marginHorizontal: 24, // px-6 from main
-    marginTop: 32, // mt-8
-    flexDirection: 'column', // lg:grid-cols-3
-    gap: 32, // gap-8
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
+    flexDirection: 'column',
+    gap: SPACING.xl,
+  },
+  contentGridDesktop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   assignmentsColumn: {
-    // lg:col-span-2 in HTML, but for mobile we stack
+    flex: 1,
+  },
+  assignmentsColumnDesktop: {
+    flex: 2,
   },
   sidebarColumn: {
-    // sidebar space-y-6 handled inside component
+    flex: 1,
+  },
+  sidebarColumnDesktop: {
+    flex: 1,
+    marginTop: 0,
   },
 });

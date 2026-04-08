@@ -4,8 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function AssignmentList({ assignments }) {
   const hexToRgba = (hex, opacity) => {
@@ -51,25 +53,25 @@ export default function AssignmentList({ assignments }) {
               <View style={styles.metaRow}>
                 {assignment.timeLeft && (
                   <View style={styles.metaItem}>
-                    <MaterialIcons name="schedule" size={16} color="#595c5e" />
+                    <MaterialIcons name="schedule" size={14} color={COLORS.gray500} />
                     <Text style={styles.metaText}>{assignment.timeLeft}</Text>
                   </View>
                 )}
                 {assignment.dueDate && (
                   <View style={styles.metaItem}>
-                    <MaterialIcons name="event" size={16} color="#595c5e" />
+                    <MaterialIcons name="event" size={14} color={COLORS.gray500} />
                     <Text style={styles.metaText}>{assignment.dueDate}</Text>
                   </View>
                 )}
                 {assignment.files && (
                   <View style={styles.metaItem}>
-                    <MaterialIcons name="attach-file" size={16} color="#595c5e" />
+                    <MaterialIcons name="attach-file" size={14} color={COLORS.gray500} />
                     <Text style={styles.metaText}>{assignment.files} Files</Text>
                   </View>
                 )}
                 {assignment.teamTask && (
                   <View style={styles.metaItem}>
-                    <MaterialIcons name="group" size={16} color="#595c5e" />
+                    <MaterialIcons name="group" size={14} color={COLORS.gray500} />
                     <Text style={styles.metaText}>Team Task</Text>
                   </View>
                 )}
@@ -93,21 +95,21 @@ export default function AssignmentList({ assignments }) {
           {/* Action Buttons */}
           <View style={styles.actions}>
             <View style={styles.swipeHintContainer}>
-              <MaterialIcons name="chevron-left" size={14} color="#595c5e" />
+              <MaterialIcons name="chevron-left" size={14} color={COLORS.gray400} />
               <Text style={styles.swipeHint}>Swipe to dismiss</Text>
             </View>
             <View style={styles.actionButtons}>
               <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: 'rgba(0, 80, 212, 0.1)' }]}
+                style={[styles.actionButton, { backgroundColor: 'rgba(37, 99, 235, 0.1)' }]}
                 activeOpacity={0.7}
               >
-                <MaterialIcons name="done-all" size={14} color="#0050d4" />
+                <MaterialIcons name="done-all" size={16} color={COLORS.primary} />
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: 'rgba(112, 42, 225, 0.1)' }]}
+                style={[styles.actionButton, { backgroundColor: 'rgba(14, 165, 233, 0.1)' }]}
                 activeOpacity={0.7}
               >
-                <MaterialIcons name="event-available" size={14} color="#702ae1" />
+                <MaterialIcons name="event-available" size={16} color={COLORS.accent} />
               </TouchableOpacity>
             </View>
           </View>
@@ -119,17 +121,15 @@ export default function AssignmentList({ assignments }) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 24, // space-y-6
+    gap: SPACING.md,
   },
   card: {
-    backgroundColor: '#ffffff', // bg-surface-container-lowest
-    borderRadius: 12, // rounded-xl
-    padding: 24, // p-6
-    shadowColor: '#000', // shadow-sm
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg,
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
   header: {
     flexDirection: 'row',
@@ -138,95 +138,99 @@ const styles = StyleSheet.create({
   },
   infoSection: {
     flex: 1,
-    marginRight: 16,
+    marginRight: SPACING.md,
   },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12, // gap-3
-    marginBottom: 8, // mb-2
+    gap: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   priorityBadge: {
-    paddingHorizontal: 8, // px-2
-    paddingVertical: 2, // py-0.5
-    borderRadius: 4, // rounded
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: BORDER_RADIUS.sm,
   },
   priorityText: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '900', // font-black
+    fontSize: 9,
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 1.5, // tracking-widest
-    fontFamily: 'Manrope-ExtraBold',
+    letterSpacing: 1,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
   },
   subjectText: {
-    fontSize: 12, // text-xs
-    fontWeight: '700', // font-bold
-    color: '#595c5e', // text-on-surface-variant
-    fontFamily: 'Manrope-Bold',
+    fontSize: 11,
+    fontWeight: '600',
+    color: COLORS.gray500,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   title: {
-    fontSize: 20, // text-xl
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
-    fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 12, // mb-3
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    marginBottom: SPACING.sm,
   },
   metaRow: {
     flexDirection: 'row',
-    gap: 16, // gap-4
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, // gap-1
+    gap: 4,
   },
   metaText: {
-    fontSize: 14, // text-sm
-    color: '#595c5e', // text-on-surface-variant
-    fontWeight: '500', // font-medium
-    fontFamily: 'Manrope-Medium',
+    fontSize: 12,
+    color: COLORS.gray500,
+    fontWeight: '500',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
   progressCircle: {
-    width: 48, // w-12
-    height: 48, // h-12
-    borderRadius: 24, // rounded-full
-    borderWidth: 4, // border-4
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
   },
   progressText: {
-    fontSize: 12, // text-xs
-    fontWeight: '700', // font-bold
-    fontFamily: 'Manrope-Bold',
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   actions: {
-    marginTop: 24, // mt-6
+    marginTop: SPACING.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    opacity: 0.4,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gray50,
   },
   swipeHintContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, // gap-1
+    gap: 4,
+    opacity: 0.6,
   },
   swipeHint: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '700', // font-bold
-    color: '#595c5e', // assuming inherits or text-on-surface-variant
+    fontSize: 10,
+    fontWeight: '600',
+    color: COLORS.gray400,
     textTransform: 'uppercase',
-    letterSpacing: 1.5, // tracking-widest
-    fontFamily: 'Manrope-Bold',
+    letterSpacing: 1,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 8, // gap-2
+    gap: SPACING.sm,
   },
   actionButton: {
-    width: 32, // w-8
-    height: 32, // h-8
-    borderRadius: 16, // rounded-full
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },

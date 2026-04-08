@@ -4,10 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function AssignmentTabs({ tabs, activeTab, onTabPress }) {
-  // Convert 'Active Tasks' to 'active' for state matching if needed, or keep exact
   const formatTabValue = (tab) => tab.split(' ')[0].toLowerCase();
 
   return (
@@ -41,30 +42,31 @@ export default function AssignmentTabs({ tabs, activeTab, onTabPress }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24, // px-6
-    marginTop: 48, // mt-12
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
     flexDirection: 'row',
-    gap: 32, // gap-8
-    borderBottomWidth: 1, // border-b
-    borderBottomColor: 'rgba(171, 173, 175, 0.1)', // border-outline-variant/10
+    gap: SPACING.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray200,
   },
   tab: {
-    paddingBottom: 16, // pb-4
-    borderBottomWidth: 2, // border-b-2
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    marginBottom: -1, // Overlap border
   },
   activeTab: {
-    borderBottomColor: '#0050d4', // border-primary
+    borderBottomColor: COLORS.primary,
   },
   tabText: {
-    fontSize: 14, // text-sm
-    fontWeight: '600', // font-semibold
-    color: '#595c5e', // text-on-surface-variant
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.gray500,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   activeTabText: {
-    color: '#0050d4', // text-primary
-    fontWeight: '700', // font-bold
-    fontFamily: 'Manrope-Bold',
+    color: COLORS.primary,
+    fontWeight: '700',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
 });

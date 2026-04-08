@@ -1,25 +1,36 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function Sidebar({ registrations, stats, trendingTags }) {
+  
+  const handleTagPress = (tag) => {
+    // Add visual feedback or navigation later
+    console.log('Pressed tag:', tag);
+  };
+
   return (
     <View style={styles.sidebar}>
       {/* My Registrations */}
       <View style={styles.sidebarSection}>
         <View style={styles.sidebarHeader}>
-          <MaterialIcons name="confirmation-number" size={24} color="#0050d4" />
-          <Text style={styles.sidebarTitle}>My Registrations</Text>
+          <MaterialIcons name="confirmation-number" size={20} color={COLORS.primary} />
+          <Text style={styles.sidebarTitle}>My Tickets</Text>
         </View>
         {registrations.map((reg) => (
-          <View key={reg.id} style={[styles.registrationCard, { borderLeftColor: reg.borderColor }]}>
+          <TouchableOpacity 
+            key={reg.id} 
+            style={[styles.registrationCard, { borderLeftColor: reg.borderColor }]}
+            activeOpacity={0.8}
+          >
             <View style={styles.registrationHeader}>
-              <View>
-                <Text style={styles.registrationTitle}>{reg.title}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.registrationTitle} numberOfLines={1}>{reg.title}</Text>
                 <Text style={styles.registrationDate}>{reg.datetime}</Text>
               </View>
-              <TouchableOpacity>
-                <MaterialIcons name="more-vert" size={20} color="#94a3b8" />
+              <TouchableOpacity style={styles.moreOptionsBtn}>
+                <MaterialIcons name="more-vert" size={20} color={COLORS.gray400} />
               </TouchableOpacity>
             </View>
             <View style={styles.registrationBody}>
@@ -33,36 +44,51 @@ export default function Sidebar({ registrations, stats, trendingTags }) {
                     <View style={[styles.toggleThumb, reg.reminderActive ? styles.toggleThumbActive : styles.toggleThumbInactive]} />
                   </View>
                 </View>
-                <Text style={[styles.reminderText, { color: reg.reminderColor }]}>{reg.reminderText}</Text>
+                <Text style={[styles.reminderText, { color: reg.reminderColor }]} numberOfLines={1}>
+                  {reg.reminderText}
+                </Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         ))}
-        <TouchableOpacity style={styles.viewAllBtn}>
+        <TouchableOpacity style={styles.viewAllBtn} activeOpacity={0.7}>
           <Text style={styles.viewAllBtnText}>View All Tickets</Text>
+          <MaterialIcons name="arrow-forward" size={16} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
       {/* Bento Stats */}
       <View style={styles.bentoGrid}>
-        <View style={styles.bentoCard1}>
-          <MaterialIcons name="calendar-month" size={24} color="#0050d4" style={styles.bentoIcon} />
+        <View style={[styles.bentoCard, styles.bentoCard1]}>
+          <View style={styles.bentoIconWrapper1}>
+            <MaterialIcons name="calendar-month" size={20} color={COLORS.primary} />
+          </View>
           <Text style={styles.bentoValue1}>{stats.upcoming}</Text>
-          <Text style={styles.bentoLabel1}>UPCOMING</Text>
+          <Text style={styles.bentoLabel1}>UPCOMING EVENTS</Text>
         </View>
-        <View style={styles.bentoCard2}>
-          <MaterialIcons name="stars" size={24} color="#702ae1" style={styles.bentoIcon} />
+        <View style={[styles.bentoCard, styles.bentoCard2]}>
+          <View style={styles.bentoIconWrapper2}>
+            <MaterialIcons name="stars" size={20} color={COLORS.accent} />
+          </View>
           <Text style={styles.bentoValue2}>{stats.xpEarned}</Text>
-          <Text style={styles.bentoLabel2}>XP EARNED</Text>
+          <Text style={styles.bentoLabel2}>TOTAL XP EARNED</Text>
         </View>
       </View>
 
       {/* Trending Tags */}
       <View style={styles.trendingSection}>
-        <Text style={styles.trendingTitle}>Trending Tags</Text>
+        <View style={styles.sidebarHeader}>
+          <MaterialIcons name="trending-up" size={20} color={COLORS.textPrimary} />
+          <Text style={styles.sidebarTitle}>Trending Tags</Text>
+        </View>
         <View style={styles.tagsContainer}>
           {trendingTags.map((tag, idx) => (
-            <TouchableOpacity key={idx} style={styles.tagBtn}>
+            <TouchableOpacity 
+              key={idx} 
+              style={styles.tagBtn}
+              activeOpacity={0.7}
+              onPress={() => handleTagPress(tag)}
+            >
               <Text style={styles.tagText}>{tag}</Text>
             </TouchableOpacity>
           ))}
@@ -74,70 +100,83 @@ export default function Sidebar({ registrations, stats, trendingTags }) {
 
 const styles = StyleSheet.create({
   sidebar: {
-    gap: 32,
+    gap: SPACING.xl,
     width: '100%',
-    marginBottom: 32,
+    marginBottom: SPACING.xl,
   },
   sidebarSection: {
-    backgroundColor: '#eef1f3',
-    padding: 24,
-    borderRadius: 16,
+    backgroundColor: COLORS.white,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
+    ...SHADOWS.sm,
   },
   sidebarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 24,
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   sidebarTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2c2f31',
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 16,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    letterSpacing: -0.3,
   },
   registrationCard: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 16,
+    backgroundColor: COLORS.gray50,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
     borderLeftWidth: 4,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: SPACING.md,
+    borderTopWidth: 1,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: COLORS.gray100,
   },
   registrationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  moreOptionsBtn: {
+    padding: 4,
+    marginRight: -4,
+    marginTop: -4,
   },
   registrationTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#2c2f31',
-    fontFamily: 'Manrope-Bold',
+    color: COLORS.textPrimary,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    marginBottom: 4,
   },
   registrationDate: {
-    fontSize: 10,
-    color: '#595c5e',
-    fontFamily: 'Manrope-Regular',
+    fontSize: 11,
+    color: COLORS.gray500,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
   },
   registrationBody: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: SPACING.md,
   },
   qrContainer: {
-    backgroundColor: '#f8fafc',
-    padding: 8,
-    borderRadius: 8,
+    backgroundColor: COLORS.white,
+    padding: 6,
+    borderRadius: BORDER_RADIUS.md,
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
   qrImage: {
     width: 40,
     height: 40,
-    opacity: 0.5,
+    opacity: 0.7,
   },
   registrationInfo: {
     flex: 1,
@@ -146,136 +185,164 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   reminderLabel: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Bold',
+    fontWeight: '800',
+    color: COLORS.gray400,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+    letterSpacing: 0.5,
   },
   toggleTrack: {
     width: 32,
-    height: 16,
-    borderRadius: 8,
+    height: 18,
+    borderRadius: 9,
     justifyContent: 'center',
   },
   toggleActive: {
-    backgroundColor: '#0050d4',
+    backgroundColor: COLORS.primary,
   },
   toggleInactive: {
-    backgroundColor: '#e2e8f0',
+    backgroundColor: COLORS.gray200,
   },
   toggleThumb: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#ffffff',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: COLORS.white,
     position: 'absolute',
   },
   toggleThumbActive: {
     right: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: -1, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   toggleThumbInactive: {
     left: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
     elevation: 1,
   },
   reminderText: {
-    fontSize: 10,
-    fontWeight: '500',
-    fontFamily: 'Manrope-Medium',
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   viewAllBtn: {
     width: '100%',
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 80, 212, 0.2)',
-    borderRadius: 8,
+    backgroundColor: 'rgba(37, 99, 235, 0.05)',
+    borderRadius: BORDER_RADIUS.md,
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 6,
+    marginTop: SPACING.sm,
   },
   viewAllBtnText: {
-    color: '#0050d4',
-    fontSize: 14,
+    color: COLORS.primary,
+    fontSize: 13,
     fontWeight: '700',
-    fontFamily: 'Manrope-Bold',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   bentoGrid: {
     flexDirection: 'row',
-    gap: 16,
+    gap: SPACING.md,
+  },
+  bentoCard: {
+    flex: 1,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl,
+    alignItems: 'flex-start',
   },
   bentoCard1: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 80, 212, 0.1)',
-    padding: 16,
-    borderRadius: 16,
+    backgroundColor: 'rgba(37, 99, 235, 0.05)',
   },
   bentoCard2: {
-    flex: 1,
-    backgroundColor: 'rgba(112, 42, 225, 0.1)',
-    padding: 16,
-    borderRadius: 16,
+    backgroundColor: 'rgba(14, 165, 233, 0.05)',
   },
-  bentoIcon: {
-    marginBottom: 8,
+  bentoIconWrapper1: {
+    backgroundColor: COLORS.white,
+    padding: 8,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.sm,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  bentoIconWrapper2: {
+    backgroundColor: COLORS.white,
+    padding: 8,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.sm,
+    shadowColor: COLORS.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   bentoValue1: {
     fontSize: 24,
-    fontWeight: '900',
-    color: '#0050d4',
-    fontFamily: 'PlusJakartaSans-ExtraBold',
+    fontWeight: '800',
+    color: COLORS.primary,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   bentoLabel1: {
     fontSize: 10,
-    fontWeight: '700',
-    color: 'rgba(0, 80, 212, 0.6)',
-    fontFamily: 'Manrope-Bold',
+    fontWeight: '800',
+    color: COLORS.primary,
+    opacity: 0.7,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    letterSpacing: 0.5,
   },
   bentoValue2: {
     fontSize: 24,
-    fontWeight: '900',
-    color: '#702ae1',
-    fontFamily: 'PlusJakartaSans-ExtraBold',
+    fontWeight: '800',
+    color: COLORS.accent,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   bentoLabel2: {
     fontSize: 10,
-    fontWeight: '700',
-    color: 'rgba(112, 42, 225, 0.6)',
-    fontFamily: 'Manrope-Bold',
+    fontWeight: '800',
+    color: COLORS.accent,
+    opacity: 0.7,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
+    letterSpacing: 0.5,
   },
   trendingSection: {
-    backgroundColor: '#ffffff',
-    padding: 24,
-    borderRadius: 16,
+    backgroundColor: COLORS.white,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl,
     borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.1)',
-  },
-  trendingTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2c2f31',
-    fontFamily: 'Manrope-Bold',
-    marginBottom: 16,
+    borderColor: COLORS.gray100,
+    ...SHADOWS.sm,
   },
   tagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.sm,
   },
   tagBtn: {
-    backgroundColor: '#eef1f3',
+    backgroundColor: COLORS.gray50,
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
+    paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
   tagText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#595c5e',
-    fontFamily: 'Manrope-SemiBold',
+    color: COLORS.gray600,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
 });

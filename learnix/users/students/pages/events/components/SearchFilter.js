@@ -1,53 +1,65 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, useWindowDimensions, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
-export default function SearchFilter({ 
-  searchQuery, 
-  setSearchQuery, 
-  activeCategory, 
-  setActiveCategory, 
-  categories 
+export default function SearchFilter({
+  searchQuery,
+  setSearchQuery,
+  activeCategory,
+  setActiveCategory,
+  categories
 }) {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
 
   return (
-    <View style={styles.searchFilterWrapper}>
-      <View style={[styles.searchFilterContainer, { flexDirection: isTablet ? 'row' : 'column' }]}>
-        <View style={[styles.searchInputContainer, isTablet && { flex: 1 }]}>
-          <MaterialIcons name="search" size={24} color="#94a3b8" style={styles.searchIcon} />
+    <View style={styles.wrapper}>
+      <View style={[styles.container, isTablet && styles.containerTablet]}>
+        <View style={styles.searchSection}>
+          <MaterialIcons name="search" size={20} color={COLORS.gray400} />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search events, workshops, or clubs..."
-            placeholderTextColor="#94a3b8"
+            style={styles.input}
+            placeholder="Search events, workshops..."
+            placeholderTextColor={COLORS.gray400}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-        </View>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false} 
-          contentContainerStyle={styles.filterScroll}
-          style={[styles.filterScrollWrapper, isTablet && { width: 'auto', flex: 0 }]}
-        >
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              style={[
-                styles.filterPill,
-                activeCategory === cat.id ? styles.filterPillActive : styles.filterPillInactive
-              ]}
-              onPress={() => setActiveCategory(cat.id)}
-            >
-              <Text style={[
-                styles.filterPillText,
-                activeCategory === cat.id ? styles.filterPillTextActive : styles.filterPillTextInactive
-              ]}>
-                {cat.label}
-              </Text>
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <MaterialIcons name="close" size={20} color={COLORS.gray400} />
             </TouchableOpacity>
-          ))}
+          )}
+        </View>
+
+        <View style={styles.divider} />
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryList}
+        >
+          {categories.map((cat) => {
+            const isActive = activeCategory === cat.id;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                onPress={() => setActiveCategory(cat.id)}
+                style={[
+                  styles.categoryPill,
+                  isActive && styles.categoryPillActive
+                ]}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.categoryText,
+                  isActive && styles.categoryTextActive
+                ]}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       </View>
     </View>
@@ -55,48 +67,68 @@ export default function SearchFilter({
 }
 
 const styles = StyleSheet.create({
-  searchFilterWrapper: {
-    paddingHorizontal: 24,
-    marginTop: -40,
-    zIndex: 20,
-    alignItems: 'center',
+  wrapper: {
+    paddingHorizontal: SPACING.lg,
+    marginTop: -30,
+    zIndex: 50,
   },
-  searchFilterContainer: {
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderRadius: 16,
-    gap: 16,
-    width: '100%',
-    maxWidth: 1152,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
+  container: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: 8,
+    ...SHADOWS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
-  searchInputContainer: {
+  containerTablet: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#eef1f3',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 48,
+    paddingRight: 16,
   },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
+  searchSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    height: 44,
     flex: 1,
-    fontSize: 16,
-    color: '#2c2f31',
-    fontFamily: 'Manrope-Medium',
   },
-  filterScrollWrapper: {
-    width: '100%',
+  input: {
+    flex: 1,
+    marginLeft: 12,
+    fontSize: 15,
+    color: COLORS.textPrimary,
+    fontWeight: '500',
+    ...Platform.select({
+      web: { outlineStyle: 'none' }
+    }),
   },
-  filterScroll: {
-    gap: 12,
-    paddingBottom: 4,
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: COLORS.gray200,
+    marginHorizontal: 12,
+    display: Platform.OS === 'web' || Platform.OS === 'ios' ? 'flex' : 'none',
+  },
+  categoryList: {
+    paddingVertical: 4,
+    gap: 8,
+  },
+  categoryPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.gray50,
+  },
+  categoryPillActive: {
+    backgroundColor: COLORS.primary,
+  },
+  categoryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.gray600,
+  },
+  categoryTextActive: {
+    color: COLORS.white,
   },
   filterPill: {
     paddingHorizontal: 20,
