@@ -5,70 +5,47 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
-// Import theme
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
-
-export default function Settings({ onNotificationPress, onSettingsPress }) {
-  const settingsOptions = [
+export default function Settings() {
+  const supportOptions = [
     {
-      id: 'notifications',
-      title: 'Notifications',
-      subtitle: '3 new notifications',
-      icon: 'notifications-outline',
-      color: COLORS.primary,
-      backgroundColor: COLORS.primary + '20',
-      onPress: onNotificationPress,
+      id: 'help',
+      title: 'Help Center',
+      icon: 'help-outline',
+      color: '#0050d4', // text-primary
+      bgColor: 'rgba(0, 80, 212, 0.1)', // bg-primary/10
     },
     {
-      id: 'profile',
-      title: 'Edit Profile',
-      subtitle: 'Update your information',
-      icon: 'person-outline',
-      color: COLORS.blue,
-      backgroundColor: COLORS.blue + '20',
-      onPress: () => {},
-    },
-    {
-      id: 'security',
-      title: 'Security',
-      subtitle: 'Password & privacy',
-      icon: 'shield-outline',
-      color: COLORS.green,
-      backgroundColor: COLORS.green + '20',
-      onPress: () => {},
-    },
-    {
-      id: 'preferences',
-      title: 'Preferences',
-      subtitle: 'App settings',
-      icon: 'settings-outline',
-      color: COLORS.purple,
-      backgroundColor: COLORS.purple + '20',
-      onPress: onSettingsPress,
+      id: 'it',
+      title: 'IT Support',
+      icon: 'computer',
+      color: '#059669', // text-emerald-600
+      bgColor: 'rgba(16, 185, 129, 0.1)', // bg-emerald-500/10
     },
   ];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Settings</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Quick Settings</Text>
+        <TouchableOpacity activeOpacity={0.7}>
+          <Text style={styles.viewAll}>View All</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.optionsList}>
-        {settingsOptions.map((option) => (
+        {supportOptions.map((option) => (
           <TouchableOpacity
             key={option.id}
-            style={styles.optionItem}
-            onPress={option.onPress}
+            style={styles.optionCard}
             activeOpacity={0.7}
           >
-            <View style={[styles.optionIcon, { backgroundColor: option.backgroundColor }]}>
-              <Ionicons name={option.icon} size={18} color={option.color} />
+            <View style={[styles.iconContainer, { backgroundColor: option.bgColor }]}>
+              <MaterialIcons name={option.icon} size={20} color={option.color} />
             </View>
-            <View style={styles.optionContent}>
-              <Text style={styles.optionTitle}>{option.title}</Text>
-              <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+            <Text style={styles.optionTitle}>{option.title}</Text>
+            <MaterialIcons name="chevron-right" size={20} color="#abadaf" style={styles.chevron} />
           </TouchableOpacity>
         ))}
       </View>
@@ -78,56 +55,58 @@ export default function Settings({ onNotificationPress, onSettingsPress }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
-    marginHorizontal: SPACING.md,
-    marginVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    ...SHADOWS.sm,
+    // No specific container margins since handled by parent
   },
-  sectionTitle: {
-    fontSize: TYPOGRAPHY.fontSize.md,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textPrimary,
-    letterSpacing: 0.3,
-    marginBottom: SPACING.md,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24, // mb-6
+  },
+  title: {
+    fontSize: 20, // text-xl
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
+    fontFamily: 'PlusJakartaSans-Bold',
+  },
+  viewAll: {
+    fontSize: 14, // text-sm
+    fontWeight: '700', // font-bold
+    color: '#0050d4', // text-primary
+    fontFamily: 'Manrope-Bold',
   },
   optionsList: {
-    gap: SPACING.xs,
+    gap: 16, // space-y-4
   },
-  optionItem: {
+  optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.sm,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.background,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: SPACING.xs,
+    backgroundColor: '#ffffff', // bg-surface-container-lowest
+    padding: 16, // p-4
+    borderRadius: 12, // rounded-xl
+    shadowColor: '#000', // shadow-sm
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    borderWidth: 1, // border
+    borderColor: 'rgba(171, 173, 175, 0.1)', // border-outline-variant/10
   },
-  optionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  iconContainer: {
+    width: 40, // w-10
+    height: 40, // h-10
+    borderRadius: 8, // rounded-lg
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  optionContent: {
-    flex: 1,
+    marginRight: 12, // mr-3
   },
   optionTitle: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: COLORS.textPrimary,
-    letterSpacing: 0.2,
-    marginBottom: SPACING.xs,
+    fontSize: 14, // text-sm
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
+    fontFamily: 'Manrope-Bold',
   },
-  optionSubtitle: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: COLORS.textSecondary,
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
-    letterSpacing: 0.1,
+  chevron: {
+    marginLeft: 'auto',
   },
 });

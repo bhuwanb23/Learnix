@@ -11,144 +11,52 @@ import {
 // Import components
 import ProfileHeader from './components/ProfileHeader';
 import ProfileStats from './components/ProfileStats';
-import QuickActions from './components/QuickActions';
-import HabitTracker from './components/HabitTracker';
+import QuickActions from './components/QuickActions'; // Will become Categories & Honors
 import CampusWallet from './components/CampusWallet';
-import Achievements from './components/Achievements';
-import Settings from './components/Settings';
-import CounselorBooking from './components/CounselorBooking';
-import FeePayment from './components/FeePayment';
+import Settings from './components/Settings'; // Will become Quick Settings
 
-// Import hooks and constants
-import { useProfile } from './hooks/useProfile';
-import { QUICK_ACTIONS, COUNSELORS, OUTSTANDING_FEES } from './constants/profileData';
+// Import constants
+import {
+  PROFILE_INFO,
+  PROFILE_STATS,
+  CATEGORIES,
+  HONORS,
+  WALLET_INFO,
+} from './constants/profileData';
 
 export default function Profile() {
-  const {
-    stats,
-    habits,
-    achievements,
-    toggleHabit,
-    getCompletedHabitsCount,
-    getTotalHabitsCount,
-  } = useProfile();
-
-  const [showCounselorBooking, setShowCounselorBooking] = useState(false);
-  const [showFeePayment, setShowFeePayment] = useState(false);
-
-  const user = {
-    name: 'Sarah Chen',
-    title: 'Computer Science • Year 3',
-    avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-1.jpg',
-  };
-
-  const handleQuickAction = (actionId) => {
-    switch (actionId) {
-      case 'counselor':
-        setShowCounselorBooking(true);
-        break;
-      case 'payments':
-        setShowFeePayment(true);
-        break;
-      default:
-        Alert.alert('Coming Soon', 'This feature will be available soon!');
-    }
-  };
-
-  const handleNotificationPress = () => {
-    Alert.alert('Notifications', 'You have 3 new notifications');
-  };
-
-  const handleSettingsPress = () => {
-    Alert.alert('Settings', 'Settings will be available soon!');
-  };
-
-  const handleAddFunds = () => {
-    Alert.alert('Add Funds', 'Add funds feature will be available soon!');
-  };
-
-  const handleViewHistory = () => {
-    Alert.alert('Transaction History', 'Transaction history will be available soon!');
-  };
-
-  const handleViewAllAchievements = () => {
-    Alert.alert('All Achievements', 'View all achievements feature will be available soon!');
-  };
-
-  const handleCounselorBook = (bookingData) => {
-    Alert.alert(
-      'Booking Confirmed',
-      `Appointment booked with ${bookingData.counselor.name} for ${bookingData.time}`
-    );
-    setShowCounselorBooking(false);
-  };
-
-  const handleFeePayment = (paymentData) => {
-    Alert.alert(
-      'Payment Successful',
-      `Payment of $${paymentData.totalAmount} processed successfully`
-    );
-    setShowFeePayment(false);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* User Profile Header */}
-        <ProfileHeader
-          user={user}
-        />
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* User Profile Header & Identity Hero */}
+        <ProfileHeader user={PROFILE_INFO} />
         
-        {/* Stats Overview */}
-        <ProfileStats stats={stats} />
+        {/* Stats Grid (CGPA, Attendance, Credits, Rank) */}
+        <ProfileStats stats={PROFILE_STATS} />
         
-        {/* Quick Actions */}
-        <QuickActions
-          actions={QUICK_ACTIONS}
-          onActionPress={handleQuickAction}
-        />
-        
-        {/* Daily Habits */}
-        <HabitTracker
-          habits={habits}
-          onToggleHabit={toggleHabit}
-          completedCount={getCompletedHabitsCount()}
-          totalCount={getTotalHabitsCount()}
-        />
-        
-        {/* Campus Wallet */}
-        <CampusWallet
-          balance={stats.walletBalance}
-          onAddFunds={handleAddFunds}
-          onViewHistory={handleViewHistory}
-        />
-        
-        {/* Achievements */}
-        <Achievements
-          achievements={achievements}
-          onViewAll={handleViewAllAchievements}
-        />
-        
-        {/* Settings */}
-        <Settings
-          onNotificationPress={handleNotificationPress}
-          onSettingsPress={handleSettingsPress}
-        />
+        {/* Main Content Area */}
+        <View style={styles.contentGrid}>
+          {/* Left Column: Categories & Honors */}
+          <View style={styles.leftColumn}>
+            <QuickActions categories={CATEGORIES} honors={HONORS} />
+          </View>
+
+          {/* Right Column: Wallet & Settings Summary */}
+          <View style={styles.rightColumn}>
+            {/* Scholar Wallet */}
+            <CampusWallet walletInfo={WALLET_INFO} />
+            
+            {/* Quick Settings & Support */}
+            <Settings />
+          </View>
+        </View>
+
       </ScrollView>
-
-      <CounselorBooking
-        counselors={COUNSELORS}
-        visible={showCounselorBooking}
-        onClose={() => setShowCounselorBooking(false)}
-        onBook={handleCounselorBook}
-      />
-
-      <FeePayment
-        fees={OUTSTANDING_FEES}
-        visible={showFeePayment}
-        onClose={() => setShowFeePayment(false)}
-        onPay={handleFeePayment}
-      />
     </SafeAreaView>
   );
 }
@@ -156,9 +64,24 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f5f7f9', // bg-surface
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 120, // pb-32
+  },
+  contentGrid: {
+    marginHorizontal: 24, // px-6
+    marginTop: 32, // gap-8 spacing from stats
+    flexDirection: 'column', // stack for mobile
+    gap: 32, // gap-8
+  },
+  leftColumn: {
+    gap: 32, // space-y-8
+  },
+  rightColumn: {
+    gap: 24, // space-y-6
   },
 });

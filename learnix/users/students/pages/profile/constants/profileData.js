@@ -1,185 +1,73 @@
 // Profile data constants
-export const PROFILE_STATS = {
-  wellBeingScore: 87,
-  dayStreak: 15,
-  walletBalance: 245.80,
+export const PROFILE_INFO = {
+  name: 'Alex Johnson',
+  rollNo: 'CS2024-8842',
+  email: 'scholar.alexj@university.edu',
+  department: 'CS Department • Semester IV',
+  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBqrwLixE4rFUHJj6YNg--3RhkhmvXhq3crYtqYXRLjJEvKNLcq9x4B_CpNK_lcOAJEBwYO4xlGk_cIWmzd3sgpQPGcAWAcm7MK-mGyT-PdQE7i_EMoOWOkKjdxS0z-cNBCHt9CqnLlCNbAS4HzUVmWPk_izcZpprXfstpv3PYrqb2gjhtBiLEsGMi8LZEBtIr34LgqQ6UTyOYzMoumbgUCg7d-OVXnCnZwxS78y7MphO0-5jfGE8q6nj5v3xmA7j55ePfBxzHSzjg',
 };
 
-export const QUICK_ACTIONS = [
+export const PROFILE_STATS = {
+  cgpa: 3.92,
+  cgpaTrend: '+0.04 from Sem III',
+  attendance: 94,
+  attendanceStatus: 'Excellent',
+  creditsEarned: 92,
+  creditsTotal: 120,
+  rank: 'TOP 5%',
+  rankDetails: 'Batch of 2026 • 214 Students',
+};
+
+export const CATEGORIES = [
+  { id: 'edit', title: 'Edit Profile', icon: 'edit-square', color: '#0050d4', bgColor: 'rgba(0, 80, 212, 0.1)' },
+  { id: 'academic', title: 'Academic Details', icon: 'school', color: '#2563eb', bgColor: 'rgba(59, 130, 246, 0.15)' },
+  { id: 'analytics', title: 'Progress & Analytics', icon: 'analytics', color: '#059669', bgColor: 'rgba(16, 185, 129, 0.15)' },
+  { id: 'activity', title: 'Activity', icon: 'history', color: '#d97706', bgColor: 'rgba(245, 158, 11, 0.15)' },
+  { id: 'saved', title: 'Saved', icon: 'bookmark', color: '#e11d48', bgColor: 'rgba(225, 29, 72, 0.15)' },
+  { id: 'notifications', title: 'Notifications', icon: 'notifications', color: '#4f46e5', bgColor: 'rgba(79, 70, 229, 0.15)' },
+  { id: 'settings', title: 'Settings', icon: 'settings', color: '#475569', bgColor: 'rgba(71, 85, 105, 0.15)' },
+  { id: 'achievements', title: 'Achievements', icon: 'military-tech', color: '#9333ea', bgColor: 'rgba(147, 51, 234, 0.15)' },
+];
+
+export const HONORS = [
   {
-    id: 'counselor',
-    title: 'Book Counselor',
-    subtitle: 'Schedule session',
-    icon: 'calendar-check',
+    id: 1,
+    title: "Dean's List",
+    subtitle: "Winter 2023",
+    icon: 'workspace-premium',
+    color: '#d97706',
+    bgColor: '#fef3c7',
+  },
+  {
+    id: 2,
+    title: 'Hack Winner',
+    subtitle: "CodeFest '24",
+    icon: 'terminal',
     color: '#2563eb',
-    backgroundColor: '#eff6ff',
-  },
-  {
-    id: 'payments',
-    title: 'Pay Fees',
-    subtitle: 'Secure payment',
-    icon: 'credit-card',
-    color: '#10b981',
-    backgroundColor: '#f0fdf4',
-  },
-];
-
-export const HABITS = [
-  {
-    id: 1,
-    title: 'Morning Exercise',
-    completed: true,
-    points: 10,
-    color: '#10b981',
-  },
-  {
-    id: 2,
-    title: 'Drink 8 Glasses Water',
-    completed: true,
-    points: 5,
-    color: '#10b981',
+    bgColor: '#dbeafe',
   },
   {
     id: 3,
-    title: 'Study 2 Hours',
-    completed: false,
-    points: 15,
-    color: '#6b7280',
+    title: 'Lead Mentor',
+    subtitle: 'Peer Support',
+    icon: 'groups',
+    color: '#9333ea',
+    bgColor: '#f3e8ff',
   },
   {
     id: 4,
-    title: 'Read 30 Minutes',
-    completed: false,
-    points: 8,
-    color: '#6b7280',
-  },
-  {
-    id: 5,
-    title: 'Meditation',
-    completed: false,
-    points: 12,
-    color: '#6b7280',
+    title: 'Philanthropy',
+    subtitle: '100+ Hours',
+    icon: 'volunteer-activism',
+    color: '#059669',
+    bgColor: '#d1fae5',
   },
 ];
 
-export const ACHIEVEMENTS = [
-  {
-    id: 1,
-    title: 'Study Streak',
-    subtitle: '7 days',
-    icon: 'trophy',
-    color: '#f59e0b',
-    backgroundColor: '#fef3c7',
-    earned: '2 days ago',
-  },
-  {
-    id: 2,
-    title: 'Top Performer',
-    subtitle: 'This week',
-    icon: 'medal',
-    color: '#8b5cf6',
-    backgroundColor: '#f3e8ff',
-    earned: '1 week ago',
-  },
-  {
-    id: 3,
-    title: 'Wellness',
-    subtitle: 'Champion',
-    icon: 'star',
-    color: '#10b981',
-    backgroundColor: '#dcfce7',
-    earned: '3 days ago',
-  },
-];
-
-export const WALLET_TRANSACTIONS = [
-  {
-    id: 1,
-    title: 'Cafeteria Payment',
-    amount: -12.50,
-    date: '2024-01-15',
-    type: 'expense',
-    icon: 'utensils',
-  },
-  {
-    id: 2,
-    title: 'Library Fine',
-    amount: -5.00,
-    date: '2024-01-14',
-    type: 'expense',
-    icon: 'book',
-  },
-  {
-    id: 3,
-    title: 'Refund - Lab Equipment',
-    amount: 25.00,
-    date: '2024-01-13',
-    type: 'income',
-    icon: 'arrow-up',
-  },
-  {
-    id: 4,
-    title: 'Campus Store',
-    amount: -8.75,
-    date: '2024-01-12',
-    type: 'expense',
-    icon: 'shopping-bag',
-  },
-];
-
-export const COUNSELORS = [
-  {
-    id: 1,
-    name: 'Dr. Emily Smith',
-    title: 'Academic Counselor',
-    avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-5.jpg',
-    available: true,
-    rating: 4.8,
-  },
-  {
-    id: 2,
-    name: 'Dr. Michael Johnson',
-    title: 'Career Counselor',
-    avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-6.jpg',
-    available: true,
-    rating: 4.9,
-  },
-  {
-    id: 3,
-    name: 'Dr. Sarah Wilson',
-    title: 'Mental Health Counselor',
-    avatar: 'https://storage.googleapis.com/uxpilot-auth.appspot.com/avatars/avatar-7.jpg',
-    available: false,
-    rating: 4.7,
-  },
-];
-
-export const OUTSTANDING_FEES = [
-  {
-    id: 1,
-    title: 'Tuition Fee - Fall 2024',
-    amount: 2850,
-    dueDate: '2024-10-15',
-    status: 'overdue',
-    color: '#ef4444',
-    backgroundColor: '#fef2f2',
-  },
-  {
-    id: 2,
-    title: 'Lab Fee - Chemistry',
-    amount: 150,
-    dueDate: '2024-11-01',
-    status: 'due_soon',
-    color: '#f59e0b',
-    backgroundColor: '#fef3c7',
-  },
-  {
-    id: 3,
-    title: 'Library Fee',
-    amount: 75,
-    dueDate: '2024-12-01',
-    status: 'upcoming',
-    color: '#10b981',
-    backgroundColor: '#f0fdf4',
-  },
-];
+export const WALLET_INFO = {
+  balance: 1240.50,
+  dues: [
+    { title: 'Library Dues', amount: 0.00 },
+    { title: 'Meal Plan', amount: 45.00 },
+  ],
+};
