@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Font from 'expo-font';
@@ -37,7 +38,14 @@ export default function App() {
   }, []);
 
   if (!fontsLoaded) {
-    return null; // Or a loading screen
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="light" backgroundColor="transparent" translucent />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' }}>
+          <Text>Loading...</Text>
+        </View>
+      </SafeAreaProvider>
+    );
   }
 
   return (
