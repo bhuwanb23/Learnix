@@ -73,14 +73,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#111827',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 12,
     color: '#6b7280',
     marginTop: 2,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   graph: {
     height: 140,
@@ -114,13 +114,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
     marginTop: 4,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
   },
   label: {
     fontSize: 9,
     color: '#6b7280',
     textAlign: 'center',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     maxWidth: '100%',
   },
   footer: {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 11,
     color: '#6b7280',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
 });
 

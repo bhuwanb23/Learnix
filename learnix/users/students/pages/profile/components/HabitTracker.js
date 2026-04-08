@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1f2937',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
   },
   progressBadge: {
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     letterSpacing: 0.2,
   },
   habitsList: {
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#1f2937',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     letterSpacing: 0.2,
     flex: 1,
   },
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#6b7280',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     letterSpacing: 0.1,
   },
   completedPoints: {

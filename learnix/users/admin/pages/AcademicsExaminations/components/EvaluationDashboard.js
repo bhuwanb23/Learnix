@@ -156,12 +156,12 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   subtitle: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.textSecondary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   menuButton: {
     padding: SPACING.sm,
@@ -203,12 +203,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   gaugeLabel: {
     fontSize: 12,
     color: COLORS.textSecondary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -225,12 +225,12 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: SPACING.xs,
   },
   statLabel: {
     fontSize: 10,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   subjectsContainer: {
     marginBottom: SPACING.lg,
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     marginBottom: SPACING.md,
   },
   subjectsList: {
@@ -257,13 +257,13 @@ const styles = StyleSheet.create({
   subjectName: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.textSecondary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   subjectPercentage: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   progressBarContainer: {
     position: 'relative',

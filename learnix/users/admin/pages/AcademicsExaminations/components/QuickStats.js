@@ -82,18 +82,18 @@ const styles = StyleSheet.create({
   statSubtitle: {
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.8)',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   statValue: {
     fontSize: 24,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: 2,
   },
   statTitle: {
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.9)',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
 });
