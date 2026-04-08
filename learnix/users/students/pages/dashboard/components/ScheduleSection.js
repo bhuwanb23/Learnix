@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   Animated,
+  TouchableOpacity,
 } from 'react-native';
 
 export default function ScheduleSection({ scheduleData }) {
@@ -50,6 +51,8 @@ export default function ScheduleSection({ scheduleData }) {
 function ScheduleCard({ classItem, delay = 0 }) {
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+  const translateXAnim = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,28 +73,75 @@ function ScheduleCard({ classItem, delay = 0 }) {
     return () => clearTimeout(timer);
   }, [delay]);
 
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 0.98,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateXAnim, {
+        toValue: 8,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateXAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
   return (
     <Animated.View 
       style={[
-        styles.card,
-        { opacity: opacityAnim, transform: [{ translateX: slideAnim }] }
+        styles.cardWrapper,
+        { opacity: opacityAnim, transform: [{ translateY: slideAnim }] }
       ]}
     >
-      <View style={[styles.iconContainer, { backgroundColor: classItem.bgColor }]}>
-        <Text style={styles.icon}>{getIconEmoji(classItem.icon)}</Text>
-      </View>
-      
-      <View style={styles.content}>
-        <Text style={styles.subjectName}>{classItem.subject}</Text>
-        <Text style={styles.details}>{classItem.professor} • {classItem.room}</Text>
-      </View>
-      
-      <View style={styles.timeSection}>
-        <Text style={styles.time}>{classItem.time}</Text>
-        <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>{classItem.duration}</Text>
-        </View>
-      </View>
+      <TouchableOpacity
+        style={styles.card}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.9}
+      >
+        <Animated.View 
+          style={[
+            styles.cardInner,
+            { 
+              transform: [ 
+                { scale: scaleAnim },
+                { translateX: translateXAnim }
+              ] 
+            }
+          ]}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: classItem.bgColor }]}>
+            <Text style={styles.icon}>{getIconEmoji(classItem.icon)}</Text>
+          </View>
+          
+          <View style={styles.content}>
+            <Text style={styles.subjectName}>{classItem.subject}</Text>
+            <Text style={styles.details}>{classItem.professor} • {classItem.room}</Text>
+          </View>
+          
+          <View style={styles.timeSection}>
+            <Text style={[styles.time, { color: classItem.color }]}>{classItem.time}</Text>
+            <View style={styles.durationBadge}>
+              <Text style={styles.durationText}>{classItem.duration}</Text>
+            </View>
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
@@ -122,18 +172,24 @@ const styles = StyleSheet.create({
   scheduleList: {
     gap: 12,
   },
+  cardWrapper: {
+    marginBottom: 0,
+  },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
+  },
+  cardInner: {
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   iconContainer: {
     width: 48,
@@ -167,7 +223,6 @@ const styles = StyleSheet.create({
   time: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#0050d4',
     marginBottom: 4,
     fontFamily: 'PlusJakartaSans-Bold',
   },
