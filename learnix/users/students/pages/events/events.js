@@ -202,88 +202,7 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
   listContent: {
-    paddingBottom: 100, // Space for FAB
-  },
-  discoverHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: SPACING['2xl'],
-    marginBottom: SPACING.lg,
-  },
-  discoverTextContainer: {
-    flex: 1,
-  },
-  discoverTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginBottom: 4,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
-  },
-  discoverSubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
-  },
-  viewMapBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    backgroundColor: COLORS.surfaceHover,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  viewMapText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.primary,
-  },
-  desktopGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: 40,
-    gap: 32,
-    maxWidth: 1440,
-    alignSelf: 'center',
-    width: '100%',
-  },
-  desktopLeft: {
-    flex: 1,
-  },
-  desktopRight: {
-    width: 340,
-  },
-  eventsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  mobileEventCardWrapper: {
-    paddingHorizontal: 16,
-  },
-  mobileSidebarWrapper: {
-    marginTop: SPACING.xl,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 30,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    ...SHADOWS.lg,
-    zIndex: 100,
-  },
-  fabGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    paddingBottom: 120, // Space for FAB and breathing room
+    paddingBottom: 120,
   },
   discoverHeader: {
     flexDirection: 'row',
@@ -294,6 +213,7 @@ const styles = StyleSheet.create({
     maxWidth: 1280,
     alignSelf: 'center',
     width: '100%',
+    paddingHorizontal: 16,
   },
   discoverTextContainer: {
     flex: 1,
@@ -302,14 +222,14 @@ const styles = StyleSheet.create({
   discoverTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#1A1A1A', // Higher contrast text
+    color: '#1A1A1A',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-condensed',
     letterSpacing: -0.5,
     marginBottom: 4,
   },
   discoverSubtitle: {
     fontSize: 14,
-    color: '#666666', // Better contrast than previous gray
+    color: '#666666',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
     lineHeight: 20,
   },
@@ -328,6 +248,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif-medium',
   },
+  desktopGrid: {
+    flexDirection: 'row',
+    maxWidth: 1280,
+    alignSelf: 'center',
+    width: '100%',
+    gap: 40,
+    paddingHorizontal: 40,
+  },
+  desktopLeft: {
+    flex: 8,
+  },
+  desktopRight: {
+    flex: 4,
+  },
   eventsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -337,19 +271,7 @@ const styles = StyleSheet.create({
   },
   mobileEventCardWrapper: {
     marginBottom: 24,
-  },
-  desktopGrid: {
-    flexDirection: 'row',
-    maxWidth: 1280,
-    alignSelf: 'center',
-    width: '100%',
-    gap: 40, // Increased gap for better 8-pt rhythm (5 * 8)
-  },
-  desktopLeft: {
-    flex: 8,
-  },
-  desktopRight: {
-    flex: 4,
+    paddingHorizontal: 16,
   },
   mobileSidebarWrapper: {
     marginTop: 16,
