@@ -49,6 +49,7 @@ export default function QuickActionCards({ actions, onActionPress }) {
 
 function ActionCard({ action, onPress, delay = 0 }) {
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
+  const iconScaleAnim = React.useRef(new Animated.Value(1)).current;
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
@@ -72,17 +73,29 @@ function ActionCard({ action, onPress, delay = 0 }) {
   }, [delay]);
 
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 0.95,
+        useNativeDriver: true,
+      }),
+      Animated.spring(iconScaleAnim, {
+        toValue: 1.1,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+      Animated.spring(iconScaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   return (
@@ -100,7 +113,7 @@ function ActionCard({ action, onPress, delay = 0 }) {
         activeOpacity={0.8}
       >
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <Text style={styles.icon}>{action.icon}</Text>
+          <Animated.Text style={[styles.icon, { transform: [{ scale: iconScaleAnim }] }]}>{action.icon}</Animated.Text>
           <Text style={[styles.label, { color: action.textColor }]}>{action.label}</Text>
         </Animated.View>
       </TouchableOpacity>
@@ -121,27 +134,25 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: '48%',
-    marginBottom: 16,
+    marginBottom: 0,
   },
   card: {
     borderRadius: 12,
     padding: 16,
-    height: 100,
+    height: 110,
     justifyContent: 'center',
     alignItems: 'center',
-    // Inner shadow effect using nested shadows
+    gap: 8,
+    // Subtle shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
-    // Inner glow effect
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   icon: {
-    fontSize: 32,
-    marginBottom: 8,
+    fontSize: 36,
+    marginBottom: 4,
   },
   label: {
     fontSize: 14,
