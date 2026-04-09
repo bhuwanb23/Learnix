@@ -7,10 +7,19 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function QuickActionsBento({ actions }) {
+export default function QuickActionsBento({ actions, navigation }) {
   const handlePress = (actionId) => {
     console.log('Quick action pressed:', actionId);
-    // TODO: Add navigation when features are redesigned
+    
+    // Navigate to specific feature pages
+    if (actionId === 'lecture-notes' || actionId === 'lecture_notes') {
+      if (navigation?.navigate) {
+        navigation.navigate('lecture_notes');
+      } else {
+        console.log('Navigation not available');
+      }
+    }
+    // Add more navigation routes as features are designed
   };
 
   return (

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
+  Animated,
 } from 'react-native';
 
 // Import components
@@ -15,6 +16,7 @@ import CourseProgression from './components/CourseProgression';
 import AIRecommendationsCard from './components/AIRecommendationsCard';
 import UpcomingTestsTimeline from './components/UpcomingTestsTimeline';
 import PerformanceStats from './components/PerformanceStats';
+import LectureNotesContainer from './features/lecture_notes';
 
 // Import data
 import {
@@ -28,12 +30,31 @@ import {
 
 export default function ClassPage({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
+  const [currentFeature, setCurrentFeature] = useState('main'); // 'main' or 'lecture_notes'
 
   const onRefresh = async () => {
     setRefreshing(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
     setRefreshing(false);
   };
+
+  const navigateToFeature = (feature) => {
+    setCurrentFeature(feature);
+  };
+
+  const navigateBack = () => {
+    setCurrentFeature('main');
+  };
+
+  // Render Lecture Notes feature
+  if (currentFeature === 'lecture_notes') {
+    return (
+      <LectureNotesContainer 
+        navigation={navigation} 
+        onBack={navigateBack}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -52,7 +73,10 @@ export default function ClassPage({ navigation }) {
         <TodaysOverview liveClass={mockClassData.liveClass} />
 
         {/* Quick Actions Bento Grid */}
-        <QuickActionsBento actions={mockQuickActions} />
+        <QuickActionsBento 
+          actions={mockQuickActions} 
+          navigation={{ navigate: navigateToFeature }} 
+        />
 
         {/* Course Progression Cards */}
         <CourseProgression courses={mockCourses} />

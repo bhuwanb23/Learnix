@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS } from '../../constants/lectureNotesData';
+import { COLORS } from '../constants/lectureNotesData';
 
 export default function ContinueStudyingCard({ course, onResume }) {
   return (

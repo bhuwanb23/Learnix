@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { COLORS } from '../../constants/lectureNotesData';
+import { COLORS } from '../constants/lectureNotesData';
 
 export default function FilterChips({ filters, activeFilter, onFilterChange }) {
   return (

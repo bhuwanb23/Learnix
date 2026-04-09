@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import SubjectCard from './SubjectCard';
-import { COLORS } from '../../constants/lectureNotesData';
+import { COLORS } from '../constants/lectureNotesData';
 
 export default function SubjectDirectory({ subjects, onViewAll, onSubjectPress }) {
   return (
