@@ -99,12 +99,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surface,
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: 24,
   },
   section: {
-    marginTop: 32,
+    marginTop: 24,
   },
   bottomPadding: {
-    height: 32,
+    height: 24,
   },
 });

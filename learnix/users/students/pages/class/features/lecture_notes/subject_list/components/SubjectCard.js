@@ -58,21 +58,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: COLORS.surfaceContainerLowest,
-    padding: 20,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: 'transparent',
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
+    gap: 16,
     flex: 1,
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -83,10 +83,10 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
     color: COLORS.onSurface,
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
     marginTop: 4,
   },
   infoItem: {
@@ -122,12 +122,12 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     fontFamily: 'Manrope-Regular',
     color: COLORS.onSurfaceVariant,
   },
   menuButton: {
-    padding: 12,
+    padding: 10,
   },
 });

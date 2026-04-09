@@ -44,13 +44,13 @@ export default function FilterChips({ filters, activeFilter, onFilterChange }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    gap: 10,
   },
   chip: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
     borderRadius: 999,
     backgroundColor: COLORS.surfaceContainerLow,
   },
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   chipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     fontFamily: 'Manrope-SemiBold',
     color: COLORS.onSurfaceVariant,

@@ -39,17 +39,17 @@ export default function SubjectDirectory({ subjects, onViewAll, onSubjectPress }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 8,
+    marginTop: 6,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    marginBottom: 16,
+    paddingHorizontal: 20,
+    marginBottom: 14,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: COLORS.onSurface,
@@ -60,13 +60,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: COLORS.primary,
   },
   list: {
-    paddingHorizontal: 24,
-    gap: 16,
+    paddingHorizontal: 20,
+    gap: 14,
   },
 });
