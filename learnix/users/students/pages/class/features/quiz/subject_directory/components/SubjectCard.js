@@ -8,13 +8,23 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_COLORS } from '../constants/quizData';
 
-export default function SubjectCard({ subject, onPress }) {
+export default function SubjectCard({ subject, onPress, onButtonPress }) {
+  const handleCardPress = () => {
+    if (onPress) {
+      onPress(subject);
+    }
+  };
+
+  const handleButtonPress = () => {
+    if (onButtonPress) {
+      onButtonPress(subject);
+    } else if (onPress) {
+      onPress(subject);
+    }
+  };
+
   return (
-    <TouchableOpacity 
-      style={styles.container}
-      onPress={() => onPress && onPress(subject)}
-      activeOpacity={0.7}
-    >
+    <View style={styles.container}>
       <View style={[styles.accentBg, { backgroundColor: subject.accentBg }]} />
       
       <View style={styles.content}>
@@ -51,6 +61,7 @@ export default function SubjectCard({ subject, onPress }) {
 
           <TouchableOpacity 
             style={[styles.startButton, { backgroundColor: subject.isResume ? QUIZ_COLORS.onSurfaceVariant : subject.color }]}
+            onPress={handleButtonPress}
             activeOpacity={0.7}
           >
             <Text style={[styles.startButtonText, { color: subject.isResume ? QUIZ_COLORS.surface : '#ffffff' }]}>
@@ -59,7 +70,7 @@ export default function SubjectCard({ subject, onPress }) {
           </TouchableOpacity>
         </View>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
