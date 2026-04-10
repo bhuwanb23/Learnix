@@ -4,9 +4,10 @@ import UnitDirectoryPage from './unit_directory/unit_directory';
 import TopicDirectoryPage from './topic_directory/topic_directory';
 import ProfessionalFormPage from './professional_form/professional_form';
 import QuizAttemptPage from './quiz_attempt/quiz_attempt';
+import ResultsPage from './results/results';
 
 export default function QuizPage({ navigation }) {
-  const [currentView, setCurrentView] = useState('subjects'); // 'subjects', 'units', 'topics', 'form', or 'attempt'
+  const [currentView, setCurrentView] = useState('subjects'); // 'subjects', 'units', 'topics', 'form', 'attempt', or 'results'
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
@@ -52,11 +53,31 @@ export default function QuizPage({ navigation }) {
     setQuizConfig(null);
   };
 
+  const navigateToResults = () => {
+    setCurrentView('results');
+  };
+
+  const navigateBackToAttempt = () => {
+    setCurrentView('attempt');
+  };
+
+  // Render Results if quiz is submitted
+  if (currentView === 'results') {
+    return (
+      <ResultsPage 
+        navigation={{ goBack: navigateBackToAttempt }}
+      />
+    );
+  }
+
   // Render Quiz Attempt if quiz is started
   if (currentView === 'attempt') {
     return (
       <QuizAttemptPage 
-        navigation={{ goBack: navigateBackToForm }}
+        navigation={{ 
+          goBack: navigateBackToForm,
+          navigateToResults 
+        }}
         route={{ params: { config: quizConfig } }}
       />
     );

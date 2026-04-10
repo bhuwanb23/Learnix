@@ -24,6 +24,9 @@ export default function QuizAttemptPage({ navigation, route }) {
 
   const handleSubmit = () => {
     console.log('Quiz submitted');
+    if (navigation?.navigateToResults) {
+      navigation.navigateToResults();
+    }
   };
 
   const handleFlag = () => {
