@@ -8,7 +8,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { TOPIC_DIRECTORY_COLORS } from '../constants/topicDirectoryData';
 
-export default function TopicCard({ topic, onPress }) {
+export default function TopicCard({ topic, onPress, onButtonPress }) {
+  const handleButtonPress = () => {
+    if (onButtonPress) {
+      onButtonPress(topic);
+    } else if (onPress) {
+      onPress(topic);
+    }
+  };
+
   return (
     <TouchableOpacity 
       style={styles.container}
@@ -40,6 +48,7 @@ export default function TopicCard({ topic, onPress }) {
 
       <TouchableOpacity 
         style={[styles.button, topic.isReview && styles.reviewButton]}
+        onPress={handleButtonPress}
         activeOpacity={0.7}
       >
         <Text style={[styles.buttonText, topic.isReview && styles.reviewButtonText]}>

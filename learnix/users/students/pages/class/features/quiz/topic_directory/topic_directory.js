@@ -21,6 +21,9 @@ export default function TopicDirectoryPage({ navigation, route }) {
 
   const handleTopicPress = (topic) => {
     console.log('Topic pressed:', topic.title);
+    if (navigation?.navigateToForm) {
+      navigation.navigateToForm(topic);
+    }
   };
 
   return (
@@ -71,7 +74,8 @@ export default function TopicDirectoryPage({ navigation, route }) {
             <TopicCard
               key={topic.id}
               topic={topic}
-              onPress={handleTopicPress}
+              onPress={() => handleTopicPress(topic)}
+              onButtonPress={() => handleTopicPress(topic)}
             />
           ))}
         </View>
