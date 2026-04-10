@@ -5,7 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_COLORS, SUBJECTS_DATA, PERFORMANCE_DATA } from './constants/quizData';
 import SubjectCard from './components/SubjectCard';
 import PerformanceInsights from './components/PerformanceInsights';
@@ -27,7 +29,16 @@ export default function SubjectDirectoryPage({ navigation }) {
       
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Practice Quizzes</Text>
+        <View style={styles.leftSection}>
+          <TouchableOpacity 
+            style={styles.iconButton} 
+            onPress={handleBack}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="arrow-back" size={22} color={QUIZ_COLORS.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Practice Quizzes</Text>
+        </View>
       </View>
 
       <ScrollView 
@@ -68,16 +79,30 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     height: 56,
-    backgroundColor: '#2563eb',
+    backgroundColor: QUIZ_COLORS.surface,
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: 17,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#ffffff',
+    color: QUIZ_COLORS.onSurface,
     letterSpacing: -0.3,
   },
   scrollContent: {
@@ -89,7 +114,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   heroTitle: {
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_COLORS.onSurface,
