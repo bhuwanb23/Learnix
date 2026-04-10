@@ -17,6 +17,7 @@ import AIRecommendationsCard from './components/AIRecommendationsCard';
 import UpcomingTestsTimeline from './components/UpcomingTestsTimeline';
 import PerformanceStats from './components/PerformanceStats';
 import LectureNotesContainer from './features/lecture_notes';
+import WeakTopicsPage from './features/weak_topics/weak_topics';
 
 // Import data
 import {
@@ -52,6 +53,15 @@ export default function ClassPage({ navigation }) {
       <LectureNotesContainer 
         navigation={navigation} 
         onBack={navigateBack}
+      />
+    );
+  }
+
+  // Render Weak Topics feature
+  if (currentFeature === 'weak_topics') {
+    return (
+      <WeakTopicsPage 
+        navigation={{ goBack: navigateBack }}
       />
     );
   }
