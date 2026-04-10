@@ -61,7 +61,10 @@ export default function UnitCard({ unit, onPress }) {
         styles.container,
         isLocked && styles.lockedContainer
       ]} 
-      onPress={onPress}
+      onPress={() => {
+        console.log('UnitCard pressed:', unit.title);
+        if (onPress) onPress(unit);
+      }}
       activeOpacity={0.7}
       disabled={isLocked}
     >

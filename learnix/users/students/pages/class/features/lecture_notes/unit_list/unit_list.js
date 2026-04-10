@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,18 @@ import UnitCard from './components/UnitCard';
 import QuickResources from './components/QuickResources';
 
 export default function UnitListPage({ navigation, subject }) {
+  const [currentPage, setCurrentPage] = useState('units'); // 'units' or 'topics'
+  const [selectedUnit, setSelectedUnit] = useState(null);
+
+  const navigateToTopics = (unit) => {
+    setSelectedUnit(unit);
+    setCurrentPage('topics');
+  };
+
+  const navigateBackToUnits = () => {
+    setCurrentPage('units');
+    setSelectedUnit(null);
+  };
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -24,19 +36,28 @@ export default function UnitListPage({ navigation, subject }) {
       Alert.alert('Locked', 'Complete previous units to unlock this content');
       return;
     }
-    Alert.alert(
-      'Open Unit',
-      `Open ${unit.title}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open', onPress: () => console.log('Open unit:', unit.id) },
-      ]
-    );
+    
+    if (navigation?.navigateToTopics) {
+      navigation.navigateToTopics(unit);
+    } else {
+      navigateToTopics(unit);
+    }
   };
 
   const handleResourcePress = (resource) => {
     Alert.alert(resource.title, resource.description);
   };
+
+  // Import TopicListPage dynamically to avoid circular dependency
+  if (currentPage === 'topics') {
+    const TopicListPage = require('../topic_list/topic_list').default;
+    return (
+      <TopicListPage 
+        navigation={{ goBack: navigateBackToUnits }}
+        unit={selectedUnit}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
