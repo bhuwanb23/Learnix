@@ -1,210 +1,154 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  TouchableOpacity,
+  useWindowDimensions,
+  FlatList,
+  StatusBar,
+  Animated,
+  Platform,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
 
 // Import components
-import TabNavigation from './components/TabNavigation';
-import SearchBar from './components/SearchBar';
-import EventCategories from './components/EventCategories';
-import EventList from './components/EventList';
-import GroupCard from './components/GroupCard';
-import CertificationCard from './components/CertificationCard';
-import EventModal from './components/EventModal';
+import HeroSection from './components/HeroSection';
+import SearchFilter from './components/SearchFilter';
+import EventCard from './components/EventCard';
+import Sidebar from './components/Sidebar';
 
-// Import hooks
-import { useEvents } from './hooks/useEvents';
-import { useEventActions } from './hooks/useEventActions';
-
-
-// Import theme
-import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
+// Import data
+import { EVENT_CATEGORIES, DISCOVERY_EVENTS, MY_REGISTRATIONS, EVENT_STATS, TRENDING_TAGS } from './constants/eventData';
 
 export default function EventsPage() {
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState('events');
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
   const [activeCategory, setActiveCategory] = useState('all');
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [showEventModal, setShowEventModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filteredEvents, setFilteredEvents] = useState(DISCOVERY_EVENTS);
 
-  // Custom hooks
-  const {
-    events,
-    groups,
-    loading,
-    error,
-    activeFilter,
-    setActiveFilter,
-    joinEvent,
-    joinGroup,
-  } = useEvents();
+  // Animation values
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
 
-  const {
-    loading: actionLoading,
-    handleJoinEvent,
-    handleJoinGroup,
-    handleGroupPress,
-    handleFilterChange,
-    handleSearch,
-    handleShareEvent,
-  } = useEventActions();
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    // Simulate refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setRefreshing(false);
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1500);
   };
 
+  // Header Animation (Fade in on scroll)
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 200],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
-  const handleEventJoin = async (event) => {
-    const success = await joinEvent(event.id);
-    if (success) {
-      handleJoinEvent(event);
-    }
-  };
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, 200],
+    outputRange: [-20, 0],
+    extrapolate: 'clamp',
+  });
 
-  const handleGroupJoin = async (group) => {
-    const success = await joinGroup(group.id);
-    if (success) {
-      handleJoinGroup(group);
-    }
-  };
-
-  const handleCertificationEnroll = (certification) => {
-    console.log('Enrolling in certification:', certification.id);
-    // Handle certification enrollment
-  };
-
-  const handleEventPress = (event) => {
-    setSelectedEvent(event);
-    setShowEventModal(true);
-  };
-
-  const handleEventModalClose = () => {
-    setShowEventModal(false);
-    setSelectedEvent(null);
-  };
-
-  const handleSearchPress = () => {
-    handleSearch(searchQuery);
-  };
-
-  const handleNotificationPress = () => {
-    console.log('Notification pressed');
-  };
-
-  const handleCategoryChange = (categoryId) => {
-    setActiveCategory(categoryId);
-  };
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-  };
-
-  const renderGroups = () => {
-    if (!groups || groups.length === 0) return null;
-
-    return (
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Peer Collaboration</Text>
-        {groups.map((group) => (
-          <GroupCard
-            key={group.id}
-            group={group}
-            onPress={handleGroupPress}
-            onJoin={handleGroupJoin}
-          />
-        ))}
-      </View>
-    );
-  };
-
-  const renderCertifications = () => {
-    const certifications = events.filter(event => event.status === 'certification');
-    if (certifications.length === 0) return null;
-
-    return certifications.map((certification) => (
-      <CertificationCard
-        key={certification.id}
-        certification={certification}
-        onPress={handleEventPress}
-        onEnroll={handleCertificationEnroll}
+  const ListHeader = () => (
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+      <HeroSection />
+      <SearchFilter
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        categories={EVENT_CATEGORIES}
+        events={DISCOVERY_EVENTS}
+        setFilteredEvents={setFilteredEvents}
       />
-    ));
-  };
+      <View style={[styles.discoverHeader, { paddingHorizontal: isDesktop ? 0 : (isTablet ? 32 : 16) }]}>
+        <View style={styles.discoverTextContainer}>
+          <Text style={styles.discoverTitle}>Upcoming Discoveries</Text>
+          <Text style={styles.discoverSubtitle}>Selected curated events based on your interests</Text>
+        </View>
+        <TouchableOpacity style={styles.viewMapBtn} activeOpacity={0.7}>
+          <Text style={styles.viewMapText}>View Map</Text>
+          <MaterialIcons name="map" size={16} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  );
+
+  const renderDesktopLayout = () => (
+    <Animated.View style={[styles.desktopGrid, { opacity: fadeAnim }]}>
+      <View style={styles.desktopLeft}>
+        <View style={styles.eventsGrid}>
+          {DISCOVERY_EVENTS.map((event, index) => <EventCard key={event.id} item={event} index={index} />)}
+        </View>
+      </View>
+      <View style={styles.desktopRight}>
+        <Sidebar
+          registrations={MY_REGISTRATIONS}
+          stats={EVENT_STATS}
+          trendingTags={TRENDING_TAGS}
+        />
+      </View>
+    </Animated.View>
+  );
 
   return (
     <View style={styles.container}>
-      {/* Tab Navigation */}
-      <TabNavigation
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-      />
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      {/* Search Bar */}
-      <SearchBar
-        onSearch={handleSearchPress}
-        onFilter={() => console.log('Filter pressed')}
-      />
-
-
-      {/* Content */}
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      <Animated.FlatList
+        data={isDesktop ? [{ id: 'desktop' }] : filteredEvents}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={ListHeader}
+        renderItem={({ item, index }) =>
+          isDesktop ? renderDesktopLayout() : (
+            <Animated.View style={[styles.mobileEventCardWrapper, {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }]}>
+              <EventCard item={item} index={index} />
+            </Animated.View>
+          )
         }
-      >
-        {/* Event Categories */}
-        <EventCategories
-          activeCategory={activeCategory}
-          onCategoryChange={handleCategoryChange}
-        />
-
-        {/* Events List */}
-        <EventList
-          events={events}
-          loading={loading}
-          error={error}
-          onEventPress={handleEventPress}
-          onEventJoin={handleEventJoin}
-          onRefresh={onRefresh}
-          refreshing={refreshing}
-        />
-
-        {/* Certifications */}
-        {renderCertifications()}
-
-        {/* Groups */}
-        {renderGroups()}
-      </ScrollView>
-
-      {/* Event Modal */}
-      <EventModal
-        event={selectedEvent}
-        visible={showEventModal}
-        onClose={handleEventModalClose}
-        onJoin={handleEventJoin}
-        onShare={handleShareEvent}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
       />
-
-      {/* Loading Overlay */}
-      {actionLoading && (
-        <View style={styles.loadingOverlay}>
-          <View style={styles.loadingBox}>
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text style={styles.loadingText}>Processing...</Text>
-          </View>
-        </View>
-      )}
     </View>
   );
 }
@@ -212,70 +156,79 @@ export default function EventsPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-    padding: 10,
+    backgroundColor: COLORS.gray50,
   },
-  content: {
+
+  listContent: {
+    paddingBottom: 40,
+  },
+  discoverHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: 24,
+    marginBottom: 20,
+    maxWidth: 1280,
+    alignSelf: 'center',
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  discoverTextContainer: {
     flex: 1,
-    paddingHorizontal: SPACING.xs,
-    paddingTop: SPACING.md,
+    paddingRight: 16,
   },
-  section: {
-    marginBottom: SPACING.lg,
+  discoverTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
-  sectionTitle: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
+  discoverSubtitle: {
+    fontSize: 14,
+    color: '#666666',
+    fontFamily: 'Manrope-Medium',
+    lineHeight: 20,
   },
-  loadingContainer: {
-    paddingVertical: SPACING.xl,
+  viewMapBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 80, 212, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 4,
   },
-  errorContainer: {
-    paddingVertical: SPACING.lg,
-    alignItems: 'center',
+  viewMapText: {
+    color: '#0050d4',
+    fontWeight: '700',
+    fontSize: 13,
+    fontFamily: 'Manrope-SemiBold',
   },
-  errorText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: '#EF4444',
-    textAlign: 'center',
+  desktopGrid: {
+    flexDirection: 'row',
+    maxWidth: 1280,
+    alignSelf: 'center',
+    width: '100%',
+    gap: 40,
+    paddingHorizontal: 40,
   },
-  emptyContainer: {
-    paddingVertical: SPACING.xl,
-    alignItems: 'center',
+  desktopLeft: {
+    flex: 8,
   },
-  emptyText: {
-    fontSize: TYPOGRAPHY.fontSize.md,
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
+  desktopRight: {
+    flex: 4,
   },
-  emptySubtext: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.textSecondary,
+  eventsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 24,
+    width: '100%',
+    justifyContent: 'space-between',
   },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingBox: {
-    backgroundColor: '#FFFFFF',
-    padding: SPACING.lg,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 200,
-  },
-  loadingText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: COLORS.textPrimary,
-    marginTop: SPACING.sm,
+  mobileEventCardWrapper: {
+    marginBottom: 20,
+    paddingHorizontal: 16,
   },
 });

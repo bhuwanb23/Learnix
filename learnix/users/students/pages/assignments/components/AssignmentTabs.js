@@ -4,60 +4,69 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function AssignmentTabs({ tabs, activeTab, onTabPress }) {
+  const formatTabValue = (tab) => tab.split(' ')[0].toLowerCase();
+
   return (
     <View style={styles.container}>
-      {tabs.map((tab, index) => (
-        <TouchableOpacity
-          key={index}
-          style={[
-            styles.tab,
-            activeTab === tab.toLowerCase().replace(' ', '-') && styles.activeTab,
-          ]}
-          onPress={() => onTabPress(tab.toLowerCase().replace(' ', '-'))}
-          activeOpacity={0.7}
-        >
-          <Text
+      {tabs.map((tab, index) => {
+        const isActive = activeTab === formatTabValue(tab);
+        return (
+          <TouchableOpacity
+            key={index}
             style={[
-              styles.tabText,
-              activeTab === tab.toLowerCase().replace(' ', '-') && styles.activeTabText,
+              styles.tab,
+              isActive && styles.activeTab,
             ]}
+            onPress={() => onTabPress(formatTabValue(tab))}
+            activeOpacity={0.7}
           >
-            {tab}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={[
+                styles.tabText,
+                isActive && styles.activeTabText,
+              ]}
+            >
+              {tab}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginTop: 48,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
     flexDirection: 'row',
+    gap: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(171, 173, 175, 0.1)',
+    borderBottomColor: COLORS.gray200,
   },
   tab: {
-    paddingBottom: 16,
-    marginRight: 32,
+    paddingBottom: SPACING.sm,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    marginBottom: -1, // Overlap border
   },
   activeTab: {
-    borderBottomColor: '#0050d4',
+    borderBottomColor: COLORS.primary,
   },
   tabText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#595c5e',
-    fontFamily: 'Manrope-SemiBold',
+    color: COLORS.gray500,
+    fontFamily: 'Manrope-Medium',
   },
   activeTabText: {
-    color: '#0050d4',
+    color: COLORS.primary,
     fontWeight: '700',
+    fontFamily: 'Manrope-Medium',
   },
 });

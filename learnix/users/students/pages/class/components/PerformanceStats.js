@@ -4,28 +4,33 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function PerformanceStats({ stats }) {
+  // Fixed heights based on HTML
+  const barHeights = [32, 48, 24, 40, 56, 36];
+  const barOpacities = [1, 0.8, 0.6, 1, 0.9, 0.7];
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.gpaLabel}>Current GPA</Text>
         <Text style={styles.gpaValue}>{stats.gpa.toFixed(2)}</Text>
         <View style={styles.trendContainer}>
-          <Text style={styles.trendIcon}>📈</Text>
+          <MaterialIcons name="trending-up" size={16} color="#7b9cff" />
           <Text style={styles.trendText}>{stats.trend}</Text>
         </View>
       </View>
 
       <View style={styles.chartContainer}>
-        {stats.chart.map((height, index) => (
+        {barHeights.map((height, index) => (
           <View
             key={index}
             style={[
               styles.bar,
               {
-                height: height * 2,
-                opacity: 0.6 + (index % 3) * 0.2,
+                height: height,
+                opacity: barOpacities[index],
               },
             ]}
           />
@@ -37,57 +42,54 @@ export default function PerformanceStats({ stats }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginBottom: 100,
-    borderRadius: 16,
-    padding: 24,
-    backgroundColor: '#2c2f31',
+    // Removed margin since parent has padding
+    borderRadius: 12, // rounded-xl
+    padding: 24, // p-6
+    backgroundColor: '#2c2f31', // bg-on-surface
     overflow: 'hidden',
   },
   content: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 24, // mt-6 for the chart below means mb-6 here
   },
   gpaLabel: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 10, // text-[10px]
+    fontWeight: '900', // font-black
+    color: '#ffffff', // text-surface (white-ish)
+    opacity: 0.6,
     textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 8,
+    letterSpacing: 1.5, // tracking-widest
+    marginBottom: 8, // mb-2
     fontFamily: 'Manrope-ExtraBold',
   },
   gpaValue: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#ffffff',
+    fontSize: 48, // text-5xl
+    fontWeight: '900', // font-black
+    color: '#ffffff', // text-surface
     fontFamily: 'PlusJakartaSans-ExtraBold',
-    marginBottom: 8,
+    marginBottom: 8, // mb-2
   },
   trendContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  trendIcon: {
-    fontSize: 16,
+    gap: 8, // gap-2
   },
   trendText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#7b9cff',
+    fontSize: 14, // text-sm
+    fontWeight: '700', // font-bold
+    color: '#7b9cff', // text-primary-fixed
     fontFamily: 'Manrope-Bold',
   },
   chartContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'flex-end',
-    gap: 4,
-    height: 40,
+    gap: 4, // gap-1 (1 * 4 = 4px)
+    height: 56, // max height
   },
   bar: {
-    width: 4,
-    backgroundColor: '#0050d4',
-    borderRadius: 2,
+    width: 4, // w-1
+    backgroundColor: '#0050d4', // bg-primary
+    borderRadius: 999, // rounded-full
   },
 });

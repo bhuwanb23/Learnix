@@ -3,7 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
+  Platform,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function RecentCompletionsSidebar({ completions }) {
   return (
@@ -36,9 +39,9 @@ export default function RecentCompletionsSidebar({ completions }) {
           </View>
 
           <View style={styles.suggestion}>
-            <Text style={styles.suggestionIcon}>💡</Text>
-            <Text style={styles.suggestionText}>
-              Suggestion: {completion.suggestion}
+            <MaterialIcons name={completion.suggestionIcon.replace('_', '-')} size={14} color={completion.borderColor} />
+            <Text style={[styles.suggestionText, { color: completion.borderColor }]}>
+              {completion.suggestionIcon === 'lightbulb' ? 'Suggestion' : 'Next step'}: {completion.suggestion}
             </Text>
           </View>
         </View>
@@ -49,70 +52,65 @@ export default function RecentCompletionsSidebar({ completions }) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 24,
+    gap: SPACING.md,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    color: '#2c2f31',
+    color: COLORS.textPrimary,
     fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 8,
+    marginBottom: SPACING.xs,
   },
   completionCard: {
-    backgroundColor: '#eef1f3',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: COLORS.gray50,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
     borderLeftWidth: 4,
   },
   gradeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.xs,
   },
   subject: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Manrope-Medium',
   },
   grade: {
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 16,
+    fontWeight: '800',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
   },
   assignmentTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#2c2f31',
-    marginBottom: 8,
-    fontFamily: 'Manrope-Bold',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
+    fontFamily: 'Manrope-Medium',
   },
   feedbackBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   feedbackText: {
-    fontSize: 12,
+    fontSize: 11,
     fontStyle: 'italic',
-    color: '#595c5e',
-    lineHeight: 18,
-    fontFamily: 'Manrope-Medium',
+    color: COLORS.gray600,
+    fontFamily: 'Manrope-Regular',
   },
   suggestion: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  suggestionIcon: {
-    fontSize: 12,
+    gap: SPACING.sm,
   },
   suggestionText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#0050d4',
     textTransform: 'uppercase',
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Manrope-Medium',
   },
 });

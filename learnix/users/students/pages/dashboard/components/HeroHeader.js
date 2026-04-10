@@ -88,13 +88,13 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginBottom: 8,
     letterSpacing: -0.5,
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
   },
   subtitle: {
     fontSize: 15,
     color: 'rgba(255, 255, 255, 0.85)',
     fontWeight: '500',
     lineHeight: 22,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
 });

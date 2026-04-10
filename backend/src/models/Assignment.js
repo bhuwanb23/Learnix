@@ -63,9 +63,7 @@ const Assignment = sequelize.define('assignment', {
   attachments: {
     type: DataTypes.JSON
   },
-  submissions: {
-    type: DataTypes.JSON
-  },
+  // Removed the submissions attribute to avoid naming collision
   is_published: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
@@ -75,5 +73,30 @@ const Assignment = sequelize.define('assignment', {
   timestamps: true,
   underscored: true
 });
+
+// Define associations
+Assignment.associate = (models) => {
+  Assignment.belongsTo(models.User, {
+    foreignKey: 'assigned_by',
+    as: 'teacher'
+  });
+  
+  Assignment.belongsTo(models.Course, {
+    foreignKey: 'course_id'
+  });
+  
+  Assignment.belongsTo(models.Class, {
+    foreignKey: 'class_id'
+  });
+  
+  Assignment.belongsTo(models.Subject, {
+    foreignKey: 'subject_id'
+  });
+  
+  Assignment.hasMany(models.AssignmentSubmission, {
+    foreignKey: 'assignment_id',
+    as: 'submissions'
+  });
+};
 
 module.exports = Assignment;

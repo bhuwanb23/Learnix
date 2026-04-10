@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#1f2937',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
   },
   placeholder: {
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1f2937',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
     marginBottom: 16,
   },
@@ -225,14 +225,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1f2937',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     letterSpacing: 0.2,
     marginBottom: 4,
   },
   feeDueDate: {
     fontSize: 12,
     color: '#6b7280',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     letterSpacing: 0.1,
   },
   feeAmountContainer: {
@@ -241,14 +241,14 @@ const styles = StyleSheet.create({
   feeAmount: {
     fontSize: 16,
     fontWeight: '700',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
     marginBottom: 2,
   },
   feeStatus: {
     fontSize: 10,
     fontWeight: '600',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     letterSpacing: 0.1,
   },
   selectedIndicator: {
@@ -296,14 +296,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1f2937',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     letterSpacing: 0.2,
     marginBottom: 2,
   },
   paymentMethodSubtitle: {
     fontSize: 12,
     color: '#6b7280',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     letterSpacing: 0.1,
   },
   radioButton: {
@@ -339,14 +339,14 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 16,
     color: '#6b7280',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     letterSpacing: 0.2,
   },
   totalAmount: {
     fontSize: 20,
     fontWeight: '700',
     color: '#1f2937',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
   },
   payButton: {
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
   },
 });

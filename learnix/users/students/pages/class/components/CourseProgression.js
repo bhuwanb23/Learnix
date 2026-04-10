@@ -5,220 +5,234 @@ import {
   StyleSheet,
   Image,
 } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 
 const CircularProgress = ({ percentage, color }) => {
+  const size = 64;
+  const strokeWidth = 6;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
   return (
     <View style={styles.progressWrapper}>
-      {/* Outer colored ring */}
-      <View
-        style={[
-          styles.outerRing,
-          {
-            borderColor: color,
-          },
-        ]}
-      >
-        {/* Inner white circle */}
-        <View style={styles.innerCircle}>
-          <Text style={[styles.percentageText, { color }]}>
-            {percentage}%
-          </Text>
-        </View>
+      <Svg width={size} height={size}>
+        {/* Background Circle */}
+        <Circle
+          stroke="#ffffff"
+          fill="transparent"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+        />
+        {/* Progress Circle */}
+        <Circle
+          stroke={color}
+          fill="transparent"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </Svg>
+      <View style={[styles.innerCircle, StyleSheet.absoluteFill]}>
+        <Text style={styles.percentageText}>{percentage}%</Text>
       </View>
     </View>
   );
 };
 
 export default function CourseProgression({ courses }) {
+  const hexToRgba = (hex, opacity) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+      `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})` 
+      : null;
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Course Progression</Text>
       
-      {courses.map((course, index) => (
-        <View
-          key={course.id}
-          style={[
-            styles.courseCard,
-            index < courses.length - 1 && styles.cardSpacing,
-          ]}
-        >
-          {/* Left: Progress Circle & Grade Badge */}
-          <View style={styles.leftSection}>
-            <CircularProgress percentage={course.progress} color={course.color} />
-            <View style={[styles.gradeBadge, { backgroundColor: course.color }]}>
-              <Text style={styles.gradeText}>{course.grade}</Text>
+      <View style={styles.listContainer}>
+        {courses.map((course, index) => (
+          <View
+            key={course.id}
+            style={[
+              styles.courseCard,
+              { 
+                backgroundColor: hexToRgba(course.color, 0.05),
+                borderColor: hexToRgba(course.color, 0.1),
+              }
+            ]}
+          >
+            <View style={styles.topSection}>
+              {/* Left: Progress Circle & Grade Badge */}
+              <View style={styles.leftSection}>
+                <CircularProgress percentage={course.progress} color={course.color} />
+                <View style={[styles.gradeBadge, { backgroundColor: course.color }]}>
+                  <Text style={styles.gradeText}>GRADE: {course.grade}</Text>
+                </View>
+              </View>
+
+              {/* Middle: Course Information */}
+              <View style={styles.middleSection}>
+                <Text style={styles.courseName}>{course.name}</Text>
+                <View style={styles.professorRow}>
+                  <Image
+                    source={{ uri: course.professorImage }}
+                    style={styles.professorAvatar}
+                  />
+                  <Text style={styles.professorName}>{course.professor}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Right/Bottom: Next Milestone */}
+            <View style={[
+              styles.milestoneContainer,
+              { borderColor: hexToRgba(course.color, 0.05) }
+            ]}>
+              <Text style={[styles.milestoneLabel, { color: course.color }]}>
+                Next Milestone
+              </Text>
+              <Text style={styles.milestoneTitle}>
+                {course.milestone.title}
+                <Text style={styles.milestoneDate}> • {course.milestone.date}</Text>
+              </Text>
             </View>
           </View>
-
-          {/* Middle: Course Information */}
-          <View style={styles.middleSection}>
-            <Text style={styles.courseName}>{course.name}</Text>
-            <View style={styles.professorRow}>
-              <Image
-                source={{ uri: course.professorImage }}
-                style={styles.professorAvatar}
-              />
-              <Text style={styles.professorName}>{course.professor}</Text>
-            </View>
-          </View>
-
-          {/* Right: Next Milestone */}
-          <View style={styles.milestoneContainer}>
-            <Text style={[styles.milestoneLabel, { color: course.color }]}>
-              Next Milestone
-            </Text>
-            <Text style={styles.milestoneTitle}>{course.milestone.title}</Text>
-            <Text style={styles.milestoneDate}>{course.milestone.date}</Text>
-          </View>
-        </View>
-      ))}
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginBottom: 24,
+    // Removed margin since parent has padding
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 20, // text-xl
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.3,
-    marginBottom: 16,
+    marginBottom: 24, // mb-6
+  },
+  listContainer: {
+    gap: 16, // space-y-4
   },
   courseCard: {
+    flexDirection: 'column', // Stack for mobile
+    borderRadius: 24, // rounded-2xl
+    padding: 24, // p-6
+    borderWidth: 1,
+    gap: 24, // gap-6
+  },
+  topSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardSpacing: {
-    marginBottom: 16,
+    gap: 24, // gap-6
   },
   leftSection: {
+    flexDirection: 'column',
     alignItems: 'center',
-    marginRight: 20,
+    gap: 8, // gap-2
   },
   progressWrapper: {
     width: 64,
     height: 64,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  outerRing: {
-    width: 64,
-    height: 64,
+    position: 'relative',
+    backgroundColor: '#ffffff',
     borderRadius: 32,
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   innerCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#ffffff',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   percentageText: {
-    fontSize: 12,
-    fontWeight: '900',
+    fontSize: 12, // text-xs
+    fontWeight: '900', // font-black
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'PlusJakartaSans-ExtraBold',
-    letterSpacing: -0.3,
   },
   gradeBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    paddingHorizontal: 12, // px-3
+    paddingVertical: 4, // py-1
+    borderRadius: 999, // rounded-full
   },
   gradeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#ffffff',
+    fontSize: 10, // text-[10px]
+    fontWeight: '700', // font-bold
+    color: '#ffffff', // text-white
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    fontFamily: 'Manrope-ExtraBold',
+    letterSpacing: 0.5, // tracking-wider
+    fontFamily: 'Manrope-Bold',
   },
   middleSection: {
     flex: 1,
-    marginRight: 16,
   },
   courseName: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 20, // text-xl
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.2,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   professorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 8, // gap-2
   },
   professorAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    width: 24, // w-6
+    height: 24, // h-6
+    borderRadius: 12, // rounded-full
+    opacity: 0.8,
   },
   professorName: {
-    fontSize: 13,
-    color: '#595c5e',
-    fontWeight: '600',
+    fontSize: 14, // text-sm
+    color: '#595c5e', // text-on-surface-variant
+    fontWeight: '600', // font-semibold
     fontFamily: 'Manrope-SemiBold',
   },
   milestoneContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 12,
+    width: '100%', // w-full
+    paddingHorizontal: 24, // px-6
+    paddingVertical: 16, // py-4
+    backgroundColor: 'rgba(255, 255, 255, 0.6)', // bg-white/60
+    borderRadius: 12, // rounded-xl
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-    minWidth: 140,
-    alignItems: 'flex-start',
   },
   milestoneLabel: {
-    fontSize: 9,
-    fontWeight: '800',
+    fontSize: 10, // text-[10px]
+    fontWeight: '700', // font-bold
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 4,
-    fontFamily: 'Manrope-ExtraBold',
+    marginBottom: 4, // mb-1
+    fontFamily: 'Manrope-Bold',
   },
   milestoneTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 14, // text-sm
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'Manrope-Bold',
-    marginBottom: 2,
   },
   milestoneDate: {
-    fontSize: 11,
-    color: '#595c5e',
-    fontWeight: '600',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 12, // text-xs
+    color: '#595c5e', // text-on-surface-variant
+    fontWeight: '500', // font-medium
+    fontFamily: 'Manrope-Medium',
   },
 });

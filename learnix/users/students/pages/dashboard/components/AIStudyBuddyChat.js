@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#ffffff',
     lineHeight: 20,
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   aiStatus: {
     fontSize: 9,
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     color: '#7b9cff',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   messageBubble: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 19,
     fontStyle: 'italic',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Medium',
   },
   sendButton: {
     backgroundColor: '#0050d4',

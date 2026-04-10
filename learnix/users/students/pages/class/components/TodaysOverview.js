@@ -5,10 +5,17 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function TodaysOverview({ liveClass }) {
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#0050d4', '#0046bb']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
       {/* Abstract background shape */}
       <View style={styles.bgShape} />
       
@@ -18,9 +25,12 @@ export default function TodaysOverview({ liveClass }) {
             <Text style={styles.badgeText}>{liveClass.status}</Text>
           </View>
           <Text style={styles.subjectName}>{liveClass.subject}</Text>
-          <Text style={styles.details}>
-            👤 {liveClass.professor} • {liveClass.time}
-          </Text>
+          <View style={styles.detailsContainer}>
+            <MaterialIcons name="person" size={14} color="rgba(255, 255, 255, 0.8)" />
+            <Text style={styles.details}>
+              {liveClass.professor} • {liveClass.time}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.actionSection}>
@@ -30,117 +40,121 @@ export default function TodaysOverview({ liveClass }) {
           </View>
           
           <TouchableOpacity style={styles.joinButton} activeOpacity={0.8}>
-            <Text style={styles.joinButtonText}>📹 Join Session</Text>
+            <MaterialIcons name="video-camera-front" size={20} color="#0050d4" />
+            <Text style={styles.joinButtonText}>Join Session</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginBottom: 24,
     borderRadius: 16,
     padding: 32,
-    backgroundColor: '#0050d4',
     position: 'relative',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
     elevation: 8,
   },
   bgShape: {
     position: 'absolute',
-    top: -60,
-    right: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    top: -80,
+    right: -80,
+    width: 256,
+    height: 256,
+    borderRadius: 128,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   content: {
     position: 'relative',
     zIndex: 1,
+    flexDirection: 'column', // flex-col md:flex-row in HTML, we do col
+    gap: 24,
   },
   infoSection: {
-    marginBottom: 20,
+    // Info section styles
   },
   badge: {
     alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 999, // rounded-full
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     marginBottom: 12,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 12, // text-xs
     fontWeight: '700',
     color: '#ffffff',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.5, // tracking-wider
     fontFamily: 'Manrope-Bold',
   },
   subjectName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontSize: 24, // text-2xl
+    fontWeight: '700', // font-bold
+    color: '#ffffff', // text-on-primary
     fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: 8,
   },
+  detailsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   details: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16, // Assuming base size
+    color: 'rgba(255, 255, 255, 0.8)', // text-on-primary/80
     fontWeight: '500',
     fontFamily: 'Manrope-Medium',
   },
   actionSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 16, // gap-4
   },
   materialsBox: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', // bg-white/10
+    borderRadius: 12, // rounded-xl
     padding: 12,
+    paddingHorizontal: 24, // px-6
     alignItems: 'center',
   },
   materialsCount: {
-    fontSize: 24,
+    fontSize: 24, // text-2xl
     fontWeight: '700',
     color: '#ffffff',
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Manrope-Bold',
   },
   materialsLabel: {
-    fontSize: 9,
+    fontSize: 10, // text-[10px]
     fontWeight: '700',
     color: 'rgba(255, 255, 255, 0.7)',
     textTransform: 'uppercase',
-    marginTop: 2,
+    marginTop: 0,
     fontFamily: 'Manrope-Bold',
   },
   joinButton: {
-    flex: 1.5,
+    flex: 2, // Take more space
+    flexDirection: 'row',
     backgroundColor: '#ffffff',
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 12, // rounded-xl
+    paddingVertical: 16, // py-4
+    paddingHorizontal: 32, // px-8
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    gap: 8,
   },
   joinButtonText: {
-    fontSize: 14,
+    fontSize: 16, // font-bold
     fontWeight: '700',
     color: '#0050d4',
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Manrope-Bold',
   },
 });

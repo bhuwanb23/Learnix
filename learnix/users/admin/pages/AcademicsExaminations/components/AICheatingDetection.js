@@ -189,12 +189,12 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   subtitle: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.textSecondary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   alertBadge: {
     backgroundColor: '#fef2f2',
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
     color: '#ef4444',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   content: {
     flex: 1,
@@ -232,18 +232,18 @@ const styles = StyleSheet.create({
   detectionTitle: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     marginLeft: SPACING.xs,
   },
   detectionValue: {
     fontSize: 20,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: 2,
   },
   detectionSubtitle: {
     fontSize: 10,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   alertsContainer: {
     marginBottom: SPACING.lg,
@@ -258,12 +258,12 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
   },
   viewAllText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: '#7c3aed',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   alertsList: {
     gap: SPACING.sm,
@@ -294,12 +294,12 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     marginBottom: 2,
   },
   alertIssue: {
     fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   alertRight: {
     alignItems: 'flex-end',
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   riskText: {
     fontSize: 10,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   alertActions: {
     flexDirection: 'row',
@@ -341,13 +341,13 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: '#7c3aed',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     marginBottom: SPACING.xs,
   },
   insightsDescription: {
     fontSize: 12,
     color: '#6b7280',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     lineHeight: 16,
   },
 });

@@ -15,33 +15,20 @@ const Document = sequelize.define('document', {
     type: DataTypes.TEXT
   },
   course_id: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: true
   },
   class_id: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'classes',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: true
   },
   subject_id: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: 'subjects',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: true
   },
   uploaded_by: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: false
   },
   file_type: {
     type: DataTypes.STRING,
@@ -71,6 +58,24 @@ const Document = sequelize.define('document', {
   },
   metadata: {
     type: DataTypes.JSON
+  },
+  // For document sharing and access control
+  shared_with: {
+    type: DataTypes.JSON, // Array of user IDs or roles
+    defaultValue: []
+  },
+  access_level: {
+    type: DataTypes.ENUM('private', 'shared', 'public'),
+    defaultValue: 'private'
+  },
+  // For document preview
+  preview_path: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  preview_type: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   tableName: 'documents',

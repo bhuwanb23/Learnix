@@ -20,6 +20,18 @@ class RealTimeService {
         console.log(`User ${socket.id} left class ${classId}`);
       });
 
+      // Join room for specific timetable
+      socket.on('subscribeToTimetable', (timetableId) => {
+        socket.join(`timetable-${timetableId}`);
+        console.log(`User ${socket.id} subscribed to timetable ${timetableId}`);
+      });
+
+      // Leave room for specific timetable
+      socket.on('unsubscribeFromTimetable', (timetableId) => {
+        socket.leave(`timetable-${timetableId}`);
+        console.log(`User ${socket.id} unsubscribed from timetable ${timetableId}`);
+      });
+
       // Handle timetable updates
       socket.on('timetableUpdate', (data) => {
         this.broadcastTimetableUpdate(data);
@@ -60,6 +72,11 @@ class RealTimeService {
   // Notify specific class
   notifyClass(classId, event, data) {
     this.io.to(`class-${classId}`).emit(event, data);
+  }
+
+  // Notify specific timetable subscribers
+  notifyTimetableSubscribers(timetableId, event, data) {
+    this.io.to(`timetable-${timetableId}`).emit(event, data);
   }
 }
 

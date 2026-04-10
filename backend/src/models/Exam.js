@@ -84,4 +84,29 @@ const Exam = sequelize.define('exam', {
   underscored: true
 });
 
+// Define associations
+Exam.associate = (models) => {
+  Exam.belongsTo(models.User, {
+    foreignKey: 'scheduled_by',
+    as: 'scheduler'
+  });
+  
+  Exam.belongsTo(models.Course, {
+    foreignKey: 'course_id'
+  });
+  
+  Exam.belongsTo(models.Class, {
+    foreignKey: 'class_id'
+  });
+  
+  Exam.belongsTo(models.Subject, {
+    foreignKey: 'subject_id'
+  });
+  
+  Exam.hasMany(models.ExamResult, {
+    foreignKey: 'exam_id',
+    as: 'results'
+  });
+};
+
 module.exports = Exam;

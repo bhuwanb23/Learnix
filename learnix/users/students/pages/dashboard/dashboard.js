@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   RefreshControl,
+  Animated,
 } from 'react-native';
 
 // Import new components
@@ -21,6 +22,7 @@ import { DASHBOARD_DATA } from './constants/dashboardData';
 export default function Dashboard({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(DASHBOARD_DATA);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -57,7 +59,7 @@ export default function Dashboard({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <ScrollView
+      <Animated.ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -67,6 +69,11 @@ export default function Dashboard({ navigation }) {
             tintColor="#0050d4"
           />
         }
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
       >
         {/* Hero Header */}
         <HeroHeader userData={dashboardData.user} />
@@ -94,7 +101,7 @@ export default function Dashboard({ navigation }) {
           aiData={dashboardData.aiBuddy}
           onSendMessage={handleAIMessage}
         />
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }

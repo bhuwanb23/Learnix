@@ -42,6 +42,49 @@ export const COLORS = {
   borderLight: '#f1f5f9',
 };
 
+export const DARK_COLORS = {
+  // Primary colors
+  primary: '#3b82f6',
+  primaryDark: '#2563eb',
+  primaryLight: '#60a5fa',
+  secondary: '#94a3b8',
+  accent: '#38bdf8',
+  
+  // Neutral colors
+  white: '#0f172a',
+  black: '#ffffff',
+  gray50: '#1e293b',
+  gray100: '#334155',
+  gray200: '#475569',
+  gray300: '#64748b',
+  gray400: '#94a3b8',
+  gray500: '#cbd5e1',
+  gray600: '#e2e8f0',
+  gray700: '#f1f5f9',
+  gray800: '#f8fafc',
+  gray900: '#ffffff',
+  
+  // Text colors
+  textPrimary: '#f8fafc',
+  textSecondary: '#cbd5e1',
+  textTertiary: '#94a3b8',
+  textLight: '#64748b',
+  
+  // Status colors
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#0ea5e9',
+  
+  // Background colors
+  background: '#0f172a',
+  backgroundSecondary: '#1e293b',
+  surface: '#1e293b',
+  surfaceHover: '#334155',
+  border: '#334155',
+  borderLight: '#1e293b',
+};
+
 // Gradient definitions - Minimal and professional
 export const GRADIENTS = {
   primary: ['#2563eb', '#3b82f6'],
@@ -53,14 +96,27 @@ export const GRADIENTS = {
   subtle: ['rgba(37, 99, 235, 0.05)', 'rgba(37, 99, 235, 0.02)'],
 };
 
-// Typography - Clean and readable
+// Typography - Clean and readable with Plus Jakarta Sans & Manrope
 export const TYPOGRAPHY = {
-  // Font families
+  // Font families - Match HTML design
   fontFamily: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
-    light: 'System',
+    // Plus Jakarta Sans for headlines/titles
+    headline: 'PlusJakartaSans-Bold',
+    headlineExtraBold: 'PlusJakartaSans-ExtraBold',
+    headlineSemiBold: 'PlusJakartaSans-SemiBold',
+    
+    // Manrope for body text
+    body: 'Manrope-Regular',
+    bodyMedium: 'Manrope-Medium',
+    bodySemiBold: 'Manrope-SemiBold',
+    bodyBold: 'Manrope-Bold',
+    bodyExtraBold: 'Manrope-ExtraBold',
+    
+    // Legacy support
+    regular: 'Manrope-Regular',
+    medium: 'Manrope-Medium',
+    bold: 'PlusJakartaSans-Bold',
+    light: 'Manrope-Regular',
   },
   
   // Font sizes (with both naming conventions for compatibility)

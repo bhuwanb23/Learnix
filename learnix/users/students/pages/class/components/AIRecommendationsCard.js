@@ -5,18 +5,20 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function AIRecommendationsCard({ data }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.icon}>✨</Text>
+        <MaterialIcons name="auto-awesome" size={24} color="#702ae1" />
         <Text style={styles.title}>{data.title}</Text>
       </View>
       
       <Text style={styles.message}>
-        Based on your last Statistics quiz, you should focus on{' '}
-        <Text style={styles.highlight}>{data.highlight}</Text>.
+        {data.message.split(data.highlight)[0]}
+        <Text style={styles.highlight}>{data.highlight}</Text>
+        {data.message.split(data.highlight)[1]}
       </Text>
 
       <View style={styles.resourcesList}>
@@ -26,9 +28,7 @@ export default function AIRecommendationsCard({ data }) {
             style={styles.resourceItem}
             activeOpacity={0.7}
           >
-            <Text style={[styles.resourceIcon, { color: '#702ae1' }]}>
-              {resource.icon === 'play_circle' ? '▶️' : '📄'}
-            </Text>
+            <MaterialIcons name={resource.icon.replace('_', '-')} size={24} color="#702ae1" />
             <View>
               <Text style={styles.resourceType}>{resource.type}</Text>
               <Text style={styles.resourceTitle}>{resource.title}</Text>
@@ -42,69 +42,57 @@ export default function AIRecommendationsCard({ data }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginBottom: 24,
-    borderRadius: 16,
-    padding: 24,
-    backgroundColor: '#eef1f3',
-    borderLeftWidth: 4,
-    borderLeftColor: '#702ae1',
+    // Removed margin since parent has padding
+    borderRadius: 12, // rounded-xl
+    padding: 24, // p-6
+    backgroundColor: '#eef1f3', // bg-surface-container-low
+    borderLeftWidth: 4, // border-l-4
+    borderLeftColor: '#702ae1', // border-secondary
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  icon: {
-    fontSize: 24,
+    gap: 12, // gap-3
+    marginBottom: 16, // mb-4
   },
   title: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 16, // Assuming base size
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface
     fontFamily: 'PlusJakartaSans-Bold',
   },
   message: {
-    fontSize: 14,
-    color: '#595c5e',
-    lineHeight: 22,
-    fontWeight: '500',
+    fontSize: 14, // text-sm
+    color: '#595c5e', // text-on-surface-variant
+    lineHeight: 24, // leading-relaxed
+    fontWeight: '500', // font-medium
     fontFamily: 'Manrope-Medium',
-    marginBottom: 24,
+    marginBottom: 24, // mb-6
   },
   highlight: {
-    color: '#702ae1',
-    fontWeight: '700',
+    color: '#702ae1', // text-secondary
+    fontWeight: '700', // font-bold
   },
   resourcesList: {
-    gap: 12,
+    gap: 12, // space-y-3
   },
   resourceItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  resourceIcon: {
-    fontSize: 20,
+    gap: 12, // gap-3
+    padding: 12, // p-3
+    backgroundColor: '#ffffff', // bg-surface-container-lowest
+    borderRadius: 8, // rounded-lg
   },
   resourceType: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 12, // text-xs
+    fontWeight: '700', // font-bold
+    color: '#2c2f31', // text-on-surface (assuming)
     fontFamily: 'Manrope-Bold',
   },
   resourceTitle: {
-    fontSize: 11,
-    color: '#595c5e',
+    fontSize: 12, // text-xs
+    color: '#595c5e', // text-on-surface-variant
     fontFamily: 'Manrope-Medium',
   },
 });

@@ -3,9 +3,21 @@ import {
   View,
   Text,
   StyleSheet,
+  Platform,
 } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function ProgressOverviewBento({ velocity, allocation }) {
+  // SVG calculations for Subject Allocation Circle
+  const size = 120; // Reduced size
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI; 
+  
+  const stemOffset = circumference * 0.25; 
+  const artsOffset = circumference * 0.75; 
+
   return (
     <View style={styles.container}>
       {/* Weekly Velocity Card */}
@@ -22,7 +34,7 @@ export default function ProgressOverviewBento({ velocity, allocation }) {
           </View>
         </View>
 
-        {/* Bar Chart */}
+        {/* Stylized Line Graph Mockup (Bars) */}
         <View style={styles.chartContainer}>
           {velocity.chart.map((height, index) => (
             <View
@@ -31,7 +43,7 @@ export default function ProgressOverviewBento({ velocity, allocation }) {
                 styles.bar,
                 {
                   height: `${height}%`,
-                  backgroundColor: index === 4 ? '#0050d4' : '#eef1f3',
+                  backgroundColor: index === 4 ? COLORS.primary : COLORS.gray100,
                   ...(index === 4 && styles.activeBar),
                 },
               ]}
@@ -40,27 +52,60 @@ export default function ProgressOverviewBento({ velocity, allocation }) {
         </View>
       </View>
 
-      {/* Subject Allocation Circle */}
+      {/* Subject Breakdown Circle */}
       <View style={styles.allocationCard}>
         <Text style={styles.allocationLabel}>Subject Allocation</Text>
         
         <View style={styles.circleContainer}>
-          {/* Simplified circular progress representation */}
-          <View style={styles.outerCircle}>
-            <View style={styles.innerCircle}>
-              <Text style={styles.taskCount}>{allocation.totalTasks}</Text>
-              <Text style={styles.taskLabel}>Tasks</Text>
-            </View>
+          <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+            {/* Background Circle */}
+            <Circle
+              stroke={COLORS.gray100}
+              fill="transparent"
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              strokeWidth={strokeWidth}
+            />
+            {/* STEM Circle */}
+            <Circle
+              stroke={COLORS.primary}
+              fill="transparent"
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              strokeWidth={strokeWidth}
+              strokeDasharray={circumference}
+              strokeDashoffset={stemOffset}
+            />
+            {/* Arts Circle */}
+            <Circle
+              stroke={COLORS.accent}
+              fill="transparent"
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              strokeWidth={strokeWidth}
+              strokeDasharray={circumference}
+              strokeDashoffset={artsOffset}
+            />
+          </Svg>
+          
+          <View style={styles.innerCircleContent}>
+            <Text style={styles.taskCount}>{allocation.totalTasks}</Text>
+            <Text style={styles.taskLabel}>Tasks</Text>
           </View>
         </View>
 
         <View style={styles.legend}>
-          {allocation.categories.map((category, index) => (
-            <View key={index} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: category.color }]} />
-              <Text style={styles.legendText}>{category.name}</Text>
-            </View>
-          ))}
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: COLORS.primary }]} />
+            <Text style={styles.legendText}>STEM</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: COLORS.accent }]} />
+            <Text style={styles.legendText}>Arts</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -69,171 +114,137 @@ export default function ProgressOverviewBento({ velocity, allocation }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginTop: 32,
     flexDirection: 'row',
-    gap: 24,
+    gap: SPACING.md,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
   },
   velocityCard: {
-    flex: 2,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-    elevation: 3,
-    position: 'relative',
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.md,
     overflow: 'hidden',
-    justifyContent: 'space-between',
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
   bgShape: {
     position: 'absolute',
-    right: -48,
-    top: -48,
-    width: 192,
-    height: 192,
-    borderRadius: 96,
-    backgroundColor: 'rgba(0, 80, 212, 0.05)',
+    top: 0,
+    right: 0,
+    width: 120,
+    height: 120,
+    backgroundColor: 'rgba(37, 99, 235, 0.05)',
+    borderBottomLeftRadius: 100,
   },
   velocityHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: SPACING.lg,
   },
   velocityLabel: {
-    fontSize: 13,
+    fontSize: 12,
+    color: COLORS.gray500,
     fontWeight: '600',
-    color: '#595c5e',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    fontFamily: 'Manrope-Medium',
     marginBottom: 4,
-    fontFamily: 'Manrope-SemiBold',
   },
   velocityValue: {
-    fontSize: 36,
+    fontSize: 24,
     fontWeight: '800',
-    color: '#0050d4',
-    fontFamily: 'PlusJakartaSans-ExtraBold',
+    color: COLORS.textPrimary,
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   trendBadge: {
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: 'rgba(123, 156, 255, 0.2)',
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.full,
   },
   trendText: {
-    fontSize: 11,
+    color: COLORS.success,
+    fontSize: 10,
     fontWeight: '700',
-    color: '#0050d4',
-    fontFamily: 'Manrope-Bold',
   },
   chartContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 128,
-    gap: 8,
-    paddingHorizontal: 8,
+    justifyContent: 'space-between',
+    height: 60,
+    marginTop: 'auto',
   },
   bar: {
-    flex: 1,
-    borderRadius: 8,
-    minHeight: '20%',
+    width: 12,
+    borderRadius: BORDER_RADIUS.sm,
   },
   activeBar: {
-    shadowColor: '#0050d4',
-    shadowOffset: { width: 0, height: 0 },
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowRadius: 4,
+    elevation: 4,
   },
   allocationCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-    elevation: 3,
+    flex: 0.8,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.md,
     alignItems: 'center',
-    justifyContent: 'center',
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
   allocationLabel: {
-    fontSize: 13,
+    fontSize: 12,
+    color: COLORS.gray500,
     fontWeight: '600',
-    color: '#595c5e',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 24,
-    fontFamily: 'Manrope-SemiBold',
+    fontFamily: 'Manrope-Medium',
+    marginBottom: SPACING.sm,
+    alignSelf: 'flex-start',
   },
   circleContainer: {
-    width: 160,
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  outerCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 12,
-    borderColor: '#dfe3e6',
-    justifyContent: 'center',
-    alignItems: 'center',
     position: 'relative',
-  },
-  innerCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#ffffff',
-    justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    justifyContent: 'center',
+    marginVertical: SPACING.sm,
+  },
+  innerCircleContent: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   taskCount: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
     fontFamily: 'PlusJakartaSans-Bold',
   },
   taskLabel: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#595c5e',
-    textTransform: 'uppercase',
-    marginTop: 2,
-    fontFamily: 'Manrope-Bold',
+    color: COLORS.gray500,
+    fontWeight: '500',
   },
   legend: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 16,
-    marginTop: 24,
+    gap: SPACING.md,
+    marginTop: 'auto',
+    paddingTop: SPACING.sm,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   legendText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#2c2f31',
-    fontFamily: 'Manrope-Bold',
+    fontSize: 10,
+    color: COLORS.gray600,
+    fontWeight: '500',
   },
 });

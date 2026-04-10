@@ -170,12 +170,12 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   subtitle: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.textSecondary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   generateButton: {
     flexDirection: 'row',
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     marginLeft: SPACING.xs,
   },
   content: {
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     marginBottom: SPACING.xs,
   },
   dropdown: {
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   dropdownText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   conflictContainer: {
     backgroundColor: '#f9fafb',
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: COLORS.textPrimary,
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     marginBottom: SPACING.sm,
   },
   conflictList: {
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   conflictLabel: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     color: COLORS.textSecondary,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   conflictBadge: {
     paddingHorizontal: SPACING.sm,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   conflictBadgeText: {
     fontSize: 10,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
   },
   suggestionsContainer: {
     backgroundColor: '#f3f4f6',
@@ -284,13 +284,13 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
     color: '#7c3aed',
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'PlusJakartaSans-SemiBold',
     marginBottom: SPACING.xs,
   },
   suggestionDescription: {
     fontSize: 12,
     color: '#6b7280',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     lineHeight: 16,
   },
 });

@@ -3,7 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
+  Platform,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function StatsCardsRow({ stats }) {
   return (
@@ -11,11 +14,9 @@ export default function StatsCardsRow({ stats }) {
       {stats.map((stat) => (
         <View key={stat.id} style={styles.card}>
           <View style={[styles.iconContainer, { backgroundColor: stat.bgColor }]}>
-            <Text style={[styles.icon, { color: stat.color }]}>
-              {getIconEmoji(stat.icon)}
-            </Text>
+            <MaterialIcons name={stat.icon.replace('_', '-')} size={20} color={stat.color} />
           </View>
-          <View>
+          <View style={styles.textContainer}>
             <Text style={styles.value}>{stat.value}</Text>
             <Text style={styles.label}>{stat.label}</Text>
           </View>
@@ -25,54 +26,47 @@ export default function StatsCardsRow({ stats }) {
   );
 }
 
-const getIconEmoji = (iconName) => {
-  const icons = {
-    alarm: '⏰',
-    check_circle: '✅',
-    star: '⭐',
-    pending_actions: '📋',
-  };
-  return icons[iconName] || '📌';
-};
-
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 24,
-    marginTop: 24,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md,
     flexDirection: 'row',
-    gap: 16,
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    justifyContent: 'space-between',
   },
   card: {
-    flex: 1,
-    backgroundColor: '#eef1f3',
-    borderRadius: 16,
-    padding: 20,
+    width: '48%',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: SPACING.sm,
+    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.gray100,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  icon: {
-    fontSize: 20,
+  textContainer: {
+    flex: 1,
   },
   value: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2c2f31',
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textPrimary,
     fontFamily: 'PlusJakartaSans-Bold',
   },
   label: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#595c5e',
-    textTransform: 'uppercase',
-    marginTop: 2,
-    fontFamily: 'Manrope-Bold',
+    fontWeight: '600',
+    color: COLORS.gray500,
+    fontFamily: 'Manrope-Regular',
   },
 });

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const timetableController = require('../controllers/timetableController');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
-const { validateRequest, timetableValidationSchema } = require('../middleware/validation');
+const { validateRequest, timetableValidationSchema, checkTimetableConflicts, validateTimetableRules } = require('../middleware/validation');
 
 // All timetable routes require authentication
 router.use(authenticateToken);
@@ -13,6 +13,8 @@ router.route('/')
   .post(
     authorizeRole('admin', 'teacher'), 
     validateRequest(timetableValidationSchema),
+    validateTimetableRules,
+    checkTimetableConflicts,
     timetableController.createTimetable
   );
 
@@ -21,11 +23,23 @@ router.route('/:id')
   .put(
     authorizeRole('admin', 'teacher'), 
     validateRequest(timetableValidationSchema),
+    validateTimetableRules,
+    checkTimetableConflicts,
     timetableController.updateTimetable
   )
   .delete(authorizeRole('admin', 'teacher'), timetableController.deleteTimetable);
 
 // Get timetable for a specific class
 router.get('/class/:classId', authorizeRole('admin', 'teacher', 'student'), timetableController.getClassTimetable);
+
+// Export timetable
+router.get('/class/:classId/export/pdf', authorizeRole('admin', 'teacher', 'student'), timetableController.exportTimetablePDF);
+router.get('/class/:classId/export/csv', authorizeRole('admin', 'teacher', 'student'), timetableController.exportTimetableCSV);
+
+// Get timetable history
+router.get('/:timetableId/history', authorizeRole('admin', 'teacher', 'student'), timetableController.getTimetableHistory);
+
+// Rollback timetable to a previous version
+router.post('/:timetableId/rollback/:historyId', authorizeRole('admin', 'teacher'), timetableController.rollbackTimetable);
 
 module.exports = router;

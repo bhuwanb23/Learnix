@@ -33,12 +33,12 @@ export default function AttendanceWidget({ attendanceData }) {
       ]}
     >
       <View style={styles.content}>
-        {/* Circular Progress */}
+        {/* Circular Progress - First */}
         <View style={styles.circularSection}>
           <CircularProgress percentage={attendanceData.percentage} />
         </View>
 
-        {/* Bar Chart */}
+        {/* Bar Chart - Below */}
         <View style={styles.chartSection}>
           <BarChart data={attendanceData.dailyData} />
         </View>
@@ -52,7 +52,16 @@ function CircularProgress({ percentage }) {
   const strokeWidth = 8;
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  const [animatedOffset, setAnimatedOffset] = React.useState(circumference);
+
+  React.useEffect(() => {
+    const targetOffset = circumference - (percentage / 100) * circumference;
+    // Animate the progress circle
+    const timeout = setTimeout(() => {
+      setAnimatedOffset(targetOffset);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [percentage, circumference]);
 
   return (
     <View style={styles.circularContainer}>
@@ -83,6 +92,7 @@ function CircularProgress({ percentage }) {
               position: 'absolute',
               top: 0,
               left: 0,
+              transform: [{ rotate: '-90deg' }],
             },
           ]}
         />
@@ -127,7 +137,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     marginHorizontal: 24,
     marginBottom: 20,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -136,13 +146,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   content: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: 24,
   },
   circularSection: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 16,
   },
   circularContainer: {
     position: 'relative',
@@ -161,21 +171,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   percentageText: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
     color: '#2c2f31',
-    fontFamily: 'Plus Jakarta Sans',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   attendanceLabel: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
     color: '#595c5e',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
   chartSection: {
-    flex: 1.5,
     justifyContent: 'flex-end',
   },
   chartContainer: {
@@ -208,6 +217,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: '#595c5e',
-    fontFamily: 'Manrope',
+    fontFamily: 'Manrope-Bold',
   },
 });

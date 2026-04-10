@@ -3,7 +3,8 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  useWindowDimensions,
+  StatusBar,
 } from 'react-native';
 
 // Import components
@@ -13,7 +14,9 @@ import StatsCardsRow from './components/StatsCardsRow';
 import AssignmentTabs from './components/AssignmentTabs';
 import AssignmentList from './components/AssignmentList';
 import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
-import FloatingAddButton from './components/FloatingAddButton';
+
+// Import theme
+import { COLORS, SPACING } from '../../../../constants/theme';
 
 // Import data
 import {
@@ -26,9 +29,12 @@ import {
 
 export default function AssignmentPage() {
   const [activeTab, setActiveTab] = useState('active');
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -38,37 +44,36 @@ export default function AssignmentPage() {
         <AssignmentHeader />
 
         {/* Progress Overview Bento Grid */}
-        <ProgressOverviewBento
-          velocity={weeklyVelocity}
-          allocation={subjectAllocation}
-        />
+        <View style={isDesktop ? styles.desktopContainer : null}>
+          <ProgressOverviewBento
+            velocity={weeklyVelocity}
+            allocation={subjectAllocation}
+          />
 
-        {/* Stats Cards Row */}
-        <StatsCardsRow stats={statsCards} />
+          {/* Stats Cards Row */}
+          <StatsCardsRow stats={statsCards} />
 
-        {/* Tabbed Navigation */}
-        <AssignmentTabs
-          tabs={['Active Tasks', 'Upcoming', 'Archived']}
-          activeTab={activeTab}
-          onTabPress={setActiveTab}
-        />
+          {/* Tabbed Navigation */}
+          <AssignmentTabs
+            tabs={['Active Tasks', 'Upcoming', 'Archived']}
+            activeTab={activeTab}
+            onTabPress={setActiveTab}
+          />
 
-        {/* Main Content Grid */}
-        <View style={styles.contentGrid}>
-          {/* Assignment Cards List */}
-          <View style={styles.assignmentsColumn}>
-            <AssignmentList assignments={assignments} />
-          </View>
+          {/* Main Content Grid */}
+          <View style={[styles.contentGrid, isDesktop && styles.contentGridDesktop]}>
+            {/* Assignment Cards List */}
+            <View style={[styles.assignmentsColumn, isDesktop && styles.assignmentsColumnDesktop]}>
+              <AssignmentList assignments={assignments} />
+            </View>
 
-          {/* Recent Completions Sidebar */}
-          <View style={styles.sidebarColumn}>
-            <RecentCompletionsSidebar completions={recentCompletions} />
+            {/* Recent Completions Sidebar */}
+            <View style={[styles.sidebarColumn, isDesktop && styles.sidebarColumnDesktop]}>
+              <RecentCompletionsSidebar completions={recentCompletions} />
+            </View>
           </View>
         </View>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <FloatingAddButton />
     </View>
   );
 }
@@ -76,24 +81,40 @@ export default function AssignmentPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f7f9',
+    backgroundColor: COLORS.gray50,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 120, // Space for FAB and bottom nav
+    paddingBottom: 100, 
+  },
+  desktopContainer: {
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
   },
   contentGrid: {
-    marginHorizontal: 24,
-    marginTop: 32,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.xl,
+    flexDirection: 'column',
+    gap: SPACING.xl,
+  },
+  contentGridDesktop: {
     flexDirection: 'row',
-    gap: 32,
+    alignItems: 'flex-start',
   },
   assignmentsColumn: {
+    flex: 1,
+  },
+  assignmentsColumnDesktop: {
     flex: 2,
   },
   sidebarColumn: {
     flex: 1,
+  },
+  sidebarColumnDesktop: {
+    flex: 1,
+    marginTop: 0,
   },
 });

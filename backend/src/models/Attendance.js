@@ -8,44 +8,24 @@ const Attendance = sequelize.define('attendance', {
     autoIncrement: true
   },
   course_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'courses',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: false
   },
   class_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'classes',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: false
   },
   subject_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'subjects',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: false
   },
   teacher_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: false
   },
   student_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: false
   },
   date: {
     type: DataTypes.DATE,
@@ -60,12 +40,8 @@ const Attendance = sequelize.define('attendance', {
     defaultValue: 'manual'
   },
   recorded_by: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'users',
-      key: 'id'
-    }
+    type: DataTypes.STRING,
+    allowNull: false
   },
   notes: {
     type: DataTypes.TEXT

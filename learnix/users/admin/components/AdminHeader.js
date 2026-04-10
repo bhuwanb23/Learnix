@@ -104,14 +104,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 1,
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Manrope-Medium',
     letterSpacing: 0.2,
   },
   adminName: {
     fontSize: 22,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
   },
   headerActions: {
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.1,
   },
   subScreenHeader: {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     fontSize: TYPOGRAPHY.fontSize.lg,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
   },
 });

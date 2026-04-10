@@ -16,6 +16,21 @@ router.route('/')
     attendanceController.createAttendance
   );
 
+// Get attendance statistics
+router.get('/stats', authorizeRole('admin', 'teacher', 'student'), attendanceController.getAttendanceStats);
+
+// Bulk attendance entry
+router.post('/bulk', authorizeRole('admin', 'teacher'), attendanceController.createBulkAttendance);
+
+// Bulk attendance status update
+router.put('/bulk', authorizeRole('admin', 'teacher'), attendanceController.updateBulkAttendanceStatus);
+
+// Get student attendance summary
+router.get('/student/:studentId/summary', authorizeRole('admin', 'teacher', 'student'), attendanceController.getStudentAttendanceSummary);
+
+// Get class attendance report
+router.get('/class/:classId/report', authorizeRole('admin', 'teacher'), attendanceController.getClassAttendanceReport);
+
 router.route('/:id')
   .get(authorizeRole('admin', 'teacher', 'student'), attendanceController.getAttendanceById)
   .put(
@@ -24,8 +39,5 @@ router.route('/:id')
     attendanceController.updateAttendance
   )
   .delete(authorizeRole('admin', 'teacher'), attendanceController.deleteAttendance);
-
-// Get attendance statistics
-router.get('/stats', authorizeRole('admin', 'teacher', 'student'), attendanceController.getAttendanceStats);
 
 module.exports = router;
