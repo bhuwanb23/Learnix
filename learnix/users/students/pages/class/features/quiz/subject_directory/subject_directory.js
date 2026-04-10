@@ -21,6 +21,9 @@ export default function SubjectDirectoryPage({ navigation }) {
 
   const handleSubjectPress = (subject) => {
     console.log('Subject pressed:', subject.title);
+    if (navigation?.navigateToUnit) {
+      navigation.navigateToUnit(subject);
+    }
   };
 
   return (

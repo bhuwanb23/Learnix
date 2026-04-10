@@ -12,7 +12,7 @@ export default function SubjectCard({ subject, onPress }) {
   return (
     <TouchableOpacity 
       style={styles.container}
-      onPress={onPress}
+      onPress={() => onPress && onPress(subject)}
       activeOpacity={0.7}
     >
       <View style={[styles.accentBg, { backgroundColor: subject.accentBg }]} />
