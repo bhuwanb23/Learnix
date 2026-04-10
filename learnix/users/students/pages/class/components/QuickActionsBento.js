@@ -24,6 +24,12 @@ export default function QuickActionsBento({ actions, navigation }) {
       } else {
         console.log('Navigation not available');
       }
+    } else if (actionId === 'quizzes' || actionId === 'quiz') {
+      if (navigation?.navigate) {
+        navigation.navigate('quizzes');
+      } else {
+        console.log('Navigation not available');
+      }
     }
     // Add more navigation routes as features are designed
   };
