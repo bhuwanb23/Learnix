@@ -12,17 +12,21 @@ export default function LectureNotesPage({ navigation }) {
   const [selectedSubject, setSelectedSubject] = useState(null);
 
   const navigateToUnits = (subject) => {
+    console.log('navigateToUnits called with:', subject);
     setSelectedSubject(subject);
     setCurrentPage('units');
+    console.log('Current page changed to: units');
   };
 
   const navigateBackToSubjects = () => {
+    console.log('navigateBackToSubjects called');
     setCurrentPage('subjects');
     setSelectedSubject(null);
   };
 
   // Render unit list page
   if (currentPage === 'units') {
+    console.log('Rendering UnitListPage with subject:', selectedSubject);
     return (
       <UnitListPage 
         navigation={{ goBack: navigateBackToSubjects }}
@@ -31,6 +35,7 @@ export default function LectureNotesPage({ navigation }) {
     );
   }
 
+  console.log('Rendering SubjectListPage');
   // Render subject list page (default)
   return (
     <View style={styles.container}>

@@ -40,9 +40,13 @@ export default function SubjectListPage({ navigation, onSubjectPress }) {
   };
 
   const handleSubjectPress = (subject) => {
+    console.log('Subject pressed:', subject);
+    
     if (onSubjectPress) {
+      console.log('Calling onSubjectPress with:', subject.title);
       onSubjectPress(subject);
     } else {
+      console.log('onSubjectPress not provided, showing alert');
       Alert.alert(
         'Open Subject',
         `Open ${subject.title} lecture notes?`,

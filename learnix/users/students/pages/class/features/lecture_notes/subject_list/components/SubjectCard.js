@@ -9,10 +9,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/lectureNotesData';
 
 export default function SubjectCard({ subject, onPress }) {
+  const handlePress = () => {
+    console.log('SubjectCard pressed:', subject?.title);
+    if (onPress) {
+      onPress(subject);
+    } else {
+      console.warn('onPress not provided to SubjectCard');
+    }
+  };
+
   return (
     <TouchableOpacity
       style={styles.container}
-      onPress={onPress}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
       <View style={styles.leftSection}>
