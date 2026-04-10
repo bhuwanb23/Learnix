@@ -12,6 +12,20 @@ import SearchFilterBar from './components/SearchFilterBar';
 import TopicCard from './components/TopicCard';
 
 export default function TopicListPage({ navigation, unit }) {
+  const [currentPage, setCurrentPage] = useState('topics'); // 'topics' or 'notes'
+  const [selectedTopic, setSelectedTopic] = useState(null);
+
+  const navigateToNotes = (topic) => {
+    console.log('Navigating to notes for:', topic.title);
+    setSelectedTopic(topic);
+    setCurrentPage('notes');
+  };
+
+  const navigateBackToTopics = () => {
+    console.log('Navigating back to topics');
+    setCurrentPage('topics');
+    setSelectedTopic(null);
+  };
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleBack = () => {
@@ -21,14 +35,12 @@ export default function TopicListPage({ navigation, unit }) {
   };
 
   const handleTopicPress = (topic) => {
-    Alert.alert(
-      'Open Topic',
-      `Open ${topic.title}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open', onPress: () => console.log('Open topic:', topic.id) },
-      ]
-    );
+    console.log('Topic pressed:', topic.title);
+    if (navigation?.navigateToNotes) {
+      navigation.navigateToNotes(topic);
+    } else {
+      navigateToNotes(topic);
+    }
   };
 
   const filteredTopics = searchQuery
@@ -37,6 +49,17 @@ export default function TopicListPage({ navigation, unit }) {
         topic.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : TOPICS;
+
+  // Render Notes Page
+  if (currentPage === 'notes') {
+    const NotesPage = require('../notes/notes').default;
+    return (
+      <NotesPage 
+        navigation={{ goBack: navigateBackToTopics }}
+        topic={selectedTopic}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -59,6 +82,7 @@ export default function TopicListPage({ navigation, unit }) {
               key={topic.id}
               topic={topic}
               onPress={() => handleTopicPress(topic)}
+              navigation={{ navigateToNotes }}
             />
           ))}
         </View>

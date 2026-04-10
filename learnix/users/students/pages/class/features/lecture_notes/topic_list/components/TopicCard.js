@@ -8,7 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { TOPIC_COLORS } from '../constants/topicListData';
 
-export default function TopicCard({ topic, onPress }) {
+export default function TopicCard({ topic, onPress, navigation }) {
   const isCompleted = topic.status === 'completed';
 
   return (
@@ -36,7 +36,18 @@ export default function TopicCard({ topic, onPress }) {
       <Text style={styles.title}>{topic.title}</Text>
       <Text style={styles.description} numberOfLines={2}>{topic.description}</Text>
 
-      <TouchableOpacity style={styles.openButton} activeOpacity={0.7}>
+      <TouchableOpacity 
+        style={styles.openButton} 
+        activeOpacity={0.7}
+        onPress={() => {
+          console.log('Open Notes pressed for:', topic.title);
+          if (navigation?.navigateToNotes) {
+            navigation.navigateToNotes(topic);
+          } else if (onPress) {
+            onPress(topic);
+          }
+        }}
+      >
         <Ionicons name="document-text-outline" size={18} color={TOPIC_COLORS.onSurface} />
         <Text style={styles.openButtonText}>Open Notes</Text>
       </TouchableOpacity>
