@@ -22,6 +22,9 @@ export default function UnitDirectoryPage({ navigation, route }) {
 
   const handleUnitPress = (unit) => {
     console.log('Unit pressed:', unit.title);
+    if (navigation?.navigateToTopic) {
+      navigation.navigateToTopic(unit);
+    }
   };
 
   const handleFullTest = () => {
@@ -68,6 +71,7 @@ export default function UnitDirectoryPage({ navigation, route }) {
               key={unit.id}
               unit={unit}
               onPress={() => handleUnitPress(unit)}
+              onButtonPress={() => handleUnitPress(unit)}
             />
           ))}
         </View>

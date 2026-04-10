@@ -8,11 +8,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { UNIT_DIRECTORY_COLORS } from '../constants/unitDirectoryData';
 
-export default function UnitCard({ unit, onPress }) {
+export default function UnitCard({ unit, onPress, onButtonPress }) {
+  const handleButtonPress = () => {
+    if (onButtonPress) {
+      onButtonPress(unit);
+    } else if (onPress) {
+      onPress(unit);
+    }
+  };
+
   return (
     <TouchableOpacity 
       style={styles.container}
-      onPress={onPress}
+      onPress={() => onPress && onPress(unit)}
       activeOpacity={0.7}
     >
       <View style={styles.content}>
@@ -44,6 +52,7 @@ export default function UnitCard({ unit, onPress }) {
 
           <TouchableOpacity 
             style={styles.startButton}
+            onPress={handleButtonPress}
             activeOpacity={0.7}
           >
             <Text style={styles.startButtonText}>Start Topic Quiz</Text>
