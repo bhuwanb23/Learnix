@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WEAK_TOPICS_COLORS } from '../constants/weakTopicsData';
@@ -12,15 +11,13 @@ import { WEAK_TOPICS_COLORS } from '../constants/weakTopicsData';
 export default function WeakTopicsHeader({ onBack }) {
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={WEAK_TOPICS_COLORS.surface} />
-      
       <View style={styles.leftSection}>
         <TouchableOpacity 
           style={styles.iconButton} 
           onPress={onBack}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color={WEAK_TOPICS_COLORS.primary} />
+          <Ionicons name="arrow-back" size={22} color={WEAK_TOPICS_COLORS.primary} />
         </TouchableOpacity>
         <Text style={styles.title}>Learning Gaps</Text>
       </View>
@@ -52,7 +49,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: WEAK_TOPICS_COLORS.onSurface,

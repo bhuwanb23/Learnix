@@ -35,7 +35,6 @@ export default function OverviewInsightsPage({ navigation }) {
               <Text style={styles.sectionTitle}>Mistake Deep Dive</Text>
               <Text style={styles.sectionSubtitle}>Key focus areas identified from your last quiz.</Text>
             </View>
-            <Text style={styles.viewAllText}>View All Gaps</Text>
           </View>
 
           {GAPS_DATA.map((gap) => (
@@ -63,45 +62,45 @@ const styles = StyleSheet.create({
     backgroundColor: WEAK_TOPICS_COLORS.surface,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 18,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: 12,
+    gap: 10,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 19,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: WEAK_TOPICS_COLORS.onSurface,
-    lineHeight: 28,
-    letterSpacing: -0.5,
-    marginBottom: 4,
+    lineHeight: 24,
+    letterSpacing: -0.4,
+    marginBottom: 3,
   },
   sectionSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     fontFamily: 'Manrope-Regular',
     color: WEAK_TOPICS_COLORS.onSurfaceVariant,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   viewAllText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: WEAK_TOPICS_COLORS.primary,
   },
   grid: {
-    gap: 20,
-    marginBottom: 24,
+    gap: 16,
+    marginBottom: 18,
   },
   mainContent: {
     flex: 1,

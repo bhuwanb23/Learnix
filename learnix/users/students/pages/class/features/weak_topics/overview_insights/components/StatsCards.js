@@ -14,22 +14,16 @@ export default function StatsCards({ stats }) {
         <Text style={styles.label}>Avg Score</Text>
         <Text style={[styles.value, { color: WEAK_TOPICS_COLORS.primary }]}>{stats.avgScore}%</Text>
         <View style={styles.trendRow}>
-          <Ionicons name="trending-up" size={14} color={WEAK_TOPICS_COLORS.secondary} />
+          <Ionicons name="trending-up" size={12} color={WEAK_TOPICS_COLORS.secondary} />
           <Text style={styles.trendText}>{stats.scoreTrend}</Text>
         </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Attempts</Text>
-        <Text style={styles.value}>{stats.attempts}</Text>
-        <Text style={styles.note}>{stats.attemptsNote}</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.label}>Top Score</Text>
         <Text style={[styles.value, { color: WEAK_TOPICS_COLORS.tertiary }]}>{stats.topScore}%</Text>
         <View style={styles.trendRow}>
-          <Ionicons name="trophy" size={14} color={WEAK_TOPICS_COLORS.onSurfaceVariant} />
+          <Ionicons name="trophy" size={12} color={WEAK_TOPICS_COLORS.onSurfaceVariant} />
           <Text style={styles.trendText}>{stats.topScoreSubject}</Text>
         </View>
       </View>
@@ -40,52 +34,52 @@ export default function StatsCards({ stats }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: 20,
   },
   card: {
     flex: 1,
     backgroundColor: WEAK_TOPICS_COLORS.surfaceContainerLowest,
-    padding: 16,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: `${WEAK_TOPICS_COLORS.outlineVariant}1A`,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 12,
+    shadowRadius: 8,
     elevation: 2,
   },
   label: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: WEAK_TOPICS_COLORS.onSurfaceVariant,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
     textTransform: 'uppercase',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   value: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -1,
-    marginBottom: 8,
+    letterSpacing: -0.8,
+    marginBottom: 6,
   },
   trendRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   trendText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: WEAK_TOPICS_COLORS.secondary,
   },
   note: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '500',
     fontFamily: 'Manrope-Regular',
     color: WEAK_TOPICS_COLORS.onSurfaceVariant,

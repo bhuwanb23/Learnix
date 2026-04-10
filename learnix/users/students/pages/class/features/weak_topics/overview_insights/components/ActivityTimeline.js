@@ -37,18 +37,18 @@ export default function ActivityTimeline({ items, studyTip }) {
 
 const styles = StyleSheet.create({
   container: {
-    gap: 20,
+    gap: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: WEAK_TOPICS_COLORS.onSurface,
     letterSpacing: -0.3,
   },
   timeline: {
-    paddingLeft: 20,
-    gap: 24,
+    padding: 16,
+    gap: 18,
   },
   timelineItem: {
     position: 'relative',
@@ -93,43 +93,44 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   itemTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: WEAK_TOPICS_COLORS.onSurface,
   },
   itemDescription: {
-    fontSize: 13,
-    fontWeight: '500',
-    fontFamily: 'Manrope-Regular',
-    color: WEAK_TOPICS_COLORS.onSurfaceVariant,
-    lineHeight: 18,
-  },
-  tipCard: {
-    backgroundColor: WEAK_TOPICS_COLORS.primary,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: WEAK_TOPICS_COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  tipIcon: {
-    marginBottom: 8,
-  },
-  tipTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'Manrope-Bold',
-    color: '#ffffff',
-    marginBottom: 6,
-  },
-  tipContent: {
     fontSize: 12,
     fontWeight: '500',
     fontFamily: 'Manrope-Regular',
+    color: WEAK_TOPICS_COLORS.onSurfaceVariant,
+    lineHeight: 16,
+  },
+  tipCard: {
+    backgroundColor: WEAK_TOPICS_COLORS.primary,
+    padding: 14,
+    borderRadius: 10,
+    shadowColor: WEAK_TOPICS_COLORS.primary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 16,
+  },
+  tipIcon: {
+    marginBottom: 6,
+  },
+  tipTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
+    color: '#ffffff',
+    marginBottom: 5,
+  },
+  tipContent: {
+    fontSize: 11,
+    fontWeight: '500',
+    fontFamily: 'Manrope-Regular',
     color: 'rgba(255,255,255,0.9)',
-    lineHeight: 18,
+    lineHeight: 16,
   },
 });
