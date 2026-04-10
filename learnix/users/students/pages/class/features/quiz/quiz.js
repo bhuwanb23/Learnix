@@ -3,12 +3,14 @@ import SubjectDirectoryPage from './subject_directory/subject_directory';
 import UnitDirectoryPage from './unit_directory/unit_directory';
 import TopicDirectoryPage from './topic_directory/topic_directory';
 import ProfessionalFormPage from './professional_form/professional_form';
+import QuizAttemptPage from './quiz_attempt/quiz_attempt';
 
 export default function QuizPage({ navigation }) {
-  const [currentView, setCurrentView] = useState('subjects'); // 'subjects', 'units', 'topics', or 'form'
+  const [currentView, setCurrentView] = useState('subjects'); // 'subjects', 'units', 'topics', 'form', or 'attempt'
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
+  const [quizConfig, setQuizConfig] = useState(null);
 
   const navigateToUnit = (subject) => {
     setSelectedSubject(subject);
@@ -23,6 +25,11 @@ export default function QuizPage({ navigation }) {
   const navigateToForm = (topic) => {
     setSelectedTopic(topic);
     setCurrentView('form');
+  };
+
+  const navigateToAttempt = (config) => {
+    setQuizConfig(config);
+    setCurrentView('attempt');
   };
 
   const navigateBackToSubjects = () => {
@@ -40,11 +47,29 @@ export default function QuizPage({ navigation }) {
     setSelectedTopic(null);
   };
 
+  const navigateBackToForm = () => {
+    setCurrentView('form');
+    setQuizConfig(null);
+  };
+
+  // Render Quiz Attempt if quiz is started
+  if (currentView === 'attempt') {
+    return (
+      <QuizAttemptPage 
+        navigation={{ goBack: navigateBackToForm }}
+        route={{ params: { config: quizConfig } }}
+      />
+    );
+  }
+
   // Render Professional Form if a topic is selected
   if (currentView === 'form') {
     return (
       <ProfessionalFormPage 
-        navigation={{ goBack: navigateBackToTopics }}
+        navigation={{ 
+          goBack: navigateBackToTopics,
+          navigateToAttempt 
+        }}
         route={{ params: { topic: selectedTopic } }}
       />
     );
