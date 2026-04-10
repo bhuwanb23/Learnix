@@ -24,7 +24,7 @@ export default function QuickActionsBento({ actions, navigation }) {
       } else {
         console.log('Navigation not available');
       }
-    } else if (actionId === 'quizzes' || actionId === 'quiz') {
+    } else if (actionId === 'practice-quizzes' || actionId === 'quizzes' || actionId === 'quiz') {
       if (navigation?.navigate) {
         navigation.navigate('quizzes');
       } else {
