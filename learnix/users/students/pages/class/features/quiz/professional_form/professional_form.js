@@ -82,30 +82,27 @@ export default function ProfessionalFormPage({ navigation, route }) {
         </View>
 
         {/* Configuration Grid */}
-        <View style={styles.configGrid}>
-          <View style={styles.leftColumn}>
-            <View style={styles.configCard}>
-              <QuestionCount
-                counts={QUESTION_COUNTS}
-                selectedCount={selectedCount}
-                onSelect={setSelectedCount}
-              />
-            </View>
-            <View style={styles.configCard}>
-              <DifficultyLevel
-                levels={DIFFICULTY_LEVELS}
-                selectedDifficulty={selectedDifficulty}
-                onSelect={setSelectedDifficulty}
-              />
-            </View>
-          </View>
-
-          <View style={styles.rightColumn}>
-            <PerformanceTweaks
-              tweaks={tweaks}
-              onToggle={handleToggle}
-            />
-          </View>
+        <View style={styles.configSection}>
+          <QuestionCount
+            counts={QUESTION_COUNTS}
+            selectedCount={selectedCount}
+            onSelect={setSelectedCount}
+          />
+          
+          <View style={styles.configSpacing} />
+          
+          <DifficultyLevel
+            levels={DIFFICULTY_LEVELS}
+            selectedDifficulty={selectedDifficulty}
+            onSelect={setSelectedDifficulty}
+          />
+          
+          <View style={styles.configSpacing} />
+          
+          <PerformanceTweaks
+            tweaks={tweaks}
+            onToggle={handleToggle}
+          />
         </View>
 
         {/* Start Button */}
@@ -195,20 +192,11 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 16,
   },
-  configGrid: {
-    flexDirection: 'row',
-    gap: 14,
+  configSection: {
     marginBottom: 20,
   },
-  leftColumn: {
-    flex: 1.2,
-    gap: 14,
-  },
-  rightColumn: {
-    flex: 0.8,
-  },
-  configCard: {
-    flex: 1,
+  configSpacing: {
+    height: 14,
   },
   startButton: {
     backgroundColor: QUIZ_SETUP_COLORS.primary,
