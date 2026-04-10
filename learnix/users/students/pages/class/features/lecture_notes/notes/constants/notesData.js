@@ -31,6 +31,7 @@ export const NOTES_DATA = {
       id: 1,
       title: '1. Fundamental Definitions',
       content: 'A binary tree is a hierarchical data structure in which each node has at most two children, referred to as the left child and the right child. Unlike arrays or linked lists, which are linear, trees represent a branching relationship common in file systems and organizational charts.',
+      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCCLTpI8W9YZ2-lPiVAfDW0j_KHQFE_mNlWofd_ACaD6N8caygLZpEk_uIW1R3hyKVajmL8b2rx-4f03NUdjobhPjiqt07zpfymOYrPHHfaz5AExi0rpx_fw-Was4zzO7UOBpoFZTgiyImQcwNspUq1DMX2LM8CAyJukcxIrbdZ_xeQqYoQXeGsyOhFjw4fT9-OQMW-MBOwIv-d8m-SrRkEwWepls5FbrLGQsPJYS29638lD05_lcRmxFAfrkmhKl91OczM3-yoJ_g',
       imageCaption: 'Fig 1.1: A Perfect Binary Tree structure showing level hierarchy.',
     },
     {

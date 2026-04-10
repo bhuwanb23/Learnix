@@ -35,15 +35,13 @@ export default function NotesPage({ navigation, topic }) {
     const renderContent = () => {
         if (activeTab === 'summary') {
             return (
-                <View style={styles.contentGrid}>
-                    {/* Main Content */}
-                    <View style={styles.mainContent}>
-                        {NOTES_DATA.sections.map((section) => (
-                            <ContentArticle key={section.id} section={section} />
-                        ))}
-                    </View>
+                <View style={styles.contentContainer}>
+                    {/* Main Content Articles */}
+                    {NOTES_DATA.sections.map((section) => (
+                        <ContentArticle key={section.id} section={section} />
+                    ))}
 
-                    {/* Side Panel */}
+                    {/* Side Panel - Below Content */}
                     <View style={styles.sidePanel}>
                         <SidePanel data={NOTES_DATA} />
                     </View>
@@ -98,17 +96,11 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         paddingBottom: 100,
     },
-    contentGrid: {
-        flexDirection: 'row',
-        gap: 20,
-    },
-    mainContent: {
-        flex: 1,
+    contentContainer: {
+        gap: 16,
     },
     sidePanel: {
-        width: width > 768 ? 320 : undefined,
-        flex: width <= 768 ? 1 : undefined,
-        marginTop: 16,
+        marginTop: 8,
     },
     tabPlaceholder: {
         alignItems: 'center',

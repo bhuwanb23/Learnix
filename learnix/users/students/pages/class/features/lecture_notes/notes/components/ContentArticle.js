@@ -13,37 +13,51 @@ export default function ContentArticle({ section }) {
     if (section.id === 1) {
       return (
         <>
+          {section.title && <Text style={styles.sectionTitle}>{section.title}</Text>}
           <Text style={styles.content}>{section.content}</Text>
-          <View style={styles.imageContainer}>
-            <View style={styles.imagePlaceholder}>
-              <Ionicons name="git-network-outline" size={64} color={NOTES_COLORS.primary} />
+          {section.imageUrl && (
+            <View style={styles.imageContainer}>
+              <Image 
+                source={{ uri: section.imageUrl }} 
+                style={styles.image}
+                resizeMode="cover"
+              />
+              <View style={styles.imageOverlay}>
+                <Text style={styles.imageCaption}>{section.imageCaption}</Text>
+              </View>
             </View>
-            <View style={styles.imageOverlay}>
-              <Text style={styles.imageCaption}>{section.imageCaption}</Text>
-            </View>
-          </View>
+          )}
         </>
       );
     }
 
     if (section.id === 2 && section.cards) {
       return (
-        <View style={styles.cardsGrid}>
-          {section.cards.map((card, index) => (
-            <View key={index} style={styles.card}>
-              <Text style={[styles.cardTitle, { color: card.color }]}>{card.type}</Text>
-              <Text style={styles.cardDescription}>{card.description}</Text>
-            </View>
-          ))}
-        </View>
+        <>
+          {section.title && <Text style={styles.sectionTitle}>{section.title}</Text>}
+          <View style={styles.cardsGrid}>
+            {section.cards.map((card, index) => (
+              <View key={index} style={styles.card}>
+                <Text style={[styles.cardTitle, { color: card.color }]}>{card.type}</Text>
+                <Text style={styles.cardDescription}>{card.description}</Text>
+              </View>
+            ))}
+          </View>
+        </>
       );
     }
 
     if (section.hasCode) {
       return (
-        <View style={styles.codeBlock}>
-          <Text style={styles.code}>{section.code}</Text>
-        </View>
+        <>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{section.title}</Text>
+            <Ionicons name="code-slash" size={24} color={NOTES_COLORS.primary} />
+          </View>
+          <View style={styles.codeBlock}>
+            <Text style={styles.code}>{section.code}</Text>
+          </View>
+        </>
       );
     }
 
@@ -52,12 +66,6 @@ export default function ContentArticle({ section }) {
 
   return (
     <View style={styles.container}>
-      {section.id === 3 && (
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>{section.title}</Text>
-          <Ionicons name="code-slash" size={24} color={NOTES_COLORS.primary} />
-        </View>
-      )}
       {renderSection()}
     </View>
   );
@@ -77,17 +85,12 @@ const styles = StyleSheet.create({
     elevation: 2,
     marginBottom: 16,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  title: {
+  sectionTitle: {
     fontSize: 20,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: NOTES_COLORS.onSurface,
+    marginBottom: 16,
   },
   content: {
     fontSize: 15,
@@ -104,11 +107,9 @@ const styles = StyleSheet.create({
     aspectRatio: 16 / 9,
     backgroundColor: NOTES_COLORS.surfaceContainerLow,
   },
-  imagePlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: NOTES_COLORS.surfaceContainerLow,
+  image: {
+    width: '100%',
+    height: '100%',
   },
   imageOverlay: {
     position: 'absolute',
@@ -155,5 +156,11 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     color: NOTES_COLORS.surfaceContainerLowest,
     lineHeight: 20,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
 });
