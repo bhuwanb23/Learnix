@@ -1,291 +1,319 @@
 <!DOCTYPE html>
 
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Learning Gaps - Minimalist Mastery</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "surface": "#f5f7f9",
-                    "primary-container": "#7b9cff",
-                    "inverse-surface": "#0b0f10",
-                    "on-error": "#ffefee",
-                    "primary": "#0050d4",
-                    "surface-variant": "#d9dde0",
-                    "secondary": "#702ae1",
-                    "secondary-fixed-dim": "#d0b8ff",
-                    "on-primary-container": "#001e5a",
-                    "on-surface-variant": "#595c5e",
-                    "on-tertiary-fixed": "#310b00",
-                    "surface-container-high": "#dfe3e6",
-                    "secondary-container": "#dcc9ff",
-                    "on-primary-fixed-variant": "#00266e",
-                    "outline-variant": "#abadaf",
-                    "surface-dim": "#d0d5d8",
-                    "surface-container-low": "#eef1f3",
-                    "background": "#f5f7f9",
-                    "tertiary-fixed-dim": "#ff7e48",
-                    "error-dim": "#9f0519",
-                    "on-background": "#2c2f31",
-                    "surface-container": "#e5e9eb",
-                    "on-primary": "#f1f2ff",
-                    "on-tertiary-fixed-variant": "#692200",
-                    "primary-fixed-dim": "#658eff",
-                    "primary-fixed": "#7b9cff",
-                    "on-secondary-fixed-variant": "#6514d6",
-                    "on-secondary-container": "#5b00c7",
-                    "surface-container-lowest": "#ffffff",
-                    "tertiary-dim": "#8e3000",
-                    "error": "#b31b25",
-                    "inverse-on-surface": "#9a9d9f",
-                    "on-secondary-fixed": "#430097",
-                    "primary-dim": "#0046bb",
-                    "on-surface": "#2c2f31",
-                    "on-secondary": "#f8f0ff",
-                    "on-primary-fixed": "#000000",
-                    "on-tertiary-container": "#5a1c00",
-                    "surface-bright": "#f5f7f9",
-                    "secondary-fixed": "#dcc9ff",
-                    "surface-tint": "#0050d4",
-                    "on-tertiary": "#ffefeb",
-                    "surface-container-highest": "#d9dde0",
-                    "tertiary": "#a23800",
-                    "inverse-primary": "#618bff",
-                    "on-error-container": "#570008",
-                    "tertiary-container": "#ff956a",
-                    "outline": "#747779",
-                    "tertiary-fixed": "#ff956a",
-                    "error-container": "#fb5151",
-                    "secondary-dim": "#6411d5"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "1.5rem",
-                    "full": "9999px"
-            },
-            "fontFamily": {
-                    "headline": ["Plus Jakarta Sans"],
-                    "body": ["Manrope"],
-                    "label": ["Manrope"]
-            }
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Learning Gaps - Minimalist Mastery</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface": "#f5f7f9",
+            "primary-container": "#7b9cff",
+            "inverse-surface": "#0b0f10",
+            "on-error": "#ffefee",
+            "primary": "#0050d4",
+            "surface-variant": "#d9dde0",
+            "secondary": "#702ae1",
+            "secondary-fixed-dim": "#d0b8ff",
+            "on-primary-container": "#001e5a",
+            "on-surface-variant": "#595c5e",
+            "on-tertiary-fixed": "#310b00",
+            "surface-container-high": "#dfe3e6",
+            "secondary-container": "#dcc9ff",
+            "on-primary-fixed-variant": "#00266e",
+            "outline-variant": "#abadaf",
+            "surface-dim": "#d0d5d8",
+            "surface-container-low": "#eef1f3",
+            "background": "#f5f7f9",
+            "tertiary-fixed-dim": "#ff7e48",
+            "error-dim": "#9f0519",
+            "on-background": "#2c2f31",
+            "surface-container": "#e5e9eb",
+            "on-primary": "#f1f2ff",
+            "on-tertiary-fixed-variant": "#692200",
+            "primary-fixed-dim": "#658eff",
+            "primary-fixed": "#7b9cff",
+            "on-secondary-fixed-variant": "#6514d6",
+            "on-secondary-container": "#5b00c7",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-dim": "#8e3000",
+            "error": "#b31b25",
+            "inverse-on-surface": "#9a9d9f",
+            "on-secondary-fixed": "#430097",
+            "primary-dim": "#0046bb",
+            "on-surface": "#2c2f31",
+            "on-secondary": "#f8f0ff",
+            "on-primary-fixed": "#000000",
+            "on-tertiary-container": "#5a1c00",
+            "surface-bright": "#f5f7f9",
+            "secondary-fixed": "#dcc9ff",
+            "surface-tint": "#0050d4",
+            "on-tertiary": "#ffefeb",
+            "surface-container-highest": "#d9dde0",
+            "tertiary": "#a23800",
+            "inverse-primary": "#618bff",
+            "on-error-container": "#570008",
+            "tertiary-container": "#ff956a",
+            "outline": "#747779",
+            "tertiary-fixed": "#ff956a",
+            "error-container": "#fb5151",
+            "secondary-dim": "#6411d5"
           },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Plus Jakarta Sans"],
+            "body": ["Manrope"],
+            "label": ["Manrope"]
+          }
         },
-      }
-    </script>
-<style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        body {
-            font-family: 'Manrope', sans-serif;
-            background-color: #f5f7f9;
-            color: #2c2f31;
-        }
-        .editorial-shadow {
-            shadow-[0_8px_24px_rgba(44,47,49,0.06)];
-        }
-    </style>
-<style>
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    body {
+      font-family: 'Manrope', sans-serif;
+      background-color: #f5f7f9;
+      color: #2c2f31;
+    }
+
+    .editorial-shadow {
+      shadow-[0_8px_24px_rgba(44, 47, 49, 0.06)];
+    }
+  </style>
+  <style>
     body {
       min-height: max(884px, 100dvh);
     }
   </style>
-  </head>
+</head>
+
 <body class="bg-surface selection:bg-primary-container selection:text-on-primary-container">
-<!-- TopAppBar -->
-<header class="fixed top-0 w-full z-50 bg-[#f5f7f9] dark:bg-slate-900 flex items-center justify-between px-6 py-4 w-full">
-<div class="flex items-center gap-4">
-<button class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#eef1f3] transition-colors active:scale-95 duration-150">
-<span class="material-symbols-outlined text-[#0050d4]" data-icon="arrow_back">arrow_back</span>
-</button>
-<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-slate-900 dark:text-slate-50 text-xl">Learning Gaps</h1>
-</div>
-<div class="flex items-center gap-6">
-<nav class="hidden md:flex items-center gap-8">
-<a class="text-[#0050d4] font-bold transition-colors" href="#">Dashboard</a>
-<a class="text-slate-500 hover:text-[#0050d4] transition-colors" href="#">Courses</a>
-<a class="text-slate-500 hover:text-[#0050d4] transition-colors" href="#">Results</a>
-</nav>
-<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
-<img alt="Profile" data-alt="portrait of a focused student with neutral background professional photography style" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsKWcr-6tkr5XeeVwdywa-dBuNKukcGOv0mnFlgN9zvZif1KOu2XzrtaEoX4pD4871M69QDpswCV8ymdSJEAvso0iXN7TK2gVBusX8s9gr1Ni9SW14HzT3jI2L5TJ3Alq4O1MV2d3K_JgeQAymPu26edxvbMhJMZ_j_7KnPl461JyDl861NOanFRbKxgkrdEynOHf87L7MjuTWwjTBVWBp7Japy8rUNyzTTt4FgKuDhcs-w-L9y1bCmRN1kk5XO7Hx8IFZPYVybgQ"/>
-</div>
-</div>
-</header>
-<main class="pt-24 pb-32 max-w-7xl mx-auto px-6 space-y-12">
-<!-- Header Stat Summary -->
-<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] border border-outline-variant/10 flex flex-col items-center text-center">
-<span class="text-on-surface-variant font-label text-xs uppercase tracking-widest mb-2">Avg Score</span>
-<span class="text-5xl font-headline font-extrabold text-primary tracking-tighter">84%</span>
-<div class="mt-4 flex items-center text-secondary text-sm font-bold">
-<span class="material-symbols-outlined text-sm mr-1" data-icon="trending_up">trending_up</span>
-                    +5.2% from last week
+  <!-- TopAppBar -->
+  <header
+    class="fixed top-0 w-full z-50 bg-[#f5f7f9] dark:bg-slate-900 flex items-center justify-between px-6 py-4 w-full">
+    <div class="flex items-center gap-4">
+      <button
+        class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-[#eef1f3] transition-colors active:scale-95 duration-150">
+        <span class="material-symbols-outlined text-[#0050d4]" data-icon="arrow_back">arrow_back</span>
+      </button>
+      <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-slate-900 dark:text-slate-50 text-xl">Learning
+        Gaps</h1>
+    </div>
+    <div class="flex items-center gap-6">
+      <nav class="hidden md:flex items-center gap-8">
+        <a class="text-[#0050d4] font-bold transition-colors" href="#">Dashboard</a>
+        <a class="text-slate-500 hover:text-[#0050d4] transition-colors" href="#">Courses</a>
+        <a class="text-slate-500 hover:text-[#0050d4] transition-colors" href="#">Results</a>
+      </nav>
+      <div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
+        <img alt="Profile"
+          data-alt="portrait of a focused student with neutral background professional photography style"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsKWcr-6tkr5XeeVwdywa-dBuNKukcGOv0mnFlgN9zvZif1KOu2XzrtaEoX4pD4871M69QDpswCV8ymdSJEAvso0iXN7TK2gVBusX8s9gr1Ni9SW14HzT3jI2L5TJ3Alq4O1MV2d3K_JgeQAymPu26edxvbMhJMZ_j_7KnPl461JyDl861NOanFRbKxgkrdEynOHf87L7MjuTWwjTBVWBp7Japy8rUNyzTTt4FgKuDhcs-w-L9y1bCmRN1kk5XO7Hx8IFZPYVybgQ" />
+      </div>
+    </div>
+  </header>
+  <main class="pt-24 pb-32 max-w-7xl mx-auto px-6 space-y-12">
+    <!-- Header Stat Summary -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div
+        class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] border border-outline-variant/10 flex flex-col items-center text-center">
+        <span class="text-on-surface-variant font-label text-xs uppercase tracking-widest mb-2">Avg Score</span>
+        <span class="text-5xl font-headline font-extrabold text-primary tracking-tighter">84%</span>
+        <div class="mt-4 flex items-center text-secondary text-sm font-bold">
+          <span class="material-symbols-outlined text-sm mr-1" data-icon="trending_up">trending_up</span>
+          +5.2% from last week
+        </div>
+      </div>
+      <div
+        class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] border border-outline-variant/10 flex flex-col items-center text-center">
+        <span class="text-on-surface-variant font-label text-xs uppercase tracking-widest mb-2">Attempts</span>
+        <span class="text-5xl font-headline font-extrabold text-on-surface tracking-tighter">12</span>
+        <span class="mt-4 text-on-surface-variant text-sm font-medium">Across 4 modules</span>
+      </div>
+      <div
+        class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] border border-outline-variant/10 flex flex-col items-center text-center">
+        <span class="text-on-surface-variant font-label text-xs uppercase tracking-widest mb-2">Top Score</span>
+        <span class="text-5xl font-headline font-extrabold text-tertiary tracking-tighter">98%</span>
+        <div class="mt-4 flex items-center text-on-surface-variant text-sm font-medium">
+          <span class="material-symbols-outlined text-sm mr-1" data-icon="military_tech">military_tech</span>
+          Advanced Calculus
+        </div>
+      </div>
+    </section>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <!-- Mistake Deep Dive -->
+      <section class="lg:col-span-8 space-y-8">
+        <div class="flex items-end justify-between">
+          <div>
+            <h2 class="font-headline text-3xl font-extrabold tracking-tight text-on-surface">Mistake Deep Dive</h2>
+            <p class="text-on-surface-variant mt-2 font-medium">Key focus areas identified from your last quiz.</p>
+          </div>
+          <button class="text-primary font-bold text-sm hover:underline">View All Gaps</button>
+        </div>
+        <div class="space-y-6">
+          <!-- Gap Card 1 -->
+          <div class="bg-surface-container-low rounded-xl overflow-hidden group">
+            <div class="p-8 space-y-4">
+              <div class="flex items-center justify-between">
+                <span
+                  class="bg-error-container text-on-error-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Critical
+                  Gap</span>
+                <span class="text-on-surface-variant text-sm font-bold">Concept #402</span>
+              </div>
+              <h3 class="font-headline text-2xl font-bold text-on-surface">Asymmetric Data Encryption</h3>
+              <p class="text-on-surface-variant leading-relaxed">
+                You consistently confuse the role of public vs private keys in the signature verification process.
+                Remember: <strong>Private keys sign, public keys verify.</strong>
+              </p>
+              <div class="pt-4 flex items-center gap-4">
+                <div class="flex-1 bg-surface-container-high h-2 rounded-full overflow-hidden">
+                  <div class="bg-error w-[40%] h-full rounded-full"></div>
                 </div>
-</div>
-<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] border border-outline-variant/10 flex flex-col items-center text-center">
-<span class="text-on-surface-variant font-label text-xs uppercase tracking-widest mb-2">Attempts</span>
-<span class="text-5xl font-headline font-extrabold text-on-surface tracking-tighter">12</span>
-<span class="mt-4 text-on-surface-variant text-sm font-medium">Across 4 modules</span>
-</div>
-<div class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] border border-outline-variant/10 flex flex-col items-center text-center">
-<span class="text-on-surface-variant font-label text-xs uppercase tracking-widest mb-2">Top Score</span>
-<span class="text-5xl font-headline font-extrabold text-tertiary tracking-tighter">98%</span>
-<div class="mt-4 flex items-center text-on-surface-variant text-sm font-medium">
-<span class="material-symbols-outlined text-sm mr-1" data-icon="military_tech">military_tech</span>
-                    Advanced Calculus
+                <span class="text-error font-bold text-sm">40% Mastery</span>
+              </div>
+            </div>
+            <div
+              class="bg-surface-container-lowest p-6 border-t border-outline-variant/10 flex items-center justify-between group-hover:bg-primary/5 transition-colors">
+              <span class="text-on-surface text-sm font-semibold">Review 12-page whitepaper snippet</span>
+              <span class="material-symbols-outlined text-primary" data-icon="arrow_forward">arrow_forward</span>
+            </div>
+          </div>
+          <!-- Gap Card 2 -->
+          <div class="bg-surface-container-low rounded-xl overflow-hidden group">
+            <div class="p-8 space-y-4">
+              <div class="flex items-center justify-between">
+                <span
+                  class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Moderate
+                  Gap</span>
+                <span class="text-on-surface-variant text-sm font-bold">Concept #119</span>
+              </div>
+              <h3 class="font-headline text-2xl font-bold text-on-surface">Big O Notation: Space Complexity</h3>
+              <p class="text-on-surface-variant leading-relaxed">
+                While time complexity is understood, you're missing the auxiliary space overhead in recursive calls.
+                Focus on stack frame allocation.
+              </p>
+              <div class="pt-4 flex items-center gap-4">
+                <div class="flex-1 bg-surface-container-high h-2 rounded-full overflow-hidden">
+                  <div class="bg-tertiary w-[65%] h-full rounded-full"></div>
                 </div>
-</div>
-</section>
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
-<!-- Mistake Deep Dive -->
-<section class="lg:col-span-8 space-y-8">
-<div class="flex items-end justify-between">
-<div>
-<h2 class="font-headline text-3xl font-extrabold tracking-tight text-on-surface">Mistake Deep Dive</h2>
-<p class="text-on-surface-variant mt-2 font-medium">Key focus areas identified from your last quiz.</p>
-</div>
-<button class="text-primary font-bold text-sm hover:underline">View All Gaps</button>
-</div>
-<div class="space-y-6">
-<!-- Gap Card 1 -->
-<div class="bg-surface-container-low rounded-xl overflow-hidden group">
-<div class="p-8 space-y-4">
-<div class="flex items-center justify-between">
-<span class="bg-error-container text-on-error-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Critical Gap</span>
-<span class="text-on-surface-variant text-sm font-bold">Concept #402</span>
-</div>
-<h3 class="font-headline text-2xl font-bold text-on-surface">Asymmetric Data Encryption</h3>
-<p class="text-on-surface-variant leading-relaxed">
-                                You consistently confuse the role of public vs private keys in the signature verification process. Remember: <strong>Private keys sign, public keys verify.</strong>
-</p>
-<div class="pt-4 flex items-center gap-4">
-<div class="flex-1 bg-surface-container-high h-2 rounded-full overflow-hidden">
-<div class="bg-error w-[40%] h-full rounded-full"></div>
-</div>
-<span class="text-error font-bold text-sm">40% Mastery</span>
-</div>
-</div>
-<div class="bg-surface-container-lowest p-6 border-t border-outline-variant/10 flex items-center justify-between group-hover:bg-primary/5 transition-colors">
-<span class="text-on-surface text-sm font-semibold">Review 12-page whitepaper snippet</span>
-<span class="material-symbols-outlined text-primary" data-icon="arrow_forward">arrow_forward</span>
-</div>
-</div>
-<!-- Gap Card 2 -->
-<div class="bg-surface-container-low rounded-xl overflow-hidden group">
-<div class="p-8 space-y-4">
-<div class="flex items-center justify-between">
-<span class="bg-tertiary-container text-on-tertiary-container px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Moderate Gap</span>
-<span class="text-on-surface-variant text-sm font-bold">Concept #119</span>
-</div>
-<h3 class="font-headline text-2xl font-bold text-on-surface">Big O Notation: Space Complexity</h3>
-<p class="text-on-surface-variant leading-relaxed">
-                                While time complexity is understood, you're missing the auxiliary space overhead in recursive calls. Focus on stack frame allocation.
-                            </p>
-<div class="pt-4 flex items-center gap-4">
-<div class="flex-1 bg-surface-container-high h-2 rounded-full overflow-hidden">
-<div class="bg-tertiary w-[65%] h-full rounded-full"></div>
-</div>
-<span class="text-tertiary font-bold text-sm">65% Mastery</span>
-</div>
-</div>
-<div class="bg-surface-container-lowest p-6 border-t border-outline-variant/10 flex items-center justify-between group-hover:bg-primary/5 transition-colors">
-<span class="text-on-surface text-sm font-semibold">Watch 5min Visual Recap</span>
-<span class="material-symbols-outlined text-primary" data-icon="play_circle">play_circle</span>
-</div>
-</div>
-</div>
-</section>
-<!-- Timeline -->
-<aside class="lg:col-span-4 space-y-8">
-<h2 class="font-headline text-2xl font-extrabold tracking-tight text-on-surface">Activity Timeline</h2>
-<div class="relative pl-8 space-y-12 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-surface-container-high">
-<!-- Timeline Item 1 -->
-<div class="relative">
-<div class="absolute -left-[29px] top-1 w-5 h-5 rounded-full bg-primary border-4 border-surface ring-4 ring-primary/10"></div>
-<div class="space-y-1">
-<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Today, 10:45 AM</span>
-<h4 class="font-bold text-on-surface">Quiz Completed</h4>
-<p class="text-sm text-on-surface-variant">Unit 4: Cybersecurity Fundamentals. Scored 82%.</p>
-</div>
-</div>
-<!-- Timeline Item 2 -->
-<div class="relative">
-<div class="absolute -left-[29px] top-1 w-5 h-5 rounded-full bg-surface-container-high border-4 border-surface ring-4 ring-surface-container-high/10"></div>
-<div class="space-y-1">
-<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Yesterday</span>
-<h4 class="font-bold text-on-surface">Gap Identified</h4>
-<p class="text-sm text-on-surface-variant">System flagged "Recursion" as a weakness area.</p>
-</div>
-</div>
-<!-- Timeline Item 3 -->
-<div class="relative">
-<div class="absolute -left-[29px] top-1 w-5 h-5 rounded-full bg-surface-container-high border-4 border-surface ring-4 ring-surface-container-high/10"></div>
-<div class="space-y-1">
-<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Oct 24, 2023</span>
-<h4 class="font-bold text-on-surface">New Milestone</h4>
-<p class="text-sm text-on-surface-variant">Completed "Intro to Algorithms" with Honors.</p>
-</div>
-</div>
-</div>
-<!-- Small Promo / Tip -->
-<div class="bg-gradient-to-br from-primary to-primary-dim p-6 rounded-xl text-on-primary">
-<span class="material-symbols-outlined mb-4" data-icon="lightbulb">lightbulb</span>
-<h5 class="font-bold mb-2">Study Tip</h5>
-<p class="text-sm opacity-90 leading-relaxed">Reviewing your mistakes within 24 hours increases retention by up to 60%. Try a quick recap now.</p>
-</div>
-</aside>
-</div>
-<!-- Primary Actions -->
-<section class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
-<div class="group cursor-pointer bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 hover:border-primary/20 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
-<div class="w-12 h-12 rounded-xl bg-primary-container/20 text-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined" data-icon="description">description</span>
-</div>
-<h3 class="font-headline text-xl font-bold text-on-surface mb-2">Review Notes</h3>
-<p class="text-on-surface-variant text-sm leading-relaxed">Personalized summaries focused exactly on your knowledge gaps.</p>
-</div>
-<div class="group cursor-pointer bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 hover:border-secondary/20 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
-<div class="w-12 h-12 rounded-xl bg-secondary-container/20 text-secondary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined" data-icon="quiz">quiz</span>
-</div>
-<h3 class="font-headline text-xl font-bold text-on-surface mb-2">Practice Quiz</h3>
-<p class="text-on-surface-variant text-sm leading-relaxed">Generate a 10-question sprint targeting your specific mistakes.</p>
-</div>
-<div class="group cursor-pointer bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 hover:border-tertiary/20 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
-<div class="w-12 h-12 rounded-xl bg-tertiary-container/20 text-tertiary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
-</div>
-<h3 class="font-headline text-xl font-bold text-on-surface mb-2">Skill Booster</h3>
-<p class="text-on-surface-variant text-sm leading-relaxed">Advanced AI-driven modules to push from 'Good' to 'Expert'.</p>
-</div>
-</section>
-</main>
-<!-- BottomNavBar -->
-<nav class="fixed bottom-6 left-0 right-0 z-50 flex justify-around items-center p-2 mx-auto bg-white/90 backdrop-blur-md w-[90%] max-w-md rounded-full shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
-<a class="flex flex-col items-center justify-center text-slate-400 py-2 px-6 hover:text-[#0050d4] transition-all active:scale-90 duration-200 ease-out" href="#">
-<span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
-<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider">Dashboard</span>
-</a>
-<a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full py-2 px-6 active:scale-90 duration-200 ease-out" href="#">
-<span class="material-symbols-outlined mb-1" data-icon="school">school</span>
-<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider">Courses</span>
-</a>
-<a class="flex flex-col items-center justify-center text-slate-400 py-2 px-6 hover:text-[#0050d4] transition-all active:scale-90 duration-200 ease-out" href="#">
-<span class="material-symbols-outlined mb-1" data-icon="analytics">analytics</span>
-<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider">Results</span>
-</a>
-<a class="flex flex-col items-center justify-center text-slate-400 py-2 px-6 hover:text-[#0050d4] transition-all active:scale-90 duration-200 ease-out" href="#">
-<span class="material-symbols-outlined mb-1" data-icon="person">person</span>
-<span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider">Profile</span>
-</a>
-</nav>
-</body></html>
+                <span class="text-tertiary font-bold text-sm">65% Mastery</span>
+              </div>
+            </div>
+            <div
+              class="bg-surface-container-lowest p-6 border-t border-outline-variant/10 flex items-center justify-between group-hover:bg-primary/5 transition-colors">
+              <span class="text-on-surface text-sm font-semibold">Watch 5min Visual Recap</span>
+              <span class="material-symbols-outlined text-primary" data-icon="play_circle">play_circle</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Timeline -->
+      <aside class="lg:col-span-4 space-y-8">
+        <h2 class="font-headline text-2xl font-extrabold tracking-tight text-on-surface">Activity Timeline</h2>
+        <div
+          class="relative pl-8 space-y-12 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-surface-container-high">
+          <!-- Timeline Item 1 -->
+          <div class="relative">
+            <div
+              class="absolute -left-[29px] top-1 w-5 h-5 rounded-full bg-primary border-4 border-surface ring-4 ring-primary/10">
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Today, 10:45
+                AM</span>
+              <h4 class="font-bold text-on-surface">Quiz Completed</h4>
+              <p class="text-sm text-on-surface-variant">Unit 4: Cybersecurity Fundamentals. Scored 82%.</p>
+            </div>
+          </div>
+          <!-- Timeline Item 2 -->
+          <div class="relative">
+            <div
+              class="absolute -left-[29px] top-1 w-5 h-5 rounded-full bg-surface-container-high border-4 border-surface ring-4 ring-surface-container-high/10">
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Yesterday</span>
+              <h4 class="font-bold text-on-surface">Gap Identified</h4>
+              <p class="text-sm text-on-surface-variant">System flagged "Recursion" as a weakness area.</p>
+            </div>
+          </div>
+          <!-- Timeline Item 3 -->
+          <div class="relative">
+            <div
+              class="absolute -left-[29px] top-1 w-5 h-5 rounded-full bg-surface-container-high border-4 border-surface ring-4 ring-surface-container-high/10">
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Oct 24, 2023</span>
+              <h4 class="font-bold text-on-surface">New Milestone</h4>
+              <p class="text-sm text-on-surface-variant">Completed "Intro to Algorithms" with Honors.</p>
+            </div>
+          </div>
+        </div>
+        <!-- Small Promo / Tip -->
+        <div class="bg-gradient-to-br from-primary to-primary-dim p-6 rounded-xl text-on-primary">
+          <span class="material-symbols-outlined mb-4" data-icon="lightbulb">lightbulb</span>
+          <h5 class="font-bold mb-2">Study Tip</h5>
+          <p class="text-sm opacity-90 leading-relaxed">Reviewing your mistakes within 24 hours increases retention by
+            up to 60%. Try a quick recap now.</p>
+        </div>
+      </aside>
+    </div>
+    <!-- Primary Actions -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
+      <div
+        class="group cursor-pointer bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 hover:border-primary/20 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
+        <div
+          class="w-12 h-12 rounded-xl bg-primary-container/20 text-primary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined" data-icon="description">description</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-on-surface mb-2">Review Notes</h3>
+        <p class="text-on-surface-variant text-sm leading-relaxed">Personalized summaries focused exactly on your
+          knowledge gaps.</p>
+      </div>
+      <div
+        class="group cursor-pointer bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 hover:border-secondary/20 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
+        <div
+          class="w-12 h-12 rounded-xl bg-secondary-container/20 text-secondary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined" data-icon="quiz">quiz</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-on-surface mb-2">Practice Quiz</h3>
+        <p class="text-on-surface-variant text-sm leading-relaxed">Generate a 10-question sprint targeting your specific
+          mistakes.</p>
+      </div>
+      <div
+        class="group cursor-pointer bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/10 hover:border-tertiary/20 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1">
+        <div
+          class="w-12 h-12 rounded-xl bg-tertiary-container/20 text-tertiary flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+        </div>
+        <h3 class="font-headline text-xl font-bold text-on-surface mb-2">Skill Booster</h3>
+        <p class="text-on-surface-variant text-sm leading-relaxed">Advanced AI-driven modules to push from 'Good' to
+          'Expert'.</p>
+      </div>
+    </section>
+  </main>
+</body>
+
+</html>

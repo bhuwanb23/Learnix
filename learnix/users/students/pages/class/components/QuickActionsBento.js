@@ -18,6 +18,12 @@ export default function QuickActionsBento({ actions, navigation }) {
       } else {
         console.log('Navigation not available');
       }
+    } else if (actionId === 'weak-topics' || actionId === 'weak_topics') {
+      if (navigation?.navigate) {
+        navigation.navigate('weak_topics');
+      } else {
+        console.log('Navigation not available');
+      }
     }
     // Add more navigation routes as features are designed
   };
