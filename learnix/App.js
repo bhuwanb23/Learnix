@@ -40,7 +40,7 @@ export default function App() {
   if (!fontsLoaded) {
     return (
       <SafeAreaProvider>
-        <StatusBar style="light" backgroundColor="transparent" translucent />
+        <StatusBar style="light" backgroundColor="#0050d4" translucent />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' }}>
           <Text>Loading...</Text>
         </View>

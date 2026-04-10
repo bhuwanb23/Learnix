@@ -11,7 +11,7 @@ import FilterChips from './components/FilterChips';
 import ContinueStudyingCard from './components/ContinueStudyingCard';
 import SubjectDirectory from './components/SubjectDirectory';
 
-export default function SubjectListPage({ navigation }) {
+export default function SubjectListPage({ navigation, onSubjectPress }) {
   const [activeFilter, setActiveFilter] = useState('all');
 
   const handleBack = () => {
@@ -40,14 +40,18 @@ export default function SubjectListPage({ navigation }) {
   };
 
   const handleSubjectPress = (subject) => {
-    Alert.alert(
-      'Open Subject',
-      `Open ${subject.title} lecture notes?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open', onPress: () => console.log('Open subject:', subject.id) },
-      ]
-    );
+    if (onSubjectPress) {
+      onSubjectPress(subject);
+    } else {
+      Alert.alert(
+        'Open Subject',
+        `Open ${subject.title} lecture notes?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open', onPress: () => console.log('Open subject:', subject.id) },
+        ]
+      );
+    }
   };
 
   const handleFilterChange = (filterId) => {
