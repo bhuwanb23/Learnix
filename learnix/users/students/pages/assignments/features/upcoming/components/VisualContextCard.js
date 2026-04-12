@@ -24,7 +24,7 @@ export default function VisualContextCard({ imageUrl, imageAlt }) {
 
 const styles = StyleSheet.create({
   container: {
-    height: 192,
+    height: 160,
     width: '100%',
     borderRadius: 12,
     overflow: 'hidden',
@@ -40,14 +40,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    padding: 16,
+    padding: 12,
   },
   label: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
     color: '#ffffff',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
 });

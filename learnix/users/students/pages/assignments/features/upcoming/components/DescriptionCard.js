@@ -19,20 +19,21 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: UPCOMING_ASSIGNMENT_COLORS.surfaceContainerLow,
     borderRadius: 12,
-    padding: 24,
+    padding: 18,
+    margin: 16,
   },
   title: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
     color: UPCOMING_ASSIGNMENT_COLORS.onSurface,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   description: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '400',
     fontFamily: 'Manrope-Regular',
     color: UPCOMING_ASSIGNMENT_COLORS.onSurfaceVariant,
-    lineHeight: 24,
+    lineHeight: 20,
   },
 });
