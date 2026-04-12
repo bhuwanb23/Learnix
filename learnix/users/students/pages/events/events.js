@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
 
 // Import components
@@ -25,6 +26,7 @@ import Sidebar from './components/Sidebar';
 import { EVENT_CATEGORIES, DISCOVERY_EVENTS, MY_REGISTRATIONS, EVENT_STATS, TRENDING_TAGS } from './constants/eventData';
 
 export default function EventsPage() {
+  const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
@@ -58,6 +60,10 @@ export default function EventsPage() {
     setTimeout(() => {
       setIsRefreshing(false);
     }, 1500);
+  };
+
+  const handleEventPress = (event) => {
+    navigation.navigate('EventDetails', { event });
   };
 
   // Header Animation (Fade in on scroll)
@@ -102,7 +108,7 @@ export default function EventsPage() {
     <Animated.View style={[styles.desktopGrid, { opacity: fadeAnim }]}>
       <View style={styles.desktopLeft}>
         <View style={styles.eventsGrid}>
-          {DISCOVERY_EVENTS.map((event, index) => <EventCard key={event.id} item={event} index={index} />)}
+          {DISCOVERY_EVENTS.map((event, index) => <EventCard key={event.id} item={event} index={index} onPress={handleEventPress} />)}
         </View>
       </View>
       <View style={styles.desktopRight}>
@@ -129,7 +135,7 @@ export default function EventsPage() {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }]
             }]}>
-              <EventCard item={item} index={index} />
+              <EventCard item={item} index={index} onPress={handleEventPress} />
             </Animated.View>
           )
         }

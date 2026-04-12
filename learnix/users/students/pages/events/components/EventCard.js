@@ -2,11 +2,9 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Animated, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
-export default function EventCard({ item, index = 0 }) {
-  const navigation = useNavigation();
+export default function EventCard({ item, index = 0, onPress }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
@@ -48,8 +46,8 @@ export default function EventCard({ item, index = 0 }) {
   };
 
   const handlePress = () => {
-    if (navigation) {
-      navigation.navigate('EventDetails', { event: item });
+    if (onPress) {
+      onPress(item);
     }
   };
 
