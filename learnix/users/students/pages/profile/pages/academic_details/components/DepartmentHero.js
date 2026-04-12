@@ -12,7 +12,7 @@ export default function DepartmentHero({ data }) {
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
-                {/* Decorative circle */}
+                {/* Decorative circle - moved behind content */}
                 <View style={styles.decorativeCircle} />
 
                 <View style={styles.content}>
@@ -50,26 +50,24 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
     },
     gradient: {
-        padding: 20,
-        minHeight: 140,
+        padding: 16,
     },
     decorativeCircle: {
         position: 'absolute',
-        top: -30,
-        right: -30,
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        top: -20,
+        right: -20,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: 'rgba(255, 255, 255, 0.06)',
+        zIndex: 0,
     },
     content: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-end',
+        flexDirection: 'column',
         gap: 12,
     },
     textSection: {
-        flex: 1,
+        zIndex: 1,
     },
     badge: {
         alignSelf: 'flex-start',
@@ -87,14 +85,14 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
     },
     title: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '800',
         color: ACADEMIC_COLORS.onPrimary,
-        lineHeight: 26,
+        lineHeight: 24,
         marginBottom: 4,
     },
     subtitle: {
-        fontSize: 12,
+        fontSize: 11,
         color: 'rgba(241, 242, 255, 0.85)',
     },
     statusCard: {
@@ -104,17 +102,17 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: 'rgba(255, 255, 255, 0.2)',
-        minWidth: 90,
+        alignSelf: 'flex-start',
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
     },
     statusLabel: {
-        fontSize: 7,
+        fontSize: 8,
         fontWeight: '700',
         color: 'rgba(241, 242, 255, 0.8)',
-        letterSpacing: 1,
+        letterSpacing: 0.8,
         textTransform: 'uppercase',
-        marginBottom: 4,
-        textAlign: 'center',
     },
     semesterRow: {
         flexDirection: 'row',
@@ -122,13 +120,13 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     statusDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        width: 7,
+        height: 7,
+        borderRadius: 3.5,
         backgroundColor: '#4caf50',
     },
     semesterText: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '700',
         color: ACADEMIC_COLORS.onPrimary,
     },

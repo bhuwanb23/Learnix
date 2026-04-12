@@ -4,9 +4,6 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ACADEMIC_COLORS } from '../constants/academicData';
 
 export default function StatsOverview({ data }) {
-    const attendanceCircumference = 2 * Math.PI * 34;
-    const attendanceOffset = attendanceCircumference * (1 - data.attendance / 100);
-
     return (
         <View style={styles.container}>
             {/* GPA Card */}
@@ -17,7 +14,7 @@ export default function StatsOverview({ data }) {
                     <Text style={styles.gpaScale}>/ {data.gpaScale}</Text>
                 </View>
                 <View style={styles.trendRow}>
-                    <MaterialIcons name="trending-up" size={16} color={ACADEMIC_COLORS.success} />
+                    <MaterialIcons name="trending-up" size={14} color={ACADEMIC_COLORS.success} />
                     <Text style={styles.trendText}>{data.gpaTrend}</Text>
                 </View>
             </View>
@@ -52,9 +49,9 @@ export default function StatsOverview({ data }) {
                             style={[
                                 styles.circleProgress,
                                 {
-                                    width: 68,
-                                    height: 68,
-                                    borderRadius: 34,
+                                    width: 50,
+                                    height: 50,
+                                    borderRadius: 25,
                                     borderWidth: 4,
                                     borderColor: ACADEMIC_COLORS.secondary,
                                     borderStyle: 'solid',
@@ -64,7 +61,9 @@ export default function StatsOverview({ data }) {
                     </View>
                     <Text style={styles.attendanceText}>{data.attendance}%</Text>
                 </View>
-                <Text style={styles.label}>Attendance</Text>
+                <View style={styles.attendanceLabel}>
+                    <Text style={styles.label}>Attendance</Text>
+                </View>
             </View>
         </View>
     );
@@ -72,20 +71,16 @@ export default function StatsOverview({ data }) {
 
 const styles = StyleSheet.create({
     container: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
         paddingHorizontal: 16,
-        marginBottom: 20,
+        marginBottom: 16,
+        gap: 10,
     },
     gpaCard: {
-        flex: 1,
-        minWidth: 140,
         backgroundColor: ACADEMIC_COLORS.surfaceContainerLowest,
-        padding: 16,
+        padding: 14,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: `${ACADEMIC_COLORS.outlineVariant}10`,
+        borderColor: `${ACADEMIC_COLORS.outlineVariant}15`,
     },
     label: {
         fontSize: 10,
@@ -93,21 +88,21 @@ const styles = StyleSheet.create({
         color: ACADEMIC_COLORS.onSurfaceVariant,
         textTransform: 'uppercase',
         letterSpacing: 0.5,
-        marginBottom: 8,
+        marginBottom: 6,
     },
     gpaRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
         gap: 4,
-        marginBottom: 8,
+        marginBottom: 6,
     },
     gpaValue: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: '800',
         color: ACADEMIC_COLORS.primary,
     },
     gpaScale: {
-        fontSize: 14,
+        fontSize: 13,
         color: ACADEMIC_COLORS.onSurfaceVariant,
     },
     trendRow: {
@@ -121,63 +116,59 @@ const styles = StyleSheet.create({
         color: ACADEMIC_COLORS.success,
     },
     creditsCard: {
-        flex: 1.5,
-        minWidth: 200,
         backgroundColor: ACADEMIC_COLORS.surfaceContainerLowest,
-        padding: 16,
+        padding: 14,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: `${ACADEMIC_COLORS.outlineVariant}10`,
+        borderColor: `${ACADEMIC_COLORS.outlineVariant}15`,
     },
     creditsHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        marginBottom: 12,
+        marginBottom: 10,
     },
     creditsValue: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '700',
         color: ACADEMIC_COLORS.onSurface,
     },
     creditsPercentage: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '700',
         color: ACADEMIC_COLORS.primary,
     },
     progressBarBg: {
-        height: 10,
+        height: 8,
         backgroundColor: ACADEMIC_COLORS.surfaceContainerHigh,
-        borderRadius: 5,
+        borderRadius: 4,
         overflow: 'hidden',
     },
     progressBar: {
         height: '100%',
         backgroundColor: ACADEMIC_COLORS.primary,
-        borderRadius: 5,
+        borderRadius: 4,
     },
     creditsNote: {
-        fontSize: 11,
+        fontSize: 10,
         color: ACADEMIC_COLORS.onSurfaceVariant,
-        marginTop: 8,
+        marginTop: 6,
     },
     attendanceCard: {
-        flex: 1,
-        minWidth: 120,
         backgroundColor: ACADEMIC_COLORS.surfaceContainerLowest,
-        padding: 16,
+        padding: 14,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: `${ACADEMIC_COLORS.outlineVariant}10`,
+        borderColor: `${ACADEMIC_COLORS.outlineVariant}15`,
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: 12,
     },
     circleContainer: {
-        width: 68,
-        height: 68,
+        width: 50,
+        height: 50,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 8,
         position: 'relative',
     },
     circleBg: {
@@ -186,12 +177,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     circleProgress: {
-        borderRadius: 34,
+        borderRadius: 25,
     },
     attendanceText: {
         position: 'absolute',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '700',
         color: ACADEMIC_COLORS.onSurface,
+    },
+    attendanceLabel: {
+        flex: 1,
     },
 });

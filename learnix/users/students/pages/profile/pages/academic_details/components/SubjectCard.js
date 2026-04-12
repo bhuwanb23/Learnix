@@ -12,13 +12,13 @@ export default function SubjectCard({ subject, onPress }) {
         >
             {/* Icon */}
             <View style={[styles.iconContainer, { backgroundColor: `${subject.iconColor}15` }]}>
-                <MaterialIcons name={subject.icon} size={28} color={subject.iconColor} />
+                <MaterialIcons name={subject.icon} size={24} color={subject.iconColor} />
             </View>
 
             {/* Subject Info */}
             <View style={styles.info}>
-                <Text style={styles.name}>{subject.name}</Text>
-                <Text style={styles.details}>Course Code: {subject.code} • {subject.professor}</Text>
+                <Text style={styles.name} numberOfLines={2}>{subject.name}</Text>
+                <Text style={styles.details} numberOfLines={1}>Course Code: {subject.code} • {subject.professor}</Text>
             </View>
 
             {/* Credits & Grade */}
@@ -52,7 +52,7 @@ export default function SubjectCard({ subject, onPress }) {
                     </View>
                 </View>
 
-                <MaterialIcons name="chevron-right" size={24} color={ACADEMIC_COLORS.onSurfaceVariant} />
+                <MaterialIcons name="chevron-right" size={20} color={ACADEMIC_COLORS.onSurfaceVariant} />
             </View>
         </TouchableOpacity>
     );
