@@ -23,12 +23,11 @@ export default function HeaderSection({ assignment, onBack }) {
 const styles = StyleSheet.create({
   header: {
     backgroundColor: SUBMISSION_COLORS.surface,
-    paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   headerContent: {
     flexDirection: 'row',

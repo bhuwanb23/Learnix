@@ -67,12 +67,12 @@ export default function TextEditor({ editor, onSaveDraft, onSubmit }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: SUBMISSION_COLORS.surfaceContainerLowest,
     borderRadius: 12,
     marginHorizontal: 16,
     marginBottom: 16,
     overflow: 'hidden',
+    minHeight: 400,
   },
   toolbar: {
     flexDirection: 'row',

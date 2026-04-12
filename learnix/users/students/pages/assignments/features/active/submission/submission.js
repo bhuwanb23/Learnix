@@ -39,15 +39,9 @@ export default function SubmissionScreen({ route, navigation, onNavigate }) {
             <HeaderSection assignment={submissionData} onBack={handleBack} />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <SummaryDashboard submission={submissionData} />
-                <View style={styles.mainContent}>
-                    <View style={styles.leftColumn}>
-                        <InstructionsCard instructions={submissionData.instructions} />
-                        <AttachmentsGallery attachments={submissionData.attachments} onAddFile={handleAddFile} />
-                    </View>
-                    <View style={styles.rightColumn}>
-                        <TextEditor editor={submissionData.editor} onSaveDraft={handleSaveDraft} onSubmit={handleSubmit} />
-                    </View>
-                </View>
+                <InstructionsCard instructions={submissionData.instructions} />
+                <AttachmentsGallery attachments={submissionData.attachments} onAddFile={handleAddFile} />
+                <TextEditor editor={submissionData.editor} onSaveDraft={handleSaveDraft} onSubmit={handleSubmit} />
             </ScrollView>
         </View>
     );
@@ -63,16 +57,5 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingBottom: 100,
-    },
-    mainContent: {
-        flexDirection: 'row',
-        paddingHorizontal: 16,
-        gap: 16,
-    },
-    leftColumn: {
-        flex: 1,
-    },
-    rightColumn: {
-        flex: 2,
     },
 });
