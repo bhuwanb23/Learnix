@@ -1,0 +1,60 @@
+// Upcoming Assignment Detail Page Data
+
+export const UPCOMING_ASSIGNMENT_COLORS = {
+  primary: '#0050d4',
+  primaryDim: '#0046bb',
+  primaryContainer: '#7b9cff',
+  secondary: '#702ae1',
+  tertiary: '#a23800',
+  error: '#b31b25',
+  errorContainer: '#fb5151',
+  surface: '#f5f7f9',
+  surfaceContainerLowest: '#ffffff',
+  surfaceContainerLow: '#eef1f3',
+  surfaceContainerHigh: '#dfe3e6',
+  surfaceContainerHighest: '#d9dde0',
+  onSurface: '#2c2f31',
+  onSurfaceVariant: '#595c5e',
+  onPrimary: '#f1f2ff',
+  onPrimaryFixedVariant: '#00266e',
+  onSecondaryFixedVariant: '#6514d6',
+  onTertiary: '#ffefeb',
+  onTertiaryFixedVariant: '#692200',
+  outlineVariant: '#abadaf',
+  outline: '#747779',
+  background: '#f5f7f9',
+  onBackground: '#2c2f31',
+};
+
+export const UPCOMING_ASSIGNMENT_DATA = {
+  id: 5,
+  title: 'Multivariable Integration Project',
+  subject: 'Calculus III',
+  instructor: 'Dr. Aris',
+  dueDate: 'Oct 24',
+  timeLeft: '4h left',
+  progress: 0,
+  status: 'Pending',
+  description: 'This project involves a deep dive into triple integrals over general regions. You must demonstrate a clear understanding of coordinate transformations (Polar, Cylindrical, Spherical) and their applications in calculating volumes and centroids of complex solids.',
+  instructions: [
+    'Follow the standard mathematical notation guide.',
+    'Show all step-by-step calculations.',
+    'Include visual sketches for 3D regions.',
+  ],
+  attachedFiles: [
+    {
+      id: 1,
+      name: 'Calculus_III_Project_Guide.pdf',
+      type: 'pdf',
+      size: '2.4 MB',
+    },
+    {
+      id: 2,
+      name: 'Coordinate_Transform_Reference.pdf',
+      type: 'pdf',
+      size: '1.8 MB',
+    },
+  ],
+  imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAUWDs_fTv6NIxnUWWt9zN-KnSxeP4IwZSIq89nFQjTChRWNrYEwyUKQCfopZ_O1T1galtV4D_vEamGfGZKAzyTdDwlT_moEs025uLZurJSbtI8yoBnbVuWH0kMW18P6UTABs1_GRS3WMMJa_6_eH9sKVtd1vxCoSESuajUaAj5LJObD2nGbWONDQ_3gdFryy8Q377Y9o_78VGuRh4yS5dbjKNWLX7S0c8EjM8P4AJ3KJYTOWckDrfZVcIN6T3-inWGYJeNC0KA_1I',
+  imageAlt: 'Intricate chalk drawings of 3D multivariable calculus functions and triple integrals on a dark green chalkboard, cinematic lighting',
+};

@@ -14,6 +14,7 @@ import StatsCardsRow from './components/StatsCardsRow';
 import AssignmentTabs from './components/AssignmentTabs';
 import AssignmentList from './components/AssignmentList';
 import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
+import UpcomingAssignmentPage from './features/upcoming/upcoming_assignment';
 
 // Import theme
 import { COLORS, SPACING } from '../../../../constants/theme';
@@ -31,6 +32,8 @@ import {
 
 export default function AssignmentPage() {
   const [activeTab, setActiveTab] = useState('active');
+  const [currentView, setCurrentView] = useState('list'); // 'list' or 'upcoming-detail'
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
 
@@ -50,48 +53,76 @@ export default function AssignmentPage() {
 
   const currentAssignments = getAssignmentsForTab();
 
+  // Handle assignment card press
+  const handleAssignmentPress = (assignment) => {
+    if (activeTab.toLowerCase() === 'upcoming') {
+      setSelectedAssignment(assignment);
+      setCurrentView('upcoming-detail');
+    }
+    // Add handlers for other tabs later
+  };
+
+  // Navigate back to list
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedAssignment(null);
+  };
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header */}
-        <AssignmentHeader />
+      {/* Show Upcoming Assignment Detail Page */}
+      {currentView === 'upcoming-detail' ? (
+        <UpcomingAssignmentPage
+          navigation={{ goBack: handleBackToList }}
+          route={{ params: { assignment: selectedAssignment } }}
+        />
+      ) : (
+        <>
+          <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {/* Header */}
+            <AssignmentHeader />
 
-        {/* Progress Overview Bento Grid */}
-        <View style={isDesktop ? styles.desktopContainer : null}>
-          <ProgressOverviewBento
-            velocity={weeklyVelocity}
-            allocation={subjectAllocation}
-          />
+            {/* Progress Overview Bento Grid */}
+            <View style={isDesktop ? styles.desktopContainer : null}>
+              <ProgressOverviewBento
+                velocity={weeklyVelocity}
+                allocation={subjectAllocation}
+              />
 
-          {/* Stats Cards Row */}
-          <StatsCardsRow stats={statsCards} />
+              {/* Stats Cards Row */}
+              <StatsCardsRow stats={statsCards} />
 
-          {/* Tabbed Navigation */}
-          <AssignmentTabs
-            tabs={['Active', 'Upcoming', 'Completed']}
-            activeTab={activeTab}
-            onTabPress={setActiveTab}
-          />
+              {/* Tabbed Navigation */}
+              <AssignmentTabs
+                tabs={['Active', 'Upcoming', 'Completed']}
+                activeTab={activeTab}
+                onTabPress={setActiveTab}
+              />
 
-          {/* Main Content Grid */}
-          <View style={[styles.contentGrid, isDesktop && styles.contentGridDesktop]}>
-            {/* Assignment Cards List */}
-            <View style={[styles.assignmentsColumn, isDesktop && styles.assignmentsColumnDesktop]}>
-              <AssignmentList assignments={currentAssignments} />
+              {/* Main Content Grid */}
+              <View style={[styles.contentGrid, isDesktop && styles.contentGridDesktop]}>
+                {/* Assignment Cards List */}
+                <View style={[styles.assignmentsColumn, isDesktop && styles.assignmentsColumnDesktop]}>
+                  <AssignmentList 
+                    assignments={currentAssignments}
+                    onAssignmentPress={handleAssignmentPress}
+                  />
+                </View>
+
+                {/* Recent Completions Sidebar */}
+                <View style={[styles.sidebarColumn, isDesktop && styles.sidebarColumnDesktop]}>
+                  <RecentCompletionsSidebar completions={recentCompletions} />
+                </View>
+              </View>
             </View>
-
-            {/* Recent Completions Sidebar */}
-            <View style={[styles.sidebarColumn, isDesktop && styles.sidebarColumnDesktop]}>
-              <RecentCompletionsSidebar completions={recentCompletions} />
-            </View>
-          </View>
-        </View>
-      </ScrollView>
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 }

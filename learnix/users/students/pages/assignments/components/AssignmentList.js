@@ -9,12 +9,18 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
-export default function AssignmentList({ assignments }) {
+export default function AssignmentList({ assignments, onAssignmentPress }) {
   const hexToRgba = (hex, opacity) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? 
       `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity})` 
       : null;
+  };
+
+  const handlePress = (assignment) => {
+    if (onAssignmentPress) {
+      onAssignmentPress(assignment);
+    }
   };
 
   return (
@@ -23,6 +29,7 @@ export default function AssignmentList({ assignments }) {
         <TouchableOpacity
           key={assignment.id}
           style={styles.card}
+          onPress={() => handlePress(assignment)}
           activeOpacity={0.7}
         >
           <View style={styles.header}>
