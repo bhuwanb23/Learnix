@@ -10,17 +10,22 @@ import { QUIZ_RESULTS_COLORS } from '../constants/quizResultsData';
 export default function PerformanceInsight({ insight }) {
   return (
     <View style={styles.container}>
-      <View style={styles.iconContainer}>
-        <Ionicons name="analytics" size={32} color={QUIZ_RESULTS_COLORS.secondary} />
-      </View>
-      
-      <View style={styles.content}>
-        <Text style={styles.title}>{insight.title}</Text>
-        <Text style={styles.description}>{insight.description}</Text>
+      <View style={styles.header}>
+        <View style={styles.iconContainer}>
+          <Ionicons name="analytics" size={28} color={QUIZ_RESULTS_COLORS.secondary} />
+        </View>
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>{insight.title}</Text>
+        </View>
       </View>
 
-      <View style={styles.xpBadge}>
-        <Text style={styles.xpText}>Level Up: +{insight.xpEarned} XP</Text>
+      <Text style={styles.description}>{insight.description}</Text>
+
+      <View style={styles.footer}>
+        <View style={styles.xpBadge}>
+          <Ionicons name="star" size={16} color={QUIZ_RESULTS_COLORS.secondary} />
+          <Text style={styles.xpText}>Level Up: +{insight.xpEarned} XP</Text>
+        </View>
       </View>
     </View>
   );
@@ -29,50 +34,65 @@ export default function PerformanceInsight({ insight }) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: QUIZ_RESULTS_COLORS.surfaceContainerLowest,
-    borderRadius: 14,
-    padding: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 20,
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 1,
     borderColor: `${QUIZ_RESULTS_COLORS.outlineVariant}26`,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 14,
   },
   iconContainer: {
-    width: 80,
-    height: 80,
+    width: 56,
+    height: 56,
     backgroundColor: QUIZ_RESULTS_COLORS.secondaryContainer,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  content: {
+  headerContent: {
     flex: 1,
-    gap: 6,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_RESULTS_COLORS.onSurface,
     letterSpacing: -0.2,
+    lineHeight: 22,
   },
   description: {
     fontSize: 13,
     fontWeight: '500',
     fontFamily: 'Manrope-Medium',
     color: QUIZ_RESULTS_COLORS.onSurfaceVariant,
-    lineHeight: 18,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   xpBadge: {
-    backgroundColor: `${QUIZ_RESULTS_COLORS.secondary}1A`,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    flexShrink: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: `${QUIZ_RESULTS_COLORS.secondary}14`,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
   xpText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: QUIZ_RESULTS_COLORS.secondary,
