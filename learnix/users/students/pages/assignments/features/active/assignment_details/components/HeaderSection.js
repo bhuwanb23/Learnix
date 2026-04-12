@@ -7,7 +7,7 @@ import { ACTIVE_ASSIGNMENT_COLORS } from '../constants/activeAssignmentData';
 export default function HeaderSection({ assignment, onBack }) {
   return (
     <View style={styles.header}>
-      <StatusBar style="dark" />
+      {/* <StatusBar style="dark" /> */}
       <View style={styles.headerContent}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
           <MaterialIcons name="arrow-back" size={24} color={ACTIVE_ASSIGNMENT_COLORS.primary} />

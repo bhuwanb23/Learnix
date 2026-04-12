@@ -1,0 +1,61 @@
+export const SUBMISSION_COLORS = {
+  primary: '#0050d4',
+  primaryDim: '#0046bb',
+  primaryContainer: '#7b9cff',
+  secondary: '#702ae1',
+  secondaryDim: '#6411d5',
+  secondaryContainer: '#dcc9ff',
+  tertiary: '#a23800',
+  tertiaryDim: '#8e3000',
+  tertiaryContainer: '#ff956a',
+  error: '#b31b25',
+  errorContainer: '#fb5151',
+  surface: '#f5f7f9',
+  surfaceContainerLowest: '#ffffff',
+  surfaceContainerLow: '#eef1f3',
+  surfaceContainer: '#e5e9eb',
+  surfaceContainerHigh: '#dfe3e6',
+  surfaceContainerHighest: '#d9dde0',
+  onSurface: '#2c2f31',
+  onSurfaceVariant: '#595c5e',
+  onPrimary: '#f1f2ff',
+  onSecondary: '#f8f0ff',
+  outline: '#747779',
+  outlineVariant: '#abadaf',
+  background: '#f5f7f9',
+  green: '#10b981',
+};
+
+export const SUBMISSION_DATA = {
+  title: 'Assignment Title',
+  timeRemaining: '00:45:00',
+  weight: '25%',
+  estimatedTime: '4h left',
+  progress: 65,
+  instructions: {
+    description: 'Analyze the provided datasets and draft a comprehensive report focusing on structural integrity and socio-economic impact.',
+    objectives: [
+      'Comparative Analysis of Data A vs B',
+      'Visual representation of trends',
+      '3-year projection model',
+    ],
+    additional: 'Ensure all citations follow the university\'s academic integrity standards. Visual components must be uploaded in high resolution.',
+  },
+  attachments: [
+    {
+      id: 1,
+      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB9Ci8sLnXHxPV1S2-3Hl-X0zFluIVEEIZeYbry0WhpRRt5Tmg6qMbTG7DvPgxLAB_FngkyD52uCUf-k2ZKEMOqUzUD7Fq9Fq9Fq9Fq9Fq9Fq9Fq9Fq9',
+      alt: 'Data analysis visualization',
+    },
+    {
+      id: 2,
+      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCEi548LoLUtiDMwfZIczAlyjt-Ruxg8PWO9-4FjZ4ghUGBeFsECdRN6pQL9HAUiOFdeWb1FlRSx-FzuA8Q1fGSRkYi-7Fq9Fq9Fq9Fq9Fq9Fq9Fq9',
+      alt: 'Financial growth chart',
+    },
+  ],
+  editor: {
+    wordCount: 1248,
+    pageCount: 3,
+    lastSaved: '2 mins ago',
+  },
+};

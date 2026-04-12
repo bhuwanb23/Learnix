@@ -17,7 +17,7 @@ import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
 import UpcomingAssignmentPage from './features/upcoming/upcoming_assignment';
 import CompletedReviewPage from './features/completed_review/completed_review';
 import CompletedResultsPage from './features/completed_results/completed_results';
-import AssignmentDetailsPage from './features/active/assignment_details/assignment_details';
+import ActiveAssignmentPage from './features/active/active_assignment';
 
 // Import theme
 import { COLORS, SPACING } from '../../../../constants/theme';
@@ -85,7 +85,7 @@ export default function AssignmentPage() {
     <View style={styles.container}>
       {/* Show Assignment Detail Pages */}
       {currentView === 'active-detail' ? (
-        <AssignmentDetailsPage
+        <ActiveAssignmentPage
           navigation={{ goBack: handleBackToList }}
           route={{ params: { assignment: selectedAssignment } }}
         />

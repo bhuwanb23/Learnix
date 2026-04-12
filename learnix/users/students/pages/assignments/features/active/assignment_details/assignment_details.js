@@ -10,7 +10,7 @@ import ResourcesCard from './components/ResourcesCard';
 import VisualInsightCard from './components/VisualInsightCard';
 import BottomActionBar from './components/BottomActionBar';
 
-export default function AssignmentDetailsScreen({ route, navigation }) {
+export default function AssignmentDetailsScreen({ route, navigation, onNavigate }) {
     const clickedAssignment = route?.params?.assignment || {};
     const assignmentData = {
         ...ACTIVE_ASSIGNMENT_DATA,
@@ -26,7 +26,9 @@ export default function AssignmentDetailsScreen({ route, navigation }) {
     };
 
     const handleSubmit = () => {
-        console.log('Submit assignment');
+        if (onNavigate) {
+            onNavigate('submission');
+        }
     };
 
     return (
