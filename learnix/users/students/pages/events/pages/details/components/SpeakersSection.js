@@ -20,7 +20,7 @@ export default function SpeakersSection({ speakers }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Featured Speakers</Text>
-        <Text style={styles.slideHint}>Slide to view</Text>
+        {/* <Text style={styles.slideHint}>Slide to view</Text> */}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
         {speakers.map((speaker) => {

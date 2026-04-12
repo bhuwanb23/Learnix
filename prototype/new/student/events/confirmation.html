@@ -112,24 +112,7 @@
 <body
     class="bg-surface font-body text-on-surface min-h-screen pb-24 selection:bg-primary-container selection:text-on-primary-container">
     <!-- TopAppBar -->
-    <header class="bg-[#f5f7f9] dark:bg-[#0f172a] fixed docked full-width top-0 z-40">
-        <div class="flex justify-between items-center w-full px-6 py-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high">
-                    <img alt="student profile photo" class="w-full h-full object-cover"
-                        data-alt="headshot of a cheerful young adult male student with a friendly expression in a modern bright indoor environment"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXs2WOU4QZgrmzrWO2LbwVbVA2-aiPS-FgnBn_Rm7cwpv6djwDMmH-g4leM4d6tzns7UAmGJUvrS2Nrzb2hKvF99dhbeGKx_M6QZ0SikIs2OlzXWP-PdGPDJXyjNoCOe5mBH2SQ6wYr59s-KFMqXoKALo5DfSIEjIdYvELkzR5MqieNia1_bYgA5i23p5OVQdc0KemmiOT80uOi_M_hOlY2ERAvfJ8hcNbvwyHzrhbhacql2_e15MrQwWJqtLJsnisvmxfQ5EV-IY" />
-                </div>
-                <span
-                    class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-2xl font-extrabold text-[#0050d4] dark:text-[#3b82f6]">The
-                    Curator</span>
-            </div>
-            <div class="flex items-center gap-4">
-                <button
-                    class="material-symbols-outlined text-[#2c2f31] dark:text-slate-400 hover:opacity-80 transition-opacity">notifications</button>
-            </div>
-        </div>
-    </header>
+    
     <main class="pt-24 px-6 max-w-2xl mx-auto space-y-10">
         <!-- 1. Celebratory Top Section -->
         <section class="relative text-center py-8 overflow-hidden rounded-3xl confetti-gradient">
@@ -232,37 +215,6 @@
             </button>
         </section>
     </main>
-    <!-- BottomNavBar -->
-    <nav class="fixed bottom-6 left-0 right-0 z-50 flex justify-around items-center px-4">
-        <div
-            class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex justify-around items-center p-2">
-            <!-- Home -->
-            <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:bg-[#eef1f3] dark:hover:bg-slate-800 rounded-full transition-all active:scale-90 duration-300"
-                href="#">
-                <span class="material-symbols-outlined text-2xl">dashboard</span>
-                <span class="font-['Manrope'] text-[10px] font-semibold">Home</span>
-            </a>
-            <!-- Courses -->
-            <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:bg-[#eef1f3] dark:hover:bg-slate-800 rounded-full transition-all active:scale-90 duration-300"
-                href="#">
-                <span class="material-symbols-outlined text-2xl">school</span>
-                <span class="font-['Manrope'] text-[10px] font-semibold">Courses</span>
-            </a>
-            <!-- Events -->
-            <a class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:bg-[#eef1f3] dark:hover:bg-slate-800 rounded-full transition-all active:scale-90 duration-300"
-                href="#">
-                <span class="material-symbols-outlined text-2xl">calendar_today</span>
-                <span class="font-['Manrope'] text-[10px] font-semibold">Events</span>
-            </a>
-            <!-- Profile - Active -->
-            <a class="flex flex-col items-center justify-center bg-gradient-to-br from-[#0050d4] to-[#0046bb] text-white rounded-full px-5 py-2 active:scale-90 duration-300 ease-out"
-                href="#">
-                <span class="material-symbols-outlined text-2xl"
-                    style="font-variation-settings: 'FILL' 1;">person</span>
-                <span class="font-['Manrope'] text-[10px] font-semibold">Profile</span>
-            </a>
-        </div>
-    </nav>
 </body>
 
 </html>

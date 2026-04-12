@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -6,7 +6,6 @@ import {
     ScrollView,
     TouchableOpacity,
     useWindowDimensions,
-    Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { REGISTRATION_COLORS } from './constants/registrationData';
@@ -15,37 +14,39 @@ import WorkshopImage from './components/WorkshopImage';
 import EventPerksCard from './components/EventPerksCard';
 import AgendaSummary from './components/AgendaSummary';
 import MapWidget from './components/MapWidget';
+import EventConfirmationPage from '../confirmation/confirmation';
 
 export default function EventRegistrationPage({ route, navigation }) {
     const { width } = useWindowDimensions();
     const isDesktop = width >= 1024;
+    const [currentView, setCurrentView] = useState('registration'); // 'registration' or 'confirmation'
     
     const eventData = route?.params?.event || {};
     const userEmail = route?.params?.userEmail || 'a.sterling@academy.edu';
 
     const handleBack = () => {
-        if (navigation?.goBack) {
+        if (currentView === 'confirmation') {
+            setCurrentView('registration');
+        } else if (navigation?.goBack) {
             navigation.goBack();
         }
     };
 
     const handleRegistrationSubmit = (formData) => {
         console.log('Registration submitted:', formData);
-        Alert.alert(
-            'Registration Successful!',
-            `You have been registered for ${eventData.title || 'the event'}.\nTrack: ${formData.track}`,
-            [
-                {
-                    text: 'OK',
-                    onPress: () => {
-                        if (navigation?.goBack) {
-                            navigation.goBack();
-                        }
-                    },
-                },
-            ]
-        );
+        // Navigate to confirmation page
+        setCurrentView('confirmation');
     };
+
+    // Show Confirmation Page
+    if (currentView === 'confirmation') {
+        return (
+            <EventConfirmationPage
+                navigation={{ goBack: handleBack }}
+                route={{ params: { event: eventData, registration: {} } }}
+            />
+        );
+    }
 
     return (
         <View style={styles.container}>

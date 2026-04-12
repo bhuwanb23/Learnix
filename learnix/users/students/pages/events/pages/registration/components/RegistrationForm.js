@@ -3,15 +3,21 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Switch } from 'rea
 import { MaterialIcons } from '@expo/vector-icons';
 import { REGISTRATION_COLORS, LAB_TRACKS } from '../constants/registrationData';
 
-export default function RegistrationForm({ event, userEmail, onSubmit }) {
+export default function RegistrationForm({ event, userEmail, onSubmit, onNavigateToConfirmation }) {
     const [selectedTrack, setSelectedTrack] = useState(0);
     const [sendConfirmation, setSendConfirmation] = useState(true);
 
     const handleSubmit = () => {
-        onSubmit({
+        const registrationData = {
             track: LAB_TRACKS[selectedTrack],
             sendConfirmation,
-        });
+        };
+        
+        if (onNavigateToConfirmation) {
+            onNavigateToConfirmation(registrationData);
+        } else {
+            onSubmit(registrationData);
+        }
     };
 
     return (
