@@ -47,7 +47,7 @@ export default function TopicListPage({ navigation, route }) {
             onPress={handleBack}
             activeOpacity={0.7}
           >
-            <Ionicons name="arrow-back" size={20} color="#ffffff" />
+            <Ionicons name="arrow-back" size={20} color={TOPIC_LIST_COLORS.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Topic Tracker</Text>
         </View>
@@ -88,7 +88,7 @@ export default function TopicListPage({ navigation, route }) {
 
           <View style={styles.studyTimeCard}>
             <View style={styles.studyTimeIcon}>
-              <MaterialIcons name="timer" size={28} color={TOPIC_LIST_COLORS.secondary} />
+              <MaterialIcons name="timer" size={24} color={TOPIC_LIST_COLORS.secondary} />
             </View>
             <Text style={styles.studyTimeNumber}>{TOPIC_LIST_DATA.studyTimeLeft}</Text>
             <Text style={styles.studyTimeLabel}>Estimated study time left</Text>
@@ -159,8 +159,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: TOPIC_LIST_COLORS.primary,
-    borderBottomWidth: 0,
+    backgroundColor: TOPIC_LIST_COLORS.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: `${TOPIC_LIST_COLORS.outlineVariant}26`,
   },
   leftSection: {
     flexDirection: 'row',
@@ -179,7 +180,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
-    color: '#ffffff',
+    color: TOPIC_LIST_COLORS.primary,
     letterSpacing: -0.3,
   },
   scrollContent: {
@@ -226,17 +227,15 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   progressSection: {
-    flexDirection: 'row',
     gap: 14,
     marginBottom: 32,
   },
   progressMainCard: {
-    flex: 2,
     backgroundColor: TOPIC_LIST_COLORS.primary,
     borderRadius: 12,
-    padding: 24,
+    padding: 20,
     justifyContent: 'space-between',
-    minHeight: 160,
+    minHeight: 140,
     overflow: 'hidden',
   },
   progressContent: {
@@ -288,21 +287,21 @@ const styles = StyleSheet.create({
     backgroundColor: `${TOPIC_LIST_COLORS.primaryContainer}33`,
   },
   studyTimeCard: {
-    flex: 1,
     backgroundColor: TOPIC_LIST_COLORS.surfaceContainerLowest,
     borderRadius: 12,
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 16,
   },
   studyTimeIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: TOPIC_LIST_COLORS.secondaryContainer,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
   },
   studyTimeNumber: {
     fontSize: 20,

@@ -13,7 +13,7 @@ export default function TopicCard({ topic, onPress, onMorePress }) {
     if (topic.isCompleted) {
       return (
         <View style={[styles.checkbox, styles.checkboxCompleted]}>
-          <MaterialIcons name="check" size={20} color="#ffffff" />
+          <MaterialIcons name="check" size={16} color="#ffffff" />
         </View>
       );
     }
@@ -69,7 +69,7 @@ export default function TopicCard({ topic, onPress, onMorePress }) {
           onPress={onMorePress}
           activeOpacity={0.7}
         >
-          <MaterialIcons name="more-vert" size={20} color={TOPIC_LIST_COLORS.onSurfaceVariant} />
+          <MaterialIcons name="more-vert" size={16} color={TOPIC_LIST_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -79,9 +79,9 @@ export default function TopicCard({ topic, onPress, onMorePress }) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: TOPIC_LIST_COLORS.surfaceContainerLowest,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 14,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -95,16 +95,16 @@ const styles = StyleSheet.create({
   },
   leftSection: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
     flex: 1,
   },
   checkboxWrapper: {
     flexShrink: 0,
   },
   checkbox: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -126,57 +126,57 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   titleDefault: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
     color: TOPIC_LIST_COLORS.onSurface,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   titleCompleted: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
     color: TOPIC_LIST_COLORS.onSurface,
-    lineHeight: 22,
+    lineHeight: 20,
     opacity: 0.6,
   },
   description: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     fontFamily: 'Manrope-Medium',
     color: TOPIC_LIST_COLORS.onSurfaceVariant,
-    lineHeight: 18,
+    lineHeight: 17,
     marginTop: 2,
   },
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     alignSelf: 'flex-end',
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 999,
-    gap: 6,
+    gap: 5,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   moreButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: TOPIC_LIST_COLORS.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
