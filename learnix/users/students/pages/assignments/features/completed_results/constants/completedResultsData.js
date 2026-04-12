@@ -1,0 +1,83 @@
+export const COMPLETED_RESULTS_COLORS = {
+    primary: '#0050d4',
+    primaryDim: '#0046bb',
+    primaryContainer: '#7b9cff',
+    secondary: '#702ae1',
+    secondaryDim: '#6411d5',
+    secondaryContainer: '#dcc9ff',
+    tertiary: '#a23800',
+    tertiaryDim: '#8e3000',
+    tertiaryContainer: '#ff956a',
+    surface: '#f5f7f9',
+    surfaceContainerLowest: '#ffffff',
+    surfaceContainerLow: '#eef1f3',
+    surfaceContainer: '#e5e9eb',
+    surfaceContainerHigh: '#dfe3e6',
+    surfaceContainerHighest: '#d9dde0',
+    onSurface: '#2c2f31',
+    onSurfaceVariant: '#595c5e',
+    onPrimary: '#f1f2ff',
+    onSecondary: '#f8f0ff',
+    outline: '#747779',
+    outlineVariant: '#abadaf',
+    background: '#f5f7f9',
+};
+
+export const COMPLETED_RESULTS_DATA = {
+    grade: 94,
+    totalGrade: 100,
+    evaluation: 'Distinction',
+    classRank: 'Top 5% of Class',
+    competencyMap: {
+        strongest: 'Primary Research',
+        growth: 'Citation Depth',
+        scores: {
+            research: 95,
+            analysis: 92,
+            criticality: 88,
+            structure: 85,
+            citing: 78,
+        },
+    },
+    feedback: [
+        {
+            type: 'positive',
+            text: '"Your synthesis of modern economic theories in the second chapter was exceptional. You\'ve demonstrated a high level of critical engagement with the core texts."',
+            instructor: 'Dr. Alistair Vance',
+            role: 'Lead Internal Examiner',
+            avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB1ZQEu8zgmllW0AkJisH2iGDRAR1_ldbPM_4Quxjv2wRG1snAOaSMLPr70q-p0QLZqQP5Az8Q7FZklcMmK2W9tuAuEsAdApu9oO3V8kv2ZYhzbqRkequZ0d945i_0dsn6qQk3vusPIFOfTDG6dnHfC1C4m0m-bc_m0FaZh8e_vC39oQjyb4mLsZ1NnF7nFXie2f0iubSLiMvphmJgpcYD2difJoWl6etHLWxmroGYKSpe_7vml_eEitGsWHLyOKnTTyMkuaa_PlLo',
+        },
+        {
+            type: 'suggestion',
+            text: '"Consider deepening the link between the qualitative data and the final conclusion. Some transitions felt slightly abrupt, though the logic remained sound."',
+            instructor: 'Sarah Chen',
+            role: 'Course Tutor',
+        },
+    ],
+    improvements: [
+        {
+            title: 'Structural Flow',
+            description: 'Use more explicit transitionary sentences between Chapter 2 and 3.',
+            icon: 'trending-up',
+            color: 'primary',
+        },
+        {
+            title: 'Referencing',
+            description: 'Ensure all primary source quotes are cross-referenced with the appendix.',
+            icon: 'history-edu',
+            color: 'secondary',
+        },
+        {
+            title: 'Data Visualization',
+            description: 'The pie charts in the methodology could be simplified for better clarity.',
+            icon: 'analytics',
+            color: 'tertiary',
+        },
+        {
+            title: 'Critical Depth',
+            description: 'Include more counter-arguments to demonstrate balanced reasoning.',
+            icon: 'article',
+            color: 'primary',
+        },
+    ],
+};

@@ -16,6 +16,7 @@ import AssignmentList from './components/AssignmentList';
 import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
 import UpcomingAssignmentPage from './features/upcoming/upcoming_assignment';
 import CompletedReviewPage from './features/completed_review/completed_review';
+import CompletedResultsPage from './features/completed_results/completed_results';
 
 // Import theme
 import { COLORS, SPACING } from '../../../../constants/theme';
@@ -33,7 +34,7 @@ import {
 
 export default function AssignmentPage() {
   const [activeTab, setActiveTab] = useState('active');
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'upcoming-detail', or 'completed-review'
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'upcoming-detail', 'completed-review', or 'completed-results'
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -60,9 +61,13 @@ export default function AssignmentPage() {
     if (tab === 'upcoming') {
       setSelectedAssignment(assignment);
       setCurrentView('upcoming-detail');
-    } else if (tab === 'completed' && assignment.underReview) {
+    } else if (tab === 'completed') {
       setSelectedAssignment(assignment);
-      setCurrentView('completed-review');
+      if (assignment.underReview) {
+        setCurrentView('completed-review');
+      } else {
+        setCurrentView('completed-results');
+      }
     }
     // Add handlers for other tabs later
   };
@@ -83,6 +88,11 @@ export default function AssignmentPage() {
         />
       ) : currentView === 'completed-review' ? (
         <CompletedReviewPage
+          navigation={{ goBack: handleBackToList }}
+          route={{ params: { assignment: selectedAssignment } }}
+        />
+      ) : currentView === 'completed-results' ? (
+        <CompletedResultsPage
           navigation={{ goBack: handleBackToList }}
           route={{ params: { assignment: selectedAssignment } }}
         />
