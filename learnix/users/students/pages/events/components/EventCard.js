@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
-export default function EventCard({ item, index = 0 }) {
+export default function EventCard({ item, index = 0, navigation }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
@@ -45,6 +45,12 @@ export default function EventCard({ item, index = 0 }) {
     }).start();
   };
 
+  const handlePress = () => {
+    if (navigation) {
+      navigation.navigate('EventDetails', { event: item });
+    }
+  };
+
   return (
     <Animated.View style={[
       styles.cardWrapper,
@@ -62,6 +68,7 @@ export default function EventCard({ item, index = 0 }) {
         activeOpacity={1}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        onPress={handlePress}
       >
         <View style={styles.imageContainer}>
           <Image source={{ uri: item.image }} style={styles.eventImage} />

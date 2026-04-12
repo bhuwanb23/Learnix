@@ -24,7 +24,7 @@ import Sidebar from './components/Sidebar';
 // Import data
 import { EVENT_CATEGORIES, DISCOVERY_EVENTS, MY_REGISTRATIONS, EVENT_STATS, TRENDING_TAGS } from './constants/eventData';
 
-export default function EventsPage() {
+export default function EventsPage({ navigation }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
@@ -102,7 +102,7 @@ export default function EventsPage() {
     <Animated.View style={[styles.desktopGrid, { opacity: fadeAnim }]}>
       <View style={styles.desktopLeft}>
         <View style={styles.eventsGrid}>
-          {DISCOVERY_EVENTS.map((event, index) => <EventCard key={event.id} item={event} index={index} />)}
+          {DISCOVERY_EVENTS.map((event, index) => <EventCard key={event.id} item={event} index={index} navigation={navigation} />)}
         </View>
       </View>
       <View style={styles.desktopRight}>
@@ -129,7 +129,7 @@ export default function EventsPage() {
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }]
             }]}>
-              <EventCard item={item} index={index} />
+              <EventCard item={item} index={index} navigation={navigation} />
             </Animated.View>
           )
         }
