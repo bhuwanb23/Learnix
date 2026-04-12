@@ -33,8 +33,8 @@ export default function SubjectCard({ subject, onPress, onButtonPress }) {
             <View style={[styles.iconContainer, { backgroundColor: subject.bgColor }]}>
               <Ionicons name={subject.icon} size={28} color={subject.color} />
             </View>
-            <View>
-              <Text style={styles.title}>{subject.title}</Text>
+            <View style={styles.titleSection}>
+              <Text style={styles.title} numberOfLines={2}>{subject.title}</Text>
               <Text style={styles.quizzes}>{subject.quizzes} Active Quizzes</Text>
             </View>
           </View>
@@ -104,11 +104,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
+    gap: 12,
   },
   leftSection: {
     flexDirection: 'row',
     gap: 12,
     flex: 1,
+    minWidth: 0,
+  },
+  titleSection: {
+    flex: 1,
+    minWidth: 0,
   },
   iconContainer: {
     width: 48,
@@ -116,6 +122,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   title: {
     fontSize: 16,
@@ -123,6 +130,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_COLORS.onSurface,
     marginBottom: 3,
+    flexShrink: 1,
   },
   quizzes: {
     fontSize: 12,
@@ -132,6 +140,7 @@ const styles = StyleSheet.create({
   },
   scoreSection: {
     alignItems: 'flex-end',
+    flexShrink: 0,
   },
   scoreLabel: {
     fontSize: 9,
@@ -150,9 +159,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
   },
   participants: {
     flexDirection: 'row',
+    flex: 1,
   },
   participantBadge: {
     width: 28,
@@ -174,6 +185,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
+    flexShrink: 0,
   },
   startButtonText: {
     fontSize: 12,

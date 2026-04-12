@@ -6,6 +6,7 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_ATTEMPT_COLORS, QUIZ_ATTEMPT_DATA, SAMPLE_QUESTION } from './constants/quizAttemptData';
@@ -15,6 +16,7 @@ import OptionButton from './components/OptionButton';
 export default function QuizAttemptPage({ navigation, route }) {
   const [question, setQuestion] = useState(SAMPLE_QUESTION);
   const [selectedOption, setSelectedOption] = useState('B');
+  const [showHint, setShowHint] = useState(false);
 
   const handleClose = () => {
     if (navigation?.goBack) {
@@ -34,7 +36,7 @@ export default function QuizAttemptPage({ navigation, route }) {
   };
 
   const handleHint = () => {
-    console.log('Show hint');
+    setShowHint(!showHint);
   };
 
   const handlePrevious = () => {
@@ -70,7 +72,7 @@ export default function QuizAttemptPage({ navigation, route }) {
           >
             <Ionicons name="close" size={22} color={QUIZ_ATTEMPT_COLORS.onSurface} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{QUIZ_ATTEMPT_DATA.unitTitle}</Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{QUIZ_ATTEMPT_DATA.unitTitle}</Text>
         </View>
         <TouchableOpacity 
           style={styles.submitButton}
@@ -103,7 +105,7 @@ export default function QuizAttemptPage({ navigation, route }) {
             >
               <Ionicons 
                 name={question.isFlagged ? "flag" : "flag-outline"} 
-                size={24} 
+                size={22} 
                 color={question.isFlagged ? QUIZ_ATTEMPT_COLORS.primary : QUIZ_ATTEMPT_COLORS.onSurfaceVariant} 
               />
             </TouchableOpacity>
@@ -122,15 +124,32 @@ export default function QuizAttemptPage({ navigation, route }) {
           </View>
         </View>
 
+        {/* Hint Section */}
+        {showHint && (
+          <View style={styles.hintBox}>
+            <View style={styles.hintHeader}>
+              <Ionicons name="bulb" size={18} color={QUIZ_ATTEMPT_COLORS.secondary} />
+              <Text style={styles.hintTitle}>Hint</Text>
+            </View>
+            <Text style={styles.hintText}>
+              Remember: ∫ e^(ax) dx = (1/a)e^(ax) + C. Apply the fundamental theorem of calculus with limits 0 to 1.
+            </Text>
+          </View>
+        )}
+
         {/* Hint Button */}
         <View style={styles.hintSection}>
           <TouchableOpacity 
-            style={styles.hintButton}
+            style={[styles.hintButton, showHint && styles.hintButtonActive]}
             onPress={handleHint}
             activeOpacity={0.7}
           >
-            <Ionicons name="bulb" size={16} color={QUIZ_ATTEMPT_COLORS.secondary} />
-            <Text style={styles.hintText}>View Hint</Text>
+            <Ionicons 
+              name={showHint ? "bulb" : "bulb-outline"} 
+              size={16} 
+              color={showHint ? QUIZ_ATTEMPT_COLORS.secondary : QUIZ_ATTEMPT_COLORS.secondary} 
+            />
+            <Text style={styles.hintTextButton}>{showHint ? 'Hide Hint' : 'View Hint'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -172,77 +191,110 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    height: 52,
     backgroundColor: QUIZ_ATTEMPT_COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: `${QUIZ_ATTEMPT_COLORS.outlineVariant}26`,
+    gap: 12,
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
+    minWidth: 0,
   },
   closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_ATTEMPT_COLORS.primary,
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
   submitButton: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    flexShrink: 0,
   },
   submitText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_ATTEMPT_COLORS.primary,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingHorizontal: 14,
+    paddingTop: 14,
     paddingBottom: 100,
   },
   questionSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   questionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
-    gap: 12,
+    marginBottom: 16,
+    gap: 10,
   },
   questionText: {
     flex: 1,
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_ATTEMPT_COLORS.onSurface,
-    lineHeight: 28,
-    letterSpacing: -0.3,
+    lineHeight: 24,
+    letterSpacing: -0.2,
   },
   flagButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   optionsList: {
-    gap: 14,
+    gap: 12,
+  },
+  hintBox: {
+    backgroundColor: `${QUIZ_ATTEMPT_COLORS.secondaryContainer}80`,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: `${QUIZ_RESULTS_COLORS.secondary}30`,
+  },
+  hintHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  hintTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
+    color: QUIZ_ATTEMPT_COLORS.secondary,
+  },
+  hintText: {
+    fontSize: 12,
+    fontWeight: '500',
+    fontFamily: 'Manrope-Medium',
+    color: QUIZ_ATTEMPT_COLORS.onSurface,
+    lineHeight: 18,
   },
   hintSection: {
     alignItems: 'center',
@@ -253,24 +305,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     backgroundColor: QUIZ_ATTEMPT_COLORS.secondaryContainer,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
   },
-  hintText: {
-    fontSize: 13,
+  hintButtonActive: {
+    backgroundColor: `${QUIZ_ATTEMPT_COLORS.secondaryContainer}CC`,
+  },
+  hintTextButton: {
+    fontSize: 12,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: QUIZ_ATTEMPT_COLORS.secondary,
   },
   bottomNav: {
     position: 'absolute',
-    bottom: 24,
-    left: 16,
-    right: 16,
+    bottom: 20,
+    left: 14,
+    right: 14,
     backgroundColor: `${QUIZ_ATTEMPT_COLORS.surfaceContainerLowest}E6`,
     borderRadius: 999,
-    padding: 8,
+    padding: 6,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -282,18 +337,18 @@ const styles = StyleSheet.create({
   },
   navButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   navButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   navButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     fontFamily: 'Manrope-SemiBold',
     color: QUIZ_ATTEMPT_COLORS.onSurface,
@@ -302,18 +357,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: QUIZ_ATTEMPT_COLORS.primary,
     borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   nextButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   nextButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: '#ffffff',

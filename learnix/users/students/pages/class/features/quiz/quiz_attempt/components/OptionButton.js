@@ -30,7 +30,7 @@ export default function OptionButton({ option, isSelected, onSelect }) {
       </View>
 
       {isSelected && (
-        <Ionicons name="checkmark-circle" size={24} color={QUIZ_ATTEMPT_COLORS.primary} />
+        <Ionicons name="checkmark-circle" size={20} color={QUIZ_ATTEMPT_COLORS.primary} />
       )}
     </TouchableOpacity>
   );
@@ -39,8 +39,8 @@ export default function OptionButton({ option, isSelected, onSelect }) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: QUIZ_ATTEMPT_COLORS.surfaceContainerLowest,
-    borderRadius: 14,
-    padding: 20,
+    borderRadius: 12,
+    padding: 14,
     borderWidth: 2,
     borderColor: 'transparent',
     flexDirection: 'row',
@@ -59,13 +59,13 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 12,
     flex: 1,
   },
   optionLetter: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: QUIZ_ATTEMPT_COLORS.surfaceContainer,
     alignItems: 'center',
     justifyContent: 'center',
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     backgroundColor: QUIZ_ATTEMPT_COLORS.primary,
   },
   letterText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: QUIZ_ATTEMPT_COLORS.onSurfaceVariant,
@@ -83,11 +83,11 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   optionText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     fontFamily: 'Manrope-Medium',
     color: QUIZ_ATTEMPT_COLORS.onSurface,
-    lineHeight: 22,
+    lineHeight: 20,
     flex: 1,
   },
   selectedOptionText: {

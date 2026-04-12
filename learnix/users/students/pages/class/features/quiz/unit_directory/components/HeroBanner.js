@@ -24,7 +24,7 @@ export default function HeroBanner({ subject, onPress }) {
               onPress={onPress}
               activeOpacity={0.7}
             >
-              <Ionicons name="rocket-sharp" size={20} color={UNIT_DIRECTORY_COLORS.primary} />
+              <Ionicons name="rocket-sharp" size={18} color={UNIT_DIRECTORY_COLORS.primary} />
               <Text style={styles.buttonText}>Full Subject Test</Text>
             </TouchableOpacity>
           </View>
@@ -46,30 +46,29 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 14,
     overflow: 'hidden',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   gradientBg: {
     backgroundColor: UNIT_DIRECTORY_COLORS.primary,
-    padding: 24,
+    padding: 18,
   },
   content: {
     position: 'relative',
     zIndex: 1,
   },
   textSection: {
-    maxWidth: 320,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   badge: {
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: '#ffffff',
@@ -77,46 +76,46 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   title: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: '#ffffff',
-    lineHeight: 32,
-    marginBottom: 12,
+    lineHeight: 28,
+    marginBottom: 8,
   },
   description: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.8)',
-    lineHeight: 20,
-    marginBottom: 20,
+    lineHeight: 18,
+    marginBottom: 14,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
     backgroundColor: UNIT_DIRECTORY_COLORS.surfaceContainerLowest,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
     alignSelf: 'flex-start',
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: UNIT_DIRECTORY_COLORS.primary,
   },
   masteryCard: {
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    padding: 18,
+    borderRadius: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
   masteryLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: 'rgba(255,255,255,0.6)',
@@ -124,21 +123,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   masteryValue: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: '#ffffff',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   progressBar: {
-    height: 8,
+    height: 6,
     backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#ffffff',
-    borderRadius: 4,
+    borderRadius: 3,
   },
 });

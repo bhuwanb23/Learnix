@@ -30,14 +30,14 @@ export default function UnitCard({ unit, onPress, onButtonPress }) {
           </View>
           
           <View style={styles.details}>
-            <Text style={styles.title}>{unit.title}</Text>
+            <Text style={styles.title} numberOfLines={2}>{unit.title}</Text>
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
-                <Ionicons name="list-outline" size={16} color={UNIT_DIRECTORY_COLORS.onSurfaceVariant} />
+                <Ionicons name="list-outline" size={14} color={UNIT_DIRECTORY_COLORS.onSurfaceVariant} />
                 <Text style={styles.metaText}>{unit.topics} Topics</Text>
               </View>
               <View style={styles.metaItem}>
-                <Ionicons name="timer-outline" size={16} color={UNIT_DIRECTORY_COLORS.onSurfaceVariant} />
+                <Ionicons name="timer-outline" size={14} color={UNIT_DIRECTORY_COLORS.onSurfaceVariant} />
                 <Text style={styles.metaText}>{unit.duration}</Text>
               </View>
             </View>
@@ -55,8 +55,8 @@ export default function UnitCard({ unit, onPress, onButtonPress }) {
             onPress={handleButtonPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.startButtonText}>Start Topic Quiz</Text>
-            <Ionicons name="chevron-forward" size={18} color={UNIT_DIRECTORY_COLORS.onSurface} />
+            <Text style={styles.startButtonText}>Start</Text>
+            <Ionicons name="chevron-forward" size={14} color={UNIT_DIRECTORY_COLORS.onSurface} />
           </TouchableOpacity>
         </View>
       </View>
@@ -73,43 +73,49 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   content: {
-    padding: 20,
+    padding: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 12,
   },
   leftSection: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
     flex: 1,
+    minWidth: 0,
   },
   numberContainer: {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: 10,
     backgroundColor: UNIT_DIRECTORY_COLORS.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   numberText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: UNIT_DIRECTORY_COLORS.primary,
   },
   details: {
     flex: 1,
+    minWidth: 0,
   },
   title: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: UNIT_DIRECTORY_COLORS.onSurface,
     marginBottom: 6,
+    flexShrink: 1,
   },
   metaRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
+    flexWrap: 'wrap',
   },
   metaItem: {
     flexDirection: 'row',
@@ -117,7 +123,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metaText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     fontFamily: 'Manrope-Medium',
     color: UNIT_DIRECTORY_COLORS.onSurfaceVariant,
@@ -125,13 +131,14 @@ const styles = StyleSheet.create({
   rightSection: {
     alignItems: 'flex-end',
     justifyContent: 'space-between',
+    flexShrink: 0,
   },
   statusSection: {
     alignItems: 'flex-end',
-    marginRight: 8,
+    marginBottom: 8,
   },
   statusLabel: {
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: UNIT_DIRECTORY_COLORS.onSurfaceVariant,
@@ -140,21 +147,21 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
   },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: UNIT_DIRECTORY_COLORS.surfaceContainerHigh,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
   },
   startButtonText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: UNIT_DIRECTORY_COLORS.onSurface,
