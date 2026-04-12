@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: `${QUIZ_RESULTS_COLORS.secondary}30`,
+    borderColor: `${QUIZ_ATTEMPT_COLORS.secondary}30`,
   },
   hintHeader: {
     flexDirection: 'row',
