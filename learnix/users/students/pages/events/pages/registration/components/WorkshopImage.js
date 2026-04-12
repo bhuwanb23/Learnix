@@ -23,14 +23,14 @@ export default function WorkshopImage({ image, location }) {
 
 const styles = StyleSheet.create({
     container: {
-        height: 220,
-        borderRadius: 16,
+        height: 160,
+        borderRadius: 12,
         overflow: 'hidden',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 24,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 4,
     },
     image: {
         width: '100%',
@@ -45,11 +45,11 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 20,
+        padding: 14,
     },
     locationText: {
         color: '#ffffff',
-        fontSize: 17,
+        fontSize: 14,
         fontWeight: '800',
         fontFamily: 'PlusJakartaSans-Bold',
     },

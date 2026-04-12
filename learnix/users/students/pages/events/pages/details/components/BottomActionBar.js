@@ -27,19 +27,19 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   bar: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 32,
-    padding: 16,
+    backgroundColor: 'rgba(233, 233, 233, 1)',
+    borderRadius: 999,
+    padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   timeInfo: {
-    paddingLeft: 16,
+    paddingLeft: 10,
   },
   timeLabel: {
     fontFamily: 'Manrope-Bold',
-    fontSize: 10,
+    fontSize: 7,
     fontWeight: '700',
     color: EVENT_DETAILS_COLORS.onSurfaceVariant,
     textTransform: 'uppercase',
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   },
   timeValue: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '800',
     color: EVENT_DETAILS_COLORS.tertiary,
     marginTop: 2,
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   },
   registerButtonText: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: EVENT_DETAILS_COLORS.onPrimary,
   },

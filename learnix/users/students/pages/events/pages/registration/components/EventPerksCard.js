@@ -31,20 +31,20 @@ export default function EventPerksCard({ perks = EVENT_PERKS }) {
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 10,
     },
     perkCard: {
         flex: 1,
-        padding: 18,
-        borderRadius: 16,
-        gap: 10,
+        padding: 14,
+        borderRadius: 12,
+        gap: 8,
     },
     perkTitle: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '800',
     },
     perkDescription: {
-        fontSize: 11,
-        lineHeight: 16,
+        fontSize: 10,
+        lineHeight: 14,
     },
 });

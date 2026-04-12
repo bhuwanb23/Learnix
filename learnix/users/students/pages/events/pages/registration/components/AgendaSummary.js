@@ -42,21 +42,21 @@ export default function AgendaSummary({ agenda = AGENDA_ITEMS }) {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: REGISTRATION_COLORS.surfaceContainerLow,
-        borderRadius: 16,
-        padding: 24,
-        gap: 20,
+        borderRadius: 12,
+        padding: 16,
+        gap: 14,
     },
     title: {
-        fontSize: 19,
+        fontSize: 15,
         fontWeight: '800',
         fontFamily: 'PlusJakartaSans-Bold',
         color: REGISTRATION_COLORS.onSurface,
     },
     timeline: {
-        paddingLeft: 24,
+        paddingLeft: 20,
         borderLeftWidth: 2,
         borderLeftColor: REGISTRATION_COLORS.primary + '33',
-        gap: 20,
+        gap: 14,
     },
     timelineItem: {
         position: 'relative',
@@ -64,19 +64,19 @@ const styles = StyleSheet.create({
     timelineLine: {
         position: 'absolute',
         left: -3,
-        top: 24,
-        bottom: -20,
+        top: 20,
+        bottom: -14,
         width: 2,
         backgroundColor: REGISTRATION_COLORS.primary + '33',
     },
     timelineDot: {
         position: 'absolute',
-        left: -30,
-        top: 4,
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        borderWidth: 4,
+        left: -26,
+        top: 3,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        borderWidth: 3,
         borderColor: REGISTRATION_COLORS.surface,
     },
     timelineDotActive: {
@@ -86,24 +86,24 @@ const styles = StyleSheet.create({
         backgroundColor: REGISTRATION_COLORS.surfaceContainerHigh,
     },
     timelineContent: {
-        gap: 4,
+        gap: 3,
     },
     timeText: {
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '800',
         color: REGISTRATION_COLORS.onSurfaceVariant,
-        marginBottom: 4,
+        marginBottom: 3,
     },
     timeTextActive: {
         color: REGISTRATION_COLORS.primary,
     },
     itemTitle: {
-        fontSize: 15,
+        fontSize: 13,
         fontWeight: '700',
         color: REGISTRATION_COLORS.onSurface,
     },
     itemDescription: {
-        fontSize: 13,
+        fontSize: 11,
         color: REGISTRATION_COLORS.onSurfaceVariant,
     },
 });
