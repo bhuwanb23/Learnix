@@ -107,14 +107,14 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     section: {
-        marginBottom: 20,
+        marginBottom: 16,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        marginBottom: 12,
+        marginBottom: 10,
     },
     sectionTitle: {
         fontSize: 18,
@@ -133,6 +133,5 @@ const styles = StyleSheet.create({
     },
     subjectsList: {
         paddingHorizontal: 16,
-        gap: 12,
     },
 });

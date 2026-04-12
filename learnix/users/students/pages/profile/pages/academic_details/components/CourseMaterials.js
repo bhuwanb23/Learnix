@@ -38,38 +38,47 @@ export default function CourseMaterials({ materials }) {
 const styles = StyleSheet.create({
     container: {
         paddingHorizontal: 16,
-        marginBottom: 20,
+        marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '700',
         color: ACADEMIC_COLORS.onSurface,
         marginBottom: 12,
     },
     grid: {
-        gap: 12,
+        gap: 10,
     },
     materialCard: {
         backgroundColor: ACADEMIC_COLORS.surfaceContainerLow,
-        padding: 16,
-        borderRadius: 12,
+        padding: 14,
+        borderRadius: 10,
+        borderLeftWidth: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
+        gap: 12,
     },
     textSection: {
         flex: 1,
     },
     title: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '700',
         color: ACADEMIC_COLORS.onSurface,
-        marginBottom: 4,
+        marginBottom: 3,
+        lineHeight: 17,
     },
     due: {
-        fontSize: 12,
+        fontSize: 11,
         color: ACADEMIC_COLORS.onSurfaceVariant,
+        lineHeight: 15,
     },
 });
