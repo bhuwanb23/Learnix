@@ -15,6 +15,7 @@ import QuickActions from './components/QuickActions'; // Will become Categories 
 import CampusWallet from './components/CampusWallet';
 import Settings from './components/Settings'; // Will become Quick Settings
 import ViewProfilePage from './pages/view_profile/view_profile';
+import AcademicDetailsPage from './pages/academic_details/academic_details';
 
 // Import constants
 import {
@@ -26,7 +27,7 @@ import {
 } from './constants/profileData';
 
 export default function Profile() {
-  const [currentView, setCurrentView] = useState('profile'); // 'profile' or 'view_profile'
+  const [currentView, setCurrentView] = useState('profile'); // 'profile', 'view_profile', or 'academic_details'
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const contentPadding = width >= 768 ? 32 : 16;
@@ -36,11 +37,13 @@ export default function Profile() {
     setCurrentView('profile');
   };
 
-  // Handle navigation to view profile
+  // Handle navigation to sub-pages
   const mockNavigation = {
     navigate: (screen) => {
       if (screen === 'ViewProfile') {
         setCurrentView('view_profile');
+      } else if (screen === 'AcademicDetails') {
+        setCurrentView('academic_details');
       }
     },
     goBack: handleBackFromViewProfile,
@@ -51,6 +54,11 @@ export default function Profile() {
       {/* Show View Profile Page */}
       {currentView === 'view_profile' ? (
         <ViewProfilePage
+          navigation={mockNavigation}
+          route={{ params: {} }}
+        />
+      ) : currentView === 'academic_details' ? (
+        <AcademicDetailsPage
           navigation={mockNavigation}
           route={{ params: {} }}
         />

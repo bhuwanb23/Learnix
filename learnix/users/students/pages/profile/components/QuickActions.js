@@ -26,8 +26,12 @@ export default function QuickActions({ categories, honors, navigation }) {
   };
 
   const handleCategoryPress = (category) => {
-    if (category.id === 'view_profile' && navigation) {
+    if (!navigation) return;
+    
+    if (category.id === 'view_profile') {
       navigation.navigate('ViewProfile');
+    } else if (category.id === 'academic') {
+      navigation.navigate('AcademicDetails');
     }
   };
 
