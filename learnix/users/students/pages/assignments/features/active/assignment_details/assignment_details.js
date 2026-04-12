@@ -38,7 +38,6 @@ export default function AssignmentDetailsScreen({ route, navigation }) {
                 <GuidelinesCard assignment={assignmentData} />
                 <InstructorCard assignment={assignmentData} />
                 <ResourcesCard assignment={assignmentData} />
-                <VisualInsightCard assignment={assignmentData} />
             </ScrollView>
             <BottomActionBar onContinueWork={handleContinueWork} onSubmit={handleSubmit} />
         </View>

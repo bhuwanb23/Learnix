@@ -7,19 +7,21 @@ export default function CountdownTimer({ assignment }) {
   return (
     <View style={styles.container}>
       <View style={styles.backgroundIcon}>
-        <MaterialIcons name="alarm" size={96} color={ACTIVE_ASSIGNMENT_COLORS.error} />
+        <MaterialIcons name="alarm" size={120} color={ACTIVE_ASSIGNMENT_COLORS.error} />
       </View>
       <View style={styles.content}>
-        <Text style={styles.label}>Time Remaining</Text>
-        <View style={styles.timeRow}>
-          <Text style={styles.time}>{assignment.timeRemaining}</Text>
-          <Text style={styles.timeUnit}>hrs</Text>
+        <View style={styles.headerRow}>
+          <View style={styles.iconBadge}>
+            <MaterialIcons name="access-time" size={16} color={ACTIVE_ASSIGNMENT_COLORS.error} />
+          </View>
+          <Text style={styles.label}>Time Remaining</Text>
         </View>
+        <Text style={styles.time}>{assignment.timeRemaining}</Text>
         <Text style={styles.deadline}>Final deadline: {assignment.deadline}</Text>
       </View>
       <View style={styles.warningButton}>
-        <MaterialIcons name="warning" size={20} color={ACTIVE_ASSIGNMENT_COLORS.onPrimary} />
-        <Text style={styles.warningText}>Submit before midnight</Text>
+        <MaterialIcons name="warning" size={18} color={ACTIVE_ASSIGNMENT_COLORS.onPrimary} />
+        <Text style={styles.warningText}>Urgent</Text>
       </View>
     </View>
   );
@@ -27,55 +29,58 @@ export default function CountdownTimer({ assignment }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: `${ACTIVE_ASSIGNMENT_COLORS.errorContainer}15`,
-    borderWidth: 1,
-    borderColor: `${ACTIVE_ASSIGNMENT_COLORS.error}15`,
+    backgroundColor: `${ACTIVE_ASSIGNMENT_COLORS.errorContainer}10`,
+    borderWidth: 1.5,
+    borderColor: `${ACTIVE_ASSIGNMENT_COLORS.error}25`,
     margin: 16,
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: 16,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20,
+    gap: 16,
     position: 'relative',
     overflow: 'hidden',
   },
   backgroundIcon: {
     position: 'absolute',
-    top: -10,
-    right: -10,
-    opacity: 0.1,
-    transform: [{ rotate: '12deg' }],
+    top: -20,
+    right: -20,
+    opacity: 0.08,
+    transform: [{ rotate: '15deg' }],
   },
   content: {
     flex: 1,
     zIndex: 1,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  iconBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: `${ACTIVE_ASSIGNMENT_COLORS.error}15`,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   label: {
     fontFamily: 'Manrope-Bold',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     color: ACTIVE_ASSIGNMENT_COLORS.error,
     textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginBottom: 6,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    marginBottom: 4,
+    letterSpacing: 1,
   },
   time: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: '800',
     color: ACTIVE_ASSIGNMENT_COLORS.error,
-  },
-  timeUnit: {
-    fontFamily: 'Manrope-SemiBold',
-    fontSize: 14,
-    fontWeight: '600',
-    color: `${ACTIVE_ASSIGNMENT_COLORS.error}90`,
+    marginBottom: 4,
+    letterSpacing: -1,
   },
   deadline: {
     fontFamily: 'Manrope-Medium',
@@ -87,15 +92,20 @@ const styles = StyleSheet.create({
     backgroundColor: ACTIVE_ASSIGNMENT_COLORS.error,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     zIndex: 1,
+    shadowColor: ACTIVE_ASSIGNMENT_COLORS.error,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   warningText: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: ACTIVE_ASSIGNMENT_COLORS.onPrimary,
   },

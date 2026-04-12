@@ -8,13 +8,13 @@ export default function BottomActionBar({ onContinueWork, onSubmit }) {
     <View style={styles.container}>
       <View style={styles.gradient} />
       <View style={styles.actionBar}>
-        <TouchableOpacity style={styles.continueButton} onPress={onContinueWork}>
-          <MaterialIcons name="edit" size={20} color={ACTIVE_ASSIGNMENT_COLORS.onSurface} />
-          <Text style={styles.continueButtonText}>Continue Work</Text>
+        <TouchableOpacity style={styles.continueButton} onPress={onContinueWork} activeOpacity={0.7}>
+          <MaterialIcons name="edit" size={18} color={ACTIVE_ASSIGNMENT_COLORS.primary} />
+          <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.submitButton} onPress={onSubmit}>
-          <MaterialIcons name="cloud-upload" size={20} color={ACTIVE_ASSIGNMENT_COLORS.onPrimary} />
-          <Text style={styles.submitButtonText}>Submit Assignment</Text>
+        <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.8}>
+          <MaterialIcons name="cloud-upload" size={18} color={ACTIVE_ASSIGNMENT_COLORS.onPrimary} />
+          <Text style={styles.submitButtonText}>Submit</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -29,46 +29,50 @@ const styles = StyleSheet.create({
     right: 0,
   },
   gradient: {
-    height: 80,
     backgroundColor: ACTIVE_ASSIGNMENT_COLORS.surface,
   },
   actionBar: {
     flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 24,
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   continueButton: {
     flex: 1,
     backgroundColor: ACTIVE_ASSIGNMENT_COLORS.surfaceContainerLowest,
-    borderWidth: 1,
-    borderColor: `${ACTIVE_ASSIGNMENT_COLORS.outlineVariant}30`,
-    height: 56,
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: `${ACTIVE_ASSIGNMENT_COLORS.primary}30`,
+    height: 52,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
   },
   continueButtonText: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: ACTIVE_ASSIGNMENT_COLORS.onSurface,
+    color: ACTIVE_ASSIGNMENT_COLORS.primary,
   },
   submitButton: {
-    flex: 1.5,
+    flex: 1.3,
     backgroundColor: ACTIVE_ASSIGNMENT_COLORS.primary,
-    height: 56,
-    borderRadius: 12,
+    height: 52,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
+    gap: 8,
+    shadowColor: ACTIVE_ASSIGNMENT_COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   submitButtonText: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: ACTIVE_ASSIGNMENT_COLORS.onPrimary,
   },
