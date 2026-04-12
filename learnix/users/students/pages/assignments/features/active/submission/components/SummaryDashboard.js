@@ -41,7 +41,6 @@ export default function SummaryDashboard({ submission }) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 12,

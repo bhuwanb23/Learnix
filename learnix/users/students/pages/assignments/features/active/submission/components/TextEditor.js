@@ -52,14 +52,14 @@ export default function TextEditor({ editor, onSaveDraft, onSubmit }) {
             PAGES: <Text style={styles.statValue}>{editor.pageCount}</Text>
           </Text>
         </View>
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.saveDraftButton} onPress={onSaveDraft} activeOpacity={0.7}>
-            <Text style={styles.saveDraftText}>Save Draft</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.8}>
-            <Text style={styles.submitButtonText}>Submit Assignment</Text>
-          </TouchableOpacity>
-        </View>
+      </View>
+      <View style={styles.actionBar}>
+        <TouchableOpacity style={styles.saveDraftButton} onPress={onSaveDraft} activeOpacity={0.7}>
+          <Text style={styles.saveDraftText}>Save Draft</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.8}>
+          <Text style={styles.submitButtonText}>Submit Assignment</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -125,10 +125,8 @@ const styles = StyleSheet.create({
   },
   bottomBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderTopWidth: 1,
     borderTopColor: SUBMISSION_COLORS.surfaceContainer,
     backgroundColor: `${SUBMISSION_COLORS.surfaceContainerLow}80`,
@@ -146,9 +144,13 @@ const styles = StyleSheet.create({
   statValue: {
     color: SUBMISSION_COLORS.onSurface,
   },
-  actions: {
+  actionBar: {
     flexDirection: 'row',
     gap: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingTop: 12,
+    backgroundColor: `${SUBMISSION_COLORS.surfaceContainerLow}80`,
   },
   saveDraftButton: {
     backgroundColor: SUBMISSION_COLORS.surfaceContainerHigh,
