@@ -13,7 +13,7 @@ export default function UnitCard({ unit, isExpanded, onToggle }) {
     if (unit.isCompleted) {
       return (
         <TouchableOpacity style={styles.statusIconContainer} activeOpacity={0.7}>
-          <MaterialIcons name="check-circle" size={24} color={UNIT_LIST_COLORS.primary} />
+          <MaterialIcons name="check-circle" size={20} color={UNIT_LIST_COLORS.primary} />
         </TouchableOpacity>
       );
     }
@@ -27,16 +27,17 @@ export default function UnitCard({ unit, isExpanded, onToggle }) {
         >
           <MaterialIcons 
             name={isExpanded ? "radio-button-checked" : "radio-button-unchecked"} 
-            size={20} 
+            size={18} 
             color={isExpanded ? UNIT_LIST_COLORS.primary : UNIT_LIST_COLORS.outline} 
           />
         </TouchableOpacity>
       );
     }
     
+    // Not started - show circle outline
     return (
       <TouchableOpacity style={styles.statusIconContainer} activeOpacity={0.7}>
-        <MaterialIcons name="lock" size={24} color={UNIT_LIST_COLORS.outlineVariant} />
+        <MaterialIcons name="radio-button-unchecked" size={20} color={UNIT_LIST_COLORS.outlineVariant} />
       </TouchableOpacity>
     );
   };
@@ -74,6 +75,9 @@ export default function UnitCard({ unit, isExpanded, onToggle }) {
     if (unit.isInProgress && isExpanded) {
       return styles.iconContainerActive;
     }
+    if (unit.isCompleted) {
+      return styles.iconContainerCompleted;
+    }
     return styles.iconContainerDefault;
   };
 
@@ -88,13 +92,15 @@ export default function UnitCard({ unit, isExpanded, onToggle }) {
           <View style={[styles.iconContainer, getIconContainerStyle()]}>
             <MaterialIcons 
               name={unit.icon} 
-              size={24} 
+              size={22} 
               color={unit.isInProgress && isExpanded ? UNIT_LIST_COLORS.onPrimaryContainer : UNIT_LIST_COLORS.primary} 
             />
           </View>
           <View style={styles.textSection}>
             <View style={styles.titleRow}>
               <Text style={styles.title}>{unit.number}. {unit.title}</Text>
+            </View>
+            <View style={styles.badgeRow}>
               <View style={[styles.statusBadge, { backgroundColor: unit.statusBg }]}>
                 <Text style={[styles.statusText, { color: unit.statusColor }]}>{unit.status}</Text>
               </View>
@@ -143,9 +149,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -156,34 +162,41 @@ const styles = StyleSheet.create({
   iconContainerActive: {
     backgroundColor: UNIT_LIST_COLORS.primaryContainer,
   },
+  iconContainerCompleted: {
+    backgroundColor: UNIT_LIST_COLORS.secondaryContainer,
+  },
   textSection: {
     flex: 1,
-    gap: 4,
+    gap: 6,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    flexWrap: 'wrap',
-    marginBottom: 4,
+    gap: 8,
+    marginBottom: 2,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
     color: UNIT_LIST_COLORS.onSurface,
-    flex: 1,
+    lineHeight: 20,
   },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
+    alignSelf: 'flex-start',
   },
   statusText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
   description: {
@@ -194,17 +207,19 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   statusIconContainer: {
-    marginLeft: 8,
+    marginLeft: 6,
+    marginTop: 2,
   },
   radioButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 2,
     borderColor: UNIT_LIST_COLORS.surfaceContainerHigh,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: 6,
+    marginTop: 2,
   },
   topicsContainer: {
     backgroundColor: UNIT_LIST_COLORS.surfaceContainerLow,

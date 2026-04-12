@@ -110,11 +110,11 @@ export default function UnitListPage({ navigation, route }) {
               <Text style={styles.velocityUnit}>hrs/day</Text>
             </View>
             <View style={styles.barChart}>
-              <View style={[styles.bar, { height: '40%', opacity: 0.3 }]} />
-              <View style={[styles.bar, { height: '60%', opacity: 0.5 }]} />
-              <View style={[styles.bar, { height: '30%', opacity: 0.3 }]} />
-              <View style={[styles.bar, { height: '85%', opacity: 0.7 }]} />
-              <View style={[styles.bar, { height: '100%', opacity: 0.9 }]} />
+              <View style={[styles.bar, { height: 19 }]} />
+              <View style={[styles.bar, { height: 29 }]} />
+              <View style={[styles.bar, { height: 14 }]} />
+              <View style={[styles.bar, { height: 41 }]} />
+              <View style={[styles.bar, { height: 48 }]} />
             </View>
           </View>
 
@@ -195,11 +195,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: UNIT_LIST_COLORS.primary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   },
   bar: {
     flex: 1,
-    backgroundColor: UNIT_LIST_COLORS.onSecondary,
+    backgroundColor: '#ffffff',
     borderRadius: 2,
   },
   milestoneCard: {

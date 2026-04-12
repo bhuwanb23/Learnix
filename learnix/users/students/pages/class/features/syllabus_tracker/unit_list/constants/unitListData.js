@@ -65,13 +65,13 @@ export const UNITS_DATA = [
     number: '03',
     title: 'Graph Theory',
     description: 'Directed graphs, Dijkstra\'s algorithm, and pathfinding.',
-    status: 'Locked',
+    status: 'Not Started',
     statusColor: UNIT_LIST_COLORS.onSurfaceVariant,
     statusBg: UNIT_LIST_COLORS.surfaceContainerHigh,
     icon: 'analytics',
     isCompleted: false,
     isInProgress: false,
-    isLocked: true,
+    isLocked: false,
   },
 ];
 
