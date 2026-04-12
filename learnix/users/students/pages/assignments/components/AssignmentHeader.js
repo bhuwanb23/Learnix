@@ -22,14 +22,14 @@ export default function AssignmentHeader() {
           <TouchableOpacity style={styles.calendarButton} activeOpacity={0.7}>
             <MaterialIcons name="calendar-today" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          <View style={styles.avatarContainer}>
+          {/* <View style={styles.avatarContainer}>
             <Image
               source={{
                 uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=2080&auto=format&fit=crop',
               }}
               style={styles.avatar}
             />
-          </View>
+          </View> */}
         </View>
       </View>
     </View>

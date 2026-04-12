@@ -75,6 +75,14 @@ export default function AssignmentList({ assignments }) {
                     <Text style={styles.metaText}>Team Task</Text>
                   </View>
                 )}
+                {assignment.grade && (
+                  <View style={styles.metaItem}>
+                    <MaterialIcons name="emoji-events" size={14} color={assignment.progressColor} />
+                    <Text style={[styles.metaText, { color: assignment.progressColor, fontWeight: '700' }]}>
+                      Grade: {assignment.grade}
+                    </Text>
+                  </View>
+                )}
               </View>
             </View>
 

@@ -23,7 +23,9 @@ import {
   weeklyVelocity,
   subjectAllocation,
   statsCards,
-  assignments,
+  activeAssignments,
+  upcomingAssignments,
+  completedAssignments,
   recentCompletions,
 } from './constants/dashboardData';
 
@@ -31,6 +33,22 @@ export default function AssignmentPage() {
   const [activeTab, setActiveTab] = useState('active');
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+
+  // Select assignments based on active tab
+  const getAssignmentsForTab = () => {
+    switch (activeTab.toLowerCase()) {
+      case 'active':
+        return activeAssignments;
+      case 'upcoming':
+        return upcomingAssignments;
+      case 'completed':
+        return completedAssignments;
+      default:
+        return activeAssignments;
+    }
+  };
+
+  const currentAssignments = getAssignmentsForTab();
 
   return (
     <View style={styles.container}>
@@ -55,7 +73,7 @@ export default function AssignmentPage() {
 
           {/* Tabbed Navigation */}
           <AssignmentTabs
-            tabs={['Active Tasks', 'Upcoming', 'Archived']}
+            tabs={['Active', 'Upcoming', 'Completed']}
             activeTab={activeTab}
             onTabPress={setActiveTab}
           />
@@ -64,7 +82,7 @@ export default function AssignmentPage() {
           <View style={[styles.contentGrid, isDesktop && styles.contentGridDesktop]}>
             {/* Assignment Cards List */}
             <View style={[styles.assignmentsColumn, isDesktop && styles.assignmentsColumnDesktop]}>
-              <AssignmentList assignments={assignments} />
+              <AssignmentList assignments={currentAssignments} />
             </View>
 
             {/* Recent Completions Sidebar */}
