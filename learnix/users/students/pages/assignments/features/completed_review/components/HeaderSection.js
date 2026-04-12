@@ -1,16 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 import { COMPLETED_REVIEW_COLORS } from '../constants/completedReviewData';
 
 export default function HeaderSection({ title, onBack }) {
   return (
     <View style={styles.header}>
-      <StatusBar style="dark" />
       <View style={styles.headerContent}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color={COMPLETED_REVIEW_COLORS.primary} />
+          <MaterialIcons name="arrow-back" size={24} color="#0050d4"/>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Assignment Details</Text>
       </View>
