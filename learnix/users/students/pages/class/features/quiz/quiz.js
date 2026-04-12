@@ -5,9 +5,10 @@ import TopicDirectoryPage from './topic_directory/topic_directory';
 import ProfessionalFormPage from './professional_form/professional_form';
 import QuizAttemptPage from './quiz_attempt/quiz_attempt';
 import ResultsPage from './results/results';
+import ReviewPage from './review/review';
 
 export default function QuizPage({ navigation }) {
-  const [currentView, setCurrentView] = useState('subjects'); // 'subjects', 'units', 'topics', 'form', 'attempt', or 'results'
+  const [currentView, setCurrentView] = useState('subjects'); // 'subjects', 'units', 'topics', 'form', 'attempt', 'results', or 'review'
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [selectedTopic, setSelectedTopic] = useState(null);
@@ -61,11 +62,31 @@ export default function QuizPage({ navigation }) {
     setCurrentView('attempt');
   };
 
+  const navigateToReview = () => {
+    setCurrentView('review');
+  };
+
+  const navigateBackToResults = () => {
+    setCurrentView('results');
+  };
+
+  // Render Review if reviewing answers
+  if (currentView === 'review') {
+    return (
+      <ReviewPage 
+        navigation={{ goBack: navigateBackToResults }}
+      />
+    );
+  }
+
   // Render Results if quiz is submitted
   if (currentView === 'results') {
     return (
       <ResultsPage 
-        navigation={{ goBack: navigateBackToAttempt }}
+        navigation={{ 
+          goBack: navigateBackToAttempt,
+          navigateToReview 
+        }}
       />
     );
   }

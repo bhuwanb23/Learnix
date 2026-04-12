@@ -4,11 +4,13 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { QUIZ_RESULTS_COLORS } from '../constants/quizResultsData';
 
 export default function AccuracyChart({ percentage }) {
-  const radius = 70;
-  const strokeWidth = 12;
+  const size = 140;
+  const strokeWidth = 10;
+  const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
 
@@ -17,13 +19,32 @@ export default function AccuracyChart({ percentage }) {
       <Text style={styles.title}>ACCURACY</Text>
       
       <View style={styles.chartContainer}>
-        <View style={styles.svgContainer}>
+        <Svg width={size} height={size} style={styles.svg}>
           {/* Background circle */}
-          <View style={[styles.circle, styles.backgroundCircle]} />
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={QUIZ_RESULTS_COLORS.surfaceContainerHigh}
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
           
-          {/* Progress circle (simplified representation) */}
-          <View style={[styles.circle, styles.progressCircle]} />
-        </View>
+          {/* Progress circle */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={QUIZ_RESULTS_COLORS.primary}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            rotation="-90"
+            origin={`${size / 2}, ${size / 2}`}
+          />
+        </Svg>
         
         <View style={styles.centerText}>
           <Text style={styles.percentageText}>{percentage}%</Text>
@@ -41,48 +62,29 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: QUIZ_RESULTS_COLORS.surfaceContainerLowest,
     borderRadius: 14,
-    padding: 20,
+    padding: 18,
     alignItems: 'center',
+    marginBottom: 12,
   },
   title: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     fontFamily: 'Manrope-Bold',
     color: QUIZ_RESULTS_COLORS.onSurfaceVariant,
     letterSpacing: 1,
     alignSelf: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   chartContainer: {
-    width: 160,
-    height: 160,
+    width: 140,
+    height: 140,
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  svgContainer: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 12,
-    borderColor: `${QUIZ_RESULTS_COLORS.primary}26`,
+  svg: {
     position: 'absolute',
-  },
-  circle: {
-    position: 'absolute',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-  },
-  backgroundCircle: {
-    borderWidth: 12,
-    borderColor: `${QUIZ_RESULTS_COLORS.onSurfaceVariant}20`,
-  },
-  progressCircle: {
-    borderWidth: 12,
-    borderColor: QUIZ_RESULTS_COLORS.primary,
-    borderStyle: 'dashed',
   },
   centerText: {
     position: 'absolute',
@@ -90,7 +92,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   percentageText: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_RESULTS_COLORS.primary,
@@ -101,6 +103,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: QUIZ_RESULTS_COLORS.onSurfaceVariant,
     textAlign: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
 });

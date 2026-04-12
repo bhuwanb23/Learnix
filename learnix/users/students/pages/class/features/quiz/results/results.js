@@ -23,6 +23,9 @@ export default function ResultsPage({ navigation, route }) {
 
   const handleReviewAnswers = () => {
     console.log('Review answers');
+    if (navigation?.navigateToReview) {
+      navigation.navigateToReview();
+    }
   };
 
   const handleTryAgain = () => {
@@ -104,7 +107,7 @@ export default function ResultsPage({ navigation, route }) {
             activeOpacity={0.7}
           >
             <Ionicons name="document-text" size={20} color="#ffffff" />
-            <Text style={styles.primaryButtonText}>Review Answers</Text>
+            <Text style={styles.primaryButtonText}>Review</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -130,32 +133,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    height: 52,
     backgroundColor: QUIZ_RESULTS_COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: `${QUIZ_RESULTS_COLORS.outlineVariant}26`,
+    gap: 12,
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
+    minWidth: 0,
   },
   iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
     color: QUIZ_RESULTS_COLORS.primary,
     letterSpacing: -0.3,
+    flexShrink: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
