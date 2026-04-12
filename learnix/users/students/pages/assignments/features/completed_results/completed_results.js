@@ -40,7 +40,7 @@ export default function CompletedResultsScreen({ route, navigation }) {
                     <ImprovementSuggestionsCard results={resultsData} />
                     <View style={styles.downloadButtonContainer}>
                         <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadPDF}>
-                            <MaterialIcons name="download" size={20} color={COMPLETED_RESULTS_COLORS.onSurface} />
+                            <MaterialIcons name="download" size={16} color={COMPLETED_RESULTS_COLORS.onSurface} />
                             <Text style={styles.downloadButtonText}>Download Annotated PDF</Text>
                         </TouchableOpacity>
                     </View>
@@ -66,23 +66,23 @@ const styles = StyleSheet.create({
         paddingHorizontal: 0,
     },
     downloadButtonContainer: {
-        paddingHorizontal: 16,
-        marginTop: 16,
+        paddingHorizontal: 12,
+        marginTop: 12,
     },
     downloadButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 12,
+        gap: 8,
         backgroundColor: COMPLETED_RESULTS_COLORS.surfaceContainerHigh,
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 10,
         alignSelf: 'flex-end',
     },
     downloadButtonText: {
         fontFamily: 'Manrope-Bold',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '700',
         color: COMPLETED_RESULTS_COLORS.onSurface,
     },
