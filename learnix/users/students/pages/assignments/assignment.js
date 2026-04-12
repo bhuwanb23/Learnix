@@ -15,6 +15,7 @@ import AssignmentTabs from './components/AssignmentTabs';
 import AssignmentList from './components/AssignmentList';
 import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
 import UpcomingAssignmentPage from './features/upcoming/upcoming_assignment';
+import CompletedReviewPage from './features/completed_review/completed_review';
 
 // Import theme
 import { COLORS, SPACING } from '../../../../constants/theme';
@@ -32,7 +33,7 @@ import {
 
 export default function AssignmentPage() {
   const [activeTab, setActiveTab] = useState('active');
-  const [currentView, setCurrentView] = useState('list'); // 'list' or 'upcoming-detail'
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'upcoming-detail', or 'completed-review'
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -55,9 +56,13 @@ export default function AssignmentPage() {
 
   // Handle assignment card press
   const handleAssignmentPress = (assignment) => {
-    if (activeTab.toLowerCase() === 'upcoming') {
+    const tab = activeTab.toLowerCase();
+    if (tab === 'upcoming') {
       setSelectedAssignment(assignment);
       setCurrentView('upcoming-detail');
+    } else if (tab === 'completed' && assignment.underReview) {
+      setSelectedAssignment(assignment);
+      setCurrentView('completed-review');
     }
     // Add handlers for other tabs later
   };
@@ -73,6 +78,11 @@ export default function AssignmentPage() {
       {/* Show Upcoming Assignment Detail Page */}
       {currentView === 'upcoming-detail' ? (
         <UpcomingAssignmentPage
+          navigation={{ goBack: handleBackToList }}
+          route={{ params: { assignment: selectedAssignment } }}
+        />
+      ) : currentView === 'completed-review' ? (
+        <CompletedReviewPage
           navigation={{ goBack: handleBackToList }}
           route={{ params: { assignment: selectedAssignment } }}
         />
