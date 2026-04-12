@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d9dde0",
+                        "background": "#f5f7f9",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-error-container": "#570008",
+                        "tertiary-dim": "#8e3000",
+                        "inverse-surface": "#0b0f10",
+                        "tertiary-fixed": "#ff956a",
+                        "on-surface": "#2c2f31",
+                        "secondary": "#702ae1",
+                        "on-background": "#2c2f31",
+                        "outline": "#747779",
+                        "primary-fixed-dim": "#658eff",
+                        "on-secondary-container": "#5b00c7",
+                        "error": "#b31b25",
+                        "on-tertiary": "#ffefeb",
+                        "secondary-container": "#dcc9ff",
+                        "error-dim": "#9f0519",
+                        "surface-bright": "#f5f7f9",
+                        "on-primary-container": "#001e5a",
+                        "tertiary-container": "#ff956a",
+                        "surface-container-high": "#dfe3e6",
+                        "surface-dim": "#d0d5d8",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "primary-container": "#7b9cff",
+                        "on-error": "#ffefee",
+                        "surface-container": "#e5e9eb",
+                        "primary": "#0050d4",
+                        "primary-dim": "#0046bb",
+                        "inverse-primary": "#618bff",
+                        "on-secondary": "#f8f0ff",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-variant": "#d9dde0",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "surface-tint": "#0050d4",
+                        "on-tertiary-fixed": "#310b00",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-surface-variant": "#595c5e",
+                        "outline-variant": "#abadaf",
+                        "on-primary-fixed-variant": "#00266e",
+                        "error-container": "#fb5151",
+                        "surface": "#f5f7f9",
+                        "on-primary-fixed": "#000000",
+                        "tertiary": "#a23800",
+                        "surface-container-low": "#eef1f3",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-secondary-fixed": "#430097",
+                        "primary-fixed": "#7b9cff",
+                        "secondary-dim": "#6411d5",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-primary": "#f1f2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+    <!-- TopAppBar -->
+    <header class="bg-[#f5f7f9] dark:bg-slate-950 docked full-width top-0 z-40">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <h1 class="text-on-surface font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-xl">My Progress</h1>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pt-8 pb-32">
+        <!-- Hero Section: Overall Progress -->
+        <section class="mb-12">
+            <div
+                class="bg-surface-container-lowest rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-[0_8px_24px_rgba(0,0,0,0.02)]">
+                <div class="space-y-2 text-center md:text-left">
+                    <span class="text-primary font-bold tracking-widest text-xs uppercase">Academic Overview</span>
+                    <h2 class="text-4xl font-extrabold text-on-surface tracking-tight leading-tight">Your Academic
+                        Journey</h2>
+                    <p class="text-on-surface-variant max-w-md">You've completed 68% of your total curriculum. Stay
+                        focused, you're ahead of the semester curve.</p>
+                </div>
+                <!-- Radial Progress Chart -->
+                <div class="relative flex items-center justify-center">
+                    <svg class="w-40 h-40 transform -rotate-90">
+                        <circle class="text-surface-container-high/20" cx="80" cy="80" fill="transparent" r="70"
+                            stroke="currentColor" stroke-width="12"></circle>
+                        <circle cx="80" cy="80" fill="transparent" r="70" stroke="url(#paint0_linear)"
+                            stroke-dasharray="440" stroke-dashoffset="140" stroke-linecap="round" stroke-width="12">
+                        </circle>
+                        <defs>
+                            <lineargradient gradientunits="userSpaceOnUse" id="paint0_linear" x1="0" x2="160" y1="0"
+                                y2="160">
+                                <stop stop-color="#0050d4"></stop>
+                                <stop offset="1" stop-color="#7b9cff"></stop>
+                            </lineargradient>
+                        </defs>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-3xl font-extrabold text-on-surface">68%</span>
+                        <span
+                            class="text-[10px] uppercase font-bold text-on-surface-variant tracking-tighter">Overall</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Subjects Grid -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Subject Card 1 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-all duration-300 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-on-surface group-hover:text-primary transition-colors">
+                            Advanced Thermodynamics</h3>
+                        <p class="text-xs text-on-surface-variant font-medium">Mechanical Engineering • SEM 04</p>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-primary bg-primary-container/10 px-2.5 py-1 rounded-full">CORE</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span
+                            class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Completion</span>
+                        <span class="text-sm font-extrabold text-on-surface">82%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full transition-all duration-700" style="width: 82%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Subject Card 2 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-all duration-300 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-on-surface group-hover:text-primary transition-colors">Neural
+                            Architectures</h3>
+                        <p class="text-xs text-on-surface-variant font-medium">Data Science • SEM 04</p>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-secondary bg-secondary-container/10 px-2.5 py-1 rounded-full">ELECTIVE</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span
+                            class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Completion</span>
+                        <span class="text-sm font-extrabold text-on-surface">45%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-secondary rounded-full transition-all duration-700" style="width: 45%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Subject Card 3 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-all duration-300 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-on-surface group-hover:text-primary transition-colors">Quantum
+                            Mechanics I</h3>
+                        <p class="text-xs text-on-surface-variant font-medium">Applied Physics • SEM 04</p>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-tertiary bg-tertiary-container/10 px-2.5 py-1 rounded-full">LAB</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span
+                            class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Completion</span>
+                        <span class="text-sm font-extrabold text-on-surface">15%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-tertiary rounded-full transition-all duration-700" style="width: 15%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Subject Card 4 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-all duration-300 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-on-surface group-hover:text-primary transition-colors">Complex
+                            Analysis</h3>
+                        <p class="text-xs text-on-surface-variant font-medium">Pure Mathematics • SEM 03</p>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-primary bg-primary-container/10 px-2.5 py-1 rounded-full">CORE</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span
+                            class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Completion</span>
+                        <span class="text-sm font-extrabold text-on-surface">94%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full transition-all duration-700" style="width: 94%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Subject Card 5 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.01)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-all duration-300 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-on-surface group-hover:text-primary transition-colors">
+                            Microeconomics</h3>
+                        <p class="text-xs text-on-surface-variant font-medium">Finance • SEM 04</p>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-slate-500 bg-surface-container-high px-2.5 py-1 rounded-full">GEN-ED</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                        <span
+                            class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Completion</span>
+                        <span class="text-sm font-extrabold text-on-surface">62%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-slate-400 rounded-full transition-all duration-700" style="width: 62%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Subject Card 6 -->
+            <div
+                class="bg-surface-container-low/50 border-2 border-dashed border-outline-variant/30 rounded-xl p-6 flex flex-col items-center justify-center text-center gap-2 group cursor-pointer hover:bg-surface-container-low transition-colors">
+                <span
+                    class="material-symbols-outlined text-3xl text-outline-variant group-hover:text-primary transition-colors">add_circle</span>
+                <div>
+                    <h3 class="text-sm font-bold text-on-surface-variant">Add New Subject</h3>
+                    <p class="text-[11px] text-on-surface-variant/70">Sync from your portal</p>
+                </div>
+            </div>
+        </section>
+        <!-- Academic Milestones (Editorial Section) -->
+        <section
+            class="mt-16 bg-gradient-to-br from-primary to-primary-dim rounded-xl p-10 relative overflow-hidden text-on-primary">
+            <div class="relative z-10">
+                <h2 class="text-3xl font-bold tracking-tight mb-2">Upcoming Milestone</h2>
+                <p class="text-on-primary/80 max-w-xl mb-8">Your mid-term portfolio review is scheduled for next Friday.
+                    Based on your current progress in "Neural Architectures", we recommend reviewing Module 3.</p>
+                <button
+                    class="bg-white text-primary px-8 py-3 rounded-full font-bold text-sm hover:opacity-90 active:scale-95 transition-all">Review
+                    Progress</button>
+            </div>
+            <!-- Decorative Elements -->
+            <div class="absolute -top-10 -right-10 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-20 -left-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"></div>
+        </section>
+    </main>
+    <!-- BottomNavBar -->
+</body>
+
+</html>

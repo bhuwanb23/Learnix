@@ -19,6 +19,7 @@ import PerformanceStats from './components/PerformanceStats';
 import LectureNotesContainer from './features/lecture_notes';
 import WeakTopicsPage from './features/weak_topics/weak_topics';
 import QuizPage from './features/quiz/quiz';
+import SyllabusTrackerPage from './features/syllabus_tracker/syllabus_tracker';
 
 // Import data
 import {
@@ -71,6 +72,15 @@ export default function ClassPage({ navigation }) {
   if (currentFeature === 'quizzes' || currentFeature === 'quiz') {
     return (
       <QuizPage 
+        navigation={{ goBack: navigateBack }}
+      />
+    );
+  }
+
+  // Render Syllabus Tracker feature
+  if (currentFeature === 'syllabus-tracker' || currentFeature === 'syllabus_tracker') {
+    return (
+      <SyllabusTrackerPage 
         navigation={{ goBack: navigateBack }}
       />
     );

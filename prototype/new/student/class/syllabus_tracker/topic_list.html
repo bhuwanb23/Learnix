@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Topic Tracker: Unit 2: Trees</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#f1f2ff",
+                        "secondary-container": "#dcc9ff",
+                        "secondary-dim": "#6411d5",
+                        "primary": "#0050d4",
+                        "on-primary-container": "#001e5a",
+                        "inverse-surface": "#0b0f10",
+                        "inverse-on-surface": "#9a9d9f",
+                        "surface-container-low": "#eef1f3",
+                        "primary-container": "#7b9cff",
+                        "outline-variant": "#abadaf",
+                        "on-error-container": "#570008",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "background": "#f5f7f9",
+                        "surface-bright": "#f5f7f9",
+                        "on-tertiary": "#ffefeb",
+                        "tertiary": "#a23800",
+                        "primary-fixed-dim": "#658eff",
+                        "on-error": "#ffefee",
+                        "surface-variant": "#d9dde0",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-tertiary-fixed": "#310b00",
+                        "tertiary-container": "#ff956a",
+                        "primary-dim": "#0046bb",
+                        "error": "#b31b25",
+                        "surface-container": "#e5e9eb",
+                        "surface-tint": "#0050d4",
+                        "surface-container-highest": "#d9dde0",
+                        "surface": "#f5f7f9",
+                        "surface-dim": "#d0d5d8",
+                        "error-container": "#fb5151",
+                        "primary-fixed": "#7b9cff",
+                        "on-secondary-container": "#5b00c7",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-secondary-fixed": "#430097",
+                        "tertiary-dim": "#8e3000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed": "#000000",
+                        "surface-container-high": "#dfe3e6",
+                        "inverse-primary": "#618bff",
+                        "on-background": "#2c2f31",
+                        "on-surface": "#2c2f31",
+                        "tertiary-fixed": "#ff956a",
+                        "on-tertiary-container": "#5a1c00",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-secondary": "#f8f0ff",
+                        "error-dim": "#9f0519",
+                        "outline": "#747779",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-surface-variant": "#595c5e",
+                        "secondary": "#702ae1",
+                        "on-secondary-fixed-variant": "#6514d6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header
+        class="w-full top-0 sticky z-40 bg-[#f5f7f9] dark:bg-slate-950 no-border tonal-shift bg-[#eef1f3] dark:bg-slate-900">
+        <div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <button
+                    class="hover:bg-[#ffffff]/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95 duration-200 p-2 rounded-full">
+                    <span class="material-symbols-outlined text-[#0050d4] dark:text-blue-400">arrow_back</span>
+                </button>
+                <h1
+                    class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-xl text-[#0050d4] dark:text-blue-400">
+                    Topic Tracker</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex gap-8 mr-8">
+                    <span class="font-['Plus_Jakarta_Sans'] font-bold text-[#0050d4]">Syllabus</span>
+                    <span
+                        class="text-slate-500 dark:text-slate-400 font-semibold cursor-pointer hover:text-[#0050d4] transition-colors">Planner</span>
+                    <span
+                        class="text-slate-500 dark:text-slate-400 font-semibold cursor-pointer hover:text-[#0050d4] transition-colors">Tracker</span>
+                </div>
+                <div
+                    class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold overflow-hidden">
+                    <img class="w-full h-full object-cover"
+                        data-alt="professional headshot of a student with a friendly expression in a modern bright studio setting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHPZ11gEdx1bobNcWB9-Q2t5On3qy1WypL8QC5-PdyPmEr1QhbT5qL7EI5Pw9URqXnDSzkeh45pYJVRsB7nm5qxGLERFIWyweKh_Ev_WP8VGaoj3mPGcWoP-78ATxdCFwOnTEMpGnUAv_GB6uK2YmVfZOCo8UwbLdAhkKl_IKlmUvpUAwlYJiSWA2bpu1lmd44VQqmyt7e2pHIv7W9O86WZ-PUpzIgYnoza_dwdKKvtZ6CvfBYKeK4GKW8xpsozDOtyJcUhzIXXzI" />
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pt-8">
+        <!-- Hero Section / Header Title -->
+        <div class="mb-12">
+            <div class="flex items-baseline gap-3 mb-2">
+                <span class="text-primary font-bold tracking-widest text-sm font-headline">UNIT 2</span>
+                <div class="h-1 w-12 bg-primary-container rounded-full"></div>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-extrabold font-headline tracking-tight text-on-surface mb-4">Trees
+                &amp; Hierarchies</h2>
+            <p class="text-on-surface-variant max-w-2xl text-lg leading-relaxed">
+                Mastering non-linear data structures, traversal algorithms, and self-balancing search trees for
+                optimized data retrieval.
+            </p>
+        </div>
+        <!-- Progress Overview Bento Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div
+                class="md:col-span-2 bg-primary p-8 rounded-xl relative overflow-hidden flex flex-col justify-between min-h-[200px]">
+                <div class="relative z-10">
+                    <h3 class="text-on-primary/80 font-semibold mb-1">Overall Unit Progress</h3>
+                    <div class="text-5xl font-bold text-white font-headline">64%</div>
+                </div>
+                <div class="relative z-10 w-full bg-white/20 h-3 rounded-full mt-4">
+                    <div class="bg-white h-full rounded-full" style="width: 64%"></div>
+                </div>
+                <!-- Abstract Background Shapes -->
+                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="absolute right-20 top-0 w-32 h-32 bg-primary-container/20 rounded-full blur-2xl"></div>
+            </div>
+            <div
+                class="bg-surface-container-lowest p-8 rounded-xl flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-full bg-secondary-container flex items-center justify-center mb-4">
+                    <span class="material-symbols-outlined text-secondary text-3xl">timer</span>
+                </div>
+                <div class="text-2xl font-bold text-on-surface font-headline">12h 40m</div>
+                <p class="text-on-surface-variant text-sm">Estimated study time left</p>
+            </div>
+        </div>
+        <!-- Topic Cards Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Topic 1: Binary Trees (In Progress) -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl group hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-transparent hover:border-primary/10">
+                <div class="flex items-center gap-6">
+                    <div class="relative flex-shrink-0">
+                        <input
+                            class="w-10 h-10 rounded-xl border-2 border-primary-container text-primary focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer appearance-none checked:bg-primary"
+                            type="checkbox" />
+                        <span
+                            class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity">check</span>
+                    </div>
+                    <div>
+                        <h4
+                            class="text-xl font-bold font-headline text-on-surface group-hover:text-primary transition-colors">
+                            Binary Trees</h4>
+                        <p class="text-on-surface-variant text-sm mt-1">Fundamental structures, recursion, and basic
+                            traversals (In-order, Pre-order).</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 self-end md:self-center">
+                    <span
+                        class="px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant text-xs font-bold tracking-wide flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                        In Progress
+                    </span>
+                    <button
+                        class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-primary-container/20 transition-colors">
+                        <span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Topic 2: Binary Search Trees -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl group hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-center gap-6">
+                    <div class="relative flex-shrink-0">
+                        <input checked=""
+                            class="w-10 h-10 rounded-xl border-2 border-primary text-primary focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer"
+                            type="checkbox" />
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold font-headline text-on-surface opacity-60">Binary Search Trees</h4>
+                        <p class="text-on-surface-variant text-sm mt-1">Efficient searching, insertion, and deletion
+                            logic within sorted constraints.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 self-end md:self-center">
+                    <span
+                        class="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant text-xs font-bold tracking-wide">
+                        Completed
+                    </span>
+                    <button
+                        class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-primary-container/20 transition-colors">
+                        <span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Topic 3: Red-Black Trees (Not Started) -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl group hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-transparent hover:border-primary/10">
+                <div class="flex items-center gap-6">
+                    <div class="relative flex-shrink-0">
+                        <input
+                            class="w-10 h-10 rounded-xl border-2 border-outline-variant/30 text-primary focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer"
+                            type="checkbox" />
+                    </div>
+                    <div>
+                        <h4
+                            class="text-xl font-bold font-headline text-on-surface group-hover:text-primary transition-colors">
+                            Red-Black Trees</h4>
+                        <p class="text-on-surface-variant text-sm mt-1">Self-balancing properties, rotations, and strict
+                            color-based constraints.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 self-end md:self-center">
+                    <span
+                        class="px-4 py-1.5 rounded-full bg-tertiary-container/20 text-on-tertiary-container text-xs font-bold tracking-wide">
+                        Not Started
+                    </span>
+                    <button
+                        class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-primary-container/20 transition-colors">
+                        <span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Topic 4: AVL Trees -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl group hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-transparent hover:border-primary/10">
+                <div class="flex items-center gap-6">
+                    <div class="relative flex-shrink-0">
+                        <input
+                            class="w-10 h-10 rounded-xl border-2 border-outline-variant/30 text-primary focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer"
+                            type="checkbox" />
+                    </div>
+                    <div>
+                        <h4
+                            class="text-xl font-bold font-headline text-on-surface group-hover:text-primary transition-colors">
+                            AVL Trees</h4>
+                        <p class="text-on-surface-variant text-sm mt-1">Height-balancing factors and maintaining
+                            logarithmic time complexity.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 self-end md:self-center">
+                    <span
+                        class="px-4 py-1.5 rounded-full bg-tertiary-container/20 text-on-tertiary-container text-xs font-bold tracking-wide">
+                        Not Started
+                    </span>
+                    <button
+                        class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-primary-container/20 transition-colors">
+                        <span class="material-symbols-outlined text-on-surface-variant">more_vert</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Featured Resource Section -->
+        <section class="mt-16 mb-12">
+            <h3 class="text-2xl font-bold font-headline mb-6">Learning Resources</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="relative h-64 rounded-xl overflow-hidden group cursor-pointer">
+                    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        data-alt="a high quality close-up of a digital tablet showing complex data structure diagrams with glowing blue lines in a dark room"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEx1apwbxnq_NX3pWPq_FvMruXQSWcKVrMlZXVQahpWubonKD8kqcd2wCjYzeP2YXsTM8eGJukDsJcedrtbQanOT1_BtLZNRHBlaFrqBLef_si98-svEwcSOcU7JrblGeHVKiaZEvKptIj5bd-iPcKT6-BjIVlj7x-KvR_V8P1X8v7P50UD9K7GJ-mH4Gxu-hm59xOmypZeNMsvi8zg_oWot63sIem7mLkvKXayZyY3o51AK_9qIMksDQt-jCwJkqvHuIR7etea0g" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8">
+                        <span class="text-primary-container font-bold text-xs tracking-widest mb-2 uppercase">Video
+                            Lecture</span>
+                        <h4 class="text-white text-xl font-bold font-headline">Visualizing Balances in Trees</h4>
+                    </div>
+                </div>
+                <div class="bg-secondary p-8 rounded-xl text-on-secondary flex flex-col justify-between">
+                    <div>
+                        <span class="material-symbols-outlined text-4xl mb-4">quiz</span>
+                        <h4 class="text-2xl font-bold font-headline mb-2">Practice Challenge</h4>
+                        <p class="opacity-80">Test your knowledge of Red-Black Tree rotations with this interactive
+                            coding sandbox.</p>
+                    </div>
+                    <button
+                        class="mt-8 bg-white text-secondary font-bold py-3 px-6 rounded-xl hover:bg-secondary-container transition-colors w-fit">
+                        Start Challenge
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#ffffff]/90 dark:bg-slate-900/90 backdrop-blur-xl fixed bottom-0 w-full rounded-t-[24px] z-50 no-border shadow-[0_-8px_24px_rgba(44,47,49,0.06)] shadow-2xl">
+        <a class="flex flex-col items-center justify-center text-[#2c2f31]/60 dark:text-slate-400 px-5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition-transform duration-300"
+            href="#">
+            <span class="material-symbols-outlined">menu_book</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold mt-1">Syllabus</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-[#2c2f31]/60 dark:text-slate-400 px-5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition-transform duration-300"
+            href="#">
+            <span class="material-symbols-outlined">calendar_today</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold mt-1">Planner</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-[#7b9cff]/20 text-[#0050d4] dark:text-blue-300 rounded-[9999px] px-5 py-2 active:scale-90 transition-transform duration-300"
+            href="#">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold mt-1">Tracker</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-[#2c2f31]/60 dark:text-slate-400 px-5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition-transform duration-300"
+            href="#">
+            <span class="material-symbols-outlined">person</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold mt-1">Profile</span>
+        </a>
+    </nav>
+</body>
+
+</html>

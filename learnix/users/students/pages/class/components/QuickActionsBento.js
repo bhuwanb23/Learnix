@@ -30,6 +30,12 @@ export default function QuickActionsBento({ actions, navigation }) {
       } else {
         console.log('Navigation not available');
       }
+    } else if (actionId === 'syllabus-tracker' || actionId === 'syllabus_tracker') {
+      if (navigation?.navigate) {
+        navigation.navigate('syllabus_tracker');
+      } else {
+        console.log('Navigation not available');
+      }
     }
     // Add more navigation routes as features are designed
   };
