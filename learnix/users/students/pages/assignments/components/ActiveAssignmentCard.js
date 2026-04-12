@@ -100,11 +100,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.xs,
     marginBottom: SPACING.xs,
+    flexWrap: 'wrap',
   },
   priorityBadge: {
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.sm,
+    flexShrink: 0,
   },
   priorityText: {
     fontSize: 8,

@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.xs,
     marginBottom: SPACING.xs,
+    flexWrap: 'wrap',
   },
   reviewBadge: {
     flexDirection: 'row',
@@ -100,6 +101,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.sm,
+    flexShrink: 0,
   },
   reviewText: {
     fontSize: 8,

@@ -90,11 +90,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.xs,
     marginBottom: SPACING.xs,
+    flexWrap: 'wrap',
   },
   statusBadge: {
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: BORDER_RADIUS.sm,
+    flexShrink: 0,
   },
   statusText: {
     fontSize: 8,
