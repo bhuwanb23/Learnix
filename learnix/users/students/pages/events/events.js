@@ -6,14 +6,11 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   FlatList,
-  StatusBar,
   Animated,
-  Platform,
   RefreshControl,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
 
 // Import components
@@ -21,12 +18,12 @@ import HeroSection from './components/HeroSection';
 import SearchFilter from './components/SearchFilter';
 import EventCard from './components/EventCard';
 import Sidebar from './components/Sidebar';
+import EventDetailsPage from './pages/details/details';
 
 // Import data
 import { EVENT_CATEGORIES, DISCOVERY_EVENTS, MY_REGISTRATIONS, EVENT_STATS, TRENDING_TAGS } from './constants/eventData';
 
 export default function EventsPage() {
-  const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
@@ -34,6 +31,8 @@ export default function EventsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filteredEvents, setFilteredEvents] = useState(DISCOVERY_EVENTS);
+  const [currentView, setCurrentView] = useState('list'); // 'list' or 'details'
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   // Animation values
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -62,8 +61,16 @@ export default function EventsPage() {
     }, 1500);
   };
 
+  // Handle event card press - navigate to details
   const handleEventPress = (event) => {
-    navigation.navigate('EventDetails', { event });
+    setSelectedEvent(event);
+    setCurrentView('details');
+  };
+
+  // Navigate back to list
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedEvent(null);
   };
 
   // Header Animation (Fade in on scroll)
@@ -123,38 +130,46 @@ export default function EventsPage() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-
-      <Animated.FlatList
-        data={isDesktop ? [{ id: 'desktop' }] : filteredEvents}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={ListHeader}
-        renderItem={({ item, index }) =>
-          isDesktop ? renderDesktopLayout() : (
-            <Animated.View style={[styles.mobileEventCardWrapper, {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }]}>
-              <EventCard item={item} index={index} onPress={handleEventPress} />
-            </Animated.View>
-          )
-        }
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
+      {/* Show Event Details Page */}
+      {currentView === 'details' ? (
+        <EventDetailsPage
+          navigation={{ goBack: handleBackToList }}
+          route={{ params: { event: selectedEvent } }}
+        />
+      ) : (
+        <>
+          <Animated.FlatList
+            data={isDesktop ? [{ id: 'desktop' }] : filteredEvents}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={ListHeader}
+            renderItem={({ item, index }) =>
+              isDesktop ? renderDesktopLayout() : (
+                <Animated.View style={[styles.mobileEventCardWrapper, {
+                  opacity: fadeAnim,
+                  transform: [{ translateY: slideAnim }]
+                }]}>
+                  <EventCard item={item} index={index} onPress={handleEventPress} />
+                </Animated.View>
+              )
+            }
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true }
+            )}
+            scrollEventThrottle={16}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={COLORS.primary}
+                colors={[COLORS.primary]}
+              />
+            }
           />
-        }
-      />
+        </>
+      )}
     </View>
   );
 }

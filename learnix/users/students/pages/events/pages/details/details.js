@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import HeroSection from './components/HeroSection';
 import AboutSection from './components/AboutSection';
@@ -7,8 +7,10 @@ import SpeakersSection from './components/SpeakersSection';
 import LocationSection from './components/LocationSection';
 import BottomActionBar from './components/BottomActionBar';
 import { EVENT_DETAILS_DATA } from './constants/eventDetailsData';
+import EventRegistrationPage from '../registration/registration';
 
 export default function EventDetailsScreen({ route, navigation }) {
+    const [currentView, setCurrentView] = useState('details'); // 'details' or 'registration'
     const clickedEvent = route?.params?.event || {};
     const eventData = {
         ...EVENT_DETAILS_DATA,
@@ -16,7 +18,11 @@ export default function EventDetailsScreen({ route, navigation }) {
     };
 
     const handleBack = () => {
-        navigation.goBack();
+        if (currentView === 'registration') {
+            setCurrentView('details');
+        } else if (navigation?.goBack) {
+            navigation.goBack();
+        }
     };
 
     const handleShare = () => {
@@ -24,8 +30,18 @@ export default function EventDetailsScreen({ route, navigation }) {
     };
 
     const handleRegister = () => {
-        console.log('Register for event');
+        setCurrentView('registration');
     };
+
+    // Show Registration Page
+    if (currentView === 'registration') {
+        return (
+            <EventRegistrationPage
+                navigation={{ goBack: handleBack }}
+                route={{ params: { event: eventData, userEmail: 'student@academy.edu' } }}
+            />
+        );
+    }
 
     return (
         <View style={styles.container}>
