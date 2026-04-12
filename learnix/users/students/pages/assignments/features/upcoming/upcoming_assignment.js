@@ -21,8 +21,14 @@ export default function UpcomingAssignmentPage({ navigation, route }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
 
-  // Get assignment data from route params or use default
-  const assignmentData = route?.params?.assignment || UPCOMING_ASSIGNMENT_DATA;
+  // Get assignment data from route params and merge with default data
+  const clickedAssignment = route?.params?.assignment || {};
+  
+  // Merge clicked assignment with default data to ensure all fields exist
+  const assignmentData = {
+    ...UPCOMING_ASSIGNMENT_DATA,
+    ...clickedAssignment,
+  };
 
   const handleBack = () => {
     if (navigation?.goBack) {
