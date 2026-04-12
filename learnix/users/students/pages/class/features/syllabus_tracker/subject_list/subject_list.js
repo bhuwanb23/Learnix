@@ -21,7 +21,9 @@ export default function SubjectListPage({ navigation }) {
   };
 
   const handleSubjectPress = (subject) => {
-    console.log('Subject pressed:', subject.name);
+    if (navigation?.navigateToUnits) {
+      navigation.navigateToUnits(subject);
+    }
   };
 
   const handleReviewProgress = () => {
