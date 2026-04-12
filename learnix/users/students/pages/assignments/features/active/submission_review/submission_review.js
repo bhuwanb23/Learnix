@@ -9,7 +9,6 @@ export default function SubmissionReviewScreen({ route, navigation, onNavigate }
     const clickedAssignment = route?.params?.assignment || {};
     const reviewData = {
         ...SUBMISSION_REVIEW_DATA,
-        ...clickedAssignment,
     };
 
     const handleBack = () => {
@@ -37,7 +36,7 @@ export default function SubmissionReviewScreen({ route, navigation, onNavigate }
                     onReturnDashboard={handleReturnDashboard} 
                     onViewDetails={handleViewDetails} 
                 />
-                <StudentInfoFooter data={reviewData} />
+                {/* <StudentInfoFooter data={reviewData} /> */}
             </ScrollView>
         </View>
     );
