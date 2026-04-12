@@ -1,291 +1,317 @@
 <!DOCTYPE html>
 
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Assignment Details - UX Strategy Research</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "on-surface": "#2c2f31",
-                    "inverse-primary": "#618bff",
-                    "secondary-fixed": "#dcc9ff",
-                    "on-secondary-fixed-variant": "#6514d6",
-                    "tertiary": "#a23800",
-                    "secondary-container": "#dcc9ff",
-                    "on-secondary-fixed": "#430097",
-                    "secondary-dim": "#6411d5",
-                    "error-dim": "#9f0519",
-                    "surface-tint": "#0050d4",
-                    "primary-container": "#7b9cff",
-                    "on-primary": "#f1f2ff",
-                    "surface-container-low": "#eef1f3",
-                    "on-primary-fixed": "#000000",
-                    "outline-variant": "#abadaf",
-                    "primary": "#0050d4",
-                    "tertiary-fixed": "#ff956a",
-                    "on-secondary-container": "#5b00c7",
-                    "on-primary-fixed-variant": "#00266e",
-                    "on-tertiary-container": "#5a1c00",
-                    "background": "#f5f7f9",
-                    "on-surface-variant": "#595c5e",
-                    "secondary-fixed-dim": "#d0b8ff",
-                    "primary-fixed-dim": "#658eff",
-                    "on-tertiary-fixed-variant": "#692200",
-                    "primary-fixed": "#7b9cff",
-                    "surface": "#f5f7f9",
-                    "tertiary-container": "#ff956a",
-                    "on-background": "#2c2f31",
-                    "surface-container-lowest": "#ffffff",
-                    "on-secondary": "#f8f0ff",
-                    "secondary": "#702ae1",
-                    "error-container": "#fb5151",
-                    "on-tertiary": "#ffefeb",
-                    "surface-container": "#e5e9eb",
-                    "inverse-surface": "#0b0f10",
-                    "surface-variant": "#d9dde0",
-                    "on-error": "#ffefee",
-                    "error": "#b31b25",
-                    "inverse-on-surface": "#9a9d9f",
-                    "surface-container-high": "#dfe3e6",
-                    "outline": "#747779",
-                    "surface-container-highest": "#d9dde0",
-                    "on-primary-container": "#001e5a",
-                    "on-error-container": "#570008",
-                    "tertiary-fixed-dim": "#ff7e48",
-                    "on-tertiary-fixed": "#310b00",
-                    "surface-bright": "#f5f7f9",
-                    "primary-dim": "#0046bb",
-                    "surface-dim": "#d0d5d8",
-                    "tertiary-dim": "#8e3000"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.25rem",
-                    "lg": "1rem",
-                    "xl": "1.5rem",
-                    "full": "9999px"
-            },
-            "fontFamily": {
-                    "headline": ["Plus Jakarta Sans"],
-                    "body": ["Manrope"],
-                    "label": ["Manrope"]
-            }
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Assignment Details - UX Strategy Research</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-surface": "#2c2f31",
+            "inverse-primary": "#618bff",
+            "secondary-fixed": "#dcc9ff",
+            "on-secondary-fixed-variant": "#6514d6",
+            "tertiary": "#a23800",
+            "secondary-container": "#dcc9ff",
+            "on-secondary-fixed": "#430097",
+            "secondary-dim": "#6411d5",
+            "error-dim": "#9f0519",
+            "surface-tint": "#0050d4",
+            "primary-container": "#7b9cff",
+            "on-primary": "#f1f2ff",
+            "surface-container-low": "#eef1f3",
+            "on-primary-fixed": "#000000",
+            "outline-variant": "#abadaf",
+            "primary": "#0050d4",
+            "tertiary-fixed": "#ff956a",
+            "on-secondary-container": "#5b00c7",
+            "on-primary-fixed-variant": "#00266e",
+            "on-tertiary-container": "#5a1c00",
+            "background": "#f5f7f9",
+            "on-surface-variant": "#595c5e",
+            "secondary-fixed-dim": "#d0b8ff",
+            "primary-fixed-dim": "#658eff",
+            "on-tertiary-fixed-variant": "#692200",
+            "primary-fixed": "#7b9cff",
+            "surface": "#f5f7f9",
+            "tertiary-container": "#ff956a",
+            "on-background": "#2c2f31",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary": "#f8f0ff",
+            "secondary": "#702ae1",
+            "error-container": "#fb5151",
+            "on-tertiary": "#ffefeb",
+            "surface-container": "#e5e9eb",
+            "inverse-surface": "#0b0f10",
+            "surface-variant": "#d9dde0",
+            "on-error": "#ffefee",
+            "error": "#b31b25",
+            "inverse-on-surface": "#9a9d9f",
+            "surface-container-high": "#dfe3e6",
+            "outline": "#747779",
+            "surface-container-highest": "#d9dde0",
+            "on-primary-container": "#001e5a",
+            "on-error-container": "#570008",
+            "tertiary-fixed-dim": "#ff7e48",
+            "on-tertiary-fixed": "#310b00",
+            "surface-bright": "#f5f7f9",
+            "primary-dim": "#0046bb",
+            "surface-dim": "#d0d5d8",
+            "tertiary-dim": "#8e3000"
           },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Plus Jakarta Sans"],
+            "body": ["Manrope"],
+            "label": ["Manrope"]
+          }
         },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .editorial-gradient {
+      background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
+    }
+
+    .urgent-pulse {
+      box-shadow: 0 0 0 0 rgba(179, 27, 37, 0.4);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.98);
+        box-shadow: 0 0 0 0 rgba(179, 27, 37, 0.4);
       }
-    </script>
-<style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .editorial-gradient {
-            background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
-        }
-        .urgent-pulse {
-            box-shadow: 0 0 0 0 rgba(179, 27, 37, 0.4);
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(179, 27, 37, 0.4); }
-            70% { transform: scale(1); box-shadow: 0 0 0 15px rgba(179, 27, 37, 0); }
-            100% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(179, 27, 37, 0); }
-        }
-    </style>
-<style>
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 15px rgba(179, 27, 37, 0);
+      }
+
+      100% {
+        transform: scale(0.98);
+        box-shadow: 0 0 0 0 rgba(179, 27, 37, 0);
+      }
+    }
+  </style>
+  <style>
     body {
       min-height: max(884px, 100dvh);
     }
   </style>
-  </head>
+</head>
+
 <body class="bg-surface font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
-<!-- TopAppBar -->
-<header class="w-full sticky top-0 z-50 bg-[#f5f7f9] dark:bg-[#0f172a] shadow-none">
-<div class="flex items-center px-6 py-4 w-full">
-<button class="mr-4 text-[#0050d4] dark:text-[#7b9cff] hover:bg-[#eef1f3] p-2 rounded-full transition-colors active:scale-95 duration-200">
-<span class="material-symbols-outlined">arrow_back</span>
-</button>
-<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-on-surface text-xl">Assignment Details</h1>
-<div class="ml-auto flex items-center gap-4">
-<span class="text-xs font-semibold bg-surface-container-high px-3 py-1 rounded-full text-on-surface-variant flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-tertiary"></span>
-                    Priority: High
-                </span>
-</div>
-</div>
-</header>
-<main class="max-w-5xl mx-auto px-6 pt-8 pb-32">
-<!-- High Urgency Countdown Section -->
-<section class="mb-10">
-<div class="bg-error-container/10 border border-error/10 rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
-<div class="absolute top-0 right-0 p-4">
-<span class="material-symbols-outlined text-error opacity-10 text-8xl rotate-12">alarm</span>
-</div>
-<div class="z-10">
-<p class="text-error font-bold uppercase tracking-widest text-xs mb-2">Time Remaining</p>
-<div class="flex items-baseline gap-2">
-<span class="text-5xl font-headline font-extrabold text-error">04:22:15</span>
-<span class="text-error/60 font-semibold">hrs</span>
-</div>
-<p class="text-on-surface-variant text-sm mt-1">Final deadline: Oct 24, 11:59 PM</p>
-</div>
-<div class="z-10 urgent-pulse bg-error rounded-full px-8 py-4 text-white flex items-center gap-3">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
-<span class="font-headline font-bold">Submit before midnight</span>
-</div>
-</div>
-</section>
-<!-- Main Content Bento Grid -->
-<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-<!-- Left Column: Primary Details -->
-<div class="md:col-span-8 space-y-6">
-<!-- Header Card -->
-<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
-<div class="flex items-center gap-3 mb-4">
-<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg text-xs font-bold uppercase tracking-tighter">UXD-402</span>
-<div class="flex items-center gap-1 text-on-surface-variant">
-<span class="material-symbols-outlined text-sm">schedule</span>
-<span class="text-xs font-medium">Estimated 4h left</span>
-</div>
-</div>
-<h2 class="text-4xl font-headline font-extrabold text-on-surface leading-tight mb-4">Advanced UX Strategy &amp; Competitive Research Analysis</h2>
-<p class="text-on-surface-variant leading-relaxed text-lg mb-8">
-                        This assignment requires a comprehensive audit of five direct competitors in the fintech space. Focus on onboarding friction points and mental model alignment.
-                    </p>
-<div class="flex flex-wrap gap-4 pt-6 border-t border-surface-container">
-<div class="flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg">
-<span class="material-symbols-outlined text-primary">cloud_done</span>
-<div>
-<p class="text-[10px] uppercase font-bold text-on-surface-variant">Status</p>
-<p class="text-sm font-bold">Draft Saved</p>
-</div>
-</div>
-<div class="flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg">
-<span class="material-symbols-outlined text-primary">description</span>
-<div>
-<p class="text-[10px] uppercase font-bold text-on-surface-variant">Format</p>
-<p class="text-sm font-bold">PDF / Figma Link</p>
-</div>
-</div>
-<div class="flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg">
-<span class="material-symbols-outlined text-primary">star</span>
-<div>
-<p class="text-[10px] uppercase font-bold text-on-surface-variant">Weight</p>
-<p class="text-sm font-bold">25% of Grade</p>
-</div>
-</div>
-</div>
-</div>
-<!-- Guidelines Card -->
-<div class="bg-surface-container-low rounded-xl p-8">
-<h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2">
-<span class="material-symbols-outlined">checklist</span>
-                        Submission Guidelines
-                    </h3>
-<ul class="space-y-4">
-<li class="flex items-start gap-4">
-<div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-<span class="text-xs font-bold text-primary">1</span>
-</div>
-<p class="text-on-surface-variant">Ensure all Figma links are set to "Anyone with the link can view".</p>
-</li>
-<li class="flex items-start gap-4">
-<div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-<span class="text-xs font-bold text-primary">2</span>
-</div>
-<p class="text-on-surface-variant">Append a 500-word reflection on the research methodology used.</p>
-</li>
-<li class="flex items-start gap-4">
-<div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-<span class="text-xs font-bold text-primary">3</span>
-</div>
-<p class="text-on-surface-variant">Export high-resolution assets (300dpi) for the visual audit section.</p>
-</li>
-</ul>
-</div>
-</div>
-<!-- Right Column: Meta & Professor -->
-<div class="md:col-span-4 space-y-6">
-<!-- Professor Card -->
-<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
-<h4 class="text-[10px] uppercase font-extrabold tracking-widest text-on-surface-variant mb-4">Instructor</h4>
-<div class="flex items-center gap-4">
-<img alt="Instructor profile" class="w-14 h-14 rounded-full object-cover" data-alt="professional portrait of a confident middle-aged academic woman with glasses in a modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzq2HOl2gI22yL9yYsy2ErukBMFWccA6kgXVrHVq6eT-BEcT4jx4NY3EOMTHDx7LGmGkl3UWc6MSVR_eN2ii-lhPpB92K9_wJRXw3UUVNko6FEbJjxC1ZmtJgCEZnBGguGp-U2K1ehyh7ilYNiDzhEix0wpE_YJT_d57i2eb_onj6TMiXuUUQOV7PZXrXxc0ERRFthl70Kkzn0DuLfNVJJI3ZS4526yaSu63hKMFiuZ491HEXiHo_gYynDvSiodCHJ9jD6gPTaIlA"/>
-<div>
-<p class="font-headline font-bold text-on-surface">Dr. Aris Thorne</p>
-<p class="text-sm text-on-surface-variant">Senior Design Lead</p>
-</div>
-</div>
-<button class="w-full mt-6 py-3 px-4 bg-surface-container-high rounded-xl font-bold text-sm text-on-surface flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors">
-<span class="material-symbols-outlined text-lg">mail</span>
-                        Message Instructor
-                    </button>
-</div>
-<!-- Resources Card -->
-<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
-<h4 class="text-[10px] uppercase font-extrabold tracking-widest text-on-surface-variant mb-4">Required Reading</h4>
-<div class="space-y-3">
-<a class="group flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-all" href="#">
-<span class="material-symbols-outlined text-secondary">article</span>
-<span class="text-sm font-semibold group-hover:text-primary transition-colors">Strategy_Framework.pdf</span>
-<span class="material-symbols-outlined text-xs ml-auto opacity-40 group-hover:opacity-100">download</span>
-</a>
-<a class="group flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-all" href="#">
-<span class="material-symbols-outlined text-secondary">link</span>
-<span class="text-sm font-semibold group-hover:text-primary transition-colors">Heuristic_Evaluation_V2</span>
-<span class="material-symbols-outlined text-xs ml-auto opacity-40 group-hover:opacity-100">open_in_new</span>
-</a>
-</div>
-</div>
-<!-- Visual Asset / Hint Card -->
-<div class="relative group rounded-xl overflow-hidden aspect-[4/3]">
-<img alt="Design tools" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="overhead shot of a minimalist designer desk with high-end tech accessories, colorful swatches, and clean aesthetic workspace" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_fEj2hq1PEy5iP8hOjAOI4b5JSVBC1rkqFIQh_LT_Ap7HLrdbs2YqU9sgfgeinz--ifR5jqyX2u-esQDb-iCYu0qQTs9LR8gr3K5oBoaYriHZZq3OGEt0AsffbpXhexFCe5gshBAul7T0eB8RWaQSq8CMgOU4K30XmiN6GUEcpy4H-YO5xhTUZNksonlVN13BswOze3GkIqVQGbLiRAhPfOH9WbH_15CWVSGvLbfcpdm9UUNi0sMT5mXDyg1AtZ5VvQTYtfVceOE"/>
-<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end">
-<p class="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-1">Weekly Insight</p>
-<p class="text-white font-headline font-bold">Strategy is about the trade-offs you make.</p>
-</div>
-</div>
-</div>
-</div>
-</main>
-<!-- Bottom Action Bar (Floating Task Action) -->
-<div class="fixed bottom-0 left-0 right-0 p-6 z-40 bg-gradient-to-t from-surface via-surface/90 to-transparent">
-<div class="max-w-5xl mx-auto flex flex-col sm:flex-row gap-4">
-<button class="flex-1 bg-surface-container-lowest border border-outline-variant/20 h-16 rounded-xl font-headline font-extrabold text-on-surface hover:bg-surface-container transition-all active:scale-95 flex items-center justify-center gap-3">
-<span class="material-symbols-outlined">edit</span>
-                Continue Work
-            </button>
-<button class="flex-[1.5] editorial-gradient h-16 rounded-xl font-headline font-extrabold text-white shadow-xl shadow-primary/20 hover:shadow-2xl hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-3">
-<span class="material-symbols-outlined">cloud_upload</span>
-                Submit Assignment
-            </button>
-</div>
-</div>
-<!-- BottomNavBar (Hidden on desktop, shown on mobile as per logic) -->
-<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center pb-8 px-4 md:hidden">
-<div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] rounded-full shadow-lg dark:shadow-2xl flex justify-around items-center py-2">
-<button class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-300">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="font-['Manrope'] text-[11px] font-semibold">Dashboard</span>
-</button>
-<button class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-300">
-<span class="material-symbols-outlined">menu_book</span>
-<span class="font-['Manrope'] text-[11px] font-semibold">Courses</span>
-</button>
-<button class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-300">
-<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
-<span class="font-['Manrope'] text-[11px] font-semibold">Tasks</span>
-</button>
-<button class="flex flex-col items-center justify-center text-[#2c2f31] dark:text-slate-400 px-5 py-2 hover:opacity-80 transition-opacity active:scale-90 duration-300">
-<span class="material-symbols-outlined">person</span>
-<span class="font-['Manrope'] text-[11px] font-semibold">Profile</span>
-</button>
-</div>
-</nav>
-</body></html>
+  <!-- TopAppBar -->
+  <header class="w-full sticky top-0 z-50 bg-[#f5f7f9] dark:bg-[#0f172a] shadow-none">
+    <div class="flex items-center px-6 py-4 w-full">
+      <button
+        class="mr-4 text-[#0050d4] dark:text-[#7b9cff] hover:bg-[#eef1f3] p-2 rounded-full transition-colors active:scale-95 duration-200">
+        <span class="material-symbols-outlined">arrow_back</span>
+      </button>
+      <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-on-surface text-l">Assignment Details</h1>
+      <div class="ml-auto flex items-center gap-4">
+        <span
+          class="text-xs font-semibold bg-surface-container-high px-3 py-1 rounded-full text-on-surface-variant flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-tertiary"></span>
+          Priority: High
+        </span>
+      </div>
+    </div>
+  </header>
+  <main class="max-w-5xl mx-auto px-6 pt-8 pb-32">
+    <!-- High Urgency Countdown Section -->
+    <section class="mb-10">
+      <div
+        class="bg-error-container/10 border border-error/10 rounded-xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4">
+          <span class="material-symbols-outlined text-error opacity-10 text-8xl rotate-12">alarm</span>
+        </div>
+        <div class="z-10">
+          <p class="text-error font-bold uppercase tracking-widest text-xs mb-2">Time Remaining</p>
+          <div class="flex items-baseline gap-2">
+            <span class="text-5xl font-headline font-extrabold text-error">04:22:15</span>
+            <span class="text-error/60 font-semibold">hrs</span>
+          </div>
+          <p class="text-on-surface-variant text-sm mt-1">Final deadline: Oct 24, 11:59 PM</p>
+        </div>
+        <div class="z-10 urgent-pulse bg-error rounded-full px-8 py-4 text-white flex items-center gap-3">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
+          <span class="font-headline font-bold">Submit before midnight</span>
+        </div>
+      </div>
+    </section>
+    <!-- Main Content Bento Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <!-- Left Column: Primary Details -->
+      <div class="md:col-span-8 space-y-6">
+        <!-- Header Card -->
+        <div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+          <div class="flex items-center gap-3 mb-4">
+            <span
+              class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-lg text-xs font-bold uppercase tracking-tighter">UXD-402</span>
+            <div class="flex items-center gap-1 text-on-surface-variant">
+              <span class="material-symbols-outlined text-sm">schedule</span>
+              <span class="text-xs font-medium">Estimated 4h left</span>
+            </div>
+          </div>
+          <h2 class="text-4xl font-headline font-extrabold text-on-surface leading-tight mb-4">Advanced UX Strategy
+            &amp; Competitive Research Analysis</h2>
+          <p class="text-on-surface-variant leading-relaxed text-lg mb-8">
+            This assignment requires a comprehensive audit of five direct competitors in the fintech space. Focus on
+            onboarding friction points and mental model alignment.
+          </p>
+          <div class="flex flex-wrap gap-4 pt-6 border-t border-surface-container">
+            <div class="flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg">
+              <span class="material-symbols-outlined text-primary">cloud_done</span>
+              <div>
+                <p class="text-[10px] uppercase font-bold text-on-surface-variant">Status</p>
+                <p class="text-sm font-bold">Draft Saved</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg">
+              <span class="material-symbols-outlined text-primary">description</span>
+              <div>
+                <p class="text-[10px] uppercase font-bold text-on-surface-variant">Format</p>
+                <p class="text-sm font-bold">PDF / Figma Link</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg">
+              <span class="material-symbols-outlined text-primary">star</span>
+              <div>
+                <p class="text-[10px] uppercase font-bold text-on-surface-variant">Weight</p>
+                <p class="text-sm font-bold">25% of Grade</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Guidelines Card -->
+        <div class="bg-surface-container-low rounded-xl p-8">
+          <h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined">checklist</span>
+            Submission Guidelines
+          </h3>
+          <ul class="space-y-4">
+            <li class="flex items-start gap-4">
+              <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span class="text-xs font-bold text-primary">1</span>
+              </div>
+              <p class="text-on-surface-variant">Ensure all Figma links are set to "Anyone with the link can view".</p>
+            </li>
+            <li class="flex items-start gap-4">
+              <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span class="text-xs font-bold text-primary">2</span>
+              </div>
+              <p class="text-on-surface-variant">Append a 500-word reflection on the research methodology used.</p>
+            </li>
+            <li class="flex items-start gap-4">
+              <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span class="text-xs font-bold text-primary">3</span>
+              </div>
+              <p class="text-on-surface-variant">Export high-resolution assets (300dpi) for the visual audit section.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- Right Column: Meta & Professor -->
+      <div class="md:col-span-4 space-y-6">
+        <!-- Professor Card -->
+        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+          <h4 class="text-[10px] uppercase font-extrabold tracking-widest text-on-surface-variant mb-4">Instructor</h4>
+          <div class="flex items-center gap-4">
+            <img alt="Instructor profile" class="w-14 h-14 rounded-full object-cover"
+              data-alt="professional portrait of a confident middle-aged academic woman with glasses in a modern office setting"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzq2HOl2gI22yL9yYsy2ErukBMFWccA6kgXVrHVq6eT-BEcT4jx4NY3EOMTHDx7LGmGkl3UWc6MSVR_eN2ii-lhPpB92K9_wJRXw3UUVNko6FEbJjxC1ZmtJgCEZnBGguGp-U2K1ehyh7ilYNiDzhEix0wpE_YJT_d57i2eb_onj6TMiXuUUQOV7PZXrXxc0ERRFthl70Kkzn0DuLfNVJJI3ZS4526yaSu63hKMFiuZ491HEXiHo_gYynDvSiodCHJ9jD6gPTaIlA" />
+            <div>
+              <p class="font-headline font-bold text-on-surface">Dr. Aris Thorne</p>
+              <p class="text-sm text-on-surface-variant">Senior Design Lead</p>
+            </div>
+          </div>
+          <button
+            class="w-full mt-6 py-3 px-4 bg-surface-container-high rounded-xl font-bold text-sm text-on-surface flex items-center justify-center gap-2 hover:bg-surface-variant transition-colors">
+            <span class="material-symbols-outlined text-lg">mail</span>
+            Message Instructor
+          </button>
+        </div>
+        <!-- Resources Card -->
+        <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+          <h4 class="text-[10px] uppercase font-extrabold tracking-widest text-on-surface-variant mb-4">Required Reading
+          </h4>
+          <div class="space-y-3">
+            <a class="group flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-all"
+              href="#">
+              <span class="material-symbols-outlined text-secondary">article</span>
+              <span
+                class="text-sm font-semibold group-hover:text-primary transition-colors">Strategy_Framework.pdf</span>
+              <span class="material-symbols-outlined text-xs ml-auto opacity-40 group-hover:opacity-100">download</span>
+            </a>
+            <a class="group flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-all"
+              href="#">
+              <span class="material-symbols-outlined text-secondary">link</span>
+              <span
+                class="text-sm font-semibold group-hover:text-primary transition-colors">Heuristic_Evaluation_V2</span>
+              <span
+                class="material-symbols-outlined text-xs ml-auto opacity-40 group-hover:opacity-100">open_in_new</span>
+            </a>
+          </div>
+        </div>
+        <!-- Visual Asset / Hint Card -->
+        <div class="relative group rounded-xl overflow-hidden aspect-[4/3]">
+          <img alt="Design tools"
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            data-alt="overhead shot of a minimalist designer desk with high-end tech accessories, colorful swatches, and clean aesthetic workspace"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_fEj2hq1PEy5iP8hOjAOI4b5JSVBC1rkqFIQh_LT_Ap7HLrdbs2YqU9sgfgeinz--ifR5jqyX2u-esQDb-iCYu0qQTs9LR8gr3K5oBoaYriHZZq3OGEt0AsffbpXhexFCe5gshBAul7T0eB8RWaQSq8CMgOU4K30XmiN6GUEcpy4H-YO5xhTUZNksonlVN13BswOze3GkIqVQGbLiRAhPfOH9WbH_15CWVSGvLbfcpdm9UUNi0sMT5mXDyg1AtZ5VvQTYtfVceOE" />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-6 flex flex-col justify-end">
+            <p class="text-white/60 text-[10px] uppercase font-bold tracking-widest mb-1">Weekly Insight</p>
+            <p class="text-white font-headline font-bold">Strategy is about the trade-offs you make.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <!-- Bottom Action Bar (Floating Task Action) -->
+  <div class="fixed bottom-0 left-0 right-0 p-6 z-40 bg-gradient-to-t from-surface via-surface/90 to-transparent">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row gap-4">
+      <button
+        class="flex-1 bg-surface-container-lowest border border-outline-variant/20 h-16 rounded-xl font-headline font-extrabold text-on-surface hover:bg-surface-container transition-all active:scale-95 flex items-center justify-center gap-3">
+        <span class="material-symbols-outlined">edit</span>
+        Continue Work
+      </button>
+      <button
+        class="flex-[1.5] editorial-gradient h-16 rounded-xl font-headline font-extrabold text-white shadow-xl shadow-primary/20 hover:shadow-2xl hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-3">
+        <span class="material-symbols-outlined">cloud_upload</span>
+        Submit Assignment
+      </button>
+    </div>
+  </div>
+  <!-- BottomNavBar (Hidden on desktop, shown on mobile as per logic) -->
+</body>
+
+</html>

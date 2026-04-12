@@ -17,6 +17,7 @@ import RecentCompletionsSidebar from './components/RecentCompletionsSidebar';
 import UpcomingAssignmentPage from './features/upcoming/upcoming_assignment';
 import CompletedReviewPage from './features/completed_review/completed_review';
 import CompletedResultsPage from './features/completed_results/completed_results';
+import AssignmentDetailsPage from './features/active/assignment_details/assignment_details';
 
 // Import theme
 import { COLORS, SPACING } from '../../../../constants/theme';
@@ -34,7 +35,7 @@ import {
 
 export default function AssignmentPage() {
   const [activeTab, setActiveTab] = useState('active');
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'upcoming-detail', 'completed-review', or 'completed-results'
+  const [currentView, setCurrentView] = useState('list'); // 'list', 'upcoming-detail', 'completed-review', 'completed-results', or 'active-detail'
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
@@ -58,7 +59,10 @@ export default function AssignmentPage() {
   // Handle assignment card press
   const handleAssignmentPress = (assignment) => {
     const tab = activeTab.toLowerCase();
-    if (tab === 'upcoming') {
+    if (tab === 'active') {
+      setSelectedAssignment(assignment);
+      setCurrentView('active-detail');
+    } else if (tab === 'upcoming') {
       setSelectedAssignment(assignment);
       setCurrentView('upcoming-detail');
     } else if (tab === 'completed') {
@@ -69,7 +73,6 @@ export default function AssignmentPage() {
         setCurrentView('completed-results');
       }
     }
-    // Add handlers for other tabs later
   };
 
   // Navigate back to list
@@ -80,8 +83,13 @@ export default function AssignmentPage() {
 
   return (
     <View style={styles.container}>
-      {/* Show Upcoming Assignment Detail Page */}
-      {currentView === 'upcoming-detail' ? (
+      {/* Show Assignment Detail Pages */}
+      {currentView === 'active-detail' ? (
+        <AssignmentDetailsPage
+          navigation={{ goBack: handleBackToList }}
+          route={{ params: { assignment: selectedAssignment } }}
+        />
+      ) : currentView === 'upcoming-detail' ? (
         <UpcomingAssignmentPage
           navigation={{ goBack: handleBackToList }}
           route={{ params: { assignment: selectedAssignment } }}
