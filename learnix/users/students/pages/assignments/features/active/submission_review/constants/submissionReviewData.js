@@ -1,0 +1,57 @@
+export const SUBMISSION_REVIEW_COLORS = {
+  primary: '#0050d4',
+  primaryDim: '#0046bb',
+  primaryContainer: '#7b9cff',
+  secondary: '#702ae1',
+  secondaryDim: '#6411d5',
+  secondaryContainer: '#dcc9ff',
+  tertiary: '#a23800',
+  tertiaryDim: '#8e3000',
+  tertiaryContainer: '#ff956a',
+  error: '#b31b25',
+  errorContainer: '#fb5151',
+  surface: '#f5f7f9',
+  surfaceContainerLowest: '#ffffff',
+  surfaceContainerLow: '#eef1f3',
+  surfaceContainer: '#e5e9eb',
+  surfaceContainerHigh: '#dfe3e6',
+  surfaceContainerHighest: '#d9dde0',
+  onSurface: '#2c2f31',
+  onSurfaceVariant: '#595c5e',
+  onPrimary: '#f1f2ff',
+  onSecondary: '#f8f0ff',
+  outline: '#747779',
+  outlineVariant: '#abadaf',
+  background: '#f5f7f9',
+};
+
+export const SUBMISSION_REVIEW_DATA = {
+  title: 'Assignment Title',
+  timeRemaining: '00:45:00',
+  submissionDate: 'Oct 24, 2023 • 10:45 PM',
+  student: {
+    name: 'Alex Johnson',
+    id: '29402-SCH',
+    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCDfeYnS3_qH6k1_qp1KyQYY_yt83gTQAnrg2PJI_UN9L6aemxWTZBs-Q8bpQ1kWMFL7Z9c11C1B14sY1LuWYOCv8bvr1tk9Fl7GcBUfb9g6AKP1bX3MuC_lNBMhM5htqupngdCITdkV3beptyEPNdE8JOCR8jOV-3wZN8x5VAjUhnuM9rOSKehmoWhR2MUDD7UGTdU4yCP9OvV2WFmBHPRJdmWRIDk17FvBsyNkzDeBlt9yy3vBJ2UK7D8PaToxrVkniBE53DNwf4',
+  },
+  files: [
+    {
+      id: 1,
+      type: 'Primary File',
+      name: 'Research_Analysis.pdf',
+      icon: 'description',
+      color: 'primary',
+    },
+    {
+      id: 2,
+      type: 'Dataset',
+      name: 'Data_Viz_Final.xlsx',
+      icon: 'analytics',
+      color: 'secondary',
+    },
+  ],
+  tags: [
+    { label: 'On Time', color: 'tertiary' },
+    { label: 'Final Attempt', color: 'secondary' },
+  ],
+};

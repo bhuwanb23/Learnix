@@ -6,6 +6,12 @@ import { SUBMISSION_COLORS } from '../constants/submissionData';
 export default function TextEditor({ editor, onSaveDraft, onSubmit }) {
   const [text, setText] = useState('');
 
+  const handleSubmit = () => {
+    if (onSubmit) {
+      onSubmit();
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.toolbar}>
@@ -57,7 +63,7 @@ export default function TextEditor({ editor, onSaveDraft, onSubmit }) {
         <TouchableOpacity style={styles.saveDraftButton} onPress={onSaveDraft} activeOpacity={0.7}>
           <Text style={styles.saveDraftText}>Save Draft</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.submitButton} onPress={onSubmit} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} activeOpacity={0.8}>
           <Text style={styles.submitButtonText}>Submit Assignment</Text>
         </TouchableOpacity>
       </View>

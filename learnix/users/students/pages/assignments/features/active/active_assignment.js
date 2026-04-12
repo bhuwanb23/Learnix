@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import AssignmentDetailsScreen from './assignment_details/assignment_details';
 import SubmissionScreen from './submission/submission';
+import SubmissionReviewScreen from './submission_review/submission_review';
 
 export default function ActiveAssignmentScreen({ route, navigation }) {
-    const [currentView, setCurrentView] = useState('details'); // 'details', 'page2', 'page3'
+    const [currentView, setCurrentView] = useState('details'); // 'details', 'submission', 'review'
     const [selectedAssignment, setSelectedAssignment] = useState(route?.params?.assignment || null);
 
     const handleBack = () => {
@@ -38,11 +39,13 @@ export default function ActiveAssignmentScreen({ route, navigation }) {
                         onNavigate={navigateToView}
                     />
                 );
-            case 'page3':
+            case 'review':
                 return (
-                    <View style={styles.container}>
-                        {/* TODO: Add Page 3 content */}
-                    </View>
+                    <SubmissionReviewScreen
+                        route={{ params: { assignment: selectedAssignment } }}
+                        navigation={{ goBack: handleBack }}
+                        onNavigate={navigateToView}
+                    />
                 );
             default:
                 return (

@@ -31,7 +31,9 @@ export default function SubmissionScreen({ route, navigation, onNavigate }) {
     };
 
     const handleSubmit = () => {
-        console.log('Submit assignment');
+        if (onNavigate) {
+            onNavigate('review');
+        }
     };
 
     return (
