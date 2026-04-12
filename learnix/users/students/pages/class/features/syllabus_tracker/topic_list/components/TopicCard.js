@@ -54,24 +54,24 @@ export default function TopicCard({ topic, onPress, onMorePress }) {
         <View style={styles.textSection}>
           <Text style={[styles.title, getTitleStyle()]}>{topic.title}</Text>
           <Text style={styles.description}>{topic.description}</Text>
+          <View style={styles.badgeRow}>
+            <View style={[styles.statusBadge, { backgroundColor: topic.statusBg }]}>
+              {topic.statusDotColor && (
+                <View style={[styles.statusDot, { backgroundColor: topic.statusDotColor }]} />
+              )}
+              <Text style={[styles.statusText, { color: topic.statusColor }]}>{topic.status}</Text>
+            </View>
+          </View>
         </View>
       </View>
       
-      <View style={styles.rightSection}>
-        <View style={[styles.statusBadge, { backgroundColor: topic.statusBg }]}>
-          {topic.statusDotColor && (
-            <View style={[styles.statusDot, { backgroundColor: topic.statusDotColor }]} />
-          )}
-          <Text style={[styles.statusText, { color: topic.statusColor }]}>{topic.status}</Text>
-        </View>
-        <TouchableOpacity 
-          style={styles.moreButton}
-          onPress={onMorePress}
-          activeOpacity={0.7}
-        >
-          <MaterialIcons name="more-vert" size={16} color={TOPIC_LIST_COLORS.onSurfaceVariant} />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity 
+        style={styles.moreButton}
+        onPress={onMorePress}
+        activeOpacity={0.7}
+      >
+        <MaterialIcons name="more-vert" size={16} color={TOPIC_LIST_COLORS.onSurfaceVariant} />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 }
@@ -125,6 +125,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+  },
   titleDefault: {
     fontSize: 15,
     fontWeight: '700',
@@ -146,13 +151,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: TOPIC_LIST_COLORS.onSurfaceVariant,
     lineHeight: 17,
-    marginTop: 2,
-  },
-  rightSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    alignSelf: 'flex-end',
   },
   statusBadge: {
     flexDirection: 'row',
@@ -161,6 +159,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 999,
     gap: 5,
+    alignSelf: 'flex-start',
   },
   statusDot: {
     width: 6,
@@ -180,5 +179,7 @@ const styles = StyleSheet.create({
     backgroundColor: TOPIC_LIST_COLORS.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+    marginTop: 4,
   },
 });

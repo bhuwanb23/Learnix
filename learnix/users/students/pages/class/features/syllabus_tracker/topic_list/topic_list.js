@@ -85,14 +85,6 @@ export default function TopicListPage({ navigation, route }) {
             <View style={styles.progressBgCircle1} />
             <View style={styles.progressBgCircle2} />
           </View>
-
-          <View style={styles.studyTimeCard}>
-            <View style={styles.studyTimeIcon}>
-              <MaterialIcons name="timer" size={24} color={TOPIC_LIST_COLORS.secondary} />
-            </View>
-            <Text style={styles.studyTimeNumber}>{TOPIC_LIST_DATA.studyTimeLeft}</Text>
-            <Text style={styles.studyTimeLabel}>Estimated study time left</Text>
-          </View>
         </View>
 
         {/* Topic Cards */}
@@ -287,36 +279,39 @@ const styles = StyleSheet.create({
     backgroundColor: `${TOPIC_LIST_COLORS.primaryContainer}33`,
   },
   studyTimeCard: {
-    backgroundColor: TOPIC_LIST_COLORS.surfaceContainerLowest,
+    backgroundColor: TOPIC_LIST_COLORS.secondary,
     borderRadius: 12,
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 16,
+    justifyContent: 'space-between',
+    minHeight: 140,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  studyTimeIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: TOPIC_LIST_COLORS.secondaryContainer,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  studyTimeNumber: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans-Bold',
-    color: TOPIC_LIST_COLORS.onSurface,
-    letterSpacing: -0.3,
-    marginBottom: 4,
+  studyTimeContent: {
+    zIndex: 10,
   },
   studyTimeLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    fontFamily: 'Manrope-Medium',
-    color: TOPIC_LIST_COLORS.onSurfaceVariant,
-    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: 'Manrope-SemiBold',
+    color: `${TOPIC_LIST_COLORS.onSecondary}CC`,
+    marginBottom: 4,
+  },
+  studyTimeNumber: {
+    fontSize: 40,
+    fontWeight: '800',
+    fontFamily: 'PlusJakartaSans-Bold',
+    color: '#ffffff',
+    letterSpacing: -1,
+  },
+  studyTimeBgCircle: {
+    position: 'absolute',
+    right: -30,
+    bottom: -30,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   topicsSection: {
     marginBottom: 32,
