@@ -11,12 +11,12 @@ export default function HeroSection({ event, onBack, onShare }) {
       
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.iconButton}>
-          <MaterialIcons name="arrow-back" size={24} color={EVENT_DETAILS_COLORS.primary} />
+          <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Event Details</Text>
         <View style={{ width: 40 }} />
         <TouchableOpacity onPress={onShare} style={styles.iconButton}>
-          <MaterialIcons name="share" size={24} color={EVENT_DETAILS_COLORS.primary} />
+          <MaterialIcons name="share" size={24} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   header: {
     position: 'absolute',
-    top: 40,
+    top: 10,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 18,
     fontWeight: '700',
-    color: EVENT_DETAILS_COLORS.primary,
+    color: '#ffffff',
   },
   bottomContent: {
     position: 'absolute',
@@ -96,10 +96,10 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 32,
     fontWeight: '800',
-    color: EVENT_DETAILS_COLORS.onSurface,
+    color: '#ffffff',
     lineHeight: 38,
   },
   highlightedText: {
-    color: EVENT_DETAILS_COLORS.primary,
+    color: '#ffffff',
   },
 });

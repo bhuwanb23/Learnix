@@ -19,7 +19,7 @@ export const PROFILE_STATS = {
 };
 
 export const CATEGORIES = [
-  { id: 'edit', title: 'Edit Profile', icon: 'edit-square', color: '#0050d4', bgColor: 'rgba(0, 80, 212, 0.1)' },
+  { id: 'view_profile', title: 'View Profile', icon: 'edit-square', color: '#0050d4', bgColor: 'rgba(0, 80, 212, 0.1)' },
   { id: 'academic', title: 'Academic Details', icon: 'school', color: '#2563eb', bgColor: 'rgba(59, 130, 246, 0.15)' },
   { id: 'analytics', title: 'Progress & Analytics', icon: 'analytics', color: '#059669', bgColor: 'rgba(16, 185, 129, 0.15)' },
   { id: 'activity', title: 'Activity', icon: 'history', color: '#d97706', bgColor: 'rgba(245, 158, 11, 0.15)' },

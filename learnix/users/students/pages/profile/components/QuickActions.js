@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function QuickActions({ categories, honors }) {
+export default function QuickActions({ categories, honors, navigation }) {
   const { width } = useWindowDimensions();
 
   const getCategoryWidth = () => {
@@ -25,6 +25,12 @@ export default function QuickActions({ categories, honors }) {
     return '100%'; // 1 col on small mobile
   };
 
+  const handleCategoryPress = (category) => {
+    if (category.id === 'view_profile' && navigation) {
+      navigation.navigate('ViewProfile');
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* Profile Categories Grid */}
@@ -34,6 +40,7 @@ export default function QuickActions({ categories, honors }) {
             key={category.id}
             style={[styles.categoryCard, { width: getCategoryWidth() }]}
             activeOpacity={0.7}
+            onPress={() => handleCategoryPress(category)}
           >
             <View style={[styles.iconContainer, { backgroundColor: category.bgColor }]}>
               <MaterialIcons name={category.icon} size={24} color={category.color} />

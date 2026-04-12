@@ -14,6 +14,7 @@ import ProfileStats from './components/ProfileStats';
 import QuickActions from './components/QuickActions'; // Will become Categories & Honors
 import CampusWallet from './components/CampusWallet';
 import Settings from './components/Settings'; // Will become Quick Settings
+import ViewProfilePage from './pages/view_profile/view_profile';
 
 // Import constants
 import {
@@ -25,45 +26,69 @@ import {
 } from './constants/profileData';
 
 export default function Profile() {
+  const [currentView, setCurrentView] = useState('profile'); // 'profile' or 'view_profile'
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const contentPadding = width >= 768 ? 32 : 16;
 
+  // Handle back from view profile
+  const handleBackFromViewProfile = () => {
+    setCurrentView('profile');
+  };
+
+  // Handle navigation to view profile
+  const mockNavigation = {
+    navigate: (screen) => {
+      if (screen === 'ViewProfile') {
+        setCurrentView('view_profile');
+      }
+    },
+    goBack: handleBackFromViewProfile,
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* User Profile Header & Identity Hero */}
-        <ProfileHeader user={PROFILE_INFO} />
-        
-        {/* Stats Grid (CGPA, Attendance, Credits, Rank) */}
-        <ProfileStats stats={PROFILE_STATS} />
-        
-        {/* Main Content Area */}
-        <View style={[
-          styles.contentGrid, 
-          { paddingHorizontal: contentPadding },
-          isDesktop && styles.contentGridDesktop
-        ]}>
-          {/* Left Column: Categories & Honors */}
-          <View style={[styles.leftColumn, isDesktop && { flex: 8 }]}>
-            <QuickActions categories={CATEGORIES} honors={HONORS} />
+      {/* Show View Profile Page */}
+      {currentView === 'view_profile' ? (
+        <ViewProfilePage
+          navigation={mockNavigation}
+          route={{ params: {} }}
+        />
+      ) : (
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* User Profile Header & Identity Hero */}
+          <ProfileHeader user={PROFILE_INFO} />
+          
+          {/* Stats Grid (CGPA, Attendance, Credits, Rank) */}
+          <ProfileStats stats={PROFILE_STATS} />
+          
+          {/* Main Content Area */}
+          <View style={[
+            styles.contentGrid, 
+            { paddingHorizontal: contentPadding },
+            isDesktop && styles.contentGridDesktop
+          ]}>
+            {/* Left Column: Categories & Honors */}
+            <View style={[styles.leftColumn, isDesktop && { flex: 8 }]}>
+              <QuickActions categories={CATEGORIES} honors={HONORS} navigation={mockNavigation} />
+            </View>
+
+            {/* Right Column: Wallet & Settings Summary */}
+            <View style={[styles.rightColumn, isDesktop && { flex: 4 }]}>
+              {/* Scholar Wallet */}
+              <CampusWallet walletInfo={WALLET_INFO} />
+              
+              {/* Quick Settings & Support */}
+              <Settings />
+            </View>
           </View>
 
-          {/* Right Column: Wallet & Settings Summary */}
-          <View style={[styles.rightColumn, isDesktop && { flex: 4 }]}>
-            {/* Scholar Wallet */}
-            <CampusWallet walletInfo={WALLET_INFO} />
-            
-            {/* Quick Settings & Support */}
-            <Settings />
-          </View>
-        </View>
-
-      </ScrollView>
+        </ScrollView>
+      )}
     </View>
   );
 }
