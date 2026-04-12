@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_DETAILS_COLORS } from '../constants/eventDetailsData';
 
 export default function ScheduleSection({ schedule }) {
-  const [expandedId, setExpandedId] = useState(3);
+  const [expandedId, setExpandedId] = useState(null);
 
   const getColorStyle = (color) => {
     switch (color) {
@@ -30,12 +30,9 @@ export default function ScheduleSection({ schedule }) {
           const isExpanded = expandedId === item.id;
           
           return (
-            <View key={item.id} style={[
-              styles.scheduleItem,
-              isExpanded && { borderWidth: 2, borderColor: `${EVENT_DETAILS_COLORS.primary}25` }
-            ]}>
+            <View key={item.id} style={styles.scheduleItem}>
               <TouchableOpacity 
-                style={[styles.scheduleHeader, isExpanded && { backgroundColor: `${EVENT_DETAILS_COLORS.primary}08` }]}
+                style={styles.scheduleHeader}
                 onPress={() => toggleExpand(item.id)}
                 activeOpacity={0.7}
               >
@@ -87,12 +84,15 @@ const styles = StyleSheet.create({
     backgroundColor: EVENT_DETAILS_COLORS.surfaceContainerLow,
     borderRadius: 16,
     overflow: 'hidden',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: EVENT_DETAILS_COLORS.outlineVariant + '20',
   },
   scheduleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
     backgroundColor: EVENT_DETAILS_COLORS.surfaceContainerLowest,
   },
   timeBlock: {

@@ -45,11 +45,11 @@ const styles = StyleSheet.create({
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(245, 247, 249, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   header: {
     position: 'absolute',
-    top: 50,
+    top: 40,
     left: 0,
     right: 0,
     flexDirection: 'row',
