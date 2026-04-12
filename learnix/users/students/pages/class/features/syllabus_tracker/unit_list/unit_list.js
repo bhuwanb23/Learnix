@@ -94,6 +94,7 @@ export default function UnitListPage({ navigation, route }) {
               unit={unit}
               isExpanded={expandedUnit === unit.id}
               onToggle={() => handleUnitToggle(unit.id)}
+              onPress={() => navigation?.navigateToTopics && navigation.navigateToTopics(unit)}
             />
           ))}
         </View>

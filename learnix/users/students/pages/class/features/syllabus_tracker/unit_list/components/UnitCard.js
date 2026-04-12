@@ -8,7 +8,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { UNIT_LIST_COLORS } from '../constants/unitListData';
 
-export default function UnitCard({ unit, isExpanded, onToggle }) {
+export default function UnitCard({ unit, isExpanded, onToggle, onPress }) {
   const renderStatusIcon = () => {
     if (unit.isCompleted) {
       return (
@@ -84,7 +84,7 @@ export default function UnitCard({ unit, isExpanded, onToggle }) {
   return (
     <TouchableOpacity 
       style={[styles.container, getCardStyle()]}
-      onPress={unit.isInProgress ? onToggle : undefined}
+      onPress={onPress || (unit.isInProgress ? onToggle : undefined)}
       activeOpacity={0.9}
     >
       <View style={styles.header}>
