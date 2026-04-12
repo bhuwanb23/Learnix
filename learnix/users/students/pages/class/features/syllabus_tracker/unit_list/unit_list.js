@@ -34,7 +34,7 @@ export default function UnitListPage({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" backgroundColor={UNIT_LIST_COLORS.surface} />
+      <StatusBar style="light" backgroundColor={UNIT_LIST_COLORS.primary} translucent />
       
       {/* Header */}
       <View style={styles.header}>
