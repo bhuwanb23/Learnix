@@ -111,6 +111,7 @@ export default function AssignmentPage() {
                   <AssignmentList 
                     assignments={currentAssignments}
                     onAssignmentPress={handleAssignmentPress}
+                    activeTab={activeTab}
                   />
                 </View>
 
