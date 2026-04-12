@@ -20,7 +20,9 @@ export default function TopicListPage({ navigation, route }) {
   };
 
   const handleTopicPress = (topic) => {
-    console.log('Topic pressed:', topic.title);
+    if (navigation?.navigateToTracker) {
+      navigation.navigateToTracker(topic);
+    }
   };
 
   const handleMorePress = (topic) => {
