@@ -12,6 +12,7 @@ import AssignmentPage from './pages/assignments/assignment';
 import ProfilePage from './pages/profile/profile';
 import EventsPage from './pages/events/events';
 import ClassPage from './pages/class/class';
+import PlacementPage from './pages/placement/placement';
 
 // Import components
 import StudentHeader from './components/StudentHeader';
@@ -37,6 +38,8 @@ export default function StudentsScreen() {
         return <AssignmentPage />;
       case 'Events':
         return <EventsPage />;
+      case 'Placement':
+        return <PlacementPage />;
       case 'Profile':
         return <ProfilePage />;
       default:
