@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Placement Drives | Student ERP</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-nav {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#310b00",
+                        "outline": "#747779",
+                        "on-secondary": "#f8f0ff",
+                        "primary": "#0050d4",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "tertiary-container": "#ff956a",
+                        "secondary-container": "#dcc9ff",
+                        "surface-variant": "#d9dde0",
+                        "surface-tint": "#0050d4",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "error-container": "#fb5151",
+                        "inverse-primary": "#618bff",
+                        "on-surface": "#2c2f31",
+                        "on-error": "#ffefee",
+                        "surface": "#f5f7f9",
+                        "on-tertiary": "#ffefeb",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-primary-container": "#001e5a",
+                        "primary-dim": "#0046bb",
+                        "on-secondary-container": "#5b00c7",
+                        "error-dim": "#9f0519",
+                        "secondary-dim": "#6411d5",
+                        "surface-container-high": "#dfe3e6",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "outline-variant": "#abadaf",
+                        "on-surface-variant": "#595c5e",
+                        "surface-container": "#e5e9eb",
+                        "tertiary": "#a23800",
+                        "surface-bright": "#f5f7f9",
+                        "surface-container-low": "#eef1f3",
+                        "surface-container-highest": "#d9dde0",
+                        "primary-container": "#7b9cff",
+                        "surface-dim": "#d0d5d8",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-secondary-fixed": "#430097",
+                        "on-primary": "#f1f2ff",
+                        "tertiary-fixed": "#ff956a",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-error-container": "#570008",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "inverse-on-surface": "#9a9d9f",
+                        "inverse-surface": "#0b0f10",
+                        "primary-fixed-dim": "#658eff",
+                        "on-primary-fixed": "#000000",
+                        "primary-fixed": "#7b9cff",
+                        "background": "#f5f7f9",
+                        "secondary": "#702ae1",
+                        "error": "#b31b25",
+                        "tertiary-dim": "#8e3000",
+                        "on-background": "#2c2f31"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface font-body min-h-screen pb-32">
+    <!-- Top Navigation Shell -->
+    <header class="w-full sticky top-0 z-50 bg-[#f5f7f9] dark:bg-slate-900 no-border">
+        <div class="flex items-center justify-between px-6 py-4 w-full max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <button class="p-2 rounded-full hover:bg-slate-200/50 transition-colors">
+                    <span class="material-symbols-outlined text-[#0050d4]">menu</span>
+                </button>
+                <h1 class="font-['Plus_Jakarta_Sans'] font-bold text-2xl tracking-tight text-[#0050d4]">Placement Drives
+                </h1>
+            </div>
+            <div class="hidden md:flex items-center gap-8">
+                <nav class="flex items-center gap-6">
+                    <a class="text-slate-500 hover:text-[#0050d4] font-semibold transition-colors"
+                        href="#">Dashboard</a>
+                    <a class="text-[#0050d4] font-bold" href="#">Drives</a>
+                    <a class="text-slate-500 hover:text-[#0050d4] font-semibold transition-colors" href="#">Applied</a>
+                    <a class="text-slate-500 hover:text-[#0050d4] font-semibold transition-colors"
+                        href="#">Resources</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center overflow-hidden">
+                    <img alt="Student Profile" class="w-full h-full object-cover"
+                        data-alt="portrait of a confident university student in a professional blazer against a clean architectural background"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK9TI8UuEYJmMGVuH9DI0iDEhVLgF21PQVB9-qJputGOucWYlCtH5g8dnpgDCM5O8mMSlPwiCvithUXhaSgF_7IztG94KBdb5pi-L6cWJ2oN9BSYQajyPT3ELk1I_fiRG-wkA6D_5dK7DHLEwreUdyFXlsbjOZcu4gUj-CQ2LyS5il-RhSweFSSBujSLS64PHYKC1yoOpJiebl8lgbWFBVmaKJB5Us7nYn9tyTxL-S7mZ66gQp88PAAMoQjTbk8gSMzxwRl3Wl9Xk" />
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Hero Header Section -->
+        <section class="mb-12">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <p class="font-label text-primary font-semibold uppercase tracking-widest text-sm mb-2">Placement
+                        Directory</p>
+                    <h2 class="font-headline text-5xl font-extrabold tracking-tight text-on-surface">Upcoming Drives
+                    </h2>
+                </div>
+                <!-- Search & Filter Bar -->
+                <div
+                    class="w-full md:w-auto flex items-center gap-3 bg-surface-container-lowest p-2 rounded-full shadow-sm outline-variant/15 border border-outline-variant/10">
+                    <div class="flex items-center pl-4 pr-2 text-on-surface-variant">
+                        <span class="material-symbols-outlined text-lg">search</span>
+                    </div>
+                    <input class="bg-transparent border-none focus:ring-0 text-sm w-full md:w-64 font-medium"
+                        placeholder="Search companies or roles..." type="text" />
+                    <button
+                        class="flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-full hover:bg-surface-container-highest transition-colors text-sm font-bold">
+                        <span class="material-symbols-outlined text-sm">tune</span>
+                        <span>Filter</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- Placement Drives Grid -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Card 1: Google -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group border border-outline-variant/5">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary font-bold text-2xl font-headline">
+                            G</div>
+                        <span
+                            class="px-3 py-1 bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider rounded-full">Open</span>
+                    </div>
+                    <h3 class="font-headline text-2xl font-bold text-on-surface mb-1">Google</h3>
+                    <p class="text-on-surface-variant text-sm font-medium mb-6">Software Engineering Intern</p>
+                    <div class="space-y-3 mb-8">
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            </div>
+                            <span class="text-sm font-semibold">Oct 24, 2026</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">videocam</span>
+                            </div>
+                            <span class="text-sm font-semibold text-primary">Virtual</span>
+                        </div>
+                    </div>
+                </div>
+                <button
+                    class="w-full py-4 bg-primary text-on-primary rounded-xl font-bold text-sm transition-all hover:bg-primary-dim shadow-lg shadow-primary/20">View
+                    Details</button>
+            </div>
+            <!-- Card 2: Microsoft -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group border border-outline-variant/5">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-secondary/5 flex items-center justify-center text-secondary font-bold text-2xl font-headline">
+                            M</div>
+                        <span
+                            class="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider rounded-full">Registered</span>
+                    </div>
+                    <h3 class="font-headline text-2xl font-bold text-on-surface mb-1">Microsoft</h3>
+                    <p class="text-on-surface-variant text-sm font-medium mb-6">Cloud Solutions Architect</p>
+                    <div class="space-y-3 mb-8">
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            </div>
+                            <span class="text-sm font-semibold">Oct 28, 2026</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">location_on</span>
+                            </div>
+                            <span class="text-sm font-semibold">Main Auditorium</span>
+                        </div>
+                    </div>
+                </div>
+                <button
+                    class="w-full py-4 bg-surface-container-high text-on-surface rounded-xl font-bold text-sm transition-all hover:bg-surface-container-highest">Applied</button>
+            </div>
+            <!-- Card 3: Amazon -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group border border-outline-variant/5">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-tertiary/5 flex items-center justify-center text-tertiary font-bold text-2xl font-headline">
+                            A</div>
+                        <span
+                            class="px-3 py-1 bg-tertiary-container text-on-tertiary-container text-[10px] font-bold uppercase tracking-wider rounded-full">Closing
+                            Soon</span>
+                    </div>
+                    <h3 class="font-headline text-2xl font-bold text-on-surface mb-1">Amazon</h3>
+                    <p class="text-on-surface-variant text-sm font-medium mb-6">Full Stack Developer</p>
+                    <div class="space-y-3 mb-8">
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            </div>
+                            <span class="text-sm font-semibold">Nov 05, 2026</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">apartment</span>
+                            </div>
+                            <span class="text-sm font-semibold">Engineering Block C</span>
+                        </div>
+                    </div>
+                </div>
+                <button
+                    class="w-full py-4 bg-primary text-on-primary rounded-xl font-bold text-sm transition-all hover:bg-primary-dim shadow-lg shadow-primary/20">Register
+                    Now</button>
+            </div>
+            <!-- Card 4: Adobe -->
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group border border-outline-variant/5">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-outline-variant/10 flex items-center justify-center text-on-surface-variant font-bold text-2xl font-headline">
+                            Ad</div>
+                        <span
+                            class="px-3 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold uppercase tracking-wider rounded-full">Upcoming</span>
+                    </div>
+                    <h3 class="font-headline text-2xl font-bold text-on-surface mb-1">Adobe</h3>
+                    <p class="text-on-surface-variant text-sm font-medium mb-6">Product Designer</p>
+                    <div class="space-y-3 mb-8">
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                            </div>
+                            <span class="text-sm font-semibold">Nov 12, 2026</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-on-surface-variant">
+                            <div class="w-8 h-8 rounded-lg bg-surface-container-low flex items-center justify-center">
+                                <span class="material-symbols-outlined text-sm">meeting_room</span>
+                            </div>
+                            <span class="text-sm font-semibold">Seminar Hall</span>
+                        </div>
+                    </div>
+                </div>
+                <button
+                    class="w-full py-4 bg-surface-container-low text-outline rounded-xl font-bold text-sm cursor-not-allowed">Not
+                    Yet Open</button>
+            </div>
+        </section>
+        <!-- Insights Bento Section -->
+        <section class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2 bg-primary p-8 rounded-xl relative overflow-hidden group">
+                <div class="relative z-10 flex flex-col justify-between h-full">
+                    <div>
+                        <h4 class="font-headline text-on-primary text-3xl font-bold mb-4">Master Your Interviews</h4>
+                        <p class="text-on-primary/80 max-w-md mb-8">Access exclusive preparation materials, mock test
+                            links, and previous year interview experiences curated for the upcoming drives.</p>
+                    </div>
+                    <button
+                        class="bg-surface-container-lowest text-primary px-6 py-3 rounded-full font-bold self-start transition-transform hover:scale-105 active:scale-95">Explore
+                        Resources</button>
+                </div>
+                <!-- Abstract graphic background -->
+                <div
+                    class="absolute -right-10 -bottom-10 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl group-hover:bg-primary-container/30 transition-all">
+                </div>
+                <div class="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
+                    <img class="w-full h-full object-cover"
+                        data-alt="abstract blurred technological background with glowing network patterns in deep blue and purple"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwVAGfe1fI1Qp_D8Gj-2vwyfvtV3z7-uUarqDPijWwXVyvjM5t6TPCp7879fiMYgt0OORX0_UMfkus74Xb30tE6hAk0o6ftEdPXLaSadYv2hLDQdtNktkX4vWRLIlxn3ykfT403q4OOJ5p5K_b4sNC37ZCS-01hsS0A3bcm4fSHZCjT_wjZFU_iwUjRmjiS4JAKgC34wEZZ0kGptu0mCk4eTREBdkggkX__x6Dzu1MXE2PUvo-EqS09e1ApjVIYFLhkXtQSS8cRAk" />
+                </div>
+            </div>
+            <div class="bg-surface-container-low p-8 rounded-xl flex flex-col">
+                <h4 class="font-headline text-on-surface text-xl font-bold mb-6">Drive Stats</h4>
+                <div class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <span class="text-on-surface-variant font-medium">Total Vacancies</span>
+                        <span class="font-headline font-extrabold text-2xl text-primary">142</span>
+                    </div>
+                    <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-primary" style="width: 65%"></div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-on-surface-variant font-medium">Avg. Package</span>
+                        <span class="font-headline font-extrabold text-2xl text-secondary">12.5L</span>
+                    </div>
+                    <div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-secondary" style="width: 45%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Bottom Navigation Shell -->
+    <nav class="fixed bottom-0 w-full z-50 flex justify-center pb-8 md:hidden">
+        <div
+            class="w-[90%] max-w-md bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-full shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex justify-between items-center px-4 py-2">
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-[#0050d4] transition-colors"
+                href="#">
+                <span class="material-symbols-outlined">dashboard</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold tracking-wide uppercase mt-1">Dashboard</span>
+            </a>
+            <a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full px-5 py-2 transition-all duration-300"
+                href="#">
+                <span class="material-symbols-outlined">work</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold tracking-wide uppercase mt-1">Drives</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-[#0050d4] transition-colors"
+                href="#">
+                <span class="material-symbols-outlined">assignment_turned_in</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold tracking-wide uppercase mt-1">Applied</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-[#0050d4] transition-colors"
+                href="#">
+                <span class="material-symbols-outlined">person</span>
+                <span class="font-['Manrope'] text-[11px] font-semibold tracking-wide uppercase mt-1">Profile</span>
+            </a>
+        </div>
+    </nav>
+    <!-- Floating Action Button - Supressed as per Task Logic (Placement Details Context) -->
+</body>
+
+</html>

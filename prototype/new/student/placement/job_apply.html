@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Senior Product Designer Application | Lumina Global Systems</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#570008",
+                        "primary-container": "#7b9cff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-primary-fixed-variant": "#00266e",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "tertiary-dim": "#8e3000",
+                        "on-tertiary-fixed": "#310b00",
+                        "tertiary": "#a23800",
+                        "on-tertiary": "#ffefeb",
+                        "on-secondary-container": "#5b00c7",
+                        "primary-fixed-dim": "#658eff",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "surface-variant": "#d9dde0",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-background": "#2c2f31",
+                        "primary": "#0050d4",
+                        "secondary": "#702ae1",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#0050d4",
+                        "on-surface": "#2c2f31",
+                        "secondary-container": "#dcc9ff",
+                        "error": "#b31b25",
+                        "surface-container": "#e5e9eb",
+                        "outline": "#747779",
+                        "surface": "#f5f7f9",
+                        "error-dim": "#9f0519",
+                        "tertiary-container": "#ff956a",
+                        "surface-container-high": "#dfe3e6",
+                        "on-surface-variant": "#595c5e",
+                        "on-secondary-fixed": "#430097",
+                        "on-primary-container": "#001e5a",
+                        "background": "#f5f7f9",
+                        "tertiary-fixed": "#ff956a",
+                        "inverse-primary": "#618bff",
+                        "primary-fixed": "#7b9cff",
+                        "on-error": "#ffefee",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "surface-dim": "#d0d5d8",
+                        "surface-container-low": "#eef1f3",
+                        "on-tertiary-container": "#5a1c00",
+                        "inverse-on-surface": "#9a9d9f",
+                        "surface-bright": "#f5f7f9",
+                        "on-primary-fixed": "#000000",
+                        "surface-container-highest": "#d9dde0",
+                        "outline-variant": "#abadaf",
+                        "inverse-surface": "#0b0f10",
+                        "secondary-dim": "#6411d5",
+                        "primary-dim": "#0046bb",
+                        "on-primary": "#f1f2ff",
+                        "error-container": "#fb5151",
+                        "on-secondary": "#f8f0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface antialiased">
+    <!-- TopAppBar -->
+    <header
+        class="fixed top-0 w-full z-50 bg-[#f5f7f9] dark:bg-slate-900 flex justify-between items-center px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+            <span
+                class="material-symbols-outlined text-[#0050d4] dark:text-blue-400 cursor-pointer active:scale-95 transition-transform"
+                data-icon="arrow_back">arrow_back</span>
+            <h1 class="font-headline font-bold tracking-tight text-on-surface text-lg">Application Process</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span
+                class="material-symbols-outlined text-slate-500 hover:bg-[#eef1f3] dark:hover:bg-slate-800 p-2 rounded-full transition-colors cursor-pointer"
+                data-icon="more_vert">more_vert</span>
+        </div>
+    </header>
+    <main class="pt-24 pb-32 px-4 max-w-2xl mx-auto">
+        <!-- Hero Section -->
+        <div class="mb-10 text-center md:text-left">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full mb-4">
+                <span class="w-2 h-2 bg-primary rounded-full"></span>
+                <span class="text-xs font-bold text-primary font-headline tracking-wider uppercase">Active
+                    Posting</span>
+            </div>
+            <h2 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight mb-2">Senior Product
+                Designer</h2>
+            <p class="text-on-surface-variant font-medium">Lumina Global Systems • Remote, Global</p>
+        </div>
+        <form class="space-y-6">
+            <!-- Section 1: Basic Details -->
+            <section class="bg-surface-container-low rounded-xl p-1">
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary"
+                                data-icon="person_outline">person_outline</span>
+                        </div>
+                        <h3 class="font-headline font-bold text-xl">Basic Details</h3>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-on-surface-variant ml-1 font-label">FULL NAME</label>
+                            <input
+                                class="w-full bg-surface border-none rounded-lg font-body font-semibold text-on-surface px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                                readonly="" type="text" value="Alexander Sterling" />
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-on-surface-variant ml-1 font-label">EMAIL
+                                ADDRESS</label>
+                            <input
+                                class="w-full bg-surface border-none rounded-lg font-body font-semibold text-on-surface px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                                readonly="" type="email" value="alex.sterling@design.co" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Section 2: Resume Upload -->
+            <section class="bg-surface-container-low rounded-xl p-1">
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-secondary/5 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-secondary"
+                                data-icon="cloud_upload">cloud_upload</span>
+                        </div>
+                        <h3 class="font-headline font-bold text-xl">Resume Upload</h3>
+                    </div>
+                    <div class="relative group cursor-pointer">
+                        <div
+                            class="border-2 border-dashed border-outline-variant/30 rounded-xl p-10 flex flex-col items-center justify-center bg-surface/30 group-hover:bg-surface/50 transition-colors">
+                            <div class="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mb-4">
+                                <span class="material-symbols-outlined text-error text-4xl"
+                                    data-icon="picture_as_pdf">picture_as_pdf</span>
+                            </div>
+                            <p class="font-bold text-on-surface mb-1">Upload your resume</p>
+                            <p class="text-xs text-on-surface-variant">PDF, DOCX up to 10MB</p>
+                            <input class="absolute inset-0 opacity-0 cursor-pointer" type="file" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Section 3: Cover Letter -->
+            <section class="bg-surface-container-low rounded-xl p-1">
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-tertiary/5 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-tertiary" data-icon="edit_note">edit_note</span>
+                        </div>
+                        <h3 class="font-headline font-bold text-xl">Cover Letter</h3>
+                    </div>
+                    <textarea
+                        class="w-full bg-surface border-none rounded-xl font-body text-on-surface px-4 py-4 focus:ring-2 focus:ring-primary/20 placeholder:text-outline-variant"
+                        placeholder="Tell us why you are a great fit for Lumina..." rows="6"></textarea>
+                </div>
+            </section>
+            <!-- Section 4: Confirmation -->
+            <div class="px-2 flex items-start gap-3">
+                <div class="mt-1">
+                    <input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                        id="confirm" type="checkbox" />
+                </div>
+                <label class="text-sm text-on-surface-variant leading-relaxed cursor-pointer select-none" for="confirm">
+                    I confirm that the information provided is accurate and I agree to the <span
+                        class="text-primary font-bold">Privacy Policy</span> and <span
+                        class="text-primary font-bold">Terms of Service</span>.
+                </label>
+            </div>
+            <!-- Action Button -->
+            <div class="pt-4">
+                <button
+                    class="w-full btn-gradient text-white font-headline font-bold py-5 rounded-xl shadow-xl shadow-primary/20 active:scale-[0.98] transition-transform"
+                    type="submit">
+                    Confirm Application
+                </button>
+            </div>
+        </form>
+        <!-- Company Quote / Brand Moment -->
+        <div class="mt-12 p-8 bg-primary-container/10 rounded-xl relative overflow-hidden">
+            <div class="relative z-10">
+                <span class="material-symbols-outlined text-primary-container text-4xl mb-4" data-icon="format_quote"
+                    style="font-variation-settings: 'FILL' 1;">format_quote</span>
+                <p class="font-headline italic text-on-primary-container text-lg leading-relaxed mb-4">
+                    "We are building the future of enterprise intelligence. Your design eye is the lens through which
+                    our users will experience that future."
+                </p>
+                <div class="flex items-center gap-3">
+                    <img class="w-10 h-10 rounded-full object-cover"
+                        data-alt="Professional headshot of a female design executive with a warm smile in a modern office setting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT_sLAOtJ7eyAgUrZuvMZvxmF2rbqJojvkXPn0FC57yvn_8ccjhxVkZjOvo2xYAb_9VRMan1ZJ9bTjlqxo_3PqfMQeaVqNuZ-vSlOlLucwCwInnaB5iLjBtut7X6RGmin_QDZvqgSO7zIHahOPhL1Y7jipjSp5RyV6XP4AeFVSdBisrZ9ae7-18N2Q0fHYB4LZ8F7Bm0lWaIrci_jyE_m_Yrvlaa-DlC7XmxsWSn7hzNiMMa4f0VCWjRBl6lzV8Lj-rXIP_VC6jKM" />
+                    <div>
+                        <p class="font-bold text-sm text-on-primary-container">Sarah Chen</p>
+                        <p class="text-xs text-on-primary-container/70">VP of Product Design, Lumina</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Decorative background element -->
+            <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl"></div>
+        </div>
+    </main>
+    <!-- BottomNavBar (Hidden for transactional flow as per instructions, but kept as a template comment if logic changes) -->
+    <!-- Suppressed: The "Destination" Rule - This is a task-focused screen (Application form) -->
+</body>
+
+</html>

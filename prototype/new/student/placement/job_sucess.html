@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#000000",
+                        "on-primary": "#f1f2ff",
+                        "on-secondary-fixed": "#430097",
+                        "on-background": "#2c2f31",
+                        "background": "#f5f7f9",
+                        "surface-container": "#e5e9eb",
+                        "primary": "#0050d4",
+                        "outline": "#747779",
+                        "inverse-primary": "#618bff",
+                        "secondary": "#702ae1",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "error": "#b31b25",
+                        "surface-bright": "#f5f7f9",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "primary-container": "#7b9cff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "tertiary": "#a23800",
+                        "error-dim": "#9f0519",
+                        "surface-dim": "#d0d5d8",
+                        "tertiary-fixed": "#ff956a",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-tertiary": "#ffefeb",
+                        "on-primary-container": "#001e5a",
+                        "error-container": "#fb5151",
+                        "inverse-surface": "#0b0f10",
+                        "primary-fixed-dim": "#658eff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "secondary-container": "#dcc9ff",
+                        "on-surface": "#2c2f31",
+                        "secondary-dim": "#6411d5",
+                        "on-surface-variant": "#595c5e",
+                        "surface-variant": "#d9dde0",
+                        "outline-variant": "#abadaf",
+                        "on-error-container": "#570008",
+                        "on-primary-fixed-variant": "#00266e",
+                        "tertiary-dim": "#8e3000",
+                        "tertiary-container": "#ff956a",
+                        "on-tertiary-fixed": "#310b00",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#0050d4",
+                        "surface-container-high": "#dfe3e6",
+                        "primary-fixed": "#7b9cff",
+                        "on-secondary": "#f8f0ff",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "surface": "#f5f7f9",
+                        "surface-container-low": "#eef1f3",
+                        "on-secondary-container": "#5b00c7",
+                        "surface-container-highest": "#d9dde0",
+                        "secondary-fixed": "#dcc9ff",
+                        "primary-dim": "#0046bb",
+                        "on-error": "#ffefee"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .bg-lush-gradient {
+            background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background font-body text-on-surface min-h-screen">
+    <!-- Header / TopAppBar -->
+    <header class="w-full sticky top-0 z-50 bg-[#f5f7f9] dark:bg-slate-900 bg-[#eef1f3] dark:bg-slate-800">
+        <div class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-headline font-bold">
+                    SP
+                </div>
+                <h1
+                    class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-xl font-bold text-[#0050d4] dark:text-[#7b9cff]">
+                    Career Hub</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button
+                    class="material-symbols-outlined text-slate-500 hover:bg-white/50 p-2 rounded-full transition-colors">notifications</button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-4xl mx-auto px-6 py-12 md:py-20 flex flex-col items-center">
+        <!-- Celebration Hero Section -->
+        <div class="text-center mb-16 relative">
+            <!-- Decorative backdrop glow -->
+            <div
+                class="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-primary-container/20 blur-3xl rounded-full -z-10">
+            </div>
+            <div
+                class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-lush-gradient text-on-primary mb-8 shadow-xl shadow-primary/20">
+                <span class="material-symbols-outlined text-5xl"
+                    style="font-variation-settings: 'FILL' 1;">check_circle</span>
+            </div>
+            <h2 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface mb-4">
+                Application Submitted</h2>
+            <p class="text-on-surface-variant text-lg max-w-lg mx-auto">Your journey with Lumina Systems starts now.
+                We've notified the hiring team about your interest.</p>
+        </div>
+        <!-- Bento Layout for Content -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 w-full">
+            <!-- Job Summary Card (Editorial Style) -->
+            <div
+                class="md:col-span-5 bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16"></div>
+                <span
+                    class="inline-block px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold tracking-widest uppercase rounded-full mb-6">Confirmed
+                    Receipt</span>
+                <div class="flex flex-col gap-1 mb-8">
+                    <p class="text-on-surface-variant text-sm font-semibold">Role</p>
+                    <h3 class="font-headline text-2xl font-extrabold text-primary leading-tight">Senior Product Designer
+                    </h3>
+                </div>
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center">
+                        <img alt="Lumina Systems Logo" class="w-8 h-8 object-contain opacity-80"
+                            data-alt="Modern abstract corporate logo with geometric shapes and minimalist design in monochrome gray"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLXzJer5AiY26G8dBW5ndef5Sh52QSR66m9aoi4mAUKWuMzOdSTrf-qt3b9GdLdRn95OsXjskVXEAvLnfnk2M_uBwlKXejWmxDUf7hlgno2L4Y_o-wqa9ebyCnJLqIMCLY0eve_8MfDMK1GGrCnCK7CDQFcqMT3iSykdEHOfcRxZ1A2rTxvI0jsY_qDYvJAvTBL13DpXPKxylYqFjWD-cLaubDPQ4MhvrCH5RWCecIqsgTpsf-pHQphJAqtz_SgL_7Cw-0SV0MJ4A" />
+                    </div>
+                    <div>
+                        <p class="font-bold text-on-surface">Lumina Systems</p>
+                        <p class="text-xs text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[14px]">location_on</span>
+                            Remote · Full-time
+                        </p>
+                    </div>
+                </div>
+                <div class="pt-6 border-t border-outline-variant/10">
+                    <p class="text-xs text-on-surface-variant leading-relaxed">
+                        Applied on Oct 24, 2023 · Reference: <span class="font-mono">#LS-77420</span>
+                    </p>
+                </div>
+            </div>
+            <!-- Status Tracker Card -->
+            <div class="md:col-span-7 bg-surface-container-low p-8 rounded-xl flex flex-col justify-center">
+                <h4 class="font-headline text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-10">
+                    Application Journey</h4>
+                <div class="relative flex flex-col gap-10">
+                    <!-- Progress Line -->
+                    <div class="absolute left-6 top-2 bottom-2 w-0.5 bg-surface-container-high"></div>
+                    <!-- Active Stage: Applied -->
+                    <div class="flex items-center gap-6 relative z-10">
+                        <div
+                            class="w-12 h-12 rounded-full bg-lush-gradient flex items-center justify-center text-on-primary ring-8 ring-primary/10">
+                            <span class="material-symbols-outlined text-2xl">check</span>
+                        </div>
+                        <div>
+                            <p class="font-headline font-bold text-primary">Applied</p>
+                            <p class="text-xs text-on-surface-variant">Yesterday, 10:45 AM</p>
+                        </div>
+                    </div>
+                    <!-- Upcoming Stage: Screening -->
+                    <div class="flex items-center gap-6 relative z-10">
+                        <div
+                            class="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-outline-variant border-2 border-surface-container-high">
+                            <span class="material-symbols-outlined text-2xl">assignment</span>
+                        </div>
+                        <div>
+                            <p class="font-headline font-bold text-on-surface-variant">Screening</p>
+                            <p class="text-xs text-outline">Usually takes 2-4 business days</p>
+                        </div>
+                    </div>
+                    <!-- Upcoming Stage: Interview -->
+                    <div class="flex items-center gap-6 relative z-10">
+                        <div
+                            class="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-outline-variant border-2 border-surface-container-high">
+                            <span class="material-symbols-outlined text-2xl">groups</span>
+                        </div>
+                        <div>
+                            <p class="font-headline font-bold text-on-surface-variant">Interview</p>
+                        </div>
+                    </div>
+                    <!-- Upcoming Stage: Offer -->
+                    <div class="flex items-center gap-6 relative z-10">
+                        <div
+                            class="w-12 h-12 rounded-full bg-surface-container-lowest flex items-center justify-center text-outline-variant border-2 border-surface-container-high">
+                            <span class="material-symbols-outlined text-2xl">celebration</span>
+                        </div>
+                        <div>
+                            <p class="font-headline font-bold text-on-surface-variant">Offer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Contextual Tip / Callout (Bento Element) -->
+            <div
+                class="md:col-span-12 bg-white p-6 rounded-xl flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary">
+                        <span class="material-symbols-outlined"
+                            style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+                    </div>
+                    <div>
+                        <p class="font-bold text-on-surface">Pro-Tip for Lumina</p>
+                        <p class="text-sm text-on-surface-variant">Candidates who engage with the community portal are
+                            30% more likely to advance.</p>
+                    </div>
+                </div>
+                <button
+                    class="px-6 py-2 rounded-full bg-surface-container-high text-on-surface font-semibold text-sm hover:bg-surface-dim transition-colors">
+                    Explore Community
+                </button>
+            </div>
+        </div>
+        <!-- Primary Action Cluster -->
+        <div class="mt-12 flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+            <button
+                class="w-full sm:w-auto px-10 py-4 rounded-full bg-lush-gradient text-on-primary font-headline font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-2">
+                View Application
+                <span class="material-symbols-outlined text-xl">arrow_forward</span>
+            </button>
+            <button
+                class="w-full sm:w-auto px-10 py-4 rounded-full bg-surface-container-high text-on-surface font-headline font-bold hover:bg-surface-dim transition-colors">
+                Back to Jobs
+            </button>
+        </div>
+    </main>
+    <!-- Success Decoration (Confetti/Abstract Shape) -->
+    <div class="fixed bottom-0 right-0 -z-10 opacity-30 pointer-events-none">
+        <svg fill="none" height="400" viewbox="0 0 400 400" width="400" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="350" cy="350" fill="url(#grad1)" r="150"></circle>
+            <defs>
+                <lineargradient gradientunits="userSpaceOnUse" id="grad1" x1="200" x2="500" y1="200" y2="500">
+                    <stop stop-color="#7b9cff"></stop>
+                    <stop offset="1" stop-color="#0050d4" stop-opacity="0"></stop>
+                </lineargradient>
+            </defs>
+        </svg>
+    </div>
+    <!-- BottomNavBar -->
+    <nav class="fixed bottom-8 left-0 w-full z-50 flex justify-around items-center px-4 md:hidden">
+        <div
+            class="w-[90%] max-w-md bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-full flex justify-around items-center p-2 shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
+            <div
+                class="flex flex-col items-center justify-center text-slate-500 p-3 hover:text-[#0050d4] transition-colors">
+                <span class="material-symbols-outlined">grid_view</span>
+                <span class="font-['Manrope'] text-xs font-semibold">Home</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-slate-500 p-3 hover:text-[#0050d4] transition-colors">
+                <span class="material-symbols-outlined">work_outline</span>
+                <span class="font-['Manrope'] text-xs font-semibold">Jobs</span>
+            </div>
+            <!-- Active State for 'Applied' -->
+            <div
+                class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full p-3 scale-110 transition-transform duration-300 ease-out">
+                <span class="material-symbols-outlined"
+                    style="font-variation-settings: 'FILL' 1;">assignment_turned_in</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold">Applied</span>
+            </div>
+            <div
+                class="flex flex-col items-center justify-center text-slate-500 p-3 hover:text-[#0050d4] transition-colors">
+                <span class="material-symbols-outlined">person</span>
+                <span class="font-['Manrope'] text-xs font-semibold">Profile</span>
+            </div>
+        </div>
+    </nav>
+</body>
+
+</html>
