@@ -87,6 +87,7 @@ export default function BrowseJobs({ navigation }) {
             eligibility="3rd/4th Year Students"
             deadline="Oct 15, 2024"
             isUrgent={true}
+            navigation={navigation}
           />
           <JobCard
             company="Vortex AI Labs"
@@ -97,6 +98,7 @@ export default function BrowseJobs({ navigation }) {
             eligibility="Graduates (CS/Math)"
             deadline="Nov 2, 2024"
             isUrgent={false}
+            navigation={navigation}
           />
           <JobCard
             company="Beam Finance"
@@ -107,6 +109,7 @@ export default function BrowseJobs({ navigation }) {
             eligibility="Open to All Majors"
             deadline="Dec 20, 2024"
             isUrgent={false}
+            navigation={navigation}
           />
         </View>
       </ScrollView>
