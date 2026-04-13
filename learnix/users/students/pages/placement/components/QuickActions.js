@@ -10,12 +10,18 @@ import { Ionicons } from '@expo/vector-icons';
 // Import theme
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../constants/theme';
 
-export default function QuickActions() {
+export default function QuickActions({ navigation }) {
+  const handleBrowseJobs = () => {
+    if (navigation) {
+      navigation.navigate('BrowseJobs');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
         {/* Browse Jobs */}
-        <TouchableOpacity style={styles.card} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={handleBrowseJobs}>
           <View style={styles.iconContainer}>
             <Ionicons name="briefcase-outline" size={24} color={COLORS.primary} />
           </View>

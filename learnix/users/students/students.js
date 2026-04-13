@@ -13,6 +13,7 @@ import ProfilePage from './pages/profile/profile';
 import EventsPage from './pages/events/events';
 import ClassPage from './pages/class/class';
 import PlacementPage from './pages/placement/placement';
+import BrowseJobsPage from './pages/placement/pages/browse_jobs';
 
 // Import components
 import StudentHeader from './components/StudentHeader';
@@ -23,12 +24,22 @@ import { COLORS } from '../../constants/theme';
 
 export default function StudentsScreen() {
   const [activeTab, setActiveTab] = useState('Home');
+  const [currentScreen, setCurrentScreen] = useState('Main');
 
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
+    setCurrentScreen('Main');
+  };
+
+  const navigateToScreen = (screenName) => {
+    setCurrentScreen(screenName);
   };
 
   const renderContent = () => {
+    if (currentScreen === 'BrowseJobs') {
+      return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+
     switch (activeTab) {
       case 'Home':
         return <Dashboard />;
@@ -39,7 +50,7 @@ export default function StudentsScreen() {
       case 'Events':
         return <EventsPage />;
       case 'Placement':
-        return <PlacementPage />;
+        return <PlacementPage navigation={{ navigate: navigateToScreen }} />;
       case 'Profile':
         return <ProfilePage />;
       default:

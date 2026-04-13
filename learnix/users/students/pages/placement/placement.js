@@ -17,7 +17,7 @@ import UpcomingDrives from './components/UpcomingDrives';
 // Import theme
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../../constants/theme';
 
-export default function PlacementPage() {
+export default function PlacementPage({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView 
@@ -29,7 +29,7 @@ export default function PlacementPage() {
         <PlacementHeader />
 
         {/* Quick Actions */}
-        <QuickActions />
+        <QuickActions navigation={navigation} />
 
         {/* Profile Strength & Stats */}
         <ProfileStrength />
