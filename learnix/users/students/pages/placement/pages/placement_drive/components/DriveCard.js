@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Import theme
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../../../constants/theme';
@@ -51,97 +52,116 @@ export default function DriveCard({ drive }) {
   const statusStyle = statusConfig[drive.statusType];
   const buttonStyle = buttonConfig[drive.buttonType];
 
-  const getInitialColor = () => {
+  const getGradientColors = () => {
     switch (drive.statusType) {
       case 'open':
-        return COLORS.primary;
+        return ['#0050d4', '#0066ff'];
       case 'registered':
-        return COLORS.secondary;
+        return ['#702ae1', '#8b4ff0'];
       case 'closing':
-        return COLORS.tertiary;
+        return ['#a23800', '#c44500'];
       default:
-        return COLORS.textSecondary;
+        return ['#595c5e', '#747779'];
     }
   };
 
-  const getInitialBg = () => {
+  const getIconName = () => {
     switch (drive.statusType) {
       case 'open':
-        return 'rgba(0, 80, 212, 0.05)';
+        return 'flash';
       case 'registered':
-        return 'rgba(112, 42, 225, 0.05)';
+        return 'checkmark-circle';
       case 'closing':
-        return 'rgba(162, 56, 0, 0.05)';
+        return 'time';
       default:
-        return 'rgba(171, 173, 175, 0.1)';
+        return 'hourglass';
     }
   };
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={0.85}>
-      {/* Header: Initial & Status */}
-      <View style={styles.header}>
-        <View style={[styles.initialContainer, { backgroundColor: getInitialBg() }]}>
-          <Text style={[styles.initialText, { color: getInitialColor() }]}>
-            {drive.initial}
-          </Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-          <Text style={[styles.statusText, { color: statusStyle.text }]}>
-            {drive.status}
-          </Text>
-        </View>
-      </View>
-
-      {/* Company & Role */}
-      <Text style={styles.company}>{drive.company}</Text>
-      <Text style={styles.role}>{drive.role}</Text>
-
-      {/* Details */}
-      <View style={styles.details}>
-        <View style={styles.detailItem}>
-          <View style={styles.detailIconBox}>
-            <Ionicons
-              name={drive.locationType === 'virtual' ? 'videocam-outline' : 'calendar-outline'}
-              size={16}
-              color={COLORS.textSecondary}
-            />
-          </View>
-          <Text style={styles.detailText}>{drive.date}</Text>
-        </View>
-        <View style={styles.detailItem}>
-          <View style={styles.detailIconBox}>
-            <Ionicons
-              name={drive.locationType === 'virtual' ? 'globe-outline' : 'location-outline'}
-              size={16}
-              color={COLORS.textSecondary}
-            />
-          </View>
-          <Text
-            style={[
-              styles.detailText,
-              drive.locationType === 'virtual' && styles.virtualText,
-            ]}
-          >
-            {drive.location}
-          </Text>
-        </View>
-      </View>
-
-      {/* Button */}
-      <TouchableOpacity
-        style={[
-          styles.button,
-          { backgroundColor: buttonStyle.bg },
-          buttonStyle.shadow && styles.buttonShadow,
-        ]}
-        activeOpacity={drive.buttonType === 'disabled' ? 1 : 0.8}
-        disabled={drive.buttonType === 'disabled'}
+    <TouchableOpacity style={styles.container} activeOpacity={0.9}>
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={getGradientColors()}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
       >
-        <Text style={[styles.buttonText, { color: buttonStyle.text }]}>
-          {drive.buttonText}
-        </Text>
-      </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <View style={styles.initialContainer}>
+            <Text style={styles.initialText}>{drive.initial}</Text>
+          </View>
+          <View style={styles.statusBadge}>
+            <Ionicons name={getIconName()} size={12} color={COLORS.white} style={styles.statusIcon} />
+            <Text style={styles.statusText}>{drive.status}</Text>
+          </View>
+        </View>
+        {/* Decorative Circle */}
+        <View style={styles.decorativeCircle} />
+      </LinearGradient>
+
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Company & Role */}
+        <Text style={styles.company}>{drive.company}</Text>
+        <Text style={styles.role}>{drive.role}</Text>
+
+        {/* Details */}
+        <View style={styles.detailsContainer}>
+          <View style={styles.detailRow}>
+            <View style={styles.detailItem}>
+              <Ionicons
+                name={drive.locationType === 'virtual' ? 'videocam' : 'calendar'}
+                size={16}
+                color={drive.locationType === 'virtual' ? COLORS.primary : COLORS.textSecondary}
+              />
+              <Text style={[
+                styles.detailText,
+                drive.locationType === 'virtual' && styles.virtualText
+              ]}>
+                {drive.date}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.detailRow}>
+            <View style={styles.detailItem}>
+              <Ionicons
+                name={drive.locationType === 'virtual' ? 'globe' : 'location'}
+                size={16}
+                color={drive.locationType === 'virtual' ? COLORS.primary : COLORS.textSecondary}
+              />
+              <Text style={[
+                styles.detailText,
+                drive.locationType === 'virtual' && styles.virtualText
+              ]}>
+                {drive.location}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Button */}
+        <TouchableOpacity
+          style={[
+            styles.button,
+            buttonStyle.shadow && styles.buttonShadow,
+            drive.buttonType === 'disabled' && styles.buttonDisabled,
+          ]}
+          activeOpacity={drive.buttonType === 'disabled' ? 1 : 0.85}
+          disabled={drive.buttonType === 'disabled'}
+        >
+          {drive.buttonType === 'primary' && (
+            <Ionicons name="arrow-forward" size={16} color={COLORS.white} style={styles.buttonIcon} />
+          )}
+          <Text style={[
+            styles.buttonText,
+            { color: buttonStyle.text },
+            drive.buttonType === 'disabled' && styles.buttonTextDisabled
+          ]}>
+            {drive.buttonText}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -150,79 +170,113 @@ const styles = StyleSheet.create({
   container: {
     width: '48%',
     backgroundColor: COLORS.white,
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.05)',
+    borderRadius: BORDER_RADIUS.xl,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    marginBottom: SPACING.md,
   },
   header: {
+    padding: SPACING.lg,
+    paddingBottom: SPACING.lg + 4,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: SPACING.lg,
+    position: 'relative',
+    zIndex: 10,
   },
   initialContainer: {
-    width: 56,
-    height: 56,
+    width: 52,
+    height: 52,
     borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   initialText: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontWeight: TYPOGRAPHY.fontWeight.extraBold,
+    color: COLORS.white,
   },
   statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     paddingHorizontal: SPACING.md,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: BORDER_RADIUS.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  statusIcon: {
+    marginRight: 4,
   },
   statusText: {
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.bold,
+    color: COLORS.white,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
+  },
+  decorativeCircle: {
+    position: 'absolute',
+    right: -20,
+    top: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  content: {
+    padding: SPACING.lg,
+    paddingTop: SPACING.lg - 2,
   },
   company: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
     marginBottom: 4,
+    letterSpacing: -0.3,
   },
   role: {
     fontSize: 13,
     fontFamily: 'Manrope-Medium',
     color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
     lineHeight: 18,
   },
-  details: {
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
+  detailsContainer: {
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.1)',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-  },
-  detailIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
+    flex: 1,
   },
   detailText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Manrope-SemiBold',
     fontWeight: TYPOGRAPHY.fontWeight.semiBold,
     color: COLORS.textSecondary,
@@ -230,22 +284,37 @@ const styles = StyleSheet.create({
   },
   virtualText: {
     color: COLORS.primary,
+    fontWeight: TYPOGRAPHY.fontWeight.bold,
   },
   button: {
-    paddingVertical: SPACING.md + 2,
-    borderRadius: BORDER_RADIUS.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.surfaceContainerHigh,
+    gap: 6,
   },
   buttonShadow: {
+    backgroundColor: COLORS.primary,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonIcon: {
+    marginLeft: 2,
   },
   buttonText: {
     fontSize: 13,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.bold,
+  },
+  buttonTextDisabled: {
+    opacity: 0.6,
   },
 });
