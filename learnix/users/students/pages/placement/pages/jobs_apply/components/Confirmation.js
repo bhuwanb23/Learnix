@@ -8,7 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
 
 export default function Confirmation({ isConfirmed, onToggle }) {
   return (

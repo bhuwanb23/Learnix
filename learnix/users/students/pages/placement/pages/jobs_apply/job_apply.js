@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Import theme
-import { COLORS, SPACING } from '../../../../../constants/theme';
+import { COLORS, SPACING } from '../../../../../../constants/theme';
 
 // Import components
 import {

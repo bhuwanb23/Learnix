@@ -7,7 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
 import { COMPANY_QUOTE } from '../constants/applicationData';
 
 export default function CompanyQuote() {

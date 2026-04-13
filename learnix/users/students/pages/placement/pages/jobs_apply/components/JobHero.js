@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 
 // Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
 
 export default function JobHero() {
   return (

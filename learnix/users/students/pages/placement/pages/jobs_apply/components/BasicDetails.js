@@ -8,7 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
 import { APPLICATION_DATA } from '../constants/applicationData';
 
 export default function BasicDetails() {
