@@ -27,14 +27,17 @@ import { COLORS } from '../../constants/theme';
 export default function StudentsScreen() {
   const [activeTab, setActiveTab] = useState('Home');
   const [currentScreen, setCurrentScreen] = useState('Main');
+  const [screenParams, setScreenParams] = useState({});
 
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
     setCurrentScreen('Main');
+    setScreenParams({});
   };
 
-  const navigateToScreen = (screenName) => {
+  const navigateToScreen = (screenName, params = {}) => {
     setCurrentScreen(screenName);
+    setScreenParams(params);
   };
 
   const renderContent = () => {
@@ -45,7 +48,7 @@ export default function StudentsScreen() {
       return <PlacementDrivePage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
     if (currentScreen === 'JobDetails') {
-      return <JobDetailsPage navigation={{ goBack: () => setCurrentScreen('BrowseJobs') }} />;
+      return <JobDetailsPage navigation={{ goBack: () => setCurrentScreen('BrowseJobs') }} route={screenParams} />;
     }
 
     switch (activeTab) {

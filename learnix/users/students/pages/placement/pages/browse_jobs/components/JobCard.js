@@ -23,7 +23,7 @@ export default function JobCard({
 }) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  const handlePress = () => {
+  const handleApplyPress = () => {
     if (navigation) {
       navigation.navigate('JobDetails', {
         job: { company, title, location, type, pkg, eligibility, deadline, isUrgent },
@@ -32,7 +32,7 @@ export default function JobCard({
   };
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={0.85} onPress={handlePress}>
+    <TouchableOpacity style={styles.container} activeOpacity={0.85}>
       {/* Header: Company & Bookmark */}
       <View style={styles.header}>
         <View style={styles.companyBadge}>
@@ -89,7 +89,7 @@ export default function JobCard({
             {deadline}
           </Text>
         </View>
-        <TouchableOpacity style={styles.applyButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.applyButton} activeOpacity={0.8} onPress={handleApplyPress}>
           <Text style={styles.applyButtonText}>Apply</Text>
           <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
         </TouchableOpacity>

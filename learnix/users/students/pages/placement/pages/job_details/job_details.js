@@ -23,7 +23,12 @@ import ApplyFooter from './components/ApplyFooter';
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../../../../constants/theme';
 
 export default function JobDetails({ navigation, route }) {
-  const { job } = route.params || {};
+  const job = route?.job || {
+    company: 'Lumina Global Systems',
+    title: 'Senior Product Designer',
+    type: 'Full-Time',
+    isUrgent: true,
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -47,10 +52,10 @@ export default function JobDetails({ navigation, route }) {
       >
         {/* Hero Section */}
         <JobHeader
-          company={job?.company || 'Lumina Global Systems'}
-          title={job?.title || 'Senior Product Designer'}
-          type={job?.type || 'Full-Time'}
-          isUrgent={job?.isUrgent || true}
+          company={job.company}
+          title={job.title}
+          type={job.type}
+          isUrgent={job.isUrgent}
         />
 
         {/* Job Description */}
