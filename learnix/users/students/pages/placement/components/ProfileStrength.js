@@ -17,41 +17,35 @@ export default function ProfileStrength() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mainCard}>
-        {/* Circular Progress */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressCircle}>
-            <View style={[
-              styles.circularProgress,
-              {
-                backgroundColor: `conic-gradient(${COLORS.primary} ${progress * 3.6}deg, #dfe3e6 0deg)`,
-              }
-            ]} />
-            <View style={styles.progressInner}>
-              <Text style={styles.progressText}>{progress}%</Text>
-              <Text style={styles.progressLabel}>Strength</Text>
-            </View>
+      {/* Circular Progress - Centered */}
+      <View style={styles.progressWrapper}>
+        <View style={styles.progressCircle}>
+          <View style={styles.progressBackground} />
+          <View style={styles.progressOverlay} />
+          <View style={styles.progressInner}>
+            <Text style={styles.progressText}>{progress}%</Text>
+            <Text style={styles.progressLabel}>Strength</Text>
           </View>
         </View>
+      </View>
 
-        {/* Profile Info */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.title}>Profile Strength</Text>
-          <Text style={styles.subtitle}>
-            Add 'Certifications' to reach 95% and unlock Premium roles.
-          </Text>
+      {/* Heading */}
+      <Text style={styles.title}>Profile Strength</Text>
 
-          {/* Stats Grid */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Resume Score</Text>
-              <Text style={[styles.statValue, { color: COLORS.secondary }]}>92/100</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Eligibility</Text>
-              <Text style={[styles.statValue, { color: COLORS.tertiary }]}>Verified</Text>
-            </View>
-          </View>
+      {/* Description */}
+      <Text style={styles.subtitle}>
+        Add 'Certifications' to reach 95% and unlock Premium roles.
+      </Text>
+
+      {/* Stats Cards */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Resume Score</Text>
+          <Text style={[styles.statValue, { color: COLORS.secondary }]}>92/100</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Eligibility</Text>
+          <Text style={[styles.statValue, { color: COLORS.tertiary }]}>Verified</Text>
         </View>
       </View>
 
@@ -71,25 +65,10 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: SPACING.xl + 8,
   },
-  mainCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.xl,
-    flexDirection: 'row',
-    gap: SPACING.xl,
-    shadowColor: COLORS.textPrimary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.04,
-    shadowRadius: 24,
-    elevation: 3,
-    marginBottom: SPACING.md,
-  },
-  progressContainer: {
-    width: 160,
-    height: 160,
+  progressWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
+    marginBottom: SPACING.lg,
   },
   progressCircle: {
     width: 160,
@@ -99,11 +78,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  circularProgress: {
+  progressBackground: {
     position: 'absolute',
     width: 160,
     height: 160,
     borderRadius: 80,
+    backgroundColor: COLORS.background,
+    opacity: 0.3,
+  },
+  progressOverlay: {
+    position: 'absolute',
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: COLORS.primary,
     opacity: 0.2,
   },
   progressInner: {
@@ -114,9 +102,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   progressText: {
-    fontSize: 28,
+    fontSize: 32,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.extraBold,
     color: COLORS.primary,
@@ -129,33 +122,38 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginTop: 2,
   },
-  infoContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: SPACING.lg,
-  },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
-    marginBottom: 4,
+    marginBottom: SPACING.sm,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Manrope-Medium',
     color: 'rgba(44, 47, 49, 0.7)',
-    lineHeight: 18,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: SPACING.lg,
+    paddingHorizontal: SPACING.md,
   },
   statsGrid: {
     flexDirection: 'row',
     gap: SPACING.md,
+    marginBottom: SPACING.md,
   },
   statCard: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: COLORS.white,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statLabel: {
     fontSize: 10,
@@ -163,10 +161,10 @@ const styles = StyleSheet.create({
     color: 'rgba(44, 47, 49, 0.7)',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 20,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.bold,
   },
@@ -174,6 +172,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.xl,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -188,13 +187,15 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginTop: SPACING.md,
     marginBottom: SPACING.md,
+    textAlign: 'center',
   },
   ctaButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
+    marginTop: SPACING.sm,
   },
   ctaButtonText: {
     fontSize: 14,
