@@ -17,6 +17,12 @@ export default function QuickActions({ navigation }) {
     }
   };
 
+  const handlePlacementDrives = () => {
+    if (navigation) {
+      navigation.navigate('PlacementDrive');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
@@ -33,7 +39,7 @@ export default function QuickActions({ navigation }) {
         </TouchableOpacity>
 
         {/* Placement Drives */}
-        <TouchableOpacity style={[styles.card, styles.secondaryCard]} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.card, styles.secondaryCard]} activeOpacity={0.8} onPress={handlePlacementDrives}>
           <View style={[styles.iconContainer, styles.secondaryIconContainer]}>
             <Ionicons name="calendar-outline" size={24} color={COLORS.secondary} />
           </View>

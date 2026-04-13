@@ -14,6 +14,7 @@ import EventsPage from './pages/events/events';
 import ClassPage from './pages/class/class';
 import PlacementPage from './pages/placement/placement';
 import BrowseJobsPage from './pages/placement/pages/browse_jobs';
+import PlacementDrivePage from './pages/placement/pages/placement_drive';
 
 // Import components
 import StudentHeader from './components/StudentHeader';
@@ -38,6 +39,9 @@ export default function StudentsScreen() {
   const renderContent = () => {
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+    if (currentScreen === 'PlacementDrive') {
+      return <PlacementDrivePage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
 
     switch (activeTab) {
