@@ -11,13 +11,23 @@ import { LinearGradient } from 'expo-linear-gradient';
 // Import theme
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../../../constants/theme';
 
-export default function ApplyFooter() {
+export default function ApplyFooter({ navigation }) {
+  const handleApplyNow = () => {
+    if (navigation) {
+      navigation.navigate('JobApply', {});
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.saveButton} activeOpacity={0.8}>
         <Text style={styles.saveButtonText}>Save for Later</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.applyButton} activeOpacity={0.85}>
+      <TouchableOpacity 
+        style={styles.applyButton} 
+        activeOpacity={0.85}
+        onPress={handleApplyNow}
+      >
         <LinearGradient
           colors={[COLORS.primary, COLORS.primaryDim]}
           start={{ x: 0, y: 0 }}
