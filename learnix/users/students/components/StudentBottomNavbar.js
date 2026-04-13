@@ -42,11 +42,11 @@ const navigationItems = [
     description: 'Event registration, RSVPs, hostel info, collaborations',
   },
   {
-    id: 'Profile',
-    label: 'Profile',
-    icon: 'person-outline',
-    activeIcon: 'person',
-    description: 'Personal info, habit tracker, wallet, achievements',
+    id: 'Placement',
+    label: 'Placement',
+    icon: 'briefcase-outline',
+    activeIcon: 'briefcase',
+    description: 'Job opportunities, placement stats, interview prep',
   },
 ];
 

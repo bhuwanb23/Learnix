@@ -16,9 +16,6 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
         rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script id="tailwind-config">
@@ -102,6 +99,15 @@
         .circular-progress {
             background: conic-gradient(#0050d4 306deg, #dfe3e6 0deg);
         }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
     <style>
         body {
@@ -111,31 +117,47 @@
 </head>
 
 <body class="bg-surface font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
-    <!-- TopAppBar -->
-    <header
-        class="w-full sticky top-0 z-50 bg-slate-50 dark:bg-slate-950 flex justify-between items-center px-6 py-4 w-full shadow-none">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
-                <img alt="Profile" class="w-full h-full object-cover"
-                    data-alt="close-up portrait of a confident male university student with a friendly expression in soft natural lighting"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEPgvJF5lWVGqKKwS-ziiCjK5H4S5StddXF4_cVn4DSIeDO32Zv_tYLsxrjzeLkEyS1Z8lP6s1YuuFm6pFkeYcgMduidw4e6DZQx6Nmcc8VdtZdMdr1iCH-pYPbl4fMf_cBpnIfSVjsUIN6tDWUSNYzk7qhd-bdzGqJdCwatfLCuL2ZPBJH9aq7Y_BEVvR5fJKet8XRQxtEcWyShAOz7jHsifQ-QyV_q4Criq32Le2NBPbC2CrrIlC1Afs9cYzcFrTOD5mr9I_z4Q" />
-            </div>
-            <span class="font-plus-jakarta text-2xl font-bold tracking-tight text-blue-700 dark:text-blue-400">
-                Scholar <span class="font-extrabold italic">Flow</span>
-            </span>
-        </div>
-        <div class="flex items-center gap-4">
-            <button
-                class="material-symbols-outlined text-slate-500 hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-200"
-                data-icon="notifications">notifications</button>
-        </div>
-    </header>
     <main class="max-w-5xl mx-auto px-6 py-8 pb-32">
         <!-- Dashboard Header -->
-        <section class="mb-10">
+        <section class="mb-8">
             <h1 class="font-headline text-4xl font-extrabold tracking-tight mb-2 text-on-surface">Hello, Alex</h1>
             <p class="text-on-surface-variant font-medium">Your placement journey is 85% complete. You're in the top 5%
                 of your cohort.</p>
+        </section>
+        <!-- Quick Actions Section -->
+        <section class="grid grid-cols-2 gap-4 mb-10">
+            <a class="group relative bg-surface-container-lowest p-5 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/20 transition-all active:scale-95"
+                href="#">
+                <div class="flex flex-col items-start gap-3">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        <span class="material-symbols-outlined text-2xl" data-icon="work">work</span>
+                    </div>
+                    <div>
+                        <h3 class="font-headline font-bold text-lg leading-tight">Browse Jobs</h3>
+                        <p class="text-xs text-on-surface-variant font-medium mt-1">150+ Matches</p>
+                    </div>
+                </div>
+                <span
+                    class="material-symbols-outlined absolute top-4 right-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-icon="arrow_outward">arrow_outward</span>
+            </a>
+            <a class="group relative bg-surface-container-lowest p-5 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-transparent hover:border-secondary/20 transition-all active:scale-95"
+                href="#">
+                <div class="flex flex-col items-start gap-3">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-white transition-colors duration-300">
+                        <span class="material-symbols-outlined text-2xl" data-icon="event_note">event_note</span>
+                    </div>
+                    <div>
+                        <h3 class="font-headline font-bold text-lg leading-tight">Placement Drives</h3>
+                        <p class="text-xs text-on-surface-variant font-medium mt-1">5 Upcoming</p>
+                    </div>
+                </div>
+                <span
+                    class="material-symbols-outlined absolute top-4 right-4 text-secondary opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-icon="arrow_outward">arrow_outward</span>
+            </a>
         </section>
         <!-- Bento Grid: Profile Strength & Quick Stats -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
@@ -213,7 +235,6 @@
                     <div class="flex justify-between items-start mb-6">
                         <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center p-2">
                             <img alt="Company" class="w-full h-full object-contain"
-                                data-alt="stylized vector logo of a modern technology company with minimalist geometric shapes in blue"
                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpskx4aCzaMNQVueRUfFkKkSJLJc2KjObIZh5qlscrrC9y20r1N8Ui-Xfdjl2F3bA5X_pkxF0ssEReobToUWYfGoezOpNQDM7zpmiOXXRRp_fW5c2YINvM7ZOTh9iLUjK1YF5AuKLiLoTgs36_RKoPlnguUOvETZYNf_oIk0quOtlN419OqVwpreJVflHGt41avnZMqspUoJiC9XihDmxsiAu0kHCAzDCKhY2TXT2X5EIw04-eMck69hM37mPVaB0HX-ok0SM6EEI" />
                         </div>
                         <span
@@ -242,7 +263,6 @@
                     <div class="flex justify-between items-start mb-6">
                         <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center p-2">
                             <img alt="Company" class="w-full h-full object-contain"
-                                data-alt="modern tech company logo with abstract vibrant colors and sharp typography"
                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAt5qCuZsmc3dmSNTmMg6_3n5MjKQS6bRi3YkLA_HAFxGcyITAFyG7ZYKCYUcd7AMamQd-z8hGqWek9yX_RYt_G-hLgtAtVwGMAcAriZkX3ylebZs_-oqozjF0ikKxBiKLnlxsQhJp5hnbAeQ9Tk420HgIf8MwS3bmp-ZJYO8a6ZrlEHtuVZpvt6W4ZPSfunSmLc-9gqnWxlF59d_Mm8OmF79X_SUWhRuv9C00uYA7pVblu9p3KaKJ41UlatFFOEWwrn4tgCdDlmcM" />
                         </div>
                     </div>
@@ -256,32 +276,6 @@
                         <div class="flex items-center gap-1">
                             <span class="material-symbols-outlined text-lg" data-icon="location_on">location_on</span>
                             <span>Austin, TX</span>
-                        </div>
-                    </div>
-                    <button
-                        class="w-full bg-surface-container-high text-on-surface font-bold py-3 rounded-xl hover:bg-primary hover:text-white transition-all active:scale-95">Apply
-                        Now</button>
-                </div>
-                <!-- Job Card 3 -->
-                <div
-                    class="min-w-[300px] bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col shrink-0">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center p-2">
-                            <img alt="Company" class="w-full h-full object-contain"
-                                data-alt="corporate minimalist logo design for a global enterprise in monochrome tones"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjnAUgfOyV06PScBvk1Lb94Y2-UPr3M18OQaxYcYiVQXrN38huHAjOH6Oh2E67Ntq2qUPO0AHmuIHAIVpEbGyG3Npd7PDY44fCKH7CWc6JgL9zq6ga3kQYI1scKJdaqc-NswwZPcvlLij8Rjul1TohsW8X_PXn1M2lF9OGYGzg76LsqWoMolJ9iQMgdiHVnQFqAoqLJPDOg03Y8G__Bs5yKDwdviWNxRrZnUlB-KuCVD-TNssNDnCh9ajXiXr9cTMltWL53E6RgFo" />
-                        </div>
-                    </div>
-                    <h3 class="font-headline font-bold text-lg mb-1">Frontend Architect</h3>
-                    <p class="text-on-surface-variant text-sm mb-4">Nova Global Tech</p>
-                    <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
-                        <div class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-lg" data-icon="payments">payments</span>
-                            <span>$135k - $150k</span>
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <span class="material-symbols-outlined text-lg" data-icon="location_on">location_on</span>
-                            <span>New York</span>
                         </div>
                     </div>
                     <button
@@ -344,63 +338,9 @@
                             data-icon="chevron_right">chevron_right</span>
                     </div>
                 </div>
-                <!-- Drive 3 -->
-                <div
-                    class="bg-surface-container-low hover:bg-surface-container-lowest transition-colors p-5 rounded-xl flex items-center justify-between group">
-                    <div class="flex items-center gap-6">
-                        <div
-                            class="bg-surface-container-highest w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0">
-                            <span class="text-[10px] uppercase font-bold text-on-surface-variant">Nov</span>
-                            <span class="font-headline text-xl font-bold text-primary">02</span>
-                        </div>
-                        <div>
-                            <h4 class="font-headline font-bold text-lg group-hover:text-primary transition-colors">AI
-                                &amp; Robotics Startup Mixer</h4>
-                            <p class="text-sm text-on-surface-variant">Tech Plaza • 02:00 PM</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div class="hidden sm:flex flex-col items-end">
-                            <span class="text-[10px] uppercase font-bold text-primary">Upcoming</span>
-                            <span class="text-sm font-medium">Details Soon</span>
-                        </div>
-                        <span
-                            class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform"
-                            data-icon="chevron_right">chevron_right</span>
-                    </div>
-                </div>
             </div>
         </section>
     </main>
-    <!-- BottomNavBar -->
-    <nav
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl flex justify-around items-center p-2 shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
-        <!-- Dashboard Item (Active) -->
-        <a class="flex flex-col items-center justify-center bg-blue-600 dark:bg-blue-500 text-white rounded-full p-3 active:scale-90 transition-all duration-300 ease-out"
-            href="#">
-            <span class="material-symbols-outlined" data-icon="dashboard"
-                style="font-variation-settings: 'FILL' 1;">dashboard</span>
-            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-0.5">Dashboard</span>
-        </a>
-        <!-- Careers Item -->
-        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-all duration-300 ease-out"
-            href="#">
-            <span class="material-symbols-outlined" data-icon="work">work</span>
-            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-0.5">Careers</span>
-        </a>
-        <!-- Applications Item -->
-        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-all duration-300 ease-out"
-            href="#">
-            <span class="material-symbols-outlined" data-icon="assignment_turned_in">assignment_turned_in</span>
-            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-0.5">Applications</span>
-        </a>
-        <!-- Events Item -->
-        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-blue-600 dark:hover:text-blue-400 active:scale-90 transition-all duration-300 ease-out"
-            href="#">
-            <span class="material-symbols-outlined" data-icon="event_upcoming">event_upcoming</span>
-            <span class="font-manrope text-[10px] font-semibold uppercase tracking-wider mt-0.5">Events</span>
-        </a>
-    </nav>
     <!-- Decorative Elements -->
     <div class="fixed top-20 right-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"></div>
     <div class="fixed bottom-40 left-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl -z-10"></div>
