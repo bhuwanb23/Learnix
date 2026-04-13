@@ -236,8 +236,6 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   drivesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: SPACING.md,
     marginBottom: SPACING.xl,
   },

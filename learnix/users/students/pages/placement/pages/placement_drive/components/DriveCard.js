@@ -168,7 +168,7 @@ export default function DriveCard({ drive }) {
 
 const styles = StyleSheet.create({
   container: {
-    width: '48%',
+    width: '100%',
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.xl,
     overflow: 'hidden',
