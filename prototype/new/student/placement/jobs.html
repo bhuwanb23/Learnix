@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Job Opportunities | Scholar Flow</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "background": "#f5f7f9",
+                        "on-primary-container": "#001e5a",
+                        "on-error-container": "#570008",
+                        "tertiary-fixed": "#ff956a",
+                        "on-error": "#ffefee",
+                        "inverse-surface": "#0b0f10",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "error-container": "#fb5151",
+                        "on-secondary-container": "#5b00c7",
+                        "outline": "#747779",
+                        "error": "#b31b25",
+                        "surface-container-low": "#eef1f3",
+                        "surface-container": "#e5e9eb",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#dfe3e6",
+                        "secondary-dim": "#6411d5",
+                        "on-primary-fixed-variant": "#00266e",
+                        "surface-container-highest": "#d9dde0",
+                        "surface": "#f5f7f9",
+                        "surface-tint": "#0050d4",
+                        "tertiary-container": "#ff956a",
+                        "surface-variant": "#d9dde0",
+                        "on-secondary-fixed": "#430097",
+                        "on-tertiary": "#ffefeb",
+                        "inverse-primary": "#618bff",
+                        "primary": "#0050d4",
+                        "on-surface-variant": "#595c5e",
+                        "on-tertiary-container": "#5a1c00",
+                        "surface-bright": "#f5f7f9",
+                        "primary-fixed": "#7b9cff",
+                        "on-surface": "#2c2f31",
+                        "primary-fixed-dim": "#658eff",
+                        "secondary-container": "#dcc9ff",
+                        "on-background": "#2c2f31",
+                        "error-dim": "#9f0519",
+                        "surface-dim": "#d0d5d8",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-tertiary-fixed": "#310b00",
+                        "secondary": "#702ae1",
+                        "on-primary-fixed": "#000000",
+                        "inverse-on-surface": "#9a9d9f",
+                        "primary-container": "#7b9cff",
+                        "tertiary": "#a23800",
+                        "primary-dim": "#0046bb",
+                        "tertiary-dim": "#8e3000",
+                        "on-primary": "#f1f2ff",
+                        "on-secondary": "#f8f0ff",
+                        "secondary-fixed": "#dcc9ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface antialiased">
+    <!-- TopAppBar -->
+    <header class="bg-[#f5f7f9] dark:bg-slate-950 w-full top-0 sticky z-40">
+        <div class="flex items-center px-6 h-16 w-full">
+            <div class="flex items-center gap-4">
+                <button
+                    class="p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors scale-95 duration-200">
+                    <span class="material-symbols-outlined text-[#0050d4] dark:text-blue-400">arrow_back</span>
+                </button>
+                <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-on-surface text-xl">Job
+                    Opportunities</h1>
+            </div>
+            <div class="ml-auto flex items-center gap-3">
+                <button class="p-2 rounded-full hover:bg-slate-200/50 transition-colors">
+                    <span class="material-symbols-outlined">search</span>
+                </button>
+                <div class="h-8 w-8 rounded-full bg-primary-container overflow-hidden">
+                    <img alt="User Profile"
+                        data-alt="professional headshot of a young student in a modern workspace environment with soft lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuAma0G0ILg8pTnLopXZ5W8Oq_B7AQndjnkyZUf-_NlFv9mlhwimLPAoLR1rX5biIc-j6M1hvL2brRDLPEIGlO_piV-HCZYVMboG9yLB5pm_QhT4DNFn8TpiJs5qUL6etSqy1it-WwHkV80sRl4oGViqNakLrS7w4m1g5k78Hvjj8mj17wD0wPF_bWxv1CI9IaoaBIG2SS6VaDqiXJupAK8E8Ed1h0dfIlcDpluYdnfDToyLgGoVkP3bRAono4HPWY169_9skbnYEZ0" />
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-6 py-8 pb-32">
+        <!-- Editorial Header Section -->
+        <div class="mb-10">
+            <h2 class="font-headline text-4xl font-extrabold tracking-tight mb-4 text-on-surface">Find Your Next Step
+            </h2>
+            <p class="text-on-surface-variant max-w-2xl leading-relaxed">Curated career paths for ambitious students.
+                Filter through premium internships and full-time roles from top-tier organizations.</p>
+        </div>
+        <!-- Filter Chips Section -->
+        <div class="flex flex-wrap gap-3 mb-10">
+            <button
+                class="px-5 py-2.5 bg-primary text-white rounded-full font-headline font-semibold text-sm flex items-center gap-2 shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined text-sm">tune</span>
+                All Roles
+            </button>
+            <button
+                class="px-5 py-2.5 bg-surface-container-lowest text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-colors">
+                Role: Design
+            </button>
+            <button
+                class="px-5 py-2.5 bg-surface-container-lowest text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-colors">
+                Salary Range
+            </button>
+            <button
+                class="px-5 py-2.5 bg-surface-container-lowest text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-colors">
+                Location: Remote
+            </button>
+            <button
+                class="px-5 py-2.5 bg-surface-container-lowest text-on-surface rounded-full font-headline font-semibold text-sm hover:bg-surface-container-high transition-colors">
+                Eligibility
+            </button>
+        </div>
+        <!-- High-Density Job List -->
+        <div class="space-y-6">
+            <!-- Job Card 1 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] group">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="w-14 h-14 rounded-xl bg-surface-container-low flex items-center justify-center overflow-hidden shrink-0">
+                            <img alt="Stellar Tech"
+                                data-alt="minimalist modern corporate logo with geometric shapes in deep blue and silver on white background"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrXVRWRNT2Q0Cri4wetlkswx-k64rJ83cJZ7deJSppxUsnngjjDKAiw82GZgrn_PsT2ub62ScSZjOF8AfhA4kS4rdHh1BNje1Cf2Bkw-LIrLW03CQYvKglQaSzOiPLghx2AM-6ccLKK05bZAzgDPk0PNGaK81n6oMWDEKqHVKezyNdhdnnA9UFIZubvQsJ960kyyF9ZH0jbSNhqa_ypDCgY_pz3c_hawLXvUvXZCzAx5qdpEUpzt9r5RI2qmRLcg8ErOTOC2ZvC2A" />
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold tracking-widest text-primary uppercase mb-1 block">Stellar
+                                Tech Systems</span>
+                            <h3
+                                class="font-headline text-xl font-bold text-on-surface group-hover:text-primary transition-colors">
+                                Product Designer Intern</h3>
+                            <div
+                                class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-on-surface-variant text-sm font-medium">
+                                <span class="flex items-center gap-1.5"><span
+                                        class="material-symbols-outlined text-[18px]">location_on</span>San Francisco,
+                                    CA</span>
+                                <span class="flex items-center gap-1.5"><span
+                                        class="material-symbols-outlined text-[18px]">schedule</span>Full-time
+                                    Internship</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button
+                            class="px-6 py-3 bg-primary text-white rounded-xl font-headline font-bold text-sm hover:bg-primary-dim transition-all shadow-md shadow-primary/10 active:scale-95">
+                            Apply Now
+                        </button>
+                        <button
+                            class="p-3 bg-surface-container-low text-on-surface rounded-xl hover:bg-surface-container-high transition-colors">
+                            <span class="material-symbols-outlined">bookmark</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Details Section -->
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-outline-variant/10">
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Package</p>
+                        <p class="font-headline font-bold text-on-surface">$45 - $60 / hour</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Eligibility
+                        </p>
+                        <p class="font-headline font-bold text-on-surface">3rd/4th Year Students</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Deadline</p>
+                        <p class="font-headline font-bold text-error">Oct 15, 2024</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Job Card 2 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] group">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="w-14 h-14 rounded-xl bg-surface-container-low flex items-center justify-center overflow-hidden shrink-0">
+                            <img alt="Vortex AI"
+                                data-alt="abstract tech logo featuring interconnected nodes and waves in purple and blue gradients"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjCrZh-9-1_tazielgAWhbSQE8so92VXn9Rg7AVCS6rgeGyIFYI5ndnUfnTPt1__uc-jHP2wCZ_pDtG2jDqfeW7A3zalHknMIMc2DkehX8tKdAQRWj4oAvGhIrRtBXz8UDLw9tWSa7h2JuM1DhtPL2SHUjfTf77u6URKbBagbhNw9jfWmi7XEcGpropDethVPV3PCgMwUqp6hgk4Zf5dOkjqXK2ssYcAc6ft6djNNmTh_BfNzZB6H0nF01dFBeakWwnsF_As8oHm0" />
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold tracking-widest text-primary uppercase mb-1 block">Vortex AI
+                                Labs</span>
+                            <h3
+                                class="font-headline text-xl font-bold text-on-surface group-hover:text-primary transition-colors">
+                                Junior ML Engineer</h3>
+                            <div
+                                class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-on-surface-variant text-sm font-medium">
+                                <span class="flex items-center gap-1.5"><span
+                                        class="material-symbols-outlined text-[18px]">public</span>Remote
+                                    (Worldwide)</span>
+                                <span class="flex items-center gap-1.5"><span
+                                        class="material-symbols-outlined text-[18px]">workspace_premium</span>Entry
+                                    Level</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button
+                            class="px-6 py-3 bg-primary text-white rounded-xl font-headline font-bold text-sm hover:bg-primary-dim transition-all shadow-md shadow-primary/10 active:scale-95">
+                            Apply Now
+                        </button>
+                        <button
+                            class="p-3 bg-surface-container-low text-on-surface rounded-xl hover:bg-surface-container-high transition-colors">
+                            <span class="material-symbols-outlined">bookmark</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Details Section -->
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-outline-variant/10">
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Package</p>
+                        <p class="font-headline font-bold text-on-surface">$120k - $145k / year</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Eligibility
+                        </p>
+                        <p class="font-headline font-bold text-on-surface">Graduates (CS/Math)</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Deadline</p>
+                        <p class="font-headline font-bold text-on-surface">Nov 2, 2024</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Job Card 3 -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] group">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="w-14 h-14 rounded-xl bg-surface-container-low flex items-center justify-center overflow-hidden shrink-0">
+                            <img alt="Beam Finance"
+                                data-alt="sleek financial technology logo with a rising arrow motif and professional navy blue color"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4fvNROf5oaBsJiOuNqS3cDr0taBObWrjOHzQq8kOAg8fgts5M58B0RXLNM5-d1JUPeDAyJg_9P14OiWu-xExUTbvT62jBsdjHqIem-vk-NaX87sz3ckpy1D1C8wbTogkk_5-o_5qhTAEA0Ah-h3VJx8PC--NHlehQ6bCNuMX1VDXFNComiQGEXex1P5q5f3H18XB9TB8l1UudeLmRK9Qw_oFMHR2xh50ucT8T88FmU_XWBUjVOIOH4ZnHG81CHdMRclWbvpHZEP0" />
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold tracking-widest text-primary uppercase mb-1 block">Beam
+                                Finance</span>
+                            <h3
+                                class="font-headline text-xl font-bold text-on-surface group-hover:text-primary transition-colors">
+                                Data Analyst</h3>
+                            <div
+                                class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-on-surface-variant text-sm font-medium">
+                                <span class="flex items-center gap-1.5"><span
+                                        class="material-symbols-outlined text-[18px]">location_on</span>New York,
+                                    NY</span>
+                                <span class="flex items-center gap-1.5"><span
+                                        class="material-symbols-outlined text-[18px]">schedule</span>Contractual</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button
+                            class="px-6 py-3 bg-primary text-white rounded-xl font-headline font-bold text-sm hover:bg-primary-dim transition-all shadow-md shadow-primary/10 active:scale-95">
+                            Apply Now
+                        </button>
+                        <button
+                            class="p-3 bg-surface-container-low text-on-surface rounded-xl hover:bg-surface-container-high transition-colors">
+                            <span class="material-symbols-outlined">bookmark</span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Details Section -->
+                <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t border-outline-variant/10">
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Package</p>
+                        <p class="font-headline font-bold text-on-surface">$80k - $95k / year</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Eligibility
+                        </p>
+                        <p class="font-headline font-bold text-on-surface">Open to All Majors</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Deadline</p>
+                        <p class="font-headline font-bold text-on-surface">Dec 20, 2024</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl shadow-[0_-8px_24px_rgba(44,47,49,0.06)] rounded-t-[24px]">
+        <a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-[#0050d4] transition-all"
+            href="#">
+            <span class="material-symbols-outlined mb-1">dashboard</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Dashboard</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-[24px] px-5 py-2 scale-110 duration-300"
+            href="#">
+            <span class="material-symbols-outlined mb-1">work</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Jobs</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-[#0050d4] transition-all"
+            href="#">
+            <span class="material-symbols-outlined mb-1">assignment_turned_in</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Applications</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-[#0050d4] transition-all"
+            href="#">
+            <span class="material-symbols-outlined mb-1">event</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Events</span>
+        </a>
+    </nav>
+</body>
+
+</html>

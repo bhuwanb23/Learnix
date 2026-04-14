@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>My Applications - Scholar Flow</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#ff956a",
+                        "surface-variant": "#d9dde0",
+                        "surface-tint": "#0050d4",
+                        "inverse-primary": "#618bff",
+                        "on-tertiary": "#ffefeb",
+                        "on-secondary-fixed": "#430097",
+                        "secondary-dim": "#6411d5",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#dfe3e6",
+                        "surface-container-low": "#eef1f3",
+                        "surface-container": "#e5e9eb",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "surface-container-highest": "#d9dde0",
+                        "surface": "#f5f7f9",
+                        "on-primary-fixed-variant": "#00266e",
+                        "error-container": "#fb5151",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "error": "#b31b25",
+                        "outline": "#747779",
+                        "on-secondary-container": "#5b00c7",
+                        "tertiary-fixed": "#ff956a",
+                        "on-primary-container": "#001e5a",
+                        "on-error-container": "#570008",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "background": "#f5f7f9",
+                        "inverse-surface": "#0b0f10",
+                        "on-error": "#ffefee",
+                        "tertiary-dim": "#8e3000",
+                        "tertiary": "#a23800",
+                        "primary-dim": "#0046bb",
+                        "primary-container": "#7b9cff",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-secondary": "#f8f0ff",
+                        "on-primary": "#f1f2ff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "secondary": "#702ae1",
+                        "on-primary-fixed": "#000000",
+                        "secondary-container": "#dcc9ff",
+                        "on-background": "#2c2f31",
+                        "primary-fixed-dim": "#658eff",
+                        "on-surface": "#2c2f31",
+                        "on-tertiary-fixed": "#310b00",
+                        "surface-dim": "#d0d5d8",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "error-dim": "#9f0519",
+                        "on-surface-variant": "#595c5e",
+                        "primary": "#0050d4",
+                        "surface-bright": "#f5f7f9",
+                        "primary-fixed": "#7b9cff",
+                        "on-tertiary-container": "#5a1c00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header
+        class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-xl w-full sticky top-0 z-40 shadow-sm dark:shadow-none">
+        <div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <img class="w-10 h-10 rounded-full object-cover ring-2 ring-primary/20"
+                    data-alt="portrait of a young student with a friendly expression in soft library lighting"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaxW7GtSl2iO5GvACRDH9C0n1glVEVMtRNYS1bZcWSAlpsCiOXStzkY_C3dR8SfLVdIZNuef-r1VmZM4FSUKOZrOjYzBl1TUpuRjG_OAGmJQ3ZGEuiqLFHNpOXudOfAwV5n6ppYKGxZn5c3CFVE47KpQlSiOsGed14PN5spBn5PSvNY3Qrluhck-rWQEjOlWI1WpHzf9-6N8F584Q7ChoJnnNZizrXG54F-pj_MKjUIk4bg92AhqYLuwJS7wGCrnpBcxApceFhUZQ" />
+                <span
+                    class="text-2xl font-bold bg-gradient-to-br from-blue-700 to-blue-500 bg-clip-text text-transparent font-plus-jakarta-sans tracking-tight">Scholar
+                    Flow</span>
+            </div>
+            <nav class="hidden md:flex items-center gap-8">
+                <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95 duration-200 px-3 py-1 rounded-lg"
+                    href="#">Dashboard</a>
+                <a class="text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 active:scale-95 duration-200 px-3 py-1"
+                    href="#">Applications</a>
+                <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95 duration-200 px-3 py-1 rounded-lg"
+                    href="#">Placements</a>
+                <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95 duration-200 px-3 py-1 rounded-lg"
+                    href="#">Profile</a>
+            </nav>
+            <div class="flex items-center gap-3">
+                <button
+                    class="p-2 rounded-full text-blue-700 dark:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pt-12">
+        <!-- Hero Editorial Header -->
+        <div class="mb-12">
+            <h1 class="text-5xl font-extrabold tracking-tight text-on-surface mb-2">My Applications</h1>
+            <p class="text-on-surface-variant text-lg">Tracking your professional journey and career milestones.</p>
+        </div>
+        <!-- Filter & Search Section -->
+        <section class="bg-surface-container-low rounded-xl p-6 mb-10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <!-- Search Bar -->
+                <div class="relative flex-grow max-w-xl">
+                    <span
+                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+                    <input
+                        class="w-full pl-12 pr-4 py-3 bg-surface-container-lowest border-none rounded-xl shadow-sm focus:ring-2 focus:ring-primary/20 text-on-surface transition-all"
+                        placeholder="Search by role or company..." type="text" />
+                </div>
+                <!-- Filter Chips -->
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        class="px-6 py-2 rounded-full bg-primary text-on-primary font-semibold text-sm shadow-md transition-transform active:scale-95">All</button>
+                    <button
+                        class="px-6 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95">Shortlisted</button>
+                    <button
+                        class="px-6 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95">Selected</button>
+                    <button
+                        class="px-6 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95">Applied</button>
+                    <button
+                        class="px-6 py-2 rounded-full bg-surface-container-lowest text-on-surface-variant font-semibold text-sm hover:bg-surface-container-high transition-all active:scale-95">Rejected</button>
+                </div>
+            </div>
+        </section>
+        <!-- Bento/Grid Layout for Applications -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Card 1: Selected -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow border border-outline-variant/10 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div
+                        class="w-14 h-14 bg-surface-container-high rounded-lg flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                        <img class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all"
+                            data-alt="minimalist corporate tech logo with abstract geometric shapes on a clean white background"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTemmkxUk4ApSX5uNqZWfDrScvTT7n2HVYUoYCuiU3UjRvHnUDCHwQ0VHsBPWgWKinPLuef_ozmrqbQfyXxwYuqVJPfh39Qv2raOip_twmypN6_Icr2gn4g58iNzzz1IKpmb-gq9M3kpWXjCbcpJeiBhkEMaCn7CLyDZSYPg_h1pxxrHiOzUG30CBdDI80gGD3XcLiiVxkwfFbhK43ENQExeyN7ML-ytXeqslT30OkTvthW81kjULu-v813A10nXUspteViGK6lXg" />
+                    </div>
+                    <span
+                        class="px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-green-100 text-green-800">Selected</span>
+                </div>
+                <h3 class="text-xl font-bold text-on-surface mb-1 leading-tight">Senior Product Designer</h3>
+                <p class="text-on-surface-variant font-medium mb-4">Lumina Global Systems</p>
+                <div class="flex items-center gap-2 text-outline text-sm mb-6">
+                    <span class="material-symbols-outlined text-base">calendar_today</span>
+                    <span>Oct 24, 2024</span>
+                </div>
+                <button
+                    class="w-full py-3 bg-primary text-on-primary rounded-lg font-bold text-sm tracking-wide hover:bg-primary-dim transition-colors active:scale-[0.98]">
+                    View Details
+                </button>
+            </div>
+            <!-- Card 2: Shortlisted -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow border border-outline-variant/10 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div
+                        class="w-14 h-14 bg-surface-container-high rounded-lg flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                        <img class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all"
+                            data-alt="modern tech company logo with clean bold typography and subtle blue accent"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJA41Z2HdcEnSX-qRurWZF1EBFL3S3PlP6oU23r9aaI3eOYfmOfnUb7x25tpXwywPBqXOxGQA9WLvx425yFHZuzWqPrJI6TSpvCF7tGNUOD8647OgwZ5STO08AjY5x1CHAws1s2OiRHe8LisbrwqZzZAQ2nEDNJVWNBTjqF4NCXHEeTTm6qlawxqoYkDb40Z2-kCcOFnhKR0AqypZH9N9iSAVIrYhz_6-jlrzubjP9wkf7LrKE2Lcj29n7W9MUCycbKtUdNpjXhPI" />
+                    </div>
+                    <span
+                        class="px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-blue-100 text-blue-800">Shortlisted</span>
+                </div>
+                <h3 class="text-xl font-bold text-on-surface mb-1 leading-tight">Frontend Engineer Intern</h3>
+                <p class="text-on-surface-variant font-medium mb-4">Nexus Digital Lab</p>
+                <div class="flex items-center gap-2 text-outline text-sm mb-6">
+                    <span class="material-symbols-outlined text-base">calendar_today</span>
+                    <span>Oct 20, 2024</span>
+                </div>
+                <button
+                    class="w-full py-3 bg-surface-container-high text-on-surface rounded-lg font-bold text-sm tracking-wide hover:bg-surface-container-highest transition-colors active:scale-[0.98]">
+                    View Details
+                </button>
+            </div>
+            <!-- Card 3: Applied -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow border border-outline-variant/10 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div
+                        class="w-14 h-14 bg-surface-container-high rounded-lg flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                        <img class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all"
+                            data-alt="creative agency logo featuring a stylized spark or lightbulb icon in purple tones"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcwGIZyYadjhtZQEtYB05rFnUck14X1eoJvERSHRC2r2Bm7FBOEc306JrSPPIDIdXC15AQw3e8PNclhKhV3bejjYiysPjp3EmOSwuXZlJQKQ2vrUWDXi02p3fKtgacuIYaC4OJkTwaiPzK_0PX3mvgN-Q2BDh1LhoRWJXQUQ8WpbOhZHOOZuwJlD6FtcZPEPIRcdBwguKnAVPQhVdXmhSF8sB9SFTOJz_y3XOBDa1g1z2mL-6i6dmgjh0Px1xkeRfJR8e3fkAGVNs" />
+                    </div>
+                    <span
+                        class="px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-purple-100 text-purple-800">Applied</span>
+                </div>
+                <h3 class="text-xl font-bold text-on-surface mb-1 leading-tight">User Experience Researcher</h3>
+                <p class="text-on-surface-variant font-medium mb-4">Aether Creative</p>
+                <div class="flex items-center gap-2 text-outline text-sm mb-6">
+                    <span class="material-symbols-outlined text-base">calendar_today</span>
+                    <span>Oct 18, 2024</span>
+                </div>
+                <button
+                    class="w-full py-3 bg-surface-container-high text-on-surface rounded-lg font-bold text-sm tracking-wide hover:bg-surface-container-highest transition-colors active:scale-[0.98]">
+                    View Details
+                </button>
+            </div>
+            <!-- Card 4: Rejected -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow border border-outline-variant/10 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div
+                        class="w-14 h-14 bg-surface-container-high rounded-lg flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                        <img class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all"
+                            data-alt="fintech startup logo with clean lines and professional red accent mark"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3AH5F1VXDRgHuW9WkCZ-1P6zEjoemD9AKNDlp98GZzxCFycV2rtFVdoJjxUc1meCFL8pJBdHXBjsE2kng3HQvSyblWGWXrP2maBwXxWc1PVD-MsTYHS8m_b_nnnltu5MWDQWGnyLLezzfmPN3ZUCE-1SyV3FbYjcZtHJ-LdvW0kiJczcRNkt81_enouWRnqTdJTVV-9U0F9qpOK8R0IJ4fhh9nZdK3sMAkup6owcp1XiofiX_dJdPooxZV46TB4vOl0B5CAQ7M5Q" />
+                    </div>
+                    <span
+                        class="px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-red-100 text-red-800">Rejected</span>
+                </div>
+                <h3 class="text-xl font-bold text-on-surface mb-1 leading-tight">Data Scientist</h3>
+                <p class="text-on-surface-variant font-medium mb-4">FinEdge Analytics</p>
+                <div class="flex items-center gap-2 text-outline text-sm mb-6">
+                    <span class="material-symbols-outlined text-base">calendar_today</span>
+                    <span>Oct 12, 2024</span>
+                </div>
+                <button
+                    class="w-full py-3 bg-surface-container-high text-on-surface rounded-lg font-bold text-sm tracking-wide hover:bg-surface-container-highest transition-colors active:scale-[0.98]">
+                    View Details
+                </button>
+            </div>
+            <!-- Card 5: Applied -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-lg transition-shadow border border-outline-variant/10 group">
+                <div class="flex justify-between items-start mb-6">
+                    <div
+                        class="w-14 h-14 bg-surface-container-high rounded-lg flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                        <img class="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all"
+                            data-alt="education platform logo with a modern open book symbol in vibrant blue"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIlq--zrmw0YzzFnusOmygrZReTpa-wistbm6AstE6kl5-FEubMULyYTOc-rPeDPmizHx-NmmuXPHiQrJWsXb_3_iMGdrlEQaUUtW0wCaGEXPMLpX8emlybgjLnWs_RwdZz7r4JkSgbpekqYPcPkFJfZpPDGn0bH1pUJwPnwkguQ7hnKzSE14DgA3TyiSAs0Nce8Zl1r5T8WimGll8l6NJtb48NAStzvWFONgld8XP2K1ovDo_OO2rAwEULK8Un2I6QTDmvaqyOOc" />
+                    </div>
+                    <span
+                        class="px-3 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-purple-100 text-purple-800">Applied</span>
+                </div>
+                <h3 class="text-xl font-bold text-on-surface mb-1 leading-tight">Content Strategist</h3>
+                <p class="text-on-surface-variant font-medium mb-4">EduLearn Hub</p>
+                <div class="flex items-center gap-2 text-outline text-sm mb-6">
+                    <span class="material-symbols-outlined text-base">calendar_today</span>
+                    <span>Oct 10, 2024</span>
+                </div>
+                <button
+                    class="w-full py-3 bg-surface-container-high text-on-surface rounded-lg font-bold text-sm tracking-wide hover:bg-surface-container-highest transition-colors active:scale-[0.98]">
+                    View Details
+                </button>
+            </div>
+            <!-- Empty state filler or placeholder for asymmetrical visual interest -->
+            <div
+                class="bg-gradient-to-br from-primary to-primary-dim rounded-xl p-8 flex flex-col justify-center items-center text-center text-on-primary">
+                <span class="material-symbols-outlined text-5xl mb-4">auto_awesome</span>
+                <h3 class="text-2xl font-bold mb-2">Ready for more?</h3>
+                <p class="text-on-primary/80 mb-6 font-medium">Explore 50+ new opportunities matched for your skills.
+                </p>
+                <button
+                    class="px-8 py-3 bg-white text-primary rounded-full font-bold text-sm hover:shadow-lg transition-all active:scale-95">Browse
+                    Placements</button>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar (Floating Island Mobile) -->
+    <nav
+        class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.06)] z-50 flex justify-around items-center p-4">
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 tap-highlight-transparent active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined">grid_view</span>
+            <span class="font-manrope text-[10px] font-semibold mt-1">Dashboard</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full px-5 py-2 tap-highlight-transparent active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+            <span class="font-manrope text-[10px] font-semibold mt-1">Applications</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 tap-highlight-transparent active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined">business_center</span>
+            <span class="font-manrope text-[10px] font-semibold mt-1">Placements</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 tap-highlight-transparent active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined">person</span>
+            <span class="font-manrope text-[10px] font-semibold mt-1">Profile</span>
+        </a>
+    </nav>
+    <!-- Desktop Bottom Tab Bar Shell Fallback (Invisible but keeping structure) -->
+    <div class="hidden md:block">
+        <div
+            class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center p-4 pb-8 pointer-events-none opacity-0">
+            <!-- Structural adherence to JSON shell layout -->
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error-container": "#570008",
+                        "primary-fixed-dim": "#658eff",
+                        "primary-dim": "#0046bb",
+                        "secondary": "#702ae1",
+                        "on-tertiary": "#ffefeb",
+                        "on-primary": "#f1f2ff",
+                        "on-secondary-container": "#5b00c7",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "primary-container": "#7b9cff",
+                        "on-primary-container": "#001e5a",
+                        "inverse-primary": "#618bff",
+                        "outline-variant": "#abadaf",
+                        "on-background": "#2c2f31",
+                        "on-surface": "#2c2f31",
+                        "surface-container": "#e5e9eb",
+                        "on-tertiary-fixed": "#310b00",
+                        "secondary-container": "#dcc9ff",
+                        "surface-container-high": "#dfe3e6",
+                        "primary": "#0050d4",
+                        "on-primary-fixed": "#000000",
+                        "surface-bright": "#f5f7f9",
+                        "surface-container-highest": "#d9dde0",
+                        "outline": "#747779",
+                        "tertiary": "#a23800",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-tertiary-container": "#5a1c00",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "on-error": "#ffefee",
+                        "background": "#f5f7f9",
+                        "on-surface-variant": "#595c5e",
+                        "surface": "#f5f7f9",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#d9dde0",
+                        "tertiary-dim": "#8e3000",
+                        "inverse-surface": "#0b0f10",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "tertiary-fixed": "#ff956a",
+                        "on-secondary-fixed": "#430097",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "error-container": "#fb5151",
+                        "on-secondary": "#f8f0ff",
+                        "tertiary-container": "#ff956a",
+                        "surface-container-low": "#eef1f3",
+                        "secondary-dim": "#6411d5",
+                        "error-dim": "#9f0519",
+                        "surface-dim": "#d0d5d8",
+                        "on-primary-fixed-variant": "#00266e",
+                        "surface-tint": "#0050d4",
+                        "primary-fixed": "#7b9cff",
+                        "error": "#b31b25",
+                        "inverse-on-surface": "#9a9d9f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-surface text-on-surface selection:bg-primary-container selection:text-on-primary-container min-h-screen">
+    <!-- TopAppBar -->
+    <header class="w-full sticky top-0 z-50 bg-[#f5f7f9] dark:bg-slate-950 flex items-center justify-between px-6 py-4">
+        <div class="flex items-center gap-4">
+            <button
+                class="material-symbols-outlined text-slate-500 hover:bg-[#eef1f3] p-2 rounded-full transition-colors active:scale-95 duration-200">arrow_back</button>
+            <h1 class="text-xl font-bold text-[#0050d4] dark:text-blue-500 font-['Plus_Jakarta_Sans'] tracking-tight">
+                Placement Drive</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button
+                class="material-symbols-outlined text-slate-500 hover:bg-[#eef1f3] p-2 rounded-full transition-colors active:scale-95 duration-200">more_vert</button>
+        </div>
+    </header>
+    <main class="max-w-5xl mx-auto px-6 py-8 pb-32">
+        <!-- Hero Section: Company Info -->
+        <section class="bg-surface-container-low rounded-xl p-8 mb-10 overflow-hidden relative">
+            <div class="flex flex-col md:flex-row items-start gap-8 relative z-10">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-outline-variant/10">
+                    <img alt="Google Logo" class="w-16 h-16 object-contain"
+                        data-alt="Official Google multi-colored logo centered on a clean white professional background with soft studio lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVhh9Gk2ynjfJteRiOSCFx1LkIe8-CousGdFSdNe-uJ8tKBFAW4rxK5Sl-M7RCn6XrcRkLshLkRa4T1eMfn0zlNHcHpO20J4s3737lFjr8VWVvZZUuYPS_Imod2YV2r8lV9JBMeXE3DsBlG7So9MZAkRPE901JOhCXEEkQ4DVdKpWEDJzlCFj06zHc2eHh4IIeirDS03_UyZ-1ph-XCQ8Mkib3Wum0fVN6aC-duaudBLDS77gGLMN4Wig5LOFvVPS063YUyWGE2Es" />
+                </div>
+                <div class="flex-1">
+                    <div class="flex flex-wrap gap-3 mb-4">
+                        <span
+                            class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Software
+                            Engineering</span>
+                        <span
+                            class="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Internship
+                            2024</span>
+                    </div>
+                    <h2 class="text-4xl font-extrabold text-on-surface mb-2 tracking-tight">Google Software Engineering
+                        Intern Drive</h2>
+                    <p class="text-on-surface-variant max-w-2xl text-lg leading-relaxed mb-6">Build for everyone.
+                        Joining Google as an intern means you will work on real projects that affect billions of users
+                        worldwide while learning from world-class mentors.</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div
+                            class="bg-surface-container-lowest p-4 rounded-lg shadow-sm border border-outline-variant/5">
+                            <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider mb-1">
+                                Stipend</p>
+                            <p class="text-xl font-bold text-primary">₹80k - 1.2L</p>
+                        </div>
+                        <div
+                            class="bg-surface-container-lowest p-4 rounded-lg shadow-sm border border-outline-variant/5">
+                            <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider mb-1">
+                                Location</p>
+                            <p class="text-xl font-bold text-on-surface">Bangalore / Hybrid</p>
+                        </div>
+                        <div
+                            class="bg-surface-container-lowest p-4 rounded-lg shadow-sm border border-outline-variant/5">
+                            <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider mb-1">
+                                Duration</p>
+                            <p class="text-xl font-bold text-on-surface">6 Months</p>
+                        </div>
+                        <div
+                            class="bg-surface-container-lowest p-4 rounded-lg shadow-sm border border-outline-variant/5">
+                            <p class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider mb-1">
+                                Eligibility</p>
+                            <p class="text-xl font-bold text-on-surface">2025 Grads</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Aesthetic Asymmetric Background Element -->
+            <div class="absolute -right-20 -top-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
+        </section>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <!-- Recruitment Rounds -->
+            <div class="lg:col-span-2 space-y-8">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-2xl font-bold text-on-surface">Recruitment Rounds</h3>
+                    <span class="text-sm font-medium text-on-surface-variant bg-surface-container p-2 rounded-lg">3
+                        Rounds Total</span>
+                </div>
+                <div class="space-y-4">
+                    <!-- Round 1 -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 flex gap-6 items-start hover:shadow-lg transition-shadow">
+                        <div
+                            class="bg-primary text-on-primary w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined">quiz</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="text-xl font-bold text-on-surface">Aptitude &amp; DSA Online Test</h4>
+                                <span
+                                    class="bg-tertiary-container text-on-tertiary-container text-[10px] font-bold px-2 py-1 rounded uppercase tracking-tighter">Upcoming</span>
+                            </div>
+                            <div class="flex gap-4 text-sm text-on-surface-variant mb-4">
+                                <span class="flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-[16px]">schedule</span> 10:00 AM - 11:30
+                                    AM</span>
+                                <span class="flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-[16px]">calendar_today</span> Oct 15,
+                                    2024</span>
+                            </div>
+                            <p class="text-on-surface-variant text-sm leading-relaxed">Evaluation of logical reasoning,
+                                quantitative analysis, and fundamental Data Structures &amp; Algorithms.</p>
+                        </div>
+                    </div>
+                    <!-- Round 2 -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 flex gap-6 items-start opacity-75 grayscale-[0.5]">
+                        <div
+                            class="bg-secondary text-on-secondary w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined">code</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="text-xl font-bold text-on-surface">Technical Interview</h4>
+                                <span
+                                    class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded uppercase tracking-tighter">Locked</span>
+                            </div>
+                            <div class="flex gap-4 text-sm text-on-surface-variant mb-4">
+                                <span class="flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-[16px]">schedule</span> TBD</span>
+                                <span class="flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-[16px]">videocam</span> Google Meet</span>
+                            </div>
+                            <p class="text-on-surface-variant text-sm leading-relaxed">One-on-one coding session with a
+                                Senior Engineer focusing on problem solving and system design basics.</p>
+                        </div>
+                    </div>
+                    <!-- Round 3 -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 flex gap-6 items-start opacity-75 grayscale-[0.5]">
+                        <div
+                            class="bg-tertiary text-on-tertiary w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined">groups</span>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="text-xl font-bold text-on-surface">HR &amp; Googleness Round</h4>
+                                <span
+                                    class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded uppercase tracking-tighter">Locked</span>
+                            </div>
+                            <div class="flex gap-4 text-sm text-on-surface-variant mb-4">
+                                <span class="flex items-center gap-1"><span
+                                        class="material-symbols-outlined text-[16px]">schedule</span> TBD</span>
+                            </div>
+                            <p class="text-on-surface-variant text-sm leading-relaxed">Cultural fit assessment focusing
+                                on Google's core values, leadership, and team collaboration skills.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Sidebar: Instructions & CTA -->
+            <div class="space-y-6">
+                <div
+                    class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10 shadow-sm sticky top-28">
+                    <h3 class="text-xl font-bold text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">info</span>
+                        Candidate Instructions
+                    </h3>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex gap-3 text-sm text-on-surface-variant">
+                            <span
+                                class="material-symbols-outlined text-primary text-[20px] flex-shrink-0">check_circle</span>
+                            <span>Keep your official university ID card ready for verification.</span>
+                        </li>
+                        <li class="flex gap-3 text-sm text-on-surface-variant">
+                            <span
+                                class="material-symbols-outlined text-primary text-[20px] flex-shrink-0">check_circle</span>
+                            <span>Stable internet connection is required for the online proctored test.</span>
+                        </li>
+                        <li class="flex gap-3 text-sm text-on-surface-variant">
+                            <span
+                                class="material-symbols-outlined text-primary text-[20px] flex-shrink-0">check_circle</span>
+                            <span>Calculators or external aids are strictly prohibited.</span>
+                        </li>
+                        <li class="flex gap-3 text-sm text-on-surface-variant">
+                            <span
+                                class="material-symbols-outlined text-primary text-[20px] flex-shrink-0">check_circle</span>
+                            <span>Maintain 75%+ GPA across all semesters to remain eligible.</span>
+                        </li>
+                    </ul>
+                    <div class="p-4 bg-surface-container-low rounded-lg mb-6 border-l-4 border-primary">
+                        <p class="text-[11px] font-bold text-primary uppercase tracking-widest mb-1">Deadline</p>
+                        <p class="text-sm font-bold text-on-surface">Applications close in 2 days</p>
+                    </div>
+                    <button
+                        class="w-full py-4 bg-gradient-to-r from-primary to-primary-dim text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all duration-200">
+                        Register Now
+                    </button>
+                    <p class="text-[10px] text-center text-on-surface-variant mt-4 font-medium italic">By registering,
+                        you agree to Google's Recruitment Privacy Policy.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+
+</html>

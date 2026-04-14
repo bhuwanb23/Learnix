@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Job Details - Professional</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#310b00",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "tertiary-container": "#ff956a",
+                        "surface-bright": "#f5f7f9",
+                        "error": "#b31b25",
+                        "on-surface-variant": "#595c5e",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#5a1c00",
+                        "secondary": "#702ae1",
+                        "surface": "#f5f7f9",
+                        "on-error-container": "#570008",
+                        "primary-container": "#7b9cff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "surface-variant": "#d9dde0",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "inverse-surface": "#0b0f10",
+                        "on-secondary": "#f8f0ff",
+                        "on-surface": "#2c2f31",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-background": "#2c2f31",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "surface-container": "#e5e9eb",
+                        "surface-container-highest": "#d9dde0",
+                        "on-primary": "#f1f2ff",
+                        "on-primary-fixed": "#000000",
+                        "primary-fixed-dim": "#658eff",
+                        "on-secondary-fixed": "#430097",
+                        "error-dim": "#9f0519",
+                        "surface-container-low": "#eef1f3",
+                        "surface-container-high": "#dfe3e6",
+                        "outline-variant": "#abadaf",
+                        "inverse-primary": "#618bff",
+                        "outline": "#747779",
+                        "on-tertiary": "#ffefeb",
+                        "surface-dim": "#d0d5d8",
+                        "primary": "#0050d4",
+                        "secondary-dim": "#6411d5",
+                        "primary-dim": "#0046bb",
+                        "tertiary-dim": "#8e3000",
+                        "primary-fixed": "#7b9cff",
+                        "error-container": "#fb5151",
+                        "on-secondary-container": "#5b00c7",
+                        "tertiary": "#a23800",
+                        "secondary-container": "#dcc9ff",
+                        "secondary-fixed": "#dcc9ff",
+                        "background": "#f5f7f9",
+                        "on-primary-container": "#001e5a",
+                        "on-error": "#ffefee",
+                        "surface-tint": "#0050d4",
+                        "inverse-on-surface": "#9a9d9f",
+                        "tertiary-fixed": "#ff956a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .tonal-shift {
+            background-color: #eef1f3;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface antialiased">
+    <!-- TopAppBar -->
+    <header class="bg-[#f5f7f9] dark:bg-[#121212] sticky docked full-width top-0 z-40">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-screen-2xl mx-auto">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary/10">
+                    <img alt="Student Profile Image"
+                        data-alt="Close-up portrait of a young professional student with a clean haircut, wearing a smart casual blazer, soft studio lighting, academic background"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBe6P4o4EozStk5w0tbXASVFSiBJRIJbgatVjx5QMflprJ9F-ak7EKnpaY490Sh-dYL4NWH--SbO6D_awPjQ8jNjwRgTnRzk3s4lQvWnil2qJ4m8JXKayjCVqbmJ8z453klN0pMoMJ8fDGeeXEoVwIEQKTs26kZfugxBKjDPYQe7zARUmWM3eshTDYvAaXI3Ksf_PUKfNgHYnp0OdkVG4tpR15iZ3rtBFb7q4h0euLyN1C2_HO0xVDHqIur-tSrMpjsWc0OlOOg0ac" />
+                </div>
+                <h1 class="text-2xl font-extrabold tracking-tighter text-[#0050d4] dark:text-[#7b9cff] font-headline">
+                    Placement Portal</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    class="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95 duration-150 ease-in-out">
+                    <span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-screen-2xl mx-auto px-6 pt-8 pb-32">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <!-- Left Column: Company Header & High-Level Info -->
+            <div class="lg:col-span-8 space-y-8">
+                <!-- Hero Bento Card -->
+                <section class="bg-surface-container-lowest rounded-xl p-8 relative overflow-hidden shadow-sm">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-20 -mt-20"></div>
+                    <div class="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
+                        <div
+                            class="w-24 h-24 bg-surface-container rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+                            <img alt="Company Logo"
+                                data-alt="Minimalist corporate logo for a high-end technology firm, geometric shapes, blue and silver color palette, professional aesthetic"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMOKd2HYCLiwLpqPnRN7XlPMVKDPMu5wNxS3aZeuWW9L9dsH9h0hHmn1N0fLJW0bw7f49x__Ding6JhCFzpToSVP7HSjoODGaTHg_-nzXboIRb9qTCl9rAYsa5SbDT7yTVIr0U89Qfq6ahfblCd0cBHUf9UvwkDN5P86Ia_X8TKo0T268LW69Jz-rouy5NpNhr-bZ8WPDoeHokeyEyMxs9YFZG7Bxs9owkPLN3S4ynkbfE5On54Bvgz70NNVKMpau73QYHEIOu-As" />
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span
+                                    class="bg-secondary-container text-on-secondary-container text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Full-Time</span>
+                                <span
+                                    class="bg-tertiary-container text-on-tertiary-container text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest">Urgent</span>
+                            </div>
+                            <h2
+                                class="text-4xl font-headline font-extrabold tracking-tight text-on-surface mb-1 leading-tight">
+                                Senior Product Designer</h2>
+                            <p class="text-xl text-primary font-medium">Lumina Global Systems</p>
+                        </div>
+                    </div>
+                </section>
+                <!-- Description & Sections -->
+                <div class="grid grid-cols-1 gap-8">
+                    <section class="bg-surface-container-low rounded-xl p-8">
+                        <h3 class="text-xl font-headline font-bold text-on-surface mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary"
+                                data-icon="description">description</span>
+                            Job Description
+                        </h3>
+                        <div class="space-y-4 text-on-surface-variant leading-relaxed">
+                            <p>Lumina Global Systems is seeking a visionary Senior Product Designer to join our Academic
+                                Excellence wing. You will be responsible for defining the user journey for over 2
+                                million students worldwide, focusing on modular learning paths and achievement
+                                visualization.</p>
+                            <p>The ideal candidate possesses a deep understanding of academic workflows and has a proven
+                                track record of creating sophisticated, high-density data dashboards that feel intuitive
+                                and editorial.</p>
+                        </div>
+                    </section>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <section class="bg-surface-container-low rounded-xl p-8">
+                            <h3 class="text-xl font-headline font-bold text-on-surface mb-6 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary"
+                                    data-icon="payments">payments</span>
+                                Salary &amp; Compensation
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="flex items-baseline gap-2">
+                                    <span class="text-3xl font-headline font-extrabold text-on-surface">$120k -
+                                        $160k</span>
+                                    <span class="text-on-surface-variant font-medium">/ year</span>
+                                </div>
+                                <ul class="space-y-2">
+                                    <li class="flex items-center gap-3 text-on-surface-variant">
+                                        <span class="material-symbols-outlined text-secondary text-sm"
+                                            data-icon="check_circle">check_circle</span>
+                                        Performance Bonus (15%)
+                                    </li>
+                                    <li class="flex items-center gap-3 text-on-surface-variant">
+                                        <span class="material-symbols-outlined text-secondary text-sm"
+                                            data-icon="check_circle">check_circle</span>
+                                        Equity Options
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+                        <section class="bg-surface-container-low rounded-xl p-8">
+                            <h3 class="text-xl font-headline font-bold text-on-surface mb-6 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary" data-icon="school">school</span>
+                                Eligibility
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="p-3 bg-white rounded-lg shadow-sm">
+                                        <span class="material-symbols-outlined text-primary"
+                                            data-icon="grade">grade</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-on-surface">Min. GPA</p>
+                                        <p class="text-on-surface-variant">3.5 / 4.0</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <div class="p-3 bg-white rounded-lg shadow-sm">
+                                        <span class="material-symbols-outlined text-primary"
+                                            data-icon="calendar_month">calendar_month</span>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-on-surface">Batch</p>
+                                        <p class="text-on-surface-variant">2024 &amp; 2025</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+            <!-- Right Column: Criteria & Meta -->
+            <aside class="lg:col-span-4 space-y-8">
+                <section class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+                    <h3 class="text-xl font-headline font-bold text-on-surface mb-6">Key Selection Criteria</h3>
+                    <ul class="space-y-6">
+                        <li class="flex gap-4">
+                            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <span class="text-primary font-bold text-sm">01</span>
+                            </div>
+                            <p class="text-on-surface-variant">Exceptional portfolio showcasing UX research and
+                                high-fidelity interface design.</p>
+                        </li>
+                        <li class="flex gap-4">
+                            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <span class="text-primary font-bold text-sm">02</span>
+                            </div>
+                            <p class="text-on-surface-variant">Proficiency in Figma and advanced prototyping tools
+                                (Protopie, Framer).</p>
+                        </li>
+                        <li class="flex gap-4">
+                            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                <span class="text-primary font-bold text-sm">03</span>
+                            </div>
+                            <p class="text-on-surface-variant">Strong communication skills for collaborating with global
+                                engineering teams.</p>
+                        </li>
+                    </ul>
+                </section>
+                <section class="bg-[#0050d4] rounded-xl p-8 text-white relative overflow-hidden">
+                    <div class="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-tl-full"></div>
+                    <h3 class="text-xl font-headline font-bold mb-4 relative z-10">Application Deadline</h3>
+                    <p class="text-4xl font-headline font-extrabold mb-2 relative z-10">15 Oct</p>
+                    <p class="text-white/80 font-medium relative z-10">Remaining: 12 Days</p>
+                </section>
+                <!-- Structured Metadata -->
+                <div class="bg-surface-container-low rounded-xl p-6 space-y-4">
+                    <div class="flex justify-between py-2 border-b border-outline-variant/10">
+                        <span class="text-on-surface-variant">Job ID</span>
+                        <span class="font-bold">#LGS-2024-089</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-outline-variant/10">
+                        <span class="text-on-surface-variant">Location</span>
+                        <span class="font-bold">Hybrid (New York)</span>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-on-surface-variant">Openings</span>
+                        <span class="font-bold">3 Positions</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <!-- Bottom Navigation Bar (Shell) -->
+    <!-- Large Apply Now Floating Footer (Desktop Only style requirement logic) -->
+    <div
+        class="fixed bottom-0 inset-x-0 bg-surface/80 backdrop-blur-md border-t border-outline-variant/10 py-6 px-6 z-30">
+        <div class="max-w-screen-2xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="hidden md:block">
+                <p class="text-on-surface-variant text-sm uppercase tracking-widest font-bold">Currently Viewing</p>
+                <p class="text-on-surface font-headline font-bold">Senior Product Designer at Lumina Global Systems</p>
+            </div>
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <button
+                    class="flex-1 md:flex-none px-8 py-4 bg-surface-container-high text-on-surface font-bold rounded-xl hover:bg-surface-container-highest transition-colors active:scale-95 duration-150">
+                    Save
+                </button>
+                <button
+                    class="flex-[2] md:flex-none px-12 py-4 bg-gradient-to-br from-primary to-primary-dim text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-95 duration-150">
+                    Apply Now
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

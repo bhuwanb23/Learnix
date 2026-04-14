@@ -31,6 +31,11 @@ export default function StudentHeader({ activeTab }) {
         </View>
         
         <View style={styles.headerActions}>
+          {/* Profile */}
+          <TouchableOpacity style={styles.actionButton}>
+            <Ionicons name="person-outline" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
           {/* Notifications */}
           <TouchableOpacity style={styles.actionButton}>
             <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
@@ -83,6 +88,7 @@ const styles = StyleSheet.create({
   actionButton: {
     position: 'relative',
     padding: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
   },
   notificationBadge: {
     position: 'absolute',

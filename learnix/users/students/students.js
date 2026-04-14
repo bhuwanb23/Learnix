@@ -12,6 +12,11 @@ import AssignmentPage from './pages/assignments/assignment';
 import ProfilePage from './pages/profile/profile';
 import EventsPage from './pages/events/events';
 import ClassPage from './pages/class/class';
+import PlacementPage from './pages/placement/placement';
+import BrowseJobsPage from './pages/placement/pages/browse_jobs';
+import PlacementDrivePage from './pages/placement/pages/placement_drive';
+import JobDetailsPage from './pages/placement/pages/job_details';
+import JobApplyPage from './pages/placement/pages/jobs_apply/job_apply';
 
 // Import components
 import StudentHeader from './components/StudentHeader';
@@ -22,12 +27,35 @@ import { COLORS } from '../../constants/theme';
 
 export default function StudentsScreen() {
   const [activeTab, setActiveTab] = useState('Home');
+  const [currentScreen, setCurrentScreen] = useState('Main');
+  const [screenParams, setScreenParams] = useState({});
 
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
+    setCurrentScreen('Main');
+    setScreenParams({});
+  };
+
+  const navigateToScreen = (screenName, params = {}) => {
+    setCurrentScreen(screenName);
+    setScreenParams(params);
   };
 
   const renderContent = () => {
+    if (currentScreen === 'BrowseJobs') {
+      return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;
+    }
+    if (currentScreen === 'PlacementDrive') {
+      return <PlacementDrivePage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+    if (currentScreen === 'JobDetails') {
+      return <JobDetailsPage navigation={{ goBack: () => setCurrentScreen('BrowseJobs') }} route={screenParams} />;
+    }
+    
+    if (currentScreen === 'JobApply') {
+      return <JobApplyPage navigation={{ goBack: () => setCurrentScreen('JobDetails') }} route={screenParams} />;
+    }
+
     switch (activeTab) {
       case 'Home':
         return <Dashboard />;
@@ -37,6 +65,8 @@ export default function StudentsScreen() {
         return <AssignmentPage />;
       case 'Events':
         return <EventsPage />;
+      case 'Placement':
+        return <PlacementPage navigation={{ navigate: navigateToScreen }} />;
       case 'Profile':
         return <ProfilePage />;
       default:

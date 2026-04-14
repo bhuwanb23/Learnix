@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Scholar Flow | Placement Dashboard</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#ff956a",
+                        "primary-container": "#7b9cff",
+                        "on-primary-container": "#001e5a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#d9dde0",
+                        "on-secondary": "#f8f0ff",
+                        "surface-tint": "#0050d4",
+                        "on-secondary-fixed": "#430097",
+                        "surface-variant": "#d9dde0",
+                        "inverse-surface": "#0b0f10",
+                        "secondary-dim": "#6411d5",
+                        "outline-variant": "#abadaf",
+                        "error-dim": "#9f0519",
+                        "on-tertiary": "#ffefeb",
+                        "on-primary-fixed": "#000000",
+                        "surface-container": "#e5e9eb",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-container-high": "#dfe3e6",
+                        "surface": "#f5f7f9",
+                        "tertiary-fixed": "#ff956a",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "primary-fixed": "#7b9cff",
+                        "on-surface": "#2c2f31",
+                        "on-error-container": "#570008",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "primary-dim": "#0046bb",
+                        "inverse-primary": "#618bff",
+                        "on-surface-variant": "#595c5e",
+                        "error": "#b31b25",
+                        "secondary-container": "#dcc9ff",
+                        "on-error": "#ffefee",
+                        "primary": "#0050d4",
+                        "on-tertiary-container": "#5a1c00",
+                        "primary-fixed-dim": "#658eff",
+                        "outline": "#747779",
+                        "tertiary-dim": "#8e3000",
+                        "inverse-on-surface": "#9a9d9f",
+                        "surface-container-low": "#eef1f3",
+                        "surface-bright": "#f5f7f9",
+                        "on-secondary-container": "#5b00c7",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-primary": "#f1f2ff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "background": "#f5f7f9",
+                        "tertiary": "#a23800",
+                        "on-primary-fixed-variant": "#00266e",
+                        "surface-dim": "#d0d5d8",
+                        "secondary": "#702ae1",
+                        "error-container": "#fb5151",
+                        "on-tertiary-fixed": "#310b00",
+                        "on-background": "#2c2f31"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .circular-progress {
+            background: conic-gradient(#0050d4 306deg, #dfe3e6 0deg);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+    <main class="max-w-5xl mx-auto px-6 py-8 pb-32">
+        <!-- Dashboard Header -->
+        <section class="mb-8">
+            <h1 class="font-headline text-4xl font-extrabold tracking-tight mb-2 text-on-surface">Hello, Alex</h1>
+            <p class="text-on-surface-variant font-medium">Your placement journey is 85% complete. You're in the top 5%
+                of your cohort.</p>
+        </section>
+        <!-- Quick Actions Section -->
+        <section class="grid grid-cols-2 gap-4 mb-10">
+            <a class="group relative bg-surface-container-lowest p-5 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-transparent hover:border-primary/20 transition-all active:scale-95"
+                href="#">
+                <div class="flex flex-col items-start gap-3">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                        <span class="material-symbols-outlined text-2xl" data-icon="work">work</span>
+                    </div>
+                    <div>
+                        <h3 class="font-headline font-bold text-lg leading-tight">Browse Jobs</h3>
+                        <p class="text-xs text-on-surface-variant font-medium mt-1">150+ Matches</p>
+                    </div>
+                </div>
+                <span
+                    class="material-symbols-outlined absolute top-4 right-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-icon="arrow_outward">arrow_outward</span>
+            </a>
+            <a class="group relative bg-surface-container-lowest p-5 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] border border-transparent hover:border-secondary/20 transition-all active:scale-95"
+                href="#">
+                <div class="flex flex-col items-start gap-3">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary group-hover:bg-secondary group-hover:text-white transition-colors duration-300">
+                        <span class="material-symbols-outlined text-2xl" data-icon="event_note">event_note</span>
+                    </div>
+                    <div>
+                        <h3 class="font-headline font-bold text-lg leading-tight">Placement Drives</h3>
+                        <p class="text-xs text-on-surface-variant font-medium mt-1">5 Upcoming</p>
+                    </div>
+                </div>
+                <span
+                    class="material-symbols-outlined absolute top-4 right-4 text-secondary opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-icon="arrow_outward">arrow_outward</span>
+            </a>
+        </section>
+        <!-- Bento Grid: Profile Strength & Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
+            <!-- Profile Strength Card -->
+            <div
+                class="md:col-span-8 bg-surface-container-lowest rounded-xl p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden shadow-[0_8px_24px_rgba(44,47,49,0.04)]">
+                <div class="relative w-40 h-40 flex items-center justify-center shrink-0">
+                    <div class="circular-progress w-full h-full rounded-full absolute inset-0 opacity-20"></div>
+                    <div
+                        class="w-32 h-32 bg-surface-container-lowest rounded-full flex flex-col items-center justify-center z-10">
+                        <span class="font-headline text-3xl font-extrabold text-primary">85%</span>
+                        <span
+                            class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Strength</span>
+                    </div>
+                    <!-- Outer Ring Simulation -->
+                    <svg class="absolute inset-0 w-full h-full -rotate-90">
+                        <circle cx="80" cy="80" fill="transparent" r="74" stroke="#0050d4" stroke-dasharray="465"
+                            stroke-dashoffset="70" stroke-linecap="round" stroke-width="12"></circle>
+                    </svg>
+                </div>
+                <div class="flex-1 space-y-6">
+                    <div>
+                        <h2 class="font-headline text-xl font-bold mb-1">Profile Strength</h2>
+                        <p class="text-on-surface-variant text-sm">Add 'Certifications' to reach 95% and unlock Premium
+                            roles.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-surface-container-low p-4 rounded-lg">
+                            <span
+                                class="text-[10px] uppercase tracking-wider font-bold text-on-surface-variant block mb-1">Resume
+                                Score</span>
+                            <span class="font-headline text-lg font-bold text-secondary">92/100</span>
+                        </div>
+                        <div class="bg-surface-container-low p-4 rounded-lg">
+                            <span
+                                class="text-[10px] uppercase tracking-wider font-bold text-on-surface-variant block mb-1">Eligibility</span>
+                            <span class="font-headline text-lg font-bold text-tertiary">Verified</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Subtle Gradient Accent -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+            </div>
+            <!-- Quick Action / Status -->
+            <div class="md:col-span-4 flex flex-col gap-6">
+                <div
+                    class="bg-gradient-to-br from-primary to-primary-dim p-6 rounded-xl text-on-primary shadow-lg h-full flex flex-col justify-between">
+                    <div>
+                        <span class="material-symbols-outlined mb-4" data-icon="rocket_launch"
+                            style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+                        <h3 class="font-headline text-lg font-bold leading-tight">Ready for Direct Interview?</h3>
+                    </div>
+                    <button
+                        class="mt-4 bg-white/20 backdrop-blur-md text-white font-bold py-3 px-4 rounded-xl hover:bg-white/30 transition-all active:scale-95 text-sm">Update
+                        Availability</button>
+                </div>
+            </div>
+        </div>
+        <!-- Recommended Jobs -->
+        <section class="mb-12">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="font-headline text-2xl font-bold">Recommended for You</h2>
+                    <p class="text-on-surface-variant text-sm">Based on your tech stack and performance</p>
+                </div>
+                <button class="text-primary font-bold text-sm flex items-center gap-1 hover:underline">
+                    View All <span class="material-symbols-outlined text-sm"
+                        data-icon="arrow_forward">arrow_forward</span>
+                </button>
+            </div>
+            <div class="flex gap-6 overflow-x-auto pb-4 -mx-2 px-2 no-scrollbar">
+                <!-- Job Card 1 -->
+                <div
+                    class="min-w-[300px] bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col shrink-0">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center p-2">
+                            <img alt="Company" class="w-full h-full object-contain"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpskx4aCzaMNQVueRUfFkKkSJLJc2KjObIZh5qlscrrC9y20r1N8Ui-Xfdjl2F3bA5X_pkxF0ssEReobToUWYfGoezOpNQDM7zpmiOXXRRp_fW5c2YINvM7ZOTh9iLUjK1YF5AuKLiLoTgs36_RKoPlnguUOvETZYNf_oIk0quOtlN419OqVwpreJVflHGt41avnZMqspUoJiC9XihDmxsiAu0kHCAzDCKhY2TXT2X5EIw04-eMck69hM37mPVaB0HX-ok0SM6EEI" />
+                        </div>
+                        <span
+                            class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Top
+                            Match</span>
+                    </div>
+                    <h3 class="font-headline font-bold text-lg mb-1">Software Engineer</h3>
+                    <p class="text-on-surface-variant text-sm mb-4">CloudNexus Systems</p>
+                    <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
+                        <div class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-lg" data-icon="payments">payments</span>
+                            <span>$120k - $140k</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-lg" data-icon="location_on">location_on</span>
+                            <span>Remote</span>
+                        </div>
+                    </div>
+                    <button
+                        class="w-full bg-surface-container-high text-on-surface font-bold py-3 rounded-xl hover:bg-primary hover:text-white transition-all active:scale-95">Apply
+                        Now</button>
+                </div>
+                <!-- Job Card 2 -->
+                <div
+                    class="min-w-[300px] bg-surface-container-lowest p-6 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col shrink-0">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center p-2">
+                            <img alt="Company" class="w-full h-full object-contain"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAt5qCuZsmc3dmSNTmMg6_3n5MjKQS6bRi3YkLA_HAFxGcyITAFyG7ZYKCYUcd7AMamQd-z8hGqWek9yX_RYt_G-hLgtAtVwGMAcAriZkX3ylebZs_-oqozjF0ikKxBiKLnlxsQhJp5hnbAeQ9Tk420HgIf8MwS3bmp-ZJYO8a6ZrlEHtuVZpvt6W4ZPSfunSmLc-9gqnWxlF59d_Mm8OmF79X_SUWhRuv9C00uYA7pVblu9p3KaKJ41UlatFFOEWwrn4tgCdDlmcM" />
+                        </div>
+                    </div>
+                    <h3 class="font-headline font-bold text-lg mb-1">Data Analyst</h3>
+                    <p class="text-on-surface-variant text-sm mb-4">InsightCore Analytics</p>
+                    <div class="flex items-center gap-4 text-sm text-on-surface-variant mb-6">
+                        <div class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-lg" data-icon="payments">payments</span>
+                            <span>$95k - $110k</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="material-symbols-outlined text-lg" data-icon="location_on">location_on</span>
+                            <span>Austin, TX</span>
+                        </div>
+                    </div>
+                    <button
+                        class="w-full bg-surface-container-high text-on-surface font-bold py-3 rounded-xl hover:bg-primary hover:text-white transition-all active:scale-95">Apply
+                        Now</button>
+                </div>
+            </div>
+        </section>
+        <!-- Upcoming Drives -->
+        <section>
+            <h2 class="font-headline text-2xl font-bold mb-6">Upcoming Campus Drives</h2>
+            <div class="space-y-4">
+                <!-- Drive 1 -->
+                <div
+                    class="bg-surface-container-low hover:bg-surface-container-lowest transition-colors p-5 rounded-xl flex items-center justify-between group">
+                    <div class="flex items-center gap-6">
+                        <div
+                            class="bg-surface-container-highest w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0">
+                            <span class="text-[10px] uppercase font-bold text-on-surface-variant">Oct</span>
+                            <span class="font-headline text-xl font-bold text-primary">24</span>
+                        </div>
+                        <div>
+                            <h4 class="font-headline font-bold text-lg group-hover:text-primary transition-colors">
+                                Google Career Summit 2024</h4>
+                            <p class="text-sm text-on-surface-variant">Main Auditorium • 09:00 AM</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="hidden sm:flex flex-col items-end">
+                            <span class="text-[10px] uppercase font-bold text-tertiary-dim">Registering Now</span>
+                            <span class="text-sm font-medium">420 slots left</span>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform"
+                            data-icon="chevron_right">chevron_right</span>
+                    </div>
+                </div>
+                <!-- Drive 2 -->
+                <div
+                    class="bg-surface-container-low hover:bg-surface-container-lowest transition-colors p-5 rounded-xl flex items-center justify-between group">
+                    <div class="flex items-center gap-6">
+                        <div
+                            class="bg-surface-container-highest w-14 h-14 rounded-xl flex flex-col items-center justify-center shrink-0">
+                            <span class="text-[10px] uppercase font-bold text-on-surface-variant">Oct</span>
+                            <span class="font-headline text-xl font-bold text-primary">28</span>
+                        </div>
+                        <div>
+                            <h4 class="font-headline font-bold text-lg group-hover:text-primary transition-colors">
+                                Fintech Innovators Recruitment</h4>
+                            <p class="text-sm text-on-surface-variant">Conference Hall B • 11:30 AM</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="hidden sm:flex flex-col items-end">
+                            <span class="text-[10px] uppercase font-bold text-on-surface-variant">Invitation Only</span>
+                            <span class="text-sm font-medium">High Eligibility</span>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform"
+                            data-icon="chevron_right">chevron_right</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Decorative Elements -->
+    <div class="fixed top-20 right-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+    <div class="fixed bottom-40 left-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl -z-10"></div>
+</body>
+
+</html>
