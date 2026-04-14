@@ -38,7 +38,7 @@ export default function QuickActions({ navigation }) {
         </TouchableOpacity>
 
         {/* Placement Drives */}
-        <TouchableOpacity style={[styles.card, styles.secondaryCard]} activeOpacity={0.95} onPress={handlePlacementDrives}>
+        {/* <TouchableOpacity style={[styles.card, styles.secondaryCard]} activeOpacity={0.95} onPress={handlePlacementDrives}>
           <View style={styles.content}>
             <View style={[styles.iconContainer, styles.secondaryIconContainer]}>
               <MaterialIcons name="event-note" size={24} color="#702ae1" />
@@ -49,7 +49,7 @@ export default function QuickActions({ navigation }) {
             </View>
           </View>
           <MaterialIcons name="arrow-outward" size={20} color="#702ae1" style={styles.arrowIcon} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </View>
   );
