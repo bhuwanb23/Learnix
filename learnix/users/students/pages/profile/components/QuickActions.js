@@ -32,6 +32,8 @@ export default function QuickActions({ categories, honors, navigation }) {
       navigation.navigate('ViewProfile');
     } else if (category.id === 'academic') {
       navigation.navigate('AcademicDetails');
+    } else if (category.id === 'analytics') {
+      navigation.navigate('ProgressAnalytics');
     }
   };
 

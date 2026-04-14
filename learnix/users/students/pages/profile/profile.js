@@ -16,6 +16,7 @@ import CampusWallet from './components/CampusWallet';
 import Settings from './components/Settings'; // Will become Quick Settings
 import ViewProfilePage from './pages/view_profile/view_profile';
 import AcademicDetailsPage from './pages/academic_details/academic_details';
+import ProgressAnalyticsPage from './pages/progress_analytics/progress_analytics';
 
 // Import constants
 import {
@@ -56,6 +57,8 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
         handleNavigate('view_profile');
       } else if (screen === 'AcademicDetails') {
         handleNavigate('academic_details');
+      } else if (screen === 'ProgressAnalytics') {
+        handleNavigate('progress_analytics');
       }
     },
     goBack: handleBack,
@@ -71,6 +74,11 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
         />
       ) : currentView === 'academic_details' ? (
         <AcademicDetailsPage
+          navigation={mockNavigation}
+          route={{ params: {} }}
+        />
+      ) : currentView === 'progress_analytics' ? (
+        <ProgressAnalyticsPage
           navigation={mockNavigation}
           route={{ params: {} }}
         />
