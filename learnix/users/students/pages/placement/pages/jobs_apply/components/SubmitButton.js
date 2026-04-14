@@ -8,6 +8,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SubmitButton({ isDisabled, onPress }) {
+  const handlePress = () => {
+    console.log('SubmitButton pressed, isDisabled:', isDisabled);
+    if (!isDisabled && onPress) {
+      onPress();
+    }
+  };
+
   return (
     <TouchableOpacity 
       style={[
@@ -15,7 +22,8 @@ export default function SubmitButton({ isDisabled, onPress }) {
         isDisabled && styles.containerDisabled
       ]} 
       activeOpacity={0.85}
-      onPress={onPress}
+      onPress={handlePress}
+      disabled={isDisabled}
     >
       <LinearGradient
         colors={['#0050d4', '#0046bb']}
@@ -42,7 +50,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   containerDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   gradient: {
     paddingVertical: 18,
