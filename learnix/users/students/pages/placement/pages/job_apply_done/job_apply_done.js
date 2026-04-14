@@ -26,8 +26,10 @@ export default function JobApplyDone({ navigation, route }) {
   };
 
   const handleBackToJobs = () => {
-    // Navigate back to jobs list
-    if (navigation?.goBack) {
+    // Navigate back to browse jobs
+    if (navigation?.navigate) {
+      navigation.navigate('BrowseJobs', {});
+    } else if (navigation?.goBack) {
       navigation.goBack();
     }
   };

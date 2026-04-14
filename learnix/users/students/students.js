@@ -85,7 +85,15 @@ export default function StudentsScreen() {
     }
     
     if (currentScreen === 'JobApplyDone') {
-      return <JobApplyDonePage navigation={{ goBack: () => setCurrentScreen('BrowseJobs') }} route={screenParams} />;
+      return <JobApplyDonePage navigation={{ 
+        goBack: () => setCurrentScreen('BrowseJobs'),
+        navigate: (screen, params) => {
+          if (screen === 'BrowseJobs') {
+            setCurrentScreen('BrowseJobs');
+            setScreenParams(params || {});
+          }
+        }
+      }} route={screenParams} />;
     }
 
     switch (activeTab) {
