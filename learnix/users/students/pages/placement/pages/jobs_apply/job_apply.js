@@ -35,9 +35,9 @@ export default function JobApply({ navigation, route }) {
       alert('Please confirm the information before submitting');
       return;
     }
-    alert('Application submitted successfully!');
-    if (navigation?.goBack) {
-      navigation.goBack();
+    // Navigate to success page
+    if (navigation?.navigate) {
+      navigation.navigate('JobApplyDone', {});
     }
   };
 
