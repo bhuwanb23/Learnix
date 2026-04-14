@@ -38,6 +38,8 @@ export default function QuickActions({ categories, honors, navigation }) {
       navigation.navigate('Activity');
     } else if (category.id === 'settings') {
       navigation.navigate('Settings');
+    } else if (category.id === 'my_applications') {
+      navigation.navigate('MyApplications');
     }
   };
 

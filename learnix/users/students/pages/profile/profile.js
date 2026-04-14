@@ -19,6 +19,7 @@ import AcademicDetailsPage from './pages/academic_details/academic_details';
 import ProgressAnalyticsPage from './pages/progress_analytics/progress_analytics';
 import ActivityPage from './pages/activity/activity';
 import SettingsPage from './pages/settings/settings';
+import MyApplicationPage from './pages/my_application/my_application';
 
 // Import constants
 import {
@@ -65,6 +66,8 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
         handleNavigate('activity');
       } else if (screen === 'Settings') {
         handleNavigate('settings');
+      } else if (screen === 'MyApplications') {
+        handleNavigate('my_applications');
       }
     },
     goBack: handleBack,
@@ -95,6 +98,11 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
         />
       ) : currentView === 'settings' ? (
         <SettingsPage
+          navigation={mockNavigation}
+          route={{ params: {} }}
+        />
+      ) : currentView === 'my_applications' ? (
+        <MyApplicationPage
           navigation={mockNavigation}
           route={{ params: {} }}
         />
