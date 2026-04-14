@@ -26,7 +26,7 @@ export const CATEGORIES = [
   { id: 'my_registration', title: 'My Registration', icon: 'bookmark', color: '#e11d48', bgColor: 'rgba(225, 29, 72, 0.15)' },
   { id: 'my_applications', title: 'My Applications', icon: 'notifications', color: '#4f46e5', bgColor: 'rgba(79, 70, 229, 0.15)' },
   { id: 'settings', title: 'Settings', icon: 'settings', color: '#475569', bgColor: 'rgba(71, 85, 105, 0.15)' },
-  { id: 'achievements', title: 'Achievements', icon: 'military-tech', color: '#9333ea', bgColor: 'rgba(147, 51, 234, 0.15)' },
+  { id: 'certifications', title: 'Certifications', icon: 'military-tech', color: '#9333ea', bgColor: 'rgba(147, 51, 234, 0.15)' },
 ];
 
 export const HONORS = [

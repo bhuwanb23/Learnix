@@ -42,6 +42,8 @@ export default function QuickActions({ categories, honors, navigation }) {
       navigation.navigate('MyApplications');
     } else if (category.id === 'my_registration') {
       navigation.navigate('MyRegistration');
+    } else if (category.id === 'certifications') {
+      navigation.navigate('Certifications');
     }
   };
 

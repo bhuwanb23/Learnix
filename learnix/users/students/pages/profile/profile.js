@@ -21,6 +21,7 @@ import ActivityPage from './pages/activity/activity';
 import SettingsPage from './pages/settings/settings';
 import MyApplicationPage from './pages/my_application/my_application';
 import MyRegistrationPage from './pages/my_registration/my_registration';
+import CertificationsPage from './pages/certifications/certifications';
 
 // Import constants
 import {
@@ -71,6 +72,8 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
         handleNavigate('my_applications');
       } else if (screen === 'MyRegistration') {
         handleNavigate('my_registration');
+      } else if (screen === 'Certifications') {
+        handleNavigate('certifications');
       }
     },
     goBack: handleBack,
@@ -111,6 +114,11 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
         />
       ) : currentView === 'my_registration' ? (
         <MyRegistrationPage
+          navigation={mockNavigation}
+          route={{ params: {} }}
+        />
+      ) : currentView === 'certifications' ? (
+        <CertificationsPage
           navigation={mockNavigation}
           route={{ params: {} }}
         />
