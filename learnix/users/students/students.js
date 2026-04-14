@@ -29,7 +29,7 @@ export default function StudentsScreen() {
   const [activeTab, setActiveTab] = useState('Home');
   const [currentScreen, setCurrentScreen] = useState('Main');
   const [screenParams, setScreenParams] = useState({});
-  const [profileView, setProfileView] = useState('profile'); // 'profile', 'view_profile', 'academic_details', or 'progress_analytics'
+  const [profileView, setProfileView] = useState('profile'); // 'profile', 'view_profile', 'academic_details', 'progress_analytics', or 'activity'
 
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
