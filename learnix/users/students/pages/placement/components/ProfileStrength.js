@@ -44,15 +44,13 @@ export default function ProfileStrength() {
       </View>
 
       {/* CTA Card */}
-      <View style={styles.ctaColumn}>
-        <TouchableOpacity style={styles.ctaCard} activeOpacity={0.9}>
-          <MaterialIcons name="rocket-launch" size={32} color="#ffffff" style={{ marginBottom: 16 }} />
-          <Text style={styles.ctaTitle}>Ready for Direct Interview?</Text>
-          <TouchableOpacity style={styles.ctaButton} activeOpacity={0.8}>
-            <Text style={styles.ctaButtonText}>Update Availability</Text>
-          </TouchableOpacity>
+      <TouchableOpacity style={styles.ctaCard} activeOpacity={0.9}>
+        <MaterialIcons name="rocket-launch" size={32} color="#ffffff" style={{ marginBottom: 16 }} />
+        <Text style={styles.ctaTitle}>Ready for Direct Interview?</Text>
+        <TouchableOpacity style={styles.ctaButton} activeOpacity={0.8}>
+          <Text style={styles.ctaButtonText}>Update Availability</Text>
         </TouchableOpacity>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -66,9 +64,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 32,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 32,
+    gap: 24,
     shadowColor: '#2c2f31',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.04,
@@ -83,7 +80,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    flexShrink: 0,
   },
   progressRing: {
     position: 'absolute',
@@ -122,7 +118,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   profileInfo: {
-    flex: 1,
+    width: '100%',
     gap: 24,
   },
   profileTitle: {
@@ -131,6 +127,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2c2f31',
     marginBottom: 4,
+    textAlign: 'center',
   },
   profileSubtitle: {
     fontSize: 14,
@@ -138,6 +135,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#595c5e',
     lineHeight: 20,
+    textAlign: 'center',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -163,9 +161,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
   },
-  ctaColumn: {
-    // Column wrapper
-  },
   ctaCard: {
     backgroundColor: '#0050d4',
     borderRadius: 12,
@@ -175,8 +170,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
-    minHeight: 200,
-    justifyContent: 'space-between',
   },
   ctaTitle: {
     fontSize: 18,
@@ -185,6 +178,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     lineHeight: 24,
     marginBottom: 16,
+    textAlign: 'center',
   },
   ctaButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
