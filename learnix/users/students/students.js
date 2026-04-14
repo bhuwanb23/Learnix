@@ -17,7 +17,6 @@ import BrowseJobsPage from './pages/placement/pages/browse_jobs';
 import PlacementDrivePage from './pages/placement/pages/placement_drive';
 import JobDetailsPage from './pages/placement/pages/job_details';
 import JobApplyPage from './pages/placement/pages/jobs_apply/job_apply';
-import MyApplicationPage from './pages/placement/pages/my_application/my_application';
 
 // Import components
 import StudentHeader from './components/StudentHeader';
@@ -66,10 +65,6 @@ export default function StudentsScreen() {
     
     if (currentScreen === 'JobApply') {
       return <JobApplyPage navigation={{ goBack: () => setCurrentScreen('JobDetails') }} route={screenParams} />;
-    }
-
-    if (currentScreen === 'MyApplications') {
-      return <MyApplicationPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
 
     switch (activeTab) {
