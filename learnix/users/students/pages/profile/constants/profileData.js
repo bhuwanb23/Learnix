@@ -23,8 +23,8 @@ export const CATEGORIES = [
   { id: 'academic', title: 'Academic Details', icon: 'school', color: '#2563eb', bgColor: 'rgba(59, 130, 246, 0.15)' },
   { id: 'analytics', title: 'Progress & Analytics', icon: 'analytics', color: '#059669', bgColor: 'rgba(16, 185, 129, 0.15)' },
   { id: 'activity', title: 'Activity', icon: 'history', color: '#d97706', bgColor: 'rgba(245, 158, 11, 0.15)' },
-  { id: 'saved', title: 'Saved', icon: 'bookmark', color: '#e11d48', bgColor: 'rgba(225, 29, 72, 0.15)' },
-  { id: 'notifications', title: 'Notifications', icon: 'notifications', color: '#4f46e5', bgColor: 'rgba(79, 70, 229, 0.15)' },
+  { id: 'registration', title: 'Registration', icon: 'bookmark', color: '#e11d48', bgColor: 'rgba(225, 29, 72, 0.15)' },
+  { id: 'my_applications', title: 'My Applications', icon: 'notifications', color: '#4f46e5', bgColor: 'rgba(79, 70, 229, 0.15)' },
   { id: 'settings', title: 'Settings', icon: 'settings', color: '#475569', bgColor: 'rgba(71, 85, 105, 0.15)' },
   { id: 'achievements', title: 'Achievements', icon: 'military-tech', color: '#9333ea', bgColor: 'rgba(147, 51, 234, 0.15)' },
 ];

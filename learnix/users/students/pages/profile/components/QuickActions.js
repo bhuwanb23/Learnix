@@ -36,6 +36,8 @@ export default function QuickActions({ categories, honors, navigation }) {
       navigation.navigate('ProgressAnalytics');
     } else if (category.id === 'activity') {
       navigation.navigate('Activity');
+    } else if (category.id === 'settings') {
+      navigation.navigate('Settings');
     }
   };
 
