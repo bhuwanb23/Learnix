@@ -5,11 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Import theme
-import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../../../constants/theme';
 
 export default function ApplyFooter({ navigation }) {
   const handleApplyNow = () => {
@@ -29,7 +25,7 @@ export default function ApplyFooter({ navigation }) {
         onPress={handleApplyNow}
       >
         <LinearGradient
-          colors={[COLORS.primary, COLORS.primaryDim]}
+          colors={['#0050d4', '#0046bb']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.gradient}
@@ -50,42 +46,43 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245, 247, 249, 0.95)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(171, 173, 175, 0.1)',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    paddingBottom: 24,
     flexDirection: 'row',
-    gap: SPACING.md,
+    gap: 12,
   },
   saveButton: {
     flex: 1,
-    backgroundColor: COLORS.surfaceContainerHigh,
-    paddingVertical: SPACING.md + 2,
-    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: '#dfe3e6',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
   },
   saveButtonText: {
     fontSize: 15,
     fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#2c2f31',
   },
   applyButton: {
     flex: 2,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: COLORS.primary,
+    shadowColor: '#0050d4',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   gradient: {
-    paddingVertical: SPACING.md + 2,
+    paddingVertical: 14,
     alignItems: 'center',
   },
   applyButtonText: {
     fontSize: 16,
     fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.white,
+    fontWeight: '700',
+    color: '#ffffff',
   },
 });
