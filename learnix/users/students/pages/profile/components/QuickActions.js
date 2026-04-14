@@ -40,6 +40,8 @@ export default function QuickActions({ categories, honors, navigation }) {
       navigation.navigate('Settings');
     } else if (category.id === 'my_applications') {
       navigation.navigate('MyApplications');
+    } else if (category.id === 'my_registration') {
+      navigation.navigate('MyRegistration');
     }
   };
 
