@@ -60,7 +60,15 @@ export default function StudentsScreen() {
       return <PlacementDrivePage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
     if (currentScreen === 'JobDetails') {
-      return <JobDetailsPage navigation={{ goBack: () => setCurrentScreen('BrowseJobs') }} route={screenParams} />;
+      return <JobDetailsPage navigation={{ 
+        goBack: () => setCurrentScreen('BrowseJobs'),
+        navigate: (screen, params) => {
+          if (screen === 'JobApply') {
+            setCurrentScreen('JobApply');
+            setScreenParams(params || {});
+          }
+        }
+      }} route={screenParams} />;
     }
     
     if (currentScreen === 'JobApply') {
