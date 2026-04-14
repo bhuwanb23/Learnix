@@ -14,9 +14,6 @@ import ProfileStrength from './components/ProfileStrength';
 import RecommendedJobs from './components/RecommendedJobs';
 import UpcomingDrives from './components/UpcomingDrives';
 
-// Import theme
-import { COLORS, SPACING, TYPOGRAPHY } from '../../../../constants/theme';
-
 export default function PlacementPage({ navigation }) {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -47,14 +44,14 @@ export default function PlacementPage({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#f5f7f9',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 40,
   },
 });

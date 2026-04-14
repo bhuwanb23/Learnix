@@ -21,20 +21,21 @@ export default function PlacementHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: SPACING.xl,
+    marginBottom: 32,
   },
   greeting: {
-    fontSize: 32,
+    fontSize: 36,
     fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: TYPOGRAPHY.fontWeight.extraBold,
-    color: COLORS.textPrimary,
-    letterSpacing: -0.5,
-    marginBottom: SPACING.xs,
+    fontWeight: '800',
+    color: '#2c2f31',
+    letterSpacing: -1,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Manrope-Medium',
-    color: 'rgba(44, 47, 49, 0.7)',
-    lineHeight: 20,
+    fontWeight: '500',
+    color: '#595c5e',
+    lineHeight: 22,
   },
 });

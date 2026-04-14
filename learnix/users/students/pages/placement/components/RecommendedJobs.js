@@ -5,11 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const jobs = [
   {
@@ -51,10 +49,10 @@ export default function RecommendedJobs() {
         contentContainerStyle={styles.scrollContent}
       >
         {jobs.map((job) => (
-          <TouchableOpacity key={job.id} style={styles.jobCard} activeOpacity={0.8}>
+          <TouchableOpacity key={job.id} style={styles.jobCard} activeOpacity={0.95}>
             <View style={styles.jobHeader}>
               <View style={styles.logoContainer}>
-                <Ionicons name="business-outline" size={24} color={COLORS.textSecondary} />
+                <Image source={{ uri: job.logo }} style={styles.logo} resizeMode="contain" />
               </View>
               {job.isTopMatch && (
                 <View style={styles.badge}>
@@ -68,16 +66,16 @@ export default function RecommendedJobs() {
 
             <View style={styles.jobDetails}>
               <View style={styles.detailItem}>
-                <Ionicons name="cash-outline" size={18} color={COLORS.textSecondary} />
+                <MaterialIcons name="payments" size={18} color="#595c5e" />
                 <Text style={styles.detailText}>{job.salary}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Ionicons name="location-outline" size={18} color={COLORS.textSecondary} />
+                <MaterialIcons name="location-on" size={18} color="#595c5e" />
                 <Text style={styles.detailText}>{job.location}</Text>
               </View>
             </View>
 
-            <TouchableOpacity style={styles.applyButton} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.applyButton} activeOpacity={0.9}>
               <Text style={styles.applyButtonText}>Apply Now</Text>
             </TouchableOpacity>
           </TouchableOpacity>
@@ -89,93 +87,99 @@ export default function RecommendedJobs() {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: SPACING.xl + 8,
+    marginBottom: 48,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginBottom: SPACING.lg,
+    marginBottom: 24,
   },
   title: {
     fontSize: 24,
     fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#2c2f31',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Manrope-Medium',
-    color: 'rgba(44, 47, 49, 0.7)',
+    fontWeight: '500',
+    color: '#595c5e',
   },
   viewAll: {
     fontSize: 14,
     fontFamily: 'Manrope-Bold',
-    color: COLORS.primary,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontWeight: '700',
+    color: '#0050d4',
   },
   scrollContent: {
-    paddingHorizontal: SPACING.xs,
+    paddingHorizontal: 8,
   },
   jobCard: {
     width: 300,
-    backgroundColor: COLORS.white,
-    padding: SPACING.xl,
-    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: '#ffffff',
+    padding: 24,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
     shadowRadius: 20,
     elevation: 2,
-    marginRight: SPACING.lg,
+    marginRight: 24,
   },
   jobHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: SPACING.lg,
+    marginBottom: 24,
   },
   logoContainer: {
     width: 48,
     height: 48,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    backgroundColor: '#e5e9eb',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: SPACING.sm,
+    padding: 8,
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
   },
   badge: {
-    backgroundColor: COLORS.secondaryContainer,
-    paddingHorizontal: SPACING.sm,
+    backgroundColor: '#dcc9ff',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: 4,
   },
   badgeText: {
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
-    color: COLORS.onSecondaryContainer,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontWeight: '700',
+    color: '#5b00c7',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   jobTitle: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#2c2f31',
     marginBottom: 4,
   },
   companyName: {
     fontSize: 14,
     fontFamily: 'Manrope-Medium',
-    color: 'rgba(44, 47, 49, 0.7)',
-    marginBottom: SPACING.lg,
+    fontWeight: '500',
+    color: '#595c5e',
+    marginBottom: 16,
   },
   jobDetails: {
     flexDirection: 'row',
-    gap: SPACING.lg,
-    marginBottom: SPACING.lg,
+    gap: 16,
+    marginBottom: 24,
   },
   detailItem: {
     flexDirection: 'row',
@@ -185,18 +189,19 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 14,
     fontFamily: 'Manrope-Medium',
-    color: COLORS.textSecondary,
+    fontWeight: '500',
+    color: '#595c5e',
   },
   applyButton: {
-    backgroundColor: COLORS.background,
-    paddingVertical: SPACING.md,
-    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: '#dfe3e6',
+    paddingVertical: 12,
+    borderRadius: 12,
     alignItems: 'center',
   },
   applyButtonText: {
     fontSize: 14,
     fontFamily: 'Manrope-Bold',
-    color: COLORS.textPrimary,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontWeight: '700',
+    color: '#2c2f31',
   },
 });

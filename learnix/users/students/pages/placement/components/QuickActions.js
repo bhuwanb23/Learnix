@@ -5,10 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function QuickActions({ navigation }) {
   const handleBrowseJobs = () => {
@@ -27,27 +24,31 @@ export default function QuickActions({ navigation }) {
     <View style={styles.container}>
       <View style={styles.grid}>
         {/* Browse Jobs */}
-        <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={handleBrowseJobs}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="briefcase-outline" size={24} color={COLORS.primary} />
+        <TouchableOpacity style={styles.card} activeOpacity={0.95} onPress={handleBrowseJobs}>
+          <View style={styles.content}>
+            <View style={styles.iconContainer}>
+              <MaterialIcons name="work" size={24} color="#0050d4" />
+            </View>
+            <View>
+              <Text style={styles.cardTitle}>Browse Jobs</Text>
+              <Text style={styles.cardSubtitle}>150+ Matches</Text>
+            </View>
           </View>
-          <Text style={styles.cardTitle}>Browse Jobs</Text>
-          <Text style={styles.cardSubtitle}>150+ Matches</Text>
-          <View style={styles.arrowIcon}>
-            <Ionicons name="arrow-forward-outline" size={20} color={COLORS.primary} />
-          </View>
+          <MaterialIcons name="arrow-outward" size={20} color="#0050d4" style={styles.arrowIcon} />
         </TouchableOpacity>
 
         {/* Placement Drives */}
-        <TouchableOpacity style={[styles.card, styles.secondaryCard]} activeOpacity={0.8} onPress={handlePlacementDrives}>
-          <View style={[styles.iconContainer, styles.secondaryIconContainer]}>
-            <Ionicons name="calendar-outline" size={24} color={COLORS.secondary} />
+        <TouchableOpacity style={[styles.card, styles.secondaryCard]} activeOpacity={0.95} onPress={handlePlacementDrives}>
+          <View style={styles.content}>
+            <View style={[styles.iconContainer, styles.secondaryIconContainer]}>
+              <MaterialIcons name="event-note" size={24} color="#702ae1" />
+            </View>
+            <View>
+              <Text style={styles.cardTitle}>Placement Drives</Text>
+              <Text style={styles.cardSubtitle}>5 Upcoming</Text>
+            </View>
           </View>
-          <Text style={styles.cardTitle}>Placement Drives</Text>
-          <Text style={styles.cardSubtitle}>5 Upcoming</Text>
-          <View style={styles.arrowIcon}>
-            <Ionicons name="arrow-forward-outline" size={20} color={COLORS.secondary} />
-          </View>
+          <MaterialIcons name="arrow-outward" size={20} color="#702ae1" style={styles.arrowIcon} />
         </TouchableOpacity>
       </View>
     </View>
@@ -56,17 +57,17 @@ export default function QuickActions({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: SPACING.xl + 8,
+    marginBottom: 40,
   },
   grid: {
     flexDirection: 'row',
-    gap: SPACING.md,
+    gap: 16,
   },
   card: {
     flex: 1,
-    backgroundColor: COLORS.white,
-    padding: SPACING.lg,
-    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
@@ -74,18 +75,23 @@ const styles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: 'transparent',
+    position: 'relative',
   },
   secondaryCard: {
     // Secondary card styling
   },
+  content: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
   iconContainer: {
     width: 48,
     height: 48,
-    borderRadius: BORDER_RADIUS.md,
+    borderRadius: 12,
     backgroundColor: 'rgba(0, 80, 212, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.md,
   },
   secondaryIconContainer: {
     backgroundColor: 'rgba(112, 42, 225, 0.1)',
@@ -93,20 +99,22 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: COLORS.textPrimary,
+    fontWeight: '700',
+    color: '#2c2f31',
     lineHeight: 22,
+    marginTop: 0,
     marginBottom: 4,
   },
   cardSubtitle: {
     fontSize: 12,
     fontFamily: 'Manrope-Medium',
-    color: 'rgba(44, 47, 49, 0.7)',
+    fontWeight: '500',
+    color: '#595c5e',
+    marginTop: 4,
   },
   arrowIcon: {
     position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
-    opacity: 0,
+    top: 16,
+    right: 16,
   },
 });
