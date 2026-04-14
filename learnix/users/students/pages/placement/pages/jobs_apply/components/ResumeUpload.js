@@ -5,25 +5,22 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function ResumeUpload() {
   return (
     <View style={styles.section}>
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: 'rgba(112, 42, 225, 0.05)' }]}>
-            <Ionicons name="cloud-upload-outline" size={22} color={COLORS.secondary} />
+          <View style={styles.iconCircle}>
+            <MaterialIcons name="cloud-upload" size={22} color="#702ae1" />
           </View>
           <Text style={styles.sectionTitle}>Resume Upload</Text>
         </View>
 
         <TouchableOpacity style={styles.uploadArea} activeOpacity={0.7}>
           <View style={styles.uploadIconContainer}>
-            <Ionicons name="document-outline" size={36} color={COLORS.error} />
+            <MaterialIcons name="description" size={40} color="#a23800" />
           </View>
           <Text style={styles.uploadTitle}>Upload your resume</Text>
           <Text style={styles.uploadSubtitle}>PDF, DOCX up to 10MB</Text>
@@ -35,26 +32,27 @@ export default function ResumeUpload() {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.lg,
+    paddingHorizontal: 16,
+    marginBottom: 24,
   },
   card: {
-    backgroundColor: COLORS.surfaceContainerLow,
-    borderRadius: BORDER_RADIUS.lg + 4,
-    padding: SPACING.xs,
+    backgroundColor: '#eef1f3',
+    borderRadius: 16,
+    padding: 12,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.lg + SPACING.xs,
-    paddingTop: SPACING.lg + SPACING.xs,
+    gap: 12,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: 'rgba(112, 42, 225, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -62,26 +60,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#2c2f31',
   },
   uploadArea: {
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: 'rgba(171, 173, 175, 0.3)',
-    borderRadius: BORDER_RADIUS.lg,
-    paddingVertical: SPACING.xxl + SPACING.md,
+    borderColor: 'rgba(171, 173, 175, 0.4)',
+    borderRadius: 14,
+    paddingVertical: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(245, 247, 249, 0.3)',
+    backgroundColor: 'rgba(245, 247, 249, 0.5)',
   },
   uploadIconContainer: {
-    width: 64,
-    height: 64,
-    backgroundColor: COLORS.surfaceContainerLowest,
-    borderRadius: BORDER_RADIUS.lg + 4,
+    width: 72,
+    height: 72,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -89,16 +87,16 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   uploadTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
+    fontSize: 16,
+    fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
+    color: '#2c2f31',
+    marginBottom: 6,
   },
   uploadSubtitle: {
-    fontSize: 11,
+    fontSize: 13,
     fontFamily: 'Manrope-Medium',
     fontWeight: '500',
-    color: COLORS.textSecondary,
+    color: '#595c5e',
   },
 });

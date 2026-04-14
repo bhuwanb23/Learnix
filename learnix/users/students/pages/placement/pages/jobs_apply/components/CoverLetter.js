@@ -5,18 +5,15 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function CoverLetter({ value, onChangeText }) {
   return (
     <View style={styles.section}>
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: 'rgba(162, 56, 0, 0.05)' }]}>
-            <Ionicons name="create-outline" size={22} color={COLORS.tertiary} />
+          <View style={styles.iconCircle}>
+            <MaterialIcons name="edit" size={22} color="#a23800" />
           </View>
           <Text style={styles.sectionTitle}>Cover Letter</Text>
         </View>
@@ -26,7 +23,7 @@ export default function CoverLetter({ value, onChangeText }) {
           value={value}
           onChangeText={onChangeText}
           placeholder="Tell us why you are a great fit for Lumina..."
-          placeholderTextColor={COLORS.outlineVariant}
+          placeholderTextColor="#aab"
           multiline
           numberOfLines={6}
           textAlignVertical="top"
@@ -38,26 +35,27 @@ export default function CoverLetter({ value, onChangeText }) {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.lg,
+    paddingHorizontal: 16,
+    marginBottom: 24,
   },
   card: {
-    backgroundColor: COLORS.surfaceContainerLow,
-    borderRadius: BORDER_RADIUS.lg + 4,
-    padding: SPACING.xs,
+    backgroundColor: '#eef1f3',
+    borderRadius: 16,
+    padding: 12,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.lg + SPACING.xs,
-    paddingTop: SPACING.lg + SPACING.xs,
+    gap: 12,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: 'rgba(162, 56, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -65,21 +63,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#2c2f31',
   },
   input: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#ffffff',
     borderWidth: 0,
-    borderRadius: BORDER_RADIUS.lg - 2,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
-    fontFamily: 'Manrope-SemiBold',
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
+    color: '#2c2f31',
   },
   textArea: {
-    minHeight: 150,
-    paddingTop: SPACING.md + 4,
+    minHeight: 160,
+    paddingTop: 18,
   },
 });

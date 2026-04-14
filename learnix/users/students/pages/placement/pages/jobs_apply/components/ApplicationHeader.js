@@ -5,10 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function ApplicationHeader({ onGoBack }) {
   return (
@@ -18,11 +15,11 @@ export default function ApplicationHeader({ onGoBack }) {
         activeOpacity={0.7}
         onPress={onGoBack}
       >
-        <Ionicons name="arrow-back" size={22} color={COLORS.primary} />
+        <MaterialIcons name="arrow-back" size={24} color="#0050d4" />
       </TouchableOpacity>
       <Text style={styles.title}>Application Process</Text>
       <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
-        <Ionicons name="ellipsis-vertical" size={20} color={COLORS.textSecondary} />
+        <MaterialIcons name="more-vert" size={24} color="#595c5e" />
       </TouchableOpacity>
     </View>
   );
@@ -33,23 +30,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.surface,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: '#f5f7f9',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(171, 173, 175, 0.1)',
+    borderBottomColor: 'rgba(171, 173, 175, 0.15)',
   },
   backButton: {
-    padding: SPACING.xs,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 80, 212, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
     letterSpacing: -0.5,
-    color: COLORS.textPrimary,
+    color: '#2c2f31',
   },
   menuButton: {
-    padding: SPACING.xs,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

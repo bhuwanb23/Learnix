@@ -5,10 +5,7 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { APPLICATION_DATA } from '../constants/applicationData';
 
 export default function BasicDetails() {
@@ -16,8 +13,8 @@ export default function BasicDetails() {
     <View style={styles.section}>
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
-          <View style={[styles.iconCircle, { backgroundColor: 'rgba(0, 80, 212, 0.05)' }]}>
-            <Ionicons name="person-outline" size={22} color={COLORS.primary} />
+          <View style={styles.iconCircle}>
+            <MaterialIcons name="person-outline" size={22} color="#0050d4" />
           </View>
           <Text style={styles.sectionTitle}>Basic Details</Text>
         </View>
@@ -49,26 +46,27 @@ export default function BasicDetails() {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: SPACING.md,
-    marginBottom: SPACING.lg,
+    paddingHorizontal: 16,
+    marginBottom: 24,
   },
   card: {
-    backgroundColor: COLORS.surfaceContainerLow,
-    borderRadius: BORDER_RADIUS.lg + 4,
-    padding: SPACING.xs,
+    backgroundColor: '#eef1f3',
+    borderRadius: 16,
+    padding: 12,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.lg + SPACING.xs,
-    paddingTop: SPACING.lg + SPACING.xs,
+    gap: 12,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   iconCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: 'rgba(0, 80, 212, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -76,29 +74,29 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: '#2c2f31',
   },
   inputGroup: {
-    marginBottom: SPACING.md,
+    marginBottom: 12,
   },
   label: {
     fontSize: 11,
     fontFamily: 'Manrope-Bold',
     fontWeight: '700',
-    color: COLORS.textSecondary,
-    marginLeft: SPACING.md,
-    marginBottom: SPACING.xs,
+    color: '#595c5e',
+    marginLeft: 12,
+    marginBottom: 6,
     letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#ffffff',
     borderWidth: 0,
-    borderRadius: BORDER_RADIUS.lg - 2,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
     fontFamily: 'Manrope-SemiBold',
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: '#2c2f31',
   },
 });

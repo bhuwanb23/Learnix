@@ -4,10 +4,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { COMPANY_QUOTE } from '../constants/applicationData';
 
 export default function CompanyQuote() {
@@ -15,11 +12,11 @@ export default function CompanyQuote() {
     <View style={styles.container}>
       <View style={styles.overlay} />
       <View style={styles.content}>
-        <Ionicons name="quote" size={32} color={COLORS.primaryContainer} style={{ marginBottom: SPACING.md }} />
+        <MaterialIcons name="format-quote" size={36} color="#0050d4" style={{ marginBottom: 16 }} />
         <Text style={styles.quoteText}>{COMPANY_QUOTE.text}</Text>
         <View style={styles.authorInfo}>
           <View style={styles.authorAvatar}>
-            <Ionicons name="person" size={20} color={COLORS.white} />
+            <MaterialIcons name="person" size={20} color="#ffffff" />
           </View>
           <View>
             <Text style={styles.authorName}>{COMPANY_QUOTE.author}</Text>
@@ -33,10 +30,10 @@ export default function CompanyQuote() {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: SPACING.md,
-    backgroundColor: 'rgba(123, 156, 255, 0.1)',
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.xxl + SPACING.md,
+    marginHorizontal: 16,
+    backgroundColor: 'rgba(123, 156, 255, 0.12)',
+    borderRadius: 16,
+    padding: 28,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -47,7 +44,7 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
     borderRadius: 80,
-    backgroundColor: 'rgba(0, 80, 212, 0.05)',
+    backgroundColor: 'rgba(0, 80, 212, 0.06)',
   },
   content: {
     position: 'relative',
@@ -55,30 +52,30 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     fontSize: 17,
-    fontFamily: 'PlusJakartaSans-Italic',
+    fontFamily: 'Manrope-Medium',
     fontStyle: 'italic',
-    color: COLORS.onPrimaryContainer,
+    color: '#2747a3',
     lineHeight: 26,
-    marginBottom: SPACING.lg,
+    marginBottom: 20,
   },
   authorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
+    gap: 12,
   },
   authorAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.primaryContainer,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#0050d4',
     justifyContent: 'center',
     alignItems: 'center',
   },
   authorName: {
     fontSize: 14,
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
-    color: COLORS.onPrimaryContainer,
+    color: '#2747a3',
   },
   authorRole: {
     fontSize: 12,

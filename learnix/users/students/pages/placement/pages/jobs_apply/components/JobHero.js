@@ -4,9 +4,7 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-
-// Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function JobHero() {
   return (
@@ -23,47 +21,48 @@ export default function JobHero() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
-    paddingBottom: SPACING.lg,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
   },
   activeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(0, 80, 212, 0.1)',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
-    borderRadius: BORDER_RADIUS.full,
-    marginBottom: SPACING.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
+    marginBottom: 16,
+    gap: 6,
   },
   activeDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: COLORS.primary,
-    marginRight: SPACING.sm,
+    backgroundColor: '#0050d4',
   },
   activeBadgeText: {
     fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'Manrope-Bold',
     fontWeight: '700',
     letterSpacing: 1.5,
-    color: COLORS.primary,
+    color: '#0050d4',
     textTransform: 'uppercase',
   },
   jobTitle: {
-    fontSize: 28,
+    fontSize: 32,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '800',
     letterSpacing: -1,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
+    color: '#2c2f31',
+    marginBottom: 8,
+    lineHeight: 38,
   },
   companyName: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Manrope-Medium',
     fontWeight: '500',
-    color: COLORS.textSecondary,
+    color: '#595c5e',
   },
 });

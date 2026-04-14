@@ -5,10 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-// Import theme
-import { COLORS, SPACING, BORDER_RADIUS } from '../../../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function Confirmation({ isConfirmed, onToggle }) {
   return (
@@ -20,7 +17,7 @@ export default function Confirmation({ isConfirmed, onToggle }) {
       >
         <View style={[styles.checkbox, isConfirmed && styles.checkboxChecked]}>
           {isConfirmed && (
-            <Ionicons name="checkmark" size={16} color={COLORS.white} />
+            <MaterialIcons name="check" size={16} color="#ffffff" />
           )}
         </View>
         <Text style={styles.confirmationText}>
@@ -35,38 +32,39 @@ export default function Confirmation({ isConfirmed, onToggle }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
+    paddingHorizontal: 24,
+    marginBottom: 16,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: SPACING.md,
+    gap: 12,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: COLORS.outlineVariant,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#aab',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 2,
+    flexShrink: 0,
   },
   checkboxChecked: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#0050d4',
+    borderColor: '#0050d4',
   },
   confirmationText: {
     flex: 1,
     fontSize: 14,
     fontFamily: 'Manrope-Medium',
     fontWeight: '500',
-    color: COLORS.textSecondary,
+    color: '#595c5e',
     lineHeight: 22,
   },
   linkText: {
-    color: COLORS.primary,
+    color: '#0050d4',
     fontFamily: 'Manrope-Bold',
     fontWeight: '700',
   },
