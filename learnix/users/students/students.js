@@ -29,16 +29,27 @@ export default function StudentsScreen() {
   const [activeTab, setActiveTab] = useState('Home');
   const [currentScreen, setCurrentScreen] = useState('Main');
   const [screenParams, setScreenParams] = useState({});
+  const [profileView, setProfileView] = useState('profile'); // 'profile', 'view_profile', or 'academic_details'
 
   const handleTabChange = (tabName) => {
     setActiveTab(tabName);
     setCurrentScreen('Main');
     setScreenParams({});
+    setProfileView('profile'); // Reset profile view when changing tabs
   };
 
   const navigateToScreen = (screenName, params = {}) => {
     setCurrentScreen(screenName);
     setScreenParams(params);
+  };
+
+  const handleProfilePress = () => {
+    setActiveTab('Profile');
+    setProfileView('profile');
+  };
+
+  const handleProfileNavigation = (view) => {
+    setProfileView(view);
   };
 
   const renderContent = () => {
@@ -68,7 +79,7 @@ export default function StudentsScreen() {
       case 'Placement':
         return <PlacementPage navigation={{ navigate: navigateToScreen }} />;
       case 'Profile':
-        return <ProfilePage />;
+        return <ProfilePage onNavigate={handleProfileNavigation} currentView={profileView} />;
       default:
         return <Dashboard />;
     }
@@ -77,7 +88,10 @@ export default function StudentsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header - Always visible */}
-      <StudentHeader activeTab={activeTab} />
+      <StudentHeader 
+        activeTab={activeTab} 
+        onProfilePress={handleProfilePress}
+      />
       
       {/* Main Content */}
       <View style={styles.contentContainer}>

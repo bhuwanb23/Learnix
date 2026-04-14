@@ -26,27 +26,39 @@ import {
   WALLET_INFO,
 } from './constants/profileData';
 
-export default function Profile() {
-  const [currentView, setCurrentView] = useState('profile'); // 'profile', 'view_profile', or 'academic_details'
+export default function Profile({ onNavigate, currentView: parentCurrentView }) {
+  const [localCurrentView, setLocalCurrentView] = useState('profile');
+  
+  // Use parent view if provided, otherwise use local state
+  const currentView = parentCurrentView !== undefined ? parentCurrentView : localCurrentView;
+  
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const contentPadding = width >= 768 ? 32 : 16;
 
-  // Handle back from view profile
-  const handleBackFromViewProfile = () => {
-    setCurrentView('profile');
+  // Handle navigation to sub-pages
+  const handleNavigate = (view) => {
+    if (onNavigate) {
+      onNavigate(view);
+    } else {
+      setLocalCurrentView(view);
+    }
   };
 
-  // Handle navigation to sub-pages
+  const handleBack = () => {
+    handleNavigate('profile');
+  };
+
+  // Mock navigation for child components
   const mockNavigation = {
     navigate: (screen) => {
       if (screen === 'ViewProfile') {
-        setCurrentView('view_profile');
+        handleNavigate('view_profile');
       } else if (screen === 'AcademicDetails') {
-        setCurrentView('academic_details');
+        handleNavigate('academic_details');
       }
     },
-    goBack: handleBackFromViewProfile,
+    goBack: handleBack,
   };
 
   return (

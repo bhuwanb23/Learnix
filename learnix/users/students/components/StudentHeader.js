@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 
-export default function StudentHeader({ activeTab }) {
+export default function StudentHeader({ activeTab, onProfilePress }) {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -32,7 +32,11 @@ export default function StudentHeader({ activeTab }) {
         
         <View style={styles.headerActions}>
           {/* Profile */}
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={onProfilePress}
+            activeOpacity={0.7}
+          >
             <Ionicons name="person-outline" size={24} color="#FFFFFF" />
           </TouchableOpacity>
           
