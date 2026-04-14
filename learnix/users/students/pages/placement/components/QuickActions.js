@@ -23,12 +23,6 @@ export default function QuickActions({ navigation }) {
     }
   };
 
-  const handleMyApplications = () => {
-    if (navigation) {
-      navigation.navigate('MyApplications');
-    }
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
@@ -53,18 +47,6 @@ export default function QuickActions({ navigation }) {
           <Text style={styles.cardSubtitle}>5 Upcoming</Text>
           <View style={styles.arrowIcon}>
             <Ionicons name="arrow-forward-outline" size={20} color={COLORS.secondary} />
-          </View>
-        </TouchableOpacity>
-
-        {/* My Applications */}
-        <TouchableOpacity style={[styles.card, styles.tertiaryCard]} activeOpacity={0.8} onPress={handleMyApplications}>
-          <View style={[styles.iconContainer, styles.tertiaryIconContainer]}>
-            <Ionicons name="document-text-outline" size={24} color={COLORS.tertiary} />
-          </View>
-          <Text style={styles.cardTitle}>My Applications</Text>
-          <Text style={styles.cardSubtitle}>5 Active</Text>
-          <View style={styles.arrowIcon}>
-            <Ionicons name="arrow-forward-outline" size={20} color={COLORS.tertiary} />
           </View>
         </TouchableOpacity>
       </View>
@@ -96,9 +78,6 @@ const styles = StyleSheet.create({
   secondaryCard: {
     // Secondary card styling
   },
-  tertiaryCard: {
-    // Tertiary card styling
-  },
   iconContainer: {
     width: 48,
     height: 48,
@@ -110,9 +89,6 @@ const styles = StyleSheet.create({
   },
   secondaryIconContainer: {
     backgroundColor: 'rgba(112, 42, 225, 0.1)',
-  },
-  tertiaryIconContainer: {
-    backgroundColor: 'rgba(162, 56, 0, 0.1)',
   },
   cardTitle: {
     fontSize: 18,
