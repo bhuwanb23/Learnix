@@ -88,7 +88,7 @@ export default function JobDetails({ navigation, route }) {
       </ScrollView>
 
       {/* Apply Footer */}
-      <ApplyFooter />
+      <ApplyFooter navigation={navigation} />
     </SafeAreaView>
   );
 }

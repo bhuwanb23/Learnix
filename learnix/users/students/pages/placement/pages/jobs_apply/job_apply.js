@@ -8,9 +8,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Import theme
-import { COLORS, SPACING } from '../../../../../../constants/theme';
-
 // Import components
 import {
   ApplicationHeader,
@@ -28,7 +25,9 @@ export default function JobApply({ navigation, route }) {
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const handleGoBack = () => {
-    navigation.goBack();
+    if (navigation?.goBack) {
+      navigation.goBack();
+    }
   };
 
   const handleSubmitApplication = () => {
@@ -37,11 +36,13 @@ export default function JobApply({ navigation, route }) {
       return;
     }
     alert('Application submitted successfully!');
-    navigation.goBack();
+    if (navigation?.goBack) {
+      navigation.goBack();
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView 
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -81,7 +82,7 @@ export default function JobApply({ navigation, route }) {
           <CompanyQuote />
 
           {/* Bottom Spacing */}
-          <View style={{ height: SPACING.xxl }} />
+          <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -91,7 +92,7 @@ export default function JobApply({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.surface,
+    backgroundColor: '#f5f7f9',
   },
   keyboardView: {
     flex: 1,
