@@ -19,7 +19,7 @@ import AcademicDetailsPage from './pages/academic_details/academic_details';
 import ProgressAnalyticsPage from './pages/progress_analytics/progress_analytics';
 import ActivityPage from './pages/activity/activity';
 import SettingsPage from './pages/settings/settings';
-import MyApplicationPage from '../placement/pages/my_application/my_application';
+import MyApplicationPage from './pages/my_application/my_application';
 
 // Import constants
 import {
