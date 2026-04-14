@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: REGISTRATION_COLORS.background,
+        paddingHorizontal: 10,
     },
     header: {
         flexDirection: 'row',
