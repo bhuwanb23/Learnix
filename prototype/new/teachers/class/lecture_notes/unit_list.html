@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Manage Units - Data Structures</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#ff956a",
+                        "surface-bright": "#f5f7f9",
+                        "on-background": "#2c2f31",
+                        "error-container": "#fb5151",
+                        "surface-container-high": "#dfe3e6",
+                        "on-primary-fixed": "#000000",
+                        "tertiary-fixed": "#ff956a",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-container": "#7b9cff",
+                        "inverse-surface": "#0b0f10",
+                        "on-error-container": "#570008",
+                        "outline": "#747779",
+                        "primary": "#0050d4",
+                        "secondary-container": "#dcc9ff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-tertiary-fixed": "#310b00",
+                        "inverse-primary": "#618bff",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "primary-dim": "#0046bb",
+                        "surface-tint": "#0050d4",
+                        "surface-variant": "#d9dde0",
+                        "on-surface": "#2c2f31",
+                        "surface-container-low": "#eef1f3",
+                        "background": "#f5f7f9",
+                        "error-dim": "#9f0519",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-dim": "#d0d5d8",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "primary-fixed": "#7b9cff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "surface": "#f5f7f9",
+                        "error": "#b31b25",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary": "#ffefeb",
+                        "on-primary": "#f1f2ff",
+                        "on-tertiary-container": "#5a1c00",
+                        "tertiary": "#a23800",
+                        "on-secondary-container": "#5b00c7",
+                        "secondary": "#702ae1",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-surface-variant": "#595c5e",
+                        "on-secondary": "#f8f0ff",
+                        "tertiary-dim": "#8e3000",
+                        "on-primary-container": "#001e5a",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-error": "#ffefee",
+                        "on-secondary-fixed": "#430097",
+                        "secondary-dim": "#6411d5",
+                        "primary-fixed-dim": "#658eff",
+                        "surface-container-highest": "#d9dde0",
+                        "surface-container": "#e5e9eb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .bg-editorial-gradient {
+            background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen">
+    <aside
+        class="fixed left-0 top-0 h-full z-40 bg-[#ffffff] dark:bg-slate-900 rounded-r-3xl w-72 shadow-2xl shadow-black/5 transition-all duration-300 ease-in-out hidden md:flex flex-col">
+        <div class="p-8 flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl overflow-hidden shadow-lg">
+                <img alt="Teacher Avatar" class="w-full h-full object-cover"
+                    data-alt="professional portrait of a woman educator with glasses, clean studio lighting, friendly academic professional aesthetic"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHxUeaaS-NLEpplO5t8WspxCRO2Mb4B4RJZ7wRYGHBVKgyq3a2WShPI-E1xqgkZ_YoihOVRw0Zv5-rnRk50sPRLI7PM0AO2wXCvWyrn9EK8bV2IYodCMG56BtuXyl1gry-Mda7XQeXmqC6xF6nF0xmjPQnvpVAMC-aXWVAQ1DLbZ_LMdPa9on95o79JCzxv_LfJmSto5uDyc6W7_bHnqTiCTOxMWkN_697kGR7S1UCyGo-gYKfZYddhli8caE11L75S60YV9Qi-bo" />
+            </div>
+            <div>
+                <h3 class="font-headline font-bold text-on-surface text-sm">Dr. Sarah Miller</h3>
+                <p class="text-xs text-slate-500">Senior Educator</p>
+            </div>
+        </div>
+        <nav class="mt-4 px-4 space-y-2">
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#0050d4] hover:bg-blue-50/50 dark:hover:bg-blue-900/10 font-medium text-sm transition-all duration-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-[#0050d4] dark:text-blue-300 font-bold rounded-xl text-sm transition-all duration-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+                <span>Units</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#0050d4] hover:bg-blue-50/50 dark:hover:bg-blue-900/10 font-medium text-sm transition-all duration-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="insights">insights</span>
+                <span>Student Progress</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#0050d4] hover:bg-blue-50/50 dark:hover:bg-blue-900/10 font-medium text-sm transition-all duration-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="folder_open">folder_open</span>
+                <span>Resources</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#0050d4] hover:bg-blue-50/50 dark:hover:bg-blue-900/10 font-medium text-sm transition-all duration-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="settings">settings</span>
+                <span>Settings</span>
+            </a>
+        </nav>
+    </aside>
+    <main class="md:ml-72 min-h-screen flex flex-col">
+        <header
+            class="w-full top-0 px-6 py-4 flex items-center justify-between bg-[#f5f7f9] dark:bg-slate-950 sticky z-30">
+            <div class="flex items-center gap-4">
+                <button
+                    class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#eef1f3] active:scale-95 transition-all text-[#0050d4]">
+                    <span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+                </button>
+                <h1 class="font-headline font-bold text-2xl tracking-tight text-[#0050d4]">Manage Units</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:block text-right">
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Current Course</p>
+                    <p class="text-sm font-bold text-on-surface">Data Structures</p>
+                </div>
+                <div class="w-10 h-10 rounded-full border-2 border-primary/20 overflow-hidden">
+                    <img alt="Sarah Miller" class="w-full h-full object-cover"
+                        data-alt="close-up avatar of a female educator"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuB23ywBAmvlSrkB0290ujqniabNdfZNJ9EAEv5iXA-X6TizlRidh6a6gOCvX317G1M2M6H0g5i-OkKBHAdzjTnfnAEQS3wSJzyr5s-KBMJKLLLQhn1MRpK9A6Z7gJJKIegGXg-RXGk9bAgDeQ6m3E98pwtxfm-28eCCvTFj3LOi_wjM3CrV-S6deN5Hj7XJCElWE85a5UPKiHJuM3hZeFvSrH8HKvVPn_WtVX6kMsY028gVjAfc5AQXTLgYZj0uSpxg82DKggdEkGU" />
+                </div>
+            </div>
+        </header>
+        <section class="px-6 py-4">
+            <nav class="flex items-center gap-2 text-sm text-slate-500 font-medium mb-8">
+                <span>Data Structures</span>
+                <span class="material-symbols-outlined text-xs">chevron_right</span>
+                <span class="text-primary font-bold">Units</span>
+            </nav>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Unit Card 1 -->
+                <div
+                    class="bg-surface-container-lowest p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span
+                            class="bg-blue-50 text-primary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Unit
+                            1</span>
+                        <div class="flex gap-1">
+                            <button
+                                class="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-slate-400 hover:text-primary">
+                                <span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+                            </button>
+                            <button
+                                class="p-2 hover:bg-red-50 rounded-lg transition-colors text-slate-400 hover:text-error">
+                                <span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h3
+                        class="font-headline font-bold text-xl text-on-surface mb-2 group-hover:text-primary transition-colors">
+                        Introduction to Data Structures</h3>
+                    <p class="text-slate-500 text-sm mb-6">Foundational concepts, memory management, and Big O notation
+                        analysis.</p>
+                    <div class="flex items-center justify-between mt-auto">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary-container text-lg"
+                                data-icon="menu_book">menu_book</span>
+                            <span class="text-xs font-bold text-slate-600">8 Topics</span>
+                        </div>
+                        <span
+                            class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-md">COMPLETED</span>
+                    </div>
+                    <button
+                        class="w-full mt-6 py-3 bg-surface-container-low hover:bg-surface-container-high text-primary font-bold text-sm rounded-xl transition-all active:scale-95">
+                        View Topics
+                    </button>
+                </div>
+                <!-- Unit Card 2 -->
+                <div
+                    class="bg-surface-container-lowest p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span
+                            class="bg-blue-50 text-primary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Unit
+                            2</span>
+                        <div class="flex gap-1">
+                            <button
+                                class="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-slate-400 hover:text-primary">
+                                <span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+                            </button>
+                            <button
+                                class="p-2 hover:bg-red-50 rounded-lg transition-colors text-slate-400 hover:text-error">
+                                <span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h3
+                        class="font-headline font-bold text-xl text-on-surface mb-2 group-hover:text-primary transition-colors">
+                        Non-Linear Structures: Trees</h3>
+                    <p class="text-slate-500 text-sm mb-6">Binary Search Trees, AVL Trees, and Heap implementations for
+                        priority queues.</p>
+                    <div class="flex items-center justify-between mt-auto">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary-container text-lg"
+                                data-icon="menu_book">menu_book</span>
+                            <span class="text-xs font-bold text-slate-600">12 Topics</span>
+                        </div>
+                        <span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-1 rounded-md">IN
+                            PROGRESS</span>
+                    </div>
+                    <button
+                        class="w-full mt-6 py-3 bg-surface-container-low hover:bg-surface-container-high text-primary font-bold text-sm rounded-xl transition-all active:scale-95">
+                        View Topics
+                    </button>
+                </div>
+                <!-- Unit Card 3 -->
+                <div
+                    class="bg-surface-container-lowest p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow group">
+                    <div class="flex justify-between items-start mb-4">
+                        <span
+                            class="bg-blue-50 text-primary text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Unit
+                            3</span>
+                        <div class="flex gap-1">
+                            <button
+                                class="p-2 hover:bg-surface-container-low rounded-lg transition-colors text-slate-400 hover:text-primary">
+                                <span class="material-symbols-outlined text-xl" data-icon="edit">edit</span>
+                            </button>
+                            <button
+                                class="p-2 hover:bg-red-50 rounded-lg transition-colors text-slate-400 hover:text-error">
+                                <span class="material-symbols-outlined text-xl" data-icon="delete">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h3
+                        class="font-headline font-bold text-xl text-on-surface mb-2 group-hover:text-primary transition-colors">
+                        Hashing &amp; Tables</h3>
+                    <p class="text-slate-500 text-sm mb-6">Collision resolution strategies, load factors, and dynamic
+                        resizing logic.</p>
+                    <div class="flex items-center justify-between mt-auto">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary-container text-lg"
+                                data-icon="menu_book">menu_book</span>
+                            <span class="text-xs font-bold text-slate-600">6 Topics</span>
+                        </div>
+                        <span
+                            class="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-1 rounded-md">PENDING</span>
+                    </div>
+                    <button
+                        class="w-full mt-6 py-3 bg-surface-container-low hover:bg-surface-container-high text-primary font-bold text-sm rounded-xl transition-all active:scale-95">
+                        View Topics
+                    </button>
+                </div>
+                <!-- Unit Card 4 (Asymmetric Layout element) -->
+                <div
+                    class="bg-editorial-gradient p-8 rounded-2xl shadow-xl lg:col-span-2 flex flex-col justify-between overflow-hidden relative">
+                    <div class="relative z-10">
+                        <h2 class="font-headline font-extrabold text-3xl text-white mb-2">Unit 4: Advanced Graphs</h2>
+                        <p class="text-blue-100 max-w-md">Master Dijkstra's, A*, and complex network flow algorithms
+                            with practical visualization tasks.</p>
+                    </div>
+                    <div class="relative z-10 flex items-center gap-6 mt-8">
+                        <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                            <p class="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Status</p>
+                            <p class="text-sm font-bold text-white">Draft Phase</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                            <p class="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Estimate</p>
+                            <p class="text-sm font-bold text-white">15 Topics</p>
+                        </div>
+                        <button
+                            class="ml-auto bg-white text-primary px-6 py-3 rounded-xl font-bold text-sm hover:shadow-lg transition-shadow active:scale-95">
+                            Continue Setup
+                        </button>
+                    </div>
+                    <span
+                        class="absolute -right-8 -bottom-8 material-symbols-outlined text-white/5 text-[180px] select-none"
+                        data-icon="hub">hub</span>
+                </div>
+            </div>
+        </section>
+        <!-- Floating Action Button -->
+        <button
+            class="fixed bottom-24 right-8 md:bottom-12 md:right-12 bg-editorial-gradient text-white flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl shadow-primary/40 hover:scale-105 active:scale-95 transition-all z-50">
+            <span class="material-symbols-outlined" data-icon="add">add</span>
+            <span class="font-bold tracking-tight">Create New Unit</span>
+        </button>
+        <footer class="fixed bottom-0 left-0 w-full z-50 flex justify-center pb-8 md:hidden">
+            <nav
+                class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl w-[90%] max-w-md rounded-full px-2 py-3 flex justify-around items-center shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
+                <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 h-12 w-12 hover:scale-110 transition-transform active:scale-90"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="home">home</span>
+                    <span class="font-['Manrope'] text-[8px] font-bold uppercase tracking-widest mt-1">Home</span>
+                </a>
+                <a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full aspect-square h-12 w-12 hover:scale-110 transition-transform active:scale-90"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+                    <span class="font-['Manrope'] text-[8px] font-bold uppercase tracking-widest mt-1">Units</span>
+                </a>
+                <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 h-12 w-12 hover:scale-110 transition-transform active:scale-90"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="group">group</span>
+                    <span class="font-['Manrope'] text-[8px] font-bold uppercase tracking-widest mt-1">Students</span>
+                </a>
+                <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 h-12 w-12 hover:scale-110 transition-transform active:scale-90"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+                    <span class="font-['Manrope'] text-[8px] font-bold uppercase tracking-widest mt-1">Chat</span>
+                </a>
+            </nav>
+        </footer>
+    </main>
+</body>
+
+</html>

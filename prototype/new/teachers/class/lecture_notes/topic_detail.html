@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Topic Management - Scholar Flow</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#0b0f10",
+                        "secondary-dim": "#6411d5",
+                        "on-error-container": "#570008",
+                        "primary-dim": "#0046bb",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-dim": "#d0d5d8",
+                        "on-secondary": "#f8f0ff",
+                        "on-error": "#ffefee",
+                        "tertiary-dim": "#8e3000",
+                        "surface-container": "#e5e9eb",
+                        "primary-container": "#7b9cff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "surface-container-low": "#eef1f3",
+                        "surface-tint": "#0050d4",
+                        "on-secondary-fixed": "#430097",
+                        "error-dim": "#9f0519",
+                        "background": "#f5f7f9",
+                        "surface-variant": "#d9dde0",
+                        "secondary": "#702ae1",
+                        "surface": "#f5f7f9",
+                        "on-surface-variant": "#595c5e",
+                        "primary-fixed": "#7b9cff",
+                        "outline": "#747779",
+                        "on-tertiary-container": "#5a1c00",
+                        "primary-fixed-dim": "#658eff",
+                        "on-primary-container": "#001e5a",
+                        "primary": "#0050d4",
+                        "on-surface": "#2c2f31",
+                        "on-secondary-container": "#5b00c7",
+                        "surface-container-highest": "#d9dde0",
+                        "on-background": "#2c2f31",
+                        "on-primary-fixed": "#000000",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "tertiary-container": "#ff956a",
+                        "on-primary": "#f1f2ff",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "tertiary-fixed": "#ff956a",
+                        "on-tertiary-fixed": "#310b00",
+                        "surface-bright": "#f5f7f9",
+                        "tertiary": "#a23800",
+                        "secondary-container": "#dcc9ff",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary": "#ffefeb",
+                        "inverse-primary": "#618bff",
+                        "error": "#b31b25",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-container-high": "#dfe3e6",
+                        "inverse-on-surface": "#9a9d9f",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "on-primary-fixed-variant": "#00266e",
+                        "error-container": "#fb5151"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .tonal-depth-layering {
+            background-color: #f5f7f9;
+        }
+
+        .lush-gradient {
+            background: linear-gradient(135deg, #0050d4 0%, #0046bb 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background font-body text-on-surface">
+    <!-- TopAppBar -->
+    <header class="bg-[#f5f7f9] dark:bg-slate-900 flex items-center justify-between px-6 py-4 w-full sticky top-0 z-40">
+        <div class="flex items-center gap-4">
+            <button
+                class="hover:bg-[#eef1f3] dark:hover:bg-slate-800 transition-colors p-2 rounded-full scale-95 active:duration-150">
+                <span class="material-symbols-outlined text-[#0050d4] dark:text-blue-400">arrow_back</span>
+            </button>
+            <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-2xl text-[#0050d4] dark:text-blue-400">
+                Topic Management</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button
+                class="hover:bg-[#eef1f3] dark:hover:bg-slate-800 transition-colors p-2 rounded-full scale-95 active:duration-150">
+                <span class="material-symbols-outlined text-slate-500 dark:text-slate-400">more_vert</span>
+            </button>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-8 pb-32">
+        <!-- Topic Hero Section -->
+        <section class="lush-gradient rounded-xl p-8 mb-10 text-on-primary relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+            <div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div class="space-y-2">
+                    <span
+                        class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-wider uppercase">Current
+                        Module</span>
+                    <h2 class="font-headline text-4xl font-extrabold tracking-tight">Advanced Quantum Mechanics</h2>
+                    <p class="text-on-primary/80 max-w-xl font-medium">Managing 24 resources across 3 core units
+                        including lecture notes, lab results, and external references.</p>
+                </div>
+                <div class="flex gap-3">
+                    <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl text-center min-w-[100px]">
+                        <div class="text-2xl font-bold">12</div>
+                        <div class="text-[10px] uppercase font-bold tracking-widest opacity-70">Resources</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl text-center min-w-[100px]">
+                        <div class="text-2xl font-bold">85%</div>
+                        <div class="text-[10px] uppercase font-bold tracking-widest opacity-70">Completed</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Bento Grid Management -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- PDF Documents Section -->
+            <div class="md:col-span-8 bg-surface-container-low rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-headline text-xl font-bold text-on-surface">Course Materials</h3>
+                    <button class="text-primary font-bold text-sm hover:underline">View All</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- PDF Card 1 -->
+                    <div
+                        class="bg-surface-container-lowest p-5 rounded-lg shadow-sm border border-outline-variant/15 flex flex-col gap-4 group">
+                        <div class="flex justify-between items-start">
+                            <div class="w-12 h-12 rounded-xl bg-error/10 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-error"
+                                    data-icon="description">description</span>
+                            </div>
+                            <span
+                                class="text-[10px] font-bold text-on-surface-variant uppercase bg-surface-container-high px-2 py-1 rounded">PDF
+                                • 4.2MB</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-on-surface line-clamp-1">Wave Particle Duality Notes</h4>
+                            <p class="text-sm text-on-surface-variant mt-1">Uploaded 2 days ago</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-2 pt-4 border-t border-outline-variant/10">
+                            <button class="flex items-center gap-2 text-sm font-bold text-primary">
+                                <span class="material-symbols-outlined text-sm">visibility</span> Preview
+                            </button>
+                            <button class="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+                                <span class="material-symbols-outlined text-on-surface-variant">download</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- PDF Card 2 -->
+                    <div
+                        class="bg-surface-container-lowest p-5 rounded-lg shadow-sm border border-outline-variant/15 flex flex-col gap-4 group">
+                        <div class="flex justify-between items-start">
+                            <div class="w-12 h-12 rounded-xl bg-error/10 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-error"
+                                    data-icon="picture_as_pdf">picture_as_pdf</span>
+                            </div>
+                            <span
+                                class="text-[10px] font-bold text-on-surface-variant uppercase bg-surface-container-high px-2 py-1 rounded">PDF
+                                • 1.8MB</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-on-surface line-clamp-1">Schrodinger Equation Guide</h4>
+                            <p class="text-sm text-on-surface-variant mt-1">Uploaded yesterday</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-2 pt-4 border-t border-outline-variant/10">
+                            <button class="flex items-center gap-2 text-sm font-bold text-primary">
+                                <span class="material-symbols-outlined text-sm">visibility</span> Preview
+                            </button>
+                            <button class="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+                                <span class="material-symbols-outlined text-on-surface-variant">download</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Stats & Quick Actions Column -->
+            <div class="md:col-span-4 flex flex-col gap-6">
+                <!-- Activity Breakdown -->
+                <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/15">
+                    <h3 class="font-headline font-bold text-lg mb-4">Topic Health</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm font-bold mb-1">
+                                <span>Note Density</span>
+                                <span>High</span>
+                            </div>
+                            <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+                                <div class="bg-primary h-full w-[88%]"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm font-bold mb-1">
+                                <span>References</span>
+                                <span>Moderate</span>
+                            </div>
+                            <div class="w-full h-2 bg-surface-container rounded-full overflow-hidden">
+                                <div class="bg-secondary h-full w-[45%]"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Collaborative Note Preview -->
+                <div class="bg-primary/5 p-6 rounded-xl border border-primary/10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="material-symbols-outlined text-primary">group</span>
+                        <h3 class="font-headline font-bold text-lg text-primary-dim">Team Access</h3>
+                    </div>
+                    <div class="flex -space-x-3 mb-4">
+                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover"
+                            data-alt="portrait of a female college student with glasses smiling"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlKgSpo5lu7bozw15R_lta_FqTyUO96ft4e53mdu_a7TklwVQQLJJ7dzVBrCBsw8jmCEgV4wX0UNa_-GGCFv2pq7i7PRwhKPZcrrxRe-7gWfjKbgdwKs3ERPa8SNoJcldGBL9wGX1hSiSMHOLffdaDSUGGE7FjthCumE1WoZADvfWf83Fg4419P6zcveXuOZCbRqbaRYefQsCwoBScGQYw3yeL4Y5VKFNaRxtNy1tYGLGC6kO87ghlWj8tsUQPEyrKOnA7tLq01s0" />
+                        <img class="w-10 h-10 rounded-full border-2 border-white object-cover"
+                            data-alt="portrait of a young man in a library setting with soft background lighting"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFkIx0ZuzHxPPdUgfDCtgnP5tTeQmK-V2-r9Vz7dBoZyunLcsYOm3nwFyFcG79d48bH9p4HEuyYKPZKxq405wcurlIZJifF6fJclHBXBiKAwGeV7a8F8L2CmPp_10CYrrBZ3ozjwCar4jhE7VR5PI-ByFjEszW9E9zOw6-2zUPglnDK2hEsJ45d6aVMo2B8eQdeNtq0gShjbuJK5l75wILKrv6gV_W72vCg5FMhBFJ2nuMpnJg2rwEYn_5TJPZYkeNaLnuRdJguU0" />
+                        <div
+                            class="w-10 h-10 rounded-full border-2 border-white bg-primary-container text-on-primary-container flex items-center justify-center text-xs font-bold">
+                            +4</div>
+                    </div>
+                    <button
+                        class="w-full py-3 bg-primary text-white rounded-lg font-bold hover:bg-primary-dim transition-colors text-sm">Manage
+                        Permissions</button>
+                </div>
+            </div>
+            <!-- External Links Section -->
+            <div class="md:col-span-12 bg-surface-container-low rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="font-headline text-xl font-bold text-on-surface">Reference Links</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Link Card 1 -->
+                    <div class="bg-surface-container-lowest p-4 rounded-lg flex items-start gap-4 group">
+                        <div
+                            class="w-10 h-10 flex-shrink-0 bg-secondary/10 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-secondary" data-icon="link">link</span>
+                        </div>
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-on-surface leading-tight">MIT OpenCourseWare: Physics III</h4>
+                            <p class="text-xs text-on-surface-variant mt-1">ocw.mit.edu</p>
+                        </div>
+                        <button class="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-sm text-on-surface-variant">open_in_new</span>
+                        </button>
+                    </div>
+                    <!-- Link Card 2 -->
+                    <div class="bg-surface-container-lowest p-4 rounded-lg flex items-start gap-4 group">
+                        <div
+                            class="w-10 h-10 flex-shrink-0 bg-secondary/10 rounded-lg flex items-center justify-center">
+                            <span class="material-symbols-outlined text-secondary" data-icon="link">link</span>
+                        </div>
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-on-surface leading-tight">Quantum Mechanics Visualization</h4>
+                            <p class="text-xs text-on-surface-variant mt-1">qubit.org/simulations</p>
+                        </div>
+                        <button class="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-sm text-on-surface-variant">open_in_new</span>
+                        </button>
+                    </div>
+                    <!-- Add Link Dummy -->
+                    <div
+                        class="border-2 border-dashed border-outline-variant/30 p-4 rounded-lg flex items-center justify-center gap-2 text-on-surface-variant font-bold cursor-pointer hover:border-primary/50 transition-colors">
+                        <span class="material-symbols-outlined">add</span>
+                        <span class="text-sm">Add Resource Link</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Floating Action Button -->
+    <button
+        class="fixed bottom-28 right-8 w-16 h-16 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+        <span class="material-symbols-outlined text-3xl">add</span>
+    </button>
+    <!-- BottomNavBar -->
+    <nav class="fixed bottom-0 w-full z-50 flex justify-center pb-8">
+        <div
+            class="bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full px-4 py-2 shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex items-center justify-around">
+            <!-- Dashboard -->
+            <a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-[#0050d4] dark:hover:text-blue-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                <span class="font-['Manrope'] text-[12px] font-semibold mt-1">Dashboard</span>
+            </a>
+            <!-- Materials (Active) -->
+            <a class="flex flex-col items-center justify-center bg-[#0050d4] text-white rounded-full p-3 scale-110 duration-300 ease-out"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="description">description</span>
+                <span class="font-['Manrope'] text-[12px] font-semibold mt-1">Materials</span>
+            </a>
+            <!-- Students -->
+            <a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-[#0050d4] dark:hover:text-blue-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="group">group</span>
+                <span class="font-['Manrope'] text-[12px] font-semibold mt-1">Students</span>
+            </a>
+            <!-- Settings -->
+            <a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-[#0050d4] dark:hover:text-blue-300"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="settings">settings</span>
+                <span class="font-['Manrope'] text-[12px] font-semibold mt-1">Settings</span>
+            </a>
+        </div>
+    </nav>
+</body>
+
+</html>
