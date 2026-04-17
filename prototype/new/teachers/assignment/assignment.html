@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Academic Curator - Assignment Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d9dde0",
+                        "on-error-container": "#570008",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-error": "#ffefee",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-secondary-container": "#5b00c7",
+                        "surface-container-high": "#dfe3e6",
+                        "error-dim": "#9f0519",
+                        "surface-container": "#e5e9eb",
+                        "on-surface-variant": "#595c5e",
+                        "error": "#b31b25",
+                        "on-primary-fixed": "#000000",
+                        "primary-fixed": "#7b9cff",
+                        "outline": "#747779",
+                        "inverse-primary": "#618bff",
+                        "tertiary-fixed": "#ff956a",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-dim": "#6411d5",
+                        "tertiary-dim": "#8e3000",
+                        "on-secondary": "#f8f0ff",
+                        "tertiary": "#a23800",
+                        "tertiary-container": "#ff956a",
+                        "error-container": "#fb5151",
+                        "surface-container-low": "#eef1f3",
+                        "surface": "#f5f7f9",
+                        "surface-variant": "#d9dde0",
+                        "secondary-fixed": "#dcc9ff",
+                        "primary-dim": "#0046bb",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "outline-variant": "#abadaf",
+                        "on-background": "#2c2f31",
+                        "surface-tint": "#0050d4",
+                        "on-tertiary": "#ffefeb",
+                        "on-surface": "#2c2f31",
+                        "inverse-surface": "#0b0f10",
+                        "primary-fixed-dim": "#658eff",
+                        "primary": "#0050d4",
+                        "on-secondary-fixed": "#430097",
+                        "on-tertiary-container": "#5a1c00",
+                        "surface-dim": "#d0d5d8",
+                        "on-primary": "#f1f2ff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "secondary-container": "#dcc9ff",
+                        "surface-bright": "#f5f7f9",
+                        "on-primary-container": "#001e5a",
+                        "secondary": "#702ae1",
+                        "background": "#f5f7f9",
+                        "primary-container": "#7b9cff",
+                        "on-tertiary-fixed": "#310b00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .tonal-layering-no-borders {
+            border: none !important;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header
+        class="w-full top-0 sticky bg-slate-50 dark:bg-slate-900 z-40 flex items-center justify-between px-6 py-4 max-w-full">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest">
+                <img alt="Teacher profile photo" class="w-full h-full object-cover"
+                    data-alt="professional portrait of a confident female academic in a minimalist office setting with soft natural light"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdplN1LNK0JHOiUXiHOYDiOUlZn-L6ohM-ILksd-WhJcV9JfCpLo4e-JN-48auDS6qKA6KZ3Q8oJkfDPWWf7KkNM9n01fh9tqP0n_-1vesqWPUGGFwCpVRgwPyBvsUnVG5vf9WoJy6frY7bXgOCAOc2GHYNAij24Q1A5QrQ4KDYCqdikk2cwwFlD_9eCGlW2gdh7J5mC3eLG2fpdWkqvq5gULvjj4Ti1j0-zV-WM3qI2CEbDP3hEYJpat1yAir2N7OaAS_WA-Npa8" />
+            </div>
+            <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-2xl text-blue-700 dark:text-blue-400">
+                Academic Curator</h1>
+        </div>
+        <div class="flex items-center gap-6">
+            <nav class="hidden md:flex items-center gap-8">
+                <a class="text-blue-700 dark:text-blue-400 font-bold font-['Plus_Jakarta_Sans'] tracking-tight"
+                    href="#">Dashboard</a>
+                <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors px-3 py-1 rounded-lg"
+                    href="#">Curriculum</a>
+                <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors px-3 py-1 rounded-lg"
+                    href="#">Reports</a>
+            </nav>
+            <button
+                class="material-symbols-outlined text-blue-700 dark:text-blue-400 p-2 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors"
+                data-icon="add_circle">add_circle</button>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Hero Section & Performance Heatmap -->
+        <section class="mb-10">
+            <div class="flex flex-col md:flex-row justify-between items-end gap-6 mb-8">
+                <div class="max-w-2xl">
+                    <h2 class="font-headline text-4xl lg:text-5xl font-extrabold tracking-tight text-on-surface mb-2">
+                        Submission Velocity</h2>
+                    <p class="text-on-surface-variant text-lg">Real-time engagement across your active academic modules.
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <span
+                        class="flex items-center gap-1 text-xs font-semibold px-3 py-1 bg-surface-container-high rounded-full">
+                        <span class="w-2 h-2 rounded-full bg-error-container"></span> Low
+                    </span>
+                    <span
+                        class="flex items-center gap-1 text-xs font-semibold px-3 py-1 bg-surface-container-high rounded-full">
+                        <span class="w-2 h-2 rounded-full bg-tertiary-container"></span> Mid
+                    </span>
+                    <span
+                        class="flex items-center gap-1 text-xs font-semibold px-3 py-1 bg-surface-container-high rounded-full">
+                        <span class="w-2 h-2 rounded-full bg-secondary-container"></span> High
+                    </span>
+                </div>
+            </div>
+            <!-- Heatmap Bento Grid -->
+            <div class="bg-surface-container-low rounded-xl p-6 lg:p-8">
+                <div class="grid grid-cols-7 md:grid-cols-14 lg:grid-cols-24 gap-3">
+                    <!-- Generating a sample heatmap pattern -->
+                    <div class="aspect-square rounded-md bg-secondary-container" title="High Engagement"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container" title="Mid Engagement"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container" title="High Engagement"></div>
+                    <div class="aspect-square rounded-md bg-surface-container-high/20"></div>
+                    <div class="aspect-square rounded-md bg-error-container"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                    <div class="aspect-square rounded-md bg-surface-container-high/20"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                    <div class="aspect-square rounded-md bg-error-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <!-- Row 2 -->
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-surface-container-high/20"></div>
+                    <div class="aspect-square rounded-md bg-error-container"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                    <div class="aspect-square rounded-md bg-surface-container-high/20"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                    <div class="aspect-square rounded-md bg-error-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-secondary-container"></div>
+                    <div class="aspect-square rounded-md bg-tertiary-container"></div>
+                </div>
+                <div class="mt-6 flex justify-between items-center border-t border-outline-variant/10 pt-4">
+                    <div class="flex gap-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Global
+                                Avg.</span>
+                            <span class="text-xl font-bold font-headline text-primary">88.4%</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase tracking-widest font-bold text-on-surface-variant">Active
+                                Submissions</span>
+                            <span class="text-xl font-bold font-headline text-secondary">1,240</span>
+                        </div>
+                    </div>
+                    <button class="text-sm font-bold text-primary flex items-center gap-1">
+                        View Detailed Metrics <span class="material-symbols-outlined text-sm">trending_up</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- Subjects & Quick Tools Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <!-- Subject Cards -->
+            <div class="lg:col-span-8 space-y-8">
+                <h3 class="font-headline text-2xl font-bold tracking-tight px-2">Academic Modules</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Card 1: Advanced Calculus -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="bg-primary/10 p-3 rounded-lg text-primary">
+                                <span class="material-symbols-outlined" data-icon="functions">functions</span>
+                            </div>
+                            <span
+                                class="px-3 py-1 bg-surface-container-high rounded-full text-xs font-bold text-on-surface">3
+                                Active</span>
+                        </div>
+                        <h4 class="font-headline text-xl font-bold mb-1">Advanced Calculus</h4>
+                        <p class="text-sm text-on-surface-variant mb-6">Differential Equations &amp; Multi-variable
+                            integration.</p>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low">
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] font-bold text-on-surface-variant uppercase">Next
+                                        Deadline</span>
+                                    <span class="text-sm font-semibold">Problem Set #04</span>
+                                </div>
+                                <span class="text-xs font-bold text-tertiary">Oct 12</span>
+                            </div>
+                            <div class="pt-2">
+                                <div class="flex justify-between text-xs font-bold mb-2">
+                                    <span>Engagement</span>
+                                    <span class="text-primary">92%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-primary to-primary-container w-[92%]">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Card 2: Physics II -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.04)] hover:shadow-lg transition-shadow">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="bg-secondary/10 p-3 rounded-lg text-secondary">
+                                <span class="material-symbols-outlined" data-icon="science">science</span>
+                            </div>
+                            <span
+                                class="px-3 py-1 bg-surface-container-high rounded-full text-xs font-bold text-on-surface">1
+                                Active</span>
+                        </div>
+                        <h4 class="font-headline text-xl font-bold mb-1">Theoretical Physics</h4>
+                        <p class="text-sm text-on-surface-variant mb-6">Electromagnetism and Thermodynamic cycles.</p>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low">
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] font-bold text-on-surface-variant uppercase">Next
+                                        Deadline</span>
+                                    <span class="text-sm font-semibold">Lab Report: Optics</span>
+                                </div>
+                                <span class="text-xs font-bold text-tertiary">Oct 14</span>
+                            </div>
+                            <div class="pt-2">
+                                <div class="flex justify-between text-xs font-bold mb-2">
+                                    <span>Engagement</span>
+                                    <span class="text-secondary">76%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-secondary to-secondary-fixed-dim w-[76%]">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Quick Tools Section -->
+            <aside class="lg:col-span-4 space-y-8">
+                <h3 class="font-headline text-2xl font-bold tracking-tight px-2">Quick Tools</h3>
+                <div class="space-y-4">
+                    <button
+                        class="w-full group bg-gradient-to-br from-primary to-primary-dim p-6 rounded-xl text-left text-on-primary shadow-xl hover:scale-[1.02] transition-transform">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="material-symbols-outlined text-3xl" data-icon="add_box">add_box</span>
+                            <span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity"
+                                data-icon="arrow_forward">arrow_forward</span>
+                        </div>
+                        <h5 class="font-headline text-xl font-bold">Create Template</h5>
+                        <p class="text-sm text-on-primary/80 mt-1">Deploy a new structured assignment across all
+                            classes.</p>
+                    </button>
+                    <button
+                        class="w-full group bg-surface-container-high p-6 rounded-xl text-left hover:bg-surface-container-highest transition-colors">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="material-symbols-outlined text-3xl text-secondary"
+                                data-icon="file_export">file_export</span>
+                            <span
+                                class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant"
+                                data-icon="download">download</span>
+                        </div>
+                        <h5 class="font-headline text-xl font-bold text-on-surface">Export Grades</h5>
+                        <p class="text-sm text-on-surface-variant mt-1">Generate CSV/PDF reports for the current
+                            semester.</p>
+                    </button>
+                    <!-- Engagement Glass Card -->
+                    <div class="glass-card p-6 rounded-xl border border-white/40 shadow-sm">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="material-symbols-outlined text-tertiary"
+                                data-icon="notifications_active">notifications_active</span>
+                            <h5 class="font-bold text-sm uppercase tracking-widest text-on-surface-variant">Priority
+                                Alerts</h5>
+                        </div>
+                        <ul class="space-y-4">
+                            <li class="flex gap-4">
+                                <div class="w-2 h-2 mt-2 rounded-full bg-error"></div>
+                                <div>
+                                    <p class="text-sm font-bold">Low submission rate in Physics</p>
+                                    <p class="text-xs text-on-surface-variant">Last activity: 4h ago</p>
+                                </div>
+                            </li>
+                            <li class="flex gap-4">
+                                <div class="w-2 h-2 mt-2 rounded-full bg-tertiary"></div>
+                                <div>
+                                    <p class="text-sm font-bold">Grade dispute: Problem Set #03</p>
+                                    <p class="text-xs text-on-surface-variant">2 pending reviews</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <!-- BottomNavBar (Mobile Shell Only) -->
+    <nav
+        class="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex justify-around items-center p-2">
+        <a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full py-2 px-5 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined" data-icon="groups">groups</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Classes</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-5 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Tasks</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-5 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined" data-icon="insights">insights</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Stats</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-5 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 transition-transform"
+            href="#">
+            <span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Create</span>
+        </a>
+    </nav>
+</body>
+
+</html>
