@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>The Academic Curator - Teacher Profile</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-tertiary": "#ffefeb",
+                        "on-background": "#2c2f31",
+                        "primary-fixed": "#7b9cff",
+                        "surface-container-high": "#dfe3e6",
+                        "on-surface": "#2c2f31",
+                        "surface-container-low": "#eef1f3",
+                        "tertiary": "#a23800",
+                        "outline": "#747779",
+                        "on-surface-variant": "#595c5e",
+                        "surface-dim": "#d0d5d8",
+                        "primary-container": "#7b9cff",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "tertiary-fixed": "#ff956a",
+                        "on-primary-fixed": "#000000",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffefee",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "surface-tint": "#0050d4",
+                        "on-primary": "#f1f2ff",
+                        "background": "#f5f7f9",
+                        "tertiary-dim": "#8e3000",
+                        "surface-container-highest": "#d9dde0",
+                        "error-container": "#fb5151",
+                        "secondary-container": "#dcc9ff",
+                        "on-secondary-container": "#5b00c7",
+                        "error": "#b31b25",
+                        "on-tertiary-fixed": "#310b00",
+                        "inverse-on-surface": "#9a9d9f",
+                        "secondary-dim": "#6411d5",
+                        "on-secondary": "#f8f0ff",
+                        "secondary": "#702ae1",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "outline-variant": "#abadaf",
+                        "inverse-primary": "#618bff",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-secondary-fixed": "#430097",
+                        "tertiary-container": "#ff956a",
+                        "primary-fixed-dim": "#658eff",
+                        "on-error-container": "#570008",
+                        "surface-container": "#e5e9eb",
+                        "primary": "#0050d4",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-bright": "#f5f7f9",
+                        "surface-variant": "#d9dde0",
+                        "on-tertiary-container": "#5a1c00",
+                        "primary-dim": "#0046bb",
+                        "error-dim": "#9f0519",
+                        "on-primary-container": "#001e5a",
+                        "surface": "#f5f7f9",
+                        "inverse-surface": "#0b0f10"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
+    <!-- TopAppBar -->
+    <header
+        class="bg-[#f5f7f9] dark:bg-slate-950 flex justify-between items-center px-6 py-4 w-full docked full-width top-0 z-40 tonal-depth-layering sticky">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-full overflow-hidden">
+                <img class="w-full h-full object-cover"
+                    data-alt="Portrait of a sophisticated female professor in a professional academic setting with soft natural light"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxYZ_Of6BOd6bt8XOeihxRyDa79DdtlihKZ9MVc0ghdiUQNZQFChyz0u4CqW2B2eckckYYNbhHRRRfV6CUlQ8_IFaxDN_iK2X8QVAu7keKWZjFEdxSoCrFd97wTmmsRY77APPNlUcIXIaxtnpTehbE4txzTrWaPH1bGLjQ-jPzijvv0D8GlPA41y8paB3xw56YORtjLFEJazdL5ptkPuE9CX-Nlam2OO6fJuG4UDo14U37RIooYHkDsUv-Mv8RJT6RIHc4Mx-S574" />
+            </div>
+            <span
+                class="text-xl font-bold text-slate-900 dark:text-slate-50 font-['Plus_Jakarta_Sans'] tracking-tight">The
+                Academic Curator</span>
+        </div>
+        <div class="hidden md:flex gap-8">
+            <nav class="flex gap-6 items-center">
+                <a class="text-slate-500 dark:text-slate-400 font-semibold hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors px-3 py-1 rounded-lg"
+                    href="#">Dashboard</a>
+                <a class="text-slate-500 dark:text-slate-400 font-semibold hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors px-3 py-1 rounded-lg"
+                    href="#">Classes</a>
+                <a class="text-slate-500 dark:text-slate-400 font-semibold hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors px-3 py-1 rounded-lg"
+                    href="#">Assignments</a>
+                <a class="text-[#0050d4] dark:text-blue-400 font-bold hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors px-3 py-1 rounded-lg"
+                    href="#">Profile</a>
+            </nav>
+        </div>
+        <button
+            class="w-10 h-10 flex items-center justify-center rounded-full text-[#0050d4] dark:text-blue-400 hover:bg-slate-200/50 transition-colors scale-95 duration-200">
+            <span class="material-symbols-outlined" data-icon="settings">settings</span>
+        </button>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-12 pb-32">
+        <!-- Hero Profile Section -->
+        <section class="flex flex-col md:flex-row gap-10 items-start mb-16">
+            <div class="relative group">
+                <div
+                    class="w-48 h-48 md:w-56 md:h-56 rounded-xl overflow-hidden ring-4 ring-surface-container-lowest shadow-lg">
+                    <img class="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                        data-alt="Close-up portrait of an experienced educator in a library environment with warm ambient lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuyNzrMj0CzIMwuTPsv-L0jXB-uZ8mw76PZVJd9odeqgCVUGuwb_uEvjE9o33ZnyTnueXZVJwLf-KyL2gGijrZyjINqbgf0zdnT5zEXfyd8e7BVMsZId-x8ine8Crsog1fmQbLN-6Y1SA1q1XoQvtuXPKNoHVfydMI-F6NOpR2A789RAY6IbgUMq9amnOaUr1WouVezgBY4C1PZD_4yd2a0H8UCuXdjRv9bhejMEfOQ3HAO2k85LR4_slOoikYsxSzFWbq61xbpX4" />
+                </div>
+                <div
+                    class="absolute -bottom-4 -right-4 bg-primary text-on-primary w-12 h-12 rounded-full flex items-center justify-center shadow-xl">
+                    <span class="material-symbols-outlined" data-icon="verified"
+                        style="font-variation-settings: 'FILL' 1;">verified</span>
+                </div>
+            </div>
+            <div class="flex-1 space-y-4">
+                <div class="space-y-1">
+                    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-on-background">Dr. Eleanor Vance
+                    </h1>
+                    <p class="text-xl text-primary font-semibold font-body">Senior Professor of Architectural History
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-4 pt-2">
+                    <div
+                        class="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg text-on-surface-variant font-medium">
+                        <span class="material-symbols-outlined text-primary" data-icon="mail">mail</span>
+                        <span>e.vance@curator.edu</span>
+                    </div>
+                    <div
+                        class="flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-lg text-on-surface-variant font-medium">
+                        <span class="material-symbols-outlined text-primary" data-icon="location_on">location_on</span>
+                        <span>Hall 4, Office 302</span>
+                    </div>
+                </div>
+                <div class="pt-6 flex gap-4">
+                    <button
+                        class="bg-gradient-to-br from-primary to-primary-dim text-on-primary px-8 py-3 rounded-xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">Download
+                        Curriculum Vitae</button>
+                    <button
+                        class="bg-surface-container-high text-on-surface px-8 py-3 rounded-xl font-bold hover:bg-surface-container-highest transition-colors">Edit
+                        Profile</button>
+                </div>
+            </div>
+        </section>
+        <!-- Stats Bento Grid -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+            <div
+                class="bg-surface-container-low p-8 rounded-xl flex flex-col justify-between group hover:bg-primary/5 transition-colors">
+                <div class="flex justify-between items-start">
+                    <div class="p-3 bg-primary-container/30 rounded-lg text-primary">
+                        <span class="material-symbols-outlined text-3xl" data-icon="groups">groups</span>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Lifetime
+                        Impact</span>
+                </div>
+                <div class="mt-8">
+                    <h3 class="text-5xl font-extrabold text-on-background">1,482</h3>
+                    <p class="text-on-surface-variant mt-1">Students mentored across 12 countries</p>
+                </div>
+            </div>
+            <div
+                class="bg-surface-container-low p-8 rounded-xl flex flex-col justify-between group hover:bg-secondary/5 transition-colors">
+                <div class="flex justify-between items-start">
+                    <div class="p-3 bg-secondary-container/30 rounded-lg text-secondary">
+                        <span class="material-symbols-outlined text-3xl" data-icon="school">school</span>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Success
+                        Rate</span>
+                </div>
+                <div class="mt-8">
+                    <h3 class="text-5xl font-extrabold text-on-background">98.4<span class="text-2xl">%</span></h3>
+                    <p class="text-on-surface-variant mt-1">Graduation success within target timeline</p>
+                </div>
+            </div>
+            <div
+                class="bg-surface-container-low p-8 rounded-xl flex flex-col justify-between group hover:bg-tertiary/5 transition-colors">
+                <div class="flex justify-between items-start">
+                    <div class="p-3 bg-tertiary-container/30 rounded-lg text-tertiary">
+                        <span class="material-symbols-outlined text-3xl" data-icon="auto_stories">auto_stories</span>
+                    </div>
+                    <span
+                        class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Publications</span>
+                </div>
+                <div class="mt-8">
+                    <h3 class="text-5xl font-extrabold text-on-background">42</h3>
+                    <p class="text-on-surface-variant mt-1">Peer-reviewed journals &amp; monographs</p>
+                </div>
+            </div>
+        </section>
+        <div class="flex flex-col lg:flex-row gap-12">
+            <!-- Left Column: Bio & History -->
+            <div class="lg:w-2/3 space-y-6">
+                <!-- Bio Section -->
+                <div class="bg-surface-container-lowest p-8 rounded-xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold tracking-tight">Biography</h2>
+                        <button class="text-primary font-bold text-sm">Expand</button>
+                    </div>
+                    <p class="text-on-surface-variant leading-relaxed mb-4">
+                        Dr. Eleanor Vance is a distinguished historian specializing in the socio-political impact of
+                        neoclassical architecture in Western Europe. With over twenty years of experience in higher
+                        education, her work bridges the gap between urban planning and cultural heritage.
+                    </p>
+                    <p class="text-on-surface-variant leading-relaxed">
+                        Currently leading the "Metropolis &amp; Memory" research initiative, Dr. Vance focuses on how
+                        modern digital curation can preserve architectural narratives for future generations. Her
+                        approach combines rigorous archival research with immersive spatial technology.
+                    </p>
+                </div>
+                <!-- Academic History -->
+                <div class="bg-surface-container-lowest p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold tracking-tight mb-8">Academic History</h2>
+                    <div
+                        class="space-y-8 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-[2px] before:bg-surface-container-high">
+                        <div class="relative pl-10">
+                            <div
+                                class="absolute left-0 top-1 w-6 h-6 bg-primary rounded-full border-4 border-surface-container-lowest">
+                            </div>
+                            <h4 class="font-bold text-lg">PhD in Art History</h4>
+                            <p class="text-primary font-semibold text-sm">Oxford University, 2004 — 2008</p>
+                            <p class="text-on-surface-variant mt-2 text-sm">Thesis: "The Silent Columns: Neoclassicism
+                                as a Tool of Governance." Received the Dean's Award for Excellence.</p>
+                        </div>
+                        <div class="relative pl-10">
+                            <div
+                                class="absolute left-0 top-1 w-6 h-6 bg-surface-container-high rounded-full border-4 border-surface-container-lowest">
+                            </div>
+                            <h4 class="font-bold text-lg">Master of Urban Studies</h4>
+                            <p class="text-on-surface-variant font-semibold text-sm">Sorbonne University, 2001 — 2003
+                            </p>
+                        </div>
+                        <div class="relative pl-10">
+                            <div
+                                class="absolute left-0 top-1 w-6 h-6 bg-surface-container-high rounded-full border-4 border-surface-container-lowest">
+                            </div>
+                            <h4 class="font-bold text-lg">Bachelor of Liberal Arts</h4>
+                            <p class="text-on-surface-variant font-semibold text-sm">University of Chicago, 1997 — 2001
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Honors & Awards -->
+                <div class="bg-surface-container-lowest p-8 rounded-xl">
+                    <h2 class="text-2xl font-bold tracking-tight mb-6">Honors &amp; Awards</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div
+                            class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low border-l-4 border-tertiary">
+                            <span class="material-symbols-outlined text-tertiary text-3xl"
+                                data-icon="emoji_events">emoji_events</span>
+                            <div>
+                                <h4 class="font-bold text-sm">Global Educator Grant</h4>
+                                <p class="text-xs text-on-surface-variant">UNESCO Foundation, 2022</p>
+                            </div>
+                        </div>
+                        <div
+                            class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low border-l-4 border-secondary">
+                            <span class="material-symbols-outlined text-secondary text-3xl"
+                                data-icon="military_tech">military_tech</span>
+                            <div>
+                                <h4 class="font-bold text-sm">Outstanding Research</h4>
+                                <p class="text-xs text-on-surface-variant">Academic Review, 2019</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Right Column: Settings & Preferences -->
+            <div class="lg:w-1/3 space-y-6">
+                <div class="bg-surface-container-lowest p-8 rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold tracking-tight mb-8 flex items-center gap-3">
+                        <span class="material-symbols-outlined" data-icon="tune">tune</span>
+                        Integrated Settings
+                    </h2>
+                    <div class="space-y-10">
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">
+                                Notification Preferences</h3>
+                            <div class="space-y-4">
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <span class="text-on-background font-medium">Assignment Alerts</span>
+                                    <div class="relative inline-flex items-center">
+                                        <input checked="" class="sr-only peer" type="checkbox" />
+                                        <div
+                                            class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all">
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <span class="text-on-background font-medium">Research Digests</span>
+                                    <div class="relative inline-flex items-center">
+                                        <input checked="" class="sr-only peer" type="checkbox" />
+                                        <div
+                                            class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all">
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">Privacy
+                                &amp; Security</h3>
+                            <div class="space-y-4">
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <span class="text-on-background font-medium">Public Portfolio View</span>
+                                    <div class="relative inline-flex items-center">
+                                        <input checked="" class="sr-only peer" type="checkbox" />
+                                        <div
+                                            class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all">
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="flex items-center justify-between cursor-pointer group">
+                                    <span class="text-on-background font-medium">Show Contact Details</span>
+                                    <div class="relative inline-flex items-center">
+                                        <input class="sr-only peer" type="checkbox" />
+                                        <div
+                                            class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all">
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="pt-4">
+                            <button
+                                class="w-full py-3 rounded-lg bg-surface text-on-surface font-bold text-sm hover:bg-surface-container-high transition-colors">
+                                View Security Logs
+                            </button>
+                            <button
+                                class="w-full py-3 mt-3 rounded-lg text-error font-bold text-sm hover:bg-error/10 transition-colors">
+                                Deactivate Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Recent Activity Mini-Card -->
+                <div class="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/15">
+                    <h2 class="text-xl font-bold tracking-tight mb-4">System Activity</h2>
+                    <div class="space-y-4">
+                        <div class="flex gap-3">
+                            <div class="w-2 h-2 mt-2 rounded-full bg-primary"></div>
+                            <div>
+                                <p class="text-sm font-bold">New Publication Uploaded</p>
+                                <p class="text-xs text-on-surface-variant">2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="w-2 h-2 mt-2 rounded-full bg-surface-container-highest"></div>
+                            <div>
+                                <p class="text-sm font-medium">Profile photo updated</p>
+                                <p class="text-xs text-on-surface-variant">Yesterday, 4:30 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav class="fixed bottom-0 w-full z-50 flex justify-around items-center pb-8 pt-2 px-4 md:hidden">
+        <div
+            class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] rounded-full shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex justify-around items-center py-2 px-4 z-50">
+            <button
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 tap-highlight-none active:scale-90 transition-transform">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Dashboard</span>
+            </button>
+            <button
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 tap-highlight-none active:scale-90 transition-transform">
+                <span class="material-symbols-outlined" data-icon="school">school</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Classes</span>
+            </button>
+            <button
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 tap-highlight-none active:scale-90 transition-transform">
+                <span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+                <span
+                    class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Assignments</span>
+            </button>
+            <button
+                class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-[#0050d4] dark:text-blue-200 rounded-full px-5 py-2 tap-highlight-none active:scale-90 transition-transform">
+                <span class="material-symbols-outlined" data-icon="person"
+                    style="font-variation-settings: 'FILL' 1;">person</span>
+                <span class="font-['Manrope'] text-[10px] font-semibold uppercase tracking-wider mt-1">Profile</span>
+            </button>
+        </div>
+    </nav>
+</body>
+
+</html>
