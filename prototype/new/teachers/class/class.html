@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#fb5151",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "primary-container": "#7b9cff",
+                        "surface-container": "#e5e9eb",
+                        "surface-container-high": "#dfe3e6",
+                        "inverse-primary": "#618bff",
+                        "primary": "#0050d4",
+                        "secondary-dim": "#6411d5",
+                        "on-tertiary-fixed": "#310b00",
+                        "on-primary": "#f1f2ff",
+                        "on-background": "#2c2f31",
+                        "error-dim": "#9f0519",
+                        "on-primary-fixed": "#000000",
+                        "surface-bright": "#f5f7f9",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-secondary-fixed": "#430097",
+                        "surface-tint": "#0050d4",
+                        "on-tertiary": "#ffefeb",
+                        "error": "#b31b25",
+                        "inverse-surface": "#0b0f10",
+                        "secondary-container": "#dcc9ff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-primary-container": "#001e5a",
+                        "on-secondary": "#f8f0ff",
+                        "on-tertiary-container": "#5a1c00",
+                        "surface": "#f5f7f9",
+                        "outline-variant": "#abadaf",
+                        "surface-dim": "#d0d5d8",
+                        "primary-fixed": "#7b9cff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "tertiary": "#a23800",
+                        "primary-dim": "#0046bb",
+                        "on-surface": "#2c2f31",
+                        "outline": "#747779",
+                        "secondary": "#702ae1",
+                        "on-surface-variant": "#595c5e",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-error": "#ffefee",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "tertiary-fixed": "#ff956a",
+                        "tertiary-container": "#ff956a",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-variant": "#d9dde0",
+                        "on-error-container": "#570008",
+                        "tertiary-dim": "#8e3000",
+                        "on-secondary-container": "#5b00c7",
+                        "surface-container-low": "#eef1f3",
+                        "surface-container-highest": "#d9dde0",
+                        "secondary-fixed": "#dcc9ff",
+                        "primary-fixed-dim": "#658eff",
+                        "background": "#f5f7f9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="w-full top-0 sticky bg-slate-50 dark:bg-slate-900 z-40 transition-colors">
+        <div class="flex justify-between items-center px-6 py-4 max-w-full mx-auto">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high">
+                    <img class="w-full h-full object-cover"
+                        data-alt="Professional portrait of a teacher in a bright studio setting with a friendly, welcoming expression"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFkgCFnrnoSiqbesgbqj3fvt7R93Q872KT4HwKyI---Wd4g5Z8PI55AY1m2YX9x7dI1X1d7pXvfSNfDelHX-D6YwXsNIl6IOJqfEzANLS9DCDBL1i7l7AHtxUvo07pOKpj7D20GlTGA8b0AqBiA6LBL1n3VAmt9FAHw3WH7a5BWXQ-cm1BB4Re4R2NjbVKer1_ortKnzUOFyR_kcKYHZ1cV7AiaGTHY6EY_kRwLPQlcQADw6yOPT5sMW8ym7Xlz3qHzN37q5UoRw8" />
+                </div>
+                <span class="text-2xl font-bold tracking-tight text-blue-700 dark:text-blue-400">Academic Curator</span>
+            </div>
+            <div class="flex-1 max-w-md mx-8 hidden md:block">
+                <div class="relative group">
+                    <span
+                        class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+                    <input
+                        class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/50"
+                        placeholder="Search classes..." type="text" />
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    class="p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 ease-in-out active:scale-95">
+                    <span class="material-symbols-outlined text-slate-500 dark:text-slate-400"
+                        data-icon="notifications">notifications</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Editorial Hero Greeting -->
+        <section class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-on-surface mb-2">Management Grid</h1>
+            <p class="text-on-surface-variant text-lg max-w-2xl">Curate and oversee your academic portfolio with
+                surgical precision. Access core identifiers and essential actions in a single, high-fidelity view.</p>
+        </section>
+        <!-- Management Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Class Card 1 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold uppercase tracking-widest text-primary/70">SEC-042</span>
+                            <h3
+                                class="text-2xl font-extrabold tracking-tight leading-tight group-hover:text-primary transition-colors">
+                                Advanced Cognitive Psychology</h3>
+                        </div>
+                        <button
+                            class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-primary-container/20 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mb-8">
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm" data-icon="group">group</span>
+                            <span>28 Students</span>
+                        </div>
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm"
+                                data-icon="calendar_today">calendar_today</span>
+                            <span>Tue, Thu 10:00 AM</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-4 border-t border-surface-container/50">
+                    <button
+                        class="flex-1 py-2.5 px-4 rounded-lg bg-primary text-on-primary font-bold text-sm transition-all hover:bg-primary-dim active:scale-95 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm" data-icon="mail">mail</span>
+                        Email Class
+                    </button>
+                    <button
+                        class="py-2.5 px-4 rounded-lg bg-surface-container-high text-on-surface font-bold text-sm transition-all hover:bg-surface-variant active:scale-95">
+                        <span class="material-symbols-outlined text-sm align-middle"
+                            data-icon="upload_file">upload_file</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Class Card 2 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold uppercase tracking-widest text-secondary/70">SEC-109</span>
+                            <h3
+                                class="text-2xl font-extrabold tracking-tight leading-tight group-hover:text-secondary transition-colors">
+                                Theoretical Physics II</h3>
+                        </div>
+                        <button
+                            class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-secondary-container/20 hover:text-secondary transition-colors">
+                            <span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mb-8">
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm" data-icon="group">group</span>
+                            <span>15 Students</span>
+                        </div>
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm"
+                                data-icon="calendar_today">calendar_today</span>
+                            <span>Mon, Wed 2:30 PM</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-4 border-t border-surface-container/50">
+                    <button
+                        class="flex-1 py-2.5 px-4 rounded-lg bg-secondary text-on-secondary font-bold text-sm transition-all hover:bg-secondary-dim active:scale-95 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm" data-icon="mail">mail</span>
+                        Email Class
+                    </button>
+                    <button
+                        class="py-2.5 px-4 rounded-lg bg-surface-container-high text-on-surface font-bold text-sm transition-all hover:bg-surface-variant active:scale-95">
+                        <span class="material-symbols-outlined text-sm align-middle"
+                            data-icon="upload_file">upload_file</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Class Card 3 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold uppercase tracking-widest text-tertiary/70">SEC-008</span>
+                            <h3
+                                class="text-2xl font-extrabold tracking-tight leading-tight group-hover:text-tertiary transition-colors">
+                                Digital Anthropology</h3>
+                        </div>
+                        <button
+                            class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-tertiary-container/20 hover:text-tertiary transition-colors">
+                            <span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mb-8">
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm" data-icon="group">group</span>
+                            <span>42 Students</span>
+                        </div>
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm"
+                                data-icon="calendar_today">calendar_today</span>
+                            <span>Fri 09:00 AM</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-4 border-t border-surface-container/50">
+                    <button
+                        class="flex-1 py-2.5 px-4 rounded-lg bg-tertiary text-on-tertiary font-bold text-sm transition-all hover:bg-tertiary-dim active:scale-95 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm" data-icon="mail">mail</span>
+                        Email Class
+                    </button>
+                    <button
+                        class="py-2.5 px-4 rounded-lg bg-surface-container-high text-on-surface font-bold text-sm transition-all hover:bg-surface-variant active:scale-95">
+                        <span class="material-symbols-outlined text-sm align-middle"
+                            data-icon="upload_file">upload_file</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Class Card 4 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold uppercase tracking-widest text-primary/70">SEC-015</span>
+                            <h3
+                                class="text-2xl font-extrabold tracking-tight leading-tight group-hover:text-primary transition-colors">
+                                Neurobiology Foundations</h3>
+                        </div>
+                        <button
+                            class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-primary-container/20 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mb-8">
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm" data-icon="group">group</span>
+                            <span>31 Students</span>
+                        </div>
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm"
+                                data-icon="calendar_today">calendar_today</span>
+                            <span>Wed 11:30 AM</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-4 border-t border-surface-container/50">
+                    <button
+                        class="flex-1 py-2.5 px-4 rounded-lg bg-primary text-on-primary font-bold text-sm transition-all hover:bg-primary-dim active:scale-95 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm" data-icon="mail">mail</span>
+                        Email Class
+                    </button>
+                    <button
+                        class="py-2.5 px-4 rounded-lg bg-surface-container-high text-on-surface font-bold text-sm transition-all hover:bg-surface-variant active:scale-95">
+                        <span class="material-symbols-outlined text-sm align-middle"
+                            data-icon="upload_file">upload_file</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Class Card 5 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex flex-col justify-between h-full">
+                <div>
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="space-y-1">
+                            <span
+                                class="text-xs font-bold uppercase tracking-widest text-on-surface-variant/70">SEC-99</span>
+                            <h3
+                                class="text-2xl font-extrabold tracking-tight leading-tight group-hover:text-primary transition-colors">
+                                Independent Thesis Lab</h3>
+                        </div>
+                        <button
+                            class="p-2 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-primary-container/20 hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mb-8">
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm" data-icon="group">group</span>
+                            <span>6 Students</span>
+                        </div>
+                        <div
+                            class="flex items-center gap-2 text-on-surface-variant bg-surface-container-low px-3 py-1.5 rounded-lg text-sm font-medium">
+                            <span class="material-symbols-outlined text-sm"
+                                data-icon="calendar_today">calendar_today</span>
+                            <span>By Appointment</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-4 border-t border-surface-container/50">
+                    <button
+                        class="flex-1 py-2.5 px-4 rounded-lg bg-surface-container-high text-on-surface font-bold text-sm transition-all hover:bg-surface-variant active:scale-95 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-sm" data-icon="mail">mail</span>
+                        Email Class
+                    </button>
+                    <button
+                        class="py-2.5 px-4 rounded-lg bg-surface-container-high text-on-surface font-bold text-sm transition-all hover:bg-surface-variant active:scale-95">
+                        <span class="material-symbols-outlined text-sm align-middle"
+                            data-icon="upload_file">upload_file</span>
+                    </button>
+                </div>
+            </div>
+            <!-- New Class Empty State / Action Card -->
+            <button
+                class="group border-2 border-dashed border-surface-container-highest rounded-xl p-6 flex flex-col items-center justify-center gap-4 transition-all hover:border-primary/40 hover:bg-primary/5 h-full">
+                <div
+                    class="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center group-hover:bg-primary-container/20 group-hover:text-primary transition-all">
+                    <span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+                </div>
+                <div class="text-center">
+                    <span class="block text-lg font-bold">New Module</span>
+                    <span class="text-on-surface-variant text-sm">Initialize a new curriculum section</span>
+                </div>
+            </button>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full shadow-2xl z-50 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)]">
+        <div class="flex justify-around items-center p-2">
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                <span class="text-[11px] font-semibold uppercase tracking-wider mt-1">Dashboard</span>
+            </a>
+            <a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full py-2 px-4 active:scale-90 duration-300 backdrop-blur-2xl"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="school">school</span>
+                <span class="text-[11px] font-semibold uppercase tracking-wider mt-1">Classes</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+                <span class="text-[11px] font-semibold uppercase tracking-wider mt-1">Schedule</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 py-2 px-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                href="#">
+                <span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                <span class="text-[11px] font-semibold uppercase tracking-wider mt-1">Reports</span>
+            </a>
+        </div>
+    </nav>
+</body>
+
+</html>
