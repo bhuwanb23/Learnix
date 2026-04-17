@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Academic Curator | Class Performance Analysis</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#f1f2ff",
+                        "surface-dim": "#d0d5d8",
+                        "on-tertiary-container": "#5a1c00",
+                        "surface-container-high": "#dfe3e6",
+                        "primary-dim": "#0046bb",
+                        "inverse-on-surface": "#9a9d9f",
+                        "error-container": "#fb5151",
+                        "surface-bright": "#f5f7f9",
+                        "on-primary-fixed": "#000000",
+                        "secondary-dim": "#6411d5",
+                        "error-dim": "#9f0519",
+                        "on-secondary-fixed": "#430097",
+                        "outline-variant": "#abadaf",
+                        "on-tertiary": "#ffefeb",
+                        "on-error": "#ffefee",
+                        "on-surface-variant": "#595c5e",
+                        "on-error-container": "#570008",
+                        "primary-container": "#7b9cff",
+                        "tertiary": "#a23800",
+                        "tertiary-fixed": "#ff956a",
+                        "surface-variant": "#d9dde0",
+                        "surface-container": "#e5e9eb",
+                        "inverse-primary": "#618bff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "error": "#b31b25",
+                        "primary-fixed-dim": "#658eff",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-secondary": "#f8f0ff",
+                        "primary": "#0050d4",
+                        "background": "#f5f7f9",
+                        "tertiary-container": "#ff956a",
+                        "secondary": "#702ae1",
+                        "surface-container-low": "#eef1f3",
+                        "on-tertiary-fixed": "#310b00",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "tertiary-dim": "#8e3000",
+                        "on-surface": "#2c2f31",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "surface-container-highest": "#d9dde0",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface": "#f5f7f9",
+                        "on-secondary-container": "#5b00c7",
+                        "on-background": "#2c2f31",
+                        "secondary-container": "#dcc9ff",
+                        "surface-tint": "#0050d4",
+                        "on-primary-container": "#001e5a",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "primary-fixed": "#7b9cff",
+                        "outline": "#747779",
+                        "inverse-surface": "#0b0f10"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f5f7f9;
+            color: #2c2f31;
+        }
+
+        .font-headline {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface">
+    <!-- TopAppBar -->
+    <header class="w-full top-0 px-6 py-4 bg-[#f5f7f9] dark:bg-slate-950 z-40">
+        <div class="flex justify-between items-center w-full max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container">
+                    <img alt="Profile" class="w-full h-full object-cover"
+                        data-alt="professional portrait of a university professor in a bright office with books in the background, soft morning light"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHcIeUcSgnzAa_UbPrxUo1t4H95rWfPbPygQNsba7xSdPFmeMiPr9WCu8OdUszh-PaTZjjw7lD4IByl4GY6s6HNg-ex5YeiO-yTvuSINY8uAASUiXvPDTgHWeosOgRAK--iA38__aLBlJyKHTt8lqJhg_XE-UmwOJBBnDsEfxLvKM2BEpcoEb_M7SrCZd24I9wvIfNjsyXTypdNm2g0aHTIrFhX6vMAHk203jiAqHxjp7bO_j92uAk3hdhg-xShuT-hRXZtIpq7Xk" />
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-blue-700 dark:text-blue-400 font-headline">Academic
+                    Curator</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button
+                    class="p-2 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors duration-200 ease-in-out scale-95">
+                    <span class="material-symbols-outlined text-slate-500">swap_horiz</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pb-32 pt-4">
+        <!-- Header & Class Selector -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+                <span class="text-sm font-bold uppercase tracking-widest text-primary mb-2 block">Performance
+                    Analytics</span>
+                <div class="flex items-center gap-3 group cursor-pointer">
+                    <h2 class="text-4xl md:text-5xl font-extrabold font-headline tracking-tighter text-on-surface">
+                        Advanced Calculus - Section A</h2>
+                    <span
+                        class="material-symbols-outlined text-3xl text-primary transition-transform group-hover:translate-y-1">expand_more</span>
+                </div>
+                <p class="text-on-surface-variant mt-2 font-medium">32 Students Enrolled • Fall Semester 2024</p>
+            </div>
+            <div class="flex gap-3">
+                <button
+                    class="px-6 py-3 bg-surface-container-high text-on-surface font-bold rounded-xl hover:opacity-80 transition-opacity">Export
+                    CSV</button>
+                <button
+                    class="px-6 py-3 bg-gradient-to-br from-primary to-primary-dim text-on-primary font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform">Notify
+                    Class</button>
+            </div>
+        </div>
+        <!-- Overview Section: Bento Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="md:col-span-2 bg-surface-container-low p-8 rounded-xl flex flex-col justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-on-surface-variant mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary" data-weight="fill">analytics</span> Class
+                        Average
+                    </h3>
+                    <div class="flex items-baseline gap-4">
+                        <span class="text-7xl font-extrabold font-headline text-primary tracking-tighter">84.2%</span>
+                        <span class="text-secondary font-bold flex items-center">
+                            <span class="material-symbols-outlined">trending_up</span> +2.4%
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-8 h-12 w-full flex items-end gap-1">
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[40%]"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[55%]"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[45%]"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[70%]"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[65%]"></div>
+                    <div class="flex-1 bg-primary/40 rounded-t-sm h-[80%]"></div>
+                    <div class="flex-1 bg-primary rounded-t-sm h-[95%]"></div>
+                </div>
+            </div>
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-center items-center text-center border border-outline-variant/10 shadow-sm">
+                <span class="material-symbols-outlined text-4xl text-secondary mb-4">event_available</span>
+                <span class="text-3xl font-extrabold font-headline">92%</span>
+                <span class="text-sm font-semibold text-on-surface-variant mt-1 uppercase tracking-wider">Attendance
+                    Rate</span>
+            </div>
+            <div
+                class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-center items-center text-center border border-outline-variant/10 shadow-sm">
+                <span class="material-symbols-outlined text-4xl text-tertiary mb-4">forum</span>
+                <span class="text-3xl font-extrabold font-headline">7.8/10</span>
+                <span
+                    class="text-sm font-semibold text-on-surface-variant mt-1 uppercase tracking-wider">Participation</span>
+            </div>
+        </div>
+        <!-- Main Content Split -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <!-- Left: Performance Segments & Individual Cards -->
+            <div class="lg:col-span-2 space-y-10">
+                <!-- Performance Segments Filter -->
+                <div class="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    <button class="px-5 py-2 bg-primary text-on-primary rounded-full font-bold whitespace-nowrap">All
+                        Students (32)</button>
+                    <button
+                        class="px-5 py-2 bg-surface-container-low text-on-surface font-semibold rounded-full whitespace-nowrap hover:bg-surface-container-high transition-colors">Top
+                        Performers (12)</button>
+                    <button
+                        class="px-5 py-2 bg-surface-container-low text-on-surface font-semibold rounded-full whitespace-nowrap hover:bg-surface-container-high transition-colors">Consistent
+                        (14)</button>
+                    <button
+                        class="px-5 py-2 bg-surface-container-low text-on-surface font-semibold rounded-full whitespace-nowrap hover:bg-surface-container-high transition-colors">Needs
+                        Support (6)</button>
+                </div>
+                <!-- Individual Insight Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Student Card 1 -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/5 shadow-sm hover:translate-y-[-4px] transition-transform duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="flex gap-3">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center font-bold text-on-secondary-container">
+                                    JS</div>
+                                <div>
+                                    <h4 class="font-bold text-on-surface">Julianna Sterling</h4>
+                                    <p class="text-xs font-semibold text-on-surface-variant">Rank #1 in Class</p>
+                                </div>
+                            </div>
+                            <span
+                                class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-md flex items-center gap-1 uppercase">🟢
+                                Optimal</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p
+                                        class="text-xs text-on-surface-variant font-bold uppercase tracking-tighter mb-1">
+                                        Grade Trend</p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-2xl font-black font-headline">98%</span>
+                                        <div class="h-6 w-24 flex items-end gap-0.5">
+                                            <div class="flex-1 bg-primary/40 h-2/3"></div>
+                                            <div class="flex-1 bg-primary/40 h-3/4"></div>
+                                            <div class="flex-1 bg-primary h-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-on-surface-variant font-bold uppercase tracking-tighter">Key
+                                        Driver</p>
+                                    <p class="text-sm font-bold text-secondary">Strong Quiz Performance</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Student Card 2 -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/5 shadow-sm hover:translate-y-[-4px] transition-transform duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="flex gap-3">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center font-bold text-on-tertiary-container">
+                                    MK</div>
+                                <div>
+                                    <h4 class="font-bold text-on-surface">Marcus Kinsley</h4>
+                                    <p class="text-xs font-semibold text-on-surface-variant">Rank #28 in Class</p>
+                                </div>
+                            </div>
+                            <span
+                                class="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-black rounded-md flex items-center gap-1 uppercase">🔴
+                                At Risk</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p
+                                        class="text-xs text-on-surface-variant font-bold uppercase tracking-tighter mb-1">
+                                        Grade Trend</p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-2xl font-black font-headline">64%</span>
+                                        <div class="h-6 w-24 flex items-end gap-0.5">
+                                            <div class="flex-1 bg-tertiary/60 h-full"></div>
+                                            <div class="flex-1 bg-tertiary/40 h-2/3"></div>
+                                            <div class="flex-1 bg-tertiary h-1/2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-on-surface-variant font-bold uppercase tracking-tighter">Key
+                                        Driver</p>
+                                    <p class="text-sm font-bold text-tertiary">Missing Assignments</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Student Card 3 -->
+                    <div
+                        class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/5 shadow-sm hover:translate-y-[-4px] transition-transform duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="flex gap-3">
+                                <div
+                                    class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center font-bold text-on-primary-container">
+                                    AL</div>
+                                <div>
+                                    <h4 class="font-bold text-on-surface">Aria Lopez</h4>
+                                    <p class="text-xs font-semibold text-on-surface-variant">Rank #14 in Class</p>
+                                </div>
+                            </div>
+                            <span
+                                class="px-2 py-1 bg-yellow-100 text-yellow-700 text-[10px] font-black rounded-md flex items-center gap-1 uppercase">🟡
+                                Caution</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-end">
+                                <div>
+                                    <p
+                                        class="text-xs text-on-surface-variant font-bold uppercase tracking-tighter mb-1">
+                                        Grade Trend</p>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-2xl font-black font-headline">81%</span>
+                                        <div class="h-6 w-24 flex items-end gap-0.5">
+                                            <div class="flex-1 bg-secondary/40 h-1/2"></div>
+                                            <div class="flex-1 bg-secondary h-full"></div>
+                                            <div class="flex-1 bg-secondary/70 h-3/4"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-on-surface-variant font-bold uppercase tracking-tighter">Key
+                                        Driver</p>
+                                    <p class="text-sm font-bold text-primary">Inconsistent Attendance</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Add Student Placeholder -->
+                    <div
+                        class="border-2 border-dashed border-outline-variant rounded-xl flex items-center justify-center p-6 cursor-pointer hover:bg-surface-container transition-colors group">
+                        <div class="text-center">
+                            <span
+                                class="material-symbols-outlined text-4xl text-outline mb-2 group-hover:scale-110 transition-transform">person_add</span>
+                            <p class="font-bold text-on-surface-variant">View Full Roster</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Right: Gap Analysis & Actionable Advice -->
+            <div class="space-y-8">
+                <!-- Gap Analysis -->
+                <section>
+                    <h3 class="text-xl font-extrabold font-headline mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-tertiary">warning</span> Gap Analysis
+                    </h3>
+                    <div class="bg-surface-container-low p-6 rounded-xl space-y-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm font-bold">
+                                <span>Integration by Parts</span>
+                                <span class="text-tertiary">45% Mastery</span>
+                            </div>
+                            <div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+                                <div class="bg-tertiary h-full w-[45%]"></div>
+                            </div>
+                            <p class="text-[10px] font-semibold text-on-surface-variant uppercase">Common error:
+                                Constant of integration</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm font-bold">
+                                <span>Trig Substitution</span>
+                                <span class="text-primary">68% Mastery</span>
+                            </div>
+                            <div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+                                <div class="bg-primary h-full w-[68%]"></div>
+                            </div>
+                            <p class="text-[10px] font-semibold text-on-surface-variant uppercase">Improving: Last quiz
+                                showed 12% growth</p>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm font-bold">
+                                <span>Limit Laws</span>
+                                <span class="text-secondary">89% Mastery</span>
+                            </div>
+                            <div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+                                <div class="bg-secondary h-full w-[89%]"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Actionable Advice (AI Suggestions) -->
+                <section>
+                    <h3 class="text-xl font-extrabold font-headline mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-secondary" data-weight="fill">lightbulb</span> AI
+                        Strategy
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-secondary shadow-md">
+                            <p class="text-sm font-bold text-on-surface leading-snug italic">"Schedule a remedial
+                                session for Topic 4 (Integration by Parts) this Friday. 12 students are struggling with
+                                the algebraic manipulation."</p>
+                            <button
+                                class="mt-4 text-xs font-black text-secondary uppercase tracking-widest flex items-center gap-1 hover:underline">
+                                Create Event <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </div>
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-primary shadow-md">
+                            <p class="text-sm font-bold text-on-surface leading-snug italic">"Assign peer-mentoring
+                                groups. Julianna S. and Marcus K. show complementary strengths in Problem Set #3."</p>
+                            <button
+                                class="mt-4 text-xs font-black text-primary uppercase tracking-widest flex items-center gap-1 hover:underline">
+                                Draft Groupings <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-full z-50 shadow-[0_8px_24px_rgba(44,47,49,0.06)] dark:shadow-none flex justify-around items-center px-4 py-2">
+        <a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-2 px-4 hover:opacity-80 transition-opacity duration-300 active:scale-95"
+            href="#">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span class="text-[10px] font-medium tracking-wide font-body">Dashboard</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full py-2 px-4 scale-110 transition-all duration-300"
+            href="#">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">school</span>
+            <span class="text-[10px] font-medium tracking-wide font-body">Classes</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-2 px-4 hover:opacity-80 transition-opacity duration-300 active:scale-95"
+            href="#">
+            <span class="material-symbols-outlined">assignment</span>
+            <span class="text-[10px] font-medium tracking-wide font-body">Assignments</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 py-2 px-4 hover:opacity-80 transition-opacity duration-300 active:scale-95"
+            href="#">
+            <span class="material-symbols-outlined">person</span>
+            <span class="text-[10px] font-medium tracking-wide font-body">Profile</span>
+        </a>
+    </nav>
+</body>
+
+</html>
