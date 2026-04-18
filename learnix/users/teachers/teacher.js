@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import TeacherHeader from './components/TeacherHeader';
 import TeacherBottomNavbar from './components/TeacherBottomNavbar';
 import TeacherDashboard from './pages/dashboard/dashboard';
 import TeacherClassPage from './pages/class/class';
@@ -29,6 +30,7 @@ export default function TeacherScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TeacherHeader />
       {renderContent()}
       <TeacherBottomNavbar activeTab={activeTab} onTabPress={setActiveTab} />
     </SafeAreaView>
