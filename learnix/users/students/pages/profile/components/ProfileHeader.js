@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { TYPOGRAPHY } from '../../../../../constants/theme';
 
 export default function ProfileHeader({ user }) {
   const { width } = useWindowDimensions();
@@ -78,11 +79,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   pageTitle: {
-    fontSize: 24, // text-2xl
+    fontSize: 36,
     fontWeight: '700', // font-bold
     color: '#2c2f31', // text-on-surface
-    fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.5, // tracking-tight
+    fontFamily: TYPOGRAPHY.fontFamily.headline,
+    letterSpacing: -0.7,
   },
   editButton: {
     flexDirection: 'row',
@@ -130,9 +131,10 @@ const styles = StyleSheet.create({
     fontSize: 28, // text-3xl
     fontWeight: '700', // font-bold
     color: '#2c2f31', // text-on-surface
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: TYPOGRAPHY.fontFamily.headline,
     marginBottom: 12, // mb-4
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   metaInfo: {
     flexDirection: 'row', // flex-col md:flex-row
@@ -146,9 +148,9 @@ const styles = StyleSheet.create({
     gap: 4, // gap-2
   },
   metaText: {
-    fontSize: 13, // text-sm
+    fontSize: 14,
     color: '#595c5e', // text-on-surface-variant
-    fontWeight: '500', // font-medium
-    fontFamily: 'Manrope-Medium',
+    fontWeight: '400',
+    fontFamily: TYPOGRAPHY.fontFamily.body,
   },
 });

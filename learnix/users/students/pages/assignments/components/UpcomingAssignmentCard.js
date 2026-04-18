@@ -4,11 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function UpcomingAssignmentCard({ assignment, onPress }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -17,7 +21,7 @@ export default function UpcomingAssignmentCard({ assignment, onPress }) {
     >
       <View style={styles.header}>
         <View style={styles.iconContainer}>
-          <MaterialIcons name="calendar-today" size={20} color={COLORS.primary} />
+          <MaterialIcons name="calendar-today" size={isCompact ? 18 : 20} color={COLORS.primary} />
         </View>
         
         <View style={styles.infoSection}>
@@ -47,12 +51,12 @@ export default function UpcomingAssignmentCard({ assignment, onPress }) {
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, isCompact && styles.footerCompact]}>
         <View style={styles.notStartedBadge}>
-          <MaterialIcons name="radio-button-unchecked" size={14} color={COLORS.gray400} />
+          <MaterialIcons name="radio-button-unchecked" size={isCompact ? 12 : 14} color={COLORS.gray400} />
           <Text style={styles.notStartedText}>Not Started</Text>
         </View>
-        <MaterialIcons name="chevron-right" size={18} color={COLORS.gray400} />
+        <MaterialIcons name="chevron-right" size={isCompact ? 16 : 18} color={COLORS.gray400} />
       </View>
     </TouchableOpacity>
   );
@@ -142,6 +146,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  footerCompact: {
+    gap: SPACING.xs,
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
   },
   notStartedBadge: {
     flexDirection: 'row',

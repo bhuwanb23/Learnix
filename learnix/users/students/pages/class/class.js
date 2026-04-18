@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Animated,
+  useWindowDimensions,
 } from 'react-native';
 
 // Import components
@@ -34,6 +33,11 @@ import {
 export default function ClassPage({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [currentFeature, setCurrentFeature] = useState('main'); // 'main' or 'lecture_notes'
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
+  const horizontalPadding = isDesktop ? 32 : isTablet ? 24 : 16;
+  const sectionGap = isTablet ? 28 : 20;
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -90,7 +94,14 @@ export default function ClassPage({ navigation }) {
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingHorizontal: horizontalPadding,
+            gap: sectionGap,
+          },
+          isDesktop && styles.scrollContentDesktop,
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -133,8 +144,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 24,
+    paddingTop: 24,
     paddingBottom: 10, // Padding for bottom nav bar
-    gap: 32, // Add gap between sections
+  },
+  scrollContentDesktop: {
+    maxWidth: 1200,
+    width: '100%',
+    alignSelf: 'center',
   },
 });

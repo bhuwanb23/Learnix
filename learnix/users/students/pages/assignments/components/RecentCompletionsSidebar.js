@@ -3,15 +3,18 @@ import {
   View,
   Text,
   StyleSheet,
-  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function RecentCompletionsSidebar({ completions }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Recent Completions</Text>
+      <Text style={[styles.title, isCompact && styles.titleCompact]}>Recent Completions</Text>
 
       {completions.map((completion) => (
         <View
@@ -38,7 +41,7 @@ export default function RecentCompletionsSidebar({ completions }) {
             <Text style={styles.feedbackText}>{completion.feedback}</Text>
           </View>
 
-          <View style={styles.suggestion}>
+          <View style={[styles.suggestion, isCompact && styles.suggestionCompact]}>
             <MaterialIcons name={completion.suggestionIcon.replace('_', '-')} size={14} color={completion.borderColor} />
             <Text style={[styles.suggestionText, { color: completion.borderColor }]}>
               {completion.suggestionIcon === 'lightbulb' ? 'Suggestion' : 'Next step'}: {completion.suggestion}
@@ -60,6 +63,9 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: SPACING.xs,
+  },
+  titleCompact: {
+    fontSize: 15,
   },
   completionCard: {
     backgroundColor: COLORS.gray50,
@@ -106,6 +112,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
+  },
+  suggestionCompact: {
+    alignItems: 'flex-start',
   },
   suggestionText: {
     fontSize: 10,

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
-  ScrollView,
+  useWindowDimensions,
   RefreshControl,
   Animated,
 } from 'react-native';
@@ -23,6 +23,10 @@ export default function Dashboard({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(DASHBOARD_DATA);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
+  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -44,8 +48,8 @@ export default function Dashboard({ navigation }) {
       case 'events':
         navigation.navigate('Events');
         break;
-      case 'profile':
-        navigation.navigate('Profile');
+      case 'placement':
+        navigation.navigate('Placement');
         break;
       default:
         break;
@@ -61,6 +65,11 @@ export default function Dashboard({ navigation }) {
     <View style={styles.container}>
       <Animated.ScrollView
         style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding },
+          isDesktop && styles.scrollContentDesktop,
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -113,5 +122,13 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 112,
+  },
+  scrollContentDesktop: {
+    width: '100%',
+    maxWidth: 1240,
+    alignSelf: 'center',
   },
 });

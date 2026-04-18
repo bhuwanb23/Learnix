@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 
 // Import theme
-import { COLORS, SPACING, TYPOGRAPHY } from '../../../../../constants/theme';
+import { TYPOGRAPHY } from '../../../../../constants/theme';
 
 export default function PlacementHeader() {
   return (
@@ -25,17 +25,17 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 36,
-    fontFamily: 'PlusJakartaSans-Bold',
-    fontWeight: '800',
+    fontFamily: TYPOGRAPHY.fontFamily.headline,
+    fontWeight: '700',
     color: '#2c2f31',
-    letterSpacing: -1,
+    letterSpacing: -0.7,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Medium',
-    fontWeight: '500',
+    fontSize: 14,
+    fontFamily: TYPOGRAPHY.fontFamily.body,
+    fontWeight: '400',
     color: '#595c5e',
-    lineHeight: 22,
+    lineHeight: 21,
   },
 });

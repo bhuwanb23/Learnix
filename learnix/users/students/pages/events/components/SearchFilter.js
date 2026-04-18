@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, useWindowDimensions, Platform } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, useWindowDimensions, Platform, ActivityIndicator, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
@@ -14,28 +14,78 @@ export default function SearchFilter({
 }) {
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
+  const [isSearching, setIsSearching] = useState(false);
+  const searchPulse = useRef(new Animated.Value(1)).current;
+  const searchTimer = useRef(null);
+
+  useEffect(() => {
+    if (isSearching) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(searchPulse, {
+            toValue: 1.03,
+            duration: 450,
+            useNativeDriver: true,
+          }),
+          Animated.timing(searchPulse, {
+            toValue: 1,
+            duration: 450,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+
+    searchPulse.setValue(1);
+  }, [isSearching, searchPulse]);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) {
+        clearTimeout(searchTimer.current);
+      }
+    };
+  }, []);
 
   const handleSearch = (text) => {
-    setSearchQuery(text);
-    
-    // Filter events based on search query
-    if (text.trim() === '') {
-      setFilteredEvents(events);
-    } else {
-      const filtered = events.filter(event => 
-        event.title.toLowerCase().includes(text.toLowerCase()) ||
-        event.description.toLowerCase().includes(text.toLowerCase()) ||
-        event.category.toLowerCase().includes(text.toLowerCase()) ||
-        event.location.toLowerCase().includes(text.toLowerCase())
-      );
-      setFilteredEvents(filtered);
+    if (searchTimer.current) {
+      clearTimeout(searchTimer.current);
     }
+
+    setIsSearching(true);
+    setSearchQuery(text);
+
+    // Small delay gives smooth visual feedback for "searching/loading".
+    searchTimer.current = setTimeout(() => {
+      if (text.trim() === '') {
+        setFilteredEvents(events);
+      } else {
+        const filtered = events.filter(event =>
+          event.title.toLowerCase().includes(text.toLowerCase()) ||
+          event.description.toLowerCase().includes(text.toLowerCase()) ||
+          event.category.toLowerCase().includes(text.toLowerCase()) ||
+          event.location.toLowerCase().includes(text.toLowerCase())
+        );
+        setFilteredEvents(filtered);
+      }
+
+      setIsSearching(false);
+    }, 260);
   };
 
   return (
     <View style={styles.wrapper}>
       <View style={[styles.container, isTablet && styles.containerTablet]}>
-        <View style={styles.searchSection}>
+        <Animated.View
+          style={[
+            styles.searchSection,
+            isTablet && styles.searchSectionTablet,
+            isSearching && styles.searchSectionActive,
+            { transform: [{ scale: searchPulse }] },
+          ]}
+        >
           <MaterialIcons name="search" size={18} color={COLORS.gray400} />
           <TextInput
             style={styles.input}
@@ -44,12 +94,16 @@ export default function SearchFilter({
             value={searchQuery}
             onChangeText={handleSearch}
           />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')}>
-              <MaterialIcons name="close" size={18} color={COLORS.gray400} />
-            </TouchableOpacity>
-          )}
-        </View>
+          <View style={styles.searchActionSlot}>
+            {isSearching ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : searchQuery.length > 0 ? (
+              <TouchableOpacity onPress={() => handleSearch('')}>
+                <MaterialIcons name="close" size={18} color={COLORS.gray400} />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </Animated.View>
 
         <View style={styles.divider} />
 
@@ -107,22 +161,38 @@ const styles = StyleSheet.create({
   searchSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    height: 46,
+    paddingHorizontal: 10,
+    height: 36,
     flex: 1,
     backgroundColor: COLORS.gray50,
     borderRadius: BORDER_RADIUS.lg,
+    minWidth: 140,
+  },
+  searchSectionTablet: {
+    flex: 0.82,
+    maxWidth: 280,
+  },
+  searchSectionActive: {
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.white,
   },
   input: {
     flex: 1,
-    marginLeft: 10,
-    fontSize: 14,
+    marginLeft: 6,
+    fontSize: 12,
     color: COLORS.textPrimary,
     fontWeight: '500',
     fontFamily: 'Manrope-Regular',
     ...Platform.select({
       web: { outlineStyle: 'none' }
     }),
+  },
+  searchActionSlot: {
+    width: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
   },
   divider: {
     width: 1,

@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
-  Alert,
   useWindowDimensions,
 } from 'react-native';
 
@@ -40,7 +38,9 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
   
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
-  const contentPadding = width >= 768 ? 32 : 16;
+  const isTablet = width >= 768;
+  const contentPadding = isDesktop ? 36 : isTablet ? 24 : 14;
+  const contentGap = isDesktop ? 28 : 20;
 
   // Handle navigation to sub-pages
   const handleNavigate = (view) => {
@@ -125,7 +125,10 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
       ) : (
         <ScrollView 
           style={styles.scrollView} 
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            isDesktop && styles.scrollContentDesktop,
+          ]}
           showsVerticalScrollIndicator={false}
         >
           {/* User Profile Header & Identity Hero */}
@@ -138,6 +141,7 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
           <View style={[
             styles.contentGrid, 
             { paddingHorizontal: contentPadding },
+            { gap: contentGap },
             isDesktop && styles.contentGridDesktop
           ]}>
             {/* Left Column: Categories & Honors */}
@@ -171,6 +175,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 120, // pb-32
+  },
+  scrollContentDesktop: {
+    width: '100%',
+    maxWidth: 1280,
+    alignSelf: 'center',
   },
   contentGrid: {
     marginTop: 32, // gap-8 spacing from stats

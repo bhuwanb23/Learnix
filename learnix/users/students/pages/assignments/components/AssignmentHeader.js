@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '800',
+    fontSize: 36,
+    fontWeight: '700',
     color: COLORS.textPrimary,
-    fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.5,
+    fontFamily: TYPOGRAPHY.fontFamily.headline,
+    letterSpacing: -0.7,
   },
   calendarButton: {
     width: 40,

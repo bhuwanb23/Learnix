@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { TYPOGRAPHY } from '../../../../../constants/theme';
 
 export default function AcademicHeader({ semester, credits }) {
   return (
@@ -37,16 +38,16 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 36, // text-4xl equivalent
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#2c2f31', // text-on-surface
-    fontFamily: 'PlusJakartaSans-ExtraBold',
-    letterSpacing: -0.5,
+    fontFamily: TYPOGRAPHY.fontFamily.headline,
+    letterSpacing: -0.7,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#595c5e', // text-on-surface-variant
-    fontWeight: '500',
-    fontFamily: 'Manrope-Medium',
+    fontWeight: '400',
+    fontFamily: TYPOGRAPHY.fontFamily.body,
   },
   selectorContainer: {
     flexDirection: 'row',

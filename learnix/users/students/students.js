@@ -53,6 +53,21 @@ export default function StudentsScreen() {
     setProfileView(view);
   };
 
+  const handleDashboardNavigation = (target) => {
+    const primaryTabs = ['Home', 'Classes', 'Assignments', 'Events', 'Placement', 'Profile'];
+
+    if (primaryTabs.includes(target)) {
+      handleTabChange(target);
+      return;
+    }
+
+    const placementScreens = ['BrowseJobs', 'PlacementDrive', 'JobDetails', 'JobApply', 'JobApplyDone'];
+    if (placementScreens.includes(target)) {
+      setActiveTab('Placement');
+      navigateToScreen(target);
+    }
+  };
+
   const renderContent = () => {
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;
@@ -98,7 +113,7 @@ export default function StudentsScreen() {
 
     switch (activeTab) {
       case 'Home':
-        return <Dashboard />;
+        return <Dashboard navigation={{ navigate: handleDashboardNavigation }} />;
       case 'Classes':
         return <ClassPage />;
       case 'Assignments':
@@ -115,7 +130,7 @@ export default function StudentsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Header - Always visible */}
       <StudentHeader 
         activeTab={activeTab} 
