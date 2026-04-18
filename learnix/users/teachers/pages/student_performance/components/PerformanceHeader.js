@@ -1,19 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function PerformanceHeader() {
+export default function PerformanceHeader({ header }) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
-      <View style={styles.leftSection}>
-        <View style={styles.iconContainer}>
-          <Ionicons name="analytics" size={20} color={COLORS.white} />
+    <View style={[styles.container, { paddingTop: insets.top + 8 }]}>
+      <View style={styles.content}>
+        <View style={styles.left}>
+          <View style={styles.avatar}>
+            <MaterialIcons name="person" size={24} color="#0050d4" />
+          </View>
+          <Text style={styles.title}>{header.title}</Text>
         </View>
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>Performance Dashboard</Text>
-          <Text style={styles.subtitle}>Class 10-A Analytics</Text>
-        </View>
+        <MaterialIcons name="swap-horiz" size={24} color="#595c5e" />
       </View>
     </View>
   );
@@ -21,41 +23,33 @@ export default function PerformanceHeader() {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: '#f5f7f9',
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+  },
+  content: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    ...SHADOWS.sm
+    alignItems: 'center',
   },
-  leftSection: {
+  left: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1
+    gap: 16,
   },
-  iconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: BORDER_RADIUS.md,
-    backgroundColor: COLORS.primary,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#7b9cff',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.sm
-  },
-  titleSection: {
-    flex: 1
   },
   title: {
-    fontSize: TYPOGRAPHY.sizes.lg,
-    fontWeight: TYPOGRAPHY.weights.semibold,
-    color: COLORS.textPrimary
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0050d4',
+    letterSpacing: -0.5,
   },
-  subtitle: {
-    fontSize: TYPOGRAPHY.sizes.xs,
-    color: COLORS.textSecondary,
-    marginTop: 2
-  }
 });
