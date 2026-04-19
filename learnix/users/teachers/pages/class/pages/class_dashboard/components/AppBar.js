@@ -25,8 +25,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingVertical: 16,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         backgroundColor: '#f5f7f9',
     },
     appBarLeft: {

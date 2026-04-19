@@ -32,31 +32,32 @@ export default function ClassPulse() {
 const styles = StyleSheet.create({
     pulseSection: {
         backgroundColor: '#ffffff',
-        padding: 32,
+        padding: 20,
         borderRadius: 12,
-        minHeight: 256,
+        minHeight: 200,
+        borderWidth: 1,
+        borderColor: '#e5e9eb',
     },
     sectionTitle: {
         fontFamily: 'PlusJakartaSans-Bold',
         fontSize: 18,
         fontWeight: '700',
         color: '#2c2f31',
-        marginBottom: 16,
+        marginBottom: 12,
     },
     pulseHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
+        flexDirection: 'column',
+        gap: 8,
+        marginBottom: 20,
     },
     pulseLegend: {
         flexDirection: 'row',
-        gap: 12,
+        gap: 8,
     },
     legendItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        gap: 6,
     },
     legendDot: {
         width: 8,
@@ -88,6 +89,6 @@ const styles = StyleSheet.create({
         fontSize: 9,
         fontWeight: '700',
         color: '#94a3b8',
-        letterSpacing: 2,
+        letterSpacing: 1,
     },
 });

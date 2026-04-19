@@ -31,18 +31,13 @@ export default function AIInsights() {
 const styles = StyleSheet.create({
     aiCard: {
         marginHorizontal: 24,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        padding: 24,
+        backgroundColor: '#ffffff',
+        padding: 20,
         borderRadius: 12,
-        flexDirection: 'row',
-        gap: 20,
+        flexDirection: 'column',
+        gap: 16,
         borderWidth: 1,
-        borderColor: '#ffffff',
-        shadowColor: '#2c2f31',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
-        elevation: 4,
+        borderColor: '#e5e9eb',
     },
     aiIcon: {
         width: 48,
@@ -60,7 +55,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         color: '#702ae1',
-        marginBottom: 4,
+        marginBottom: 8,
     },
     aiText: {
         fontFamily: 'Manrope',
@@ -72,8 +67,8 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     aiActions: {
-        flexDirection: 'row',
-        gap: 12,
+        flexDirection: 'column',
+        gap: 8,
         marginTop: 8,
     },
     aiActionPrimary: {
