@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Lecture Editor | Scholar Flow</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary": "#f8f0ff",
+                        "tertiary-dim": "#8e3000",
+                        "error-container": "#fb5151",
+                        "on-surface-variant": "#595c5e",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-primary": "#f1f2ff",
+                        "inverse-primary": "#618bff",
+                        "on-error-container": "#570008",
+                        "secondary": "#702ae1",
+                        "surface-container-low": "#eef1f3",
+                        "on-primary-fixed": "#000000",
+                        "primary-fixed": "#7b9cff",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "primary-dim": "#0046bb",
+                        "on-background": "#2c2f31",
+                        "surface-tint": "#0050d4",
+                        "secondary-container": "#dcc9ff",
+                        "on-surface": "#2c2f31",
+                        "primary": "#0050d4",
+                        "surface-variant": "#d9dde0",
+                        "error-dim": "#9f0519",
+                        "surface-dim": "#d0d5d8",
+                        "primary-container": "#7b9cff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "outline": "#747779",
+                        "tertiary-fixed": "#ff956a",
+                        "background": "#f5f7f9",
+                        "on-tertiary-fixed": "#310b00",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-container-high": "#dfe3e6",
+                        "surface": "#f5f7f9",
+                        "tertiary": "#a23800",
+                        "on-tertiary-container": "#5a1c00",
+                        "primary-fixed-dim": "#658eff",
+                        "on-secondary-fixed": "#430097",
+                        "surface-container-highest": "#d9dde0",
+                        "outline-variant": "#abadaf",
+                        "tertiary-container": "#ff956a",
+                        "on-tertiary": "#ffefeb",
+                        "inverse-surface": "#0b0f10",
+                        "surface-bright": "#f5f7f9",
+                        "on-error": "#ffefee",
+                        "surface-container": "#e5e9eb",
+                        "secondary-dim": "#6411d5",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "error": "#b31b25",
+                        "on-primary-container": "#001e5a",
+                        "on-secondary-container": "#5b00c7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface">
+    <!-- NavigationDrawer (JSON Authority) -->
+    <nav
+        class="fixed left-0 top-0 h-full z-40 border-r border-slate-200/10 bg-slate-50 dark:bg-slate-950 h-screen w-72 rounded-r-3xl shadow-xl dark:shadow-none hidden lg:block">
+        <div class="p-8">
+            <div class="flex items-center gap-3 mb-12">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dim flex items-center justify-center text-white shadow-lg">
+                    <span class="material-symbols-outlined">menu_book</span>
+                </div>
+                <span class="text-lg font-black text-blue-700">Scholar Flow</span>
+            </div>
+            <!-- Profile Section -->
+            <div class="flex flex-col mb-10 px-4">
+                <div class="w-12 h-12 rounded-full overflow-hidden mb-3 ring-2 ring-primary-container ring-offset-2">
+                    <img alt="Teacher Profile" class="w-full h-full object-cover"
+                        data-alt="professional academic portrait of a female teacher in a brightly lit modern office setting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9bxuVpxE_e8q7nLDQG6fK1cJchGSDvHgWpzYn9nLBIhyZMhJgoWLZqo3VjOj0jlmQyxIZ7pQsuRhHJzceal8ITwnpREgI_1hyt1_aw8cmxgLnEcwCjESDfi50crHIw0-1e1vzTMddvtNJqEMMqWmS3h7dpR4dBGutN_fKCh6KB8Z9Fzd02R7ROdMwLJfyn35IL1BWJW5XY3Q6PpP0MPYPgJZFNgGjrufaP0ZA32eah-24JiBPADDUZVcEMFKKKfv75DOPxku6Nqg" />
+                </div>
+                <h3 class="font-bold text-on-surface text-base">Academic Curator</h3>
+                <p class="text-on-surface-variant text-xs font-medium">Department of Arts</p>
+            </div>
+            <!-- Nav Items -->
+            <div class="space-y-1">
+                <div
+                    class="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-xl mx-2 px-4 py-3 flex items-center gap-3 font-medium cursor-pointer transition-transform active:scale-95">
+                    <span class="material-symbols-outlined">description</span>
+                    <span class="font-manrope text-sm">Lecture Notes</span>
+                </div>
+                <div
+                    class="text-slate-600 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 font-medium hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all cursor-pointer">
+                    <span class="material-symbols-outlined">movie_filter</span>
+                    <span class="font-manrope text-sm">Media Gallery</span>
+                </div>
+                <div
+                    class="text-slate-600 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 font-medium hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all cursor-pointer">
+                    <span class="material-symbols-outlined">link</span>
+                    <span class="font-manrope text-sm">External Links</span>
+                </div>
+                <div
+                    class="text-slate-600 dark:text-slate-400 mx-2 px-4 py-3 flex items-center gap-3 font-medium hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all cursor-pointer">
+                    <span class="material-symbols-outlined">settings</span>
+                    <span class="font-manrope text-sm">Settings</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content Shell -->
+    <main class="lg:ml-72 min-h-screen flex flex-col">
+        <!-- TopAppBar (JSON Authority) -->
+        <header class="bg-slate-50 dark:bg-slate-900 w-full top-0 sticky z-30">
+            <div class="flex items-center justify-between px-6 h-16 w-full max-w-7xl mx-auto">
+                <div class="flex items-center gap-4">
+                    <button
+                        class="p-2 text-slate-500 hover:text-blue-700 transition-colors active:opacity-80 active:scale-95">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <h1
+                        class="text-xl font-plus-jakarta-sans tracking-tight font-bold text-slate-900 dark:text-slate-100">
+                        Lecture Editor</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button
+                        class="px-6 py-2 rounded-full font-bold text-sm text-blue-700 dark:text-blue-400 hover:text-blue-600 transition-colors active:opacity-80 active:scale-95 border border-blue-200 dark:border-blue-900">
+                        Preview
+                    </button>
+                    <button
+                        class="bg-gradient-to-r from-primary to-primary-dim px-6 py-2 rounded-full text-white font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                        Update
+                    </button>
+                </div>
+            </div>
+        </header>
+        <!-- Editor Canvas -->
+        <div class="flex-1 max-w-5xl mx-auto w-full px-6 py-12 pb-32">
+            <!-- Metadata Section -->
+            <section class="mb-12">
+                <input
+                    class="w-full bg-transparent border-none text-4xl md:text-5xl font-headline font-extrabold text-on-surface focus:ring-0 placeholder:text-surface-variant p-0 mb-4 transition-all tracking-tight"
+                    placeholder="Enter Lecture Title..." type="text" value="Renaissance Art &amp; Modernity" />
+                <textarea
+                    class="w-full bg-transparent border-none text-lg text-on-surface-variant focus:ring-0 placeholder:text-outline-variant p-0 resize-none leading-relaxed"
+                    placeholder="Write a short description of this lecture..."
+                    rows="2">Exploring the transition from medieval symbolism to human-centric perspectives in 15th-century Florence.</textarea>
+            </section>
+            <!-- Bento Content Area -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                <!-- Tab Switching Panel -->
+                <div
+                    class="md:col-span-8 bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/10">
+                    <!-- Editor Tabs -->
+                    <div class="flex gap-8 mb-8 border-b border-surface-container-low">
+                        <button
+                            class="pb-4 border-b-2 border-primary text-primary font-bold text-sm flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">edit_note</span>
+                            Text Notes
+                        </button>
+                        <button
+                            class="pb-4 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-semibold text-sm flex items-center gap-2 transition-all">
+                            <span class="material-symbols-outlined text-sm">cloud_upload</span>
+                            Upload File
+                        </button>
+                        <button
+                            class="pb-4 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-semibold text-sm flex items-center gap-2 transition-all">
+                            <span class="material-symbols-outlined text-sm">link</span>
+                            External Links
+                        </button>
+                    </div>
+                    <!-- Editor Content (Mock Rich Text) -->
+                    <div class="prose prose-slate max-w-none">
+                        <div class="flex gap-4 p-2 bg-surface-container-low rounded-lg mb-6 w-max">
+                            <button
+                                class="p-2 hover:bg-surface-container-high rounded text-on-surface-variant transition-colors"><span
+                                    class="material-symbols-outlined text-xl">format_bold</span></button>
+                            <button
+                                class="p-2 hover:bg-surface-container-high rounded text-on-surface-variant transition-colors"><span
+                                    class="material-symbols-outlined text-xl">format_italic</span></button>
+                            <button
+                                class="p-2 hover:bg-surface-container-high rounded text-on-surface-variant transition-colors"><span
+                                    class="material-symbols-outlined text-xl">format_list_bulleted</span></button>
+                            <button
+                                class="p-2 hover:bg-surface-container-high rounded text-on-surface-variant transition-colors"><span
+                                    class="material-symbols-outlined text-xl">format_quote</span></button>
+                            <div class="w-px h-6 bg-outline-variant/30 my-auto mx-1"></div>
+                            <button
+                                class="p-2 hover:bg-surface-container-high rounded text-on-surface-variant transition-colors"><span
+                                    class="material-symbols-outlined text-xl">image</span></button>
+                            <button
+                                class="p-2 hover:bg-surface-container-high rounded text-on-surface-variant transition-colors"><span
+                                    class="material-symbols-outlined text-xl">code</span></button>
+                        </div>
+                        <div class="min-h-[400px] text-on-surface text-lg leading-relaxed focus:outline-none"
+                            contenteditable="true">
+                            <p class="mb-4">The shift from <b>Theocentric</b> (God-centered) to <b>Anthropocentric</b>
+                                (Human-centered) worldviews defined the Italian Renaissance.</p>
+                            <p class="mb-4">Key themes to cover in this lecture:</p>
+                            <ul class="list-disc pl-6 mb-4 space-y-2">
+                                <li>The discovery of linear perspective by Brunelleschi.</li>
+                                <li>The patronage of the Medici family in Florence.</li>
+                                <li>Humanism as an intellectual bridge to Classical antiquity.</li>
+                            </ul>
+                            <div class="my-8 rounded-xl overflow-hidden shadow-md">
+                                <img alt="Renaissance Sculpture Art" class="w-full h-auto"
+                                    data-alt="magnificent close-up of classical italian sculpture with marble textures and dramatic lighting from a side window"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEM7x5VanBnSK_fLm8-tn5NUyS7cX55zX7H9oRtdPYhOStqMJ8413J02lOj_2hcNHm9F2n1XWCKIbhxjZuQo_zfNCeYYSqLvicpNYR-ERxZdgwvDRr33rrzYjZP96DQPEnxTcUjEAm7EJtCt57Z7u9Y06OBgkd-eJ11NATQaP0zGvAgMN1xRfgOGgL-IrzQfodiAMbro044DTllXTzlw0gFOxRGhDeNXNVcu2B1g7kiZq765xez4KZnCAL9UrPDDzFbSK_liuKdt0" />
+                            </div>
+                            <p>Next week, we will examine how these concepts traveled North to the Netherlands and
+                                Germany.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sidebar Context -->
+                <aside class="md:col-span-4 space-y-6">
+                    <!-- Statistics Card -->
+                    <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
+                        <h4 class="font-bold text-sm text-primary uppercase tracking-widest mb-4">Lecture Stats</h4>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-on-surface-variant text-sm">Word Count</span>
+                                <span class="font-bold text-on-surface">1,240</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-on-surface-variant text-sm">Reading Time</span>
+                                <span class="font-bold text-on-surface">6 min</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-on-surface-variant text-sm">Status</span>
+                                <span
+                                    class="px-2 py-1 bg-tertiary-container/30 text-on-tertiary-container rounded-md text-[10px] font-bold uppercase tracking-tighter">Drafting</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Related Assets -->
+                    <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
+                        <h4 class="font-bold text-sm text-primary uppercase tracking-widest mb-4">Quick Assets</h4>
+                        <div class="space-y-3">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-surface rounded-lg group cursor-pointer hover:bg-primary-container/20 transition-colors">
+                                <span class="material-symbols-outlined text-primary">picture_as_pdf</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-on-surface truncate">syllabus_art_101.pdf</p>
+                                    <p class="text-[10px] text-on-surface-variant">2.4 MB</p>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-outline-variant text-sm group-hover:text-primary">more_vert</span>
+                            </div>
+                            <div
+                                class="flex items-center gap-3 p-3 bg-surface rounded-lg group cursor-pointer hover:bg-primary-container/20 transition-colors">
+                                <span class="material-symbols-outlined text-secondary">videocam</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-bold text-on-surface truncate">florence_vlog.mp4</p>
+                                    <p class="text-[10px] text-on-surface-variant">45.2 MB</p>
+                                </div>
+                                <span
+                                    class="material-symbols-outlined text-outline-variant text-sm group-hover:text-primary">more_vert</span>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+        <!-- BottomNavBar (JSON Authority) -->
+        <nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-8 lg:hidden">
+            <div
+                class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.06)] flex justify-between p-2">
+                <button
+                    class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 duration-200">
+                    <span class="material-symbols-outlined mb-1">save</span>
+                    <span class="font-manrope text-[10px] font-bold uppercase tracking-wider">Save Draft</span>
+                </button>
+                <button
+                    class="flex flex-col items-center justify-center bg-blue-600 text-white rounded-full p-3 shadow-lg shadow-blue-500/40 active:scale-90 duration-200">
+                    <span class="material-symbols-outlined mb-1">visibility</span>
+                    <span class="font-manrope text-[10px] font-bold uppercase tracking-wider">Preview</span>
+                </button>
+                <button
+                    class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-3 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 duration-200">
+                    <span class="material-symbols-outlined mb-1">delete</span>
+                    <span class="font-manrope text-[10px] font-bold uppercase tracking-wider">Delete</span>
+                </button>
+            </div>
+        </nav>
+        <!-- Floating Desktop Actions (Beyond JSON - Complementary) -->
+        <div class="fixed bottom-10 right-10 flex-col gap-4 hidden lg:flex">
+            <button
+                class="w-14 h-14 bg-surface-container-lowest text-on-surface-variant rounded-full flex items-center justify-center shadow-xl hover:text-primary hover:bg-primary-container/20 transition-all active:scale-90">
+                <span class="material-symbols-outlined">save</span>
+            </button>
+            <button
+                class="w-14 h-14 bg-error text-on-error rounded-full flex items-center justify-center shadow-xl hover:bg-error-dim transition-all active:scale-90">
+                <span class="material-symbols-outlined">delete</span>
+            </button>
+        </div>
+    </main>
+</body>
+
+</html>

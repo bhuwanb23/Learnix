@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 
 export default function TeacherHeader() {
   const getGreeting = () => {
@@ -35,11 +34,8 @@ export default function TeacherHeader() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#2563eb',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xs,
-    paddingBottom: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1d4ed8',
+    paddingHorizontal: 24,
+    paddingBottom: 16,
   },
   topSection: {
     flexDirection: 'row',
@@ -50,16 +46,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: 10,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 1,
-    letterSpacing: 0.2,
+    marginBottom: 4,
+    letterSpacing: 0.5,
+    fontFamily: 'Manrope-Medium',
   },
   teacherName: {
-    fontSize: 22,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 24,
+    fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: 0.3,
+    letterSpacing: -0.3,
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   headerActions: {
     flexDirection: 'row',
@@ -67,12 +65,12 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     position: 'relative',
-    padding: SPACING.xs,
+    padding: 8,
   },
   notificationBadge: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: 4,
+    right: 4,
     backgroundColor: '#EF4444',
     borderRadius: 9999,
     minWidth: 18,
@@ -83,10 +81,10 @@ const styles = StyleSheet.create({
     borderColor: '#2563eb',
   },
   badgeText: {
-    fontSize: 9,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 10,
+    fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: 0.1,
+    fontFamily: 'Manrope-Bold',
   },
 });
 

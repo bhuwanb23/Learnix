@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function PerformanceHeader({ header }) {
+export default function ProfileHeader({ profile }) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -13,9 +13,11 @@ export default function PerformanceHeader({ header }) {
           <View style={styles.avatar}>
             <MaterialIcons name="person" size={24} color="#0050d4" />
           </View>
-          <Text style={styles.title}>{header.title}</Text>
+          <Text style={styles.title}>The Academic Curator</Text>
         </View>
-        <MaterialIcons name="swap-horiz" size={24} color="#595c5e" />
+        <TouchableOpacity style={styles.settingsBtn} activeOpacity={0.7}>
+          <MaterialIcons name="settings" size={24} color="#0050d4" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -41,7 +43,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7b9cff',
+    backgroundColor: '#eef1f3',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -49,7 +51,14 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     fontSize: 20,
     fontWeight: '800',
-    color: '#0050d4',
+    color: '#2c2f31',
     letterSpacing: -0.5,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

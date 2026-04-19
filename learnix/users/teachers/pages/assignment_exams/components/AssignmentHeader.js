@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function PerformanceHeader({ header }) {
+export default function AssignmentHeader({ header }) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -11,11 +11,11 @@ export default function PerformanceHeader({ header }) {
       <View style={styles.content}>
         <View style={styles.left}>
           <View style={styles.avatar}>
-            <MaterialIcons name="person" size={24} color="#0050d4" />
+            <MaterialIcons name="person" size={24} color="#595c5e" />
           </View>
           <Text style={styles.title}>{header.title}</Text>
         </View>
-        <MaterialIcons name="swap-horiz" size={24} color="#595c5e" />
+        <MaterialIcons name="add-circle" size={28} color="#0050d4" />
       </View>
     </View>
   );
@@ -41,13 +41,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7b9cff',
+    backgroundColor: '#d9dde0',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '800',
     color: '#0050d4',
     letterSpacing: -0.5,

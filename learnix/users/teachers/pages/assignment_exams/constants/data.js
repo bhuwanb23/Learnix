@@ -1,67 +1,92 @@
-// Data constants for Assignment & Exams page
+// Data constants for Assignment & Exams page - Academic Curator
 
-export const OVERVIEW_CARDS = [
+export const HEADER = {
+  title: 'Academic Curator',
+};
+
+export const HERO = {
+  title: 'Submission Velocity',
+  subtitle: 'Real-time engagement across your active academic modules.',
+  legend: [
+    { label: 'Low', color: '#fb5151' },
+    { label: 'Mid', color: '#ff956a' },
+    { label: 'High', color: '#dcc9ff' },
+  ],
+  stats: [
+    { label: 'Global Avg.', value: '88.4%', color: '#0050d4' },
+    { label: 'Active Submissions', value: '1,240', color: '#702ae1' },
+  ],
+  heatmap: [
+    // Row 1
+    { engagement: 'high' }, { engagement: 'mid' }, { engagement: 'high' }, { engagement: 'low' },
+    { engagement: 'low' }, { engagement: 'mid' }, { engagement: 'high' }, { engagement: 'high' },
+    // Row 2
+    { engagement: 'mid' }, { engagement: 'high' }, { engagement: 'low' }, { engagement: 'mid' },
+    { engagement: 'low' }, { engagement: 'high' }, { engagement: 'high' }, { engagement: 'mid' },
+  ],
+};
+
+export const MODULES = [
   {
-    id: 'activeAssignments',
-    value: 24,
-    label: 'Active Assignments',
-    badge: '+5 Today',
-    badgeColor: '#16A34A',
-    iconBg: '#DBEAFE',
-    iconColor: '#1E40AF',
-    icon: '📄',
+    id: 'calculus',
+    title: 'Advanced Calculus',
+    description: 'Differential Equations & Multi-variable integration.',
+    icon: 'functions',
+    iconColor: '#0050d4',
+    iconBg: '#0050d41a',
+    activeCount: 3,
+    nextDeadline: 'Problem Set #04',
+    deadlineDate: 'Oct 12',
+    engagement: 92,
+    engagementColor: '#0050d4',
   },
   {
-    id: 'pendingSubmissions',
-    value: 12,
-    label: 'Submissions',
-    badge: 'Pending',
-    badgeColor: '#EA580C',
-    iconBg: '#FFEDD5',
-    iconColor: '#EA580C',
-    icon: '⏰',
-  },
-  {
-    id: 'upcomingExams',
-    value: 3,
-    label: 'Upcoming Exams',
-    badge: 'This Week',
-    badgeColor: '#9333EA',
-    iconBg: '#F3E8FF',
-    iconColor: '#9333EA',
-    icon: '🗓️',
-  },
-  {
-    id: 'gradedItems',
-    value: 156,
-    label: 'Graded Items',
-    badge: '87% Done',
-    badgeColor: '#16A34A',
-    iconBg: '#DCFCE7',
-    iconColor: '#16A34A',
-    icon: '✅',
+    id: 'physics',
+    title: 'Theoretical Physics',
+    description: 'Electromagnetism and Thermodynamic cycles.',
+    icon: 'science',
+    iconColor: '#702ae1',
+    iconBg: '#702ae11a',
+    activeCount: 1,
+    nextDeadline: 'Lab Report: Optics',
+    deadlineDate: 'Oct 14',
+    engagement: 76,
+    engagementColor: '#702ae1',
   },
 ];
 
-export const QUICK_ACTIONS = [
-  { id: 'createAssignment', title: 'Create Assignment', primary: true, icon: '＋' },
-  { id: 'viewSubmissions', title: 'View Submissions', primary: false, icon: '👁️' },
-  { id: 'grading', title: 'Grading & Feedback', primary: false, icon: '⭐' },
-  { id: 'examScheduler', title: 'Exam Scheduler', primary: false, icon: '📅' },
+export const QUICK_TOOLS = [
+  {
+    id: 'create',
+    title: 'Create Template',
+    subtitle: 'Deploy a new structured assignment across all classes.',
+    icon: 'add-box',
+    gradient: true,
+    color: '#0050d4',
+  },
+  {
+    id: 'export',
+    title: 'Export Grades',
+    subtitle: 'Generate CSV/PDF reports for the current semester.',
+    icon: 'file-export',
+    gradient: false,
+    color: '#702ae1',
+  },
 ];
 
-export const UPLOAD_RESULT = { id: 'upload', title: 'Upload Results', icon: '⬆️' };
-
-export const PERFORMANCE_SERIES = [65, 78, 85, 72, 90];
-export const PERFORMANCE_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-
-export const DEADLINE_SERIES = [3, 5, 8, 12];
-export const DEADLINE_LABELS = ['Today', 'Tomorrow', 'This Week', 'Next Week'];
-
-export const RECENT_ACTIVITY = [
-  { id: 'a1', title: 'Math Quiz 3 submitted', time: '2 minutes ago', tint: '#EFF6FF', chipBg: '#1E40AF' },
-  { id: 'a2', title: 'Science Lab Report graded', time: '15 minutes ago', tint: '#ECFDF5', chipBg: '#16A34A' },
-  { id: 'a3', title: 'History Exam scheduled', time: '1 hour ago', tint: '#F5F3FF', chipBg: '#9333EA' },
+export const ALERTS = [
+  {
+    id: 'alert1',
+    title: 'Low submission rate in Physics',
+    subtitle: 'Last activity: 4h ago',
+    color: '#b31b25',
+  },
+  {
+    id: 'alert2',
+    title: 'Grade dispute: Problem Set #03',
+    subtitle: '2 pending reviews',
+    color: '#a23800',
+  },
 ];
 
 

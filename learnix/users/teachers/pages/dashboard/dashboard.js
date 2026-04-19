@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import useTeacherDashboard from './hooks/useTeacherDashboard';
-import QuickActions from './components/QuickActions';
 import HeroHeader from './components/HeroHeader';
+import QuickActions from './components/QuickActions';
 import ScheduleList from './components/ScheduleList';
-import NavCards from './components/NavCards';
-import Reminders from './components/Reminders';
-import RecentNotifications from './components/RecentNotifications';
-import { COLORS, SPACING } from '../../../../constants/theme';
+import PerformanceOverview from './components/PerformanceOverview';
+import InsightsGrid from './components/InsightsGrid';
+import RecentSubmissions from './components/RecentSubmissions';
 
 export default function TeacherDashboard() {
   const { data, loading, error, refresh, handleQuickAction } = useTeacherDashboard();
@@ -17,7 +17,7 @@ export default function TeacherDashboard() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color="#0050d4" />
         <Text style={styles.stateText}>Loading dashboard...</Text>
       </View>
     );
@@ -32,27 +32,51 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} colors={[COLORS.primary]} />}
-    >
-      <HeroHeader header={data.header} />
-      <QuickActions actions={data.quickActions} onPress={handleQuickAction} />
-      <ScheduleList items={data.schedule} onPressAll={() => { }} />
-      <NavCards cards={data.navCards} onPress={() => { }} />
-      <Reminders items={data.reminders} />
-      <RecentNotifications items={data.notifications} />
-    </ScrollView>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} colors={['#0050d4']} />}
+      >
+        <HeroHeader header={data.header} />
+        <QuickActions actions={data.quickActions} onPress={handleQuickAction} />
+        <ScheduleList items={data.schedule} onPressAll={() => {}} />
+        <PerformanceOverview performance={data.performance} />
+        <InsightsGrid insights={data.insights} />
+        <RecentSubmissions submissions={data.submissions} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  content: { paddingBottom: SPACING.lg, paddingTop: 0 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
-  stateText: { marginTop: SPACING.sm, color: '#6B7280' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f5f7f9',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: { 
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
+  },
+  center: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 24,
+    backgroundColor: '#f5f7f9',
+  },
+  stateText: { 
+    marginTop: 12, 
+    color: '#64748b',
+    fontSize: 15,
+    fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
+  },
 });
 
 

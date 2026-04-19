@@ -1,24 +1,31 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function ScheduleList({ items, onPressAll }) {
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
+      <View style={styles.header}>
         <Text style={styles.title}>Today's Schedule</Text>
-        <Text style={styles.link} onPress={onPressAll}>View All</Text>
+        <TouchableOpacity onPress={onPressAll}>
+          <Text style={styles.viewAll}>View All</Text>
+        </TouchableOpacity>
       </View>
+
       <View style={styles.list}>
-        {items.map(item => (
-          <View key={item.id} style={[styles.row, item.emphasis ? styles.rowEmphasis : styles.rowMuted]}>
-            <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>{item.title}</Text>
-              <Text style={styles.rowMeta}>{item.place} • {item.time}</Text>
+        {items.map((item) => (
+          <TouchableOpacity key={item.id} style={styles.card} activeOpacity={0.9}>
+            <View style={styles.info}>
+              <Text style={styles.time}>{item.time}</Text>
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.location}>{item.location}</Text>
             </View>
-            <View style={[styles.statusDot, { backgroundColor: item.emphasis ? '#3B82F6' : '#9CA3AF' }]} />
-          </View>
+            {item.canJoin && (
+              <TouchableOpacity style={styles.joinButton} activeOpacity={0.8}>
+                <Text style={styles.joinText}>Join Live</Text>
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
         ))}
       </View>
     </View>
@@ -27,66 +34,81 @@ export default function ScheduleList({ items, onPressAll }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.white,
-    // marginHorizontal: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    ...SHADOWS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    backgroundColor: '#eef1f3',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 28,
   },
-  headerRow: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.sm,
+    marginBottom: 20,
   },
   title: {
-    fontSize: TYPOGRAPHY.sizes.md,
-    fontWeight: TYPOGRAPHY.weights.semibold,
-    color: COLORS.textPrimary,
+    fontSize: 20,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontWeight: '700',
+    color: '#2c2f31',
   },
-  link: {
-    color: COLORS.primary,
-    fontSize: TYPOGRAPHY.sizes.sm,
-    fontWeight: TYPOGRAPHY.weights.medium,
+  viewAll: {
+    fontSize: 14,
+    fontFamily: 'Manrope-Bold',
+    fontWeight: '700',
+    color: '#0050d4',
   },
   list: {
-    gap: SPACING.xs,
+    gap: 12,
   },
-  row: {
+  card: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 12,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: SPACING.sm,
-    borderRadius: BORDER_RADIUS.lg,
-    borderLeftWidth: 4,
+    gap: 12,
   },
-  rowEmphasis: {
-    backgroundColor: '#EFF6FF',
-    borderLeftColor: '#3B82F6',
-  },
-  rowMuted: {
-    backgroundColor: '#F9FAFB',
-    borderLeftColor: '#D1D5DB',
-  },
-  rowText: {
+  info: {
     flex: 1,
   },
-  rowTitle: {
-    fontSize: TYPOGRAPHY.sizes.sm,
-    fontWeight: TYPOGRAPHY.weights.semibold,
-    color: COLORS.textPrimary,
+  time: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Bold',
+    fontWeight: '700',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 4,
   },
-  rowMeta: {
-    fontSize: TYPOGRAPHY.sizes.xs,
-    color: COLORS.textSecondary,
+  title: {
+    fontSize: 16,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 4,
   },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  location: {
+    fontSize: 13,
+    fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
+    color: '#64748b',
+  },
+  joinButton: {
+    backgroundColor: '#0050d4',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 9999,
+    shadowColor: '#0050d4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  joinText: {
+    fontSize: 13,
+    fontFamily: 'Manrope-Bold',
+    fontWeight: '700',
+    color: '#ffffff',
   },
 });
-
-
