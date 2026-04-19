@@ -120,52 +120,10 @@
                     class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-slate-900 dark:text-slate-50 text-xl">
                     Topic Management</h1>
             </div>
-            <div class="flex items-center gap-2">
-                <div class="hidden md:flex gap-6 mr-6">
-                    <a class="text-blue-700 dark:text-blue-400 font-bold font-headline transition-colors"
-                        href="#">Curriculum</a>
-                    <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
-                        href="#">Resources</a>
-                    <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
-                        href="#">Students</a>
-                    <a class="text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors"
-                        href="#">Settings</a>
-                </div>
-                <button
-                    class="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors active:duration-150 scale-95">
-                    <span class="material-symbols-outlined text-slate-900 dark:text-slate-50"
-                        data-icon="more_vert">more_vert</span>
-                </button>
-            </div>
         </div>
     </header>
     <main class="max-w-7xl mx-auto px-6 py-8 pb-32">
         <!-- Sub-header & Breadcrumb -->
-        <div class="mb-10">
-            <nav class="flex items-center gap-2 text-sm font-medium text-outline mb-4">
-                <a class="hover:text-primary transition-colors" href="#">Dashboard</a>
-                <span class="material-symbols-outlined text-xs">chevron_right</span>
-                <a class="hover:text-primary transition-colors" href="#">Academic Archive</a>
-                <span class="material-symbols-outlined text-xs">chevron_right</span>
-                <span class="text-on-surface">Topic Management</span>
-            </nav>
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h2 class="font-headline text-4xl font-extrabold tracking-tight mb-2">Subject Library</h2>
-                    <p class="text-on-surface-variant max-w-lg leading-relaxed">Curate and organize your lecture
-                        materials into high-impact academic modules.</p>
-                </div>
-                <div class="flex items-center gap-3 bg-surface-container-low p-2 rounded-xl">
-                    <span
-                        class="px-4 py-2 bg-surface-container-lowest rounded-lg shadow-sm text-sm font-bold text-primary">All
-                        Topics</span>
-                    <span
-                        class="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors">Recent</span>
-                    <span
-                        class="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface cursor-pointer transition-colors">Starred</span>
-                </div>
-            </div>
-        </div>
         <!-- Topics Bento Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <!-- Card 1 -->
@@ -279,48 +237,6 @@
                 </button>
             </div>
             <!-- Card 4 (Asymmetric Large Featured) -->
-            <div
-                class="md:col-span-2 group relative bg-primary-container rounded-xl p-8 transition-all duration-300 hover:shadow-2xl overflow-hidden">
-                <div class="relative z-10 flex flex-col h-full justify-between">
-                    <div>
-                        <div
-                            class="inline-flex px-3 py-1 bg-on-primary-container/10 rounded-full text-xs font-extrabold uppercase tracking-widest text-on-primary-container mb-4">
-                            Focus Module</div>
-                        <h3 class="font-headline text-3xl font-extrabold text-on-primary-container mb-2">Molecular
-                            Biology &amp; Genetics</h3>
-                        <p class="text-on-primary-container/80 text-lg font-medium mb-6 max-w-md">Detailed study of
-                            replication, transcription, and translation processes with 2024 updates.</p>
-                    </div>
-                    <div class="flex items-center justify-between mt-8">
-                        <div class="flex items-center gap-6">
-                            <div class="flex items-center gap-2 text-on-primary-container font-bold">
-                                <span class="material-symbols-outlined" data-icon="folder_special">folder_special</span>
-                                <span>124 Resources</span>
-                            </div>
-                            <div class="flex -space-x-2">
-                                <img class="w-8 h-8 rounded-full border-2 border-primary-container"
-                                    data-alt="portrait of a young male student with a friendly expression"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCi3gUl-QC7NSKRGNpI-dVIh73dNaQD7xaHL1T7C8F7ktjxdtSmoF8l5g-23k3ZNdA8StjTJSAlU4XRKooPbyDTT1P9ZpoqQUY1g47X2yN0iucuJX50ySywZ1L3hkrambrKARlgui8TifkTSgGWhjb262mAs6zP-y2kcidF8jfqrlKjCuFqnouSIKQ7RD_V2sdkPvfnO6Dt1b9Tle0OGn04gO0ba5v-EoYvIWES8wkyQC5QIGvVvurWdnANLnayO9vmnwMnd6Hzc1g" />
-                                <img class="w-8 h-8 rounded-full border-2 border-primary-container"
-                                    data-alt="portrait of a professional female researcher in a modern office"
-                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzObMRBsJ7lQbQtYme3jQy5I1ynVgYDMPrf4FcI3p3r7ARad_mCAhH4LetdiVF7XLix7lZ1gADwa98rLeo9EDf7X-jpPO2sDRrt199T47_Q28VtuDeyxlHWeBoyy6mtfQkAhJVP5md2brZRFXH1iuXF_ES1efvWE-S7LJn6ZquJJP4pTuQAt-NT9i3FJs7ZLrWWIbHX9mOEKPmg8xbIZY8OuZmfUBIbh7sD8roaOKf53PQrtcU90ZReCl1hRcsUC5A2APtpdIy2Qo" />
-                                <div
-                                    class="w-8 h-8 rounded-full bg-on-primary-container text-primary-container flex items-center justify-center text-[10px] font-bold border-2 border-primary-container">
-                                    +8</div>
-                            </div>
-                        </div>
-                        <button
-                            class="px-8 py-4 bg-on-primary-container text-on-primary font-bold rounded-xl flex items-center gap-2 transition-all hover:scale-105">
-                            <span>Resume Study</span>
-                            <span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
-                        </button>
-                    </div>
-                </div>
-                <!-- Aesthetic Background Blob -->
-                <div
-                    class="absolute -right-20 -bottom-20 w-80 h-80 bg-primary-dim rounded-full blur-3xl opacity-30 group-hover:scale-125 transition-transform duration-700">
-                </div>
-            </div>
             <!-- Card 5 -->
             <div
                 class="group relative bg-surface-container-lowest rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
@@ -359,90 +275,6 @@
             </div>
         </div>
     </main>
-    <!-- Create Topic Floating FAB (Mandatory Alignment) -->
-    <div
-        class="fixed bottom-32 left-1/2 -translate-x-1/2 z-50 px-6 w-full max-w-7xl flex justify-center md:justify-end">
-        <button
-            class="group bg-primary text-on-primary px-8 py-5 rounded-full shadow-2xl flex items-center gap-4 transition-all hover:scale-105 hover:bg-primary-dim active:scale-95">
-            <span class="material-symbols-outlined text-2xl" data-icon="add">add</span>
-            <span class="font-headline font-extrabold tracking-tight uppercase text-sm">Create New Topic</span>
-        </button>
-    </div>
-    <!-- BottomNavBar (Mobile Only) -->
-    <nav
-        class="md:hidden glass-effect fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-8 rounded-t-[24px] z-50 shadow-[0_-8px_24px_rgba(44,47,49,0.06)]">
-        <div
-            class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-300 transition-all duration-300 ease-out">
-            <span class="material-symbols-outlined mb-1" data-icon="auto_stories">auto_stories</span>
-            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Curriculum</span>
-        </div>
-        <div
-            class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-300 transition-all duration-300 ease-out">
-            <span class="material-symbols-outlined mb-1" data-icon="folder_open">folder_open</span>
-            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Resources</span>
-        </div>
-        <div
-            class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-[20px] px-5 py-2 transition-all duration-300 ease-out">
-            <span class="material-symbols-outlined mb-1" data-icon="group"
-                style="font-variation-settings: 'FILL' 1;">group</span>
-            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Students</span>
-        </div>
-        <div
-            class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-300 transition-all duration-300 ease-out">
-            <span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
-            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Settings</span>
-        </div>
-    </nav>
-    <!-- Side Navigation Drawer (Implicit Web Context) -->
-    <aside
-        class="hidden xl:flex fixed left-0 top-0 h-full w-80 bg-white dark:bg-slate-950 flex-col gap-2 p-6 z-30 transition-transform -translate-x-full lg:translate-x-0 rounded-r-[24px]">
-        <div class="flex items-center gap-3 mb-10 pl-2">
-            <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
-                <span class="material-symbols-outlined" data-icon="terminal">terminal</span>
-            </div>
-            <span class="font-['Plus_Jakarta_Sans'] font-extrabold text-blue-700 text-2xl">ScholarFlow</span>
-        </div>
-        <div class="space-y-1">
-            <a class="flex items-center gap-4 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all duration-200 hover:pl-6 group"
-                href="#">
-                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
-                <span class="font-['Manrope'] font-medium">Overview</span>
-            </a>
-            <a class="flex items-center gap-4 px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-bold border-l-4 border-blue-700 rounded-r-xl transition-all duration-200 pl-6"
-                href="#">
-                <span class="material-symbols-outlined" data-icon="menu_book"
-                    style="font-variation-settings: 'FILL' 1;">menu_book</span>
-                <span class="font-['Manrope']">Subject Library</span>
-            </a>
-            <a class="flex items-center gap-4 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all duration-200 hover:pl-6"
-                href="#">
-                <span class="material-symbols-outlined" data-icon="event_note">event_note</span>
-                <span class="font-['Manrope'] font-medium">Lesson Planner</span>
-            </a>
-            <a class="flex items-center gap-4 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all duration-200 hover:pl-6"
-                href="#">
-                <span class="material-symbols-outlined" data-icon="grading">grading</span>
-                <span class="font-['Manrope'] font-medium">Assessment</span>
-            </a>
-            <a class="flex items-center gap-4 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all duration-200 hover:pl-6"
-                href="#">
-                <span class="material-symbols-outlined" data-icon="insights">insights</span>
-                <span class="font-['Manrope'] font-medium">Analytics</span>
-            </a>
-        </div>
-        <div class="mt-auto pt-6 border-t border-slate-100 dark:border-slate-800">
-            <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl">
-                <img class="w-12 h-12 rounded-full object-cover"
-                    data-alt="Portrait of Prof. Editorial, a distinguished elderly educator with glasses"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLyQ36gZ0iiLQoEcGMOI7Hoa4V034uNlmY696SEAhss_pN2ULIQVHTdRLeq0X2yftl1RqeNNUnUgJXj5i4vCOM4GpcxDHKh0ziewmWG3XwEbiOZ7K3TdHI5zd643LTE_H-mPzf6kLpGRXVT_2Jd0cJQLlp73GktwFDjgM2VWZQhpJnT49FNX3WSonuLIX35_AdI0jA_ZEO6hu4zvIAO1TBGn7rhe2qIhRXWx_BU9Z34sngoTEmD91zhy_M4FvDej-QX0wS2-3wCGA" />
-                <div class="flex flex-col">
-                    <span class="font-headline font-bold text-sm">Prof. Editorial</span>
-                    <span class="text-xs text-on-surface-variant font-medium">Lead Educator</span>
-                    <span class="text-[10px] text-primary font-extrabold uppercase mt-0.5">Science Dept</span>
-                </div>
-            </div>
-        </div>
-    </aside>
 </body>
 
 </html>

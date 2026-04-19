@@ -4,13 +4,18 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const { width } = Dimensions.get('window');
 
-export default function QuickActions({ actions }) {
+export default function QuickActions({ actions, onActionPress }) {
     return (
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
             <View style={styles.actionsGrid}>
                 {actions.map((action, index) => (
-                    <TouchableOpacity key={index} style={styles.actionButton} activeOpacity={0.7}>
+                    <TouchableOpacity 
+                        key={index} 
+                        style={styles.actionButton} 
+                        activeOpacity={0.7}
+                        onPress={() => onActionPress?.(action)}
+                    >
                         <View style={[styles.actionIcon, { backgroundColor: action.bgColor }]}>
                             <MaterialIcons name={action.icon} size={24} color={action.color} />
                         </View>

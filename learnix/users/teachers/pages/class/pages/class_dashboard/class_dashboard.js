@@ -23,6 +23,14 @@ export default function ClassDashboard({ route, navigation }) {
         }
     };
 
+    const handleActionPress = (action) => {
+        if (action.screen === 'LectureNotes' && navigation?.navigate) {
+            navigation.navigate('LectureNotes', { classData });
+        } else {
+            console.log('Navigate to:', action.screen);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -30,7 +38,7 @@ export default function ClassDashboard({ route, navigation }) {
                 <HeroCard color={classData.color} />
                 <StatsGrid stats={DASHBOARD_STATS} />
                 <View style={styles.contentGrid}>
-                    <QuickActions actions={QUICK_ACTIONS} />
+                    <QuickActions actions={QUICK_ACTIONS} onActionPress={handleActionPress} />
                     <ClassPulse />
                 </View>
                 <AIInsights />

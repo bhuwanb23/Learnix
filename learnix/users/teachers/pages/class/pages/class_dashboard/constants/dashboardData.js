@@ -6,10 +6,10 @@ export const DASHBOARD_STATS = [
 ];
 
 export const QUICK_ACTIONS = [
-    { label: 'Notes', icon: 'description', color: '#0050d4', bgColor: 'rgba(123, 156, 255, 0.2)' },
-    { label: 'Quizzes', icon: 'quiz', color: '#702ae1', bgColor: 'rgba(220, 201, 255, 0.2)' },
-    { label: 'Syllabus', icon: 'calendar-today', color: '#a23800', bgColor: 'rgba(255, 149, 106, 0.2)' },
-    { label: 'Roster', icon: 'group', color: '#595c5e', bgColor: 'rgba(89, 92, 94, 0.1)' },
+    { label: 'Notes', icon: 'description', color: '#0050d4', bgColor: 'rgba(123, 156, 255, 0.2)', screen: 'LectureNotes' },
+    { label: 'Quizzes', icon: 'quiz', color: '#702ae1', bgColor: 'rgba(220, 201, 255, 0.2)', screen: 'Quizzes' },
+    { label: 'Syllabus', icon: 'calendar-today', color: '#a23800', bgColor: 'rgba(255, 149, 106, 0.2)', screen: 'Syllabus' },
+    { label: 'Roster', icon: 'group', color: '#595c5e', bgColor: 'rgba(89, 92, 94, 0.1)', screen: 'Roster' },
 ];
 
 export const DAYS_LABELS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
