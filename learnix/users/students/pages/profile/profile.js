@@ -3,8 +3,11 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  useWindowDimensions,
 } from 'react-native';
+import {
+  useStudentResponsive,
+  STUDENT_MAX_CONTENT_WIDTH,
+} from '../../hooks/useStudentResponsive';
 
 // Import components
 import ProfileHeader from './components/ProfileHeader';
@@ -36,11 +39,9 @@ export default function Profile({ onNavigate, currentView: parentCurrentView, st
   // Use parent view if provided, otherwise use local state
   const currentView = parentCurrentView !== undefined ? parentCurrentView : localCurrentView;
   
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
-  const contentPadding = isDesktop ? 36 : isTablet ? 24 : 14;
-  const contentGap = isDesktop ? 28 : 20;
+  const { isDesktop, profileContentPadding, sectionGap } = useStudentResponsive();
+  const contentPadding = profileContentPadding;
+  const contentGap = sectionGap;
 
   // Handle navigation to sub-pages
   const handleNavigate = (view) => {
@@ -179,14 +180,14 @@ const styles = StyleSheet.create({
   },
   scrollContentDesktop: {
     width: '100%',
-    maxWidth: 1280,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     alignSelf: 'center',
   },
   contentGrid: {
     marginTop: 32, // gap-8 spacing from stats
     flexDirection: 'column', // stack for mobile
     gap: 24, // gap-8
-    maxWidth: 1280,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     alignSelf: 'center',
     width: '100%',
   },

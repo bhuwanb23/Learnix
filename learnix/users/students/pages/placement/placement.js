@@ -3,8 +3,8 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  useWindowDimensions,
 } from 'react-native';
+import { useStudentResponsive, STUDENT_MAX_CONTENT_WIDTH } from '../../hooks/useStudentResponsive';
 
 // Import components
 import PlacementHeader from './components/PlacementHeader';
@@ -14,10 +14,7 @@ import RecommendedJobs from './components/RecommendedJobs';
 import UpcomingDrives from './components/UpcomingDrives';
 
 export default function PlacementPage({ navigation, studentHeader }) {
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
-  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
+  const { isDesktop, horizontalPadding } = useStudentResponsive();
 
   return (
     <View style={styles.container}>
@@ -62,7 +59,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   scrollContentDesktop: {
-    maxWidth: 1240,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     width: '100%',
     alignSelf: 'center',
   },
