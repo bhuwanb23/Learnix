@@ -3,9 +3,9 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  useWindowDimensions,
   StatusBar,
 } from 'react-native';
+import { useStudentResponsive, STUDENT_MAX_CONTENT_WIDTH } from '../../hooks/useStudentResponsive';
 
 // Import components
 import AssignmentHeader from './components/AssignmentHeader';
@@ -39,10 +39,7 @@ export default function AssignmentPage({ studentHeader }) {
   const [currentView, setCurrentView] = useState('list'); // 'list', 'upcoming-detail', 'completed-review', 'completed-results', or 'active-detail'
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
-  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
+  const { isDesktop, horizontalPadding } = useStudentResponsive();
 
   const calendarItems = useMemo(
     () => [
@@ -207,12 +204,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100, 
   },
   desktopContainer: {
-    maxWidth: 1240,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     width: '100%',
     alignSelf: 'center',
   },
   scrollContentDesktop: {
-    maxWidth: 1240,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     width: '100%',
     alignSelf: 'center',
   },

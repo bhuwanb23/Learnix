@@ -4,8 +4,8 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  useWindowDimensions,
 } from 'react-native';
+import { useStudentResponsive, STUDENT_MAX_CONTENT_WIDTH } from '../../hooks/useStudentResponsive';
 
 // Import components
 import AcademicHeader from './components/AcademicHeader';
@@ -33,12 +33,7 @@ import {
 export default function ClassPage({ navigation, studentHeader }) {
   const [refreshing, setRefreshing] = useState(false);
   const [currentFeature, setCurrentFeature] = useState('main'); // 'main' or 'lecture_notes'
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
-  // Match Home (Dashboard) scroll inset so StudentHeader lines up the same
-  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
-  const sectionGap = isTablet ? 28 : 20;
+  const { isDesktop, horizontalPadding, sectionGap } = useStudentResponsive();
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -149,7 +144,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10, // Padding for bottom nav bar
   },
   scrollContentDesktop: {
-    maxWidth: 1240,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     width: '100%',
     alignSelf: 'center',
   },

@@ -4,11 +4,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  useWindowDimensions,
   FlatList,
   Animated,
   RefreshControl,
 } from 'react-native';
+import {
+  useStudentResponsive,
+  STUDENT_MAX_CONTENT_WIDTH,
+} from '../../hooks/useStudentResponsive';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../../../../constants/theme';
 import { STUDENT_HOME_FONT } from '../../constants/studentHomeTypography';
@@ -30,11 +33,7 @@ import {
 } from './constants/eventData';
 
 export default function EventsPage({ studentHeader }) {
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
-  // Match Home (Dashboard) so StudentHeader + list share the same horizontal inset
-  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
+  const { isDesktop, horizontalPadding } = useStudentResponsive();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('list'); // 'list' or 'details'
@@ -208,7 +207,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     marginTop: 24,
     marginBottom: 20,
-    maxWidth: 1280,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     alignSelf: 'center',
     width: '100%',
     paddingHorizontal: 0,
@@ -249,7 +248,7 @@ const styles = StyleSheet.create({
   },
   desktopGrid: {
     flexDirection: 'row',
-    maxWidth: 1280,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     alignSelf: 'center',
     width: '100%',
     gap: 40,

@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
-  useWindowDimensions,
   RefreshControl,
   Animated,
 } from 'react-native';
+import { useStudentResponsive, STUDENT_MAX_CONTENT_WIDTH } from '../../hooks/useStudentResponsive';
 
 // Import new components
 import HeroHeader from './components/HeroHeader';
@@ -23,10 +23,7 @@ export default function Dashboard({ navigation, studentHeader }) {
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(DASHBOARD_DATA);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const { width } = useWindowDimensions();
-  const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
-  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
+  const { isDesktop, horizontalPadding } = useStudentResponsive();
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -129,7 +126,7 @@ const styles = StyleSheet.create({
   },
   scrollContentDesktop: {
     width: '100%',
-    maxWidth: 1240,
+    maxWidth: STUDENT_MAX_CONTENT_WIDTH,
     alignSelf: 'center',
   },
 });
