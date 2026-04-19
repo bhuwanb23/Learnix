@@ -8,7 +8,8 @@ import { HEADER, CLASSES } from './constants/classData';
 export default function TeacherClassPage({ navigation }) {
   const handleViewClass = (classItem) => {
     console.log('View class:', classItem.id);
-    // Navigate to class details
+    // Navigate to class dashboard
+    navigation.navigate('ClassDashboard', { classData: classItem });
   };
 
   const handleUpload = (classItem) => {
