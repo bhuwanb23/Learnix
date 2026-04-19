@@ -11,15 +11,6 @@ export default function UnitHeader({ title, courseName, onBack }) {
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{title}</Text>
             </View>
-            <View style={styles.headerRight}>
-                <View style={styles.courseInfo}>
-                    <Text style={styles.courseLabel}>Current Course</Text>
-                    <Text style={styles.courseName}>{courseName}</Text>
-                </View>
-                <View style={styles.profileImage}>
-                    <MaterialIcons name="person" size={24} color="#595c5e" />
-                </View>
-            </View>
         </View>
     );
 }
@@ -29,8 +20,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingVertical: 16,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         backgroundColor: '#f5f7f9',
     },
     headerLeft: {

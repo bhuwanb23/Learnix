@@ -30,7 +30,7 @@ export default function TeacherScreen() {
 
   const renderContent = () => {
     if (currentScreen === 'ClassDashboard') {
-      return <ClassDashboard route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('main') }} />;
+      return <ClassDashboard route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('main'), navigate: handleNavigate }} />;
     }
 
     if (currentScreen === 'LectureNotes') {

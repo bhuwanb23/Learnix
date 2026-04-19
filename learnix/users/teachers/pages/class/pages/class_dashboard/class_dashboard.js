@@ -24,8 +24,8 @@ export default function ClassDashboard({ route, navigation }) {
     };
 
     const handleActionPress = (action) => {
-        if (action.screen === 'LectureNotes' && navigation?.navigate) {
-            navigation.navigate('LectureNotes', { classData });
+        if (action.screen === 'LectureNotes') {
+            navigation?.navigate?.('LectureNotes', { classData });
         } else {
             console.log('Navigate to:', action.screen);
         }
