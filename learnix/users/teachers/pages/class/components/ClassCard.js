@@ -51,7 +51,7 @@ export default function ClassCard({ classData, onViewPress, onUploadPress }) {
                     activeOpacity={0.85}
                     onPress={onUploadPress}
                 >
-                    <MaterialIcons name="upload-file" size={20} color="#2c2f31" />
+                    <MaterialIcons name="cloud-upload" size={20} color="#2c2f31" />
                 </TouchableOpacity>
             </View>
         </View>

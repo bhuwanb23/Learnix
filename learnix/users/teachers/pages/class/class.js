@@ -7,8 +7,7 @@ import { HEADER, CLASSES } from './constants/classData';
 
 export default function TeacherClassPage({ navigation }) {
   const handleViewClass = (classItem) => {
-    console.log('View class:', classItem.id);
-    // Navigate to class details
+    navigation.navigate('ClassDashboard', { classData: classItem });
   };
 
   const handleUpload = (classItem) => {
@@ -24,7 +23,7 @@ export default function TeacherClassPage({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <ClassHeader header={HEADER} />
-        
+
         {/* Class Cards Grid */}
         <View style={styles.grid}>
           {CLASSES.map((classItem) => (
