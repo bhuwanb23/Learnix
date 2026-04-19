@@ -12,6 +12,7 @@ import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constant
 export default function CompletedUnderReviewCard({ assignment, onPress }) {
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
+  const fileCount = typeof assignment.files === 'number' ? assignment.files : null;
 
   return (
     <TouchableOpacity
@@ -40,10 +41,17 @@ export default function CompletedUnderReviewCard({ assignment, onPress }) {
               <MaterialIcons name="check-circle" size={13} color={COLORS.gray500} />
               <Text style={styles.metaText}>Submitted {assignment.submittedDate}</Text>
             </View>
-            {assignment.files && (
+            {fileCount != null && fileCount > 0 ? (
               <View style={styles.metaItem}>
                 <MaterialIcons name="attach-file" size={13} color={COLORS.gray500} />
-                <Text style={styles.metaText}>{assignment.files} Files</Text>
+                <Text style={styles.metaText}>
+                  {fileCount} {fileCount === 1 ? 'file' : 'files'}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.metaItem}>
+                <MaterialIcons name="cloud-done" size={13} color={COLORS.gray500} />
+                <Text style={styles.metaText}>Submission on file</Text>
               </View>
             )}
           </View>

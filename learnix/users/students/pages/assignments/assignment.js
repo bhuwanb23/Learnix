@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,6 +9,7 @@ import {
 
 // Import components
 import AssignmentHeader from './components/AssignmentHeader';
+import AssignmentCalendarModal from './components/AssignmentCalendarModal';
 import ProgressOverviewBento from './components/ProgressOverviewBento';
 import StatsCardsRow from './components/StatsCardsRow';
 import AssignmentTabs from './components/AssignmentTabs';
@@ -33,12 +34,39 @@ import {
   recentCompletions,
 } from './constants/dashboardData';
 
-export default function AssignmentPage() {
+export default function AssignmentPage({ studentHeader }) {
   const [activeTab, setActiveTab] = useState('active');
   const [currentView, setCurrentView] = useState('list'); // 'list', 'upcoming-detail', 'completed-review', 'completed-results', or 'active-detail'
   const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
+  const isTablet = width >= 768;
+  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
+
+  const calendarItems = useMemo(
+    () => [
+      ...activeAssignments.map((a) => ({ ...a, calendarSource: 'active' })),
+      ...upcomingAssignments.map((a) => ({ ...a, calendarSource: 'upcoming' })),
+      ...completedAssignments.map((a) => ({ ...a, calendarSource: 'completed' })),
+    ],
+    []
+  );
+
+  const handleOpenFromCalendar = useCallback((item) => {
+    const src = item.calendarSource;
+    setCalendarOpen(false);
+    setActiveTab(src);
+    const { calendarSource: _c, ...assignment } = item;
+    setSelectedAssignment(assignment);
+    if (src === 'completed') {
+      setCurrentView(item.underReview ? 'completed-review' : 'completed-results');
+    } else if (src === 'upcoming') {
+      setCurrentView('upcoming-detail');
+    } else {
+      setCurrentView('active-detail');
+    }
+  }, []);
 
   // Select assignments based on active tab
   const getAssignmentsForTab = () => {
@@ -110,10 +138,15 @@ export default function AssignmentPage() {
           <ScrollView
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingHorizontal: horizontalPadding },
+              isDesktop && styles.scrollContentDesktop,
+            ]}
           >
+            {studentHeader}
             {/* Header */}
-            <AssignmentHeader />
+            <AssignmentHeader onCalendarPress={() => setCalendarOpen(true)} />
 
             {/* Progress Overview Bento Grid */}
             <View style={isDesktop ? styles.desktopContainer : null}>
@@ -150,6 +183,12 @@ export default function AssignmentPage() {
               </View>
             </View>
           </ScrollView>
+          <AssignmentCalendarModal
+            visible={calendarOpen}
+            onClose={() => setCalendarOpen(false)}
+            calendarItems={calendarItems}
+            onOpenAssignment={handleOpenFromCalendar}
+          />
         </>
       )}
     </View>
@@ -168,12 +207,17 @@ const styles = StyleSheet.create({
     paddingBottom: 100, 
   },
   desktopContainer: {
-    maxWidth: 1200,
+    maxWidth: 1240,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  scrollContentDesktop: {
+    maxWidth: 1240,
     width: '100%',
     alignSelf: 'center',
   },
   contentGrid: {
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: 0,
     marginTop: SPACING.xl,
     flexDirection: 'column',
     gap: SPACING.xl,

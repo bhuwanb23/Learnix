@@ -6,7 +6,9 @@ import {
     ScrollView,
     StatusBar,
     TouchableOpacity,
+    Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { TOPIC_TRACKER_COLORS, TOPIC_TRACKER_DATA, NOTES_DATA, QUIZ_DATA, STUDY_HISTORY_DATA } from './constants/topicTrackerData';
 import NotesCard from './components/NotesCard';
@@ -14,6 +16,9 @@ import QuizCard from './components/QuizCard';
 import StudyHistoryCard from './components/StudyHistoryCard';
 
 export default function TopicTrackerPage({ navigation, route }) {
+    const insets = useSafeAreaInsets();
+    const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
     const handleBack = () => {
         if (navigation?.goBack) {
             navigation.goBack();
@@ -38,7 +43,7 @@ export default function TopicTrackerPage({ navigation, route }) {
             <StatusBar style="light" backgroundColor="#0050d4" translucent />
 
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: headerTopPad }]}>
                 <View style={styles.leftSection}>
                     <TouchableOpacity
                         style={styles.backButton}
@@ -114,7 +119,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingBottom: 12,
+        minHeight: 48,
         backgroundColor: TOPIC_TRACKER_COLORS.surface,
         borderBottomWidth: 1,
         borderBottomColor: `${TOPIC_TRACKER_COLORS.outlineVariant}26`,

@@ -7,12 +7,17 @@ import {
   StatusBar,
   TouchableOpacity,
   Image,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { TOPIC_LIST_COLORS, TOPIC_LIST_DATA, TOPICS_DATA, RESOURCES_DATA } from './constants/topicListData';
 import TopicCard from './components/TopicCard';
 
 export default function TopicListPage({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -42,7 +47,7 @@ export default function TopicListPage({ navigation, route }) {
       <StatusBar style="light" backgroundColor={TOPIC_LIST_COLORS.primary} translucent />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.backButton} 
@@ -152,7 +157,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
+    minHeight: 48,
     backgroundColor: TOPIC_LIST_COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: `${TOPIC_LIST_COLORS.outlineVariant}26`,

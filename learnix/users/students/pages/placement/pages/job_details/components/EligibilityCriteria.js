@@ -42,7 +42,6 @@ export default function EligibilityCriteria() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: COLORS.surfaceContainerLow,
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,

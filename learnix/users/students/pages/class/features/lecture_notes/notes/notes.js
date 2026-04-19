@@ -4,11 +4,11 @@ import {
     Text,
     StyleSheet,
     ScrollView,
-    SafeAreaView,
     StatusBar,
     Dimensions,
     TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NOTES_COLORS, NOTES_DATA } from './constants/notesData';
 import NotesHeader from './components/NotesHeader';
@@ -61,7 +61,7 @@ export default function NotesPage({ navigation, topic }) {
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={NOTES_COLORS.surface} />
 
-            <SafeAreaView style={styles.safeArea}>
+            <SafeAreaView style={styles.safeArea} edges={['bottom', 'left', 'right']}>
                 <NotesHeader title={NOTES_DATA.subject} onBack={handleBack} />
 
                 <ScrollView

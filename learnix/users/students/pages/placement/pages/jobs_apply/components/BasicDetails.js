@@ -46,7 +46,6 @@ export default function BasicDetails() {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: 16,
     marginBottom: 24,
   },
   card: {

@@ -29,7 +29,7 @@ export default function CompletedResultsScreen({ route, navigation }) {
         <View style={styles.container}>
             <StatusBar style="light" backgroundColor="#0050d4" translucent />
 
-            <HeaderSection onBack={handleBack} />
+            <HeaderSection title={resultsData.title} onBack={handleBack} />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.leftColumn}>
                     <GradeCard results={resultsData} />

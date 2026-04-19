@@ -23,7 +23,7 @@ export default function CompletedReviewScreen({ route, navigation }) {
     return (
         <View style={styles.container}>
             <StatusBar style="light" backgroundColor="#0050d4" translucent />
-            <HeaderSection onBack={handleBack} />
+            <HeaderSection title={assignmentData.title} onBack={handleBack} />
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <HeroSection assignment={assignmentData} />
                 <SubmissionSummaryCard assignment={assignmentData} />

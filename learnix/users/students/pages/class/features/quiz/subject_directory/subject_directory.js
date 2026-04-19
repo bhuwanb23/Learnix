@@ -6,13 +6,18 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_COLORS, SUBJECTS_DATA, PERFORMANCE_DATA } from './constants/quizData';
 import SubjectCard from './components/SubjectCard';
 import PerformanceInsights from './components/PerformanceInsights';
 
 export default function SubjectDirectoryPage({ navigation }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -31,7 +36,7 @@ export default function SubjectDirectoryPage({ navigation }) {
       <StatusBar style="light" backgroundColor="#2563eb" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.iconButton} 
@@ -84,8 +89,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 56,
+    paddingBottom: 12,
+    minHeight: 48,
     backgroundColor: QUIZ_COLORS.surface,
   },
   leftSection: {

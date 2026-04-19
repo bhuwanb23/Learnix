@@ -1,18 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ACTIVE_ASSIGNMENT_COLORS } from '../constants/activeAssignmentData';
 
 export default function HeaderSection({ assignment, onBack }) {
+  const insets = useSafeAreaInsets();
+  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+  const title = assignment?.title?.trim() || 'Assignment details';
+
   return (
-    <View style={styles.header}>
-      {/* <StatusBar style="dark" /> */}
+    <View style={[styles.header, { paddingTop: topPad }]}>
       <View style={styles.headerContent}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={12}>
           <MaterialIcons name="arrow-back" size={24} color={ACTIVE_ASSIGNMENT_COLORS.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Assignment Details</Text>
+        <Text style={styles.headerTitle} numberOfLines={2} ellipsizeMode="tail">
+          {title}
+        </Text>
       </View>
     </View>
   );
@@ -21,23 +26,27 @@ export default function HeaderSection({ assignment, onBack }) {
 const styles = StyleSheet.create({
   header: {
     backgroundColor: ACTIVE_ASSIGNMENT_COLORS.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ACTIVE_ASSIGNMENT_COLORS.surfaceContainerHigh,
+    paddingBottom: 10,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    minHeight: 44,
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     color: ACTIVE_ASSIGNMENT_COLORS.onSurface,
-    marginLeft: 12,
+    marginLeft: 4,
     flex: 1,
+    lineHeight: 22,
   },
   priorityBadge: {
     flexDirection: 'row',

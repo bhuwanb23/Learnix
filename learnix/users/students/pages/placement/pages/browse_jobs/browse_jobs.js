@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 // Import components
@@ -15,9 +15,12 @@ import JobCard from './components/JobCard';
 
 // Import theme
 import { COLORS, SPACING, TYPOGRAPHY } from '../../../../../../constants/theme';
+import { usePlacementLayout } from '../../placementLayout';
+import { STUDENT_HOME_FONT } from '../../../../constants/studentHomeTypography';
 
 export default function BrowseJobs({ navigation }) {
   const [activeFilters, setActiveFilters] = useState(['All Roles']);
+  const { isCompact, horizontalPadding } = usePlacementLayout();
 
   const handleFilterPress = (filter) => {
     if (filter === 'All Roles') {
@@ -44,7 +47,9 @@ export default function BrowseJobs({ navigation }) {
           >
             <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
           </TouchableOpacity>
-          <Text style={styles.topBarTitle}>Job Opportunities</Text>
+          <Text style={styles.topBarTitle} numberOfLines={1}>
+            Job Opportunities
+          </Text>
         </View>
         <View style={styles.topBarRight}>
           <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
@@ -58,12 +63,17 @@ export default function BrowseJobs({ navigation }) {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Editorial Header */}
         <View style={styles.editorialHeader}>
-          <Text style={styles.headerTitle}>Find Your Next Step</Text>
+          <Text style={[styles.headerTitle, { fontSize: STUDENT_HOME_FONT.heroTitle }]}>
+            Find Your Next Step
+          </Text>
           <Text style={styles.headerSubtitle}>
             Curated career paths for ambitious students. Filter through premium internships
             and full-time roles from top-tier organizations.
@@ -88,6 +98,7 @@ export default function BrowseJobs({ navigation }) {
             deadline="Oct 15, 2024"
             isUrgent={true}
             navigation={navigation}
+            compact={isCompact}
           />
           <JobCard
             company="Vortex AI Labs"
@@ -99,6 +110,7 @@ export default function BrowseJobs({ navigation }) {
             deadline="Nov 2, 2024"
             isUrgent={false}
             navigation={navigation}
+            compact={isCompact}
           />
           <JobCard
             company="Beam Finance"
@@ -110,6 +122,7 @@ export default function BrowseJobs({ navigation }) {
             deadline="Dec 20, 2024"
             isUrgent={false}
             navigation={navigation}
+            compact={isCompact}
           />
         </View>
       </ScrollView>
@@ -126,21 +139,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     backgroundColor: COLORS.background,
+    gap: SPACING.sm,
   },
   topBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
     flex: 1,
+    minWidth: 0,
   },
   backButton: {
     padding: SPACING.xs,
   },
   topBarTitle: {
-    fontSize: 20,
+    flex: 1,
+    fontSize: 18,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.textPrimary,
@@ -165,7 +181,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
     paddingBottom: SPACING.xl,
   },
@@ -173,7 +188,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   headerTitle: {
-    fontSize: 32,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.extraBold,
     color: COLORS.textPrimary,
@@ -181,8 +195,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: STUDENT_HOME_FONT.heroSubtitle,
     fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
     color: 'rgba(44, 47, 49, 0.7)',
     lineHeight: 22,
   },

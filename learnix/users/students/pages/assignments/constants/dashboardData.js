@@ -256,6 +256,7 @@ export const completedAssignments = [
     priorityBg: 'rgba(112, 42, 225, 0.15)',
     dueDate: 'Oct 12',
     submittedDate: 'Oct 11',
+    files: 2,
     progress: 100,
     progressColor: '#702ae1',
     underReview: true,

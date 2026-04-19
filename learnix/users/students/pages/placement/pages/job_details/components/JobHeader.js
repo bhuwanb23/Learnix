@@ -4,20 +4,20 @@ import {
   Text,
   StyleSheet,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-
 // Import theme
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../../../constants/theme';
 
-export default function JobHeader({ company, title, type, isUrgent }) {
+export default function JobHeader({ company, title, type, isUrgent, compact = false }) {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logoText}>{company.charAt(0)}</Text>
+      <View style={[styles.content, compact && styles.contentCompact]}>
+        <View style={[styles.logoContainer, compact && styles.logoContainerCompact]}>
+          <Text style={[styles.logoText, compact && styles.logoTextCompact]}>
+            {company.charAt(0)}
+          </Text>
         </View>
-        <View style={styles.info}>
-          <View style={styles.badges}>
+        <View style={[styles.info, compact && styles.infoCompact]}>
+          <View style={[styles.badges, compact && styles.badgesCompact]}>
             <View style={[styles.badge, styles.badgeSecondary]}>
               <Text style={styles.badgeTextSecondary}>{type}</Text>
             </View>
@@ -27,8 +27,18 @@ export default function JobHeader({ company, title, type, isUrgent }) {
               </View>
             )}
           </View>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.company}>{company}</Text>
+          <Text
+            style={[styles.title, compact && styles.titleCompact]}
+            numberOfLines={compact ? 3 : undefined}
+          >
+            {title}
+          </Text>
+          <Text
+            style={[styles.company, compact && styles.companyCompact]}
+            numberOfLines={2}
+          >
+            {company}
+          </Text>
         </View>
       </View>
       {/* Decorative Circle */}
@@ -56,6 +66,11 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
     position: 'relative',
     zIndex: 10,
+    alignItems: 'flex-start',
+  },
+  contentCompact: {
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   logoContainer: {
     width: 96,
@@ -66,19 +81,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
+  logoContainerCompact: {
+    width: 72,
+    height: 72,
+    alignSelf: 'center',
+  },
   logoText: {
     fontSize: 40,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.extraBold,
     color: COLORS.primary,
   },
+  logoTextCompact: {
+    fontSize: 30,
+  },
   info: {
     flex: 1,
+    minWidth: 0,
+  },
+  infoCompact: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
   },
   badges: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
     gap: SPACING.sm,
     marginBottom: SPACING.sm,
+  },
+  badgesCompact: {
+    justifyContent: 'center',
   },
   badge: {
     paddingHorizontal: SPACING.md,
@@ -116,10 +149,18 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     marginBottom: 4,
   },
+  titleCompact: {
+    fontSize: 22,
+    lineHeight: 28,
+    textAlign: 'center',
+  },
   company: {
     fontSize: 18,
     fontFamily: 'Manrope-Medium',
     color: COLORS.primary,
+  },
+  companyCompact: {
+    textAlign: 'center',
   },
   decorativeCircle: {
     position: 'absolute',

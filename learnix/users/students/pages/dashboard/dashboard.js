@@ -19,7 +19,7 @@ import AIStudyBuddyChat from './components/AIStudyBuddyChat';
 // Import data
 import { DASHBOARD_DATA } from './constants/dashboardData';
 
-export default function Dashboard({ navigation }) {
+export default function Dashboard({ navigation, studentHeader }) {
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState(DASHBOARD_DATA);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -84,6 +84,7 @@ export default function Dashboard({ navigation }) {
         )}
         scrollEventThrottle={16}
       >
+        {studentHeader}
         {/* Hero Header */}
         <HeroHeader userData={dashboardData.user} />
 

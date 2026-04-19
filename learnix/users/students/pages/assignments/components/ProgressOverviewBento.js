@@ -6,7 +6,8 @@ import {
   Platform,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function ProgressOverviewBento({ velocity, allocation }) {
   // SVG calculations for Subject Allocation Circle
@@ -116,7 +117,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     gap: SPACING.md,
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: 0,
     marginTop: SPACING.lg,
   },
   velocityCard: {
@@ -145,14 +146,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   velocityLabel: {
-    fontSize: 12,
+    fontSize: STUDENT_HOME_FONT.cardMeta,
     color: COLORS.gray500,
     fontWeight: '600',
     fontFamily: 'Manrope-Medium',
     marginBottom: 4,
   },
   velocityValue: {
-    fontSize: 24,
+    fontSize: STUDENT_HOME_FONT.bigStat,
     fontWeight: '800',
     color: COLORS.textPrimary,
     fontFamily: 'PlusJakartaSans-Bold',
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
   },
   trendText: {
     color: COLORS.success,
-    fontSize: 10,
+    fontSize: STUDENT_HOME_FONT.caption,
     fontWeight: '700',
   },
   chartContainer: {
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.gray100,
   },
   allocationLabel: {
-    fontSize: 12,
+    fontSize: STUDENT_HOME_FONT.cardMeta,
     color: COLORS.gray500,
     fontWeight: '600',
     fontFamily: 'Manrope-Medium',
@@ -216,13 +217,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   taskCount: {
-    fontSize: 20,
+    fontSize: STUDENT_HOME_FONT.statValue,
     fontWeight: '800',
     color: COLORS.textPrimary,
     fontFamily: 'PlusJakartaSans-Bold',
   },
   taskLabel: {
-    fontSize: 10,
+    fontSize: STUDENT_HOME_FONT.caption,
     color: COLORS.gray500,
     fontWeight: '500',
   },
@@ -243,7 +244,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   legendText: {
-    fontSize: 10,
+    fontSize: STUDENT_HOME_FONT.caption,
     color: COLORS.gray600,
     fontWeight: '500',
   },

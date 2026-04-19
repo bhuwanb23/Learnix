@@ -11,6 +11,8 @@ import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../const
 export default function RecentCompletionsSidebar({ completions }) {
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
+  const isTablet = width >= 768;
+  const suggestionIconSize = isTablet ? 16 : isCompact ? 12 : 14;
 
   return (
     <View style={styles.container}>
@@ -42,7 +44,11 @@ export default function RecentCompletionsSidebar({ completions }) {
           </View>
 
           <View style={[styles.suggestion, isCompact && styles.suggestionCompact]}>
-            <MaterialIcons name={completion.suggestionIcon.replace('_', '-')} size={14} color={completion.borderColor} />
+            <MaterialIcons
+              name={completion.suggestionIcon.replace('_', '-')}
+              size={suggestionIconSize}
+              color={completion.borderColor}
+            />
             <Text style={[styles.suggestionText, { color: completion.borderColor }]}>
               {completion.suggestionIcon === 'lightbulb' ? 'Suggestion' : 'Next step'}: {completion.suggestion}
             </Text>

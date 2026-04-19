@@ -3,33 +3,39 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
-  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
+import { COLORS, SPACING } from '../../../../../constants/theme';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
-export default function AssignmentHeader() {
+export default function AssignmentHeader({ onCalendarPress }) {
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const isDesktop = width >= 1024;
+
+  const titleSize = STUDENT_HOME_FONT.heroTitle;
+  const iconSize = isDesktop ? 24 : isTablet ? 22 : 20;
+  const btnSize = isDesktop ? 46 : isTablet ? 44 : 40;
+  // Match Home / StudentHeader: outer scroll already applies 12 / 20 / 28 — keep title row full width inside that inset
   return (
     <View style={styles.container}>
       <View style={styles.headerContent}>
         <View style={styles.leftSection}>
-          <Text style={styles.title}>Assignments</Text>
+          <Text style={[styles.title, { fontSize: titleSize }]}>Assignments</Text>
         </View>
 
         <View style={styles.rightSection}>
-          <TouchableOpacity style={styles.calendarButton} activeOpacity={0.7}>
-            <MaterialIcons name="calendar-today" size={20} color={COLORS.textPrimary} />
+          <TouchableOpacity
+            style={[styles.calendarButton, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }]}
+            onPress={onCalendarPress}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Open assignment due date calendar"
+          >
+            <MaterialIcons name="calendar-today" size={iconSize} color={COLORS.textPrimary} />
           </TouchableOpacity>
-          {/* <View style={styles.avatarContainer}>
-            <Image
-              source={{
-                uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=2080&auto=format&fit=crop',
-              }}
-              style={styles.avatar}
-            />
-          </View> */}
         </View>
       </View>
     </View>
@@ -39,51 +45,36 @@ export default function AssignmentHeader() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.gray50,
-    paddingTop: Platform.OS === 'ios' ? SPACING.md : SPACING.xl,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.md,
-    paddingHorizontal: SPACING.lg,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    maxWidth: 1200,
+    maxWidth: 1240,
     alignSelf: 'center',
   },
   leftSection: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
+    flex: 1,
+    paddingRight: SPACING.sm,
   },
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
   },
-  avatarContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: COLORS.primaryLight,
-  },
-  avatar: {
-    width: '100%',
-    height: '100%',
-  },
   title: {
-    fontSize: 36,
-    fontWeight: '700',
+    fontWeight: '800',
     color: COLORS.textPrimary,
-    fontFamily: TYPOGRAPHY.fontFamily.headline,
-    letterSpacing: -0.7,
+    fontFamily: 'PlusJakartaSans-ExtraBold',
+    letterSpacing: -0.5,
   },
   calendarButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',

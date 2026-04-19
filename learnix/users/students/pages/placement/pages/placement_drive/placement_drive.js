@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 // Import components
@@ -16,6 +16,7 @@ import InsightsSection from './components/InsightsSection';
 
 // Import theme
 import { COLORS, SPACING, TYPOGRAPHY, BORDER_RADIUS } from '../../../../../../constants/theme';
+import { STUDENT_HOME_FONT } from '../../../../constants/studentHomeTypography';
 
 const drives = [
   {
@@ -158,7 +159,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xs,
   },
   topBarTitle: {
-    fontSize: 20,
+    fontSize: STUDENT_HOME_FONT.sectionTitle,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: COLORS.primary,
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: STUDENT_HOME_FONT.captionWide,
     fontFamily: 'Manrope-Bold',
     color: COLORS.primary,
     textTransform: 'uppercase',
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   title: {
-    fontSize: 36,
+    fontSize: STUDENT_HOME_FONT.heroTitle,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: TYPOGRAPHY.fontWeight.extraBold,
     color: COLORS.textPrimary,
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
     fontFamily: 'Manrope-Medium',
     color: COLORS.textPrimary,
     paddingVertical: SPACING.sm,
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.full,
   },
   filterButtonText: {
-    fontSize: 13,
+    fontSize: STUDENT_HOME_FONT.cardMeta,
     fontFamily: 'Manrope-Bold',
     color: COLORS.textPrimary,
   },

@@ -9,6 +9,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { UPCOMING_ASSIGNMENT_COLORS } from '../constants/upcomingAssignmentData';
 
 export default function AttachedFilesCard({ files }) {
+  const list = Array.isArray(files) ? files : [];
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -17,7 +19,7 @@ export default function AttachedFilesCard({ files }) {
       </View>
 
       <View style={styles.filesList}>
-        {files.map((file) => (
+        {list.map((file) => (
           <TouchableOpacity
             key={file.id}
             style={styles.fileItem}

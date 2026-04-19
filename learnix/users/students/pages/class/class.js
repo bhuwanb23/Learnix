@@ -30,13 +30,14 @@ import {
   mockPerformanceStats,
 } from './constants/classData';
 
-export default function ClassPage({ navigation }) {
+export default function ClassPage({ navigation, studentHeader }) {
   const [refreshing, setRefreshing] = useState(false);
   const [currentFeature, setCurrentFeature] = useState('main'); // 'main' or 'lecture_notes'
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
-  const horizontalPadding = isDesktop ? 32 : isTablet ? 24 : 16;
+  // Match Home (Dashboard) scroll inset so StudentHeader lines up the same
+  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
   const sectionGap = isTablet ? 28 : 20;
 
   const onRefresh = async () => {
@@ -107,6 +108,7 @@ export default function ClassPage({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        {studentHeader}
         {/* Academic Header */}
         <AcademicHeader semester={mockClassData.semester} credits={mockClassData.credits} />
 
@@ -144,11 +146,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 24,
     paddingBottom: 10, // Padding for bottom nav bar
   },
   scrollContentDesktop: {
-    maxWidth: 1200,
+    maxWidth: 1240,
     width: '100%',
     alignSelf: 'center',
   },

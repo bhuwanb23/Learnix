@@ -7,19 +7,25 @@ import {
   StatusBar,
   Animated,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 
 export default function StudentHeader({ activeTab, onProfilePress }) {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isTablet = width >= 768;
-  const isDesktop = width >= 1200;
-  const containerPaddingHorizontal = isDesktop ? 28 : isTablet ? 22 : 16;
+  const isDesktop = width >= 1024;
+  // Match Dashboard horizontal rhythm (same as scroll paddingHorizontal on Home)
+  const containerPaddingHorizontal = isDesktop ? 28 : isTablet ? 20 : 12;
   const headingSize = isDesktop ? 24 : isTablet ? 23 : 20;
   const actionIconSize = isTablet ? 25 : 22;
+  // Push the whole card below the status bar / notch; inner layout unchanged (margin, not extra padding inside).
+  const safeTop = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
 
   const mountainDrift = useRef(new Animated.Value(0)).current;
 
@@ -59,8 +65,8 @@ export default function StudentHeader({ activeTab, onProfilePress }) {
         styles.container,
         {
           paddingHorizontal: containerPaddingHorizontal,
-          marginHorizontal: isDesktop ? 28 : isTablet ? 20 : 14,
-          marginTop: isTablet ? SPACING.md : SPACING.sm,
+          marginHorizontal: isDesktop ? 28 : isTablet ? 20 : 12,
+          marginTop: (isTablet ? SPACING.md : SPACING.sm) + safeTop,
         },
       ]}
     >

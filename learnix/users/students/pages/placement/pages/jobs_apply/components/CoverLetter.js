@@ -35,7 +35,6 @@ export default function CoverLetter({ value, onChangeText }) {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: 16,
     marginBottom: 24,
   },
   card: {

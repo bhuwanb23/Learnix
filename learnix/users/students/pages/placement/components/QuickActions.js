@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function QuickActions({ navigation }) {
   const handleBrowseJobs = () => {
@@ -97,16 +98,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(112, 42, 225, 0.1)',
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
     color: '#2c2f31',
-    lineHeight: 22,
+    lineHeight: 20,
     marginTop: 0,
     marginBottom: 4,
   },
   cardSubtitle: {
-    fontSize: 12,
+    fontSize: STUDENT_HOME_FONT.cardMeta,
     fontFamily: 'Manrope-Medium',
     fontWeight: '500',
     color: '#595c5e',

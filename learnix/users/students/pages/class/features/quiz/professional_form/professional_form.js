@@ -6,7 +6,9 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_SETUP_COLORS, QUIZ_CONFIG_DATA, QUIZ_MODES, QUESTION_COUNTS, DIFFICULTY_LEVELS, PERFORMANCE_TWEAKS } from './constants/quizSetupData';
 import ModeSelection from './components/ModeSelection';
@@ -15,6 +17,9 @@ import DifficultyLevel from './components/DifficultyLevel';
 import PerformanceTweaks from './components/PerformanceTweaks';
 
 export default function ProfessionalFormPage({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const [selectedMode, setSelectedMode] = useState('practice');
   const [selectedCount, setSelectedCount] = useState(10);
   const [selectedDifficulty, setSelectedDifficulty] = useState('medium');
@@ -54,7 +59,7 @@ export default function ProfessionalFormPage({ navigation, route }) {
       <StatusBar style="light" backgroundColor="#2563eb" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.iconButton} 
@@ -137,8 +142,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 56,
+    paddingBottom: 12,
+    minHeight: 48,
     backgroundColor: QUIZ_SETUP_COLORS.surface,
   },
   leftSection: {

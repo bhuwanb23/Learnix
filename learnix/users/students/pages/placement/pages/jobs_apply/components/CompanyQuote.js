@@ -30,7 +30,6 @@ export default function CompanyQuote() {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
     backgroundColor: 'rgba(123, 156, 255, 0.12)',
     borderRadius: 16,
     padding: 28,

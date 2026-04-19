@@ -4,44 +4,72 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function TodaysOverview({ liveClass }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 420;
+  const isTablet = width >= 768;
+  const pad = isCompact ? 20 : isTablet ? 28 : 24;
+  const subjectSize = STUDENT_HOME_FONT.heroTitle;
+  const joinIconSize = isCompact ? 18 : 20;
+  const materialsIconSize = isCompact ? 22 : 24;
+
   return (
     <LinearGradient
       colors={['#0050d4', '#0046bb']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={styles.container}
+      style={[styles.container, { padding: pad }]}
     >
-      {/* Abstract background shape */}
       <View style={styles.bgShape} />
-      
+
       <View style={styles.content}>
         <View style={styles.infoSection}>
           <View style={styles.badge}>
+            <View style={styles.liveDot} />
             <Text style={styles.badgeText}>{liveClass.status}</Text>
           </View>
-          <Text style={styles.subjectName}>{liveClass.subject}</Text>
+          <Text
+            style={[styles.subjectName, { fontSize: subjectSize, lineHeight: Math.round(subjectSize * 1.15) }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {liveClass.subject}
+          </Text>
           <View style={styles.detailsContainer}>
-            <MaterialIcons name="person" size={14} color="rgba(255, 255, 255, 0.8)" />
-            <Text style={styles.details}>
+            <MaterialIcons name="person-outline" size={16} color="rgba(255, 255, 255, 0.85)" />
+            <Text style={[styles.details, isCompact && styles.detailsCompact]} numberOfLines={2}>
               {liveClass.professor} • {liveClass.time}
             </Text>
           </View>
         </View>
 
-        <View style={styles.actionSection}>
-          <View style={styles.materialsBox}>
-            <Text style={styles.materialsCount}>{liveClass.materials}</Text>
-            <Text style={styles.materialsLabel}>Materials</Text>
+        <View style={[styles.actionSection, isCompact && styles.actionSectionStacked]}>
+          <View style={[styles.materialsBox, isCompact && styles.materialsBoxFull]}>
+            <View style={styles.materialsIconWrap}>
+              <MaterialIcons name="menu-book" size={materialsIconSize} color="rgba(255, 255, 255, 0.95)" />
+            </View>
+            <View style={styles.materialsTextCol}>
+              <Text style={styles.materialsCount}>{liveClass.materials}</Text>
+              <Text style={styles.materialsLabel}>Materials</Text>
+            </View>
           </View>
-          
-          <TouchableOpacity style={styles.joinButton} activeOpacity={0.8}>
-            <MaterialIcons name="video-camera-front" size={20} color="#0050d4" />
-            <Text style={styles.joinButtonText}>Join Session</Text>
+
+          <TouchableOpacity
+            style={[styles.joinButton, isCompact && styles.joinButtonFull]}
+            activeOpacity={0.8}
+          >
+            <View style={styles.joinIconCircle}>
+              <MaterialIcons name="videocam" size={joinIconSize} color="#0050d4" />
+            </View>
+            <Text style={[styles.joinButtonText, isCompact && styles.joinButtonTextCompact]} numberOfLines={1}>
+              Join Session
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -52,7 +80,6 @@ export default function TodaysOverview({ liveClass }) {
 const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
-    padding: 32,
     position: 'relative',
     overflow: 'hidden',
     shadowColor: '#000',
@@ -73,88 +100,156 @@ const styles = StyleSheet.create({
   content: {
     position: 'relative',
     zIndex: 1,
-    flexDirection: 'column', // flex-col md:flex-row in HTML, we do col
-    gap: 24,
+    flexDirection: 'column',
+    gap: 20,
   },
-  infoSection: {
-    // Info section styles
-  },
+  infoSection: {},
   badge: {
     alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999, // rounded-full
+    paddingVertical: 6,
+    borderRadius: 999,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    marginBottom: 12,
+    marginBottom: 10,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#4ade80',
   },
   badgeText: {
-    fontSize: 12, // text-xs
+    fontSize: 11,
     fontWeight: '700',
     color: '#ffffff',
     textTransform: 'uppercase',
-    letterSpacing: 0.5, // tracking-wider
+    letterSpacing: 0.6,
     fontFamily: 'Manrope-Bold',
   },
   subjectName: {
-    fontSize: 24, // text-2xl
-    fontWeight: '700', // font-bold
-    color: '#ffffff', // text-on-primary
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontWeight: '800',
+    color: '#ffffff',
+    fontFamily: 'PlusJakartaSans-ExtraBold',
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   detailsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
+    maxWidth: '100%',
   },
   details: {
-    fontSize: 16, // Assuming base size
-    color: 'rgba(255, 255, 255, 0.8)', // text-on-primary/80
+    flex: 1,
+    fontSize: STUDENT_HOME_FONT.heroSubtitle,
+    color: 'rgba(255, 255, 255, 0.85)',
     fontWeight: '500',
     fontFamily: 'Manrope-Medium',
+    lineHeight: 22,
+  },
+  detailsCompact: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   actionSection: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16, // gap-4
+    alignItems: 'stretch',
+    gap: 12,
+  },
+  actionSectionStacked: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
   materialsBox: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // bg-white/10
-    borderRadius: 12, // rounded-xl
-    padding: 12,
-    paddingHorizontal: 24, // px-6
-    alignItems: 'center',
-  },
-  materialsCount: {
-    fontSize: 24, // text-2xl
-    fontWeight: '700',
-    color: '#ffffff',
-    fontFamily: 'Manrope-Bold',
-  },
-  materialsLabel: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.7)',
-    textTransform: 'uppercase',
-    marginTop: 0,
-    fontFamily: 'Manrope-Bold',
-  },
-  joinButton: {
-    flex: 2, // Take more space
+    flexGrow: 0,
+    flexShrink: 0,
     flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 12, // rounded-xl
-    paddingVertical: 16, // py-4
-    paddingHorizontal: 32, // px-8
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minWidth: 118,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+  },
+  materialsBoxFull: {
+    width: '100%',
+    minWidth: undefined,
+    alignSelf: 'stretch',
+  },
+  materialsIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  materialsTextCol: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    minWidth: 44,
+  },
+  materialsCount: {
+    fontSize: STUDENT_HOME_FONT.bigStat,
+    fontWeight: '800',
+    color: '#ffffff',
+    fontFamily: 'PlusJakartaSans-Bold',
+    lineHeight: 26,
+  },
+  materialsLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.75)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    fontFamily: 'Manrope-Bold',
+    marginTop: 2,
+  },
+  joinButton: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  joinButtonFull: {
+    width: '100%',
+    flex: undefined,
+    minHeight: 52,
+  },
+  joinIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 80, 212, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   joinButtonText: {
-    fontSize: 16, // font-bold
+    flexShrink: 1,
+    fontSize: STUDENT_HOME_FONT.emphasis,
     fontWeight: '700',
     color: '#0050d4',
     fontFamily: 'Manrope-Bold',
+  },
+  joinButtonTextCompact: {
+    fontSize: 14,
   },
 });

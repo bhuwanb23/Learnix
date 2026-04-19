@@ -30,7 +30,7 @@ import {
   WALLET_INFO,
 } from './constants/profileData';
 
-export default function Profile({ onNavigate, currentView: parentCurrentView }) {
+export default function Profile({ onNavigate, currentView: parentCurrentView, studentHeader }) {
   const [localCurrentView, setLocalCurrentView] = useState('profile');
   
   // Use parent view if provided, otherwise use local state
@@ -131,6 +131,7 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
           ]}
           showsVerticalScrollIndicator={false}
         >
+          {studentHeader}
           {/* User Profile Header & Identity Hero */}
           <ProfileHeader user={PROFILE_INFO} />
           

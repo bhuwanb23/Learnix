@@ -6,12 +6,17 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_REVIEW_COLORS, QUIZ_REVIEW_DATA, SAMPLE_QUESTIONS } from './constants/quizReviewData';
 import QuestionCard from './components/QuestionCard';
 
 export default function ReviewPage({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -30,7 +35,7 @@ export default function ReviewPage({ navigation, route }) {
       <StatusBar style="light" backgroundColor={QUIZ_REVIEW_COLORS.primary} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.backButton} 
@@ -114,8 +119,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    height: 52,
+    paddingBottom: 10,
+    minHeight: 44,
     backgroundColor: `${QUIZ_REVIEW_COLORS.surfaceContainerLowest}E6`,
     borderBottomWidth: 1,
     borderBottomColor: `${QUIZ_REVIEW_COLORS.outlineVariant}26`,

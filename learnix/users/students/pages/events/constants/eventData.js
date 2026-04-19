@@ -19,12 +19,12 @@ export const DISCOVERY_EVENTS = [
     date: { day: '12', month: 'APR' },
     time: '4:00 PM',
     location: 'Central Lawn',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDBP6IqqI1hRQW5sW2Wbb05Mo73WN4dtUCgKmjJD3VX3ZobyeD1dgF21lXOLD5f3UP557hMdnqcsWMatkr2dsy3fFa60wvdFGtSGNfgrdP2991S6CsvHXotd5fZ-E7YiRT9_3I4vr8eW-UmF_RP3MJSXLsybwKKRKmRYYa9sdZiSkprZ2ZYKo7Stc_xbbtVJboCeN6MUqqthOKNbi__tt6NxugisueWxFxPOvNjXb_OkC3_luy-aGutZfj29VIFSN6CmPAaXvqN9Lk',
+    image: 'https://picsum.photos/seed/learnix-cover-1/800/480',
     attendees: 45, // 3 visible + 42
     avatars: [
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBwuHljW12s7TwQSMIfRQHlDj7kPwQVslDl50YQ81SbrgfyfKhrozqnJbz3c47x0RmChKCRGMqU9qkS0oRlJQjriO3C6dAYDwOoQfDdbg-MPfzGsrLM3_IlEK_YNgPHysP4V1SFqZWEdRV6ZInPiw9WYcJ_CEuV2P4zxUU-bwBLY-Ua2pFkIFYgmWT-hbJt9SCvrgnJQibkPN4sDM3pD6N6eGLop5LToB7hkbU4BAwciqt29J9do9TLKIi_o4KJnrt1cCwj9d2ZZjA',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAqwg86yfUN7_5kOoW8GqWIkWFP-uZxVeHo5jHNMjocmYs1C0HvoQb8o1ppMRO20-q7Cm2Nv_X2JNsl57oiwrrTub4cWPWvjhvgcKanjn7_hepPMB5DVnIVL32OdCyxhYG9zKcahqfT99JweFMnpBVBLZJQmr-UZHJa63Rut43BK2BgfaRa4ZgX7WvnmGTPrYGTIcIaqjv0vBpUW67ijvD8AwxKuGLV4081lb626eac4jILbBBCr63fq461K6yJRBheBjaLpYVT2pk',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCkVUqPNUQ9ClrSz6XOM9K--8nwYuXhaxD7JIieGTxZMEVl3n_neuiXOp2q9omMyzTsvrLaVb6PK5-79xFsDUjVknDN1qDTo_WGUPfLhehYjob5n8HMUc7Ors7JtTBkSbdcfHxK9bakdhE1uqOkrpc8JmTzbotM1NxCPaIR0zZepnmGXfcinZiqsdKWQCEAO0NOyCwxQdMNpR5QH9zRJCJeQhTjI3xLPUWNLaiJrXeAqwWoabE0UhF8D8_3v1kKCBj7PcBZwnP2lBc',
+      'https://picsum.photos/seed/learnix-1-a0/120/120',
+      'https://picsum.photos/seed/learnix-1-a1/120/120',
+      'https://picsum.photos/seed/learnix-1-a2/120/120',
     ]
   },
   {
@@ -37,11 +37,11 @@ export const DISCOVERY_EVENTS = [
     date: { day: '15', month: 'APR' },
     time: '10:30 AM',
     location: 'Media Lab 2',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuC-YG34wb9Th2FJcf_7rfDXKLIwqTQBIC6GpMPHDuHSF7ckvKVdc8kIKQ9HAFLg3WNu-I26Tx_RThGKHKuoqY1rsO4SazJnr8zMncwuft4sFbQyE0kCPF-B34hFj6H41sfgkea0vZG3Dw3QfZ1RSUXTOf8J-zpp72SerfNtJZe3NZjMZG17ksF0jhjmwt7GJ6d2YisG5VrmxBgUH5P1wzEmxVSBeVy0i-pXjRsA33_KmHs1D60r2VgTbmYOfeYZYgMbhJFiZxxgD_s',
+    image: 'https://picsum.photos/seed/learnix-cover-2/800/480',
     attendees: 14,
     avatars: [
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBwnKfhtRXpb7G1hYpwQhLj6M3eepaZfAius5sKZRDxS7RolxCMrMRbIRERI9wzGPqyEo0Y4GjTIbS6DFNL6avaAfOTyjq5UE8zi7c6V1Byq3_GaCnUwok3KTM87ocRT2XvIPKqpVHdqZFSQuy5TZlg7O1ULER47YqSaY_RlSj_D8LJcWtMcFhrkDRRf7lRYoo_R0eoJ-otywPb4xMqs2eI_uOlXTun5Ce-DRpCMzL87Bv4DcfK9eJnt0PX4Cw-bLxwE1sglGiRW_s',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCJ-uyewRCkTkPl9jjTKbb2HDlP2o7d3bWvICchCfLTsl-CkbEXY6Ozn--YgLf65e1juHLrrsM6XzFpw6fXtPn34YBvirdHzRz268qxDhV3mz8rqImVaC028TuJ3sSpPyobXMNb0DBfA7QdO9lvghVd9ur1slEBeMVxJeuFxeJRkC0N0wKkhRThQwdvFnIbistunUzHZwW-4Q_7rkYnggZsKlSUOK2hTTKLk5TxvNmgIuXuzXNi_Z9RZaCsBIZK21dbtmxLajlqEWY',
+      'https://picsum.photos/seed/learnix-2-a0/120/120',
+      'https://picsum.photos/seed/learnix-2-a1/120/120',
     ]
   },
   {
@@ -54,14 +54,28 @@ export const DISCOVERY_EVENTS = [
     date: { day: '18', month: 'APR' },
     time: '7:00 PM',
     location: 'Main Arena',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDb_94hU1UX6UTc1sDbOCkKgF6p6mfXh4_mLkAEttvbO3ia_mSgsQwzYhTGpb_QmhH1O1CFV_gNp-KMLYyXIcE0bQurlr1uCHYmacZrVNKee3k8FZKXmsHy2zZTizN6pxDQiSKFaFXxn60T0cMxSzV6gfnxwHqb7Nh9R11SlurR_i9KDN8-Mx6KuAMXQfYmlF3e38l56Yc4BZ-inGtiGxyBJTYAGvkQbWB5odgScxOK5hi-Jnf9Mxtewc6hq18qPFeYJd_S6mms1M8',
+    image: 'https://picsum.photos/seed/learnix-cover-3/800/480',
     attendees: 152,
     avatars: [
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCGC1iCnQ4ahiwtRJQNv04b2TjOH-XPLXqPy6CWdBYRRjZX4TxyyF84wp1iZZKJwqz1R3zHZ5x0sDNNPm1i801-vh2RRrltbHT2ZVITB0ZlTMm7g-KwYDdzKS58Yu71rfwX_BkkEtuiGz8pFJvFZ_nfpd5iUv2g_gNALb6nO4uMBvRKhD-TgRCL4ppoMRiX7ul-IGFQuRxDiPPIuXJtBOYwIVZLiCj02NSTgj_tWbNztMsIGgA87WLSmldcTmlqRR5BN9nn92KEs5A',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAB6xJIaV5hrPfs3cB9p6cCLyriFrEP-c-OtIBImQzHdphLAtjQgvR1NovclepPDAOPoy98Q6s0MnJ1Cl5B2HcFvVtqlTbo7zTlyKN44FSubv5bJUeDDxwrDigiku8tN4MqN4xApYpFd42vlZ_xmvD9CUCkRbZaW2crm1PGff1Otkncw2SS6_BAmtehd24neymY-XT1_YTtGX8LP-iJLZxA_UhB8Kw319oe8R3SCWRg7Wzt5aGiN3bW1HHW9V74qAnEtGK2EW7Eutk',
+      'https://picsum.photos/seed/learnix-3-a0/120/120',
+      'https://picsum.photos/seed/learnix-3-a1/120/120',
     ]
   },
 ];
+
+/** Quick-search chips under the search bar (matches discovery events). */
+export const EVENT_SEARCH_EXAMPLES = [
+  { label: "Spring Fest", query: 'Spring' },
+  { label: 'UI Design', query: 'UI' },
+  { label: 'Varsity Finals', query: 'Varsity' },
+];
+
+/** Hero strip stats (separate from card-level attendee counts). */
+export const HERO_STATS = {
+  attendees: '1.2k+',
+  speakers: 45,
+  workshops: 12,
+};
 
 export const MY_REGISTRATIONS = [
   {

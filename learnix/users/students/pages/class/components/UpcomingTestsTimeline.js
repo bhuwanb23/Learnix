@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function UpcomingTestsTimeline({ tests }) {
   const hexToRgba = (hex, opacity) => {
@@ -77,15 +78,15 @@ const styles = StyleSheet.create({
     marginBottom: 24, // mb-6
   },
   title: {
-    fontSize: 16, // Assuming base size
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
+    fontSize: STUDENT_HOME_FONT.sectionTitle,
+    fontWeight: '700',
+    color: '#2c2f31',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   viewAll: {
-    fontSize: 12, // text-xs
-    fontWeight: '700', // font-bold
-    color: '#0050d4', // text-primary
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
+    fontWeight: '700',
+    color: '#0050d4',
     fontFamily: 'Manrope-Bold',
   },
   timeline: {
@@ -124,23 +125,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   daysLeft: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '800', // font-extrabold
+    fontSize: STUDENT_HOME_FONT.caption,
+    fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: -0.5, // tracking-tighter
-    marginBottom: 4, // mb-1
-    fontFamily: 'Manrope-ExtraBold',
-  },
-  testTitle: {
-    fontSize: 14, // text-sm
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
+    letterSpacing: 0.5,
+    marginBottom: 4,
     fontFamily: 'Manrope-Bold',
   },
+  testTitle: {
+    fontSize: STUDENT_HOME_FONT.cardTitle,
+    fontWeight: '700',
+    color: '#2c2f31',
+    fontFamily: 'PlusJakartaSans-Bold',
+  },
   testDate: {
-    fontSize: 12, // text-xs
-    color: '#595c5e', // text-on-surface-variant
-    fontWeight: '500', // font-medium
+    fontSize: STUDENT_HOME_FONT.cardMeta,
+    color: '#595c5e',
+    fontWeight: '500',
     fontFamily: 'Manrope-Medium',
   },
 });

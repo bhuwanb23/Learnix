@@ -1,15 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EVENT_DETAILS_COLORS } from '../constants/eventDetailsData';
 
 export default function HeroSection({ event, onBack, onShare }) {
+  const insets = useSafeAreaInsets();
+  const safeTop = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   return (
     <View style={styles.container}>
       <Image source={{ uri: event.image }} style={styles.image} />
       <View style={styles.gradient} />
       
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: safeTop + 8 }]}>
         <TouchableOpacity onPress={onBack} style={styles.iconButton}>
           <MaterialIcons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
@@ -49,13 +53,14 @@ const styles = StyleSheet.create({
   },
   header: {
     position: 'absolute',
-    top: 10,
+    top: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingBottom: 4,
   },
   iconButton: {
     width: 40,

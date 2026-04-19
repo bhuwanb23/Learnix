@@ -4,6 +4,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { SUBMISSION_REVIEW_COLORS } from '../constants/submissionReviewData';
 
 export default function SuccessCard({ data, onReturnDashboard, onViewDetails }) {
+  const fileList = Array.isArray(data?.files) ? data.files : [];
+
   return (
     <View style={styles.container}>
       <View style={styles.successIcon}>
@@ -14,7 +16,7 @@ export default function SuccessCard({ data, onReturnDashboard, onViewDetails }) 
       <Text style={styles.submissionDate}>{data.submissionDate}</Text>
 
       <View style={styles.filesSection}>
-        {data.files.map((file) => (
+        {fileList.map((file) => (
           <View key={file.id} style={styles.fileCard}>
             <View style={[styles.fileIcon, { backgroundColor: SUBMISSION_REVIEW_COLORS.surfaceContainerLowest }]}>
               <MaterialIcons 

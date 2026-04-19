@@ -7,10 +7,10 @@ import {
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function ProTipCard() {
+export default function ProTipCard({ compact = false }) {
   return (
     <View style={styles.container}>
-      <View style={styles.content}>
+      <View style={[styles.content, compact && styles.contentCompact]}>
         <View style={styles.leftContent}>
           <View style={styles.iconContainer}>
             <MaterialIcons name="lightbulb" size={24} color="#a23800" />
@@ -23,7 +23,10 @@ export default function ProTipCard() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={[styles.button, compact && styles.buttonCompact]}
+          activeOpacity={0.8}
+        >
           <Text style={styles.buttonText}>Explore Community</Text>
         </TouchableOpacity>
       </View>
@@ -48,6 +51,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 16,
+  },
+  contentCompact: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
   leftContent: {
     flex: 1,
@@ -87,6 +94,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 9999,
     flexShrink: 0,
+  },
+  buttonCompact: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
   },
   buttonText: {
     fontSize: 13,

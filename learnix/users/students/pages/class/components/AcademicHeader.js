@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { TYPOGRAPHY } from '../../../../../constants/theme';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function AcademicHeader({ semester, credits }) {
   return (
@@ -36,18 +36,20 @@ const styles = StyleSheet.create({
   titleSection: {
     gap: 4,
   },
+  /** Page title — same scale as Home section headings (e.g. “Upcoming Classes”), not the blue hero block */
   title: {
-    fontSize: 36, // text-4xl equivalent
+    fontSize: STUDENT_HOME_FONT.sectionTitle,
     fontWeight: '700',
-    color: '#2c2f31', // text-on-surface
-    fontFamily: TYPOGRAPHY.fontFamily.headline,
-    letterSpacing: -0.7,
+    color: '#2c2f31',
+    fontFamily: 'PlusJakartaSans-Bold',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: STUDENT_HOME_FONT.heroSubtitle,
     color: '#595c5e', // text-on-surface-variant
-    fontWeight: '400',
-    fontFamily: TYPOGRAPHY.fontFamily.body,
+    fontWeight: '500',
+    fontFamily: 'Manrope-Medium',
+    lineHeight: 22,
   },
   selectorContainer: {
     flexDirection: 'row',
@@ -68,7 +70,7 @@ const styles = StyleSheet.create({
   selectorText: {
     color: '#0050d4', // text-primary
     fontWeight: '700', // font-bold
-    fontSize: 16,
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
     fontFamily: 'Manrope-Bold',
   },
 });

@@ -5,8 +5,7 @@ import {
   StyleSheet,
 } from 'react-native';
 
-// Import theme
-import { TYPOGRAPHY } from '../../../../../constants/theme';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function PlacementHeader() {
   return (
@@ -21,21 +20,22 @@ export default function PlacementHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 32,
+    marginTop: 12,
+    marginBottom: 46,
   },
   greeting: {
-    fontSize: 36,
-    fontFamily: TYPOGRAPHY.fontFamily.headline,
-    fontWeight: '700',
+    fontSize: STUDENT_HOME_FONT.heroTitle,
+    fontFamily: 'PlusJakartaSans-ExtraBold',
+    fontWeight: '800',
     color: '#2c2f31',
-    letterSpacing: -0.7,
-    marginBottom: 8,
+    letterSpacing: -0.5,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 14,
-    fontFamily: TYPOGRAPHY.fontFamily.body,
-    fontWeight: '400',
+    fontSize: STUDENT_HOME_FONT.heroSubtitle,
+    fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
     color: '#595c5e',
-    lineHeight: 21,
+    lineHeight: 22,
   },
 });

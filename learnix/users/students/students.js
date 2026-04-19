@@ -53,6 +53,13 @@ export default function StudentsScreen() {
     setProfileView(view);
   };
 
+  const studentHeader = (
+    <StudentHeader
+      activeTab={activeTab}
+      onProfilePress={handleProfilePress}
+    />
+  );
+
   const handleDashboardNavigation = (target) => {
     const primaryTabs = ['Home', 'Classes', 'Assignments', 'Events', 'Placement', 'Profile'];
 
@@ -68,7 +75,7 @@ export default function StudentsScreen() {
     }
   };
 
-  const renderContent = () => {
+  const renderContent = (studentHeader) => {
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;
     }
@@ -113,33 +120,48 @@ export default function StudentsScreen() {
 
     switch (activeTab) {
       case 'Home':
-        return <Dashboard navigation={{ navigate: handleDashboardNavigation }} />;
+        return (
+          <Dashboard
+            navigation={{ navigate: handleDashboardNavigation }}
+            studentHeader={studentHeader}
+          />
+        );
       case 'Classes':
-        return <ClassPage />;
+        return <ClassPage studentHeader={studentHeader} />;
       case 'Assignments':
-        return <AssignmentPage />;
+        return <AssignmentPage studentHeader={studentHeader} />;
       case 'Events':
-        return <EventsPage />;
+        return <EventsPage studentHeader={studentHeader} />;
       case 'Placement':
-        return <PlacementPage navigation={{ navigate: navigateToScreen }} />;
+        return (
+          <PlacementPage
+            navigation={{ navigate: navigateToScreen }}
+            studentHeader={studentHeader}
+          />
+        );
       case 'Profile':
-        return <ProfilePage onNavigate={handleProfileNavigation} currentView={profileView} />;
+        return (
+          <ProfilePage
+            onNavigate={handleProfileNavigation}
+            currentView={profileView}
+            studentHeader={studentHeader}
+          />
+        );
       default:
-        return <Dashboard />;
+        return (
+          <Dashboard
+            navigation={{ navigate: handleDashboardNavigation }}
+            studentHeader={studentHeader}
+          />
+        );
     }
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      {/* Header - Always visible */}
-      <StudentHeader 
-        activeTab={activeTab} 
-        onProfilePress={handleProfilePress}
-      />
-      
-      {/* Main Content */}
+      {/* Main Content (each tab scrolls its own header with the page) */}
       <View style={styles.contentContainer}>
-        {renderContent()}
+        {renderContent(studentHeader)}
       </View>
       
       {/* Bottom Navigation - Always visible */}

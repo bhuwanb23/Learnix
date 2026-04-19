@@ -1,22 +1,20 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import HeaderSection from './components/HeaderSection';
+import { StyleSheet, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import SuccessCard from './components/SuccessCard';
 import StudentInfoFooter from './components/StudentInfoFooter';
 import { SUBMISSION_REVIEW_DATA } from './constants/submissionReviewData';
 
-export default function SubmissionReviewScreen({ route, navigation, onNavigate }) {
+export default function SubmissionReviewScreen({ route }) {
     const clickedAssignment = route?.params?.assignment || {};
-    const reviewData = {
+    const merged = {
         ...SUBMISSION_REVIEW_DATA,
+        ...clickedAssignment,
     };
-
-    const handleBack = () => {
-        if (onNavigate) {
-            onNavigate('submission');
-        } else {
-            navigation.goBack();
-        }
+    // Dashboard assignments use `files` as a number; SuccessCard expects an array of file objects.
+    const reviewData = {
+        ...merged,
+        files: Array.isArray(merged.files) ? merged.files : SUBMISSION_REVIEW_DATA.files,
     };
 
     const handleReturnDashboard = () => {
@@ -28,8 +26,7 @@ export default function SubmissionReviewScreen({ route, navigation, onNavigate }
     };
 
     return (
-        <View style={styles.container}>
-            <HeaderSection data={reviewData} onBack={handleBack} />
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <SuccessCard 
                     data={reviewData} 
@@ -38,7 +35,7 @@ export default function SubmissionReviewScreen({ route, navigation, onNavigate }
                 />
                 {/* <StudentInfoFooter data={reviewData} /> */}
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
 
