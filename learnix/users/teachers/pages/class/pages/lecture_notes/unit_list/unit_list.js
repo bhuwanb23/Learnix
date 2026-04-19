@@ -5,6 +5,7 @@ import UnitHeader from './components/UnitHeader';
 import Breadcrumb from './components/Breadcrumb';
 import UnitCard from './components/UnitCard';
 import { UNITS, HEADER, BREADCRUMB } from './constants/unitData';
+import TopicList from '../topic_list/topic_list';
 
 export default function UnitList({ route, navigation }) {
     const courseData = route?.params?.courseData || {
@@ -13,14 +14,29 @@ export default function UnitList({ route, navigation }) {
         color: '#0050d4',
     };
 
+    const [currentScreen, setCurrentScreen] = React.useState('units');
+    const [selectedUnit, setSelectedUnit] = React.useState(null);
+
+    const handleNavigate = (screen, params = {}) => {
+        if (screen === 'TopicList') {
+            setCurrentScreen('TopicList');
+            setSelectedUnit(params.unitData);
+        } else if (screen === 'main') {
+            setCurrentScreen('units');
+            setSelectedUnit(null);
+        }
+    };
+
     const handleBack = () => {
-        if (navigation?.goBack) {
+        if (currentScreen === 'TopicList') {
+            handleNavigate('main');
+        } else if (navigation?.goBack) {
             navigation.goBack();
         }
     };
 
     const handleViewTopics = (unit) => {
-        console.log('View topics for:', unit.id);
+        handleNavigate('TopicList', { unitData: unit });
     };
 
     const handleEdit = (unit) => {
@@ -33,25 +49,32 @@ export default function UnitList({ route, navigation }) {
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <UnitHeader 
-                    title={HEADER.title} 
-                    courseName={courseData.title}
-                    onBack={handleBack} 
+            {currentScreen === 'TopicList' ? (
+                <TopicList 
+                    route={{ params: { unitData: selectedUnit } }} 
+                    navigation={{ goBack: handleBack }} 
                 />
-                <Breadcrumb items={BREADCRUMB} />
-                <View style={styles.unitsList}>
-                    {UNITS.map((unit) => (
-                        <UnitCard
-                            key={unit.id}
-                            unit={unit}
-                            onViewTopics={() => handleViewTopics(unit)}
-                            onEdit={() => handleEdit(unit)}
-                            onDelete={() => handleDelete(unit)}
-                        />
-                    ))}
-                </View>
-            </ScrollView>
+            ) : (
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    <UnitHeader 
+                        title={HEADER.title} 
+                        courseName={courseData.title}
+                        onBack={handleBack} 
+                    />
+                    <Breadcrumb items={BREADCRUMB} />
+                    <View style={styles.unitsList}>
+                        {UNITS.map((unit) => (
+                            <UnitCard
+                                key={unit.id}
+                                unit={unit}
+                                onViewTopics={() => handleViewTopics(unit)}
+                                onEdit={() => handleEdit(unit)}
+                                onDelete={() => handleDelete(unit)}
+                            />
+                        ))}
+                    </View>
+                </ScrollView>
+            )}
         </SafeAreaView>
     );
 }
