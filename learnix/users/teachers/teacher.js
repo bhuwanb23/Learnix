@@ -4,19 +4,36 @@ import TeacherHeader from './components/TeacherHeader';
 import TeacherBottomNavbar from './components/TeacherBottomNavbar';
 import TeacherDashboard from './pages/dashboard/dashboard';
 import TeacherClassPage from './pages/class/class';
+import ClassDashboard from './pages/class/pages/class_dashboard/class_dashboard';
 import AssignmentExamsPage from './pages/assignment_exams/assignment_exams';
 import TeacherProfilePage from './pages/profile/profile';
 import StudentPerformancePage from './pages/student_performance/student_performance';
 
 export default function TeacherScreen() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [currentScreen, setCurrentScreen] = useState('main');
+  const [selectedClass, setSelectedClass] = useState(null);
+
+  const handleNavigate = (screen, params = {}) => {
+    if (screen === 'ClassDashboard') {
+      setCurrentScreen('ClassDashboard');
+      setSelectedClass(params.classData);
+    } else if (screen === 'main') {
+      setCurrentScreen('main');
+      setSelectedClass(null);
+    }
+  };
 
   const renderContent = () => {
+    if (currentScreen === 'ClassDashboard') {
+      return <ClassDashboard route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('main') }} />;
+    }
+
     switch (activeTab) {
       case 'Dashboard':
         return <TeacherDashboard />;
       case 'Classes':
-        return <TeacherClassPage navigation={{ navigate: (screen) => console.log('Navigate to:', screen) }} />;
+        return <TeacherClassPage navigation={{ navigate: handleNavigate }} />;
       case 'Assignments':
         return <AssignmentExamsPage />;
       case 'Profile':
