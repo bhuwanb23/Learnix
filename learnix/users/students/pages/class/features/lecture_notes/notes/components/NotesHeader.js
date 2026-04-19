@@ -5,13 +5,18 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NOTES_COLORS } from '../constants/notesData';
 
 export default function NotesHeader({ title, onBack }) {
+  const insets = useSafeAreaInsets();
+  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: topPad }]}>
       <StatusBar barStyle="dark-content" backgroundColor="rgba(255,255,255,0.95)" />
       
       <View style={styles.leftSection}>
@@ -43,8 +48,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 56,
+    paddingBottom: 12,
+    minHeight: 48,
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(171,173,175,0.15)',

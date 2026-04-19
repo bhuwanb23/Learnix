@@ -1,16 +1,13 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
-  Animated,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
+import { SPACING, BORDER_RADIUS } from '../../../constants/theme';
 
 const navigationItems = [
   {
@@ -51,55 +48,26 @@ const navigationItems = [
 ];
 
 export default function StudentBottomNavbar({ activeTab, onTabChange }) {
-  const scaleAnimations = useRef(
-    navigationItems.map(() => new Animated.Value(1))
-  ).current;
-
-  useEffect(() => {
-    navigationItems.forEach((item, index) => {
-      if (activeTab === item.id) {
-        Animated.spring(scaleAnimations[index], {
-          toValue: 1.1,
-          useNativeDriver: true,
-          tension: 150,
-          friction: 7,
-        }).start();
-      } else {
-        Animated.spring(scaleAnimations[index], {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 150,
-          friction: 7,
-        }).start();
-      }
-    });
-  }, [activeTab]);
-
   return (
     <View style={styles.container}>
       <View style={styles.navbar}>
-        {navigationItems.map((item, index) => (
+        {navigationItems.map((item) => (
           <TouchableOpacity
             key={item.id}
             style={[
               styles.navItem,
-              activeTab === item.id && styles.activeNavItem,
+              activeTab === item.id && styles.navItemActive,
             ]}
             onPress={() => onTabChange(item.id)}
             activeOpacity={0.8}
           >
-            <Animated.View 
-              style={[
-                styles.iconContainer,
-                { transform: [{ scale: scaleAnimations[index] }] }
-              ]}
-            >
+            <View style={styles.iconContainer}>
               <Ionicons
                 name={activeTab === item.id ? item.activeIcon : item.icon}
                 size={18}
                 color={activeTab === item.id ? '#2563eb' : 'rgba(255, 255, 255, 0.7)'}
               />
-            </Animated.View>
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -109,43 +77,47 @@ export default function StudentBottomNavbar({ activeTab, onTabChange }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#2563eb',
-    borderTopWidth: 1,
-    borderTopColor: '#1d4ed8',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    backgroundColor: 'transparent',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xs,
+    paddingBottom: SPACING.sm + 2,
   },
   navbar: {
+    position: 'relative',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
-    paddingBottom: SPACING.sm + 4,
+    backgroundColor: '#2563eb',
+    borderRadius: BORDER_RADIUS.full,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#1d4ed8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 9,
   },
   navItem: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.sm,
-    borderRadius: 20,
-    minHeight: 40,
-    minWidth: 40,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.full,
+    minHeight: 44,
     justifyContent: 'center',
-    marginHorizontal: SPACING.xs,
   },
-  activeNavItem: {
+  navItemActive: {
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.16,
+    shadowRadius: 4,
+    elevation: 4,
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
 });

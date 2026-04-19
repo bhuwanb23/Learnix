@@ -7,7 +7,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function SuccessHeader() {
+export default function SuccessHeader({ compact = false }) {
   return (
     <View style={styles.container}>
       {/* Decorative glow */}
@@ -24,8 +24,8 @@ export default function SuccessHeader() {
       </LinearGradient>
 
       {/* Title */}
-      <Text style={styles.title}>Application Submitted</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.title, compact && styles.titleCompact]}>Application Submitted</Text>
+      <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>
         Your journey with Lumina Systems starts now. We've notified the hiring team about your interest.
       </Text>
     </View>
@@ -69,6 +69,10 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     marginBottom: 12,
     textAlign: 'center',
+    paddingHorizontal: 4,
+  },
+  titleCompact: {
+    fontSize: 26,
   },
   subtitle: {
     fontSize: 15,
@@ -78,5 +82,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     maxWidth: 320,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  subtitleCompact: {
+    maxWidth: '100%',
   },
 });

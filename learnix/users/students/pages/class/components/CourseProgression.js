@@ -6,6 +6,7 @@ import {
   Image,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 const CircularProgress = ({ percentage, color }) => {
   const size = 64;
@@ -118,11 +119,11 @@ const styles = StyleSheet.create({
     // Removed margin since parent has padding
   },
   sectionTitle: {
-    fontSize: 20, // text-xl
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
+    fontSize: STUDENT_HOME_FONT.sectionTitle,
+    fontWeight: '700',
+    color: '#2c2f31',
     fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 24, // mb-6
+    marginBottom: 24,
   },
   listContainer: {
     gap: 16, // space-y-4
@@ -163,10 +164,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   percentageText: {
-    fontSize: 12, // text-xs
-    fontWeight: '900', // font-black
-    color: '#2c2f31', // text-on-surface
-    fontFamily: 'PlusJakartaSans-ExtraBold',
+    fontSize: STUDENT_HOME_FONT.captionWide,
+    fontWeight: '800',
+    color: '#2c2f31',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   gradeBadge: {
     paddingHorizontal: 12, // px-3
@@ -174,20 +175,20 @@ const styles = StyleSheet.create({
     borderRadius: 999, // rounded-full
   },
   gradeText: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '700', // font-bold
-    color: '#ffffff', // text-white
+    fontSize: STUDENT_HOME_FONT.caption,
+    fontWeight: '700',
+    color: '#ffffff',
     textTransform: 'uppercase',
-    letterSpacing: 0.5, // tracking-wider
+    letterSpacing: 0.5,
     fontFamily: 'Manrope-Bold',
   },
   middleSection: {
     flex: 1,
   },
   courseName: {
-    fontSize: 20, // text-xl
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
+    fontSize: STUDENT_HOME_FONT.cardTitle,
+    fontWeight: '700',
+    color: '#2c2f31',
     fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: 4,
   },
@@ -203,10 +204,10 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   professorName: {
-    fontSize: 14, // text-sm
-    color: '#595c5e', // text-on-surface-variant
-    fontWeight: '600', // font-semibold
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: STUDENT_HOME_FONT.bodySecondary,
+    color: '#595c5e',
+    fontWeight: '500',
+    fontFamily: 'Manrope-Medium',
   },
   milestoneContainer: {
     width: '100%', // w-full
@@ -217,22 +218,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   milestoneLabel: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '700', // font-bold
+    fontSize: STUDENT_HOME_FONT.caption,
+    fontWeight: '700',
     textTransform: 'uppercase',
-    marginBottom: 4, // mb-1
+    marginBottom: 4,
     fontFamily: 'Manrope-Bold',
   },
   milestoneTitle: {
-    fontSize: 14, // text-sm
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
-    fontFamily: 'Manrope-Bold',
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
+    fontWeight: '700',
+    color: '#2c2f31',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   milestoneDate: {
-    fontSize: 12, // text-xs
-    color: '#595c5e', // text-on-surface-variant
-    fontWeight: '500', // font-medium
+    fontSize: STUDENT_HOME_FONT.cardMeta,
+    color: '#595c5e',
+    fontWeight: '500',
     fontFamily: 'Manrope-Medium',
   },
 });

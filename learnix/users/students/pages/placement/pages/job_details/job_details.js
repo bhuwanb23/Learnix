@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -19,8 +19,10 @@ import SelectionCriteria from './components/SelectionCriteria';
 import DeadlineCard from './components/DeadlineCard';
 import JobMetadata from './components/JobMetadata';
 import ApplyFooter from './components/ApplyFooter';
+import { usePlacementLayout } from '../../placementLayout';
 
 export default function JobDetails({ navigation, route }) {
+  const { isCompact, horizontalPadding } = usePlacementLayout();
   const job = route?.job || {
     company: 'Lumina Global Systems',
     title: 'Senior Product Designer',
@@ -45,7 +47,9 @@ export default function JobDetails({ navigation, route }) {
           <View style={styles.profileImage}>
             <Ionicons name="person" size={20} color="#0050d4" />
           </View>
-          <Text style={styles.topBarTitle}>Placement Portal</Text>
+          <Text style={styles.topBarTitle} numberOfLines={1}>
+            Placement Portal
+          </Text>
         </View>
         <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
           <Ionicons name="notifications-outline" size={24} color="#595c5e" />
@@ -54,7 +58,10 @@ export default function JobDetails({ navigation, route }) {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingHorizontal: horizontalPadding },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Hero Section */}
@@ -63,15 +70,20 @@ export default function JobDetails({ navigation, route }) {
           title={job.title}
           type={job.type}
           isUrgent={job.isUrgent}
+          compact={isCompact}
         />
 
         {/* Job Description */}
         <JobDescription />
 
         {/* Salary & Eligibility Grid */}
-        <View style={styles.twoColumnGrid}>
-          <SalaryCompensation />
-          <EligibilityCriteria />
+        <View style={[styles.twoColumnGrid, isCompact && styles.twoColumnGridStacked]}>
+          <View style={[styles.gridCell, !isCompact && styles.gridCellRow]}>
+            <SalaryCompensation />
+          </View>
+          <View style={[styles.gridCell, !isCompact && styles.gridCellRow]}>
+            <EligibilityCriteria />
+          </View>
         </View>
 
         {/* Selection Criteria */}
@@ -84,11 +96,11 @@ export default function JobDetails({ navigation, route }) {
         <JobMetadata />
 
         {/* Bottom spacing for footer */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: isCompact ? 120 : 108 }} />
       </ScrollView>
 
       {/* Apply Footer */}
-      <ApplyFooter navigation={navigation} />
+      <ApplyFooter navigation={navigation} compact={isCompact} />
     </SafeAreaView>
   );
 }
@@ -102,9 +114,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#f5f7f9',
+    gap: 8,
   },
   backButton: {
     width: 40,
@@ -120,6 +133,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
+    minWidth: 0,
   },
   profileImage: {
     width: 40,
@@ -132,7 +146,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 80, 212, 0.2)',
   },
   topBarTitle: {
-    fontSize: 20,
+    flex: 1,
+    fontSize: 17,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '800',
     color: '#0050d4',
@@ -145,7 +160,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 32,
   },
@@ -153,5 +167,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     marginBottom: 24,
+    alignItems: 'stretch',
+  },
+  twoColumnGridStacked: {
+    flexDirection: 'column',
+  },
+  gridCell: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
+  gridCellRow: {
+    flex: 1,
+    minWidth: 0,
   },
 });

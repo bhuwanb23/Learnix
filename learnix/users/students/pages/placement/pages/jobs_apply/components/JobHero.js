@@ -6,24 +6,30 @@ import {
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function JobHero() {
+export default function JobHero({ compact = false }) {
   return (
     <View style={styles.container}>
       <View style={styles.activeBadge}>
         <View style={styles.activeDot} />
         <Text style={styles.activeBadgeText}>Active Posting</Text>
       </View>
-      <Text style={styles.jobTitle}>Senior Product Designer</Text>
-      <Text style={styles.companyName}>Lumina Global Systems • Remote, Global</Text>
+      <Text style={[styles.jobTitle, compact && styles.jobTitleCompact]}>
+        Senior Product Designer
+      </Text>
+      <Text
+        style={styles.companyName}
+        numberOfLines={compact ? 3 : 2}
+      >
+        Lumina Global Systems • Remote, Global
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
+    paddingTop: 24,
+    paddingBottom: 20,
   },
   activeBadge: {
     flexDirection: 'row',
@@ -58,6 +64,10 @@ const styles = StyleSheet.create({
     color: '#2c2f31',
     marginBottom: 8,
     lineHeight: 38,
+  },
+  jobTitleCompact: {
+    fontSize: 24,
+    lineHeight: 30,
   },
   companyName: {
     fontSize: 16,

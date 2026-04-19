@@ -1,13 +1,20 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
+
+/** Distinct cover per event; seed keeps the same image stable across reloads. */
+function getEventCoverUri(item) {
+  if (item?.image) return item.image;
+  return `https://picsum.photos/seed/learnix-event-${item?.id ?? '0'}/800/480`;
+}
 
 export default function EventCard({ item, index = 0, onPress }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
+
+  const coverUri = getEventCoverUri(item);
 
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -71,7 +78,7 @@ export default function EventCard({ item, index = 0, onPress }) {
         onPress={handlePress}
       >
         <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.eventImage} />
+          <Image source={{ uri: coverUri }} style={styles.eventImage} />
           <LinearGradient
             colors={['transparent', 'rgba(0,0,0,0.6)']}
             style={styles.imageGradient}
@@ -95,11 +102,11 @@ export default function EventCard({ item, index = 0, onPress }) {
         <View style={styles.contentContainer}>
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <MaterialIcons name="schedule" size={14} color={COLORS.gray500} />
+              <MaterialIcons name="schedule" size={13} color={COLORS.gray500} />
               <Text style={styles.metaText}>{item.time}</Text>
             </View>
             <View style={styles.metaItem}>
-              <MaterialIcons name="location-on" size={14} color={COLORS.gray500} />
+              <MaterialIcons name="location-on" size={13} color={COLORS.gray500} />
               <Text style={styles.metaText} numberOfLines={1}>{item.location}</Text>
             </View>
           </View>
@@ -112,7 +119,7 @@ export default function EventCard({ item, index = 0, onPress }) {
               <View style={styles.avatarStack}>
                 {item.avatars.slice(0, 3).map((avatar, idx) => (
                   <Image
-                    key={idx}
+                    key={`${item.id}-av-${idx}`}
                     source={{ uri: avatar }}
                     style={[styles.avatar, { marginLeft: idx > 0 ? -10 : 0 }]}
                   />
@@ -135,19 +142,23 @@ export default function EventCard({ item, index = 0, onPress }) {
 
 const styles = StyleSheet.create({
   cardWrapper: {
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.md,
+    width: '100%',
   },
   eventCard: {
     backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS['2xl'],
+    borderRadius: 24,
     overflow: 'hidden',
     ...SHADOWS.md,
     borderWidth: 1,
     borderColor: COLORS.gray100,
   },
   imageContainer: {
-    height: 150,
+    height: 132,
     position: 'relative',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: 'hidden',
   },
   eventImage: {
     width: '100%',
@@ -159,17 +170,17 @@ const styles = StyleSheet.create({
   },
   topBadges: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    right: 12,
+    top: 10,
+    left: 10,
+    right: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   categoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: BORDER_RADIUS.full,
   },
   categoryText: {
     color: COLORS.white,
@@ -180,25 +191,25 @@ const styles = StyleSheet.create({
   favoriteBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: BORDER_RADIUS.full,
     backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   dateBadge: {
     position: 'absolute',
-    bottom: 12,
-    left: 12,
+    bottom: 10,
+    left: 10,
     backgroundColor: COLORS.white,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.full,
     alignItems: 'center',
     minWidth: 45,
     ...SHADOWS.sm,
   },
   dateDay: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
     color: COLORS.textPrimary,
   },
@@ -209,12 +220,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   contentContainer: {
-    padding: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 10,
   },
   metaRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 6,
+    gap: 10,
+    marginBottom: 4,
   },
   metaItem: {
     flexDirection: 'row',
@@ -222,27 +234,27 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   metaText: {
-    fontSize: 11,
+    fontSize: 10,
     color: COLORS.gray500,
     fontWeight: '500',
   },
   eventTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   eventDescription: {
-    fontSize: 13,
+    fontSize: 12,
     color: COLORS.textSecondary,
-    lineHeight: 18,
-    marginBottom: 12,
+    lineHeight: 16,
+    marginBottom: 10,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 10,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: COLORS.gray100,
   },
@@ -255,9 +267,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
     borderColor: COLORS.white,
   },
@@ -268,14 +280,14 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     backgroundColor: COLORS.gray50,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: BORDER_RADIUS.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.full,
     borderWidth: 1,
     borderColor: COLORS.gray200,
   },
   actionBtnText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: COLORS.primary,
   },

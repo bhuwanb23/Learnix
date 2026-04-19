@@ -4,11 +4,16 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function CompletedUnderReviewCard({ assignment, onPress }) {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const fileCount = typeof assignment.files === 'number' ? assignment.files : null;
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -17,13 +22,13 @@ export default function CompletedUnderReviewCard({ assignment, onPress }) {
     >
       <View style={styles.header}>
         <View style={styles.iconContainer}>
-          <MaterialIcons name="pending" size={20} color={COLORS.accent} />
+          <MaterialIcons name="pending" size={isCompact ? 18 : 20} color={COLORS.accent} />
         </View>
         
         <View style={styles.infoSection}>
           <View style={styles.badgeRow}>
             <View style={styles.reviewBadge}>
-              <MaterialIcons name="hourglass-top" size={10} color={COLORS.accent} />
+              <MaterialIcons name="hourglass-top" size={isCompact ? 9 : 10} color={COLORS.accent} />
               <Text style={styles.reviewText}>Under Review</Text>
             </View>
             <Text style={styles.subjectText}>{assignment.subject}</Text>
@@ -36,22 +41,29 @@ export default function CompletedUnderReviewCard({ assignment, onPress }) {
               <MaterialIcons name="check-circle" size={13} color={COLORS.gray500} />
               <Text style={styles.metaText}>Submitted {assignment.submittedDate}</Text>
             </View>
-            {assignment.files && (
+            {fileCount != null && fileCount > 0 ? (
               <View style={styles.metaItem}>
                 <MaterialIcons name="attach-file" size={13} color={COLORS.gray500} />
-                <Text style={styles.metaText}>{assignment.files} Files</Text>
+                <Text style={styles.metaText}>
+                  {fileCount} {fileCount === 1 ? 'file' : 'files'}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.metaItem}>
+                <MaterialIcons name="cloud-done" size={13} color={COLORS.gray500} />
+                <Text style={styles.metaText}>Submission on file</Text>
               </View>
             )}
           </View>
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, isCompact && styles.footerCompact]}>
         <View style={styles.waitingMessage}>
-          <MaterialIcons name="info-outline" size={13} color={COLORS.accent} />
+          <MaterialIcons name="info-outline" size={isCompact ? 12 : 13} color={COLORS.accent} />
           <Text style={styles.waitingText}>Waiting for feedback</Text>
         </View>
-        <View style={styles.progressIndicator}>
+        <View style={[styles.progressIndicator, isCompact && styles.progressIndicatorCompact]}>
           <Text style={styles.progressText}>100%</Text>
         </View>
       </View>
@@ -149,6 +161,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  footerCompact: {
+    gap: SPACING.xs,
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
   waitingMessage: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -165,6 +182,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: BORDER_RADIUS.sm,
+  },
+  progressIndicatorCompact: {
+    alignSelf: 'flex-start',
   },
   progressText: {
     fontSize: 10,

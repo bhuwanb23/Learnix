@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function ProfileStrength() {
   const progress = 85;
@@ -103,13 +104,13 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   progressText: {
-    fontSize: 32,
+    fontSize: STUDENT_HOME_FONT.bigStat,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '800',
     color: '#0050d4',
   },
   progressLabel: {
-    fontSize: 10,
+    fontSize: STUDENT_HOME_FONT.caption,
     fontFamily: 'Manrope-Bold',
     fontWeight: '700',
     color: '#595c5e',
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   profileTitle: {
-    fontSize: 24,
+    fontSize: STUDENT_HOME_FONT.sectionTitle,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
     color: '#2c2f31',
@@ -130,11 +131,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   profileSubtitle: {
-    fontSize: 14,
+    fontSize: STUDENT_HOME_FONT.heroSubtitle,
     fontFamily: 'Manrope-Medium',
     fontWeight: '500',
     color: '#595c5e',
-    lineHeight: 20,
+    lineHeight: 22,
     textAlign: 'center',
   },
   statsGrid: {
@@ -148,7 +149,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: STUDENT_HOME_FONT.caption,
     fontFamily: 'Manrope-Bold',
     fontWeight: '700',
     color: '#595c5e',
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: STUDENT_HOME_FONT.statValue,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
   },
@@ -172,11 +173,11 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   ctaTitle: {
-    fontSize: 18,
+    fontSize: STUDENT_HOME_FONT.cardTitle,
     fontFamily: 'PlusJakartaSans-Bold',
     fontWeight: '700',
     color: '#ffffff',
-    lineHeight: 24,
+    lineHeight: 22,
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -188,7 +189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ctaButtonText: {
-    fontSize: 14,
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
     fontFamily: 'Manrope-Bold',
     fontWeight: '700',
     color: '#ffffff',

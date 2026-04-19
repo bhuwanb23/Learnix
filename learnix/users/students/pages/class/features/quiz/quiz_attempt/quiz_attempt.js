@@ -7,13 +7,18 @@ import {
   StatusBar,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_ATTEMPT_COLORS, QUIZ_ATTEMPT_DATA, SAMPLE_QUESTION } from './constants/quizAttemptData';
 import ProgressIndicator from './components/ProgressIndicator';
 import OptionButton from './components/OptionButton';
 
 export default function QuizAttemptPage({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const [question, setQuestion] = useState(SAMPLE_QUESTION);
   const [selectedOption, setSelectedOption] = useState('B');
   const [showHint, setShowHint] = useState(false);
@@ -63,7 +68,7 @@ export default function QuizAttemptPage({ navigation, route }) {
       <StatusBar style="light" backgroundColor="#2563eb" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.closeButton} 
@@ -192,8 +197,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    height: 52,
+    paddingBottom: 10,
+    minHeight: 44,
     backgroundColor: QUIZ_ATTEMPT_COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: `${QUIZ_ATTEMPT_COLORS.outlineVariant}26`,

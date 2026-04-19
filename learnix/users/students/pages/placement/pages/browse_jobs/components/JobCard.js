@@ -20,6 +20,7 @@ export default function JobCard({
   deadline,
   isUrgent = false,
   navigation,
+  compact = false,
 }) {
   const [isBookmarked, setIsBookmarked] = useState(false);
 
@@ -55,20 +56,20 @@ export default function JobCard({
       <Text style={styles.jobTitle}>{title}</Text>
 
       {/* Location & Type */}
-      <View style={styles.metaRow}>
-        <View style={styles.metaItem}>
+      <View style={[styles.metaRow, compact && styles.metaRowCompact]}>
+        <View style={[styles.metaItem, compact && styles.metaItemCompact]}>
           <Ionicons name="location-outline" size={16} color={COLORS.textSecondary} />
-          <Text style={styles.metaText}>{location}</Text>
+          <Text style={styles.metaText} numberOfLines={2}>{location}</Text>
         </View>
-        <View style={styles.divider} />
-        <View style={styles.metaItem}>
+        {!compact ? <View style={styles.divider} /> : null}
+        <View style={[styles.metaItem, compact && styles.metaItemCompact]}>
           <Ionicons name="briefcase-outline" size={16} color={COLORS.textSecondary} />
-          <Text style={styles.metaText}>{type}</Text>
+          <Text style={styles.metaText} numberOfLines={2}>{type}</Text>
         </View>
       </View>
 
       {/* Details Grid */}
-      <View style={styles.detailsGrid}>
+      <View style={[styles.detailsGrid, compact && styles.detailsGridCompact]}>
         <View style={styles.detailBox}>
           <Ionicons name="cash-outline" size={16} color={COLORS.primary} style={styles.detailIcon} />
           <Text style={styles.detailLabel}>Package</Text>
@@ -82,14 +83,18 @@ export default function JobCard({
       </View>
 
       {/* Deadline & Apply */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, compact && styles.footerCompact]}>
         <View style={[styles.deadlineBadge, isUrgent && styles.deadlineBadgeUrgent]}>
           <Ionicons name="alarm-outline" size={14} color={isUrgent ? COLORS.error : COLORS.textSecondary} />
           <Text style={[styles.deadlineText, isUrgent && styles.deadlineTextUrgent]}>
             {deadline}
           </Text>
         </View>
-        <TouchableOpacity style={styles.applyButton} activeOpacity={0.8} onPress={handleApplyPress}>
+        <TouchableOpacity
+          style={[styles.applyButton, compact && styles.applyButtonCompact]}
+          activeOpacity={0.8}
+          onPress={handleApplyPress}
+        >
           <Text style={styles.applyButtonText}>Apply</Text>
           <Ionicons name="arrow-forward" size={16} color={COLORS.white} />
         </TouchableOpacity>
@@ -144,11 +149,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
   },
+  metaRowCompact: {
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
+    rowGap: SPACING.sm,
+  },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     flex: 1,
+    minWidth: 0,
+  },
+  metaItemCompact: {
+    flexBasis: '100%',
+    flexGrow: 0,
   },
   divider: {
     width: 4,
@@ -166,6 +181,9 @@ const styles = StyleSheet.create({
   detailsGrid: {
     flexDirection: 'row',
     gap: SPACING.sm,
+  },
+  detailsGridCompact: {
+    flexDirection: 'column',
   },
   detailBox: {
     flex: 1,
@@ -199,6 +217,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(171, 173, 175, 0.15)',
   },
+  footerCompact: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: SPACING.md,
+  },
   deadlineBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -224,6 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm + 2,
@@ -233,6 +257,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 3,
+  },
+  applyButtonCompact: {
+    alignSelf: 'stretch',
   },
   applyButtonText: {
     fontSize: 14,

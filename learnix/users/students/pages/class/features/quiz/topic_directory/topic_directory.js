@@ -6,13 +6,18 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { TOPIC_DIRECTORY_COLORS, UNIT_DETAIL_DATA, TOPICS_DATA, MASTERY_INSIGHT_DATA } from './constants/topicDirectoryData';
 import TopicCard from './components/TopicCard';
 import MasteryInsight from './components/MasteryInsight';
 
 export default function TopicDirectoryPage({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -31,7 +36,7 @@ export default function TopicDirectoryPage({ navigation, route }) {
       <StatusBar style="light" backgroundColor="#2563eb" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.iconButton} 
@@ -97,8 +102,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 56,
+    paddingBottom: 12,
+    minHeight: 48,
     backgroundColor: TOPIC_DIRECTORY_COLORS.surface,
   },
   leftSection: {

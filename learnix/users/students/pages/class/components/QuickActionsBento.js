@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function QuickActionsBento({ actions, navigation }) {
   const handlePress = (actionId) => {
@@ -82,10 +83,10 @@ const styles = StyleSheet.create({
     marginBottom: 12, // mb-3
   },
   label: {
-    fontSize: 14, // text-sm
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
+    fontWeight: '700',
+    color: '#2c2f31',
     textAlign: 'center',
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
 });

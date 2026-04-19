@@ -7,7 +7,9 @@ import {
     StatusBar,
     TouchableOpacity,
     useWindowDimensions,
+    Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { UPCOMING_ASSIGNMENT_COLORS, UPCOMING_ASSIGNMENT_DATA } from './constants/upcomingAssignmentData';
 import HeroSection from './components/HeroSection';
@@ -18,7 +20,9 @@ import BottomActionBar from './components/BottomActionBar';
 
 export default function UpcomingAssignmentPage({ navigation, route }) {
     const { width } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const isDesktop = width >= 1024;
+    const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
 
     // Get assignment data from route params and merge with default data
     const clickedAssignment = route?.params?.assignment || {};
@@ -56,13 +60,15 @@ export default function UpcomingAssignmentPage({ navigation, route }) {
             <StatusBar style="light" backgroundColor="#0050d4" translucent />
 
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-                    <Ionicons name="arrow-back" size={20} color={UPCOMING_ASSIGNMENT_COLORS.primary} />
+            <View style={[styles.header, { paddingTop: headerTopPad }]}>
+                <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7} hitSlop={12}>
+                    <Ionicons name="arrow-back" size={22} color={UPCOMING_ASSIGNMENT_COLORS.primary} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Assignment Details</Text>
-                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7}>
-                    <Ionicons name="ellipsis-vertical" size={20} color={UPCOMING_ASSIGNMENT_COLORS.primary} />
+                <Text style={styles.headerTitle} numberOfLines={2} ellipsizeMode="tail">
+                    {assignmentData.title || 'Assignment details'}
+                </Text>
+                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7} hitSlop={12}>
+                    <Ionicons name="ellipsis-vertical" size={22} color={UPCOMING_ASSIGNMENT_COLORS.primary} />
                 </TouchableOpacity>
             </View>
 
@@ -122,20 +128,26 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingVertical: 10,
+        paddingHorizontal: 16,
+        paddingBottom: 10,
         backgroundColor: UPCOMING_ASSIGNMENT_COLORS.surface,
-
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0, 80, 212, 0.12)',
+        gap: 8,
     },
     backButton: {
         padding: 8,
     },
     headerTitle: {
-        fontSize: 15,
+        flex: 1,
+        fontSize: 16,
         fontWeight: '700',
         fontFamily: 'PlusJakartaSans-Bold',
-        color: UPCOMING_ASSIGNMENT_COLORS.primary,
-        letterSpacing: -0.3,
+        color: UPCOMING_ASSIGNMENT_COLORS.onSurface,
+        letterSpacing: -0.2,
+        lineHeight: 21,
+        textAlign: 'center',
+        marginHorizontal: 4,
     },
     moreButton: {
         padding: 8,

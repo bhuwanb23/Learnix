@@ -6,7 +6,9 @@ import {
     ScrollView,
     TouchableOpacity,
     Alert,
+    Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CONFIRMATION_COLORS } from './constants/confirmationData';
@@ -15,6 +17,9 @@ import TicketCard from './components/TicketCard';
 import NextSteps from './components/NextSteps';
 
 export default function EventConfirmationPage({ route, navigation }) {
+    const insets = useSafeAreaInsets();
+    const safeTop = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
     const eventData = route?.params?.event || {};
     const registrationData = route?.params?.registration || {};
 
@@ -44,7 +49,7 @@ export default function EventConfirmationPage({ route, navigation }) {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: safeTop + 8 }]}>
                 <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
                     <MaterialIcons name="arrow-back" size={20} color={CONFIRMATION_COLORS.primary} />
                 </TouchableOpacity>
@@ -106,7 +111,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingBottom: 12,
         backgroundColor: CONFIRMATION_COLORS.surface,
     },
     backButton: {

@@ -6,7 +6,9 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SYLLABUS_TRACKER_COLORS, ACADEMIC_DATA, SUBJECTS_DATA, MILESTONE_DATA } from './constants/syllabusData';
 import ProgressChart from './components/ProgressChart';
@@ -14,6 +16,9 @@ import SubjectCard from './components/SubjectCard';
 import MilestoneCard from './components/MilestoneCard';
 
 export default function SubjectListPage({ navigation }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -35,7 +40,7 @@ export default function SubjectListPage({ navigation }) {
       <StatusBar style="light" backgroundColor={SYLLABUS_TRACKER_COLORS.primary} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.backButton} 
@@ -95,8 +100,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    height: 52,
+    paddingBottom: 10,
+    minHeight: 44,
     backgroundColor: SYLLABUS_TRACKER_COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: `${SYLLABUS_TRACKER_COLORS.outlineVariant}26`,

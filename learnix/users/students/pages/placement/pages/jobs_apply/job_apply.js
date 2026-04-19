@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View,
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import components
 import {
@@ -19,10 +18,13 @@ import {
   SubmitButton,
   CompanyQuote,
 } from './components';
+import { usePlacementLayout } from '../../placementLayout';
 
 export default function JobApply({ navigation, route }) {
   const [coverLetter, setCoverLetter] = useState('');
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { horizontalPadding, isCompact } = usePlacementLayout();
 
   const handleGoBack = () => {
     if (navigation?.goBack) {
@@ -49,14 +51,23 @@ export default function JobApply({ navigation, route }) {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <KeyboardAvoidingView 
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 8 : 0}
       >
         {/* Top Bar */}
         <ApplicationHeader onGoBack={handleGoBack} />
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: horizontalPadding },
+          ]}
+        >
           {/* Hero Section */}
-          <JobHero />
+          <JobHero compact={isCompact} />
 
           {/* Section 1: Basic Details */}
           <BasicDetails />
@@ -84,9 +95,6 @@ export default function JobApply({ navigation, route }) {
 
           {/* Company Quote */}
           <CompanyQuote />
-
-          {/* Bottom Spacing */}
-          <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -103,5 +111,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+    flexGrow: 1,
   },
 });

@@ -32,7 +32,6 @@ export default function ResumeUpload() {
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: 16,
     marginBottom: 24,
   },
   card: {

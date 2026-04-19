@@ -128,9 +128,9 @@ export const DASHBOARD_DATA = {
       iconColor: '#059669',
     },
     {
-      id: 'profile',
-      label: 'Profile',
-      icon: 'person-outline',
+      id: 'placement',
+      label: 'Placement',
+      icon: 'briefcase-outline',
       bgColor: 'rgba(245, 158, 11, 0.15)',
       hoverBg: 'rgba(245, 158, 11, 0.25)',
       textColor: '#d97706',

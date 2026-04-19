@@ -6,7 +6,9 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_RESULTS_COLORS, QUIZ_RESULTS_DATA, PERFORMANCE_INSIGHT } from './constants/quizResultsData';
 import AccuracyChart from './components/AccuracyChart';
@@ -15,6 +17,9 @@ import ResponseRatio from './components/ResponseRatio';
 import PerformanceInsight from './components/PerformanceInsight';
 
 export default function ResultsPage({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -40,7 +45,7 @@ export default function ResultsPage({ navigation, route }) {
       <StatusBar style="light" backgroundColor={QUIZ_RESULTS_COLORS.primary} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.iconButton} 
@@ -134,8 +139,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 14,
-    paddingVertical: 10,
-    height: 52,
+    paddingBottom: 10,
+    minHeight: 44,
     backgroundColor: QUIZ_RESULTS_COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: `${QUIZ_RESULTS_COLORS.outlineVariant}26`,

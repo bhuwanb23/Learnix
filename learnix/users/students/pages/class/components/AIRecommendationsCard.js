@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function AIRecommendationsCard({ data }) {
   return (
@@ -56,18 +57,18 @@ const styles = StyleSheet.create({
     marginBottom: 16, // mb-4
   },
   title: {
-    fontSize: 16, // Assuming base size
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface
+    fontSize: STUDENT_HOME_FONT.panelTitle,
+    fontWeight: '700',
+    color: '#2c2f31',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   message: {
-    fontSize: 14, // text-sm
-    color: '#595c5e', // text-on-surface-variant
-    lineHeight: 24, // leading-relaxed
-    fontWeight: '500', // font-medium
+    fontSize: STUDENT_HOME_FONT.bodySecondary,
+    color: '#595c5e',
+    lineHeight: 22,
+    fontWeight: '500',
     fontFamily: 'Manrope-Medium',
-    marginBottom: 24, // mb-6
+    marginBottom: 24,
   },
   highlight: {
     color: '#702ae1', // text-secondary
@@ -85,14 +86,14 @@ const styles = StyleSheet.create({
     borderRadius: 8, // rounded-lg
   },
   resourceType: {
-    fontSize: 12, // text-xs
-    fontWeight: '700', // font-bold
-    color: '#2c2f31', // text-on-surface (assuming)
+    fontSize: STUDENT_HOME_FONT.captionWide,
+    fontWeight: '700',
+    color: '#2c2f31',
     fontFamily: 'Manrope-Bold',
   },
   resourceTitle: {
-    fontSize: 12, // text-xs
-    color: '#595c5e', // text-on-surface-variant
+    fontSize: STUDENT_HOME_FONT.cardMeta,
+    color: '#595c5e',
     fontFamily: 'Manrope-Medium',
   },
 });

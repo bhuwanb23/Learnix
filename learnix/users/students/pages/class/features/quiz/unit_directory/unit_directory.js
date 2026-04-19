@@ -6,7 +6,9 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { UNIT_DIRECTORY_COLORS, SUBJECT_DETAIL_DATA, UNITS_DATA, STATS_DATA } from './constants/unitDirectoryData';
 import HeroBanner from './components/HeroBanner';
@@ -14,6 +16,9 @@ import UnitCard from './components/UnitCard';
 import StatsBento from './components/StatsBento';
 
 export default function UnitDirectoryPage({ navigation, route }) {
+  const insets = useSafeAreaInsets();
+  const headerTopPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
   const handleBack = () => {
     if (navigation?.goBack) {
       navigation.goBack();
@@ -36,7 +41,7 @@ export default function UnitDirectoryPage({ navigation, route }) {
       <StatusBar style="light" backgroundColor="#2563eb" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: headerTopPad }]}>
         <View style={styles.leftSection}>
           <TouchableOpacity 
             style={styles.iconButton} 
@@ -93,8 +98,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    height: 56,
+    paddingBottom: 12,
+    minHeight: 48,
     backgroundColor: UNIT_DIRECTORY_COLORS.surface,
   },
   leftSection: {

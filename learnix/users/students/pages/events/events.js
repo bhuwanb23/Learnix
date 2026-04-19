@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,27 +10,33 @@ import {
   RefreshControl,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
+import { COLORS } from '../../../../constants/theme';
+import { STUDENT_HOME_FONT } from '../../constants/studentHomeTypography';
 
 // Import components
 import HeroSection from './components/HeroSection';
-import SearchFilter from './components/SearchFilter';
 import EventCard from './components/EventCard';
 import Sidebar from './components/Sidebar';
 import EventDetailsPage from './pages/details/details';
 
 // Import data
-import { EVENT_CATEGORIES, DISCOVERY_EVENTS, MY_REGISTRATIONS, EVENT_STATS, TRENDING_TAGS } from './constants/eventData';
+import {
+  DISCOVERY_EVENTS,
+  MY_REGISTRATIONS,
+  EVENT_STATS,
+  TRENDING_TAGS,
+  HERO_STATS,
+  EVENT_SEARCH_EXAMPLES,
+} from './constants/eventData';
 
-export default function EventsPage() {
+export default function EventsPage({ studentHeader }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  // Match Home (Dashboard) so StudentHeader + list share the same horizontal inset
+  const horizontalPadding = isDesktop ? 28 : isTablet ? 20 : 12;
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [filteredEvents, setFilteredEvents] = useState(DISCOVERY_EVENTS);
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentView, setCurrentView] = useState('list'); // 'list' or 'details'
   const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -86,19 +92,29 @@ export default function EventsPage() {
     extrapolate: 'clamp',
   });
 
+  const filteredEvents = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return DISCOVERY_EVENTS;
+    return DISCOVERY_EVENTS.filter(
+      (e) =>
+        e.title.toLowerCase().includes(q) ||
+        e.description.toLowerCase().includes(q) ||
+        e.category.toLowerCase().includes(q) ||
+        e.location.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
   const ListHeader = () => (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-      <HeroSection />
-      <SearchFilter
+      {studentHeader}
+      <HeroSection
+        featuredEvent={filteredEvents[0] ?? DISCOVERY_EVENTS[0]}
+        stats={HERO_STATS}
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
-        categories={EVENT_CATEGORIES}
-        events={DISCOVERY_EVENTS}
-        setFilteredEvents={setFilteredEvents}
+        onSearchChange={setSearchQuery}
+        searchExamples={EVENT_SEARCH_EXAMPLES}
       />
-      <View style={[styles.discoverHeader, { paddingHorizontal: isDesktop ? 0 : (isTablet ? 32 : 16) }]}>
+      <View style={styles.discoverHeader}>
         <View style={styles.discoverTextContainer}>
           <Text style={styles.discoverTitle}>Upcoming Discoveries</Text>
           <Text style={styles.discoverSubtitle}>Selected curated events based on your interests</Text>
@@ -115,7 +131,7 @@ export default function EventsPage() {
     <Animated.View style={[styles.desktopGrid, { opacity: fadeAnim }]}>
       <View style={styles.desktopLeft}>
         <View style={styles.eventsGrid}>
-          {DISCOVERY_EVENTS.map((event, index) => <EventCard key={event.id} item={event} index={index} onPress={handleEventPress} />)}
+          {filteredEvents.map((event, index) => <EventCard key={event.id} item={event} index={index} onPress={handleEventPress} />)}
         </View>
       </View>
       <View style={styles.desktopRight}>
@@ -152,7 +168,10 @@ export default function EventsPage() {
                 </Animated.View>
               )
             }
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingHorizontal: horizontalPadding },
+            ]}
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -192,24 +211,25 @@ const styles = StyleSheet.create({
     maxWidth: 1280,
     alignSelf: 'center',
     width: '100%',
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
   },
   discoverTextContainer: {
     flex: 1,
     paddingRight: 16,
   },
   discoverTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#1A1A1A',
-    fontFamily: 'PlusJakartaSans-ExtraBold',
+    fontSize: STUDENT_HOME_FONT.sectionTitle,
+    fontWeight: '700',
+    color: '#2c2f31',
+    fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: -0.5,
     marginBottom: 4,
   },
   discoverSubtitle: {
-    fontSize: 14,
-    color: '#666666',
+    fontSize: STUDENT_HOME_FONT.bodySecondary,
+    color: '#595c5e',
     fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
     lineHeight: 20,
   },
   viewMapBtn: {
@@ -224,8 +244,8 @@ const styles = StyleSheet.create({
   viewMapText: {
     color: '#0050d4',
     fontWeight: '700',
-    fontSize: 13,
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
+    fontFamily: 'Manrope-Bold',
   },
   desktopGrid: {
     flexDirection: 'row',
@@ -233,7 +253,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     gap: 40,
-    paddingHorizontal: 40,
+    paddingHorizontal: 0,
   },
   desktopLeft: {
     flex: 8,
@@ -244,12 +264,14 @@ const styles = StyleSheet.create({
   eventsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 24,
+    gap: 20,
     width: '100%',
     justifyContent: 'space-between',
   },
   mobileEventCardWrapper: {
-    marginBottom: 20,
-    paddingHorizontal: 16,
+    width: '100%',
+    alignSelf: 'stretch',
+    marginBottom: 0,
+    paddingHorizontal: 0,
   },
 });

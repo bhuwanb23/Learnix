@@ -39,7 +39,6 @@ export default function SubmitButton({ isDisabled, onPress }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
     marginBottom: 24,
     borderRadius: 14,
     overflow: 'hidden',

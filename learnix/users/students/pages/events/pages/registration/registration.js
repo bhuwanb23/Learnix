@@ -6,7 +6,9 @@ import {
     ScrollView,
     TouchableOpacity,
     useWindowDimensions,
+    Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { REGISTRATION_COLORS } from './constants/registrationData';
 import RegistrationForm from './components/RegistrationForm';
@@ -18,6 +20,8 @@ import EventConfirmationPage from '../confirmation/confirmation';
 
 export default function EventRegistrationPage({ route, navigation }) {
     const { width } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
+    const safeTop = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
     const isDesktop = width >= 1024;
     const [currentView, setCurrentView] = useState('registration'); // 'registration' or 'confirmation'
     
@@ -51,7 +55,7 @@ export default function EventRegistrationPage({ route, navigation }) {
     return (
         <View style={styles.container}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: safeTop + 8 }]}>
                 <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
                     <MaterialIcons name="arrow-back" size={20} color={REGISTRATION_COLORS.primary} />
                 </TouchableOpacity>
@@ -133,7 +137,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 24,
-        paddingVertical: 12,
+        paddingBottom: 12,
         backgroundColor: REGISTRATION_COLORS.surface,
     },
     backButton: {

@@ -32,7 +32,6 @@ export default function Confirmation({ isConfirmed, onToggle }) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24,
     marginBottom: 16,
   },
   checkboxRow: {

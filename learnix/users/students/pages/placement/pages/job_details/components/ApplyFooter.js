@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function ApplyFooter({ navigation }) {
+export default function ApplyFooter({ navigation, compact = false }) {
+  const insets = useSafeAreaInsets();
   const handleApplyNow = () => {
     if (navigation) {
       navigation.navigate('JobApply', {});
@@ -15,12 +17,21 @@ export default function ApplyFooter({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.saveButton} activeOpacity={0.8}>
+    <View
+      style={[
+        styles.container,
+        compact && styles.containerCompact,
+        { paddingBottom: Math.max(insets.bottom, 16) },
+      ]}
+    >
+      <TouchableOpacity
+        style={[styles.saveButton, compact && styles.buttonFullWidth]}
+        activeOpacity={0.8}
+      >
         <Text style={styles.saveButtonText}>Save for Later</Text>
       </TouchableOpacity>
       <TouchableOpacity 
-        style={styles.applyButton} 
+        style={[styles.applyButton, compact && styles.buttonFullWidth]} 
         activeOpacity={0.85}
         onPress={handleApplyNow}
       >
@@ -46,14 +57,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245, 247, 249, 0.95)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(171, 173, 175, 0.1)',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'stretch',
+  },
+  containerCompact: {
+    flexDirection: 'column',
+  },
+  buttonFullWidth: {
+    flexGrow: 0,
+    flexShrink: 0,
+    alignSelf: 'stretch',
+    width: '100%',
   },
   saveButton: {
     flex: 1,
+    minHeight: 48,
+    justifyContent: 'center',
     backgroundColor: '#dfe3e6',
     paddingVertical: 14,
     borderRadius: 12,
@@ -67,6 +89,7 @@ const styles = StyleSheet.create({
   },
   applyButton: {
     flex: 2,
+    minHeight: 48,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#0050d4',

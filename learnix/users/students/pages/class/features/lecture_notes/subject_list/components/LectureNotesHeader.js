@@ -5,13 +5,18 @@ import {
     StyleSheet,
     TouchableOpacity,
     StatusBar,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/lectureNotesData';
 
 export default function LectureNotesHeader({ onBack, onSearch }) {
+    const insets = useSafeAreaInsets();
+    const topPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: topPad }]}>
             <StatusBar barStyle="light-content" />
 
             <View style={styles.leftSection}>
@@ -34,7 +39,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        height: 56,
+        paddingBottom: 12,
+        minHeight: 48,
         color: 'black',
     },
     leftSection: {

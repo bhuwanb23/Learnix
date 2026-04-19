@@ -5,6 +5,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { STUDENT_HOME_FONT } from '../../../constants/studentHomeTypography';
 
 export default function PerformanceStats({ stats }) {
   // Fixed heights based on HTML
@@ -53,21 +54,22 @@ const styles = StyleSheet.create({
     marginBottom: 24, // mt-6 for the chart below means mb-6 here
   },
   gpaLabel: {
-    fontSize: 10, // text-[10px]
-    fontWeight: '900', // font-black
-    color: '#ffffff', // text-surface (white-ish)
-    opacity: 0.6,
+    fontSize: STUDENT_HOME_FONT.caption,
+    fontWeight: '700',
+    color: '#ffffff',
+    opacity: 0.65,
     textTransform: 'uppercase',
-    letterSpacing: 1.5, // tracking-widest
-    marginBottom: 8, // mb-2
-    fontFamily: 'Manrope-ExtraBold',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+    fontFamily: 'Manrope-Bold',
   },
   gpaValue: {
-    fontSize: 48, // text-5xl
-    fontWeight: '900', // font-black
-    color: '#ffffff', // text-surface
+    fontSize: STUDENT_HOME_FONT.bigStat,
+    fontWeight: '800',
+    color: '#ffffff',
     fontFamily: 'PlusJakartaSans-ExtraBold',
-    marginBottom: 8, // mb-2
+    letterSpacing: -0.5,
+    marginBottom: 8,
   },
   trendContainer: {
     flexDirection: 'row',
@@ -75,9 +77,9 @@ const styles = StyleSheet.create({
     gap: 8, // gap-2
   },
   trendText: {
-    fontSize: 14, // text-sm
-    fontWeight: '700', // font-bold
-    color: '#7b9cff', // text-primary-fixed
+    fontSize: STUDENT_HOME_FONT.quickActionLabel,
+    fontWeight: '700',
+    color: '#7b9cff',
     fontFamily: 'Manrope-Bold',
   },
   chartContainer: {

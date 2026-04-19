@@ -1,49 +1,70 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SUBMISSION_REVIEW_COLORS } from '../constants/submissionReviewData';
 
 export default function HeaderSection({ data, onBack }) {
+  const insets = useSafeAreaInsets();
+  const topPad = Math.max(insets.top, Platform.OS === 'android' ? 8 : 6);
+  const title = data?.title?.trim() || 'Review submission';
+
   return (
-    <View style={styles.header}>
-      <View style={styles.headerContent}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color={SUBMISSION_REVIEW_COLORS.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{data.title}</Text>
+    <View style={[styles.wrap, { paddingTop: topPad }]}>
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton} hitSlop={12}>
+            <MaterialIcons name="arrow-back" size={24} color={SUBMISSION_REVIEW_COLORS.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={2} ellipsizeMode="tail">
+            {title}
+          </Text>
+        </View>
+        <Text style={styles.timerText} numberOfLines={1}>
+          {data.timeRemaining}
+        </Text>
       </View>
-      <Text style={styles.timerText}>{data.timeRemaining}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
+  wrap: {
     backgroundColor: SUBMISSION_REVIEW_COLORS.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: SUBMISSION_REVIEW_COLORS.surfaceContainer,
+  },
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    gap: 8,
   },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     color: SUBMISSION_REVIEW_COLORS.onSurface,
-    marginLeft: 12,
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 22,
   },
   timerText: {
     fontFamily: 'PlusJakartaSans-Bold',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: SUBMISSION_REVIEW_COLORS.primary,
+    flexShrink: 0,
   },
 });

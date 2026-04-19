@@ -4,11 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function AssignmentTabs({ tabs, activeTab, onTabPress }) {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+  const tabFont = isDesktop ? 15 : width >= 768 ? 14 : 13;
+
   const formatTabValue = (tab) => tab.split(' ')[0].toLowerCase();
 
   return (
@@ -28,6 +32,7 @@ export default function AssignmentTabs({ tabs, activeTab, onTabPress }) {
             <Text
               style={[
                 styles.tabText,
+                { fontSize: tabFont },
                 isActive && styles.activeTabText,
               ]}
             >
@@ -42,7 +47,7 @@ export default function AssignmentTabs({ tabs, activeTab, onTabPress }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: SPACING.lg,
+    marginHorizontal: 0,
     marginTop: SPACING.xl,
     flexDirection: 'row',
     gap: SPACING.lg,
@@ -59,7 +64,6 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.primary,
   },
   tabText: {
-    fontSize: 14,
     fontWeight: '600',
     color: COLORS.gray500,
     fontFamily: 'Manrope-Medium',

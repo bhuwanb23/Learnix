@@ -4,6 +4,20 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Font from 'expo-font';
 import AppNavigator from './navigation/AppNavigator';
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
+import {
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from '@expo-google-fonts/manrope';
 
 export default function App() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -12,19 +26,25 @@ export default function App() {
     async function loadFonts() {
       try {
         await Font.loadAsync({
-          // Plus Jakarta Sans variants
-          'PlusJakartaSans-Regular': require('./assets/fonts/PlusJakartaSans-Regular.ttf'),
-          'PlusJakartaSans-Medium': require('./assets/fonts/PlusJakartaSans-Medium.ttf'),
-          'PlusJakartaSans-SemiBold': require('./assets/fonts/PlusJakartaSans-SemiBold.ttf'),
-          'PlusJakartaSans-Bold': require('./assets/fonts/PlusJakartaSans-Bold.ttf'),
-          'PlusJakartaSans-ExtraBold': require('./assets/fonts/PlusJakartaSans-ExtraBold.ttf'),
-          
+          // Plus Jakarta Sans variants (aligned with requested 400/600/700/800)
+          'PlusJakartaSans-Regular': PlusJakartaSans_400Regular,
+          'PlusJakartaSans-Medium': PlusJakartaSans_500Medium,
+          'PlusJakartaSans-SemiBold': PlusJakartaSans_600SemiBold,
+          'PlusJakartaSans-Bold': PlusJakartaSans_700Bold,
+          'PlusJakartaSans-ExtraBold': PlusJakartaSans_800ExtraBold,
+
+          // Backward compatibility aliases
+          'Plus Jakarta Sans': PlusJakartaSans_400Regular,
+          'Plus Jakarta Sans-SemiBold': PlusJakartaSans_600SemiBold,
+          'Plus Jakarta Sans-Bold': PlusJakartaSans_700Bold,
+
           // Manrope variants
-          'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
-          'Manrope-Medium': require('./assets/fonts/Manrope-Medium.ttf'),
-          'Manrope-SemiBold': require('./assets/fonts/Manrope-SemiBold.ttf'),
-          'Manrope-Bold': require('./assets/fonts/Manrope-Bold.ttf'),
-          'Manrope-ExtraBold': require('./assets/fonts/Manrope-ExtraBold.ttf'),
+          'Manrope-Regular': Manrope_400Regular,
+          'Manrope-Medium': Manrope_500Medium,
+          'Manrope-SemiBold': Manrope_600SemiBold,
+          'Manrope-Bold': Manrope_700Bold,
+          'Manrope-ExtraBold': Manrope_800ExtraBold,
+          'Manrope': Manrope_400Regular,
         });
         setFontsLoaded(true);
       } catch (error) {
