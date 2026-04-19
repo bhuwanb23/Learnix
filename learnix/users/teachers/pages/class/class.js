@@ -1,75 +1,60 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import TimetableSection from './components/TimetableSection';
-import QuickActions from './components/QuickActions';
-import SyllabusTracker from './components/SyllabusTracker';
-import PendingTasks from './components/PendingTasks';
-import NavButtons from './components/NavButtons';
-import RecentActivity from './components/RecentActivity';
-import { useTeacherClass } from './hooks/useTeacherClass';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import ClassHeader from './components/ClassHeader';
+import ClassCard from './components/ClassCard';
+import { HEADER, CLASSES } from './constants/classData';
 
 export default function TeacherClassPage({ navigation }) {
-  const {
-    timetable,
-    quickActions,
-    syllabus,
-    pendingTasks,
-    navButtons,
-    recent,
-    refreshing,
-    onRefresh,
-  } = useTeacherClass();
-
-  const handleActionPress = (id) => {
-    if (id === 'attendance') {
-      navigation.navigate('Attendance');
-    } else if (id === 'upload') {
-      navigation.navigate('UploadNotes');
-    }
+  const handleViewClass = (classItem) => {
+    console.log('View class:', classItem.id);
+    // Navigate to class details
   };
 
-  const handleNavPress = (id) => {
-    if (id === 'syllabus') {
-      navigation.navigate('SyllabusProgress');
-    } else if (id === 'ai') {
-      console.log('AI Suggestions pressed');
-      // Navigate to AI suggestions screen
-    }
-  };
-
-  const handleNotificationPress = () => {
-    console.log('Notification pressed');
-    // Navigate to notifications screen
+  const handleUpload = (classItem) => {
+    console.log('Upload notes for:', classItem.id);
+    navigation.navigate('UploadNotes');
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#2563EB"]} tintColor="#2563EB" />}
+        style={styles.scrollView}
         contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
       >
-        <TimetableSection data={timetable} onNotificationPress={handleNotificationPress} />
-        <View style={styles.gap} />
-        <QuickActions actions={quickActions} onPress={handleActionPress} />
-        <View style={styles.gap} />
-        <SyllabusTracker data={syllabus} />
-        <View style={styles.gap} />
-        <PendingTasks data={pendingTasks} />
-        <View style={styles.gap} />
-        <NavButtons items={navButtons} onPress={handleNavPress} />
-        <View style={styles.gap} />
-        <RecentActivity items={recent} />
+        <ClassHeader header={HEADER} />
+        
+        {/* Class Cards Grid */}
+        <View style={styles.grid}>
+          {CLASSES.map((classItem) => (
+            <ClassCard
+              key={classItem.id}
+              classData={classItem}
+              onViewPress={() => handleViewClass(classItem)}
+              onUploadPress={() => handleUpload(classItem)}
+            />
+          ))}
+        </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  scroll: { flex: 1 },
-  content: { padding: 8, paddingBottom: 32 },
-  gap: { height: 12 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f7f9',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingBottom: 32,
+  },
+  grid: {
+    paddingHorizontal: 24,
+    gap: 16,
+  },
 });
 

@@ -1,39 +1,29 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
 
 export default function HeroHeader({ header }) {
   return (
-    <LinearGradient colors={["#3B82F6", "#1E40AF"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.container}>
-      <View style={styles.topRow}>
-        <View style={styles.leftGroup}>
-          <View style={styles.avatarCircle}>
-            <Ionicons name="school" size={18} color="#FFFFFF" />
-          </View>
-          <View>
-            <Text style={styles.greeting}>{header.greeting}</Text>
-            <Text style={styles.name}>{header.name}</Text>
-          </View>
+    <LinearGradient
+      colors={['#2563eb', '#1d4ed8']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
+      {/* Decorative glow */}
+      <View style={styles.glow} />
+      
+      <View style={styles.content}>
+        <Text style={styles.greeting}>{header.greeting}</Text>
+        <Text style={styles.title}>{header.title}, {header.name}</Text>
+        
+        <View style={styles.stats}>
+          {header.stats.map((stat, index) => (
+            <View key={index} style={styles.statBadge}>
+              <Text style={styles.statText}>{stat.value} {stat.label}</Text>
+            </View>
+          ))}
         </View>
-        <View style={styles.rightGroup}>
-          <View style={styles.bellWrap}>
-            <Ionicons name="notifications" size={20} color="#FFFFFF" />
-            {header.notifications > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{header.notifications}</Text>
-              </View>
-            )}
-          </View>
-          {!!header.avatar && (
-            <Image source={{ uri: header.avatar }} style={styles.avatar} />
-          )}
-        </View>
-      </View>
-      <View style={styles.centerText}>
-        <Text style={styles.date}>{header.dateText}</Text>
-        <Text style={styles.count}>{header.classesScheduledText}</Text>
       </View>
     </LinearGradient>
   );
@@ -41,68 +31,60 @@ export default function HeroHeader({ header }) {
 
 const styles = StyleSheet.create({
   container: {
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.lg,
-    paddingBottom: SPACING.lg,
+    borderRadius: 20,
+    padding: 28,
+    marginBottom: 28,
+    position: 'relative',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
+  glow: {
+    position: 'absolute',
+    top: -40,
+    right: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  leftGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  rightGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  avatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  content: {
+    position: 'relative',
+    zIndex: 1,
   },
   greeting: {
-    fontSize: TYPOGRAPHY.sizes.sm,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  name: {
     fontSize: 16,
-    fontWeight: TYPOGRAPHY.weights.semibold,
-    color: '#FFFFFF',
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginBottom: 4,
   },
-  bellWrap: { position: 'relative', padding: 4 },
-  badge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    backgroundColor: '#EF4444',
-    width: 16,
-    height: 16,
-    borderRadius: BORDER_RADIUS.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#2563EB',
+  title: {
+    fontSize: 28,
+    fontFamily: 'PlusJakartaSans-Bold',
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: -0.5,
+    marginBottom: 16,
   },
-  badgeText: {
-    fontSize: 9,
-    color: '#FFFFFF',
-    fontWeight: TYPOGRAPHY.weights.bold,
+  stats: {
+    flexDirection: 'row',
+    gap: 12,
+    flexWrap: 'wrap',
   },
-  avatar: { width: 36, height: 36, borderRadius: BORDER_RADIUS.full, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
-  centerText: { alignItems: 'center' },
-  date: { color: '#DBEAFE', fontSize: TYPOGRAPHY.sizes.xs, marginBottom: 2 },
-  count: { color: '#FFFFFF', fontWeight: TYPOGRAPHY.weights.bold, fontSize: 20 },
+  statBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 9999,
+  },
+  statText: {
+    fontSize: 13,
+    fontFamily: 'Manrope-Bold',
+    fontWeight: '700',
+    color: '#ffffff',
+  },
 });
-
-

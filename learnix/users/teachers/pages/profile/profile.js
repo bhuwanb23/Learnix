@@ -1,30 +1,53 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { COLORS, SPACING } from '../../../../constants/theme';
-import useTeacherProfile from './hooks/useTeacherProfile';
-import ProfileCard from './components/ProfileCard';
-import RecognitionBadges from './components/RecognitionBadges';
-import QuickAccess from './components/QuickAccess';
-import CommunityEngagement from './components/CommunityEngagement';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import ProfileHeader from './components/ProfileHeader';
+import ProfileHero from './components/ProfileHero';
+import StatsGrid from './components/StatsGrid';
+import BiographySection from './components/BiographySection';
+import AcademicHistory from './components/AcademicHistory';
+import AwardsSection from './components/AwardsSection';
+import SettingsPanel from './components/SettingsPanel';
+import {
+  PROFILE,
+  STATS,
+  BIO,
+  ACADEMIC_HISTORY,
+  AWARDS,
+  SETTINGS,
+  ACTIVITY,
+} from './constants/profileData';
 
-export default function TeacherProfile() {
-  const { profile, badges, quickAccess, discussions, tiles } = useTeacherProfile();
-
+export default function TeacherProfilePage() {
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <ProfileCard profile={profile} />
-      <RecognitionBadges items={badges} />
-      <QuickAccess items={quickAccess} />
-      <CommunityEngagement discussions={discussions} tiles={tiles} />
-    </ScrollView>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <ProfileHeader profile={PROFILE} />
+        <ProfileHero profile={PROFILE} />
+        <StatsGrid stats={STATS} />
+        <BiographySection bio={BIO} />
+        <AcademicHistory history={ACADEMIC_HISTORY} />
+        <AwardsSection awards={AWARDS} />
+        <SettingsPanel settings={SETTINGS} activity={ACTIVITY} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 5,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#f5f7f9',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  content: {
+    paddingBottom: 32,
   },
 });
 
