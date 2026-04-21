@@ -1,22 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QuizHeader from './components/QuizHeader';
 import QuizUnitCard from './components/QuizUnitCard';
 import { UNITS, HEADER } from './constants/unitData';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import TopicList from '../topic_list/topic_list';
 
 export default function UnitList({ route, navigation }) {
     const classData = route?.params?.classData;
+    const [currentScreen, setCurrentScreen] = useState('units');
+    const [selectedUnit, setSelectedUnit] = useState(null);
+
+    const handleNavigate = (screen, params = {}) => {
+        if (screen === 'TopicList') {
+            setCurrentScreen('TopicList');
+            setSelectedUnit(params.unitData);
+        } else if (screen === 'main') {
+            setCurrentScreen('units');
+            setSelectedUnit(null);
+        }
+    };
 
     const handleBack = () => {
-        if (navigation?.goBack) {
+        if (currentScreen === 'TopicList') {
+            handleNavigate('main');
+        } else if (navigation?.goBack) {
             navigation.goBack();
         }
     };
 
     const handleManageUnit = (unit) => {
-        console.log('Manage unit:', unit.id);
+        handleNavigate('TopicList', { unitData: unit });
     };
 
     const handleCreateUnit = () => {
@@ -25,34 +40,41 @@ export default function UnitList({ route, navigation }) {
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <View style={styles.headerWrapper}>
-                    <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
-                        <MaterialIcons name="arrow-back" size={24} color="#64748b" />
-                    </TouchableOpacity>
-                    <QuizHeader 
-                        breadcrumb={HEADER.breadcrumb}
-                        title={HEADER.title}
-                        subtitle={HEADER.subtitle}
-                    />
-                </View>
-                <View style={styles.unitsList}>
-                    {UNITS.map((unit) => (
-                        <QuizUnitCard
-                            key={unit.id}
-                            unit={unit}
-                            onManage={() => handleManageUnit(unit)}
+            {currentScreen === 'TopicList' ? (
+                <TopicList 
+                    route={{ params: { unitData: selectedUnit } }} 
+                    navigation={{ goBack: handleBack }} 
+                />
+            ) : (
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                    <View style={styles.headerWrapper}>
+                        <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
+                            <MaterialIcons name="arrow-back" size={24} color="#64748b" />
+                        </TouchableOpacity>
+                        <QuizHeader 
+                            breadcrumb={HEADER.breadcrumb}
+                            title={HEADER.title}
+                            subtitle={HEADER.subtitle}
                         />
-                    ))}
-                    <TouchableOpacity style={styles.createCard} onPress={handleCreateUnit} activeOpacity={0.7}>
-                        <View style={styles.createIconContainer}>
-                            <MaterialIcons name="add" size={32} color="#595c5e" />
-                        </View>
-                        <Text style={styles.createTitle}>Create New Unit</Text>
-                        <Text style={styles.createSubtitle}>Add a new curriculum module to this subject</Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
+                    </View>
+                    <View style={styles.unitsList}>
+                        {UNITS.map((unit) => (
+                            <QuizUnitCard
+                                key={unit.id}
+                                unit={unit}
+                                onManage={() => handleManageUnit(unit)}
+                            />
+                        ))}
+                        <TouchableOpacity style={styles.createCard} onPress={handleCreateUnit} activeOpacity={0.7}>
+                            <View style={styles.createIconContainer}>
+                                <MaterialIcons name="add" size={32} color="#595c5e" />
+                            </View>
+                            <Text style={styles.createTitle}>Create New Unit</Text>
+                            <Text style={styles.createSubtitle}>Add a new curriculum module to this subject</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            )}
         </SafeAreaView>
     );
 }
