@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-dim": "#9f0519",
+                        "on-error-container": "#570008",
+                        "tertiary-container": "#ff956a",
+                        "surface-tint": "#0050d4",
+                        "error-container": "#fb5151",
+                        "outline": "#747779",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#595c5e",
+                        "on-primary-container": "#001e5a",
+                        "tertiary-fixed": "#ff956a",
+                        "tertiary-dim": "#8e3000",
+                        "secondary-container": "#dcc9ff",
+                        "primary-fixed": "#7b9cff",
+                        "on-secondary-fixed": "#430097",
+                        "inverse-surface": "#0b0f10",
+                        "secondary": "#702ae1",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-tertiary-fixed": "#310b00",
+                        "outline-variant": "#abadaf",
+                        "surface-container-low": "#eef1f3",
+                        "on-tertiary": "#ffefeb",
+                        "surface-container-high": "#dfe3e6",
+                        "primary-container": "#7b9cff",
+                        "on-background": "#2c2f31",
+                        "surface": "#f5f7f9",
+                        "on-tertiary-container": "#5a1c00",
+                        "on-primary-fixed-variant": "#00266e",
+                        "surface-container": "#e5e9eb",
+                        "on-primary-fixed": "#000000",
+                        "tertiary": "#a23800",
+                        "error": "#b31b25",
+                        "on-surface": "#2c2f31",
+                        "primary": "#0050d4",
+                        "secondary-fixed": "#dcc9ff",
+                        "background": "#f5f7f9",
+                        "surface-container-highest": "#d9dde0",
+                        "primary-fixed-dim": "#658eff",
+                        "on-secondary-container": "#5b00c7",
+                        "on-secondary": "#f8f0ff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-primary": "#f1f2ff",
+                        "surface-variant": "#d9dde0",
+                        "surface-bright": "#f5f7f9",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "inverse-primary": "#618bff",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "primary-dim": "#0046bb",
+                        "surface-dim": "#d0d5d8",
+                        "on-error": "#ffefee",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "secondary-dim": "#6411d5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f5f7f9;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="bg-[#f5f7f9] dark:bg-slate-950 flex justify-between items-center w-full px-6 h-16 fixed top-0 z-40">
+        <div class="flex items-center gap-4">
+            <button
+                class="active:scale-95 duration-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 p-2 rounded-full">
+                <span class="material-symbols-outlined text-slate-900 dark:text-slate-50"
+                    data-icon="arrow_back">arrow_back</span>
+            </button>
+            <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-slate-900 dark:text-slate-50 text-xl">
+                Edit Quiz</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button
+                class="active:scale-95 duration-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 p-2 rounded-full">
+                <span class="material-symbols-outlined text-slate-900 dark:text-slate-50"
+                    data-icon="more_vert">more_vert</span>
+            </button>
+        </div>
+    </header>
+    <main class="pt-24 px-6 max-w-4xl mx-auto space-y-8">
+        <!-- Hero Editorial Section -->
+        <section
+            class="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-dim p-8 text-on-primary">
+            <div class="relative z-10">
+                <span class="text-xs font-bold uppercase tracking-widest opacity-80 font-headline">Quiz Editor</span>
+                <h2 class="text-3xl font-extrabold mt-2 tracking-tight">Data Structures Quiz 1</h2>
+                <p class="mt-2 opacity-90 max-w-md font-medium">Refining the fundamental assessment for CS201 students.
+                    Focus on Big O and Linked Lists.</p>
+            </div>
+            <div class="absolute top-0 right-0 w-64 h-64 opacity-10 translate-x-10 -translate-y-10">
+                <span class="material-symbols-outlined text-[12rem]" data-icon="quiz">quiz</span>
+            </div>
+        </section>
+        <!-- Form Layout: Asymmetrical Bento Grid Style -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- Left Column: Main Metadata -->
+            <div class="md:col-span-7 space-y-6">
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+                    <label class="block text-sm font-bold text-on-surface-variant mb-2">Quiz Title</label>
+                    <input
+                        class="w-full bg-surface-container-low border-none rounded-lg p-4 font-headline font-semibold text-on-surface focus:ring-2 focus:ring-primary transition-all"
+                        type="text" value="Data Structures Quiz 1" />
+                    <label class="block text-sm font-bold text-on-surface-variant mt-6 mb-2">Description</label>
+                    <textarea
+                        class="w-full bg-surface-container-low border-none rounded-lg p-4 font-body text-on-surface focus:ring-2 focus:ring-primary transition-all resize-none"
+                        rows="4">Comprehensive assessment covering Time Complexity, Linked Lists, and Stack/Queue implementations. Designed for mid-term review.</textarea>
+                </div>
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-bold mb-4 font-headline flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary" data-icon="tune">tune</span>
+                        Difficulty Settings
+                    </h3>
+                    <div class="flex p-1 bg-surface-container-low rounded-xl">
+                        <button
+                            class="flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-on-surface-variant hover:bg-surface-container-high">Easy</button>
+                        <button
+                            class="flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all bg-primary text-white shadow-md">Medium</button>
+                        <button
+                            class="flex-1 py-3 px-4 rounded-lg font-bold text-sm transition-all text-on-surface-variant hover:bg-surface-container-high">Hard</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Right Column: Parameters & Actions -->
+            <div class="md:col-span-5 space-y-6">
+                <div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm">
+                    <h3 class="text-lg font-bold mb-4 font-headline flex items-center gap-2">
+                        <span class="material-symbols-outlined text-tertiary" data-icon="timer">timer</span>
+                        Time Limit
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-2xl font-extrabold text-on-surface">45 <span
+                                    class="text-sm font-medium text-on-surface-variant">Minutes</span></span>
+                            <span class="material-symbols-outlined text-on-surface-variant"
+                                data-icon="edit_calendar">edit_calendar</span>
+                        </div>
+                        <input
+                            class="w-full h-2 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-primary"
+                            max="120" min="5" type="range" value="45" />
+                        <div
+                            class="flex justify-between text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">
+                            <span>5 MIN</span>
+                            <span>60 MIN</span>
+                            <span>120 MIN</span>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="bg-surface-container-low rounded-xl p-6 border-2 border-dashed border-outline-variant/20 flex flex-col items-center text-center">
+                    <div class="w-12 h-12 bg-primary-container rounded-full flex items-center justify-center mb-3">
+                        <span class="material-symbols-outlined text-on-primary-container"
+                            data-icon="account_tree">account_tree</span>
+                    </div>
+                    <h3 class="font-bold font-headline">Quiz Structure</h3>
+                    <p class="text-xs text-on-surface-variant mt-1">15 Multiple Choice · 5 Coding</p>
+                    <button
+                        class="mt-4 w-full bg-surface-container-highest py-3 rounded-lg font-bold text-sm text-on-surface hover:bg-surface-container-high transition-colors">
+                        Manage Questions
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Danger Zone Section -->
+        <section class="mt-12 p-6 rounded-xl bg-error-container/5 border border-error-container/10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-error-dim font-headline">Danger Zone</h3>
+                    <p class="text-xs text-on-surface-variant">Permanently remove this quiz and all student attempts.
+                    </p>
+                </div>
+                <button
+                    class="px-6 py-2 bg-error text-on-error rounded-lg font-bold text-sm hover:bg-error-dim transition-colors active:scale-95 duration-200">
+                    Delete Quiz
+                </button>
+            </div>
+        </section>
+    </main>
+    <!-- Bottom Actions Bar: Glassmorphic Floating Panel -->
+    <div class="fixed bottom-0 w-full z-50 flex justify-center pb-8 px-6">
+        <div
+            class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl w-full max-w-2xl rounded-full px-6 py-4 flex items-center justify-between shadow-[0_8px_24px_rgba(44,47,49,0.12)]">
+            <button class="text-slate-500 font-bold text-sm px-6 py-2 hover:text-on-surface transition-colors">
+                Cancel
+            </button>
+            <div class="flex gap-4">
+                <button
+                    class="bg-[#0050d4] text-white rounded-full px-8 py-3 font-bold text-sm shadow-lg shadow-primary/20 active:scale-95 transition-transform duration-200">
+                    Update Quiz
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- BottomNavBar (Hidden on Mobile per user request for "Edit Quiz" task context, but included for structure) -->
+    <div class="hidden md:block">
+        <!-- Persistent desktop layout elements if needed -->
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Academic Curator | Quiz Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#310b00",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-background": "#2c2f31",
+                        "on-secondary-fixed": "#430097",
+                        "on-error-container": "#570008",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-primary": "#f1f2ff",
+                        "background": "#f5f7f9",
+                        "primary": "#0050d4",
+                        "outline": "#747779",
+                        "on-tertiary": "#ffefeb",
+                        "inverse-primary": "#618bff",
+                        "on-secondary-container": "#5b00c7",
+                        "surface": "#f5f7f9",
+                        "inverse-surface": "#0b0f10",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "on-primary-fixed-variant": "#00266e",
+                        "outline-variant": "#abadaf",
+                        "surface-variant": "#d9dde0",
+                        "on-error": "#ffefee",
+                        "surface-container": "#e5e9eb",
+                        "error-dim": "#9f0519",
+                        "secondary-container": "#dcc9ff",
+                        "error-container": "#fb5151",
+                        "primary-fixed": "#7b9cff",
+                        "surface-dim": "#d0d5d8",
+                        "on-secondary": "#f8f0ff",
+                        "tertiary-container": "#ff956a",
+                        "primary-container": "#7b9cff",
+                        "secondary": "#702ae1",
+                        "on-primary-fixed": "#000000",
+                        "tertiary-fixed": "#ff956a",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "surface-tint": "#0050d4",
+                        "on-surface": "#2c2f31",
+                        "primary-dim": "#0046bb",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "on-surface-variant": "#595c5e",
+                        "tertiary": "#a23800",
+                        "surface-container-highest": "#d9dde0",
+                        "error": "#b31b25",
+                        "secondary-dim": "#6411d5",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#f5f7f9",
+                        "tertiary-dim": "#8e3000",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "surface-container-high": "#dfe3e6",
+                        "surface-container-low": "#eef1f3",
+                        "primary-fixed-dim": "#658eff",
+                        "on-primary-container": "#001e5a",
+                        "on-tertiary-container": "#5a1c00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header
+        class="w-full top-0 sticky z-40 bg-[#f5f7f9] dark:bg-slate-950 flex justify-between items-center px-6 py-4 w-full">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container">
+                <img alt="Teacher profile photo" class="w-full h-full object-crop"
+                    data-alt="Professional headshot of a female teacher in a brightly lit modern office setting with a soft bokeh background"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDD9HwjziC7f24oiAfJpkRa1Yj8cncEcE3DtT4KTBSN5K_c-Cx1TU1ECajDo5ppQEtLTyNOrDZX-EaoBcqGvFijPbnvaZSayjw642MX7GoqaS1Fil8iMJ6hyz7U8k-RWnigJimD4WCRLnJIHwtncGAtAYO7bvnWTyNHyIsoJmzI1NtZaFpFb7OgXJ74TMlqhno8rbhtJzL3GnskslLdiezepm-Au3LFnU0YnN7TB_cbOkHbbRWFjMecAzu-I523lekaIHp6NcLNQgg" />
+            </div>
+            <span
+                class="text-xl font-bold text-[#0050d4] dark:text-blue-400 font-['Plus_Jakarta_Sans'] tracking-tight">Academic
+                Curator</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button
+                class="p-2 rounded-full hover:bg-[#eef1f3] dark:hover:bg-slate-800 transition-colors active:scale-95 duration-200 text-[#2c2f31] dark:text-slate-400">
+                <span class="material-symbols-outlined" data-icon="search">search</span>
+            </button>
+            <button
+                class="p-2 rounded-full hover:bg-[#eef1f3] dark:hover:bg-slate-800 transition-colors active:scale-95 duration-200 text-[#2c2f31] dark:text-slate-400">
+                <span class="material-symbols-outlined" data-icon="settings">settings</span>
+            </button>
+        </div>
+    </header>
+    <main class="px-6 max-w-5xl mx-auto">
+        <!-- Visual Summary Hero -->
+        <section
+            class="mt-8 mb-10 bg-surface-container-low rounded-xl p-8 flex flex-col md:flex-row justify-between items-end md:items-center gap-8 relative overflow-hidden">
+            <div class="z-10 w-full md:w-1/2">
+                <p class="text-on-surface-variant font-semibold tracking-wide text-xs mb-2 uppercase">Performance
+                    Overview</p>
+                <h2 class="text-3xl font-extrabold tracking-tight mb-4">Class Performance</h2>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-5xl font-extrabold text-primary">84%</span>
+                    <span class="text-secondary font-bold flex items-center text-sm">
+                        <span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+                        +12% this month
+                    </span>
+                </div>
+            </div>
+            <div class="z-10 w-full md:w-1/2 h-32 flex items-end justify-between gap-1">
+                <!-- Sparkline Representation -->
+                <div class="w-full h-full bg-surface-container-lowest/50 rounded-xl p-4 flex items-end gap-1">
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[40%]"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[35%]"></div>
+                    <div class="flex-1 bg-primary/20 rounded-t-sm h-[55%]"></div>
+                    <div class="flex-1 bg-primary/40 rounded-t-sm h-[70%]"></div>
+                    <div class="flex-1 bg-primary/40 rounded-t-sm h-[65%]"></div>
+                    <div class="flex-1 bg-primary/60 rounded-t-sm h-[85%]"></div>
+                    <div class="flex-1 bg-primary rounded-t-sm h-[95%]"></div>
+                </div>
+            </div>
+            <!-- Background Aesthetic -->
+            <div class="absolute -right-10 -top-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+        </section>
+        <!-- Stats Row (Horizontal Scroll on mobile) -->
+        <section class="flex overflow-x-auto gap-4 pb-4 no-scrollbar mb-10">
+            <div
+                class="min-w-[240px] flex-1 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-primary/10 rounded-lg text-primary">
+                        <span class="material-symbols-outlined" data-icon="quiz">quiz</span>
+                    </div>
+                    <span class="text-xs font-bold text-on-surface-variant">Active Quizzes</span>
+                </div>
+                <div class="text-3xl font-extrabold">12</div>
+                <div class="mt-2 text-xs text-on-surface-variant font-medium">4 Ending this week</div>
+            </div>
+            <div
+                class="min-w-[240px] flex-1 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-secondary/10 rounded-lg text-secondary">
+                        <span class="material-symbols-outlined" data-icon="task_alt">task_alt</span>
+                    </div>
+                    <span class="text-xs font-bold text-on-surface-variant">Completion Rate</span>
+                </div>
+                <div class="text-3xl font-extrabold">92.4%</div>
+                <div class="mt-2 text-xs text-on-surface-variant font-medium">Higher than average</div>
+            </div>
+            <div
+                class="min-w-[240px] flex-1 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="p-2 bg-tertiary-container/10 rounded-lg text-tertiary">
+                        <span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+                    </div>
+                    <span class="text-xs font-bold text-on-surface-variant">Top Score</span>
+                </div>
+                <div class="text-3xl font-extrabold">98/100</div>
+                <div class="mt-2 text-xs text-on-surface-variant font-medium">Data Structures Quiz</div>
+            </div>
+        </section>
+        <!-- Quiz List (Table Style) -->
+        <section class="mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold tracking-tight">Recent Quizzes</h3>
+                <button class="text-primary text-sm font-bold flex items-center gap-1 hover:underline">
+                    View All <span class="material-symbols-outlined text-base"
+                        data-icon="arrow_forward">arrow_forward</span>
+                </button>
+            </div>
+            <div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-surface-container-low/50">
+                                <th
+                                    class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                    Quiz Name</th>
+                                <th
+                                    class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                    Status</th>
+                                <th
+                                    class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                    Submissions</th>
+                                <th
+                                    class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
+                                    Avg Score</th>
+                                <th
+                                    class="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider text-right">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline-variant/10">
+                            <!-- Row 1 -->
+                            <tr class="hover:bg-surface-container-low/30 transition-colors">
+                                <td class="px-6 py-5">
+                                    <div class="font-bold text-on-surface">Modern Architecture Basics</div>
+                                    <div class="text-xs text-on-surface-variant">Modified 2h ago</div>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <span
+                                        class="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded-full uppercase tracking-tighter">Live</span>
+                                </td>
+                                <td class="px-6 py-5 font-semibold text-on-surface">45/48</td>
+                                <td class="px-6 py-5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-16 h-2 bg-surface-container-high rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary w-[78%]"></div>
+                                        </div>
+                                        <span class="font-bold text-sm">78%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-5 text-right">
+                                    <div class="flex justify-end gap-3 text-on-surface-variant">
+                                        <button class="hover:text-primary transition-colors"><span
+                                                class="material-symbols-outlined text-lg"
+                                                data-icon="edit">edit</span></button>
+                                        <button class="hover:text-error transition-colors"><span
+                                                class="material-symbols-outlined text-lg"
+                                                data-icon="delete">delete</span></button>
+                                        <button
+                                            class="text-primary text-xs font-bold px-2 py-1 rounded hover:bg-primary/5">Manage</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 2 -->
+                            <tr class="hover:bg-surface-container-low/30 transition-colors">
+                                <td class="px-6 py-5">
+                                    <div class="font-bold text-on-surface">Introduction to UX Research</div>
+                                    <div class="text-xs text-on-surface-variant">Modified yesterday</div>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <span
+                                        class="px-3 py-1 bg-surface-container-highest text-on-surface-variant text-[10px] font-bold rounded-full uppercase tracking-tighter">Draft</span>
+                                </td>
+                                <td class="px-6 py-5 font-semibold text-on-surface-variant">-</td>
+                                <td class="px-6 py-5 font-semibold text-on-surface-variant">-</td>
+                                <td class="px-6 py-5 text-right">
+                                    <div class="flex justify-end gap-3 text-on-surface-variant">
+                                        <button class="hover:text-primary transition-colors"><span
+                                                class="material-symbols-outlined text-lg"
+                                                data-icon="edit">edit</span></button>
+                                        <button class="hover:text-error transition-colors"><span
+                                                class="material-symbols-outlined text-lg"
+                                                data-icon="delete">delete</span></button>
+                                        <button
+                                            class="text-primary text-xs font-bold px-2 py-1 rounded hover:bg-primary/5">Manage</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Row 3 -->
+                            <tr class="hover:bg-surface-container-low/30 transition-colors">
+                                <td class="px-6 py-5">
+                                    <div class="font-bold text-on-surface">Principles of Color Theory</div>
+                                    <div class="text-xs text-on-surface-variant">Modified 3d ago</div>
+                                </td>
+                                <td class="px-6 py-5">
+                                    <span
+                                        class="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded-full uppercase tracking-tighter">Live</span>
+                                </td>
+                                <td class="px-6 py-5 font-semibold text-on-surface">12/12</td>
+                                <td class="px-6 py-5">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-16 h-2 bg-surface-container-high rounded-full overflow-hidden">
+                                            <div class="h-full bg-secondary w-[92%]"></div>
+                                        </div>
+                                        <span class="font-bold text-sm">92%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-5 text-right">
+                                    <div class="flex justify-end gap-3 text-on-surface-variant">
+                                        <button class="hover:text-primary transition-colors"><span
+                                                class="material-symbols-outlined text-lg"
+                                                data-icon="edit">edit</span></button>
+                                        <button class="hover:text-error transition-colors"><span
+                                                class="material-symbols-outlined text-lg"
+                                                data-icon="delete">delete</span></button>
+                                        <button
+                                            class="text-primary text-xs font-bold px-2 py-1 rounded hover:bg-primary/5">Manage</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        <!-- Teacher Insights Section -->
+        <section class="mb-20">
+            <div
+                class="bg-gradient-to-br from-[#0050d4] to-[#0046bb] text-on-primary rounded-xl p-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+                <div class="z-10 text-center md:text-left flex-1">
+                    <div
+                        class="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 backdrop-blur-md">
+                        <span class="material-symbols-outlined text-sm" data-icon="lightbulb">lightbulb</span>
+                        SMART INSIGHT
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">Refine Learning Paths</h3>
+                    <p class="text-on-primary/80 text-sm max-w-md leading-relaxed">
+                        Data from recent submissions shows students are struggling with <strong
+                            class="text-white">Recursion logic</strong> and <strong class="text-white">Big O
+                            notation</strong>. Consider creating a targeted quiz for these areas.
+                    </p>
+                    <button
+                        class="mt-6 px-6 py-3 bg-white text-primary font-bold rounded-full text-sm hover:bg-opacity-90 transition-all active:scale-95">
+                        Generate Specialized Quiz
+                    </button>
+                </div>
+                <div class="z-10 w-full md:w-auto flex justify-center">
+                    <div
+                        class="w-32 h-32 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20">
+                        <span class="material-symbols-outlined text-6xl" data-icon="psychology">psychology</span>
+                    </div>
+                </div>
+                <!-- Abstract Shapes -->
+                <div class="absolute -bottom-20 -left-10 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+            </div>
+        </section>
+    </main>
+    <!-- BottomNavBar (Mobile Only) -->
+    <nav
+        class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center pb-8 px-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl">
+        <div
+            class="flex flex-col items-center justify-center bg-gradient-to-br from-[#0050d4] to-[#0046bb] text-white rounded-full p-3 scale-110 -translate-y-2 active:scale-90 transition-all duration-300 ease-out">
+            <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Dashboard</span>
+        </div>
+        <div
+            class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-2 hover:text-[#0050d4] transition-all">
+            <span class="material-symbols-outlined" data-icon="quiz">quiz</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Quizzes</span>
+        </div>
+        <div
+            class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-2 hover:text-[#0050d4] transition-all">
+            <span class="material-symbols-outlined" data-icon="group">group</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Students</span>
+        </div>
+        <div
+            class="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 p-2 hover:text-[#0050d4] transition-all">
+            <span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold uppercase tracking-wider">Reports</span>
+        </div>
+    </nav>
+    <!-- Floating Primary CTA (Desktop and Mobile alignment) -->
+    <div class="fixed bottom-10 right-6 md:right-12 z-50">
+        <button
+            class="bg-gradient-to-br from-primary to-primary-dim text-white px-8 py-4 rounded-full shadow-lg flex items-center gap-3 font-bold text-lg active:scale-95 transition-all group">
+            <span class="material-symbols-outlined group-hover:rotate-90 transition-transform duration-300"
+                data-icon="add">add</span>
+            Create New Quiz
+        </button>
+    </div>
+</body>
+
+</html>

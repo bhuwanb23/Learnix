@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Topic Selection - Neural Network Architectures</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#001e5a",
+                        "on-secondary-fixed": "#430097",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "primary": "#0050d4",
+                        "inverse-primary": "#618bff",
+                        "on-primary": "#f1f2ff",
+                        "tertiary-dim": "#8e3000",
+                        "on-tertiary": "#ffefeb",
+                        "tertiary": "#a23800",
+                        "error-container": "#fb5151",
+                        "on-surface": "#2c2f31",
+                        "background": "#f5f7f9",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "surface": "#f5f7f9",
+                        "on-error-container": "#570008",
+                        "outline": "#747779",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eef1f3",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "error": "#b31b25",
+                        "on-error": "#ffefee",
+                        "tertiary-fixed": "#ff956a",
+                        "primary-dim": "#0046bb",
+                        "on-primary-fixed": "#000000",
+                        "primary-fixed-dim": "#658eff",
+                        "on-primary-fixed-variant": "#00266e",
+                        "secondary": "#702ae1",
+                        "surface-variant": "#d9dde0",
+                        "secondary-container": "#dcc9ff",
+                        "on-tertiary-container": "#5a1c00",
+                        "secondary-fixed": "#dcc9ff",
+                        "on-secondary": "#f8f0ff",
+                        "tertiary-container": "#ff956a",
+                        "on-tertiary-fixed": "#310b00",
+                        "on-surface-variant": "#595c5e",
+                        "primary-container": "#7b9cff",
+                        "inverse-on-surface": "#9a9d9f",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "primary-fixed": "#7b9cff",
+                        "surface-container": "#e5e9eb",
+                        "secondary-dim": "#6411d5",
+                        "on-background": "#2c2f31",
+                        "error-dim": "#9f0519",
+                        "surface-dim": "#d0d5d8",
+                        "surface-tint": "#0050d4",
+                        "surface-bright": "#f5f7f9",
+                        "inverse-surface": "#0b0f10",
+                        "on-secondary-container": "#5b00c7",
+                        "surface-container-high": "#dfe3e6",
+                        "surface-container-highest": "#d9dde0",
+                        "outline-variant": "#abadaf"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f5f7f9;
+            color: #2c2f31;
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .tonal-depth-layering {
+            background: linear-gradient(180deg, rgba(245, 247, 249, 1) 0%, rgba(238, 241, 243, 0.5) 100%);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface min-h-screen pb-32">
+    <!-- TopAppBar from JSON -->
+    <header
+        class="flex flex-col w-full max-w-7xl mx-auto w-full top-0 px-6 pt-4 no-border tonal-depth-layering sticky z-40">
+        <div class="flex items-center justify-between py-4">
+            <div class="flex items-center gap-4">
+                <button
+                    class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95 duration-200">
+                    <span class="material-symbols-outlined text-slate-900" data-icon="arrow_back">arrow_back</span>
+                </button>
+                <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-slate-900 text-2xl">Topic Selection
+                </h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors active:scale-95 duration-200">
+                    <span class="material-symbols-outlined text-[#0050d4]" data-icon="search">search</span>
+                </button>
+                <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                    <img alt="Teacher Profile" class="w-full h-full object-cover"
+                        data-alt="portrait of a professional educator with a friendly smile, soft natural studio lighting, clean minimalist background"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzEWAi8NDmBgS1S9-8w7E6AaCa6MIFknblwU_G28uDAsj6bquIXF-EGqrKn4gVka74qK_xlW4Z-w06DJ22sWlIb5UGK0S7w9hLw6WyCHy-SvVVvg1yWUP0aq-uPu95zdt1UbHzNGCiXjfg4z9bB_IhenU2izIiTOQQWxc3TxLCzvgrM8fxE0MItrcyHZpdUppcutNLL4isuLKb6Alroj82TfVcNHdjt5JACD0k7Vs7hpcWcNLRW-vXGkmx4ewrYCFTYcMddkbcuoo" />
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 mt-8">
+        <!-- Breadcrumbs & Hero Context -->
+        <div class="mb-12">
+            <nav class="flex items-center gap-2 text-sm font-medium text-on-surface-variant mb-6">
+                <span>Subjects</span>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span>Advanced Cognitive Psychology</span>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span>Neural Network Architectures</span>
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                <span class="text-primary">Topics</span>
+            </nav>
+            <div
+                class="relative overflow-hidden rounded-xl bg-primary h-[220px] flex flex-col justify-end p-10 text-on-primary">
+                <div class="absolute inset-0 bg-gradient-to-br from-primary to-primary-dim opacity-90 z-0"></div>
+                <img alt="Unit Background" class="absolute inset-0 w-full h-full object-cover z-[-1] opacity-40"
+                    data-alt="abstract neural network visualization with flowing blue light lines and nodes on a dark background, cinematic scientific illustration"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgCPMiU2eWjhtZG9zC0pj9RMI3Ua0yN4ZOQyIb2V-6rOlNkncOZ04vgzY5JI_p-_kdKs6ehccBRDt7SQMLGLgwxLg5fW86-SbrVO7ErA4J7irCHnJB3zPybwrjSaCAT1GqZ4cJ0_KfOslcufUdj0VIi-hWnJjTjUs3YpNlDIwND0YRidavHsnAWdCkwnmEHI3UQ0e0QY9sUHI97P2Q2HrHFKEiLrIcluaY8Zu5IvsJEip8gSQQzMmSjLhMBLlH37tH9mhBHSbK3O0" />
+                <div class="relative z-10">
+                    <span class="uppercase tracking-widest text-[11px] font-bold opacity-80 mb-2 block">Current
+                        Module</span>
+                    <h2 class="font-headline text-4xl font-extrabold tracking-tight">Neural Network Architectures</h2>
+                </div>
+            </div>
+        </div>
+        <!-- Minimalist Search Section -->
+        <div class="mb-10">
+            <div class="relative w-full max-w-2xl">
+                <span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-outline"
+                    data-icon="search">search</span>
+                <input
+                    class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-14 pr-6 focus:ring-2 focus:ring-primary/20 text-on-surface font-body transition-all"
+                    placeholder="Filter research topics or keywords..." type="text" />
+            </div>
+        </div>
+        <!-- Typography-led Topic List (Bento-inspired Grid) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Topic Card 1 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-8 transition-all hover:translate-y-[-4px] cursor-pointer">
+                <div class="flex justify-between items-start mb-12">
+                    <div class="p-3 rounded-lg bg-primary/5 text-primary">
+                        <span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+                    </div>
+                    <span class="text-[11px] font-bold text-on-surface-variant font-body">2d ago</span>
+                </div>
+                <h3
+                    class="font-headline text-2xl font-bold text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors">
+                    Perceptrons &amp; Feedforward Models</h3>
+                <p class="text-on-surface-variant text-sm mb-8 font-body">Foundational linear classifiers and the
+                    architecture of multi-layer perception systems.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span
+                        class="px-3 py-1 bg-surface-container-low rounded-full text-[12px] font-bold text-on-surface-variant">5
+                        Quizzes</span>
+                    <a class="flex items-center gap-2 text-primary font-bold text-sm" href="#">
+                        Open Quiz Dashboard
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Topic Card 2 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-8 transition-all hover:translate-y-[-4px] cursor-pointer">
+                <div class="flex justify-between items-start mb-12">
+                    <div class="p-3 rounded-lg bg-secondary/5 text-secondary">
+                        <span class="material-symbols-outlined" data-icon="rebase_edit">rebase_edit</span>
+                    </div>
+                    <span class="text-[11px] font-bold text-on-surface-variant font-body">2d ago</span>
+                </div>
+                <h3
+                    class="font-headline text-2xl font-bold text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors">
+                    Backpropagation Mechanics</h3>
+                <p class="text-on-surface-variant text-sm mb-8 font-body">The mathematical core of gradient descent and
+                    weight optimization in deep learning.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span
+                        class="px-3 py-1 bg-surface-container-low rounded-full text-[12px] font-bold text-on-surface-variant">5
+                        Quizzes</span>
+                    <a class="flex items-center gap-2 text-primary font-bold text-sm" href="#">
+                        Open Quiz Dashboard
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Topic Card 3 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-8 transition-all hover:translate-y-[-4px] cursor-pointer">
+                <div class="flex justify-between items-start mb-12">
+                    <div class="p-3 rounded-lg bg-tertiary/5 text-tertiary">
+                        <span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                    </div>
+                    <span class="text-[11px] font-bold text-on-surface-variant font-body">2d ago</span>
+                </div>
+                <h3
+                    class="font-headline text-2xl font-bold text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors">
+                    Convolutional Layers</h3>
+                <p class="text-on-surface-variant text-sm mb-8 font-body">Spatial hierarchy and feature extraction
+                    through convolution and pooling mechanisms.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span
+                        class="px-3 py-1 bg-surface-container-low rounded-full text-[12px] font-bold text-on-surface-variant">5
+                        Quizzes</span>
+                    <a class="flex items-center gap-2 text-primary font-bold text-sm" href="#">
+                        Open Quiz Dashboard
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Topic Card 4 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-8 transition-all hover:translate-y-[-4px] cursor-pointer">
+                <div class="flex justify-between items-start mb-12">
+                    <div class="p-3 rounded-lg bg-primary/5 text-primary">
+                        <span class="material-symbols-outlined" data-icon="memory">memory</span>
+                    </div>
+                    <span class="text-[11px] font-bold text-on-surface-variant font-body">2d ago</span>
+                </div>
+                <h3
+                    class="font-headline text-2xl font-bold text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors">
+                    Recurrent Neural Networks</h3>
+                <p class="text-on-surface-variant text-sm mb-8 font-body">Sequential data processing and the vanishing
+                    gradient problem in time-series models.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span
+                        class="px-3 py-1 bg-surface-container-low rounded-full text-[12px] font-bold text-on-surface-variant">5
+                        Quizzes</span>
+                    <a class="flex items-center gap-2 text-primary font-bold text-sm" href="#">
+                        Open Quiz Dashboard
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Topic Card 5 -->
+            <div
+                class="group bg-surface-container-lowest rounded-xl p-8 transition-all hover:translate-y-[-4px] cursor-pointer">
+                <div class="flex justify-between items-start mb-12">
+                    <div class="p-3 rounded-lg bg-secondary/5 text-secondary">
+                        <span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+                    </div>
+                    <span class="text-[11px] font-bold text-on-surface-variant font-body">2d ago</span>
+                </div>
+                <h3
+                    class="font-headline text-2xl font-bold text-on-surface mb-2 leading-tight group-hover:text-primary transition-colors">
+                    Attention Mechanisms</h3>
+                <p class="text-on-surface-variant text-sm mb-8 font-body">Contextual focus and the rise of Transformer
+                    architectures in cognitive modeling.</p>
+                <div class="flex items-center justify-between mt-auto">
+                    <span
+                        class="px-3 py-1 bg-surface-container-low rounded-full text-[12px] font-bold text-on-surface-variant">5
+                        Quizzes</span>
+                    <a class="flex items-center gap-2 text-primary font-bold text-sm" href="#">
+                        Open Quiz Dashboard
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Empty/New State Card -->
+            <div
+                class="group border-2 border-dashed border-outline-variant/30 rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all hover:border-primary/50 cursor-pointer">
+                <div
+                    class="w-14 h-14 rounded-full bg-surface-container-low flex items-center justify-center mb-4 group-hover:bg-primary/10 transition-colors">
+                    <span class="material-symbols-outlined text-outline group-hover:text-primary"
+                        data-icon="add">add</span>
+                </div>
+                <h3 class="font-headline text-xl font-bold text-on-surface-variant">Propose New Topic</h3>
+                <p class="text-on-surface-variant/60 text-sm mt-2 font-body max-w-[180px]">Add supplementary material to
+                    the curriculum.</p>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar from JSON -->
+    <nav
+        class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl fixed bottom-0 w-full z-50 rounded-t-[24px] no-border shadow-ambient shadow-[0_-8px_24px_rgba(44,47,49,0.06)]">
+        <!-- Active Tab: Curriculum -->
+        <a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-[#0050d4] dark:text-blue-300 rounded-[20px] px-5 py-2 group transition-all duration-200"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="import_contacts">import_contacts</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Curriculum</span>
+        </a>
+        <!-- Inactive Tab: Quizzes -->
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 duration-150 transition-all"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="quiz">quiz</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Quizzes</span>
+        </a>
+        <!-- Inactive Tab: Students -->
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 duration-150 transition-all"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="group">group</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Students</span>
+        </a>
+        <!-- Inactive Tab: Settings -->
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-2 hover:text-blue-600 dark:hover:text-blue-300 active:scale-90 duration-150 transition-all"
+            href="#">
+            <span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+            <span class="font-['Manrope'] text-[11px] font-semibold">Settings</span>
+        </a>
+    </nav>
+</body>
+
+</html>
