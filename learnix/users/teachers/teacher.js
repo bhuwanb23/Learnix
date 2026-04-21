@@ -6,6 +6,7 @@ import TeacherDashboard from './pages/dashboard/dashboard';
 import TeacherClassPage from './pages/class/class';
 import ClassDashboard from './pages/class/pages/class_dashboard/class_dashboard';
 import LectureNotes from './pages/class/pages/lecture_notes/lecture_notes';
+import Quiz from './pages/class/pages/quiz/quiz';
 import AssignmentExamsPage from './pages/assignment_exams/assignment_exams';
 import TeacherProfilePage from './pages/profile/profile';
 import StudentPerformancePage from './pages/student_performance/student_performance';
@@ -22,6 +23,9 @@ export default function TeacherScreen() {
     } else if (screen === 'LectureNotes') {
       setCurrentScreen('LectureNotes');
       setSelectedClass(params.classData);
+    } else if (screen === 'Quiz') {
+      setCurrentScreen('Quiz');
+      setSelectedClass(params.classData);
     } else if (screen === 'main') {
       setCurrentScreen('main');
       setSelectedClass(null);
@@ -31,6 +35,10 @@ export default function TeacherScreen() {
   const renderContent = () => {
     if (currentScreen === 'ClassDashboard') {
       return <ClassDashboard route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('main'), navigate: handleNavigate }} />;
+    }
+
+    if (currentScreen === 'Quiz') {
+      return <Quiz route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('ClassDashboard'), navigate: handleNavigate }} />;
     }
 
     if (currentScreen === 'LectureNotes') {

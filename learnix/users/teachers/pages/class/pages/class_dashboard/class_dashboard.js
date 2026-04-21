@@ -26,6 +26,8 @@ export default function ClassDashboard({ route, navigation }) {
     const handleActionPress = (action) => {
         if (action.screen === 'LectureNotes') {
             navigation?.navigate?.('LectureNotes', { classData });
+        } else if (action.screen === 'Quiz') {
+            navigation?.navigate?.('Quiz', { classData });
         } else {
             console.log('Navigate to:', action.screen);
         }
