@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed-dim": "#658eff",
+                        "on-primary": "#f1f2ff",
+                        "error": "#b31b25",
+                        "surface-bright": "#f5f7f9",
+                        "primary": "#0050d4",
+                        "tertiary-fixed-dim": "#ff7e48",
+                        "surface-tint": "#0050d4",
+                        "on-tertiary-container": "#5a1c00",
+                        "outline": "#747779",
+                        "primary-container": "#7b9cff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-container": "#5b00c7",
+                        "tertiary": "#a23800",
+                        "on-error-container": "#570008",
+                        "primary-dim": "#0046bb",
+                        "primary-fixed": "#7b9cff",
+                        "on-primary-container": "#001e5a",
+                        "tertiary-fixed": "#ff956a",
+                        "inverse-surface": "#0b0f10",
+                        "on-primary-fixed-variant": "#00266e",
+                        "on-secondary": "#f8f0ff",
+                        "on-primary-fixed": "#000000",
+                        "on-secondary-fixed": "#430097",
+                        "on-tertiary": "#ffefeb",
+                        "surface-dim": "#d0d5d8",
+                        "on-surface-variant": "#595c5e",
+                        "secondary": "#702ae1",
+                        "on-background": "#2c2f31",
+                        "on-tertiary-fixed-variant": "#692200",
+                        "tertiary-container": "#ff956a",
+                        "surface-variant": "#d9dde0",
+                        "secondary-fixed-dim": "#d0b8ff",
+                        "on-secondary-fixed-variant": "#6514d6",
+                        "inverse-on-surface": "#9a9d9f",
+                        "surface": "#f5f7f9",
+                        "on-surface": "#2c2f31",
+                        "error-container": "#fb5151",
+                        "secondary-dim": "#6411d5",
+                        "surface-container": "#e5e9eb",
+                        "secondary-fixed": "#dcc9ff",
+                        "surface-container-highest": "#d9dde0",
+                        "secondary-container": "#dcc9ff",
+                        "surface-container-low": "#eef1f3",
+                        "on-error": "#ffefee",
+                        "tertiary-dim": "#8e3000",
+                        "on-tertiary-fixed": "#310b00",
+                        "error-dim": "#9f0519",
+                        "surface-container-high": "#dfe3e6",
+                        "inverse-primary": "#618bff",
+                        "background": "#f5f7f9",
+                        "outline-variant": "#abadaf"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .tonal-depth-via-surface-container-low {
+            background-color: #eef1f3;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="bg-[#f5f7f9] dark:bg-[#0f172a] fixed top-0 left-0 right-0 z-40">
+        <div class="flex justify-between items-center w-full px-6 py-4">
+            <div class="flex items-center gap-4">
+                <button
+                    class="hover:bg-[#eef1f3] dark:hover:bg-slate-800 transition-colors p-2 rounded-full scale-95 active:duration-150">
+                    <span class="material-symbols-outlined text-[#0050d4] dark:text-[#3b82f6]"
+                        data-icon="arrow_back">arrow_back</span>
+                </button>
+                <h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-xl text-[#0050d4] dark:text-white">
+                    Quiz Preview</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="text-on-surface-variant font-semibold text-sm hidden md:inline">Viewing as
+                    Instructor</span>
+                <button
+                    class="bg-[#0050d4] text-white px-6 py-2 rounded-full font-bold hover:bg-primary-dim transition-all scale-95 active:duration-150">
+                    Edit Quiz
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="mt-24 max-w-4xl mx-auto px-6">
+        <!-- Quiz Header / Student Meta -->
+        <section class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div class="space-y-2">
+                <span class="text-primary font-bold tracking-wider text-xs uppercase">ADVANCED NEUROSCIENCE</span>
+                <h2 class="text-4xl font-extrabold tracking-tight text-on-surface">Synaptic Plasticity &amp; Memory</h2>
+                <p class="text-on-surface-variant max-w-xl">Preview the student attempt experience. Correct answers are
+                    highlighted for your reference.</p>
+            </div>
+            <!-- Timer Placeholder (Student UI Replication) -->
+            <div
+                class="bg-surface-container-lowest p-4 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] flex items-center gap-4 min-w-[180px]">
+                <div
+                    class="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-xl" data-icon="timer">timer</span>
+                </div>
+                <div>
+                    <div class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Time Remaining
+                    </div>
+                    <div class="text-xl font-headline font-extrabold text-on-surface">44:02</div>
+                </div>
+            </div>
+        </section>
+        <!-- Question Sequence -->
+        <div class="space-y-8">
+            <!-- Question 1: Multiple Choice -->
+            <div
+                class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] border border-outline-variant/15">
+                <div class="flex justify-between items-start mb-6">
+                    <span
+                        class="bg-surface-container-high px-3 py-1 rounded-full text-xs font-bold text-on-surface-variant">QUESTION
+                        01</span>
+                    <span class="text-xs font-bold text-on-surface-variant">2.0 POINTS</span>
+                </div>
+                <h3 class="text-xl font-bold mb-8 leading-snug">Which neurotransmitter is primarily responsible for
+                    long-term potentiation (LTP) in the hippocampal CA1 region?</h3>
+                <div class="grid gap-4">
+                    <!-- Option A -->
+                    <div
+                        class="group flex items-center p-4 rounded-lg bg-surface-container-low border border-transparent transition-all">
+                        <div
+                            class="w-6 h-6 rounded-full border-2 border-outline-variant flex items-center justify-center mr-4 text-xs font-bold">
+                            A</div>
+                        <span class="text-on-surface font-medium">GABA</span>
+                    </div>
+                    <!-- Option B (Correct Highlight) -->
+                    <div
+                        class="group flex items-center p-4 rounded-lg bg-primary/10 border border-primary/30 transition-all relative">
+                        <div
+                            class="w-6 h-6 rounded-full bg-primary flex items-center justify-center mr-4 text-xs font-bold text-white">
+                            B</div>
+                        <span class="text-on-surface font-bold">Glutamate</span>
+                        <div class="ml-auto flex items-center gap-2 text-primary">
+                            <span class="text-[10px] font-bold uppercase tracking-tighter">Correct Answer</span>
+                            <span class="material-symbols-outlined text-lg" data-icon="check_circle"
+                                style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        </div>
+                    </div>
+                    <!-- Option C -->
+                    <div
+                        class="group flex items-center p-4 rounded-lg bg-surface-container-low border border-transparent transition-all">
+                        <div
+                            class="w-6 h-6 rounded-full border-2 border-outline-variant flex items-center justify-center mr-4 text-xs font-bold">
+                            C</div>
+                        <span class="text-on-surface font-medium">Dopamine</span>
+                    </div>
+                    <!-- Option D -->
+                    <div
+                        class="group flex items-center p-4 rounded-lg bg-surface-container-low border border-transparent transition-all">
+                        <div
+                            class="w-6 h-6 rounded-full border-2 border-outline-variant flex items-center justify-center mr-4 text-xs font-bold">
+                            D</div>
+                        <span class="text-on-surface font-medium">Serotonin</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Question 2: Image-based / Multi-select -->
+            <div
+                class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] border border-outline-variant/15">
+                <div class="flex justify-between items-start mb-6">
+                    <span
+                        class="bg-surface-container-high px-3 py-1 rounded-full text-xs font-bold text-on-surface-variant">QUESTION
+                        02</span>
+                    <span class="text-xs font-bold text-on-surface-variant">4.0 POINTS</span>
+                </div>
+                <h3 class="text-xl font-bold mb-6 leading-snug">Identify the structural changes associated with
+                    dendritic spine remodeling during memory consolidation.</h3>
+                <div class="mb-8 rounded-xl overflow-hidden aspect-video relative">
+                    <img alt="Scientific visualization of neurons" class="w-full h-full object-cover"
+                        data-alt="Detailed 3D scientific visualization of neural networks and glowing synapses in a deep blue atmospheric digital environment"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKI1wsNyt3YrRvlz7SOFOW_LVeI2TXbpqwv5kC-7YLzomLjhSDLyppLXgQHPGA3zxFNEMCDe8ROnQqeldJ2tVE5lf_QB21p_nq3ALOUZVLKAelMLb1vZZK3vrXaGRD6caLxNKQgt5TgG2H3iW_ZANF8EBX7cSqLJUBf1j-ZMuWJMwyrmPyEPolOzQyfAlxKtzaQIXOZMPmAukYI8ZIteRXm6fSht85fcRUgwOBTrSZ8enhfdKyE_mPodsMLD5aXVsbvlXFPGl2444" />
+                </div>
+                <div class="grid gap-4">
+                    <div
+                        class="group flex items-center p-4 rounded-lg bg-primary/10 border border-primary/30 transition-all">
+                        <div class="w-6 h-6 rounded-lg bg-primary flex items-center justify-center mr-4">
+                            <span class="material-symbols-outlined text-white text-sm" data-icon="check"
+                                style="font-variation-settings: 'wght' 700;">check</span>
+                        </div>
+                        <span class="text-on-surface font-bold">Increase in mushroom spine density</span>
+                        <span class="ml-auto material-symbols-outlined text-primary text-lg"
+                            data-icon="done_all">done_all</span>
+                    </div>
+                    <div
+                        class="group flex items-center p-4 rounded-lg bg-surface-container-low border border-transparent transition-all">
+                        <div
+                            class="w-6 h-6 rounded-lg border-2 border-outline-variant flex items-center justify-center mr-4">
+                        </div>
+                        <span class="text-on-surface font-medium">Global reduction in protein synthesis</span>
+                    </div>
+                    <div
+                        class="group flex items-center p-4 rounded-lg bg-primary/10 border border-primary/30 transition-all">
+                        <div class="w-6 h-6 rounded-lg bg-primary flex items-center justify-center mr-4">
+                            <span class="material-symbols-outlined text-white text-sm" data-icon="check"
+                                style="font-variation-settings: 'wght' 700;">check</span>
+                        </div>
+                        <span class="text-on-surface font-bold">Actin cytoskeleton reorganization</span>
+                        <span class="ml-auto material-symbols-outlined text-primary text-lg"
+                            data-icon="done_all">done_all</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Question 3: Short Answer Preview -->
+            <div
+                class="bg-surface-container-lowest p-8 rounded-xl shadow-[0_8px_24px_rgba(44,47,49,0.06)] border border-outline-variant/15">
+                <div class="flex justify-between items-start mb-6">
+                    <span
+                        class="bg-surface-container-high px-3 py-1 rounded-full text-xs font-bold text-on-surface-variant">QUESTION
+                        03</span>
+                    <span class="text-xs font-bold text-on-surface-variant">5.0 POINTS</span>
+                </div>
+                <h3 class="text-xl font-bold mb-4 leading-snug">Explain the role of NMDA receptors as coincidence
+                    detectors.</h3>
+                <div class="bg-surface-container-low rounded-xl p-4 mb-4">
+                    <p class="text-on-surface-variant text-sm italic">Student text area preview...</p>
+                </div>
+                <div class="bg-secondary/5 rounded-xl p-5 border border-secondary/20">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-secondary" data-icon="auto_awesome"
+                            style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                        <span class="text-xs font-bold text-secondary uppercase tracking-wider">Teacher Reference
+                            Key</span>
+                    </div>
+                    <p class="text-on-surface text-sm leading-relaxed">The NMDA receptor requires both glutamate binding
+                        (presynaptic activity) and postsynaptic depolarization to remove the magnesium block (Mg2+),
+                        thus acting as a molecular coincidence detector for LTP.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Floating Action for Instructor -->
+    <div class="fixed bottom-32 right-8 flex flex-col gap-3 items-end pointer-events-none md:pointer-events-auto">
+        <button
+            class="bg-surface-container-lowest shadow-2xl p-4 rounded-full flex items-center gap-3 border border-outline-variant/15 pointer-events-auto hover:bg-surface transition-all active:scale-95">
+            <span class="material-symbols-outlined text-on-surface" data-icon="settings_suggest">settings_suggest</span>
+            <span class="text-sm font-bold pr-2">Manage Questions</span>
+        </button>
+    </div>
+</body>
+
+</html>
