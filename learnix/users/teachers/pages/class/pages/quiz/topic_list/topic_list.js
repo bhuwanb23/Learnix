@@ -5,6 +5,7 @@ import TopicHeader from './components/TopicHeader';
 import TopicCard from './components/TopicCard';
 import { TOPICS, HEADER } from './constants/topicData';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import TopicDetail from '../topic_detail/topic_detail';
 
 export default function TopicList({ route, navigation }) {
     const unitData = route?.params?.unitData || {
@@ -44,11 +45,10 @@ export default function TopicList({ route, navigation }) {
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
             {currentScreen === 'TopicDetail' ? (
-                <View style={styles.placeholderContainer}>
-                    <MaterialIcons name="quiz" size={64} color="#0050d4" opacity={0.3} />
-                    <Text style={styles.placeholderTitle}>Topic Detail</Text>
-                    <Text style={styles.placeholderText}>Coming soon: Quiz dashboard for {selectedTopic?.title}</Text>
-                </View>
+                <TopicDetail 
+                    route={{ params: { topicData: selectedTopic } }} 
+                    navigation={{ goBack: handleBack }} 
+                />
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                     <View style={styles.headerWrapper}>
