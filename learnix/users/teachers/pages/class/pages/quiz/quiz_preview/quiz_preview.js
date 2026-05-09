@@ -20,7 +20,9 @@ export default function QuizPreview({ route, navigation }) {
     };
 
     const handleEdit = () => {
-        console.log('Edit quiz');
+        if (navigation?.navigate) {
+            navigation.navigate('EditQuizScreen');
+        }
     };
 
     const handleManageQuestions = () => {
@@ -36,6 +38,7 @@ export default function QuizPreview({ route, navigation }) {
                         quizName={quizData.name}
                         onBack={handleBack}
                         onEdit={handleEdit}
+                        navigation={navigation}
                     />
                 </View>
                 <View style={styles.content}>

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function QuizPreviewHeader({ title, quizName, onBack, onEdit }) {
+export default function QuizPreviewHeader({ title, quizName, onBack, onEdit, navigation }) {
     return (
         <View style={styles.header}>
             <View style={styles.headerTop}>
