@@ -19,7 +19,7 @@ export default function ActionButtons({ onCancel, onSave, isSaving }) {
                 activeOpacity={0.85}
             >
                 <Text style={styles.saveButtonText}>
-                    {isSaving ? 'Saving...' : 'Save Assessment'}
+                    Create Questions
                 </Text>
             </TouchableOpacity>
         </View>

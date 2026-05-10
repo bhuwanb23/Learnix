@@ -10,6 +10,7 @@ import QuestionCounter from './components/QuestionCounter';
 import DifficultySelector from './components/DifficultySelector';
 import TimeLimitSlider from './components/TimeLimitSlider';
 import ActionButtons from './components/ActionButtons';
+import CreateQuestion from '../create_question/create_question';
 import { HEADER, EDITORIAL, BREADCRUMB_ITEMS, DEFAULT_QUIZ_DATA } from './constants/createQuizData';
 
 export default function CreateQuiz({ route, navigation }) {
@@ -26,9 +27,13 @@ export default function CreateQuiz({ route, navigation }) {
     const [timeLimit, setTimeLimit] = useState(DEFAULT_QUIZ_DATA.timeLimit);
     const [quizTitleError, setQuizTitleError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [currentScreen, setCurrentScreen] = useState('setup');
+    const [createdQuizData, setCreatedQuizData] = useState(null);
 
     const handleBack = () => {
-        if (navigation?.goBack) {
+        if (currentScreen === 'createQuestion') {
+            setCurrentScreen('setup');
+        } else if (navigation?.goBack) {
             navigation.goBack();
         }
     };
@@ -58,7 +63,7 @@ export default function CreateQuiz({ route, navigation }) {
 
         setIsSaving(true);
         
-        // Simulate API call
+        // Create quiz data and navigate to question creation
         setTimeout(() => {
             const quizData = {
                 id: `quiz-${Date.now()}`,
@@ -69,20 +74,14 @@ export default function CreateQuiz({ route, navigation }) {
                 difficulty,
                 timeLimit,
                 topicId: topicData.id,
+                totalQuestions: questionCount,
+                duration: timeLimit,
             };
             
-            console.log('Quiz created:', quizData);
+            setCreatedQuizData(quizData);
             setIsSaving(false);
-            
-            // Navigate back with success
-            Alert.alert(
-                'Quiz Created!',
-                `Your quiz "${quizTitle}" has been created successfully.`,
-                [
-                    { text: 'OK', onPress: handleBack },
-                ]
-            );
-        }, 1500);
+            setCurrentScreen('createQuestion');
+        }, 800);
     };
 
     const handleIncrementQuestions = () => {
@@ -100,6 +99,15 @@ export default function CreateQuiz({ route, navigation }) {
     const handleTimeLimitChange = (value) => {
         setTimeLimit(value);
     };
+
+    if (currentScreen === 'createQuestion') {
+        return (
+            <CreateQuestion 
+                route={{ params: { quizData: createdQuizData, topicData } }} 
+                navigation={{ goBack: handleBack }} 
+            />
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>

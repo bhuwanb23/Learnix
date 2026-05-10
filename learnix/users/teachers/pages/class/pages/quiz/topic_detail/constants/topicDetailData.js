@@ -57,7 +57,7 @@ export const QUIZZES = [
         id: 'quiz-3',
         name: 'Principles of Color Theory',
         modified: 'Modified 3d ago',
-        status: 'Live',
+        status: 'Completed',
         statusColor: '#702ae1',
         statusBg: 'rgba(220, 201, 255, 1)',
         statusTextColor: '#5b00c7',
