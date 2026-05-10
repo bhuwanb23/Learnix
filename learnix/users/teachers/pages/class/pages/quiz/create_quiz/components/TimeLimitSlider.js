@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Slider } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function TimeLimitSlider({ value, onValueChange, min = 5, max = 120 }) {
+const TIME_OPTIONS = [5, 15, 30, 45, 60, 90, 120];
+
+export default function TimeLimitSlider({ value, onValueChange }) {
     return (
         <View style={styles.card}>
             <View style={styles.header}>
@@ -9,23 +12,27 @@ export default function TimeLimitSlider({ value, onValueChange, min = 5, max = 1
                 <Text style={styles.valueText}>{value} min</Text>
             </View>
             
-            <View style={styles.sliderContainer}>
-                <Slider
-                    style={styles.slider}
-                    minimumValue={min}
-                    maximumValue={max}
-                    value={value}
-                    onValueChange={onValueChange}
-                    minimumTrackTintColor="#0050d4"
-                    maximumTrackTintColor="#d9dde0"
-                    thumbTintColor="#0050d4"
-                    step={5}
-                />
-            </View>
-            
-            <View style={styles.rangeLabels}>
-                <Text style={styles.rangeText}>{min} min</Text>
-                <Text style={styles.rangeText}>{max} min</Text>
+            <View style={styles.optionsContainer}>
+                {TIME_OPTIONS.map((time) => (
+                    <TouchableOpacity
+                        key={time}
+                        style={[
+                            styles.timeButton,
+                            value === time && styles.selectedTimeButton
+                        ]}
+                        onPress={() => onValueChange(time)}
+                        activeOpacity={0.7}
+                    >
+                        <Text 
+                            style={[
+                                styles.timeText,
+                                value === time && styles.selectedTimeText
+                            ]}
+                        >
+                            {time}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
         </View>
     );
@@ -59,23 +66,32 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         color: '#0050d4',
     },
-    sliderContainer: {
-        marginHorizontal: -10,
-    },
-    slider: {
-        height: 40,
-    },
-    rangeLabels: {
+    optionsContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 4,
+        flexWrap: 'wrap',
+        gap: 10,
     },
-    rangeText: {
+    timeButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
+        backgroundColor: '#ffffff',
+        borderWidth: 1,
+        borderColor: 'rgba(116, 119, 121, 0.15)',
+        minWidth: 60,
+        alignItems: 'center',
+    },
+    selectedTimeButton: {
+        backgroundColor: '#0050d4',
+        borderColor: '#0050d4',
+    },
+    timeText: {
+        fontFamily: 'Manrope-Medium',
+        fontSize: 14,
+        color: '#595c5e',
+    },
+    selectedTimeText: {
         fontFamily: 'Manrope-Bold',
-        fontSize: 10,
-        fontWeight: '700',
-        color: '#abadaf',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        color: '#ffffff',
     },
 });

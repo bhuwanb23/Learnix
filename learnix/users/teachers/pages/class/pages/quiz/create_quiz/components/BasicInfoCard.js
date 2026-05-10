@@ -10,7 +10,6 @@ export default function BasicInfoCard({
 }) {
     return (
         <View style={styles.card}>
-            {/* Quiz Title Input */}
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>QUIZ TITLE</Text>
                 <TextInput
@@ -28,7 +27,6 @@ export default function BasicInfoCard({
                 )}
             </View>
 
-            {/* Description Input */}
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>DESCRIPTION</Text>
                 <TextInput

@@ -98,7 +98,7 @@ export default function CreateQuiz({ route, navigation }) {
     };
 
     const handleTimeLimitChange = (value) => {
-        setTimeLimit(Math.round(value));
+        setTimeLimit(value);
     };
 
     return (
