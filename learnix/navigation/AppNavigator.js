@@ -7,7 +7,6 @@ import LoginScreen from '../pages/login/login';
 import StudentsScreen from '../users/students/students';
 import TeacherScreen from '../users/teachers/teacher';
 import AdminScreen from '../users/admin/admin';
-import EditQuizScreen from '../users/teachers/pages/class/pages/quiz/edit_quiz/EditQuizScreen';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -36,8 +35,6 @@ export default function AppNavigator() {
         return <TeacherScreen navigation={{ navigate }} />;
       case 'Admin':
         return <AdminScreen navigation={{ navigate }} />;
-      case 'EditQuiz':
-        return <EditQuizScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:
