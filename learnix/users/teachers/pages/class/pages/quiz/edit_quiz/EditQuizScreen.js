@@ -6,13 +6,18 @@ import EditQuizForm from './components/EditQuizForm';
 import EditQuizDangerZone from './components/EditQuizDangerZone';
 import EditQuizBottomBar from './components/EditQuizBottomBar';
 
-export default function EditQuizScreen() {
+export default function EditQuizScreen({ route, navigation }) {
+  const quizData = route?.params?.quizData || {
+    id: 'quiz-1',
+    name: 'Synaptic Plasticity & Memory',
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <EditQuizHeader />
-        <EditQuizHero />
-        <EditQuizForm />
+        <EditQuizHeader quizName={quizData.name} navigation={navigation} />
+        <EditQuizHero quizData={quizData} />
+        <EditQuizForm quizData={quizData} />
         <EditQuizDangerZone />
       </ScrollView>
       <EditQuizBottomBar />

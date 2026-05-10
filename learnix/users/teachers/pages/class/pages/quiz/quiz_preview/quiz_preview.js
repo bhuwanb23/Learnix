@@ -21,7 +21,7 @@ export default function QuizPreview({ route, navigation }) {
 
     const handleEdit = () => {
         if (navigation?.navigate) {
-            navigation.navigate('EditQuizScreen');
+            navigation.navigate('EditQuiz', { quizData });
         }
     };
 
