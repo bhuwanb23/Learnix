@@ -7,6 +7,7 @@ import QuestionCard from './components/QuestionCard';
 import { QUIZ_HEADER, QUESTIONS, HEADER } from './constants/quizPreviewData';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import EditQuizScreen from '../edit_quiz/EditQuizScreen';
+import EditQuestions from '../edit_questions/edit_questions';
 
 export default function QuizPreview({ route, navigation }) {
     const quizData = route?.params?.quizData || {
@@ -19,13 +20,15 @@ export default function QuizPreview({ route, navigation }) {
     const handleNavigate = (screen, params = {}) => {
         if (screen === 'EditQuiz') {
             setCurrentScreen('EditQuiz');
+        } else if (screen === 'EditQuestions') {
+            setCurrentScreen('EditQuestions');
         } else if (screen === 'main') {
             setCurrentScreen('preview');
         }
     };
 
     const handleBack = () => {
-        if (currentScreen === 'EditQuiz') {
+        if (currentScreen === 'EditQuiz' || currentScreen === 'EditQuestions') {
             handleNavigate('main');
         } else if (navigation?.goBack) {
             navigation.goBack();
@@ -37,13 +40,18 @@ export default function QuizPreview({ route, navigation }) {
     };
 
     const handleManageQuestions = () => {
-        console.log('Manage questions');
+        handleNavigate('EditQuestions');
     };
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
             {currentScreen === 'EditQuiz' ? (
                 <EditQuizScreen 
+                    route={{ params: { quizData } }} 
+                    navigation={{ goBack: handleBack }} 
+                />
+            ) : currentScreen === 'EditQuestions' ? (
+                <EditQuestions 
                     route={{ params: { quizData } }} 
                     navigation={{ goBack: handleBack }} 
                 />
