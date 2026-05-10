@@ -9,6 +9,7 @@ import AIInsightCard from './components/AIInsightCard';
 import { QUIZ_STATS, QUIZZES, HEADER, AI_INSIGHT } from './constants/topicDetailData';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import QuizPreview from '../quiz_preview/quiz_preview';
+import CreateQuiz from '../create_quiz/create_quiz';
 
 export default function TopicDetail({ route, navigation }) {
     const topicData = route?.params?.topicData || {
@@ -23,6 +24,8 @@ export default function TopicDetail({ route, navigation }) {
         if (screen === 'QuizPreview') {
             setCurrentScreen('QuizPreview');
             setSelectedQuiz(params.quizData);
+        } else if (screen === 'CreateQuiz') {
+            setCurrentScreen('CreateQuiz');
         } else if (screen === 'main') {
             setCurrentScreen('detail');
             setSelectedQuiz(null);
@@ -30,7 +33,7 @@ export default function TopicDetail({ route, navigation }) {
     };
 
     const handleBack = () => {
-        if (currentScreen === 'QuizPreview') {
+        if (currentScreen === 'QuizPreview' || currentScreen === 'CreateQuiz') {
             handleNavigate('main');
         } else if (navigation?.goBack) {
             navigation.goBack();
@@ -50,7 +53,7 @@ export default function TopicDetail({ route, navigation }) {
     };
 
     const handleGenerateQuiz = () => {
-        console.log('Generate specialized quiz');
+        handleNavigate('CreateQuiz', { topicData });
     };
 
     return (
@@ -58,6 +61,11 @@ export default function TopicDetail({ route, navigation }) {
             {currentScreen === 'QuizPreview' ? (
                 <QuizPreview 
                     route={{ params: { quizData: selectedQuiz } }} 
+                    navigation={{ goBack: handleBack }} 
+                />
+            ) : currentScreen === 'CreateQuiz' ? (
+                <CreateQuiz 
+                    route={{ params: { topicData } }} 
                     navigation={{ goBack: handleBack }} 
                 />
             ) : (
