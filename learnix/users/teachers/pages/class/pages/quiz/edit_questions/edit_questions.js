@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EditQuestionsHeader from './components/EditQuestionsHeader';
 import QuestionListHeader from './components/QuestionListHeader';
 import QuestionCard from './components/QuestionCard';
 import AddQuestionButton from './components/AddQuestionButton';
+import CreateQuestion from '../create_question/create_question';
 import { QUIZ_INFO, QUESTIONS, HEADER } from './constants/editQuestionsData';
 
 export default function EditQuestions({ route, navigation }) {
@@ -15,33 +16,55 @@ export default function EditQuestions({ route, navigation }) {
     };
 
     const [questions, setQuestions] = useState(QUESTIONS);
+    const [currentScreen, setCurrentScreen] = useState('list');
 
     const handleBack = () => {
-        if (navigation?.goBack) {
+        if (currentScreen === 'CreateQuestion') {
+            setCurrentScreen('list');
+        } else if (navigation?.goBack) {
             navigation.goBack();
         }
     };
 
     const handleImport = () => {
-        console.log('Import questions');
+        Alert.alert('Import Questions', 'Importing from the question bank is available once the backend is connected. You can add questions one by one below.');
     };
 
     const handleEditQuestion = (question) => {
-        console.log('Edit question:', question.id);
+        setCurrentScreen('CreateQuestion');
     };
 
     const handleDeleteQuestion = (question) => {
-        console.log('Delete question:', question.id);
-        setQuestions(questions.filter(q => q.id !== question.id));
+        Alert.alert(
+            'Delete Question?',
+            'This question will be removed from the quiz.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => setQuestions(questions.filter(q => q.id !== question.id)),
+                },
+            ]
+        );
     };
 
     const handleAddQuestion = () => {
-        console.log('Add new question');
+        setCurrentScreen('CreateQuestion');
     };
 
     const handleToggleExpand = (index, expanded) => {
         console.log('Question', index + 1, expanded ? 'expanded' : 'collapsed');
     };
+
+    if (currentScreen === 'CreateQuestion') {
+        return (
+            <CreateQuestion
+                route={{ params: { quizData } }}
+                navigation={{ goBack: handleBack }}
+            />
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
