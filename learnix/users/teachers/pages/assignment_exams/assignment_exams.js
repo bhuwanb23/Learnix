@@ -21,6 +21,19 @@ export default function AssignmentExamsPage({ navigation }) {
   const [currentScreen, setCurrentScreen] = useState('dashboard');
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [selectedExam, setSelectedExam] = useState(null);
+  // Return targets so back goes where the user came from, not always the dashboard
+  const [assignmentReturn, setAssignmentReturn] = useState('dashboard');
+  const [examReturn, setExamReturn] = useState('dashboard');
+  const [createReturn, setCreateReturn] = useState('dashboard');
+
+  const goDashboard = () => {
+    setCurrentScreen('dashboard');
+    setSelectedAssignment(null);
+    setSelectedExam(null);
+    setAssignmentReturn('dashboard');
+    setExamReturn('dashboard');
+    setCreateReturn('dashboard');
+  };
 
   const handleNavigate = (screen, params = {}) => {
     if (screen === 'AssignmentList') {
@@ -28,8 +41,16 @@ export default function AssignmentExamsPage({ navigation }) {
       setSelectedAssignment(null);
     } else if (screen === 'AssignmentDetail') {
       setSelectedAssignment(params.assignment);
+      setAssignmentReturn(params.from === 'list' ? 'list' : 'dashboard');
       setCurrentScreen('AssignmentDetail');
     } else if (screen === 'CreateAssignment') {
+      if (params.assignment) {
+        // Edit mode launched from a detail screen
+        setSelectedAssignment(params.assignment);
+        setCreateReturn('detail');
+      } else {
+        setCreateReturn('dashboard');
+      }
       setCurrentScreen('CreateAssignment');
     } else if (screen === 'GradeSubmission') {
       setSelectedAssignment(params.assignment);
@@ -39,20 +60,35 @@ export default function AssignmentExamsPage({ navigation }) {
       setSelectedExam(null);
     } else if (screen === 'ExamDetail') {
       setSelectedExam(params.exam);
+      setExamReturn(params.from === 'list' ? 'list' : 'dashboard');
       setCurrentScreen('ExamDetail');
     } else if (screen === 'CreateExam') {
       setCurrentScreen('CreateExam');
     } else if (screen === 'ExportGrades') {
       setCurrentScreen('ExportGrades');
     } else if (screen === 'dashboard') {
-      setCurrentScreen('dashboard');
-      setSelectedAssignment(null);
-      setSelectedExam(null);
+      goDashboard();
+    }
+  };
+
+  const goBackFrom = (screen) => {
+    if (screen === 'AssignmentDetail') {
+      handleNavigate(assignmentReturn === 'list' ? 'AssignmentList' : 'dashboard');
+    } else if (screen === 'CreateAssignment') {
+      if (createReturn === 'detail' && selectedAssignment) {
+        handleNavigate('AssignmentDetail', { assignment: selectedAssignment, from: 'detail' });
+      } else {
+        goDashboard();
+      }
+    } else if (screen === 'ExamDetail') {
+      handleNavigate(examReturn === 'list' ? 'ExamList' : 'dashboard');
+    } else {
+      goDashboard();
     }
   };
 
   const subNavigation = {
-    goBack: () => handleNavigate('dashboard'),
+    goBack: goDashboard,
     navigate: handleNavigate,
   };
 
@@ -64,13 +100,18 @@ export default function AssignmentExamsPage({ navigation }) {
     return (
       <AssignmentDetail
         route={{ params: { assignment: selectedAssignment } }}
-        navigation={subNavigation}
+        navigation={{ goBack: () => goBackFrom('AssignmentDetail'), navigate: handleNavigate }}
       />
     );
   }
 
   if (currentScreen === 'CreateAssignment') {
-    return <CreateAssignment route={{ params: {} }} navigation={subNavigation} />;
+    return (
+      <CreateAssignment
+        route={{ params: { assignment: selectedAssignment } }}
+        navigation={{ goBack: () => goBackFrom('CreateAssignment'), navigate: handleNavigate }}
+      />
+    );
   }
 
   if (currentScreen === 'GradeSubmission') {
@@ -78,7 +119,7 @@ export default function AssignmentExamsPage({ navigation }) {
       <GradeSubmission
         route={{ params: { assignment: selectedAssignment } }}
         navigation={{
-          goBack: () => handleNavigate('AssignmentDetail', { assignment: selectedAssignment }),
+          goBack: () => handleNavigate('AssignmentDetail', { assignment: selectedAssignment, from: 'detail' }),
           navigate: handleNavigate,
         }}
       />
@@ -93,7 +134,7 @@ export default function AssignmentExamsPage({ navigation }) {
     return (
       <ExamDetail
         route={{ params: { exam: selectedExam } }}
-        navigation={subNavigation}
+        navigation={{ goBack: () => goBackFrom('ExamDetail'), navigate: handleNavigate }}
       />
     );
   }
@@ -116,6 +157,26 @@ export default function AssignmentExamsPage({ navigation }) {
     }
   };
 
+  const handleStatPress = (statId) => {
+    if (statId === 'active' || statId === 'due') {
+      handleNavigate('AssignmentList');
+    } else if (statId === 'grading') {
+      const target = ACTIVE_ASSIGNMENTS.find((item) => item.graded < item.submitted) || ACTIVE_ASSIGNMENTS[0];
+      handleNavigate('AssignmentDetail', { assignment: target, from: 'dashboard' });
+    } else if (statId === 'exams') {
+      handleNavigate('ExamList');
+    }
+  };
+
+  const handleAlertPress = (alert) => {
+    if (alert.id === 'alert1') {
+      const target = ACTIVE_ASSIGNMENTS.find((item) => item.id === 'lab01') || ACTIVE_ASSIGNMENTS[0];
+      handleNavigate('AssignmentDetail', { assignment: target, from: 'dashboard' });
+    } else if (alert.id === 'alert2') {
+      handleNavigate('AssignmentList');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
@@ -128,7 +189,7 @@ export default function AssignmentExamsPage({ navigation }) {
           onAddPress={() => handleNavigate('CreateAssignment')}
         />
 
-        <StatsHero stats={STATS} />
+        <StatsHero stats={STATS} onPressStat={handleStatPress} />
 
         <View style={styles.section}>
           <View style={styles.sectionHead}>
@@ -141,7 +202,7 @@ export default function AssignmentExamsPage({ navigation }) {
             <ActiveAssignmentCard
               key={assignment.id}
               assignment={assignment}
-              onPress={() => handleNavigate('AssignmentDetail', { assignment })}
+              onPress={() => handleNavigate('AssignmentDetail', { assignment, from: 'dashboard' })}
             />
           ))}
         </View>
@@ -157,7 +218,7 @@ export default function AssignmentExamsPage({ navigation }) {
             <UpcomingExamCard
               key={exam.id}
               exam={exam}
-              onPress={() => handleNavigate('ExamDetail', { exam })}
+              onPress={() => handleNavigate('ExamDetail', { exam, from: 'dashboard' })}
             />
           ))}
         </View>
@@ -165,7 +226,7 @@ export default function AssignmentExamsPage({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <QuickActions actions={QUICK_ACTIONS} onActionPress={handleQuickAction} />
-          <PriorityAlerts alerts={ALERTS} />
+          <PriorityAlerts alerts={ALERTS} onPressAlert={handleAlertPress} />
         </View>
       </ScrollView>
     </SafeAreaView>
