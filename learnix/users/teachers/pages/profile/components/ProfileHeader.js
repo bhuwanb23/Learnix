@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function ProfileHeader({ profile }) {
+export default function ProfileHeader({ profile, onSettingsPress }) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -15,7 +15,7 @@ export default function ProfileHeader({ profile }) {
           </View>
           <Text style={styles.title}>The Academic Curator</Text>
         </View>
-        <TouchableOpacity style={styles.settingsBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.settingsBtn} onPress={onSettingsPress} activeOpacity={0.7}>
           <MaterialIcons name="settings" size={24} color="#0050d4" />
         </TouchableOpacity>
       </View>

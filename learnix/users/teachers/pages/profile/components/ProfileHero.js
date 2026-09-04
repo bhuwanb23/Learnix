@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function ProfileHero({ profile }) {
+export default function ProfileHero({ profile, onDownloadCV, onEditProfile }) {
   return (
     <View style={styles.container}>
       <View style={styles.photoSection}>
@@ -34,10 +34,10 @@ export default function ProfileHero({ profile }) {
         </View>
 
         <View style={styles.buttons}>
-          <TouchableOpacity style={styles.cvButton} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.cvButton} onPress={onDownloadCV} activeOpacity={0.85}>
             <Text style={styles.cvButtonText}>Download Curriculum Vitae</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.editButton} onPress={onEditProfile} activeOpacity={0.85}>
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
