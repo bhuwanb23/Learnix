@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Syllabus Tracker - Advanced Cognitive Psychology</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0050d4",
+                        "primary-dim": "#0046bb",
+                        "primary-container": "#7b9cff",
+                        "on-primary": "#f1f2ff",
+                        "on-primary-container": "#001e5a",
+                        "secondary": "#702ae1",
+                        "secondary-container": "#dcc9ff",
+                        "tertiary": "#a23800",
+                        "tertiary-container": "#ff956a",
+                        "surface": "#f5f7f9",
+                        "surface-bright": "#f5f7f9",
+                        "surface-dim": "#d0d5d8",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#eef1f3",
+                        "surface-container": "#e5e9eb",
+                        "surface-container-high": "#dfe3e6",
+                        "surface-container-highest": "#d9dde0",
+                        "on-surface": "#2c2f31",
+                        "on-surface-variant": "#595c5e",
+                        "outline": "#747779",
+                        "outline-variant": "#abadaf"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "2xl": "1.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #f5f7f9;
+            color: #2c2f31;
+        }
+
+        .font-headline {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .lush-gradient {
+            background: linear-gradient(135deg, #0050d4 0%, #1e40af 100%);
+        }
+
+        .card-subtle {
+            background: #ffffff;
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen pb-36">
+    <!-- TopAppBar -->
+    <header class="sticky top-0 z-40 bg-[#f5f7f9]/90 backdrop-blur-md px-5 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <button aria-label="Go Back"
+                class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors active:scale-95 text-on-surface">
+                <span class="material-symbols-outlined text-[22px]">arrow_back</span>
+            </button>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-xl font-headline font-bold text-slate-900 tracking-tight">Syllabus Tracker</h1>
+                    <span
+                        class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-label">PSY-402</span>
+                </div>
+                <p class="text-xs font-body font-medium text-on-surface-variant truncate max-w-[200px] sm:max-w-xs">
+                    Advanced Cognitive Psychology</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button
+                class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-surface-container transition-colors text-on-surface"
+                title="Export Syllabus">
+                <span class="material-symbols-outlined text-[20px]">ios_share</span>
+            </button>
+            <button
+                class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low hover:bg-surface-container transition-colors text-on-surface"
+                title="Syllabus Settings">
+                <span class="material-symbols-outlined text-[20px]">tune</span>
+            </button>
+        </div>
+    </header>
+    <main class="max-w-xl mx-auto px-4 pt-2 space-y-5">
+        <!-- Overview Card -->
+        <section class="lush-gradient rounded-2xl p-6 text-on-primary shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none">
+            </div>
+            <div
+                class="absolute right-6 top-6 w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                <span class="material-symbols-outlined text-3xl text-white">auto_stories</span>
+            </div>
+            <div class="relative z-10 space-y-4">
+                <div class="flex items-center gap-2">
+                    <span
+                        class="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tracking-wider uppercase font-label">Spring
+                        Term 2025</span>
+                    <span class="text-xs text-white/80 font-medium">• On Track</span>
+                </div>
+                <div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-4xl font-headline font-extrabold tracking-tight">68%</span>
+                        <span class="text-sm font-medium text-white/80">Overall Completed</span>
+                    </div>
+                    <p class="text-xs text-white/70 mt-0.5 font-body">18 of 26 Lectures delivered • Target completion:
+                        Dec 18</p>
+                </div>
+                <!-- Progress Bar -->
+                <div class="space-y-1.5">
+                    <div class="w-full h-2.5 bg-white/25 rounded-full overflow-hidden p-0.5">
+                        <div class="h-full bg-white rounded-full transition-all duration-500 shadow-sm"
+                            style="width: 68%;"></div>
+                    </div>
+                    <div class="flex justify-between text-[11px] text-white/75 font-medium">
+                        <span>4 of 6 Units Completed</span>
+                        <span>8 Lectures Remaining</span>
+                    </div>
+                </div>
+                <!-- Fast Stats Pill Grid -->
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/15">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-2.5 py-2">
+                        <p class="text-[10px] uppercase font-bold text-white/70 tracking-wider font-label">Quizzes</p>
+                        <p class="text-sm font-headline font-bold text-white mt-0.5">5 / 7 Done</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-2.5 py-2">
+                        <p class="text-[10px] uppercase font-bold text-white/70 tracking-wider font-label">Pace</p>
+                        <p class="text-sm font-headline font-bold text-emerald-300 mt-0.5">+1 Lecture</p>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl px-2.5 py-2">
+                        <p class="text-[10px] uppercase font-bold text-white/70 tracking-wider font-label">Attendance
+                        </p>
+                        <p class="text-sm font-headline font-bold text-white mt-0.5">94% Avg</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Quick Filter & Unit Heading -->
+        <div class="flex items-center justify-between pt-1">
+            <div>
+                <h2 class="text-lg font-headline font-bold text-slate-900 tracking-tight">Course Units</h2>
+                <p class="text-xs text-on-surface-variant font-medium">6 modules structured across 16 weeks</p>
+            </div>
+            <div class="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-xl text-xs font-semibold">
+                <button class="px-2.5 py-1 rounded-lg bg-surface-container-lowest text-primary shadow-xs font-label">All
+                    (6)</button>
+                <button class="px-2.5 py-1 rounded-lg text-on-surface-variant hover:text-on-surface font-label">In
+                    Progress</button>
+            </div>
+        </div>
+        <!-- Interactive Unit Cards List -->
+        <div class="space-y-4">
+            <!-- Unit 1: Completed -->
+            <article class="card-subtle rounded-2xl p-5 border border-slate-100 transition-all hover:shadow-md">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span
+                            class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[20px]"
+                                style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        </span>
+                        <div>
+                            <span class="text-[11px] font-bold tracking-wide uppercase text-slate-400 font-label">Unit
+                                01</span>
+                            <h3 class="font-headline font-bold text-[15px] text-slate-900 leading-tight">Foundations of
+                                Neural Architecture</h3>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 shrink-0">
+                        Completed
+                    </span>
+                </div>
+                <div class="mt-3.5 space-y-2">
+                    <div class="flex items-center justify-between text-xs text-on-surface-variant">
+                        <span class="font-medium">5 of 5 Topics Finished</span>
+                        <span class="font-bold text-emerald-700">100%</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full w-full"></div>
+                    </div>
+                </div>
+                <div
+                    class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-on-surface-variant">
+                    <div class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[16px] text-slate-400">event_available</span>
+                        <span>Completed Oct 14 • 4 Lectures</span>
+                    </div>
+                    <button class="text-primary font-bold hover:underline inline-flex items-center gap-0.5">
+                        Review <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+                    </button>
+                </div>
+            </article>
+            <!-- Unit 2: In Progress (Expanded Details) -->
+            <article class="card-subtle rounded-2xl p-5 border-2 border-primary/20 shadow-md ring-4 ring-primary/5">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span
+                            class="w-8 h-8 rounded-xl bg-blue-100 text-primary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">psychology</span>
+                        </span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[11px] font-bold tracking-wide uppercase text-primary font-label">Unit
+                                    02 • Active</span>
+                            </div>
+                            <h3 class="font-headline font-bold text-[16px] text-slate-900 leading-tight">Memory
+                                Consolidation &amp; LTP</h3>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-primary shrink-0">
+                        75% Done
+                    </span>
+                </div>
+                <p class="text-xs text-on-surface-variant mt-2">Exploration of hippocampal sharp-wave ripples, cellular
+                    synaptic enhancement, and recall cues.</p>
+                <div class="mt-3.5 space-y-1.5">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-medium text-on-surface-variant">3 of 4 Topics delivered</span>
+                        <span class="font-bold text-primary">Lecture 3/4 logged</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full w-[75%]"></div>
+                    </div>
+                </div>
+                <!-- Topic Breakdown mini checklist -->
+                <div class="mt-4 bg-surface-container-low rounded-xl p-3 space-y-2">
+                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 font-label">Topic Progress
+                    </p>
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between text-slate-700">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-emerald-600"
+                                    style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                Long-Term Potentiation (LTP) mechanics
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-medium">Oct 19</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-700">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-emerald-600"
+                                    style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                Hippocampal-Cortical Dialogue
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-medium">Oct 23</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-700">
+                            <span class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[16px] text-emerald-600"
+                                    style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                                Sleep Architecture &amp; Replay Phases
+                            </span>
+                            <span class="text-[11px] text-slate-400 font-medium">Oct 28</span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-900 font-semibold">
+                            <span class="flex items-center gap-2">
+                                <span
+                                    class="material-symbols-outlined text-[16px] text-primary">radio_button_unchecked</span>
+                                Reconsolidation &amp; Extinction Protocols
+                            </span>
+                            <span class="text-[11px] font-bold text-primary">Final Topic</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Unit Action Buttons -->
+                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2">
+                    <button
+                        class="flex-1 bg-primary text-on-primary py-2.5 px-3 rounded-xl text-xs font-bold font-headline flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all">
+                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        Log Lecture
+                    </button>
+                    <button
+                        class="px-3.5 py-2.5 rounded-xl bg-surface-container-high text-on-surface hover:bg-slate-200 transition-colors text-xs font-bold font-headline active:scale-95 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">edit_note</span>
+                        Edit Topics
+                    </button>
+                    <button
+                        class="w-9 h-9 rounded-xl bg-surface-container-high text-on-surface hover:bg-slate-200 transition-colors flex items-center justify-center"
+                        title="Mark Unit Complete">
+                        <span class="material-symbols-outlined text-[18px]">done_all</span>
+                    </button>
+                </div>
+            </article>
+            <!-- Unit 3: In Progress (Next Lecture Scheduled) -->
+            <article class="card-subtle rounded-2xl p-5 border border-slate-100 transition-all hover:shadow-md">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span
+                            class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">timeline</span>
+                        </span>
+                        <div>
+                            <span class="text-[11px] font-bold tracking-wide uppercase text-slate-400 font-label">Unit
+                                03</span>
+                            <h3 class="font-headline font-bold text-[15px] text-slate-900 leading-tight">Synaptic
+                                Pruning &amp; Plasticity</h3>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 shrink-0">
+                        25% In Progress
+                    </span>
+                </div>
+                <!-- Next lecture banner -->
+                <div class="mt-3 bg-blue-50/70 border border-blue-100 rounded-xl p-3 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <span class="material-symbols-outlined text-primary text-[20px]">event_upcoming</span>
+                        <div>
+                            <p class="text-xs font-bold text-slate-900 leading-none">Next Lecture: Tomorrow, 10:00 AM
+                            </p>
+                            <p class="text-[11px] text-on-surface-variant mt-0.5">Hall B • Topic: Microglial Synaptic
+                                Elimination</p>
+                        </div>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                </div>
+                <div class="mt-3.5 space-y-1.5">
+                    <div class="flex items-center justify-between text-xs text-on-surface-variant">
+                        <span>1 of 4 Topics finished</span>
+                        <span class="font-semibold text-slate-700">3 lectures scheduled</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-500 rounded-full w-1/4"></div>
+                    </div>
+                </div>
+                <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span class="text-on-surface-variant font-medium">Target completion: Nov 10</span>
+                    <button class="text-primary font-bold hover:underline flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">tune</span> Update Progress
+                    </button>
+                </div>
+            </article>
+            <!-- Unit 4: Upcoming -->
+            <article class="card-subtle rounded-2xl p-5 border border-slate-100">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span
+                            class="w-8 h-8 rounded-xl bg-purple-50 text-secondary flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[20px]">account_tree</span>
+                        </span>
+                        <div>
+                            <span class="text-[11px] font-bold tracking-wide uppercase text-slate-400 font-label">Unit
+                                04</span>
+                            <h3 class="font-headline font-bold text-[15px] text-slate-900 leading-tight">Pre-frontal
+                                Cortex &amp; Executive Control</h3>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 shrink-0">
+                        Upcoming
+                    </span>
+                </div>
+                <div
+                    class="mt-3 flex items-center justify-between text-xs text-on-surface-variant bg-surface-container-low px-3 py-2 rounded-xl">
+                    <span class="flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[16px] text-secondary">assignment</span>
+                        <span>Starts Nov 12 • 5 Topics</span>
+                    </span>
+                    <span class="font-bold text-secondary">Draft Notes Ready</span>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span class="text-slate-400">0% complete</span>
+                    <button
+                        class="text-slate-600 font-bold hover:text-primary transition-colors flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">visibility</span> Preview Topics
+                    </button>
+                </div>
+            </article>
+            <!-- Unit 5 & 6: Locked / Later in Term -->
+            <article class="card-subtle rounded-2xl p-4 border border-slate-100 opacity-75">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[18px]">lock</span>
+                        </span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold uppercase text-slate-400 font-label">Unit 05</span>
+                                <span
+                                    class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 font-semibold">Late
+                                    Nov</span>
+                            </div>
+                            <h4 class="font-headline font-bold text-sm text-slate-700">Neuromodulators and Emotional
+                                Valence</h4>
+                        </div>
+                    </div>
+                    <button class="p-1.5 text-slate-400 hover:text-slate-600">
+                        <span class="material-symbols-outlined text-[20px]">more_horiz</span>
+                    </button>
+                </div>
+            </article>
+            <article class="card-subtle rounded-2xl p-4 border border-slate-100 opacity-75">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[18px]">lock</span>
+                        </span>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold uppercase text-slate-400 font-label">Unit 06</span>
+                                <span
+                                    class="text-[10px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-500 font-semibold">Dec</span>
+                            </div>
+                            <h4 class="font-headline font-bold text-sm text-slate-700">Cognitive Decline &amp;
+                                Neurorehabilitation</h4>
+                        </div>
+                    </div>
+                    <button class="p-1.5 text-slate-400 hover:text-slate-600">
+                        <span class="material-symbols-outlined text-[20px]">more_horiz</span>
+                    </button>
+                </div>
+            </article>
+        </div>
+    </main>
+    <!-- Floating Action Toolbar -->
+    <aside class="fixed bottom-24 left-0 right-0 z-30 px-5 flex justify-center pointer-events-none">
+        <div
+            class="pointer-events-auto bg-slate-900/90 backdrop-blur-lg text-white px-3 py-2 rounded-2xl shadow-xl flex items-center gap-2 border border-white/10">
+            <button
+                class="bg-primary hover:bg-primary-dim text-white text-xs font-headline font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-transform active:scale-95 shadow-md">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Add New Unit
+            </button>
+            <div class="w-px h-5 bg-white/20"></div>
+            <button
+                class="text-white hover:text-blue-200 text-xs font-medium px-2.5 py-2 rounded-xl flex items-center gap-1 transition-colors">
+                <span class="material-symbols-outlined text-[18px]">sync</span>
+                Sync Calendar
+            </button>
+        </div>
+    </aside>
+    <!-- BottomNavBar -->
+    <nav class="fixed bottom-0 w-full z-40 flex justify-center items-center pb-6 pointer-events-none">
+        <div
+            class="bg-white/90 backdrop-blur-xl w-[92%] max-w-md rounded-full shadow-[0_8px_24px_rgba(44,47,49,0.08)] flex justify-around items-center p-2 pointer-events-auto border border-slate-100">
+            <a class="flex flex-col items-center justify-center text-slate-400 hover:text-primary py-1.5 px-3 transition-transform active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined text-[22px]">dashboard</span>
+                <span class="font-label text-[10px] font-semibold tracking-wider">Home</span>
+            </a>
+            <a class="flex flex-col items-center justify-center bg-blue-50 text-primary rounded-full py-1.5 px-4 transition-transform active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined text-[22px]"
+                    style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+                <span class="font-label text-[10px] font-bold tracking-wider">Syllabus</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 hover:text-primary py-1.5 px-3 transition-transform active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined text-[22px]">quiz</span>
+                <span class="font-label text-[10px] font-semibold tracking-wider">Quizzes</span>
+            </a>
+            <a class="flex flex-col items-center justify-center text-slate-400 hover:text-primary py-1.5 px-3 transition-transform active:scale-90 duration-200"
+                href="#">
+                <span class="material-symbols-outlined text-[22px]">analytics</span>
+                <span class="font-label text-[10px] font-semibold tracking-wider">Reports</span>
+            </a>
+        </div>
+    </nav>
+</body>
+
+</html>
