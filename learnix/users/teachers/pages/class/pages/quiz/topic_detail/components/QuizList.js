@@ -2,12 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function QuizList({ quizzes, onEdit, onDelete, onManage }) {
+export default function QuizList({ quizzes, onEdit, onDelete, onManage, onViewAll }) {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Recent Quizzes</Text>
-                <TouchableOpacity style={styles.viewAllButton} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.viewAllButton} activeOpacity={0.7} onPress={onViewAll}>
                     <Text style={styles.viewAllText}>View All</Text>
                     <MaterialIcons name="arrow-forward" size={16} color="#0050d4" />
                 </TouchableOpacity>

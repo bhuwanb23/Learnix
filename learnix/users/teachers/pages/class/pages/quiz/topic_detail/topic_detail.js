@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import TopicDetailHeader from './components/TopicDetailHeader';
 import PerformanceHero from './components/PerformanceHero';
@@ -10,6 +10,8 @@ import { QUIZ_STATS, QUIZZES, HEADER, AI_INSIGHT } from './constants/topicDetail
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import QuizPreview from '../quiz_preview/quiz_preview';
 import CreateQuiz from '../create_quiz/create_quiz';
+import EditQuizScreen from '../edit_quiz/EditQuizScreen';
+import Quizzes from '../quizzes/quizzes';
 
 export default function TopicDetail({ route, navigation }) {
     const topicData = route?.params?.topicData || {
@@ -26,6 +28,11 @@ export default function TopicDetail({ route, navigation }) {
             setSelectedQuiz(params.quizData);
         } else if (screen === 'CreateQuiz') {
             setCurrentScreen('CreateQuiz');
+        } else if (screen === 'EditQuiz') {
+            setCurrentScreen('EditQuiz');
+            setSelectedQuiz(params.quizData);
+        } else if (screen === 'Quizzes') {
+            setCurrentScreen('Quizzes');
         } else if (screen === 'main') {
             setCurrentScreen('detail');
             setSelectedQuiz(null);
@@ -33,7 +40,7 @@ export default function TopicDetail({ route, navigation }) {
     };
 
     const handleBack = () => {
-        if (currentScreen === 'QuizPreview' || currentScreen === 'CreateQuiz') {
+        if (currentScreen === 'QuizPreview' || currentScreen === 'CreateQuiz' || currentScreen === 'EditQuiz' || currentScreen === 'Quizzes') {
             handleNavigate('main');
         } else if (navigation?.goBack) {
             navigation.goBack();
@@ -41,11 +48,18 @@ export default function TopicDetail({ route, navigation }) {
     };
 
     const handleEdit = (quiz) => {
-        console.log('Edit quiz:', quiz.id);
+        handleNavigate('EditQuiz', { quizData: quiz });
     };
 
     const handleDelete = (quiz) => {
-        console.log('Delete quiz:', quiz.id);
+        Alert.alert(
+            'Delete Quiz?',
+            `"${quiz.name}" and its submissions will be permanently removed.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Quiz deleted', 'The quiz was removed.') },
+            ]
+        );
     };
 
     const handleManage = (quiz) => {
@@ -58,7 +72,17 @@ export default function TopicDetail({ route, navigation }) {
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            {currentScreen === 'QuizPreview' ? (
+            {currentScreen === 'Quizzes' ? (
+                <Quizzes
+                    route={{ params: { topicData } }}
+                    navigation={{ goBack: handleBack, navigate: handleNavigate }}
+                />
+            ) : currentScreen === 'EditQuiz' ? (
+                <EditQuizScreen
+                    route={{ params: { quizData: selectedQuiz } }}
+                    navigation={{ goBack: handleBack }}
+                />
+            ) : currentScreen === 'QuizPreview' ? (
                 <QuizPreview 
                     route={{ params: { quizData: selectedQuiz } }} 
                     navigation={{ goBack: handleBack }} 
@@ -90,6 +114,7 @@ export default function TopicDetail({ route, navigation }) {
                             onEdit={handleEdit}
                             onDelete={handleDelete}
                             onManage={handleManage}
+                            onViewAll={() => handleNavigate('Quizzes')}
                         />
                         <AIInsightCard 
                             insight={AI_INSIGHT}
