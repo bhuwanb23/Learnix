@@ -6,6 +6,7 @@ import QuizUnitCard from './components/QuizUnitCard';
 import { UNITS, HEADER } from './constants/unitData';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import TopicList from '../topic_list/topic_list';
+import CreateUnit from '../create_unit/create_unit';
 
 export default function UnitList({ route, navigation }) {
     const classData = route?.params?.classData;
@@ -16,6 +17,8 @@ export default function UnitList({ route, navigation }) {
         if (screen === 'TopicList') {
             setCurrentScreen('TopicList');
             setSelectedUnit(params.unitData);
+        } else if (screen === 'CreateUnit') {
+            setCurrentScreen('CreateUnit');
         } else if (screen === 'main') {
             setCurrentScreen('units');
             setSelectedUnit(null);
@@ -24,6 +27,8 @@ export default function UnitList({ route, navigation }) {
 
     const handleBack = () => {
         if (currentScreen === 'TopicList') {
+            handleNavigate('main');
+        } else if (currentScreen === 'CreateUnit') {
             handleNavigate('main');
         } else if (navigation?.goBack) {
             navigation.goBack();
@@ -35,12 +40,17 @@ export default function UnitList({ route, navigation }) {
     };
 
     const handleCreateUnit = () => {
-        console.log('Create new unit');
+        handleNavigate('CreateUnit');
     };
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            {currentScreen === 'TopicList' ? (
+            {currentScreen === 'CreateUnit' ? (
+                <CreateUnit
+                    route={{ params: { classData } }}
+                    navigation={{ goBack: handleBack }}
+                />
+            ) : currentScreen === 'TopicList' ? (
                 <TopicList 
                     route={{ params: { unitData: selectedUnit } }} 
                     navigation={{ goBack: handleBack }} 

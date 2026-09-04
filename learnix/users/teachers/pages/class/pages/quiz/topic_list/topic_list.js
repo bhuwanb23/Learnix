@@ -6,6 +6,7 @@ import TopicCard from './components/TopicCard';
 import { TOPICS, HEADER } from './constants/topicData';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import TopicDetail from '../topic_detail/topic_detail';
+import EditTopic from '../../syllabus/edit_topic/edit_topic';
 
 export default function TopicList({ route, navigation }) {
     const unitData = route?.params?.unitData || {
@@ -19,6 +20,8 @@ export default function TopicList({ route, navigation }) {
     const handleBack = () => {
         if (currentScreen === 'TopicDetail') {
             handleNavigate('main');
+        } else if (currentScreen === 'EditTopic') {
+            handleNavigate('main');
         } else if (navigation?.goBack) {
             navigation.goBack();
         }
@@ -28,6 +31,9 @@ export default function TopicList({ route, navigation }) {
         if (screen === 'TopicDetail') {
             setCurrentScreen('TopicDetail');
             setSelectedTopic(params.topicData);
+        } else if (screen === 'EditTopic') {
+            setSelectedTopic(null);
+            setCurrentScreen('EditTopic');
         } else if (screen === 'main') {
             setCurrentScreen('topics');
             setSelectedTopic(null);
@@ -39,12 +45,17 @@ export default function TopicList({ route, navigation }) {
     };
 
     const handleCreateTopic = () => {
-        console.log('Create new topic');
+        handleNavigate('EditTopic');
     };
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            {currentScreen === 'TopicDetail' ? (
+            {currentScreen === 'EditTopic' ? (
+                <EditTopic
+                    route={{ params: { unitData, topicData: null } }}
+                    navigation={{ goBack: handleBack }}
+                />
+            ) : currentScreen === 'TopicDetail' ? (
                 <TopicDetail 
                     route={{ params: { topicData: selectedTopic } }} 
                     navigation={{ goBack: handleBack }} 

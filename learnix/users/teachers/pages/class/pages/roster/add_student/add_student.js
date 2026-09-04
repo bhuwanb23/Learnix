@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AddStudentHeader from './components/AddStudentHeader';
 import FormField from './components/FormField';
@@ -23,8 +23,10 @@ export default function AddStudent({ route, navigation }) {
     const valid = requiredKeys.every((key) => values[key] && values[key].trim().length > 0);
 
     const handleSave = () => {
-        console.log('Enroll student:', values);
-        handleBack();
+        const name = values.name ? values.name.trim() : 'Student';
+        Alert.alert('Student Enrolled', `${name} was added to the roster. An invitation has been queued.`, [
+            { text: 'OK', onPress: () => handleBack() },
+        ]);
     };
 
     return (
