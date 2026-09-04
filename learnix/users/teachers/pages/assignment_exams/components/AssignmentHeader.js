@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function AssignmentHeader({ header }) {
+export default function AssignmentHeader({ header, onAddPress }) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -15,7 +15,9 @@ export default function AssignmentHeader({ header }) {
           </View>
           <Text style={styles.title}>{header.title}</Text>
         </View>
-        <MaterialIcons name="add-circle" size={28} color="#0050d4" />
+        <TouchableOpacity onPress={onAddPress} activeOpacity={0.85}>
+          <MaterialIcons name="add-circle" size={28} color="#0050d4" />
+        </TouchableOpacity>
       </View>
     </View>
   );
