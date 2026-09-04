@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function TeacherHeader() {
+export default function TeacherHeader({ onNotificationsPress }) {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -19,12 +19,16 @@ export default function TeacherHeader() {
           <Text style={styles.teacherName}>Prof. Jane Smith</Text>
         </View>
         <View style={styles.headerActions}>
-          <View style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={onNotificationsPress}
+            activeOpacity={0.7}
+          >
             <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
             <View style={styles.notificationBadge}>
               <Text style={styles.badgeText}>2</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
     </View>

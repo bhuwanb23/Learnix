@@ -12,11 +12,19 @@ import Roster from './pages/class/pages/roster/roster';
 import AssignmentExamsPage from './pages/assignment_exams/assignment_exams';
 import TeacherProfilePage from './pages/profile/profile';
 import StudentPerformancePage from './pages/student_performance/student_performance';
+import NotificationsPage from './pages/notifications/notifications';
+import SchedulePage from './pages/schedule/schedule';
 
 export default function TeacherScreen() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const [selectedClass, setSelectedClass] = useState(null);
+
+  const handleTabPress = (tab) => {
+    setCurrentScreen('main');
+    setSelectedClass(null);
+    setActiveTab(tab);
+  };
 
   const handleNavigate = (screen, params = {}) => {
     if (screen === 'ClassDashboard') {
@@ -34,6 +42,10 @@ export default function TeacherScreen() {
     } else if (screen === 'Roster') {
       setCurrentScreen('Roster');
       setSelectedClass(params.classData);
+    } else if (screen === 'Notifications') {
+      setCurrentScreen('Notifications');
+    } else if (screen === 'Schedule') {
+      setCurrentScreen('Schedule');
     } else if (screen === 'main') {
       setCurrentScreen('main');
       setSelectedClass(null);
@@ -41,6 +53,14 @@ export default function TeacherScreen() {
   };
 
   const renderContent = () => {
+    if (currentScreen === 'Notifications') {
+      return <NotificationsPage navigation={{ goBack: () => handleNavigate('main') }} />;
+    }
+
+    if (currentScreen === 'Schedule') {
+      return <SchedulePage navigation={{ goBack: () => handleNavigate('main') }} />;
+    }
+
     if (currentScreen === 'ClassDashboard') {
       return <ClassDashboard route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('main'), navigate: handleNavigate }} />;
     }
@@ -63,7 +83,7 @@ export default function TeacherScreen() {
 
     switch (activeTab) {
       case 'Dashboard':
-        return <TeacherDashboard />;
+        return <TeacherDashboard onNavigateTab={handleTabPress} onOpenSchedule={() => handleNavigate('Schedule')} />;
       case 'Classes':
         return <TeacherClassPage navigation={{ navigate: handleNavigate }} />;
       case 'Assignments':
@@ -79,9 +99,9 @@ export default function TeacherScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TeacherHeader />
+      <TeacherHeader onNotificationsPress={() => handleNavigate('Notifications')} />
       {renderContent()}
-      <TeacherBottomNavbar activeTab={activeTab} onTabPress={setActiveTab} />
+      <TeacherBottomNavbar activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
   );
 }
@@ -91,5 +111,4 @@ const styles = {
     flex: 1,
     backgroundColor: '#f5f7f9',
   },
-};
-
+};

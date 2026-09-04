@@ -11,8 +11,12 @@ export default function TeacherClassPage({ navigation }) {
   };
 
   const handleUpload = (classItem) => {
-    console.log('Upload notes for:', classItem.id);
-    navigation.navigate('UploadNotes');
+    // Upload notes opens the lecture notes module for this class
+    navigation.navigate('LectureNotes', { classData: classItem });
+  };
+
+  const handleMore = (classItem) => {
+    navigation.navigate('ClassDashboard', { classData: classItem });
   };
 
   return (
@@ -32,6 +36,7 @@ export default function TeacherClassPage({ navigation }) {
               classData={classItem}
               onViewPress={() => handleViewClass(classItem)}
               onUploadPress={() => handleUpload(classItem)}
+              onMorePress={() => handleMore(classItem)}
             />
           ))}
         </View>
