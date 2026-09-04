@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function ScheduleList({ items, onPressAll }) {
+export default function ScheduleList({ items, onPressAll, onPressItem, onJoin }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -14,14 +14,23 @@ export default function ScheduleList({ items, onPressAll }) {
 
       <View style={styles.list}>
         {items.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.card} activeOpacity={0.9}>
+          <TouchableOpacity
+            key={item.id}
+            style={styles.card}
+            activeOpacity={0.9}
+            onPress={() => onPressItem && onPressItem(item)}
+          >
             <View style={styles.info}>
               <Text style={styles.time}>{item.time}</Text>
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.location}>{item.location}</Text>
             </View>
             {item.canJoin && (
-              <TouchableOpacity style={styles.joinButton} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.joinButton}
+                activeOpacity={0.8}
+                onPress={() => onJoin && onJoin(item)}
+              >
                 <Text style={styles.joinText}>Join Live</Text>
               </TouchableOpacity>
             )}

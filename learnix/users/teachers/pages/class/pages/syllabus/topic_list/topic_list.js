@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Animated, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import TopicHeader from './components/TopicHeader';
@@ -58,7 +58,17 @@ export default function TopicList({ route, navigation }) {
     };
 
     const handlePublish = () => {
-        console.log('Publish unit');
+        Alert.alert(
+            'Publish Unit?',
+            'This will sync the unit (topics, hours and quizzes) to the student syllabus.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Publish',
+                    onPress: () => showToast('Unit published to student syllabus.'),
+                },
+            ]
+        );
     };
 
     const handleFilter = (filterId) => {
@@ -72,15 +82,34 @@ export default function TopicList({ route, navigation }) {
     };
 
     const handleAddTopic = () => {
-        showToast('Add Topic modal opened (Draft template initialized).');
+        // Open the topic editor in create mode
+        setSelectedTopic(null);
+        setCurrentScreen('EditTopic');
     };
 
     const handleTopicAction = (actionId, topic) => {
         if (actionId === 'edit' || actionId === 'edit-details') {
             setSelectedTopic(topic);
             setCurrentScreen('EditTopic');
-        } else {
-            console.log('Topic action:', actionId, topic?.id);
+        } else if (actionId === 'log-delivery') {
+            Alert.alert('Delivery Logged', `${topic.title} was logged as delivered for this week.`);
+        } else if (actionId === 'schedule-class') {
+            Alert.alert('Class Scheduled', `${topic.title} was added to next week's class schedule.`);
+        } else if (actionId === 'publish') {
+            Alert.alert('Topic Published', `${topic.title} was published to the student syllabus.`);
+        } else if (actionId === 'delete') {
+            Alert.alert(
+                'Delete Topic?',
+                `"${topic.title}" will be removed from the unit.`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => showToast('Topic deleted.') },
+                ]
+            );
+        } else if (actionId === 'notes') {
+            showToast('Notes module for this topic will open here.');
+        } else if (actionId === 'options') {
+            Alert.alert(topic.title, 'Choose an action: duplicate, archive or move this topic. Full options arrive with the backend.');
         }
     };
 

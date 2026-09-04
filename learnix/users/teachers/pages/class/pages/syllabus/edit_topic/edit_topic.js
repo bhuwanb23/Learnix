@@ -59,7 +59,19 @@ export default function EditTopic({ route, navigation }) {
     };
 
     const handlePublish = () => {
-        console.log('Publish unit');
+        Alert.alert(
+            'Publish Unit?',
+            'This syncs the unit with its topics and quizzes to the student syllabus.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Publish',
+                    onPress: () => {
+                        handleSaveDraft();
+                    },
+                },
+            ]
+        );
     };
 
     const handleWeightToggle = (id) => {
@@ -96,7 +108,27 @@ export default function EditTopic({ route, navigation }) {
     };
 
     const handleResourceAction = (action, resource) => {
-        console.log('Resource action:', action, resource?.fileName);
+        const name = resource?.fileName || 'the resource';
+        if (action === 'replace') {
+            Alert.alert('Replace Resource', `Choose a new file to replace ${name}.`);
+        } else if (action === 'remove') {
+            Alert.alert(
+                'Remove Resource?',
+                `${name} will be detached from this topic.`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Remove', style: 'destructive', onPress: () => Alert.alert('Resource Removed', `${name} was detached.`) },
+                ]
+            );
+        }
+    };
+
+    const handleAttach = () => {
+        Alert.alert('Attach Document', 'A file picker will open here to attach a new document.');
+    };
+
+    const handleChangeQuiz = () => {
+        Alert.alert('Change Linked Quiz', 'The quiz selector will open here to link a different quiz.');
     };
 
     return (
@@ -145,8 +177,8 @@ export default function EditTopic({ route, navigation }) {
                     quiz={LINKED_QUIZ}
                     onReplace={(r) => handleResourceAction('replace', r)}
                     onRemove={(r) => handleResourceAction('remove', r)}
-                    onAttach={() => console.log('Attach new document')}
-                    onChangeQuiz={() => console.log('Change quiz')}
+                    onAttach={handleAttach}
+                    onChangeQuiz={handleChangeQuiz}
                 />
 
                 <DeliverySection

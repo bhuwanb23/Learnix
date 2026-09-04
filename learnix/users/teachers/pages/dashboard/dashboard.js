@@ -9,10 +9,36 @@ import PerformanceOverview from './components/PerformanceOverview';
 import InsightsGrid from './components/InsightsGrid';
 import RecentSubmissions from './components/RecentSubmissions';
 
-export default function TeacherDashboard() {
-  const { data, loading, error, refresh, handleQuickAction } = useTeacherDashboard();
+const QUICK_ACTION_TABS = {
+  my_classes: 'Classes',
+  manage_assignments: 'Assignments',
+  student_insights: 'Performance',
+  teaching_profile: 'Profile',
+};
+
+export default function TeacherDashboard({ onNavigateTab, onOpenSchedule }) {
+  const { data, loading, error, refresh } = useTeacherDashboard();
 
   const onRefresh = () => refresh();
+
+  const handleQuickAction = (id) => {
+    const tab = QUICK_ACTION_TABS[id];
+    if (tab && onNavigateTab) {
+      onNavigateTab(tab);
+    }
+  };
+
+  const handleOpenSchedule = () => {
+    if (onOpenSchedule) {
+      onOpenSchedule();
+    }
+  };
+
+  const handleGradeSubmission = () => {
+    if (onNavigateTab) {
+      onNavigateTab('Assignments');
+    }
+  };
 
   if (loading) {
     return (
@@ -41,10 +67,10 @@ export default function TeacherDashboard() {
       >
         <HeroHeader header={data.header} />
         <QuickActions actions={data.quickActions} onPress={handleQuickAction} />
-        <ScheduleList items={data.schedule} onPressAll={() => {}} />
+        <ScheduleList items={data.schedule} onPressAll={handleOpenSchedule} onPressItem={handleOpenSchedule} onJoin={handleOpenSchedule} />
         <PerformanceOverview performance={data.performance} />
         <InsightsGrid insights={data.insights} />
-        <RecentSubmissions submissions={data.submissions} />
+        <RecentSubmissions submissions={data.submissions} onGrade={handleGradeSubmission} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -77,6 +103,4 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     fontWeight: '500',
   },
-});
-
-
+});

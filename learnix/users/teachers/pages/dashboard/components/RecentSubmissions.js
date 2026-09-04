@@ -2,14 +2,19 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function RecentSubmissions({ submissions }) {
+export default function RecentSubmissions({ submissions, onGrade }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Recent Submissions</Text>
 
       <View style={styles.list}>
         {submissions.map((submission) => (
-          <TouchableOpacity key={submission.id} style={styles.card} activeOpacity={0.9}>
+          <TouchableOpacity
+            key={submission.id}
+            style={styles.card}
+            activeOpacity={0.9}
+            onPress={() => onGrade && onGrade(submission)}
+          >
             <Image 
               source={{ uri: submission.avatar }} 
               style={styles.avatar}
@@ -21,7 +26,11 @@ export default function RecentSubmissions({ submissions }) {
             </View>
             <View style={styles.right}>
               <Text style={styles.time}>{submission.time}</Text>
-              <TouchableOpacity style={styles.gradeButton} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.gradeButton}
+                activeOpacity={0.8}
+                onPress={() => onGrade && onGrade(submission)}
+              >
                 <Text style={styles.gradeText}>Grade</Text>
               </TouchableOpacity>
             </View>

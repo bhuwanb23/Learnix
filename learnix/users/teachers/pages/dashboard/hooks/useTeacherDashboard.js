@@ -23,11 +23,7 @@ export default function useTeacherDashboard() {
     refresh();
   }, [refresh]);
 
-  const handleQuickAction = (id) => {
-    console.log('Teacher quick action:', id);
-  };
-
-  return { data, loading, error, refresh, handleQuickAction };
+  return { data, loading, error, refresh };
 }
 
 

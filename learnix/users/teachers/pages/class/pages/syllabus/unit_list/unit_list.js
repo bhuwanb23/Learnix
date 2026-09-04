@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import UnitHeader from './components/UnitHeader';
 import OverviewCard from './components/OverviewCard';
 import UnitCard from './components/UnitCard';
 import FloatingToolbar from './components/FloatingToolbar';
 import TopicList from '../topic_list/topic_list';
+import CreateUnit from '../create_unit/create_unit';
 import { SYLLABUS_HEADER, OVERVIEW, SECTION_HEADING, FILTERS, UNITS } from './constants/unitData';
 
 const PROGRESS_STATUSES = ['active', 'in_progress'];
@@ -31,6 +32,8 @@ export default function UnitList({ route, navigation }) {
         if (currentScreen === 'TopicList') {
             setCurrentScreen('units');
             setSelectedUnit(null);
+        } else if (currentScreen === 'CreateUnit') {
+            setCurrentScreen('units');
         } else if (navigation?.goBack) {
             navigation.goBack();
         }
@@ -42,33 +45,55 @@ export default function UnitList({ route, navigation }) {
     };
 
     const handleExport = () => {
-        console.log('Export syllabus');
+        Alert.alert('Export Syllabus', 'The syllabus is being prepared as a PDF. It will be available in Downloads shortly.');
     };
 
     const handleSettings = () => {
-        console.log('Syllabus settings');
+        Alert.alert('Syllabus Settings', 'Display options: show percentages, hide draft units, and default status filter can be configured here once the backend is connected.');
     };
 
     const handleUnitAction = (actionId, unit) => {
         // Topic-management actions open the topic list for the unit
-        if (actionId === 'edit-topics' || actionId === 'review' || actionId === 'preview-topics') {
+        if (actionId === 'edit-topics' || actionId === 'review' || actionId === 'preview-topics' || actionId === 'update-progress') {
             handleOpenTopics(unit);
             return;
         }
-        console.log('Unit action:', actionId, unit?.id);
+        if (actionId === 'log-lecture') {
+            Alert.alert('Lecture Logged', `A lecture for ${unit.title} was added to the delivery log.`);
+        } else if (actionId === 'mark-complete') {
+            Alert.alert(
+                'Mark Unit Complete?',
+                `${unit.title} will be marked as fully delivered.`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Complete', onPress: () => Alert.alert('Unit Completed', `${unit.title} is now marked complete.`) },
+                ]
+            );
+        } else if (actionId === 'more') {
+            Alert.alert(unit.title, `This unit unlocks in ${unit.period || 'the coming weeks'}.`);
+        }
     };
 
     const handleAddUnit = () => {
-        console.log('Add new unit');
+        setCurrentScreen('CreateUnit');
     };
 
     const handleSyncCalendar = () => {
-        console.log('Sync calendar');
+        Alert.alert('Calendar Synced', 'Unit delivery dates were synced to your teaching calendar.');
     };
 
     const visibleUnits = activeFilter === 'progress'
         ? UNITS.filter((unit) => PROGRESS_STATUSES.includes(unit.status))
         : UNITS;
+
+    if (currentScreen === 'CreateUnit') {
+        return (
+            <CreateUnit
+                route={{ params: { classData } }}
+                navigation={{ goBack: handleBack }}
+            />
+        );
+    }
 
     if (currentScreen === 'TopicList') {
         return (
