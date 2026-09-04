@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 
-export default function PerformanceFilters({ filters }) {
-  const [activeFilter, setActiveFilter] = useState('all');
-
+export default function PerformanceFilters({ filters, activeFilter, onChange }) {
   return (
     <ScrollView
       horizontal
@@ -14,19 +12,11 @@ export default function PerformanceFilters({ filters }) {
       {filters.map((filter) => (
         <TouchableOpacity
           key={filter.id}
-          style={[
-            styles.filter,
-            activeFilter === filter.id && styles.filterActive,
-          ]}
+          style={[styles.filter, activeFilter === filter.id && styles.filterActive]}
           activeOpacity={0.85}
-          onPress={() => setActiveFilter(filter.id)}
+          onPress={() => onChange(filter.id)}
         >
-          <Text
-            style={[
-              styles.filterText,
-              activeFilter === filter.id && styles.filterTextActive,
-            ]}
-          >
+          <Text style={[styles.filterText, activeFilter === filter.id && styles.filterTextActive]}>
             {filter.label}
           </Text>
         </TouchableOpacity>
@@ -37,16 +27,16 @@ export default function PerformanceFilters({ filters }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   content: {
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: 20,
+    gap: 10,
   },
   filter: {
     backgroundColor: '#eef1f3',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
     borderRadius: 20,
   },
   filterActive: {
@@ -54,12 +44,11 @@ const styles = StyleSheet.create({
   },
   filterText: {
     fontFamily: 'Manrope-SemiBold',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: '#2c2f31',
-    whiteSpace: 'nowrap',
   },
   filterTextActive: {
     color: '#ffffff',
   },
-});
+});
