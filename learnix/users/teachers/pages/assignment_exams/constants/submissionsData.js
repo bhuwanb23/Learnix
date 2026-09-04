@@ -1,0 +1,55 @@
+// Submissions per assignment - single source for the assignment detail rows and the grading queue.
+// Mirrors the AssignmentSubmission model (submitted, is_late, grade, is_graded, feedback, plagiarism_score).
+
+export const SUBMISSIONS = {
+  ps04: [
+    { studentId: 'JS', submitted: true, late: false, content: 'Worked through all 6 problems, showing step-by-step derivations for the partial-differential setups. Q4 uses the substitution method from class.', fileName: 'ps04_julianna.pdf', grade: 92, graded: true, feedback: 'Excellent derivation work. Watch notation on Q5.', plagiarism: 4 },
+    { studentId: 'SK', submitted: true, late: false, content: 'Complete set with clean final answers. Q2 relies on a shortcut I did not annotate.', fileName: 'ps04_sofia.pdf', grade: 88, graded: true, feedback: 'Good work — please show the intermediate step in Q2.', plagiarism: 2 },
+    { studentId: 'TK', submitted: true, late: false, content: 'All problems attempted, several solved using numerical approximation.', fileName: 'ps04_tariq.pdf', grade: 95, graded: true, feedback: 'Top marks. Precision is excellent.', plagiarism: 1 },
+    { studentId: 'DL', submitted: true, late: false, content: 'Completed with some gaps in Q3 and Q6 derivations.', fileName: 'ps04_daniel.pdf', grade: 79, graded: true, feedback: 'Solid attempt; revisit Q3 integration steps.', plagiarism: 3 },
+    { studentId: 'AP', submitted: true, late: false, content: 'Full write-up with a worked example for every method covered this week.', fileName: 'ps04_ananya.pdf', grade: null, graded: false, feedback: '', plagiarism: 2 },
+    { studentId: 'MK', submitted: true, late: true, content: 'Submitted after deadline. Q1–Q3 complete, Q4–Q6 partial.', fileName: 'ps04_marcus.pdf', grade: null, graded: false, feedback: '', plagiarism: 6 },
+    { studentId: 'MI', submitted: true, late: false, content: 'Concise solutions; Q5 answer does not match expected result.', fileName: 'ps04_meera.pdf', grade: null, graded: false, feedback: '', plagiarism: 2 },
+    { studentId: 'RC', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+  ],
+  lab01: [
+    { studentId: 'AP', submitted: true, late: false, content: 'Lab report with methodology, raw measurements and analysis. Graphs attached.', fileName: 'optics_ananya.pdf', grade: null, graded: false, feedback: '', plagiarism: 3 },
+    { studentId: 'MI', submitted: true, late: true, content: 'Report submitted late; results section incomplete.', fileName: 'optics_meera.pdf', grade: null, graded: false, feedback: '', plagiarism: 5 },
+    { studentId: 'TK', submitted: true, late: false, content: 'Complete report with uncertainty calculations.', fileName: 'optics_tariq.pdf', grade: null, graded: false, feedback: '', plagiarism: 1 },
+    { studentId: 'JS', submitted: true, late: false, content: 'Report with diagrams and full error analysis.', fileName: 'optics_julianna.pdf', grade: null, graded: false, feedback: '', plagiarism: 2 },
+    { studentId: 'SK', submitted: true, late: false, content: 'Good structure; conclusion could be deeper.', fileName: 'optics_sofia.pdf', grade: null, graded: false, feedback: '', plagiarism: 2 },
+    { studentId: 'MK', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'DL', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'RC', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+  ],
+  resp02: [
+    { studentId: 'AP', submitted: true, late: false, content: 'Two-page response connecting the readings to the lecture on working memory.', fileName: 'resp_ananya.pdf', grade: null, graded: false, feedback: '', plagiarism: 2 },
+    { studentId: 'MI', submitted: true, late: false, content: 'Response focuses on the Atkinson-Shiffrin model.', fileName: 'resp_meera.pdf', grade: null, graded: false, feedback: '', plagiarism: 4 },
+    { studentId: 'SK', submitted: true, late: false, content: 'Engaging response with personal study examples.', fileName: 'resp_sofia.pdf', grade: null, graded: false, feedback: '', plagiarism: 1 },
+    { studentId: 'TK', submitted: true, late: false, content: 'Concise summary with strong thesis.', fileName: 'resp_tariq.pdf', grade: null, graded: false, feedback: '', plagiarism: 1 },
+    { studentId: 'JS', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'MK', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'DL', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'RC', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+  ],
+  refl01: [
+    { studentId: 'JS', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'MK', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'AP', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'RC', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'SK', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'DL', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'MI', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+    { studentId: 'TK', submitted: false, late: false, content: '', fileName: '', grade: null, graded: false, feedback: '', plagiarism: null },
+  ],
+  ps03: [
+    { studentId: 'JS', submitted: true, late: false, content: 'Complete set.', fileName: 'ps03_julianna.pdf', grade: 90, graded: true, feedback: 'Great precision.', plagiarism: 2 },
+    { studentId: 'MK', submitted: true, late: false, content: 'Partial set.', fileName: 'ps03_marcus.pdf', grade: 62, graded: true, feedback: 'Several errors in Q2.', plagiarism: 8 },
+    { studentId: 'AP', submitted: true, late: false, content: 'Complete set.', fileName: 'ps03_ananya.pdf', grade: 96, graded: true, feedback: 'Excellent.', plagiarism: 1 },
+    { studentId: 'RC', submitted: true, late: false, content: 'Partial set.', fileName: 'ps03_rohan.pdf', grade: 58, graded: true, feedback: 'Needs revision of the basics.', plagiarism: 7 },
+    { studentId: 'SK', submitted: true, late: false, content: 'Complete set.', fileName: 'ps03_sofia.pdf', grade: 85, graded: true, feedback: 'Good work.', plagiarism: 2 },
+    { studentId: 'DL', submitted: true, late: false, content: 'Complete set.', fileName: 'ps03_daniel.pdf', grade: 88, graded: true, feedback: 'Solid.', plagiarism: 1 },
+    { studentId: 'MI', submitted: true, late: false, content: 'Complete set.', fileName: 'ps03_meera.pdf', grade: 80, graded: true, feedback: 'Watch Q4.', plagiarism: 3 },
+    { studentId: 'TK', submitted: true, late: false, content: 'Complete set.', fileName: 'ps03_tariq.pdf', grade: 95, graded: true, feedback: 'Excellent.', plagiarism: 1 },
+  ],
+};
