@@ -1,0 +1,80 @@
+// Data constants for the assignment list page - teacher view
+
+export const LIST_HEADER = {
+  title: 'Assignments',
+  subtitle: 'Manage assignments across your classes',
+};
+
+export const TABS = [
+  { id: 'active', label: 'Active' },
+  { id: 'upcoming', label: 'Upcoming' },
+  { id: 'graded', label: 'Graded' },
+];
+
+export const ASSIGNMENTS = [
+  {
+    id: 'ps04',
+    title: 'Problem Set #04',
+    subject: 'Advanced Calculus',
+    classCode: 'CAL-101',
+    dueDate: 'Oct 12',
+    status: 'active',
+    submitted: 18,
+    total: 24,
+    graded: 12,
+    avgGrade: null,
+    color: '#0050d4',
+  },
+  {
+    id: 'lab01',
+    title: 'Lab Report: Optics',
+    subject: 'Theoretical Physics',
+    classCode: 'PHY-210',
+    dueDate: 'Oct 14',
+    status: 'active',
+    submitted: 9,
+    total: 24,
+    graded: 0,
+    avgGrade: null,
+    color: '#702ae1',
+  },
+  {
+    id: 'resp02',
+    title: 'Reading Response: Memory',
+    subject: 'Advanced Cognitive Psychology',
+    classCode: 'PSY-402',
+    dueDate: 'Oct 20',
+    status: 'upcoming',
+    submitted: 0,
+    total: 24,
+    graded: 0,
+    avgGrade: null,
+    color: '#16a34a',
+  },
+  {
+    id: 'refl01',
+    title: 'Weekly Reflection: Week 7',
+    subject: 'Advanced Calculus',
+    classCode: 'CAL-101',
+    dueDate: 'Oct 25',
+    status: 'upcoming',
+    submitted: 0,
+    total: 24,
+    graded: 0,
+    avgGrade: null,
+    color: '#0050d4',
+  },
+  {
+    id: 'ps03',
+    title: 'Problem Set #03',
+    subject: 'Advanced Calculus',
+    classCode: 'CAL-101',
+    dueDate: 'Sep 28',
+    status: 'graded',
+    submitted: 24,
+    total: 24,
+    graded: 24,
+    avgGrade: 84,
+    color: '#16a34a',
+  },
+];
