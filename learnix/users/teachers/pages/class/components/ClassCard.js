@@ -5,7 +5,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 const { width } = Dimensions.get('window');
 const cardWidth = width - 48; // Full width minus padding
 
-export default function ClassCard({ classData, onViewPress, onUploadPress }) {
+export default function ClassCard({ classData, onViewPress, onUploadPress, onMorePress }) {
     return (
         <View style={styles.card}>
             {/* Header Section */}
@@ -19,7 +19,7 @@ export default function ClassCard({ classData, onViewPress, onUploadPress }) {
                         {classData.title}
                     </Text>
                 </View>
-                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7} onPress={onMorePress}>
                     <MaterialIcons name="more-vert" size={20} color="#595c5e" />
                 </TouchableOpacity>
             </View>
