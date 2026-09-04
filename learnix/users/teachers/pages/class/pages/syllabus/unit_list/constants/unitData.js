@@ -1,0 +1,127 @@
+export const SYLLABUS_HEADER = {
+  title: 'Syllabus Tracker',
+  code: 'PSY-402',
+  courseName: 'Advanced Cognitive Psychology',
+};
+
+export const OVERVIEW = {
+  term: 'Spring Term 2025',
+  status: 'On Track',
+  percent: 68,
+  caption: '18 of 26 Lectures delivered • Target completion: Dec 18',
+  unitProgress: '4 of 6 Units Completed',
+  lecturesRemaining: '8 Lectures Remaining',
+  stats: [
+    { id: 'quizzes', label: 'Quizzes', value: '5 / 7 Done', valueColor: '#ffffff' },
+    { id: 'pace', label: 'Pace', value: '+1 Lecture', valueColor: '#6ee7b7' },
+    { id: 'attendance', label: 'Attendance', value: '94% Avg', valueColor: '#ffffff' },
+  ],
+};
+
+export const SECTION_HEADING = {
+  title: 'Course Units',
+  subtitle: '6 modules structured across 16 weeks',
+};
+
+export const FILTERS = [
+  { id: 'all', label: 'All (6)' },
+  { id: 'progress', label: 'In Progress' },
+];
+
+export const UNITS = [
+  {
+    id: 'unit-1',
+    number: 'Unit 01',
+    eyebrow: 'Unit 01',
+    title: 'Foundations of Neural Architecture',
+    status: 'completed',
+    icon: 'check-circle',
+    iconBg: '#ecfdf5',
+    iconColor: '#059669',
+    badge: { label: 'Completed', bg: '#d1fae5', color: '#065f46' },
+    progressLabel: '5 of 5 Topics Finished',
+    progressNote: '100%',
+    percent: 100,
+    progressColor: '#10b981',
+    footerMeta: 'Completed Oct 14 • 4 Lectures',
+    action: { label: 'Review', icon: 'chevron-right' },
+  },
+  {
+    id: 'unit-2',
+    number: 'Unit 02',
+    eyebrow: 'Unit 02 • Active',
+    title: 'Memory Consolidation & LTP',
+    status: 'active',
+    icon: 'psychology',
+    iconBg: '#dbeafe',
+    iconColor: '#0050d4',
+    badge: { label: '75% Done', bg: '#dbeafe', color: '#0050d4' },
+    description: 'Exploration of hippocampal sharp-wave ripples, cellular synaptic enhancement, and recall cues.',
+    progressLabel: '3 of 4 Topics delivered',
+    progressNote: 'Lecture 3/4 logged',
+    percent: 75,
+    progressColor: '#0050d4',
+    checklist: [
+      { label: 'Long-Term Potentiation (LTP) mechanics', date: 'Oct 19', done: true },
+      { label: 'Hippocampal-Cortical Dialogue', date: 'Oct 23', done: true },
+      { label: 'Sleep Architecture & Replay Phases', date: 'Oct 28', done: true },
+      { label: 'Reconsolidation & Extinction Protocols', date: 'Final Topic', done: false },
+    ],
+    buttons: [
+      { id: 'log-lecture', label: 'Log Lecture', icon: 'add-circle', variant: 'primary' },
+      { id: 'edit-topics', label: 'Edit Topics', icon: 'edit-note', variant: 'secondary' },
+      { id: 'mark-complete', label: '', icon: 'done-all', variant: 'icon' },
+    ],
+  },
+  {
+    id: 'unit-3',
+    number: 'Unit 03',
+    eyebrow: 'Unit 03',
+    title: 'Synaptic Pruning & Plasticity',
+    status: 'in_progress',
+    icon: 'timeline',
+    iconBg: '#fffbeb',
+    iconColor: '#d97706',
+    badge: { label: '25% In Progress', bg: '#fef3c7', color: '#92400e' },
+    nextLecture: {
+      title: 'Next Lecture: Tomorrow, 10:00 AM',
+      sub: 'Hall B • Topic: Microglial Synaptic Elimination',
+    },
+    progressLabel: '1 of 4 Topics finished',
+    progressNote: '3 lectures scheduled',
+    percent: 25,
+    progressColor: '#f59e0b',
+    footerMeta: 'Target completion: Nov 10',
+    action: { label: 'Update Progress', icon: 'tune' },
+  },
+  {
+    id: 'unit-4',
+    number: 'Unit 04',
+    eyebrow: 'Unit 04',
+    title: 'Pre-frontal Cortex & Executive Control',
+    status: 'upcoming',
+    icon: 'account-tree',
+    iconBg: '#faf5ff',
+    iconColor: '#702ae1',
+    badge: { label: 'Upcoming', bg: '#f1f5f9', color: '#475569' },
+    infoRow: { icon: 'assignment', text: 'Starts Nov 12 • 5 Topics', tag: 'Draft Notes Ready' },
+    footerMeta: '0% complete',
+    action: { label: 'Preview Topics', icon: 'visibility' },
+  },
+  {
+    id: 'unit-5',
+    number: 'Unit 05',
+    eyebrow: 'Unit 05',
+    title: 'Neuromodulators and Emotional Valence',
+    status: 'locked',
+    period: 'Late Nov',
+  },
+  {
+    id: 'unit-6',
+    number: 'Unit 06',
+    eyebrow: 'Unit 06',
+    title: 'Cognitive Decline & Neurorehabilitation',
+    status: 'locked',
+    period: 'Dec',
+  },
+];

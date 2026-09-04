@@ -28,6 +28,8 @@ export default function ClassDashboard({ route, navigation }) {
             navigation?.navigate?.('LectureNotes', { classData });
         } else if (action.screen === 'Quiz') {
             navigation?.navigate?.('Quiz', { classData });
+        } else if (action.screen === 'Syllabus') {
+            navigation?.navigate?.('Syllabus', { classData });
         } else {
             console.log('Navigate to:', action.screen);
         }
