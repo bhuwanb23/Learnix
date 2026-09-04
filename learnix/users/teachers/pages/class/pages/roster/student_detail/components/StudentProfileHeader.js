@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STATUS_META } from '../../roster_list/constants/rosterData';
@@ -30,7 +30,7 @@ export default function StudentProfileHeader({ student, onBack }) {
                 <TouchableOpacity
                     style={styles.actionButton}
                     activeOpacity={0.85}
-                    onPress={() => console.log('Message student:', student.name)}
+                    onPress={() => Alert.alert('Message Student', `A direct message thread with ${student.name} will open here.`)}
                 >
                     <MaterialIcons name="message" size={18} color="#0050d4" />
                     <Text style={styles.actionText}>Message</Text>
@@ -38,7 +38,7 @@ export default function StudentProfileHeader({ student, onBack }) {
                 <TouchableOpacity
                     style={styles.actionButton}
                     activeOpacity={0.85}
-                    onPress={() => console.log('Call student:', student.name)}
+                    onPress={() => Alert.alert('Call Student', `A call to ${student.name} will be placed from the registered guardian number.`)}
                 >
                     <MaterialIcons name="phone" size={18} color="#0050d4" />
                     <Text style={styles.actionText}>Call</Text>

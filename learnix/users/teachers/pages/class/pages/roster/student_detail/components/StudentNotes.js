@@ -5,10 +5,11 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 export default function StudentNotes({ note }) {
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState('');
+    const [savedNote, setSavedNote] = useState(note || '');
 
     const handleSave = () => {
         if (draft.trim().length > 0) {
-            console.log('Save note for student:', draft.trim());
+            setSavedNote(draft.trim());
         }
         setEditing(false);
         setDraft('');
@@ -57,7 +58,7 @@ export default function StudentNotes({ note }) {
                     </View>
                 </View>
             ) : (
-                <Text style={styles.noteText}>{note || 'No notes yet for this student.'}</Text>
+                <Text style={styles.noteText}>{savedNote || 'No notes yet for this student.'}</Text>
             )}
         </View>
     );

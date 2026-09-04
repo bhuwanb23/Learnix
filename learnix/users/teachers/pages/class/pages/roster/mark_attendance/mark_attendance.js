@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AttendanceHeader from './components/AttendanceHeader';
 import AttendanceDateBar from './components/AttendanceDateBar';
@@ -68,8 +68,14 @@ export default function MarkAttendance({ route, navigation }) {
     });
 
     const handleSave = () => {
-        console.log('Attendance saved for', formattedDate, counts);
-        handleBack();
+        Alert.alert(
+            'Save Attendance?',
+            `${counts.present} present, ${counts.late} late, ${counts.absent} absent, ${counts.excused} excused for ${formattedDate}.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Save', onPress: () => handleBack() },
+            ]
+        );
     };
 
     return (
