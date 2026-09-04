@@ -1,14 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-export default function EditQuizBottomBar() {
+export default function EditQuizBottomBar({ onCancel, onUpdate, saving }) {
   return (
     <View style={styles.bottomBar}>
-      <TouchableOpacity style={styles.cancelButton} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.cancelButton} onPress={onCancel} activeOpacity={0.85}>
         <Text style={styles.cancelText}>Cancel</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.updateButton} activeOpacity={0.85}>
-        <Text style={styles.updateText}>Update Quiz</Text>
+      <TouchableOpacity style={styles.updateButton} onPress={onUpdate} activeOpacity={0.85} disabled={saving}>
+        {saving ? (
+          <ActivityIndicator color="#ffffff" size="small" />
+        ) : (
+          <Text style={styles.updateText}>Update Quiz</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -51,6 +55,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 20,
+    minWidth: 140,
+    alignItems: 'center',
     shadowColor: '#0050d4',
     shadowOpacity: 0.18,
     shadowRadius: 6,
@@ -63,4 +69,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-});
+});
