@@ -8,6 +8,7 @@ import ClassDashboard from './pages/class/pages/class_dashboard/class_dashboard'
 import LectureNotes from './pages/class/pages/lecture_notes/lecture_notes';
 import Quiz from './pages/class/pages/quiz/quiz';
 import Syllabus from './pages/class/pages/syllabus/syllabus';
+import Roster from './pages/class/pages/roster/roster';
 import AssignmentExamsPage from './pages/assignment_exams/assignment_exams';
 import TeacherProfilePage from './pages/profile/profile';
 import StudentPerformancePage from './pages/student_performance/student_performance';
@@ -30,6 +31,9 @@ export default function TeacherScreen() {
     } else if (screen === 'Syllabus') {
       setCurrentScreen('Syllabus');
       setSelectedClass(params.classData);
+    } else if (screen === 'Roster') {
+      setCurrentScreen('Roster');
+      setSelectedClass(params.classData);
     } else if (screen === 'main') {
       setCurrentScreen('main');
       setSelectedClass(null);
@@ -51,6 +55,10 @@ export default function TeacherScreen() {
 
     if (currentScreen === 'Syllabus') {
       return <Syllabus route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('ClassDashboard'), navigate: handleNavigate }} />;
+    }
+
+    if (currentScreen === 'Roster') {
+      return <Roster route={{ params: { classData: selectedClass } }} navigation={{ goBack: () => handleNavigate('ClassDashboard'), navigate: handleNavigate }} />;
     }
 
     switch (activeTab) {

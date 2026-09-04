@@ -30,6 +30,8 @@ export default function ClassDashboard({ route, navigation }) {
             navigation?.navigate?.('Quiz', { classData });
         } else if (action.screen === 'Syllabus') {
             navigation?.navigate?.('Syllabus', { classData });
+        } else if (action.screen === 'Roster') {
+            navigation?.navigate?.('Roster', { classData });
         } else {
             console.log('Navigate to:', action.screen);
         }
