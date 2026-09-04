@@ -2,13 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-const STATUS_COLORS = {
-    completed: { badgeBg: '#d1fae5', badgeColor: '#065f46' },
-    active: { badgeBg: '#dbeafe', badgeColor: '#0050d4' },
-    in_progress: { badgeBg: '#fef3c7', badgeColor: '#92400e' },
-    upcoming: { badgeBg: '#f1f5f9', badgeColor: '#475569' },
-};
-
 export default function UnitCard({ unit, onAction }) {
     const isLocked = unit.status === 'locked';
 
@@ -46,7 +39,8 @@ export default function UnitCard({ unit, onAction }) {
         );
     }
 
-    const statusColors = STATUS_COLORS[unit.status] || STATUS_COLORS.upcoming;
+    const badgeBg = unit.badge?.bg || '#eef1f3';
+    const badgeColor = unit.badge?.color || '#475569';
 
     return (
         <View style={[styles.card, unit.status === 'active' && styles.activeCard]}>
@@ -63,8 +57,8 @@ export default function UnitCard({ unit, onAction }) {
                         <Text style={styles.unitTitle}>{unit.title}</Text>
                     </View>
                 </View>
-                <View style={[styles.badge, { backgroundColor: statusColors.badgeBg }]}>
-                    <Text style={[styles.badgeText, { color: statusColors.badgeColor }]}>{unit.badge?.label}</Text>
+                <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+                    <Text style={[styles.badgeText, { color: badgeColor }]}>{unit.badge?.label}</Text>
                 </View>
             </View>
 
