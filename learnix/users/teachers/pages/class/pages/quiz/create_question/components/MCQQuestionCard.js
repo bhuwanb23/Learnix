@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function MCQQuestionCard({ 
@@ -46,7 +46,17 @@ export default function MCQQuestionCard({
                         </View>
                         <Text style={styles.questionType}>Multiple Choice</Text>
                     </View>
-                    <TouchableOpacity style={styles.moreButton} activeOpacity={0.7}>
+                    <TouchableOpacity
+                        style={styles.moreButton}
+                        activeOpacity={0.7}
+                        onPress={() =>
+                            Alert.alert('Question Options', 'Duplicate, move or delete this question. Tap the icons below to delete or duplicate.', [
+                                { text: 'Duplicate', onPress: () => onDuplicate(question) },
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'Delete', style: 'destructive', onPress: () => onDelete(question.id) },
+                            ])
+                        }
+                    >
                         <MaterialIcons name="more-horiz" size={24} color="#abadaf" />
                     </TouchableOpacity>
                 </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const { width } = Dimensions.get('window');
@@ -16,7 +16,13 @@ export default function HeroCard({ color }) {
                     <Text style={styles.heroTitle}>Next Lecture: Tomorrow, 10:00 AM</Text>
                     <Text style={styles.heroSubtitle}>Topic: Neural Plasticity and Memory Consolidation in Adult Learners.</Text>
                 </View>
-                <TouchableOpacity style={styles.startButton} activeOpacity={0.85}>
+                <TouchableOpacity
+                    style={styles.startButton}
+                    activeOpacity={0.85}
+                    onPress={() =>
+                        Alert.alert('Start Session', 'The live class session will start here — join link and attendance sheet are prepared.')
+                    }
+                >
                     <MaterialIcons name="play-circle" size={24} color={color} />
                     <Text style={styles.startButtonText}>Start Session</Text>
                 </TouchableOpacity>

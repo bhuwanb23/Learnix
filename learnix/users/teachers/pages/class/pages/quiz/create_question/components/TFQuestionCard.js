@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function TFQuestionCard({ 
@@ -33,7 +33,11 @@ export default function TFQuestionCard({
                         </View>
                         <Text style={styles.questionType}>True / False</Text>
                     </View>
-                    <TouchableOpacity style={styles.moreButton} activeOpacity={0.7}>
+                    <TouchableOpacity
+                        style={styles.moreButton}
+                        activeOpacity={0.7}
+                        onPress={() => Alert.alert('Question Options', 'Convert to multiple choice or adjust the answer key here.')}
+                    >
                         <MaterialIcons name="more-horiz" size={24} color="#abadaf" />
                     </TouchableOpacity>
                 </View>
@@ -92,7 +96,7 @@ export default function TFQuestionCard({
                         </View>
                     </View>
 
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => Alert.alert('Edit Feedback', 'Explanation shown to students after submission can be edited here.')}>
                         <Text style={styles.editFeedbackText}>Edit Feedback</Text>
                     </TouchableOpacity>
                 </View>
