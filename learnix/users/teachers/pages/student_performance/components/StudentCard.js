@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function StudentCard({ student }) {
+export default function StudentCard({ student, onPress }) {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.studentInfo}>
@@ -16,8 +16,11 @@ export default function StudentCard({ student }) {
             <Text style={styles.rank}>Rank #{student.rank} in Class</Text>
           </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: student.statusBg }]}>
-          <Text style={[styles.statusText, { color: student.statusColor }]}>{student.status}</Text>
+        <View style={styles.headerRight}>
+          <View style={[styles.statusBadge, { backgroundColor: student.statusBg }]}>
+            <Text style={[styles.statusText, { color: student.statusColor }]}>{student.status}</Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={18} color="#c3c7cc" />
         </View>
       </View>
 
@@ -49,7 +52,7 @@ export default function StudentCard({ student }) {
           <Text style={[styles.driverValue, { color: student.driverColor }]}>{student.keyDriver}</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -102,6 +105,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: '#595c5e',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   statusBadge: {
     paddingHorizontal: 8,
