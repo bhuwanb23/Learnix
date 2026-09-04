@@ -1,24 +1,115 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PerformanceHeader from './components/PerformanceHeader';
-import ClassSelector from './components/ClassSelector';
+import SelectionChips from './components/SelectionChips';
 import OverviewCards from './components/OverviewCards';
+import CompareCards from './components/CompareCards';
 import PerformanceFilters from './components/PerformanceFilters';
 import StudentCard from './components/StudentCard';
 import GapAnalysis from './components/GapAnalysis';
 import AISuggestions from './components/AISuggestions';
+import StudentDetail from './pages/student_detail/student_detail';
+import Comparison from './pages/comparison/comparison';
 import {
   HEADER,
-  CLASS_INFO,
-  OVERVIEW,
-  FILTERS,
-  STUDENTS,
-  GAP_ANALYSIS,
-  AI_SUGGESTIONS,
+  CLASSES,
+  SUBJECTS,
+  subjectsForClass,
+  getStudentsFor,
+  getOverviewFor,
+  getFiltersFor,
+  filterStudents,
+  SUBJECT_GAPS,
+  SUBJECT_SUGGESTIONS,
+  compareSubjectsInClass,
+  compareClassesForSubject,
 } from './constants/performanceData';
 
 export default function StudentPerformancePage({ navigation }) {
+  const [currentScreen, setCurrentScreen] = useState('hub');
+  const [selectedClass, setSelectedClass] = useState('sec-a');
+  const [selectedSubject, setSelectedSubject] = useState(subjectsForClass('sec-a')[0].id);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [comparisonType, setComparisonType] = useState('class');
+
+  const selectClass = (classId) => {
+    const subjects = subjectsForClass(classId);
+    setSelectedClass(classId);
+    setSelectedSubject(subjects.length > 0 ? subjects[0].id : null);
+    setActiveFilter('all');
+  };
+
+  const selectSubject = (subjectId) => {
+    setSelectedSubject(subjectId);
+    setActiveFilter('all');
+  };
+
+  const handleNavigate = (screen, params = {}) => {
+    if (screen === 'StudentDetail') {
+      setSelectedStudent(params.student);
+      setCurrentScreen('StudentDetail');
+    } else if (screen === 'Comparison') {
+      setComparisonType(params.type || 'class');
+      setCurrentScreen('Comparison');
+    } else if (screen === 'SubjectClass') {
+      setSelectedClass(params.classId);
+      setSelectedSubject(params.subjectId);
+      setActiveFilter('all');
+      setCurrentScreen('hub');
+    } else if (screen === 'hub') {
+      setCurrentScreen('hub');
+    }
+  };
+
+  const subNavigation = {
+    goBack: () => setCurrentScreen('hub'),
+    navigate: handleNavigate,
+  };
+
+  if (currentScreen === 'StudentDetail') {
+    return (
+      <StudentDetail
+        route={{ params: { subjectId: selectedSubject, classId: selectedClass, student: selectedStudent } }}
+        navigation={subNavigation}
+      />
+    );
+  }
+
+  if (currentScreen === 'Comparison') {
+    return (
+      <Comparison
+        route={{ params: { type: comparisonType, subjectId: selectedSubject, classId: selectedClass } }}
+        navigation={subNavigation}
+      />
+    );
+  }
+
+  const subject = SUBJECTS.find((s) => s.id === selectedSubject) || SUBJECTS[0];
+  const classItem = CLASSES.find((c) => c.id === selectedClass) || CLASSES[0];
+  const classSubjects = subjectsForClass(selectedClass);
+  const students = filterStudents(getStudentsFor(selectedSubject, selectedClass), activeFilter);
+  const overview = getOverviewFor(selectedSubject, selectedClass);
+  const filters = getFiltersFor(selectedSubject, selectedClass);
+  const gaps = SUBJECT_GAPS[selectedSubject] || [];
+  const suggestions = SUBJECT_SUGGESTIONS[selectedSubject] || [];
+
+  const classCompare = {
+    title: `Subjects in ${classItem.label}`,
+    subtitle: `${classSubjects.length} subject${classSubjects.length > 1 ? 's' : ''} · avg ${overview.classAverage.value}%`,
+    color: classItem.color,
+  };
+  const subjectCompare = {
+    title: `${subject.name} across classes`,
+    subtitle: `${compareClassesForSubject(selectedSubject).length} sections · avg ${overview.classAverage.value}%`,
+    color: subject.color,
+  };
+
+  const handleSuggestionAction = (suggestion) => {
+    Alert.alert(suggestion.action, suggestion.text);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
@@ -26,30 +117,47 @@ export default function StudentPerformancePage({ navigation }) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <PerformanceHeader header={HEADER} />
 
-        {/* Class Selector */}
-        <ClassSelector classInfo={CLASS_INFO} />
+        <SelectionChips
+          label="Class"
+          options={CLASSES}
+          selected={selectedClass}
+          onChange={selectClass}
+        />
+        <SelectionChips
+          label="Subject"
+          options={classSubjects}
+          selected={selectedSubject}
+          onChange={selectSubject}
+        />
 
-        {/* Overview Cards */}
-        <OverviewCards overview={OVERVIEW} />
+        <OverviewCards overview={overview} />
 
-        {/* Performance Filters */}
-        <PerformanceFilters filters={FILTERS} />
+        <CompareCards
+          classCompare={classCompare}
+          subjectCompare={subjectCompare}
+          onPress={(type) => handleNavigate('Comparison', { type })}
+        />
 
-        {/* Student Cards */}
+        <PerformanceFilters
+          filters={filters}
+          activeFilter={activeFilter}
+          onChange={setActiveFilter}
+        />
+
         <View style={styles.studentsSection}>
-          {STUDENTS.map((student) => (
-            <StudentCard key={student.id} student={student} />
+          {students.map((student) => (
+            <StudentCard
+              key={student.id}
+              student={student}
+              onPress={() => handleNavigate('StudentDetail', { student })}
+            />
           ))}
         </View>
 
-        {/* Gap Analysis */}
-        <GapAnalysis gaps={GAP_ANALYSIS} />
-
-        {/* AI Suggestions */}
-        <AISuggestions suggestions={AI_SUGGESTIONS} />
+        <GapAnalysis gaps={gaps} />
+        <AISuggestions suggestions={suggestions} onAction={handleSuggestionAction} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -67,7 +175,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   studentsSection: {
-    paddingHorizontal: 24,
-    marginBottom: 32,
+    paddingHorizontal: 20,
+    marginBottom: 28,
   },
-});
+});

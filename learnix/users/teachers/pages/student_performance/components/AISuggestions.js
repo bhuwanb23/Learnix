@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function AISuggestions({ suggestions }) {
+export default function AISuggestions({ suggestions, onAction }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -16,7 +16,11 @@ export default function AISuggestions({ suggestions }) {
             style={[styles.suggestionCard, { borderLeftColor: suggestion.color }]}
           >
             <Text style={styles.text}>{suggestion.text}</Text>
-            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.7}
+              onPress={() => onAction && onAction(suggestion)}
+            >
               <Text style={[styles.actionText, { color: suggestion.color }]}>
                 {suggestion.action}
               </Text>
