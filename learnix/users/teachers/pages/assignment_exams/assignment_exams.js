@@ -77,7 +77,10 @@ export default function AssignmentExamsPage({ navigation }) {
     return (
       <GradeSubmission
         route={{ params: { assignment: selectedAssignment } }}
-        navigation={subNavigation}
+        navigation={{
+          goBack: () => handleNavigate('AssignmentDetail', { assignment: selectedAssignment }),
+          navigate: handleNavigate,
+        }}
       />
     );
   }
