@@ -35,7 +35,7 @@ export default function EditTopic({ route, navigation }) {
 
     const editorTitle = topicData?.title
         ? `Edit Topic: ${topicData.title}`
-        : (unitData ? `Edit Topic for Unit ${unitData.number || '02'}` : DEFAULT_TOPIC.title);
+        : (unitData ? `Edit Topic: ${unitData.number || 'Unit 02'} Topics` : DEFAULT_TOPIC.title);
 
     const [status, setStatus] = useState('In Progress');
     const [title, setTitle] = useState(BASIC_INFO.title.value);
