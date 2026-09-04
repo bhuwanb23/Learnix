@@ -12,12 +12,18 @@ import { STUDENTS } from '../../constants/studentsData';
 
 export default function GradeSubmission({ route, navigation }) {
     const assignment = route?.params?.assignment;
+    const viewOnly = route?.params?.viewOnly || false;
+    const startStudentId = route?.params?.startStudentId || null;
     const submissions = assignment ? SUBMISSIONS[assignment.id] || [] : [];
 
     const [queue] = useState(() =>
         submissions.filter((sub) => sub.submitted && !sub.graded)
     );
-    const [index, setIndex] = useState(0);
+    const [index, setIndex] = useState(() => {
+        if (!startStudentId) return 0;
+        const found = queue.findIndex((sub) => sub.studentId === startStudentId);
+        return found >= 0 ? found : 0;
+    });
     const [grade, setGrade] = useState(0);
     const [feedback, setFeedback] = useState('');
 
@@ -31,6 +37,50 @@ export default function GradeSubmission({ route, navigation }) {
         return (
             <SafeAreaView style={styles.container} edges={['top']}>
                 <GradeHeader assignmentTitle="Grading" index={0} total={0} onBack={handleBack} />
+            </SafeAreaView>
+        );
+    }
+
+    // View-only mode: show the tapped student's saved submission (already graded)
+    if (viewOnly) {
+        const viewed = startStudentId
+            ? submissions.find((sub) => sub.studentId === startStudentId)
+            : null;
+        const fallback = submissions.find((sub) => sub.graded) || submissions[0];
+        const submission = viewed || fallback;
+        const student = STUDENTS.find((item) => item.id === submission.studentId) || {
+            id: '?',
+            name: submission.studentId,
+            studentId: submission.studentId,
+            avatarBg: '#eef1f3',
+            avatarText: '#8a8f94',
+        };
+
+        return (
+            <SafeAreaView style={styles.container} edges={['top']}>
+                <GradeHeader
+                    assignmentTitle={assignment.title}
+                    index={-1}
+                    total={0}
+                    viewOnly
+                    onBack={handleBack}
+                />
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <SubmissionViewer student={student} submission={submission} />
+                    <RubricCard rubric={RUBRIC} />
+                    <GradeInputCard
+                        grade={submission.grade || 0}
+                        onChangeGrade={() => {}}
+                        feedback={submission.feedback || ''}
+                        onChangeFeedback={() => {}}
+                        editable={false}
+                    />
+                </ScrollView>
+                <GradeNavBar isLast onSkip={handleBack} onSave={handleBack} saveLabel="Close" />
             </SafeAreaView>
         );
     }

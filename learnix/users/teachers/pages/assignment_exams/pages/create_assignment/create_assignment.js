@@ -12,9 +12,19 @@ import { CREATE_HEADER, FORM_FIELDS, CLASS_OPTIONS, DUE_OPTIONS } from './consta
 const DEFAULT_ATTACHMENTS = ['problem_set_template.pdf'];
 
 export default function CreateAssignment({ route, navigation }) {
-    const [values, setValues] = useState({});
-    const [selectedClass, setSelectedClass] = useState(null);
-    const [dueDate, setDueDate] = useState(null);
+    const editing = route?.params?.assignment || null;
+
+    const [values, setValues] = useState(() =>
+        editing
+            ? {
+                  title: editing.title,
+                  description: '',
+                  points: '',
+              }
+            : {}
+    );
+    const [selectedClass, setSelectedClass] = useState(() => (editing ? editing.classCode : null));
+    const [dueDate, setDueDate] = useState(() => (editing ? editing.dueDate : null));
     const [publish, setPublish] = useState(true);
     const [attachments, setAttachments] = useState(DEFAULT_ATTACHMENTS);
 
@@ -44,15 +54,21 @@ export default function CreateAssignment({ route, navigation }) {
         Boolean(dueDate);
 
     const handleSave = () => {
-        console.log('Create assignment:', { ...values, class: selectedClass, dueDate, publish, attachments });
+        console.log(editing ? 'Update assignment:' : 'Create assignment:', {
+            ...values,
+            class: selectedClass,
+            dueDate,
+            publish,
+            attachments,
+        });
         handleBack();
     };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <CreateHeader
-                title={CREATE_HEADER.title}
-                subtitle={CREATE_HEADER.subtitle}
+                title={editing ? 'Edit Assignment' : CREATE_HEADER.title}
+                subtitle={editing ? `Editing ${editing.title}` : CREATE_HEADER.subtitle}
                 onBack={handleBack}
             />
             <ScrollView
@@ -90,7 +106,7 @@ export default function CreateAssignment({ route, navigation }) {
                 onCancel={handleBack}
                 onSave={handleSave}
                 valid={valid}
-                saveLabel="Save & Publish"
+                saveLabel={editing ? 'Save Changes' : 'Save & Publish'}
                 saveIcon="send"
             />
         </SafeAreaView>

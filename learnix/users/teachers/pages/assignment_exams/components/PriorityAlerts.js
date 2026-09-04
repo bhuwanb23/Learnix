@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function PriorityAlerts({ alerts }) {
+export default function PriorityAlerts({ alerts, onPressAlert }) {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -12,7 +12,12 @@ export default function PriorityAlerts({ alerts }) {
 
             <View style={styles.alerts}>
                 {alerts.map((alert) => (
-                    <View key={alert.id} style={styles.alertItem}>
+                    <TouchableOpacity
+                        key={alert.id}
+                        style={styles.alertItem}
+                        onPress={() => onPressAlert && onPressAlert(alert)}
+                        activeOpacity={0.85}
+                    >
                         <View style={[styles.alertIcon, { backgroundColor: `${alert.color}1a` }]}>
                             <MaterialIcons name={alert.icon} size={15} color={alert.color} />
                         </View>
@@ -20,7 +25,8 @@ export default function PriorityAlerts({ alerts }) {
                             <Text style={styles.alertTitle}>{alert.title}</Text>
                             <Text style={styles.alertSubtitle}>{alert.subtitle}</Text>
                         </View>
-                    </View>
+                        <MaterialIcons name="chevron-right" size={18} color="#c3c7cc" />
+                    </TouchableOpacity>
                 ))}
             </View>
         </View>

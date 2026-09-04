@@ -11,8 +11,8 @@ export default function SubmissionRow({ student, submission, onPress }) {
                 ? { label: 'Graded', color: '#16a34a', bg: '#dcfce7', icon: 'check-circle' }
                 : { label: 'Submitted', color: '#0050d4', bg: '#dbeafe', icon: 'check-circle' };
 
-    return (
-        <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.85}>
+    const rowContent = (
+        <>
             <View style={[styles.avatar, { backgroundColor: student.avatarBg }]}>
                 <Text style={[styles.avatarText, { color: student.avatarText }]}>{student.id}</Text>
             </View>
@@ -36,9 +36,17 @@ export default function SubmissionRow({ student, submission, onPress }) {
                     <Text style={styles.gradeCtaText}>Grade</Text>
                     <MaterialIcons name="chevron-right" size={16} color="#0050d4" />
                 </View>
-            ) : (
-                <MaterialIcons name="chevron-right" size={20} color="#c3c7cc" />
-            )}
+            ) : null}
+        </>
+    );
+
+    if (!submission.submitted) {
+        return <View style={styles.row}>{rowContent}</View>;
+    }
+
+    return (
+        <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.85}>
+            {rowContent}
         </TouchableOpacity>
     );
 }

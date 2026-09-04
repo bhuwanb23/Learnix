@@ -3,8 +3,24 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-nativ
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { GRADE_PRESETS, GRADE_LABELS } from '../constants/gradingData';
 
-export default function GradeInputCard({ grade, onChangeGrade, feedback, onChangeFeedback }) {
+export default function GradeInputCard({ grade, onChangeGrade, feedback, onChangeFeedback, editable = true }) {
     const clamp = (value) => Math.max(0, Math.min(100, value));
+
+    if (!editable) {
+        return (
+            <View style={styles.card}>
+                <Text style={styles.title}>Awarded Grade</Text>
+                <View style={styles.readonlyGradeRow}>
+                    <Text style={styles.readonlyGrade}>{grade}</Text>
+                    <Text style={styles.readonlyGradeMax}>/ 100</Text>
+                </View>
+                <Text style={styles.feedbackLabel}>Feedback</Text>
+                <Text style={styles.readonlyFeedback}>
+                    {feedback || 'No feedback provided for this submission.'}
+                </Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.card}>
@@ -114,6 +130,33 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#0050d4',
         paddingVertical: 0,
+    },
+    readonlyGradeRow: {
+        flexDirection: 'row',
+        alignItems: 'baseline',
+        justifyContent: 'center',
+        gap: 4,
+        marginBottom: 16,
+    },
+    readonlyGrade: {
+        fontFamily: 'PlusJakartaSans-Bold',
+        fontSize: 32,
+        fontWeight: '700',
+        color: '#0050d4',
+    },
+    readonlyGradeMax: {
+        fontFamily: 'Manrope-SemiBold',
+        fontSize: 14,
+        color: '#8a8f94',
+    },
+    readonlyFeedback: {
+        fontFamily: 'Manrope-Medium',
+        fontSize: 12,
+        lineHeight: 18,
+        color: '#2c2f31',
+        backgroundColor: '#f5f7f9',
+        borderRadius: 10,
+        padding: 12,
     },
     presetsRow: {
         flexDirection: 'row',

@@ -3,17 +3,21 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function GradeNavBar({ isLast, onSkip, onSave }) {
+export default function GradeNavBar({ isLast, onSkip, onSave, saveLabel }) {
     const insets = useSafeAreaInsets();
 
     return (
         <View style={[styles.container, { paddingBottom: insets.bottom + 14 }]}>
-            <TouchableOpacity style={styles.skipButton} onPress={onSkip} activeOpacity={0.85}>
-                <Text style={styles.skipText}>Skip</Text>
-            </TouchableOpacity>
+            {!saveLabel && (
+                <TouchableOpacity style={styles.skipButton} onPress={onSkip} activeOpacity={0.85}>
+                    <Text style={styles.skipText}>Skip</Text>
+                </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.saveButton} onPress={onSave} activeOpacity={0.85}>
                 <MaterialIcons name="check-circle" size={17} color="#ffffff" />
-                <Text style={styles.saveText}>{isLast ? 'Save & Finish' : 'Save & Next'}</Text>
+                <Text style={styles.saveText}>
+                    {saveLabel || (isLast ? 'Save & Finish' : 'Save & Next')}
+                </Text>
             </TouchableOpacity>
         </View>
     );

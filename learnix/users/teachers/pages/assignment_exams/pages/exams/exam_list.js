@@ -23,7 +23,7 @@ export default function ExamList({ route, navigation }) {
 
     const handleOpenExam = (exam) => {
         if (navigation?.navigate) {
-            navigation.navigate('ExamDetail', { exam });
+            navigation.navigate('ExamDetail', { exam, from: 'list' });
         }
     };
 

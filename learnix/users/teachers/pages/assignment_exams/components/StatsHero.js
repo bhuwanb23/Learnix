@@ -1,18 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function StatsHero({ stats }) {
+export default function StatsHero({ stats, onPressStat }) {
     return (
         <View style={styles.container}>
             {stats.map((stat) => (
-                <View key={stat.id} style={styles.card}>
+                <TouchableOpacity
+                    key={stat.id}
+                    style={styles.card}
+                    onPress={() => onPressStat && onPressStat(stat.id)}
+                    activeOpacity={0.85}
+                >
                     <View style={[styles.iconWrap, { backgroundColor: `${stat.color}1a` }]}>
                         <MaterialIcons name={stat.icon} size={18} color={stat.color} />
                     </View>
                     <Text style={styles.value}>{stat.value}</Text>
                     <Text style={styles.label}>{stat.label}</Text>
-                </View>
+                </TouchableOpacity>
             ))}
         </View>
     );

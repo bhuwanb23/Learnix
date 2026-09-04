@@ -17,7 +17,7 @@ export default function AssignmentList({ route, navigation }) {
 
     const handleOpenAssignment = (assignment) => {
         if (navigation?.navigate) {
-            navigation.navigate('AssignmentDetail', { assignment });
+            navigation.navigate('AssignmentDetail', { assignment, from: 'list' });
         }
     };
 

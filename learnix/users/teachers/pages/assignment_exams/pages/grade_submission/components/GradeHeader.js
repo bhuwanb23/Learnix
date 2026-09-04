@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export default function GradeHeader({ assignmentTitle, index, total, onBack }) {
+export default function GradeHeader({ assignmentTitle, index, total, onBack, viewOnly }) {
     const insets = useSafeAreaInsets();
 
     return (
@@ -15,14 +15,20 @@ export default function GradeHeader({ assignmentTitle, index, total, onBack }) {
                 <View style={styles.titleWrap}>
                     <Text style={styles.title}>{assignmentTitle}</Text>
                     <Text style={styles.subtitle}>
-                        {total > 0 ? `Submission ${index + 1} of ${total}` : 'All submissions graded'}
+                        {viewOnly
+                            ? 'Viewing saved submission'
+                            : total > 0
+                                ? `Submission ${index + 1} of ${total}`
+                                : 'All submissions graded'}
                     </Text>
                 </View>
                 <View style={styles.progressBadge}>
-                    <Text style={styles.progressText}>{total > 0 ? `${index + 1}/${total}` : 'Done'}</Text>
+                    <Text style={styles.progressText}>
+                        {viewOnly ? 'View' : total > 0 ? `${index + 1}/${total}` : 'Done'}
+                    </Text>
                 </View>
             </View>
-            {total > 0 && (
+            {!viewOnly && total > 0 && (
                 <View style={styles.track}>
                     <View style={[styles.fill, { width: `${((index + 1) / total) * 100}%` }]} />
                 </View>

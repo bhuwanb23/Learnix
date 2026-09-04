@@ -27,7 +27,9 @@ export default function AssignmentDetail({ route, navigation }) {
     };
 
     const handleEdit = () => {
-        console.log('Edit assignment:', assignment?.id);
+        if (navigation?.navigate && assignment) {
+            navigation.navigate('CreateAssignment', { assignment });
+        }
     };
 
     if (!assignment) {
@@ -55,10 +57,12 @@ export default function AssignmentDetail({ route, navigation }) {
     const pendingCount = rows.filter((row) => row.submission.submitted && !row.submission.graded).length;
 
     const handlePressRow = (row) => {
-        if (row.submission.submitted && !row.submission.graded) {
-            handleGrade();
-        } else if (row.submission.submitted && row.submission.graded) {
-            console.log('View graded submission:', row.student.name);
+        if (navigation?.navigate && assignment) {
+            if (row.submission.submitted && !row.submission.graded) {
+                navigation.navigate('GradeSubmission', { assignment, startStudentId: row.student.studentId });
+            } else if (row.submission.submitted && row.submission.graded) {
+                navigation.navigate('GradeSubmission', { assignment, viewOnly: true, startStudentId: row.student.studentId });
+            }
         }
     };
 
