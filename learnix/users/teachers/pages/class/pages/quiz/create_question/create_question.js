@@ -51,7 +51,7 @@ export default function CreateQuestion({ route, navigation }) {
     };
 
     const handleSearch = () => {
-        console.log('Search questions');
+        Alert.alert('Search Question Bank', 'Search across your saved questions will open here once the backend is connected.');
     };
 
     const handleUpdateQuestion = (updatedQuestion) => {

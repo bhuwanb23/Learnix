@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { REPORT_HEADER, REPORT_MONTH } from '../constants/reportData';
+import { REPORT_HEADER } from '../constants/reportData';
 
-export default function ReportHeader({ onBack, onPrevMonth, onNextMonth }) {
+export default function ReportHeader({ title, monthLabel, onBack, onPrevMonth, onNextMonth }) {
     const insets = useSafeAreaInsets();
 
     return (
@@ -14,14 +14,14 @@ export default function ReportHeader({ onBack, onPrevMonth, onNextMonth }) {
                     <MaterialIcons name="arrow-back" size={22} color="#2c2f31" />
                 </TouchableOpacity>
                 <View style={styles.titleWrap}>
-                    <Text style={styles.title}>{REPORT_HEADER.title}</Text>
+                    <Text style={styles.title}>{title || REPORT_HEADER.title}</Text>
                     <Text style={styles.subtitle}>{REPORT_HEADER.subtitle}</Text>
                 </View>
                 <View style={styles.monthNav}>
                     <TouchableOpacity onPress={onPrevMonth} activeOpacity={0.85}>
                         <MaterialIcons name="chevron-left" size={20} color="#595c5e" />
                     </TouchableOpacity>
-                    <Text style={styles.monthLabel}>{REPORT_MONTH.label}</Text>
+                    <Text style={styles.monthLabel}>{monthLabel}</Text>
                     <TouchableOpacity onPress={onNextMonth} activeOpacity={0.85}>
                         <MaterialIcons name="chevron-right" size={20} color="#595c5e" />
                     </TouchableOpacity>

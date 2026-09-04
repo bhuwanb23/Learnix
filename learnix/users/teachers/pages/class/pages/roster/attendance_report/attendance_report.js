@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReportHeader from './components/ReportHeader';
@@ -9,6 +9,8 @@ import { MONTH_STATS } from './constants/reportData';
 import { STUDENTS } from '../roster_list/constants/rosterData';
 
 export default function AttendanceReport({ route, navigation }) {
+    const [monthOffset, setMonthOffset] = useState(0);
+
     const handleBack = () => {
         if (navigation?.goBack) {
             navigation.goBack();
@@ -16,12 +18,17 @@ export default function AttendanceReport({ route, navigation }) {
     };
 
     const handlePrevMonth = () => {
-        console.log('Previous month');
+        setMonthOffset((prev) => prev - 1);
     };
 
     const handleNextMonth = () => {
-        console.log('Next month');
+        setMonthOffset((prev) => prev + 1);
     };
+
+    const monthLabel = new Date(new Date().getFullYear(), new Date().getMonth() + monthOffset, 1).toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric',
+    });
 
     const handleOpenStudent = (student) => {
         if (navigation?.navigate) {
@@ -38,6 +45,7 @@ export default function AttendanceReport({ route, navigation }) {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <ReportHeader
+                monthLabel={monthLabel}
                 onBack={handleBack}
                 onPrevMonth={handlePrevMonth}
                 onNextMonth={handleNextMonth}
