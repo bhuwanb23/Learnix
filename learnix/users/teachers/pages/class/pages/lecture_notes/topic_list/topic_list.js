@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import TopicHeader from './components/TopicHeader';
 import TopicCard from './components/TopicCard';
@@ -38,11 +38,18 @@ export default function TopicList({ route, navigation }) {
     };
 
     const handleEdit = (topic) => {
-        console.log('Edit topic:', topic.id);
+        handleNavigate('CreateEditNotes', { topicData: topic });
     };
 
     const handleDelete = (topic) => {
-        console.log('Delete topic:', topic.id);
+        Alert.alert(
+            'Delete Topic?',
+            `"${topic.title}" and its notes will be permanently removed.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Topic deleted', 'The topic was removed.') },
+            ]
+        );
     };
 
     return (

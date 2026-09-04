@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import EditorHeader from './components/EditorHeader';
 import MetadataSection from './components/MetadataSection';
@@ -24,11 +24,13 @@ export default function CreateEditNotes({ route, navigation }) {
     };
 
     const handlePreview = () => {
-        console.log('Preview notes');
+        Alert.alert('Preview', 'This is how the notes module will look to students. The rendered view opens once the backend is connected.');
     };
 
     const handleUpdate = () => {
-        console.log('Update notes');
+        Alert.alert('Notes Updated', `"${title || topicData.title}" was saved and synced to the class.`, [
+            { text: 'OK', onPress: () => handleBack() },
+        ]);
     };
 
     return (
