@@ -15,7 +15,6 @@ export default function PerformanceHeader({ header }) {
           </View>
           <Text style={styles.title}>{header.title}</Text>
         </View>
-        <MaterialIcons name="swap-horiz" size={24} color="#595c5e" />
       </View>
     </View>
   );
