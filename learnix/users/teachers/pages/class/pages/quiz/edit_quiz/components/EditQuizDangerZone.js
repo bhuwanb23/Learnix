@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-export default function EditQuizDangerZone() {
+export default function EditQuizDangerZone({ onDelete }) {
   return (
     <View style={styles.dangerZone}>
       <View style={styles.dangerContent}>
         <Text style={styles.dangerTitle}>Danger Zone</Text>
         <Text style={styles.dangerDesc}>Permanently remove this quiz and all student attempts.</Text>
       </View>
-      <TouchableOpacity style={styles.deleteButton} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.deleteButton} onPress={onDelete} activeOpacity={0.85}>
         <Text style={styles.deleteButtonText}>Delete Quiz</Text>
       </TouchableOpacity>
     </View>
@@ -57,4 +57,4 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
   },
-});
+});
