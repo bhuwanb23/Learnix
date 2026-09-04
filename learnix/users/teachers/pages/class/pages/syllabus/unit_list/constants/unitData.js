@@ -44,7 +44,7 @@ export const UNITS = [
     percent: 100,
     progressColor: '#10b981',
     footerMeta: 'Completed Oct 14 • 4 Lectures',
-    action: { label: 'Review', icon: 'chevron-right' },
+    action: { id: 'review', label: 'Review', icon: 'chevron-right' },
   },
   {
     id: 'unit-2',
@@ -92,7 +92,7 @@ export const UNITS = [
     percent: 25,
     progressColor: '#f59e0b',
     footerMeta: 'Target completion: Nov 10',
-    action: { label: 'Update Progress', icon: 'tune' },
+    action: { id: 'update-progress', label: 'Update Progress', icon: 'tune' },
   },
   {
     id: 'unit-4',
@@ -106,7 +106,7 @@ export const UNITS = [
     badge: { label: 'Upcoming', bg: '#f1f5f9', color: '#475569' },
     infoRow: { icon: 'assignment', text: 'Starts Nov 12 • 5 Topics', tag: 'Draft Notes Ready' },
     footerMeta: '0% complete',
-    action: { label: 'Preview Topics', icon: 'visibility' },
+    action: { id: 'preview-topics', label: 'Preview Topics', icon: 'visibility' },
   },
   {
     id: 'unit-5',

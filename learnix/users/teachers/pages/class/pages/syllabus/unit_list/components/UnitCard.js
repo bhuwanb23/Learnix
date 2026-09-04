@@ -77,7 +77,7 @@ export default function UnitCard({ unit, onAction }) {
             {unit.nextLecture && (
                 <View style={styles.nextLectureBanner}>
                     <View style={styles.nextLectureRow}>
-                        <MaterialIcons name="event-upcoming" size={20} color="#0050d4" />
+                        <MaterialIcons name="event-note" size={20} color="#0050d4" />
                         <View style={styles.nextLectureText}>
                             <Text style={styles.nextLectureTitle}>{unit.nextLecture.title}</Text>
                             <Text style={styles.nextLectureSub}>{unit.nextLecture.sub}</Text>

@@ -5,6 +5,7 @@ import UnitHeader from './components/UnitHeader';
 import OverviewCard from './components/OverviewCard';
 import UnitCard from './components/UnitCard';
 import FloatingToolbar from './components/FloatingToolbar';
+import TopicList from '../topic_list/topic_list';
 import { SYLLABUS_HEADER, OVERVIEW, SECTION_HEADING, FILTERS, UNITS } from './constants/unitData';
 
 const PROGRESS_STATUSES = ['active', 'in_progress'];
@@ -23,11 +24,21 @@ export default function UnitList({ route, navigation }) {
     };
 
     const [activeFilter, setActiveFilter] = useState('all');
+    const [currentScreen, setCurrentScreen] = useState('units');
+    const [selectedUnit, setSelectedUnit] = useState(null);
 
     const handleBack = () => {
-        if (navigation?.goBack) {
+        if (currentScreen === 'TopicList') {
+            setCurrentScreen('units');
+            setSelectedUnit(null);
+        } else if (navigation?.goBack) {
             navigation.goBack();
         }
+    };
+
+    const handleOpenTopics = (unit) => {
+        setCurrentScreen('TopicList');
+        setSelectedUnit(unit);
     };
 
     const handleExport = () => {
@@ -39,6 +50,11 @@ export default function UnitList({ route, navigation }) {
     };
 
     const handleUnitAction = (actionId, unit) => {
+        // Topic-management actions open the topic list for the unit
+        if (actionId === 'edit-topics' || actionId === 'review' || actionId === 'preview-topics') {
+            handleOpenTopics(unit);
+            return;
+        }
         console.log('Unit action:', actionId, unit?.id);
     };
 
@@ -53,6 +69,15 @@ export default function UnitList({ route, navigation }) {
     const visibleUnits = activeFilter === 'progress'
         ? UNITS.filter((unit) => PROGRESS_STATUSES.includes(unit.status))
         : UNITS;
+
+    if (currentScreen === 'TopicList') {
+        return (
+            <TopicList
+                route={{ params: { unitData: selectedUnit, classData } }}
+                navigation={{ goBack: handleBack }}
+            />
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>

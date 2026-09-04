@@ -31,6 +31,11 @@ import {
 
 export default function EditTopic({ route, navigation }) {
     const topicData = route?.params?.topicData || null;
+    const unitData = route?.params?.unitData || null;
+
+    const editorTitle = topicData?.title
+        ? `Edit Topic: ${topicData.title}`
+        : (unitData ? `Edit Topic for Unit ${unitData.number || '02'}` : DEFAULT_TOPIC.title);
 
     const [status, setStatus] = useState('In Progress');
     const [title, setTitle] = useState(BASIC_INFO.title.value);
@@ -105,7 +110,7 @@ export default function EditTopic({ route, navigation }) {
                 <EditorTitleBar
                     breadcrumb={BREADCRUMB}
                     modulePill={MODULE_PILL}
-                    title={topicData?.title || DEFAULT_TOPIC.title}
+                    title={editorTitle}
                     saveStatus={SAVE_STATUS}
                 />
                 <StatusSelector tabs={STATUS_TABS} value={status} onChange={setStatus} />
