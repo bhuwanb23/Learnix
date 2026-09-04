@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PerformanceHeader from './components/PerformanceHeader';
-import SelectionChips from './components/SelectionChips';
+import PickerCard from './components/PickerCard';
 import OverviewCards from './components/OverviewCards';
 import CompareCards from './components/CompareCards';
 import PerformanceFilters from './components/PerformanceFilters';
@@ -119,20 +119,21 @@ export default function StudentPerformancePage({ navigation }) {
       >
         <PerformanceHeader header={HEADER} />
 
-        <SelectionChips
-          label="Class"
-          options={CLASSES}
-          selected={selectedClass}
-          onChange={selectClass}
-        />
-        <SelectionChips
-          label="Subject"
-          options={classSubjects}
-          selected={selectedSubject}
-          onChange={selectSubject}
+        <PickerCard
+          classOptions={CLASSES}
+          selectedClass={selectedClass}
+          onSelectClass={selectClass}
+          subjectOptions={classSubjects}
+          selectedSubject={selectedSubject}
+          onSelectSubject={selectSubject}
         />
 
-        <OverviewCards overview={overview} />
+        <OverviewCards
+          overview={overview}
+          subjectName={subject.name}
+          classLabel={classItem.label}
+          color={subject.color}
+        />
 
         <CompareCards
           classCompare={classCompare}

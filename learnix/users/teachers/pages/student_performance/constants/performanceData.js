@@ -53,6 +53,13 @@ export const CLASS_OFFSETS = {
   'sec-c': -2,
 };
 
+// Class-average trend vs the previous assessment cycle, per subject.
+export const SUBJECT_TRENDS = {
+  calc: '+2.4%',
+  phy: '-1.2%',
+  psy: '+0.8%',
+};
+
 export const SUBJECT_SKILLS = {
   calc: ['Limits & Continuity', 'Derivatives', 'Integration by Parts', 'Trig Substitution', 'Series Convergence'],
   phy: ['Kinematics', 'Optics & Waves', 'Thermodynamics', 'Electromagnetism'],
@@ -151,10 +158,25 @@ export function getOverviewFor(subjectId, classId) {
   const avg = Math.round(students.reduce((sum, s) => sum + s.grade, 0) / students.length);
   const attendance = Math.round(students.reduce((sum, s) => sum + s.attendance, 0) / students.length);
   const participation = Number((5 + (avg / 100) * 3.5).toFixed(1));
+  const buckets = [
+    { label: '90+', min: 90 },
+    { label: '80–89', min: 80 },
+    { label: '70–79', min: 70 },
+    { label: '60–69', min: 60 },
+    { label: '50–59', min: 50 },
+    { label: '<50', min: 0 },
+  ];
+  const distribution = buckets.map((bucket, index) => ({
+    label: bucket.label,
+    count: students.filter((s) =>
+      index === 0 ? s.grade >= bucket.min : s.grade >= bucket.min && s.grade < buckets[index - 1].min
+    ).length,
+  }));
   return {
-    classAverage: { value: avg, trend: '+2.4%', chartData: [45, 55, 50, 62, 68, 74, avg] },
+    classAverage: { value: avg, trend: SUBJECT_TRENDS[subjectId] || '+0.0%' },
     attendanceRate: { value: attendance, label: 'Attendance Rate' },
     participation: { value: participation, max: 10, label: 'Participation' },
+    distribution,
     atRisk: students.filter((s) => s.grade < 70).length,
     top: students.filter((s) => s.grade >= 85).length,
     total: students.length,
@@ -189,9 +211,15 @@ export function getStudentDetail(subjectId, classId, studentId) {
     value: clamp(grade - index * 9 + (student.attendance % 5) - 8, 25, 98),
   }));
   const sorted = [...mastery].sort((a, b) => b.value - a.value);
+  const quizzes =
+    student.trendShape === 'up'
+      ? [clamp(grade - 16, 20, 100), clamp(grade - 9, 20, 100), clamp(grade - 4, 20, 100), grade]
+      : student.trendShape === 'down'
+        ? [grade, clamp(grade - 9, 20, 100), clamp(grade - 16, 20, 100), clamp(grade - 22, 20, 100)]
+        : [clamp(grade - 6, 20, 100), clamp(grade - 2, 20, 100), clamp(grade - 5, 20, 100), grade];
   return {
     ...student,
-    quizzes: [clamp(grade - 16, 20, 100), clamp(grade - 9, 20, 100), clamp(grade - 4, 20, 100), grade],
+    quizzes,
     assignments: [clamp(grade - 11, 20, 100), clamp(grade - 6, 20, 100), grade],
     exam: clamp(grade - 2, 20, 100),
     strengths: sorted.slice(0, 2).map((m) => m.skill),

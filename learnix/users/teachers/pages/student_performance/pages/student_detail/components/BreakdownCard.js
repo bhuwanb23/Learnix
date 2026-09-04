@@ -4,6 +4,8 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const average = (values) => Math.round(values.reduce((sum, v) => sum + v, 0) / values.length);
 
+const clamp = (value, lo, hi) => Math.max(lo, Math.min(hi, value));
+
 export default function BreakdownCard({ detail }) {
     const tiles = [
         { label: 'Quizzes', value: `${average(detail.quizzes)}%`, icon: 'quiz', color: '#0050d4' },
@@ -28,12 +30,23 @@ export default function BreakdownCard({ detail }) {
                 ))}
             </View>
 
-            <Text style={styles.sectionLabel}>Score trend</Text>
+            <Text style={styles.sectionLabel}>Quiz trend</Text>
             <View style={styles.trendRow}>
                 {detail.quizzes.map((score, index) => (
                     <View key={index} style={styles.trendItem}>
                         <View style={styles.trendBarTrack}>
-                            <View style={[styles.trendBarFill, { height: `${score}%` }]} />
+                            <View
+                                style={[
+                                    styles.trendBarFill,
+                                    {
+                                        height: `${score}%`,
+                                        backgroundColor:
+                                            index === detail.quizzes.length - 1
+                                                ? detail.trendColor
+                                                : `${detail.trendColor}66`,
+                                    },
+                                ]}
+                            />
                         </View>
                         <Text style={styles.trendLabel}>Q{index + 1}</Text>
                         <Text style={styles.trendValue}>{score}</Text>

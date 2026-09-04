@@ -26,7 +26,7 @@ export default function SelectionChips({ label, options, selected, onChange }) {
                                 ]}
                             />
                             <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                                {option.label}
+                                {option.label || option.name}
                             </Text>
                         </TouchableOpacity>
                     );

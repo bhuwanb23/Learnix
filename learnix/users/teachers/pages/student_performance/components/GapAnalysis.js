@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 16,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   title: {
     fontFamily: 'PlusJakartaSans-Bold',
