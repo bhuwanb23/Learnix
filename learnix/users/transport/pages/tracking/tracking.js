@@ -125,12 +125,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: theme.colors.text,
   },
   statLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -151,13 +151,13 @@ const styles = StyleSheet.create({
   },
   mapText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginTop: 8,
   },
   mapSub: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 3,
   },
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   mapBtnText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 5,
   },
@@ -185,12 +185,12 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   seeAll: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.primary,
   },
   list: { paddingBottom: 24 },
@@ -217,12 +217,12 @@ const styles = StyleSheet.create({
   cardHeader: { flex: 1 },
   reg: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   route: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 1,
   },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
   positionRow: {
     flexDirection: 'row',
@@ -243,13 +243,13 @@ const styles = StyleSheet.create({
   positionText: {
     flex: 1,
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginLeft: 5,
   },
   speedText: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
   progressTrack: {
@@ -267,12 +267,12 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
   },
   etaText: {
     fontSize: 10,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
 });

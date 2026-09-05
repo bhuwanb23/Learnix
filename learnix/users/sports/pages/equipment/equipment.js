@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: theme.colors.text,
   },
   statLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: theme.colors.primary },
   tabText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.textMuted,
   },
   tabTextActive: { color: '#fff' },
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
   addText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 3,
   },
@@ -228,12 +228,12 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, marginRight: 8 },
   itemName: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   itemMeta: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   condText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
   avatar: {
     width: 40,
@@ -265,12 +265,12 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#2563eb',
   },
   dueText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     marginTop: 4,
   },
   returnBtn: {
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   },
   returnText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
   issueBtn: {
     flexDirection: 'row',
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   issueText: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 6,
   },

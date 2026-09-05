@@ -1,3 +1,37 @@
+// Convenience theme object (staff app pages import { theme })
+export const theme = {
+  colors: {
+    primary: '#2563eb',
+    primaryDark: '#1d4ed8',
+    primaryLight: '#eff6ff',
+    background: '#f5f7f9',
+    surface: '#ffffff',
+    surfaceMuted: '#f1f5f9',
+    border: '#e2e8f0',
+    text: '#0f172a',
+    textMuted: '#64748b',
+    white: '#ffffff',
+    success: '#059669',
+    warning: '#d97706',
+    error: '#dc2626',
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    '2xl': 48,
+  },
+  radius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 16,
+    full: 9999,
+  },
+};
+
 // Color palette - Clean ERP Style
 export const COLORS = {
   // Primary colors

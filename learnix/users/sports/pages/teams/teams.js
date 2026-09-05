@@ -90,12 +90,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 16,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: theme.colors.text,
   },
   statLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   addBtn: {
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   },
   addText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 3,
   },
@@ -146,18 +146,18 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, marginRight: 8 },
   name: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   meta: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
   nextMatch: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.primary,
     marginTop: 4,
   },

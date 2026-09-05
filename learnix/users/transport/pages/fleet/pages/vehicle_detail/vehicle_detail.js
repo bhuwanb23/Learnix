@@ -153,12 +153,12 @@ const styles = StyleSheet.create({
   },
   reg: {
     fontSize: 22,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
   },
   model: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.85)',
     marginTop: 4,
   },
@@ -173,12 +173,12 @@ const styles = StyleSheet.create({
   heroStat: { flex: 1, alignItems: 'center' },
   heroStatValue: {
     fontSize: 14,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
   },
   heroStatLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
@@ -200,13 +200,13 @@ const styles = StyleSheet.create({
   infoLabel: {
     flex: 1,
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginLeft: 10,
   },
   infoValue: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   divider: { height: 1, backgroundColor: theme.colors.border },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   serviceBtnText: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 6,
   },
@@ -237,12 +237,12 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   formLabel: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 13,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
   },
   confirmBtn: {
@@ -269,13 +269,13 @@ const styles = StyleSheet.create({
   },
   confirmText: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 6,
   },
   sectionTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginTop: 18,
     marginBottom: 10,
@@ -304,19 +304,19 @@ const styles = StyleSheet.create({
   historyBody: { flex: 1 },
   historyType: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
   historyMeta: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
   historyRight: { alignItems: 'flex-end' },
   historyCost: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   doneChip: {
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   doneText: {
     fontSize: 9,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#059669',
   },
 });

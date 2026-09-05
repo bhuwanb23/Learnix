@@ -164,12 +164,12 @@ const styles = StyleSheet.create({
   },
   routeName: {
     fontSize: 20,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
   },
   routeSub: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.85)',
     marginTop: 4,
   },
@@ -184,12 +184,12 @@ const styles = StyleSheet.create({
   heroStat: { flex: 1, alignItems: 'center' },
   heroStatValue: {
     fontSize: 16,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
   },
   heroStatLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
@@ -216,14 +216,14 @@ const styles = StyleSheet.create({
   vehicleBody: { flex: 1 },
   vehicleLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   vehicleName: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginTop: 1,
   },
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.primary,
     marginLeft: 4,
   },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   },
   passengerTitle: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginBottom: 8,
   },
@@ -281,23 +281,23 @@ const styles = StyleSheet.create({
   },
   passengerAvatarText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#2563eb',
   },
   passengerName: {
     flex: 1,
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
   passengerStop: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
   },
   sectionTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginTop: 18,
     marginBottom: 10,
@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
   stopBody: { flex: 1, marginLeft: 8, paddingBottom: 18 },
   stopName: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   stopNameUpcoming: { color: theme.colors.textMuted },
   stopMeta: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -351,6 +351,6 @@ const styles = StyleSheet.create({
   },
   stopChipText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
 });

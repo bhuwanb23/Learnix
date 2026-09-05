@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
   },
   headerIconBtn: {
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   headerSub: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.8)',
     marginTop: 6,
   },
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: theme.colors.primary },
   tabText: {
     fontSize: 14,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.textMuted,
   },
   tabTextActive: { color: theme.colors.primary },
@@ -329,18 +329,18 @@ const styles = StyleSheet.create({
   cardTitle: {
     flex: 1,
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginRight: 8,
   },
   cardTime: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
   },
   cardMessage: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     lineHeight: 18,
     marginTop: 4,
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   },
   audienceText: {
     fontSize: 10,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.textMuted,
     marginLeft: 4,
   },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   formLabel: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginTop: 12,
     marginBottom: 8,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 13,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
   },
   messageInput: { minHeight: 100 },
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   audienceChipActive: { backgroundColor: theme.colors.primary },
   audienceChipText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.textMuted,
   },
   audienceChipTextActive: { color: '#fff' },
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
   },
   sendBtnText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 8,
   },
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
     marginLeft: 10,
     lineHeight: 18,

@@ -196,13 +196,13 @@ const styles = StyleSheet.create({
   },
   teamName: {
     fontSize: 22,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
     marginTop: 10,
   },
   teamMeta: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.85)',
     marginTop: 3,
   },
@@ -218,12 +218,12 @@ const styles = StyleSheet.create({
   heroStat: { flex: 1, alignItems: 'center' },
   heroStatValue: {
     fontSize: 16,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
   },
   heroStatLabel: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.primary,
     marginLeft: 4,
   },
@@ -262,12 +262,12 @@ const styles = StyleSheet.create({
   },
   addTitle: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   addText: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 4,
     lineHeight: 17,
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   confirmText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 5,
   },
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginTop: 18,
     marginBottom: 10,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   },
   sectionCount: {
     fontSize: 11,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.textMuted,
   },
   playerCard: {
@@ -329,17 +329,17 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
   playerBody: { flex: 1 },
   playerName: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   playerMeta: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   roleText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
   fixtureCard: {
     flexDirection: 'row',
@@ -369,18 +369,18 @@ const styles = StyleSheet.create({
   },
   fixtureDateText: {
     fontSize: 11,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   fixtureBody: { flex: 1, marginLeft: 10 },
   fixtureVs: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
   fixtureVenue: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -391,6 +391,6 @@ const styles = StyleSheet.create({
   },
   fixtureText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
 });

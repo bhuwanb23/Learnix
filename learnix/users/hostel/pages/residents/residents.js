@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     paddingHorizontal: 8,
     fontSize: 13,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
   },
   filterRow: { flexDirection: 'row', marginTop: 12 },
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: theme.colors.primary },
   filterText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.textMuted,
   },
   filterTextActive: { color: '#fff' },
@@ -155,17 +155,17 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
   },
   cardBody: { flex: 1 },
   name: {
     fontSize: 14,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   meta: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   },
   roomText: {
     fontSize: 10,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     marginLeft: 4,
   },
 });

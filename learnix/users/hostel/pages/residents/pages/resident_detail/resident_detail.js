@@ -185,18 +185,18 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 28,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
   },
   name: {
     fontSize: 20,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
     marginTop: 10,
   },
   meta: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.85)',
     marginTop: 3,
   },
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   roomBadgeText: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: '#fff',
     marginLeft: 5,
   },
@@ -234,14 +234,14 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.primary,
     marginLeft: 5,
   },
   section: { paddingHorizontal: 16, marginTop: 18 },
   sectionTitle: {
     fontSize: 15,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginBottom: 10,
   },
@@ -259,12 +259,12 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
   },
   infoValue: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
   divider: { height: 1, backgroundColor: theme.colors.border },
@@ -283,12 +283,12 @@ const styles = StyleSheet.create({
   },
   paymentLabel: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
   },
   paymentValue: {
     fontSize: 20,
-    fontFamily: 'Manrope_800ExtraBold',
+    fontFamily: 'Manrope-ExtraBold',
     marginTop: 2,
   },
   receiveBtn: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   receiveText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 5,
   },
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   },
   clearText: {
     fontSize: 12,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#059669',
     marginLeft: 4,
   },
@@ -327,18 +327,18 @@ const styles = StyleSheet.create({
   historyBody: { flex: 1 },
   historyItem: {
     fontSize: 12,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
   historyDate: {
     fontSize: 10,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 1,
   },
   historyAmount: {
     fontSize: 13,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginRight: 8,
   },
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   paidText: {
     fontSize: 10,
-    fontFamily: 'Manrope_700Bold',
+    fontFamily: 'Manrope-Bold',
     color: '#059669',
   },
   complaintCard: {
@@ -366,12 +366,12 @@ const styles = StyleSheet.create({
   complaintBody: { flex: 1, marginLeft: 10 },
   complaintTitle: {
     fontSize: 13,
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
   complaintMeta: {
     fontSize: 11,
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
   },
