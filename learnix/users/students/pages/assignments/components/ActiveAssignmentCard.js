@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
@@ -64,10 +65,18 @@ export default function ActiveAssignmentCard({ assignment, onPress }) {
           <Text style={styles.swipeHint}>Swipe to dismiss</Text>
         </View>
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: 'rgba(37, 99, 235, 0.1)' }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: 'rgba(37, 99, 235, 0.1)' }]}
+            activeOpacity={0.7}
+            onPress={() => Alert.alert('Mark Complete', `Mark "${assignment.title}" as complete?`)}
+          >
             <MaterialIcons name="done-all" size={15} color={COLORS.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, { backgroundColor: 'rgba(14, 165, 233, 0.1)' }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: 'rgba(14, 165, 233, 0.1)' }]}
+            activeOpacity={0.7}
+            onPress={() => Alert.alert('Reminder Set', `A reminder for "${assignment.title}" was added.`)}
+          >
             <MaterialIcons name="event-available" size={15} color={COLORS.accent} />
           </TouchableOpacity>
         </View>

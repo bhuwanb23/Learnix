@@ -6,6 +6,7 @@ import {
   Image,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
@@ -19,7 +20,7 @@ export default function AssignmentHeader() {
         </View>
 
         <View style={styles.rightSection}>
-          <TouchableOpacity style={styles.calendarButton} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.calendarButton} activeOpacity={0.7} onPress={() => Alert.alert('Calendar', 'Your assignment deadline calendar will open here.')}>
             <MaterialIcons name="calendar-today" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
           {/* <View style={styles.avatarContainer}>
