@@ -30,7 +30,19 @@ const jobs = [
   },
 ];
 
-export default function RecommendedJobs() {
+export default function RecommendedJobs({ navigation }) {
+  const handleJobPress = (job) => {
+    if (navigation) {
+      navigation.navigate('JobDetails', { job });
+    }
+  };
+
+  const handleViewAll = () => {
+    if (navigation) {
+      navigation.navigate('BrowseJobs');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -38,7 +50,7 @@ export default function RecommendedJobs() {
           <Text style={styles.title}>Recommended for You</Text>
           <Text style={styles.subtitle}>Based on your tech stack and performance</Text>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleViewAll} activeOpacity={0.7}>
           <Text style={styles.viewAll}>View All</Text>
         </TouchableOpacity>
       </View>
@@ -49,7 +61,7 @@ export default function RecommendedJobs() {
         contentContainerStyle={styles.scrollContent}
       >
         {jobs.map((job) => (
-          <TouchableOpacity key={job.id} style={styles.jobCard} activeOpacity={0.95}>
+          <TouchableOpacity key={job.id} style={styles.jobCard} activeOpacity={0.95} onPress={() => handleJobPress(job)}>
             <View style={styles.jobHeader}>
               <View style={styles.logoContainer}>
                 <Image source={{ uri: job.logo }} style={styles.logo} resizeMode="contain" />
@@ -75,7 +87,7 @@ export default function RecommendedJobs() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.applyButton} activeOpacity={0.9}>
+            <TouchableOpacity style={styles.applyButton} activeOpacity={0.9} onPress={() => handleJobPress(job)}>
               <Text style={styles.applyButtonText}>Apply Now</Text>
             </TouchableOpacity>
           </TouchableOpacity>

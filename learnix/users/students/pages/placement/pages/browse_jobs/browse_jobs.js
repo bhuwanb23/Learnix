@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -47,7 +48,7 @@ export default function BrowseJobs({ navigation }) {
           <Text style={styles.topBarTitle}>Job Opportunities</Text>
         </View>
         <View style={styles.topBarRight}>
-          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={() => Alert.alert('Search', 'Type a role or company to filter the job list below.')}>
             <Ionicons name="search-outline" size={24} color={COLORS.textPrimary} />
           </TouchableOpacity>
           <View style={styles.profileImage}>

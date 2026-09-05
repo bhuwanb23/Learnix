@@ -32,14 +32,20 @@ const drives = [
   },
 ];
 
-export default function UpcomingDrives() {
+export default function UpcomingDrives({ navigation }) {
+  const handleDrivePress = (drive) => {
+    if (navigation) {
+      navigation.navigate('PlacementDrive');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Upcoming Campus Drives</Text>
 
       <View style={styles.drivesList}>
         {drives.map((drive) => (
-          <TouchableOpacity key={drive.id} style={styles.driveCard} activeOpacity={0.95}>
+          <TouchableOpacity key={drive.id} style={styles.driveCard} activeOpacity={0.95} onPress={() => handleDrivePress(drive)}>
             <View style={styles.driveContent}>
               <View style={styles.dateBox}>
                 <Text style={styles.monthText}>{drive.month}</Text>
