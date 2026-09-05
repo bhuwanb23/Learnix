@@ -41,10 +41,18 @@ export default function EvaluationDashboard({
   );
 
   const renderSubjectProgress = (subject) => (
-    <View key={subject.id} style={styles.subjectItem}>
+    <TouchableOpacity
+      key={subject.id}
+      style={styles.subjectItem}
+      onPress={() => onViewDetails && onViewDetails(subject.id)}
+      activeOpacity={0.7}
+    >
       <View style={styles.subjectHeader}>
         <Text style={styles.subjectName}>{subject.name}</Text>
-        <Text style={styles.subjectPercentage}>{subject.progress}%</Text>
+        <View style={styles.subjectHeaderRight}>
+          <Text style={styles.subjectPercentage}>{subject.progress}%</Text>
+          <Ionicons name="chevron-forward" size={14} color="#94a3b8" />
+        </View>
       </View>
       <View style={styles.progressBarContainer}>
         <View style={styles.progressBarBackground} />
@@ -56,7 +64,7 @@ export default function EvaluationDashboard({
           }
         ]} />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -78,7 +86,7 @@ export default function EvaluationDashboard({
           onPress={() => onExportData && onExportData('evaluation')}
           activeOpacity={0.7}
         >
-          <Ionicons name="ellipsis-vertical" size={20} color={COLORS.text.secondary} />
+          <Ionicons name="download-outline" size={20} color={COLORS.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -253,6 +261,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SPACING.xs,
+  },
+  subjectHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
   },
   subjectName: {
     fontSize: TYPOGRAPHY.fontSize.sm,

@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react';
+import { Alert } from 'react-native';
 
-export const useAcademicsExaminations = () => {
+export const useAcademicsExaminations = (navigation) => {
   const [selectedSemester, setSelectedSemester] = useState('semester-1');
   const [selectedExamType, setSelectedExamType] = useState('mid-term');
   const [isGeneratingTimetable, setIsGeneratingTimetable] = useState(false);
   const [evaluationProgress, setEvaluationProgress] = useState(77);
   const [cheatingAlerts, setCheatingAlerts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [timetableGenerated, setTimetableGenerated] = useState(false);
 
   const handleSemesterChange = useCallback((semester) => {
     setSelectedSemester(semester);
@@ -19,72 +21,82 @@ export const useAcademicsExaminations = () => {
   const handleGenerateTimetable = useCallback(async () => {
     setIsGeneratingTimetable(true);
     setIsLoading(true);
-    
+
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock success response
-      console.log('Timetable generated successfully');
-      
-      // You can add actual API call here
-      // const response = await generateTimetableAPI({
-      //   semester: selectedSemester,
-      //   examType: selectedExamType
-      // });
-      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setTimetableGenerated(true);
+      if (navigation && navigation.navigate) {
+        navigation.navigate('examTimetable');
+      }
     } catch (error) {
-      console.error('Error generating timetable:', error);
+      // Swallow error — mock flow
     } finally {
       setIsGeneratingTimetable(false);
       setIsLoading(false);
     }
-  }, [selectedSemester, selectedExamType]);
+  }, [selectedSemester, selectedExamType, navigation]);
 
   const handleViewEvaluationDetails = useCallback((subjectId) => {
-    console.log('View evaluation details for:', subjectId);
-    // Navigate to evaluation details page
-  }, []);
+    if (navigation && navigation.navigate) {
+      navigation.navigate('evaluationDetails', { subjectId });
+    }
+  }, [navigation]);
 
   const handleCheatingAlertAction = useCallback((alertId, action) => {
-    console.log('Cheating alert action:', { alertId, action });
-    
-    // Update alert status
-    setCheatingAlerts(prev => 
-      prev.map(alert => 
-        alert.id === alertId 
+    // Update alert status locally
+    setCheatingAlerts(prev =>
+      prev.map(alert =>
+        alert.id === alertId
           ? { ...alert, status: action }
           : alert
       )
     );
+    if (action === 'investigate') {
+      Alert.alert(
+        'Investigate Alert',
+        'Opening case file with flagged answer patterns, session logs, and AI evidence...'
+      );
+    } else {
+      Alert.alert('Alert Dismissed', 'This alert has been marked as a false positive.');
+    }
   }, []);
 
   const handleRefreshData = useCallback(async () => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call to refresh data
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Refresh evaluation progress
+      await new Promise(resolve => setTimeout(resolve, 800));
       setEvaluationProgress(prev => Math.min(100, prev + Math.random() * 5));
-      
-    } catch (error) {
-      console.error('Error refreshing data:', error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   const handleExportData = useCallback((dataType) => {
-    console.log('Export data:', dataType);
-    // Implement export functionality
-  }, []);
+    if (navigation && navigation.navigate) {
+      navigation.navigate('exportReport', { dataType });
+    }
+  }, [navigation]);
 
   const handleViewDetailedReport = useCallback((reportType) => {
-    console.log('View detailed report:', reportType);
-    // Navigate to detailed report page
-  }, []);
+    if (navigation && navigation.navigate) {
+      if (reportType === 'cheating') {
+        navigation.navigate('cheatingCases');
+      } else if (reportType === 'evaluations') {
+        navigation.navigate('evaluationDetails');
+      } else if (reportType === 'exams') {
+        navigation.navigate('examTimetable');
+      } else if (reportType === 'performance') {
+        navigation.navigate('publishResults');
+      }
+    }
+  }, [navigation]);
+
+  const handleViewAllAlerts = useCallback(() => {
+    if (navigation && navigation.navigate) {
+      navigation.navigate('cheatingCases');
+    }
+  }, [navigation]);
 
   return {
     // State
@@ -94,7 +106,8 @@ export const useAcademicsExaminations = () => {
     evaluationProgress,
     cheatingAlerts,
     isLoading,
-    
+    timetableGenerated,
+
     // Actions
     handleSemesterChange,
     handleExamTypeChange,
@@ -104,5 +117,6 @@ export const useAcademicsExaminations = () => {
     handleRefreshData,
     handleExportData,
     handleViewDetailedReport,
+    handleViewAllAlerts,
   };
-};
+};

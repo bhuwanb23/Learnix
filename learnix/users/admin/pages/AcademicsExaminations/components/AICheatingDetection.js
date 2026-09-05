@@ -63,14 +63,14 @@ export default function AICheatingDetection({
             onPress={() => onAlertAction && onAlertAction(alert.id, 'investigate')}
             activeOpacity={0.7}
           >
-            <Ionicons name="search-outline" size={16} color={COLORS.text.secondary} />
+            <Ionicons name="search-outline" size={16} color={COLORS.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => onAlertAction && onAlertAction(alert.id, 'dismiss')}
             activeOpacity={0.7}
           >
-            <Ionicons name="close-outline" size={16} color={COLORS.text.secondary} />
+            <Ionicons name="close-outline" size={16} color={COLORS.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>

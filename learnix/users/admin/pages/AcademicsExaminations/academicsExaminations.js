@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   RefreshControl,
@@ -25,16 +24,45 @@ import {
   CHEATING_ALERTS,
 } from './constants/academicsData';
 
+// Sub-pages
+import ExamTimetable from './pages/exam_timetable/exam_timetable';
+import EvaluationDetails from './pages/evaluation_details/evaluation_details';
+import CheatingCases from './pages/cheating_cases/cheating_cases';
+import PublishResults from './pages/publish_results/publish_results';
+import ExportReport from './pages/export_report/export_report';
+
 // Import theme
-import { COLORS, TYPOGRAPHY, SPACING } from '../../../../constants/theme';
+import { COLORS, SPACING } from '../../../../constants/theme';
 
 export default function AcademicsExaminations({ navigation }) {
+  const [subScreen, setSubScreen] = useState('main');
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [exportType, setExportType] = useState(null);
+
+  const handleNavigate = (screen, params) => {
+    if (params && params.subjectId) setSelectedSubject(params.subjectId);
+    if (params && params.dataType) setExportType(params.dataType);
+    setSubScreen(screen);
+  };
+
+  const handleBack = () => {
+    setSubScreen('main');
+    setSelectedSubject(null);
+    setExportType(null);
+  };
+
+  const moduleNavigation = {
+    ...navigation,
+    navigate: handleNavigate,
+    back: handleBack,
+  };
+
   const {
     selectedSemester,
     selectedExamType,
     isGeneratingTimetable,
-    evaluationProgress,
     isLoading,
+    timetableGenerated,
     handleSemesterChange,
     handleExamTypeChange,
     handleGenerateTimetable,
@@ -43,11 +71,27 @@ export default function AcademicsExaminations({ navigation }) {
     handleRefreshData,
     handleExportData,
     handleViewDetailedReport,
-  } = useAcademicsExaminations();
+    handleViewAllAlerts,
+  } = useAcademicsExaminations(moduleNavigation);
+
+  // Sub-screen routing
+  if (subScreen === 'examTimetable') {
+    return <ExamTimetable onBack={handleBack} />;
+  }
+  if (subScreen === 'evaluationDetails') {
+    return <EvaluationDetails subjectId={selectedSubject} onBack={handleBack} />;
+  }
+  if (subScreen === 'cheatingCases') {
+    return <CheatingCases alerts={CHEATING_ALERTS} onBack={handleBack} />;
+  }
+  if (subScreen === 'publishResults') {
+    return <PublishResults onBack={handleBack} />;
+  }
+  if (subScreen === 'exportReport') {
+    return <ExportReport dataType={exportType} onBack={handleBack} />;
+  }
 
   const handleStatPress = (statId) => {
-    console.log('Stat pressed:', statId);
-    // Navigate to detailed view based on stat type
     switch (statId) {
       case 'active-exams':
         handleViewDetailedReport('exams');
@@ -64,11 +108,6 @@ export default function AcademicsExaminations({ navigation }) {
       default:
         break;
     }
-  };
-
-  const handleViewAllAlerts = () => {
-    console.log('View all cheating alerts');
-    // Navigate to alerts page
   };
 
   return (
@@ -105,6 +144,8 @@ export default function AcademicsExaminations({ navigation }) {
             onExamTypeChange={handleExamTypeChange}
             onGenerateTimetable={handleGenerateTimetable}
             isGenerating={isGeneratingTimetable}
+            timetableGenerated={timetableGenerated}
+            onViewTimetable={() => handleNavigate('examTimetable')}
           />
         </View>
 
@@ -147,4 +188,4 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: SPACING.md,
   },
-});
+});

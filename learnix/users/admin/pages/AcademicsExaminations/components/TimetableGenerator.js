@@ -20,16 +20,28 @@ export default function TimetableGenerator({
   onExamTypeChange,
   onGenerateTimetable,
   isGenerating,
+  onViewTimetable,
+  timetableGenerated,
 }) {
+  const cycleOption = (options, currentValue, onValueChange) => {
+    const idx = options.findIndex(option => option.value === currentValue);
+    const next = options[(idx + 1) % options.length];
+    onValueChange(next.value);
+  };
+
   const renderDropdown = (label, value, options, onValueChange) => (
     <View style={styles.dropdownContainer}>
       <Text style={styles.dropdownLabel}>{label}</Text>
-      <View style={styles.dropdown}>
+      <TouchableOpacity
+        style={styles.dropdown}
+        onPress={() => cycleOption(options, value, onValueChange)}
+        activeOpacity={0.8}
+      >
         <Text style={styles.dropdownText}>
           {options.find(option => option.value === value)?.label || 'Select Option'}
         </Text>
         <Ionicons name="chevron-down" size={16} color={COLORS.textSecondary} />
-      </View>
+      </TouchableOpacity>
     </View>
   );
 
@@ -128,6 +140,16 @@ export default function TimetableGenerator({
               </Text>
             </View>
           </View>
+          {timetableGenerated ? (
+            <TouchableOpacity
+              style={styles.viewTimetableButton}
+              onPress={onViewTimetable}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="calendar-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.viewTimetableText}>View Generated Timetable</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </ScrollView>
     </View>
@@ -292,5 +314,21 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontFamily: 'Manrope-Medium',
     lineHeight: 16,
+  },
+  viewTimetableButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    backgroundColor: '#7c3aed',
+    borderRadius: BORDER_RADIUS.lg,
+    paddingVertical: SPACING.md,
+    marginTop: SPACING.md,
+  },
+  viewTimetableText: {
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    fontWeight: TYPOGRAPHY.fontWeight.medium,
+    color: '#FFFFFF',
+    fontFamily: 'Manrope-Medium',
   },
 });
