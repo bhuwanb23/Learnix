@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import HeroSection from './components/HeroSection';
 import AboutSection from './components/AboutSection';
 import ScheduleSection from './components/ScheduleSection';
@@ -26,7 +26,7 @@ export default function EventDetailsScreen({ route, navigation }) {
     };
 
     const handleShare = () => {
-        console.log('Share event');
+        Alert.alert('Share Event', 'Sharing options for this event will open here.');
     };
 
     const handleRegister = () => {

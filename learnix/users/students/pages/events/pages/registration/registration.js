@@ -32,8 +32,7 @@ export default function EventRegistrationPage({ route, navigation }) {
         }
     };
 
-    const handleRegistrationSubmit = (formData) => {
-        console.log('Registration submitted:', formData);
+    const handleRegistrationSubmit = () => {
         // Navigate to confirmation page
         setCurrentView('confirmation');
     };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { EVENT_DETAILS_COLORS } from '../constants/eventDetailsData';
 
@@ -20,7 +20,7 @@ export default function LocationSection({ location }) {
               <Text style={styles.locationAddress}>{location.address}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.mapsLink} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.mapsLink} activeOpacity={0.7} onPress={() => Alert.alert('Open in Maps', `Launching directions to ${location.name}.`)}>
             <Text style={styles.mapsLinkText}>Open in Google Maps</Text>
             <MaterialIcons name="open-in-new" size={16} color={EVENT_DETAILS_COLORS.primary} />
           </TouchableOpacity>

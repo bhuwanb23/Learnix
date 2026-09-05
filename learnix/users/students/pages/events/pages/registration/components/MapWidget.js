@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { REGISTRATION_COLORS } from '../constants/registrationData';
 
 export default function MapWidget({ location, mapImage }) {
     return (
-        <TouchableOpacity style={styles.container} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.container} activeOpacity={0.8} onPress={() => Alert.alert('Location', `Viewing ${location || 'Science Hub, Hall 4'} on the map.`)}>
             <Image
                 source={{ uri: mapImage || 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800' }}
                 style={styles.mapImage}
