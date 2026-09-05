@@ -40,7 +40,6 @@ export default function CreateAssignment({ route, navigation }) {
 
     const handleAttachment = (action, name) => {
         if (action === 'add') {
-            console.log('Pick attachment file');
             setAttachments((prev) => [...prev, `attachment_${prev.length + 1}.pdf`]);
         } else if (action === 'remove') {
             setAttachments((prev) => prev.filter((item) => item !== name));
@@ -54,13 +53,6 @@ export default function CreateAssignment({ route, navigation }) {
         Boolean(dueDate);
 
     const handleSave = () => {
-        console.log(editing ? 'Update assignment:' : 'Create assignment:', {
-            ...values,
-            class: selectedClass,
-            dueDate,
-            publish,
-            attachments,
-        });
         handleBack();
     };
 

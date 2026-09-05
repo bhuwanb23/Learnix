@@ -70,12 +70,10 @@ export default function ExamDetail({ route, navigation }) {
     const complete = isUpcoming || rows.every((row) => row.result.marks != null || row.result.status === 'absent');
 
     const handleSaveDraft = () => {
-        console.log('Save results draft:', exam.id, results);
         handleBack();
     };
 
     const handlePublish = () => {
-        console.log('Publish results:', exam.id, results);
         handleBack();
     };
 

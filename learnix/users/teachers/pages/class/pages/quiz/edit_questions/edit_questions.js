@@ -53,8 +53,8 @@ export default function EditQuestions({ route, navigation }) {
         setCurrentScreen('CreateQuestion');
     };
 
-    const handleToggleExpand = (index, expanded) => {
-        console.log('Question', index + 1, expanded ? 'expanded' : 'collapsed');
+    const handleToggleExpand = () => {
+        // Expansion handled inside QuestionCard
     };
 
     if (currentScreen === 'CreateQuestion') {

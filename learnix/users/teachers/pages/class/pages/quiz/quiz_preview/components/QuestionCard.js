@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     studentPreviewText: {
-        fontFamily: 'Manrope-Italic',
+        fontFamily: 'Manrope-Regular',
         fontSize: 13,
         fontStyle: 'italic',
         color: '#595c5e',

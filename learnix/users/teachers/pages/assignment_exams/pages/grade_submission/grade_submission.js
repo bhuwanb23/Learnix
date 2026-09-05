@@ -88,7 +88,6 @@ export default function GradeSubmission({ route, navigation }) {
     const current = queue[index];
 
     const handleSave = () => {
-        console.log('Grade saved:', current?.studentId, grade, feedback);
         if (index >= queue.length - 1) {
             handleBack();
             return;

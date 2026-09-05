@@ -21,7 +21,6 @@ export default function ExportGrades({ route, navigation }) {
     const valid = Boolean(format) && Boolean(selectedClass) && Boolean(period);
 
     const handleExport = () => {
-        console.log('Export grades:', { format, class: selectedClass, period });
         handleBack();
     };
 

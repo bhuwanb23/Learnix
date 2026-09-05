@@ -34,7 +34,6 @@ export default function CreateExam({ route, navigation }) {
     Boolean(duration);
 
   const handleSave = () => {
-    console.log('Schedule exam:', { ...values, class: selectedClass, duration });
     handleBack();
   };
 
