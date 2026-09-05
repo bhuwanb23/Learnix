@@ -4,10 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function AIRecommendationsCard({ data }) {
+  const handleResourcePress = (resource) => {
+    Alert.alert(resource.type, resource.title);
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -27,6 +32,7 @@ export default function AIRecommendationsCard({ data }) {
             key={resource.id}
             style={styles.resourceItem}
             activeOpacity={0.7}
+            onPress={() => handleResourcePress(resource)}
           >
             <MaterialIcons name={resource.icon.replace('_', '-')} size={24} color="#702ae1" />
             <View>

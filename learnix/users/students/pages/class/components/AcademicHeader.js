@@ -4,10 +4,23 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function AcademicHeader({ semester, credits }) {
+  const handleSemesterPress = () => {
+    Alert.alert(
+      'Switch Semester',
+      'Choose the semester to view its academics.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Fall 2024', onPress: () => Alert.alert('Fall 2024', 'You are already viewing Fall Semester 2024.') },
+        { text: 'Spring 2025', onPress: () => Alert.alert('Spring 2025', 'Spring 2025 courses will appear here once enrolled.') },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContent}>
@@ -15,7 +28,7 @@ export default function AcademicHeader({ semester, credits }) {
           <Text style={styles.title}>Academic Overview</Text>
           <Text style={styles.subtitle}>{semester} • {credits}</Text>
         </View>
-        <TouchableOpacity style={styles.selectorContainer}>
+        <TouchableOpacity style={styles.selectorContainer} onPress={handleSemesterPress} activeOpacity={0.7}>
           <Text style={styles.selectorText}>{semester}</Text>
           <MaterialIcons name="expand-more" size={24} color="#0050d4" />
         </TouchableOpacity>
