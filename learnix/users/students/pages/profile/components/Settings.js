@@ -4,10 +4,25 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function Settings() {
+export default function Settings({ navigation }) {
+  const handleViewAll = () => {
+    if (navigation) {
+      navigation.navigate('Settings');
+    }
+  };
+
+  const handleOptionPress = (option) => {
+    if (option.id === 'help') {
+      Alert.alert('Help Center', 'FAQs and support articles will open here.');
+    } else if (option.id === 'it') {
+      Alert.alert('IT Support', 'Opening a ticket with campus IT support…');
+    }
+  };
+
   const supportOptions = [
     {
       id: 'help',
@@ -29,7 +44,7 @@ export default function Settings() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Quick Settings</Text>
-        <TouchableOpacity activeOpacity={0.7}>
+        <TouchableOpacity activeOpacity={0.7} onPress={handleViewAll}>
           <Text style={styles.viewAll}>View All</Text>
         </TouchableOpacity>
       </View>
@@ -40,6 +55,7 @@ export default function Settings() {
             key={option.id}
             style={styles.optionCard}
             activeOpacity={0.7}
+            onPress={() => handleOptionPress(option)}
           >
             <View style={[styles.iconContainer, { backgroundColor: option.bgColor }]}>
               <MaterialIcons name={option.icon} size={20} color={option.color} />

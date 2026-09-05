@@ -35,7 +35,7 @@ export default function AcademicDetailsPage({ route, navigation }) {
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Academic Profile</Text>
                 </View>
-                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7} onPress={() => Alert.alert('Options', 'More academic options will appear here.')}>
                     <MaterialIcons name="more-vert" size={24} color={ACADEMIC_COLORS.onSurfaceVariant} />
                 </TouchableOpacity>
             </View>
@@ -49,7 +49,7 @@ export default function AcademicDetailsPage({ route, navigation }) {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Enrolled Subjects</Text>
-                        <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
+                        <TouchableOpacity style={styles.filterButton} activeOpacity={0.7} onPress={() => Alert.alert('Semester', 'Switch between enrolled semesters here.')}>
                             <MaterialIcons name="filter-list" size={20} color={ACADEMIC_COLORS.primary} />
                             <Text style={styles.filterText}>Spring 2024</Text>
                         </TouchableOpacity>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ACTIVITY_COLORS, QUICK_LOOK, ACTIVITIES } from './constants/activityData';
 import QuickLookSummary from './components/QuickLookSummary';
@@ -13,8 +13,7 @@ export default function ActivityPage({ route, navigation }) {
     };
 
     const handleViewAll = () => {
-        // Future: Navigate to full activity list
-        console.log('View all activities');
+        Alert.alert('Activity Feed', 'Your complete activity history will open here.');
     };
 
     return (
@@ -31,7 +30,7 @@ export default function ActivityPage({ route, navigation }) {
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Activity Feed</Text>
                 </View>
-                <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7} onPress={() => Alert.alert('Notifications', 'Your activity notifications will open here.')}>
                     <MaterialIcons name="notifications" size={24} color={ACTIVITY_COLORS.primary} />
                 </TouchableOpacity>
             </View>
