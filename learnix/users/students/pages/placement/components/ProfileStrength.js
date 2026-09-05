@@ -4,11 +4,16 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-export default function ProfileStrength() {
+export default function ProfileStrength({ navigation }) {
   const progress = 85;
+
+  const handleUpdateAvailability = () => {
+    Alert.alert('Update Availability', 'Set your interview availability to unlock direct interview opportunities.');
+  };
 
   return (
     <View style={styles.bentoGrid}>
@@ -44,10 +49,10 @@ export default function ProfileStrength() {
       </View>
 
       {/* CTA Card */}
-      <TouchableOpacity style={styles.ctaCard} activeOpacity={0.9}>
+      <TouchableOpacity style={styles.ctaCard} activeOpacity={0.9} onPress={handleUpdateAvailability}>
         <MaterialIcons name="rocket-launch" size={32} color="#ffffff" style={{ marginBottom: 16 }} />
         <Text style={styles.ctaTitle}>Ready for Direct Interview?</Text>
-        <TouchableOpacity style={styles.ctaButton} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.ctaButton} activeOpacity={0.8} onPress={handleUpdateAvailability}>
           <Text style={styles.ctaButtonText}>Update Availability</Text>
         </TouchableOpacity>
       </TouchableOpacity>

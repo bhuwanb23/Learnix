@@ -29,13 +29,13 @@ export default function PlacementPage({ navigation }) {
         <QuickActions navigation={navigation} />
 
         {/* Profile Strength & Stats */}
-        <ProfileStrength />
+        <ProfileStrength navigation={navigation} />
 
         {/* Recommended Jobs */}
-        <RecommendedJobs />
+        <RecommendedJobs navigation={navigation} />
 
         {/* Upcoming Drives */}
-        <UpcomingDrives />
+        <UpcomingDrives navigation={navigation} />
       </ScrollView>
     </SafeAreaView>
   );
