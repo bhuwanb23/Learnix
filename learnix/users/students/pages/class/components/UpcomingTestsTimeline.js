@@ -4,9 +4,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 
 export default function UpcomingTestsTimeline({ tests }) {
+  const handleViewAll = () => {
+    Alert.alert('All Tests', 'Your complete exam and test schedule will open here.');
+  };
+
   const hexToRgba = (hex, opacity) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result ? 
@@ -18,7 +23,7 @@ export default function UpcomingTestsTimeline({ tests }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Upcoming Tests</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleViewAll} activeOpacity={0.7}>
           <Text style={styles.viewAll}>View All</Text>
         </TouchableOpacity>
       </View>
