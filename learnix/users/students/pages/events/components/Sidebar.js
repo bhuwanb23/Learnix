@@ -1,13 +1,21 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Platform, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function Sidebar({ registrations, stats, trendingTags }) {
-  
+  const [activeReminders, setActiveReminders] = useState(
+    registrations.filter((r) => r.reminderActive).map((r) => r.id)
+  );
+
   const handleTagPress = (tag) => {
-    // Add visual feedback or navigation later
-    console.log('Pressed tag:', tag);
+    Alert.alert('Trending Tag', `Showing events tagged "${tag}".`);
+  };
+
+  const toggleReminder = (regId) => {
+    setActiveReminders((prev) =>
+      prev.includes(regId) ? prev.filter((id) => id !== regId) : [...prev, regId]
+    );
   };
 
   return (
@@ -23,13 +31,14 @@ export default function Sidebar({ registrations, stats, trendingTags }) {
             key={reg.id} 
             style={[styles.registrationCard, { borderLeftColor: reg.borderColor }]}
             activeOpacity={0.8}
+            onPress={() => Alert.alert(reg.title, `Your ticket for ${reg.datetime}.`)}
           >
             <View style={styles.registrationHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.registrationTitle} numberOfLines={1}>{reg.title}</Text>
                 <Text style={styles.registrationDate}>{reg.datetime}</Text>
               </View>
-              <TouchableOpacity style={styles.moreOptionsBtn}>
+              <TouchableOpacity style={styles.moreOptionsBtn} onPress={() => Alert.alert('Options', `More options for ${reg.title}.`)} activeOpacity={0.7}>
                 <MaterialIcons name="more-vert" size={20} color={COLORS.gray400} />
               </TouchableOpacity>
             </View>
@@ -40,9 +49,13 @@ export default function Sidebar({ registrations, stats, trendingTags }) {
               <View style={styles.registrationInfo}>
                 <View style={styles.reminderHeader}>
                   <Text style={styles.reminderLabel}>REMINDER</Text>
-                  <View style={[styles.toggleTrack, reg.reminderActive ? styles.toggleActive : styles.toggleInactive]}>
-                    <View style={[styles.toggleThumb, reg.reminderActive ? styles.toggleThumbActive : styles.toggleThumbInactive]} />
-                  </View>
+                  <TouchableOpacity
+                    style={[styles.toggleTrack, activeReminders.includes(reg.id) ? styles.toggleActive : styles.toggleInactive]}
+                    onPress={() => toggleReminder(reg.id)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.toggleThumb, activeReminders.includes(reg.id) ? styles.toggleThumbActive : styles.toggleThumbInactive]} />
+                  </TouchableOpacity>
                 </View>
                 <Text style={[styles.reminderText, { color: reg.reminderColor }]} numberOfLines={1}>
                   {reg.reminderText}
@@ -51,7 +64,7 @@ export default function Sidebar({ registrations, stats, trendingTags }) {
             </View>
           </TouchableOpacity>
         ))}
-        <TouchableOpacity style={styles.viewAllBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.viewAllBtn} activeOpacity={0.7} onPress={() => Alert.alert('My Tickets', 'All your registered event tickets will open here.')}>
           <Text style={styles.viewAllBtnText}>View All Tickets</Text>
           <MaterialIcons name="arrow-forward" size={16} color={COLORS.primary} />
         </TouchableOpacity>

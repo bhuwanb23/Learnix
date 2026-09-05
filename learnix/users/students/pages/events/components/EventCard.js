@@ -1,11 +1,12 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Animated, Platform } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Animated, Platform, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../../constants/theme';
 
 export default function EventCard({ item, index = 0, onPress }) {
   const { width } = useWindowDimensions();
+  const [isFavorite, setIsFavorite] = useState(false);
   const isDesktop = width >= 1024;
   const isTablet = width >= 768;
 
@@ -81,8 +82,16 @@ export default function EventCard({ item, index = 0, onPress }) {
             <View style={[styles.categoryBadge, { backgroundColor: item.categoryColor || COLORS.primary }]}>
               <Text style={styles.categoryText}>{item.category}</Text>
             </View>
-            <TouchableOpacity style={styles.favoriteBtn}>
-              <MaterialIcons name="favorite-outline" size={20} color={COLORS.white} />
+            <TouchableOpacity
+              style={styles.favoriteBtn}
+              onPress={() => setIsFavorite(!isFavorite)}
+              activeOpacity={0.7}
+            >
+              <MaterialIcons
+                name={isFavorite ? 'favorite' : 'favorite-outline'}
+                size={20}
+                color={isFavorite ? '#ef4444' : COLORS.white}
+              />
             </TouchableOpacity>
           </View>
 
@@ -123,7 +132,7 @@ export default function EventCard({ item, index = 0, onPress }) {
               </Text>
             </View>
 
-            <TouchableOpacity style={styles.actionBtn}>
+            <TouchableOpacity style={styles.actionBtn} onPress={() => Alert.alert('Join Event', `Opening registration for "${item.title}".`)} activeOpacity={0.7}>
               <Text style={styles.actionBtnText}>Join</Text>
             </TouchableOpacity>
           </View>

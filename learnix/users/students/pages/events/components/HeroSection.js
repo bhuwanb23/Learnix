@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Platform, Animated } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, useWindowDimensions, Platform, Animated, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../../constants/theme';
@@ -67,12 +67,12 @@ export default function HeroSection() {
         </Text>
         
         <View style={styles.heroButtons}>
-          <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.8} onPress={() => Alert.alert('Reserve Spot', 'Registration for Innovate-X 2024 opens below — scroll to the event cards to join.')}>
             <Text style={styles.primaryBtnText}>Reserve Spot</Text>
             <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.secondaryBtn} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.secondaryBtn} activeOpacity={0.8} onPress={() => Alert.alert('Explore Schedule', 'The full 3-day symposium schedule will open here.')}>
             <Text style={styles.secondaryBtnText}>Explore Schedule</Text>
           </TouchableOpacity>
         </View>
