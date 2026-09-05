@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import HeaderSection from './components/HeaderSection';
 import SummaryDashboard from './components/SummaryDashboard';
 import InstructionsCard from './components/InstructionsCard';
@@ -23,11 +23,11 @@ export default function SubmissionScreen({ route, navigation, onNavigate }) {
     };
 
     const handleAddFile = () => {
-        console.log('Add file');
+        Alert.alert('Add File', 'File picker will open here to attach your work.');
     };
 
     const handleSaveDraft = () => {
-        console.log('Save draft');
+        Alert.alert('Draft Saved', 'Your progress has been saved as a draft.');
     };
 
     const handleSubmit = () => {

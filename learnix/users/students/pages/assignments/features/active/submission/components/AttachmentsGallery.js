@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SUBMISSION_COLORS } from '../constants/submissionData';
 
@@ -9,7 +9,7 @@ export default function AttachmentsGallery({ attachments, onAddFile }) {
       <Text style={styles.title}>Attachments</Text>
       <View style={styles.grid}>
         {attachments.map((attachment) => (
-          <TouchableOpacity key={attachment.id} style={styles.imageContainer} activeOpacity={0.8}>
+          <TouchableOpacity key={attachment.id} style={styles.imageContainer} activeOpacity={0.8} onPress={() => Alert.alert('Attachment', 'Opening attachment preview…')}>
             <Image
               source={{ uri: attachment.imageUrl }}
               style={styles.image}
