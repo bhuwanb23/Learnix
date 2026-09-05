@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Switch, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { REGISTRATION_COLORS } from '../constants/registrationData';
 
@@ -72,7 +72,7 @@ export default function RegistrationCard({ registration, onPress }) {
                     {registration.isCompleted ? (
                         <>
                             <Text style={styles.endedText}>{registration.endedText}</Text>
-                            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7}>
+                            <TouchableOpacity style={styles.actionButton} activeOpacity={0.7} onPress={() => Alert.alert('Download', `Downloading materials for "${registration.title}"…`)}>
                                 <Text style={styles.actionButtonText}>{registration.actionText}</Text>
                                 <MaterialIcons name={registration.actionIcon} size={16} color={REGISTRATION_COLORS.secondary} />
                             </TouchableOpacity>
@@ -92,7 +92,7 @@ export default function RegistrationCard({ registration, onPress }) {
                                     ios_backgroundColor={REGISTRATION_COLORS.surfaceContainerHighest}
                                 />
                             </View>
-                            <TouchableOpacity style={styles.viewDetailsButton} activeOpacity={0.7}>
+                            <TouchableOpacity style={styles.viewDetailsButton} activeOpacity={0.7} onPress={() => onPress && onPress(registration)}>
                                 <Text style={styles.viewDetailsText}>View Details</Text>
                                 <MaterialIcons name="arrow-forward" size={16} color={REGISTRATION_COLORS.primary} />
                             </TouchableOpacity>

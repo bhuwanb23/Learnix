@@ -13,7 +13,7 @@ export default function SettingsPage({ route, navigation }) {
     };
 
     const handleItemPress = (item) => {
-        console.log('Settings item pressed:', item.id);
+        Alert.alert(item.label || 'Settings', 'This setting will open here.');
     };
 
     const handleLogout = () => {

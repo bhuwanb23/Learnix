@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { PROGRESS_COLORS, PERFORMANCE_DATA, SUBJECTS, MASTERY_LEVELS, CURATOR_TIP, HEATMAP_DATA } from './constants/progressData';
 import PerformanceSnapshot from './components/PerformanceSnapshot';
@@ -15,8 +15,7 @@ export default function ProgressAnalyticsPage({ route, navigation }) {
     };
 
     const handleViewDetails = () => {
-        // Future: Navigate to detailed subject view
-        console.log('View subject details');
+        Alert.alert('Subject Analytics', 'Detailed subject analytics will open here.');
     };
 
     return (
