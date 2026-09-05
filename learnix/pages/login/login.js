@@ -68,6 +68,8 @@ export default function LoginScreen({ navigation }) {
         navigation.navigate('Accounts');
       } else if (credentials.role === 'library') {
         navigation.navigate('Library');
+      } else if (credentials.role === 'hostel') {
+        navigation.navigate('Hostel');
       } else {
         // For other roles, navigate to main app
         navigation.navigate('Main');
