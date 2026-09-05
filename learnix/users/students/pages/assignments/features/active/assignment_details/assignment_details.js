@@ -22,7 +22,9 @@ export default function AssignmentDetailsScreen({ route, navigation, onNavigate 
     };
 
     const handleContinueWork = () => {
-        console.log('Continue working on assignment');
+        if (onNavigate) {
+            onNavigate('submission');
+        }
     };
 
     const handleSubmit = () => {

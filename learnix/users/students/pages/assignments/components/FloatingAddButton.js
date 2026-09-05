@@ -4,12 +4,15 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function FloatingAddButton() {
+export default function FloatingAddButton({ onPress }) {
+  const handlePress = onPress || (() => Alert.alert('New Assignment', 'Creating a new assignment will open here.'));
+
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.container} activeOpacity={0.8} onPress={handlePress}>
       <MaterialIcons name="add" size={32} color="#ffffff" />
     </TouchableOpacity>
   );
