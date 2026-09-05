@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SUBMISSION_COLORS } from '../constants/submissionData';
 
@@ -15,20 +15,20 @@ export default function TextEditor({ editor, onSaveDraft, onSubmit }) {
   return (
     <View style={styles.container}>
       <View style={styles.toolbar}>
-        <TouchableOpacity style={styles.toolButton}>
+        <TouchableOpacity style={styles.toolButton} onPress={() => Alert.alert('Formatting', 'Bold formatting applied.')}>
           <MaterialIcons name="format-bold" size={20} color={SUBMISSION_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.toolButton}>
+        <TouchableOpacity style={styles.toolButton} onPress={() => Alert.alert('Formatting', 'Italic formatting applied.')}>
           <MaterialIcons name="format-italic" size={20} color={SUBMISSION_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.toolButton}>
+        <TouchableOpacity style={styles.toolButton} onPress={() => Alert.alert('Formatting', 'Bulleted list inserted.')}>
           <MaterialIcons name="format-list-bulleted" size={20} color={SUBMISSION_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
         <View style={styles.divider} />
-        <TouchableOpacity style={styles.toolButton}>
+        <TouchableOpacity style={styles.toolButton} onPress={() => Alert.alert('Insert Link', 'Link insertion will open here.')}>
           <MaterialIcons name="link" size={20} color={SUBMISSION_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.toolButton}>
+        <TouchableOpacity style={styles.toolButton} onPress={() => Alert.alert('Insert Image', 'Image picker will open here.')}>
           <MaterialIcons name="image" size={20} color={SUBMISSION_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
         <View style={styles.saveStatus}>

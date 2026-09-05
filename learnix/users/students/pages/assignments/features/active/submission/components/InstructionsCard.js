@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SUBMISSION_COLORS } from '../constants/submissionData';
 
@@ -8,7 +8,7 @@ export default function InstructionsCard({ instructions }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Instructions</Text>
-        <TouchableOpacity style={styles.flagButton}>
+        <TouchableOpacity style={styles.flagButton} onPress={() => Alert.alert('Flag Issue', 'An issue with these instructions has been reported.')}>
           <MaterialIcons name="flag" size={20} color={SUBMISSION_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
       </View>
