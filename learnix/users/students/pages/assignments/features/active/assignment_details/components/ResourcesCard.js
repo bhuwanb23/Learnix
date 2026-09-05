@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ACTIVE_ASSIGNMENT_COLORS } from '../constants/activeAssignmentData';
 
@@ -9,7 +9,7 @@ export default function ResourcesCard({ assignment }) {
       <Text style={styles.label}>Required Reading</Text>
       <View style={styles.resourcesList}>
         {assignment.resources.map((resource) => (
-          <TouchableOpacity key={resource.id} style={styles.resourceItem}>
+          <TouchableOpacity key={resource.id} style={styles.resourceItem} onPress={() => Alert.alert(resource.name, 'Opening this resource…')}>
             <MaterialIcons 
               name={resource.icon} 
               size={20} 

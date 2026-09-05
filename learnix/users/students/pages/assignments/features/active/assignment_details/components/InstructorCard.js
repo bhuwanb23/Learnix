@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ACTIVE_ASSIGNMENT_COLORS } from '../constants/activeAssignmentData';
 
@@ -14,7 +14,7 @@ export default function InstructorCard({ assignment }) {
           <Text style={styles.instructorTitle}>{assignment.instructor.title}</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.messageButton}>
+      <TouchableOpacity style={styles.messageButton} onPress={() => Alert.alert('Message Instructor', `Opening a chat with ${assignment.instructor.name}…`)}>
         <MaterialIcons name="mail" size={18} color={ACTIVE_ASSIGNMENT_COLORS.onSurface} />
         <Text style={styles.messageButtonText}>Message Instructor</Text>
       </TouchableOpacity>
