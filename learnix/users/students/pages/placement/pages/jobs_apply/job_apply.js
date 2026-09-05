@@ -5,6 +5,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -31,17 +32,12 @@ export default function JobApply({ navigation, route }) {
   };
 
   const handleSubmitApplication = () => {
-    console.log('Submit pressed, isConfirmed:', isConfirmed);
     if (!isConfirmed) {
-      alert('Please confirm the information before submitting');
+      Alert.alert('Confirmation Required', 'Please confirm the information before submitting.');
       return;
     }
-    // Navigate to success page
-    console.log('Navigating to JobApplyDone...');
     if (navigation?.navigate) {
       navigation.navigate('JobApplyDone', {});
-    } else {
-      console.error('Navigation not available:', navigation);
     }
   };
 

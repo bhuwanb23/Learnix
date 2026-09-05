@@ -4,10 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function ApplicationHeader({ onGoBack }) {
+  const handleMenuPress = () => {
+    Alert.alert('Options', 'Application options will appear here.');
+  };
+
   return (
     <View style={styles.topBar}>
       <TouchableOpacity 
@@ -18,7 +23,7 @@ export default function ApplicationHeader({ onGoBack }) {
         <MaterialIcons name="arrow-back" size={24} color="#0050d4" />
       </TouchableOpacity>
       <Text style={styles.title}>Application Process</Text>
-      <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.menuButton} activeOpacity={0.7} onPress={handleMenuPress}>
         <MaterialIcons name="more-vert" size={24} color="#595c5e" />
       </TouchableOpacity>
     </View>

@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -16,7 +17,7 @@ export default function ApplyFooter({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.saveButton} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.saveButton} activeOpacity={0.8} onPress={() => Alert.alert('Saved', 'This job was added to your saved list.')}>
         <Text style={styles.saveButtonText}>Save for Later</Text>
       </TouchableOpacity>
       <TouchableOpacity 
