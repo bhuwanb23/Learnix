@@ -1,0 +1,71 @@
+export const EVENT_STATS = [
+  { id: 'upcoming', label: 'Upcoming Events', value: '6', icon: 'calendar', color: '#7c3aed' },
+  { id: 'registrations', label: 'Total Registrations', value: '1,284', icon: 'person-add', color: '#059669' },
+  { id: 'pending', label: 'Pending Approvals', value: '3', icon: 'hourglass', color: '#d97706' },
+  { id: 'completed', label: 'Completed', value: '24', icon: 'checkmark-done', color: '#0284c7' },
+];
+
+export const EVENTS = [
+  {
+    id: 'E1',
+    name: 'Tech Fest 2026',
+    category: 'Technical',
+    date: 'Nov 21-22, 2026',
+    venue: 'Main Auditorium',
+    registrations: 420,
+    capacity: 600,
+    status: 'Approved',
+    color: '#7c3aed',
+  },
+  {
+    id: 'E2',
+    name: 'Annual Sports Meet',
+    category: 'Sports',
+    date: 'Nov 28-30, 2026',
+    venue: 'Sports Ground',
+    registrations: 350,
+    capacity: 500,
+    status: 'Approved',
+    color: '#059669',
+  },
+  {
+    id: 'E3',
+    name: 'Cultural Night 2026',
+    category: 'Cultural',
+    date: 'Dec 5, 2026',
+    venue: 'Open Air Theatre',
+    registrations: 290,
+    capacity: 450,
+    status: 'Pending',
+    color: '#d97706',
+  },
+  {
+    id: 'E4',
+    name: 'Hackathon: CodeSprint',
+    category: 'Technical',
+    date: 'Dec 12-13, 2026',
+    venue: 'CS Labs',
+    registrations: 120,
+    capacity: 200,
+    status: 'Approved',
+    color: '#dc2626',
+  },
+  {
+    id: 'E5',
+    name: 'Alumni Networking Meet',
+    category: 'Academic',
+    date: 'Dec 18, 2026',
+    venue: 'Seminar Hall B',
+    registrations: 85,
+    capacity: 150,
+    status: 'Pending',
+    color: '#0891b2',
+  },
+];
+
+export const RECENT_REGISTRATIONS = [
+  { id: 'R1', student: 'Aarav Mehta', event: 'Tech Fest 2026', registeredAt: '2 hrs ago', color: '#7c3aed' },
+  { id: 'R2', student: 'Priya Sharma', event: 'Annual Sports Meet', registeredAt: '4 hrs ago', color: '#059669' },
+  { id: 'R3', student: 'Rahul Verma', event: 'Hackathon: CodeSprint', registeredAt: '5 hrs ago', color: '#dc2626' },
+  { id: 'R4', student: 'Sneha Patel', event: 'Cultural Night 2026', registeredAt: 'Yesterday', color: '#d97706' },
+];
