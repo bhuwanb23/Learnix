@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,16 @@ import {
   TextInput,
   TouchableOpacity,
   Animated,
+  ScrollView,
 } from 'react-native';
 
 export default function AIStudyBuddyChat({ aiData, onSendMessage }) {
+  const [messages, setMessages] = useState([
+    { id: 'ai-intro', role: 'ai', text: aiData.message },
+  ]);
   const [message, setMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const scrollRef = useRef(null);
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
   const sparkleAnim = React.useRef(new Animated.Value(1)).current;
@@ -50,15 +55,25 @@ export default function AIStudyBuddyChat({ aiData, onSendMessage }) {
   }, []);
 
   const handleSend = () => {
-    if (message.trim()) {
-      onSendMessage(message);
-      setMessage('');
-      setIsTyping(true);
-      
-      setTimeout(() => {
-        setIsTyping(false);
-      }, 2000);
-    }
+    const text = message.trim();
+    if (!text) return;
+
+    onSendMessage?.(text);
+    setMessages((prev) => [...prev, { id: `user-${Date.now()}`, role: 'user', text }]);
+    setMessage('');
+    setIsTyping(true);
+
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `ai-${Date.now()}`,
+          role: 'ai',
+          text: `Great question! Based on your progress, I'd suggest focusing on ${aiData.focusTopic || 'the current module'} first — start with the concept summary, then try a 10-question practice set. Want me to walk you through it?`,
+        },
+      ]);
+      setIsTyping(false);
+    }, 1200);
   };
 
   return (
@@ -85,9 +100,36 @@ export default function AIStudyBuddyChat({ aiData, onSendMessage }) {
           </View>
         </View>
 
-        <View style={styles.messageBubble}>
-          <Text style={styles.messageText}>{aiData.message}</Text>
-        </View>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.chatThread}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+        >
+          {messages.map((msg) => (
+            <View
+              key={msg.id}
+              style={[
+                styles.threadBubble,
+                msg.role === 'user' ? styles.threadBubbleUser : styles.threadBubbleAi,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.threadText,
+                  msg.role === 'user' ? styles.threadTextUser : styles.threadTextAi,
+                ]}
+              >
+                {msg.text}
+              </Text>
+            </View>
+          ))}
+          {isTyping && (
+            <View style={[styles.threadBubble, styles.threadBubbleAi]}>
+              <Text style={[styles.threadText, styles.threadTextAi]}>Typing…</Text>
+            </View>
+          )}
+        </ScrollView>
 
         <View style={styles.inputContainer}>
           <TextInput
@@ -182,20 +224,36 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     fontFamily: 'Manrope-Bold',
   },
-  messageBubble: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  chatThread: {
+    maxHeight: 220,
+    marginBottom: 16,
+  },
+  threadBubble: {
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    padding: 12,
+    marginBottom: 8,
+    maxWidth: '85%',
+  },
+  threadBubbleAi: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignSelf: 'flex-start',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
-  messageText: {
+  threadBubbleUser: {
+    backgroundColor: '#0050d4',
+    alignSelf: 'flex-end',
+  },
+  threadText: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
     lineHeight: 19,
-    fontStyle: 'italic',
     fontFamily: 'Manrope-Medium',
+  },
+  threadTextAi: {
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  threadTextUser: {
+    color: '#ffffff',
   },
   inputContainer: {
     flexDirection: 'row',

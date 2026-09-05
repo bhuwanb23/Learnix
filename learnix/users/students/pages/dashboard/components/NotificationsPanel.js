@@ -7,7 +7,7 @@ import {
   Animated,
 } from 'react-native';
 
-export default function NotificationsPanel({ notifications }) {
+export default function NotificationsPanel({ notifications, navigation }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
@@ -35,9 +35,9 @@ export default function NotificationsPanel({ notifications }) {
     >
       <View style={styles.header}>
         <Text style={styles.title}>Alerts & Notifications</Text>
-        {/* <TouchableOpacity>
-          <Text style={styles.markReadButton}>Mark all as read</Text>
-        </TouchableOpacity> */}
+        <TouchableOpacity onPress={() => navigation?.navigate?.('Notifications')} activeOpacity={0.7}>
+          <Text style={styles.markReadButton}>View All</Text>
+        </TouchableOpacity>
       </View>
       
       <View style={styles.notificationsList}>
@@ -46,6 +46,7 @@ export default function NotificationsPanel({ notifications }) {
             key={notification.id}
             notification={notification}
             delay={index * 100}
+            onPress={() => navigation?.navigate?.('Notifications')}
           />
         ))}
       </View>
@@ -53,7 +54,7 @@ export default function NotificationsPanel({ notifications }) {
   );
 }
 
-function NotificationItem({ notification, delay = 0 }) {
+function NotificationItem({ notification, delay = 0, onPress }) {
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
@@ -87,6 +88,7 @@ function NotificationItem({ notification, delay = 0 }) {
         }
       ]}
     >
+      <TouchableOpacity style={styles.cardTouchable} onPress={onPress} activeOpacity={0.8}>
       <Text style={[styles.icon, { color: notification.iconColor }]}>
         {getIconEmoji(notification.icon)}
       </Text>
@@ -94,6 +96,7 @@ function NotificationItem({ notification, delay = 0 }) {
         <Text style={styles.notificationTitle}>{notification.title}</Text>
         <Text style={styles.notificationMessage}>{notification.message}</Text>
       </View>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
@@ -147,6 +150,11 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
     alignItems: 'flex-start',
+  },
+  cardTouchable: {
+    flexDirection: 'row',
+    gap: 16,
+    flex: 1,
   },
   icon: {
     fontSize: 18,

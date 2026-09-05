@@ -52,9 +52,8 @@ export default function Dashboard({ navigation }) {
     }
   };
 
-  const handleAIMessage = (message) => {
-    console.log('AI Message sent:', message);
-    // Handle AI message sending
+  const handleAIMessage = () => {
+    // AI reply is simulated inside AIStudyBuddyChat; nothing needed here.
   };
 
   return (
@@ -88,13 +87,13 @@ export default function Dashboard({ navigation }) {
         <AttendanceWidget attendanceData={dashboardData.attendance} />
 
         {/* Schedule Section */}
-        <ScheduleSection scheduleData={dashboardData.schedule} />
+        <ScheduleSection scheduleData={dashboardData.schedule} navigation={navigation} />
 
         {/* Performance Heatmap */}
         <PerformanceHeatmap performanceData={dashboardData.performance} />
 
         {/* Notifications Panel */}
-        <NotificationsPanel notifications={dashboardData.notifications} />
+        <NotificationsPanel notifications={dashboardData.notifications} navigation={navigation} />
 
         {/* AI Study Buddy Chat */}
         <AIStudyBuddyChat
