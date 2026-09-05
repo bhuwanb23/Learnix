@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NOTES_COLORS } from '../constants/notesData';
@@ -26,10 +27,10 @@ export default function NotesHeader({ title, onBack }) {
       </View>
 
       <View style={styles.rightSection}>
-        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={() => Alert.alert('Search', 'Search within these notes is coming soon.')}>
           <Ionicons name="search" size={22} color={NOTES_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={() => Alert.alert('Options', 'Download, share and more options will appear here.')}>
           <Ionicons name="ellipsis-vertical" size={20} color={NOTES_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
       </View>

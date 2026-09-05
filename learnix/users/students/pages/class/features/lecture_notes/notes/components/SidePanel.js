@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NOTES_COLORS } from '../constants/notesData';
@@ -30,7 +31,12 @@ export default function SidePanel({ data }) {
         <Text style={styles.cardTitle}>Study Tools</Text>
         <View style={styles.toolsList}>
           {data.studyTools.map((tool, index) => (
-            <TouchableOpacity key={index} style={styles.toolItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={index}
+              style={styles.toolItem}
+              activeOpacity={0.7}
+              onPress={() => Alert.alert(tool.label, `Launching ${tool.label.toLowerCase()} for this topic…`)}
+            >
               <View style={styles.toolLeft}>
                 <Ionicons name={tool.icon} size={20} color={tool.color} />
                 <Text style={styles.toolLabel}>{tool.label}</Text>
