@@ -30,6 +30,7 @@ const roles = [
   { id: 'transport', name: 'Transport', icon: '🚌' },
   { id: 'sports', name: 'Sports & Cultural', icon: '🏆' },
   { id: 'hod', name: 'HOD', icon: '🧑‍🏫' },
+  { id: 'alumni', name: 'Alumni Relations', icon: '🤝' },
 ];
 
 export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {

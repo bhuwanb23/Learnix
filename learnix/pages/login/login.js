@@ -76,6 +76,8 @@ export default function LoginScreen({ navigation }) {
         navigation.navigate('Sports');
       } else if (credentials.role === 'hod') {
         navigation.navigate('HOD');
+      } else if (credentials.role === 'alumni') {
+        navigation.navigate('Alumni');
       } else {
         // For other roles, navigate to main app
         navigation.navigate('Main');
