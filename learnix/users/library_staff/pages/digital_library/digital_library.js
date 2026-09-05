@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
@@ -38,7 +38,7 @@ const resources = [
     format: 'Video',
     size: '24 hrs',
     downloads: 198,
-    color: '#7c3aed',
+    color: '#2563eb',
     icon: 'videocam',
   },
   {
@@ -179,7 +179,12 @@ export default function DigitalLibrary({ navigation }) {
               </View>
               <View style={styles.cardActions}>
                 <Text style={styles.downloadText}>{item.downloads} DLs</Text>
-                <TouchableOpacity style={styles.openBtn} onPress={() => {}}>
+                <TouchableOpacity
+                  style={styles.openBtn}
+                  onPress={() =>
+                    Alert.alert(item.type, `${item.title} — ${item.size} ${item.format}. Streaming link opens for members.`)
+                  }
+                >
                   <Ionicons name="open-outline" size={16} color="#fff" />
                 </TouchableOpacity>
               </View>
@@ -197,7 +202,12 @@ export default function DigitalLibrary({ navigation }) {
               Add e-books, journals, video courses or audiobooks to the digital library for students
               and staff.
             </Text>
-            <TouchableOpacity style={styles.uploadBtn} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.uploadBtn}
+              onPress={() =>
+                Alert.alert('Upload Resource', 'File picker opens here — PDF, EPUB, MP4, MP3 up to 200 MB.')
+              }
+            >
               <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
               <Text style={styles.uploadBtnText}>Upload Resource</Text>
             </TouchableOpacity>
