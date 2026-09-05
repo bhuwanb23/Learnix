@@ -68,7 +68,7 @@ export default function TimetableGenerator({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.iconContainer}>
-            <Ionicons name="robot-outline" size={20} color="#7c3aed" />
+            <Ionicons name="sparkles-outline" size={20} color="#7c3aed" />
           </View>
           <View>
             <Text style={styles.title}>Auto Timetable Generator</Text>

@@ -21,7 +21,7 @@ export default function AICheatingDetection({
   const renderDetectionCard = (stat, index) => (
     <View key={index} style={[styles.detectionCard, { backgroundColor: stat.bgColor }]}>
       <View style={styles.detectionHeader}>
-        <Ionicons name="clock-outline" size={16} color={stat.color} />
+        <Ionicons name="time-outline" size={16} color={stat.color} />
         <Text style={[styles.detectionTitle, { color: stat.color }]}>
           {stat.label}
         </Text>
