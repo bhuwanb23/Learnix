@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { UNIT_COLORS } from '../constants/unitListData';
@@ -25,7 +26,7 @@ export default function UnitListHeader({ onBack }) {
         <Text style={styles.title}>Subject Details</Text>
       </View>
 
-      <TouchableOpacity style={styles.menuButton} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.menuButton} activeOpacity={0.7} onPress={() => Alert.alert('Options', 'Subject options will appear here.')}>
         <Ionicons name="ellipsis-vertical" size={20} color={UNIT_COLORS.onSurfaceVariant} />
       </TouchableOpacity>
     </View>

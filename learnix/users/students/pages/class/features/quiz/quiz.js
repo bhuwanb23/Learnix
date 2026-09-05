@@ -136,7 +136,8 @@ export default function QuizPage({ navigation }) {
       <UnitDirectoryPage 
         navigation={{ 
           goBack: navigateBackToSubjects,
-          navigateToTopic 
+          navigateToTopic,
+          navigateToForm
         }}
         route={{ params: { subject: selectedSubject } }}
       />
