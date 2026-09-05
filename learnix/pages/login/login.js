@@ -60,6 +60,8 @@ export default function LoginScreen({ navigation }) {
         navigation.navigate('Teacher');
       } else if (credentials.role === 'admin') {
         navigation.navigate('Admin');
+      } else if (credentials.role === 'placement') {
+        navigation.navigate('Placement');
       } else {
         // For other roles, navigate to main app
         navigation.navigate('Main');
