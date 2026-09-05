@@ -72,6 +72,8 @@ export default function LoginScreen({ navigation }) {
         navigation.navigate('Hostel');
       } else if (credentials.role === 'transport') {
         navigation.navigate('Transport');
+      } else if (credentials.role === 'sports') {
+        navigation.navigate('Sports');
       } else {
         // For other roles, navigate to main app
         navigation.navigate('Main');

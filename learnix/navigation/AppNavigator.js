@@ -13,6 +13,7 @@ import AccountsScreen from '../users/accounts_finance/accounts_finance';
 import LibraryStaffScreen from '../users/library_staff/library_staff';
 import HostelScreen from '../users/hostel/hostel';
 import TransportScreen from '../users/transport/transport';
+import SportsScreen from '../users/sports/sports';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -53,6 +54,8 @@ export default function AppNavigator() {
         return <HostelScreen navigation={{ navigate }} />;
       case 'Transport':
         return <TransportScreen navigation={{ navigate }} />;
+      case 'Sports':
+        return <SportsScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:
