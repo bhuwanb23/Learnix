@@ -21,14 +21,15 @@ export default function UnitDirectoryPage({ navigation, route }) {
   };
 
   const handleUnitPress = (unit) => {
-    console.log('Unit pressed:', unit.title);
     if (navigation?.navigateToTopic) {
       navigation.navigateToTopic(unit);
     }
   };
 
   const handleFullTest = () => {
-    console.log('Full subject test started');
+    if (navigation?.navigateToForm) {
+      navigation.navigateToForm({ id: 'full-test', title: 'Full Subject Test' });
+    }
   };
 
   return (
@@ -54,8 +55,8 @@ export default function UnitDirectoryPage({ navigation, route }) {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Hero Section */}
-        <HeroBanner 
-          subject={SUBJECT_DETAIL_DATA} 
+        <HeroBanner
+          subject={SUBJECT_DETAIL_DATA}
           onPress={handleFullTest}
         />
 

@@ -20,7 +20,6 @@ export default function TopicDirectoryPage({ navigation, route }) {
   };
 
   const handleTopicPress = (topic) => {
-    console.log('Topic pressed:', topic.title);
     if (navigation?.navigateToForm) {
       navigation.navigateToForm(topic);
     }

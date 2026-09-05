@@ -6,6 +6,7 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SYLLABUS_TRACKER_COLORS, ACADEMIC_DATA, SUBJECTS_DATA, MILESTONE_DATA } from './constants/syllabusData';
@@ -27,7 +28,7 @@ export default function SubjectListPage({ navigation }) {
   };
 
   const handleReviewProgress = () => {
-    console.log('Review progress pressed');
+    Alert.alert('Milestone Review', 'Your upcoming milestones and deadlines will open here.');
   };
 
   return (
