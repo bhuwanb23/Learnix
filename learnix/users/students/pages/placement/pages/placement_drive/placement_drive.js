@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -74,6 +75,29 @@ const drives = [
 
 export default function PlacementDrive({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  const filteredDrives = drives.filter((drive) =>
+    drive.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    drive.role.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleDrivePress = (drive) => {
+    if (navigation) {
+      navigation.navigate('JobDetails', {
+        job: {
+          company: drive.company,
+          title: drive.role,
+          location: drive.location,
+          type: drive.buttonText,
+          pkg: 'As per company standards',
+          eligibility: 'Open to all eligible students',
+          deadline: drive.date,
+          isUrgent: drive.statusType === 'closing',
+        },
+      });
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -115,7 +139,14 @@ export default function PlacementDrive({ navigation }) {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            activeOpacity={0.7}
+            onPress={() => {
+              setShowFilters(!showFilters);
+              Alert.alert('Filter', showFilters ? 'Filters hidden.' : 'Filter options will appear here.');
+            }}
+          >
             <Ionicons name="tune-outline" size={18} color={COLORS.textPrimary} />
             <Text style={styles.filterButtonText}>Filter</Text>
           </TouchableOpacity>
@@ -123,8 +154,8 @@ export default function PlacementDrive({ navigation }) {
 
         {/* Drives Grid */}
         <View style={styles.drivesGrid}>
-          {drives.map((drive) => (
-            <DriveCard key={drive.id} drive={drive} />
+          {filteredDrives.map((drive) => (
+            <DriveCard key={drive.id} drive={drive} onPress={() => handleDrivePress(drive)} />
           ))}
         </View>
 

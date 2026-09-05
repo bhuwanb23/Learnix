@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
@@ -18,7 +19,7 @@ export default function ResumeUpload() {
           <Text style={styles.sectionTitle}>Resume Upload</Text>
         </View>
 
-        <TouchableOpacity style={styles.uploadArea} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.uploadArea} activeOpacity={0.7} onPress={() => Alert.alert('Upload Resume', 'File picker will open here to choose your resume (PDF, DOCX up to 10MB).')}>
           <View style={styles.uploadIconContainer}>
             <MaterialIcons name="description" size={40} color="#a23800" />
           </View>

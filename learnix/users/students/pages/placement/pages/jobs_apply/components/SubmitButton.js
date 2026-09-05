@@ -9,7 +9,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SubmitButton({ isDisabled, onPress }) {
   const handlePress = () => {
-    console.log('SubmitButton pressed, isDisabled:', isDisabled);
     if (!isDisabled && onPress) {
       onPress();
     }
