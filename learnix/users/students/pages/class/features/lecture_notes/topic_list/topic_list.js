@@ -16,13 +16,11 @@ export default function TopicListPage({ navigation, unit }) {
   const [selectedTopic, setSelectedTopic] = useState(null);
 
   const navigateToNotes = (topic) => {
-    console.log('Navigating to notes for:', topic.title);
     setSelectedTopic(topic);
     setCurrentPage('notes');
   };
 
   const navigateBackToTopics = () => {
-    console.log('Navigating back to topics');
     setCurrentPage('topics');
     setSelectedTopic(null);
   };
@@ -35,7 +33,6 @@ export default function TopicListPage({ navigation, unit }) {
   };
 
   const handleTopicPress = (topic) => {
-    console.log('Topic pressed:', topic.title);
     if (navigation?.navigateToNotes) {
       navigation.navigateToNotes(topic);
     } else {

@@ -40,7 +40,6 @@ export default function TopicCard({ topic, onPress, navigation }) {
         style={styles.openButton} 
         activeOpacity={0.7}
         onPress={() => {
-          console.log('Open Notes pressed for:', topic.title);
           if (navigation?.navigateToNotes) {
             navigation.navigateToNotes(topic);
           } else if (onPress) {
