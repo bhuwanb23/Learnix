@@ -27,6 +27,7 @@ const roles = [
   { id: 'accounts', name: 'Accounts & Finance', icon: '💰' },
   { id: 'library', name: 'Library Staff', icon: '📚' },
   { id: 'hostel', name: 'Hostel', icon: '🏠' },
+  { id: 'transport', name: 'Transport', icon: '🚌' },
 ];
 
 export default function LoginCard({ onLogin, onForgotPassword, isLoading }) {

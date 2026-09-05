@@ -12,6 +12,7 @@ import ExamCellScreen from '../users/exam_cell/exam_cell';
 import AccountsScreen from '../users/accounts_finance/accounts_finance';
 import LibraryStaffScreen from '../users/library_staff/library_staff';
 import HostelScreen from '../users/hostel/hostel';
+import TransportScreen from '../users/transport/transport';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -50,6 +51,8 @@ export default function AppNavigator() {
         return <LibraryStaffScreen navigation={{ navigate }} />;
       case 'Hostel':
         return <HostelScreen navigation={{ navigate }} />;
+      case 'Transport':
+        return <TransportScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:
