@@ -9,7 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 // Import theme
-import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 
 export default function AdminHeader({
   title,
@@ -27,7 +27,7 @@ export default function AdminHeader({
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#7c3aed" />
+      <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
 
       {/* Top Section */}
       <View style={styles.topSection}>
@@ -40,7 +40,7 @@ export default function AdminHeader({
                 onPress={onBackPress}
                 activeOpacity={0.7}
               >
-                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+                <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
               </TouchableOpacity>
               <View style={styles.titleSection}>
                 <Ionicons name={icon} size={18} color="#FFFFFF" />
@@ -77,12 +77,12 @@ export default function AdminHeader({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#7c3aed',
-    paddingHorizontal: SPACING.lg,
+    backgroundColor: '#2563eb',
+    paddingHorizontal: 24,
     paddingTop: SPACING.xs,
-    paddingBottom: SPACING.sm,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#6d28d9',
+    borderBottomColor: '#1d4ed8',
   },
   topSection: {
     flexDirection: 'row',
@@ -93,18 +93,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: 10,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 1,
+    marginBottom: 4,
+    letterSpacing: 0.5,
     fontFamily: 'Manrope-Medium',
-    letterSpacing: 0.2,
   },
   adminName: {
-    fontSize: 22,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 24,
+    fontWeight: '800',
     color: '#FFFFFF',
+    letterSpacing: -0.3,
     fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: 0.3,
   },
   headerActions: {
     flexDirection: 'row',
@@ -112,12 +112,12 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     position: 'relative',
-    padding: SPACING.xs,
+    padding: 8,
   },
   notificationBadge: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: 4,
+    right: 4,
     backgroundColor: '#EF4444',
     borderRadius: BORDER_RADIUS.full,
     minWidth: 18,
@@ -125,14 +125,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#7c3aed',
+    borderColor: '#2563eb',
   },
   badgeText: {
-    fontSize: 9,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 10,
+    fontWeight: '700',
     color: '#FFFFFF',
-    fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: 0.1,
+    fontFamily: 'Manrope-Bold',
   },
   subScreenHeader: {
     flexDirection: 'row',
@@ -142,6 +141,12 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: SPACING.md,
     padding: SPACING.xs,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: BORDER_RADIUS.lg,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   titleSection: {
     flexDirection: 'row',
@@ -154,7 +159,7 @@ const styles = StyleSheet.create({
     fontWeight: TYPOGRAPHY.fontWeight.bold,
     color: '#FFFFFF',
     fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
     flex: 1,
   },
-});
+});

@@ -87,7 +87,7 @@ export default function AdminBottomNavbar({ activeTab, onTabChange }) {
             onPress={() => onTabChange(item.id)}
             activeOpacity={0.8}
           >
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.iconContainer,
                 { transform: [{ scale: scaleAnimations[index] }] }
@@ -95,10 +95,18 @@ export default function AdminBottomNavbar({ activeTab, onTabChange }) {
             >
               <Ionicons
                 name={activeTab === item.id ? item.activeIcon : item.icon}
-                size={18}
-                color={activeTab === item.id ? '#7c3aed' : 'rgba(255, 255, 255, 0.7)'}
+                size={20}
+                color={activeTab === item.id ? '#2563eb' : 'rgba(255, 255, 255, 0.75)'}
               />
             </Animated.View>
+            <Text
+              style={[
+                styles.label,
+                activeTab === item.id && styles.activeLabel,
+              ]}
+            >
+              {item.label}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -108,21 +116,21 @@ export default function AdminBottomNavbar({ activeTab, onTabChange }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: '#6d28d9',
+    borderTopColor: '#e2e8f0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 8,
   },
   navbar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.sm + 4,
   },
   navItem: {
@@ -130,21 +138,26 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
     borderRadius: 20,
-    minHeight: 40,
-    minWidth: 40,
+    minWidth: 56,
     justifyContent: 'center',
-    marginHorizontal: SPACING.xs,
   },
   activeNavItem: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    backgroundColor: '#eff6ff',
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 2,
   },
-});
+  label: {
+    fontSize: 9,
+    fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
+    color: '#94a3b8',
+    marginTop: 2,
+  },
+  activeLabel: {
+    color: '#2563eb',
+    fontFamily: 'Manrope-Bold',
+  },
+});

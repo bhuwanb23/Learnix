@@ -12,7 +12,7 @@ export const STUDENTS = [
     attendance: 92,
     cgpa: 8.4,
     status: 'Active',
-    avatarColor: '#7c3aed',
+    avatarColor: '#2563eb',
   },
   {
     id: 'STU002',
@@ -87,7 +87,7 @@ export const STUDENTS = [
     attendance: 97,
     cgpa: 9.1,
     status: 'Active',
-    avatarColor: '#7c3aed',
+    avatarColor: '#2563eb',
   },
   {
     id: 'STU007',

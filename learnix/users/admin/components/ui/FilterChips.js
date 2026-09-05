@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { SPACING } from '../../../../constants/theme';
 
 export default function FilterChips({ options, selected, onSelect }) {
   return (
@@ -38,26 +38,35 @@ export default function FilterChips({ options, selected, onSelect }) {
 
 const styles = StyleSheet.create({
   scroll: {
-    marginBottom: SPACING.md,
+    marginBottom: 16,
     flexGrow: 0,
   },
   content: {
     paddingRight: SPACING.md,
   },
   chip: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 8,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 9999,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.25)',
     marginRight: SPACING.sm,
   },
   activeChip: {
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
+    borderColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   chipText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: '#475569',
+    fontSize: 12,
+    color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeChipText: {
     color: '#ffffff',

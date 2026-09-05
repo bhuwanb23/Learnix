@@ -7,24 +7,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { TYPOGRAPHY, SPACING } from '../../../../constants/theme';
 
 export default function ListRow({
   icon,
-  iconColor = '#7c3aed',
+  iconColor = '#2563eb',
   title,
   subtitle,
   right,
   onPress,
   chevron = true,
   badge,
-  badgeColor = '#7c3aed',
+  badgeColor = '#2563eb',
 }) {
   const renderRight = () => {
     if (right) return right;
     if (badge) {
       return (
-        <View style={[styles.badge, { backgroundColor: badgeColor + '1A' }]}>
+        <View style={[styles.badge, { backgroundColor: badgeColor + '14' }]}>
           <Text style={[styles.badgeText, { color: badgeColor }]}>{badge}</Text>
         </View>
       );
@@ -43,7 +43,7 @@ export default function ListRow({
       disabled={!onPress}
     >
       {icon ? (
-        <View style={[styles.iconContainer, { backgroundColor: iconColor + '1A' }]}>
+        <View style={[styles.iconContainer, { backgroundColor: iconColor + '14' }]}>
           <Ionicons name={icon} size={18} color={iconColor} />
         </View>
       ) : null}
@@ -61,15 +61,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    marginBottom: SPACING.sm,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   iconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -79,25 +86,25 @@ const styles = StyleSheet.create({
     marginRight: SPACING.sm,
   },
   title: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   subtitle: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-Regular',
     marginTop: 2,
   },
   badge: {
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: 9999,
   },
   badgeText: {
     fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
 });

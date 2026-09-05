@@ -92,7 +92,7 @@ export default function AssignmentsModule({ navigation }) {
               onPress={() => handleGrade(submission)}
               activeOpacity={0.8}
             >
-              <View style={[styles.avatar, { backgroundColor: submission.color + '1A' }]}>
+              <View style={[styles.avatar, { backgroundColor: submission.color + '14' }]}>
                 <Text style={[styles.avatarText, { color: submission.color }]}>{submission.student.charAt(0)}</Text>
               </View>
               <View style={styles.submissionInfo}>
@@ -140,7 +140,7 @@ export default function AssignmentsModule({ navigation }) {
                   onPress={() => handlePlagiarismAction(caseItem, 'view')}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="eye-outline" size={14} color="#7c3aed" />
+                  <Ionicons name="eye-outline" size={14} color="#2563eb" />
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.actionBtn, styles.dismissBtn]}
@@ -161,11 +161,12 @@ export default function AssignmentsModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
@@ -175,10 +176,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -187,24 +190,36 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   submissionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   avatar: {
     width: 40,
@@ -265,10 +280,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   similarityCircle: {
     width: 48,
@@ -318,7 +339,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewBtn: {
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
   },
   dismissBtn: {
     backgroundColor: '#0596691A',

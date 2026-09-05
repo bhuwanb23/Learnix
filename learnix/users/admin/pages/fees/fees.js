@@ -89,7 +89,7 @@ export default function FeesModule({ navigation }) {
               activeOpacity={0.8}
               onPress={() => Alert.alert(col.student, `${col.program}\n${col.amount} via ${col.method} • ${col.date}`)}
             >
-              <View style={[styles.colAvatar, { backgroundColor: col.color + '1A' }]}>
+              <View style={[styles.colAvatar, { backgroundColor: col.color + '14' }]}>
                 <Text style={[styles.colInitial, { color: col.color }]}>{col.student.charAt(0)}</Text>
               </View>
               <View style={styles.colInfo}>
@@ -114,7 +114,7 @@ export default function FeesModule({ navigation }) {
           <SectionHeader title="Fee Defaulters" actionLabel="Remind All" actionIcon="megaphone" onAction={() => Alert.alert('Reminders Sent', 'Dues reminders sent to all 86 defaulters.')} />
           {FEE_DUES.map((due) => (
             <View key={due.id} style={styles.dueCard}>
-              <View style={[styles.dueAvatar, { backgroundColor: due.color + '1A' }]}>
+              <View style={[styles.dueAvatar, { backgroundColor: due.color + '14' }]}>
                 <Text style={[styles.dueInitial, { color: due.color }]}>{due.student.charAt(0)}</Text>
               </View>
               <View style={styles.dueInfo}>
@@ -149,7 +149,7 @@ export default function FeesModule({ navigation }) {
               activeOpacity={0.8}
               onPress={() => Alert.alert(fee.program, `Tuition: ${fee.tuition}\nOther fees: ${fee.other}\nTotal: ${fee.total}`)}
             >
-              <View style={[styles.structureIcon, { backgroundColor: fee.color + '1A' }]}>
+              <View style={[styles.structureIcon, { backgroundColor: fee.color + '14' }]}>
                 <Ionicons name="school" size={18} color={fee.color} />
               </View>
               <View style={styles.structureInfo}>
@@ -168,11 +168,12 @@ export default function FeesModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
@@ -182,10 +183,16 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -206,7 +213,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -223,10 +230,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -235,24 +244,36 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   collectionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   colAvatar: {
     width: 38,
@@ -306,10 +327,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   dueAvatar: {
     width: 38,
@@ -359,7 +386,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -367,10 +394,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   structureIcon: {
     width: 38,
@@ -398,7 +431,7 @@ const styles = StyleSheet.create({
   structureTotal: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-Bold',
   },
 });

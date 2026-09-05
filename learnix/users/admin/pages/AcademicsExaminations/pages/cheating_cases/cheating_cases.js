@@ -114,7 +114,7 @@ export default function CheatingCases({ alerts, onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#7c3aed" />
+            <Ionicons name="arrow-back" size={22} color="#2563eb" />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Cheating Cases</Text>
@@ -149,7 +149,7 @@ export default function CheatingCases({ alerts, onBack }) {
                   onPress={() => handleAction(alert, 'review')}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="search-outline" size={14} color="#7c3aed" />
+                  <Ionicons name="search-outline" size={14} color="#2563eb" />
                   <Text style={styles.reviewBtnText}>Review Evidence</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -172,11 +172,12 @@ export default function CheatingCases({ alerts, onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerRow: {
     flexDirection: 'row',
@@ -187,7 +188,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -209,11 +210,17 @@ const styles = StyleSheet.create({
   },
   alertCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     borderLeftWidth: 4,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   alertHeader: {
     flexDirection: 'row',
@@ -285,11 +292,11 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   reviewBtn: {
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
   },
   reviewBtnText: {
     fontSize: 11,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
   },
   resolveBtn: {

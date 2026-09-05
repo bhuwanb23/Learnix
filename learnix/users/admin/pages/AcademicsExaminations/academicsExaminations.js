@@ -120,8 +120,8 @@ export default function AcademicsExaminations({ navigation }) {
           <RefreshControl
             refreshing={isLoading}
             onRefresh={handleRefreshData}
-            colors={['#7c3aed']}
-            tintColor="#7c3aed"
+            colors={['#2563eb']}
+            tintColor="#2563eb"
           />
         }
       >
@@ -176,16 +176,17 @@ export default function AcademicsExaminations({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   section: {
-    marginBottom: SPACING.md,
+    marginBottom: 24,
   },
 });

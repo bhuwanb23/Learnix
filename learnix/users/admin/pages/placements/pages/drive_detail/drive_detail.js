@@ -34,7 +34,7 @@ export default function DriveDetail({ drive, onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#7c3aed" />
+            <Ionicons name="arrow-back" size={22} color="#2563eb" />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>{drive.company} Drive</Text>
@@ -43,7 +43,7 @@ export default function DriveDetail({ drive, onBack }) {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={[styles.companyIcon, { backgroundColor: drive.color + '1A' }]}>
+          <View style={[styles.companyIcon, { backgroundColor: drive.color + '14' }]}>
             <Text style={[styles.companyInitial, { color: drive.color }]}>{drive.company.charAt(0)}</Text>
           </View>
           <Text style={styles.companyName}>{drive.company}</Text>
@@ -54,8 +54,8 @@ export default function DriveDetail({ drive, onBack }) {
               <Text style={[styles.badgeText, { color: '#059669' }]}>{drive.package}</Text>
             </View>
             <View style={styles.badge}>
-              <Ionicons name="calendar-outline" size={12} color="#7c3aed" />
-              <Text style={[styles.badgeText, { color: '#7c3aed' }]}>{drive.date}</Text>
+              <Ionicons name="calendar-outline" size={12} color="#2563eb" />
+              <Text style={[styles.badgeText, { color: '#2563eb' }]}>{drive.date}</Text>
             </View>
             <View style={styles.badge}>
               <Ionicons name="videocam-outline" size={12} color="#d97706" />
@@ -131,8 +131,8 @@ export default function DriveDetail({ drive, onBack }) {
                 activeOpacity={0.8}
                 onPress={() => Alert.alert(name, `CSE-2${i + 1}-00${i + 1}\nCGPA: ${(8.1 + i * 0.2).toFixed(1)}\nApplied: 3 days ago`)}
               >
-                <View style={[styles.appAvatar, { backgroundColor: ['#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2'][i] + '1A' }]}>
-                  <Text style={[styles.appInitial, { color: ['#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2'][i] }]}>
+                <View style={[styles.appAvatar, { backgroundColor: ['#2563eb', '#059669', '#d97706', '#dc2626', '#0891b2'][i] + '14' }]}>
+                  <Text style={[styles.appInitial, { color: ['#2563eb', '#059669', '#d97706', '#dc2626', '#0891b2'][i] }]}>
                     {name.split(' ').map((w) => w[0]).join('')}
                   </Text>
                 </View>
@@ -153,11 +153,12 @@ export default function DriveDetail({ drive, onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerRow: {
     flexDirection: 'row',
@@ -168,7 +169,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -190,11 +191,17 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.lg,
     alignItems: 'center',
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   companyIcon: {
     width: 56,
@@ -233,7 +240,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
   },
   badgeText: {
     fontSize: 10,
@@ -248,10 +255,16 @@ const styles = StyleSheet.create({
   statBox: {
     flex: 1,
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     alignItems: 'center',
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   statValue: {
     fontSize: TYPOGRAPHY.fontSize.lg,
@@ -267,10 +280,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -279,24 +294,36 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   stepCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   stepNumber: {
     width: 36,
@@ -340,10 +367,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   appAvatar: {
     width: 38,

@@ -127,7 +127,7 @@ export default function AttendanceModule({ navigation }) {
               activeOpacity={0.8}
               onPress={() => Alert.alert(cls.name, `${cls.present}/${cls.students} present today`)}
             >
-              <View style={[styles.classIcon, { backgroundColor: cls.color + '1A' }]}>
+              <View style={[styles.classIcon, { backgroundColor: cls.color + '14' }]}>
                 <Ionicons name="people" size={18} color={cls.color} />
               </View>
               <View style={styles.classInfo}>
@@ -148,7 +148,7 @@ export default function AttendanceModule({ navigation }) {
           <SectionHeader title="Frequent Absentees" actionLabel="Send All Notices" actionIcon="megaphone" onAction={() => Alert.alert('Notices Sent', 'Warning notices sent to all frequent absentees.')} />
           {RECENT_ABSENT.map((student) => (
             <View key={student.id} style={styles.absentCard}>
-              <View style={[styles.absentAvatar, { backgroundColor: student.color + '1A' }]}>
+              <View style={[styles.absentAvatar, { backgroundColor: student.color + '14' }]}>
                 <Text style={[styles.absentInitial, { color: student.color }]}>{student.name.charAt(0)}</Text>
               </View>
               <View style={styles.absentInfo}>
@@ -176,11 +176,12 @@ export default function AttendanceModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
@@ -190,10 +191,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -202,22 +205,34 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   summaryCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -228,7 +243,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -246,14 +261,20 @@ const styles = StyleSheet.create({
   },
   trendCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     height: 160,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   barColumn: {
     alignItems: 'center',
@@ -264,7 +285,7 @@ const styles = StyleSheet.create({
   barTrack: {
     width: 18,
     height: 100,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     borderRadius: BORDER_RADIUS.sm,
     justifyContent: 'flex-end',
     overflow: 'hidden',
@@ -283,10 +304,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   classIcon: {
     width: 38,
@@ -313,7 +340,7 @@ const styles = StyleSheet.create({
   },
   classTrack: {
     height: 6,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -331,10 +358,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   absentAvatar: {
     width: 38,
@@ -373,7 +406,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: SPACING.sm,

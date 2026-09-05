@@ -7,8 +7,8 @@ export const QUICK_STATS = [
     value: '12',
     subtitle: 'This Week',
     icon: 'calendar-check',
-    gradient: ['#7c3aed', '#8b5cf6'],
-    bgColor: '#7c3aed',
+    gradient: ['#2563eb', '#3b82f6'],
+    bgColor: '#2563eb',
   },
   {
     id: 'pass-rate',
@@ -34,8 +34,8 @@ export const QUICK_STATS = [
     value: '23',
     subtitle: 'Pending',
     icon: 'clock',
-    gradient: ['#8b5cf6', '#7c3aed'],
-    bgColor: '#8b5cf6',
+    gradient: ['#3b82f6', '#2563eb'],
+    bgColor: '#3b82f6',
   },
 ];
 
@@ -168,8 +168,8 @@ export const SMART_SUGGESTIONS = {
   title: 'Smart Suggestions',
   description: 'Optimal exam scheduling available for Dec 15-20. 94% efficiency score.',
   icon: 'lightbulb',
-  color: '#7c3aed',
-  bgColor: '#f3f4f6',
+  color: '#2563eb',
+  bgColor: '#f1f5f9',
   borderColor: '#e5e7eb',
 };
 
@@ -181,7 +181,7 @@ export const RECENT_ACTIVITY = [
     description: 'Exam scheduled for Dec 20, 2024 at 10:00 AM',
     time: '2 hours ago',
     icon: 'calendar-check',
-    color: '#7c3aed',
+    color: '#2563eb',
   },
   {
     id: '2',
@@ -208,6 +208,6 @@ export const RECENT_ACTIVITY = [
     description: 'New timetable generated for Semester 3',
     time: '1 day ago',
     icon: 'robot',
-    color: '#8b5cf6',
+    color: '#3b82f6',
   },
 ];

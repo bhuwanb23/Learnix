@@ -85,7 +85,7 @@ export default function SettingsModule({ navigation }) {
               onPress={() => handleRolePress(role)}
               activeOpacity={0.8}
             >
-              <View style={[styles.roleIcon, { backgroundColor: role.color + '1A' }]}>
+              <View style={[styles.roleIcon, { backgroundColor: role.color + '14' }]}>
                 <Ionicons name="shield-checkmark" size={18} color={role.color} />
               </View>
               <View style={styles.roleInfo}>
@@ -121,7 +121,7 @@ export default function SettingsModule({ navigation }) {
           <View style={styles.yearCard}>
             <View style={styles.yearHeader}>
               <View style={styles.yearIcon}>
-                <Ionicons name="calendar" size={22} color="#7c3aed" />
+                <Ionicons name="calendar" size={22} color="#2563eb" />
               </View>
               <View>
                 <Text style={styles.yearCurrent}>Current: {ACADEMIC_YEAR.current}</Text>
@@ -170,7 +170,7 @@ export default function SettingsModule({ navigation }) {
           {SYSTEM_CONFIG.map((item) => (
             <View key={item.id} style={styles.configCard}>
               <View style={styles.configIcon}>
-                <Ionicons name={item.icon} size={16} color="#7c3aed" />
+                <Ionicons name={item.icon} size={16} color="#2563eb" />
               </View>
               <View style={styles.configInfo}>
                 <Text style={styles.configLabel}>{item.label}</Text>
@@ -200,7 +200,7 @@ export default function SettingsModule({ navigation }) {
                       Alert.alert('Maintenance Mode', 'Student and teacher logins will be temporarily disabled.');
                     }
                   }}
-                  trackColor={{ false: '#e2e8f0', true: '#7c3aed' }}
+                  trackColor={{ false: '#e2e8f0', true: '#2563eb' }}
                   thumbColor="#ffffff"
                 />
               </View>
@@ -215,18 +215,21 @@ export default function SettingsModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -235,15 +238,21 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   hint: {
     fontSize: 11,
@@ -256,10 +265,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   roleIcon: {
     width: 38,
@@ -300,10 +315,16 @@ const styles = StyleSheet.create({
   },
   permissionCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   permissionName: {
     fontSize: TYPOGRAPHY.fontSize.sm,
@@ -321,20 +342,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
   },
   permissionChipText: {
     fontSize: 10,
     fontWeight: TYPOGRAPHY.fontWeight.medium,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-Medium',
   },
   yearCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   yearHeader: {
     flexDirection: 'row',
@@ -345,7 +372,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -362,7 +389,7 @@ const styles = StyleSheet.create({
   },
   yearDivider: {
     height: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     marginVertical: SPACING.md,
   },
   yearRow: {
@@ -386,8 +413,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: SPACING.sm,
-    backgroundColor: '#7c3aed',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#2563eb',
+    borderRadius: 16,
     paddingVertical: 12,
     marginTop: SPACING.md,
   },
@@ -400,11 +427,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     gap: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   prevYearText: {
     flex: 1,
@@ -416,16 +449,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   configIcon: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -447,9 +486,15 @@ const styles = StyleSheet.create({
   },
   toggleCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   toggleRow: {
     flexDirection: 'row',

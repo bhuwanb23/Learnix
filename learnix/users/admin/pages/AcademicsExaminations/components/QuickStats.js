@@ -61,9 +61,14 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minWidth: '48%',
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.xl,
-    marginBottom: SPACING.sm,
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 3,
   },
   statHeader: {
     flexDirection: 'row',

@@ -25,8 +25,6 @@ import EmptyState from '../../components/ui/EmptyState';
 
 import CourseDetail from './pages/course_detail/course_detail';
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
 const TABS = [
   { id: 'departments', label: 'Departments' },
   { id: 'programs', label: 'Programs' },
@@ -62,7 +60,7 @@ export default function CoursesModule({ navigation }) {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       {/* Stats */}
       <View style={styles.statsRow}>
-        <StatCard icon="business" value="5" label="Departments" color="#7c3aed" />
+        <StatCard icon="business" value="5" label="Departments" color="#2563eb" />
         <StatCard icon="school" value="7" label="Programs" color="#059669" />
         <StatCard icon="book" value="156" label="Courses" color="#d97706" />
         <StatCard icon="document-text" value="48" label="Syllabi" color="#0284c7" />
@@ -83,16 +81,16 @@ export default function CoursesModule({ navigation }) {
       </View>
 
       {tab === 'departments' ? (
-        <>
-          <SectionHeader title="Departments" actionLabel="Add Dept" actionIcon="add" onAction={() => Alert.alert('Add Department', 'Create a new academic department.')} />
+        <View style={styles.block}>
+          <SectionHeader title="Departments" subtitle="Academic departments and their heads" actionLabel="Add Dept" actionIcon="add" onAction={() => Alert.alert('Add Department', 'Create a new academic department.')} />
           {DEPARTMENTS.map((dept) => (
             <TouchableOpacity
               key={dept.id}
               style={styles.deptCard}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               onPress={() => Alert.alert(dept.name, `${dept.programs} programs • ${dept.students} students\nHoD: ${dept.hod}`)}
             >
-              <View style={[styles.deptIcon, { backgroundColor: dept.color + '1A' }]}>
+              <View style={[styles.deptIcon, { backgroundColor: dept.color + '14' }]}>
                 <Ionicons name="business" size={20} color={dept.color} />
               </View>
               <View style={styles.deptInfo}>
@@ -105,42 +103,43 @@ export default function CoursesModule({ navigation }) {
               </View>
             </TouchableOpacity>
           ))}
-        </>
+        </View>
       ) : null}
 
       {tab === 'programs' ? (
-        <>
-          <SectionHeader title="Programs" actionLabel="New Program" actionIcon="add" onAction={() => Alert.alert('New Program', 'Create a new academic program.')} />
+        <View style={styles.block}>
+          <SectionHeader title="Programs" subtitle="Degree programs across departments" actionLabel="New Program" actionIcon="add" onAction={() => Alert.alert('New Program', 'Create a new academic program.')} />
           {PROGRAMS.map((program) => (
             <TouchableOpacity
               key={program.id}
               style={styles.programCard}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               onPress={() => Alert.alert(program.name, `${program.type} • ${program.duration}\n${program.semesters} semesters • ${program.students} students`)}
             >
-              <View style={[styles.programIcon, { backgroundColor: program.color + '1A' }]}>
+              <View style={[styles.programIcon, { backgroundColor: program.color + '14' }]}>
                 <Ionicons name="school" size={20} color={program.color} />
               </View>
               <View style={styles.programInfo}>
                 <Text style={styles.programName}>{program.name}</Text>
                 <Text style={styles.programMeta}>{program.department} • {program.duration}</Text>
               </View>
-              <View style={[styles.typeChip, { backgroundColor: program.type === 'Undergraduate' ? '#0596691A' : '#7c3aed1A' }]}>
-                <Text style={[styles.typeText, { color: program.type === 'Undergraduate' ? '#059669' : '#7c3aed' }]}>
+              <View style={[styles.typeChip, { backgroundColor: program.type === 'Undergraduate' ? '#05966914' : '#2563eb14' }]}>
+                <Text style={[styles.typeText, { color: program.type === 'Undergraduate' ? '#059669' : '#2563eb' }]}>
                   {program.type === 'Undergraduate' ? 'UG' : 'PG'}
                 </Text>
               </View>
             </TouchableOpacity>
           ))}
-        </>
+        </View>
       ) : null}
 
       {tab === 'courses' ? (
-        <>
+        <View style={styles.block}>
           <SearchBar value={search} onChangeText={setSearch} placeholder="Search courses by name or code..." />
           <FilterChips options={COURSE_FILTERS} selected={departmentFilter} onSelect={setDepartmentFilter} />
           <SectionHeader
-            title={`Courses (${filteredCourses.length})`}
+            title="Courses"
+            subtitle={`${filteredCourses.length} of ${COURSES.length} shown`}
             actionLabel="Create Course"
             actionIcon="add"
             onAction={() => Alert.alert('Create Course', 'Create a new course with credits and teacher assignment.')}
@@ -153,9 +152,9 @@ export default function CoursesModule({ navigation }) {
                 key={course.id}
                 style={styles.courseCard}
                 onPress={() => setSelectedCourse(course)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
-                <View style={[styles.courseIcon, { backgroundColor: course.color + '1A' }]}>
+                <View style={[styles.courseIcon, { backgroundColor: course.color + '14' }]}>
                   <Text style={[styles.courseCode, { color: course.color }]}>{course.code}</Text>
                 </View>
                 <View style={styles.courseInfo}>
@@ -167,34 +166,34 @@ export default function CoursesModule({ navigation }) {
               </TouchableOpacity>
             ))
           )}
-        </>
+        </View>
       ) : null}
 
       {tab === 'syllabus' ? (
-        <>
-          <SectionHeader title="Syllabus Templates" actionLabel="New Template" actionIcon="add" onAction={() => Alert.alert('New Template', 'Create a syllabus template from a course.')} />
+        <View style={styles.block}>
+          <SectionHeader title="Syllabus Templates" subtitle="Course syllabus blueprints" actionLabel="New Template" actionIcon="add" onAction={() => Alert.alert('New Template', 'Create a syllabus template from a course.')} />
           {SYLLABUS_TEMPLATES.map((template) => (
             <TouchableOpacity
               key={template.id}
               style={styles.templateCard}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               onPress={() => Alert.alert(template.name, `${template.program} • Sem ${template.semester}\n${template.units} units • Updated ${template.updatedAt}`)}
             >
-              <View style={[styles.templateIcon, { backgroundColor: template.color + '1A' }]}>
+              <View style={[styles.templateIcon, { backgroundColor: template.color + '14' }]}>
                 <Ionicons name="document-text" size={20} color={template.color} />
               </View>
               <View style={styles.templateInfo}>
                 <Text style={styles.templateName}>{template.name}</Text>
                 <Text style={styles.templateMeta}>{template.program} • {template.units} units</Text>
               </View>
-              <View style={[styles.templateStatus, { backgroundColor: template.status === 'Approved' ? '#0596691A' : '#d977061A' }]}>
+              <View style={[styles.templateStatus, { backgroundColor: template.status === 'Approved' ? '#05966914' : '#d9770614' }]}>
                 <Text style={[styles.templateStatusText, { color: template.status === 'Approved' ? '#059669' : '#d97706' }]}>
                   {template.status}
                 </Text>
               </View>
             </TouchableOpacity>
           ))}
-        </>
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -203,67 +202,84 @@ export default function CoursesModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: SPACING.md,
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: 10,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
+  },
+  block: {
+    marginTop: 20,
   },
   deptCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   deptIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: 14,
   },
   deptInfo: {
     flex: 1,
   },
   deptName: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   deptMeta: {
     fontSize: 11,
@@ -275,9 +291,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   deptCount: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#0f172a',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1e293b',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   deptCountLabel: {
@@ -289,27 +305,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   programIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: 14,
   },
   programInfo: {
     flex: 1,
   },
   programName: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   programMeta: {
     fontSize: 11,
@@ -318,45 +340,51 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   typeChip: {
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: 9999,
   },
   typeText: {
     fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
   courseCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   courseIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 46,
+    height: 46,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: 14,
   },
   courseCode: {
     fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontWeight: '800',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   courseInfo: {
     flex: 1,
   },
   courseName: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   courseMeta: {
     fontSize: 11,
@@ -366,35 +394,42 @@ const styles = StyleSheet.create({
   },
   courseTeacher: {
     fontSize: 10,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
     marginTop: 1,
   },
   templateCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   templateIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: 14,
   },
   templateInfo: {
     flex: 1,
   },
   templateName: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   templateMeta: {
     fontSize: 11,
@@ -403,13 +438,13 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   templateStatus: {
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: 9999,
   },
   templateStatusText: {
     fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
 });

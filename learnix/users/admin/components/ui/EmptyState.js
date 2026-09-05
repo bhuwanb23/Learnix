@@ -6,13 +6,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { TYPOGRAPHY, SPACING } from '../../../../constants/theme';
+import { SPACING } from '../../../../constants/theme';
 
 export default function EmptyState({ icon = 'file-tray-outline', title, message }) {
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Ionicons name={icon} size={32} color="#94a3b8" />
+        <Ionicons name={icon} size={30} color="#94a3b8" />
       </View>
       <Text style={styles.title}>{title}</Text>
       {message ? <Text style={styles.message}>{message}</Text> : null}
@@ -23,30 +23,30 @@ export default function EmptyState({ icon = 'file-tray-outline', title, message 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: SPACING.xl,
-    paddingHorizontal: SPACING.lg,
+    paddingVertical: 40,
+    paddingHorizontal: 24,
   },
   iconContainer: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: '#f1f5f9',
+    borderRadius: 20,
+    backgroundColor: '#eef1f3',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: 14,
   },
   title: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
+    fontSize: 15,
+    fontWeight: '700',
     color: '#475569',
-    fontFamily: 'Manrope-SemiBold',
+    fontFamily: 'PlusJakartaSans-Bold',
     textAlign: 'center',
   },
   message: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontSize: 12,
     color: '#94a3b8',
     fontFamily: 'Manrope-Regular',
     textAlign: 'center',
-    marginTop: SPACING.xs,
+    marginTop: 4,
   },
 });

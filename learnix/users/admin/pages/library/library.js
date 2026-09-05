@@ -113,7 +113,7 @@ export default function LibraryModule({ navigation }) {
                 onPress={() => handleBookPress(book)}
                 activeOpacity={0.8}
               >
-                <View style={[styles.bookIcon, { backgroundColor: book.color + '1A' }]}>
+                <View style={[styles.bookIcon, { backgroundColor: book.color + '14' }]}>
                   <Ionicons name="book" size={20} color={book.color} />
                 </View>
                 <View style={styles.bookInfo}>
@@ -142,7 +142,7 @@ export default function LibraryModule({ navigation }) {
               onPress={() => handleIssue(issued)}
               activeOpacity={0.8}
             >
-              <View style={[styles.issuedAvatar, { backgroundColor: issued.color + '1A' }]}>
+              <View style={[styles.issuedAvatar, { backgroundColor: issued.color + '14' }]}>
                 <Text style={[styles.issuedInitial, { color: issued.color }]}>{issued.student.charAt(0)}</Text>
               </View>
               <View style={styles.issuedInfo}>
@@ -167,7 +167,7 @@ export default function LibraryModule({ navigation }) {
           <SectionHeader title="Book Requests" />
           {BOOK_REQUESTS.map((request) => (
             <View key={request.id} style={styles.requestCard}>
-              <View style={[styles.requestAvatar, { backgroundColor: request.color + '1A' }]}>
+              <View style={[styles.requestAvatar, { backgroundColor: request.color + '14' }]}>
                 <Text style={[styles.requestInitial, { color: request.color }]}>{request.student.charAt(0)}</Text>
               </View>
               <View style={styles.requestInfo}>
@@ -202,11 +202,12 @@ export default function LibraryModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
@@ -216,10 +217,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -228,24 +231,36 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   bookCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   bookIcon: {
     width: 42,
@@ -291,10 +306,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   issuedAvatar: {
     width: 38,
@@ -344,10 +365,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   requestAvatar: {
     width: 38,

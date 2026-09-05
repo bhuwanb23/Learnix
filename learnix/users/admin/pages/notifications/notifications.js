@@ -17,7 +17,7 @@ const INITIAL_NOTIFICATIONS = [
     description: 'Rahul Sharma (B.Tech CSE, Sem 3) submitted enrollment request',
     time: '2 min ago',
     type: 'person-add',
-    color: '#7c3aed',
+    color: '#2563eb',
     unread: true,
   },
   {
@@ -62,7 +62,7 @@ const INITIAL_NOTIFICATIONS = [
     description: 'Semester 4 final exam timetable is now live',
     time: 'Yesterday',
     type: 'calendar-outline',
-    color: '#7c3aed',
+    color: '#2563eb',
     unread: false,
   },
   {
@@ -110,7 +110,7 @@ export default function NotificationsScreen({ navigation }) {
             onPress={() => handleMarkRead(item.id)}
             activeOpacity={0.8}
           >
-            <View style={[styles.iconContainer, { backgroundColor: item.color + '1A' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: item.color + '14' }]}>
               <Ionicons name={item.type} size={18} color={item.color} />
             </View>
             <View style={styles.cardContent}>
@@ -129,7 +129,7 @@ export default function NotificationsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   topBar: {
     flexDirection: 'row',
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f1f5f9',
   },
   unreadText: {
     fontSize: TYPOGRAPHY.fontSize.xs,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   },
   markAllText: {
     fontSize: TYPOGRAPHY.fontSize.xs,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
   },
   scrollContent: {
@@ -156,13 +156,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
   },
   unreadCard: {
     borderWidth: 1,
-    borderColor: '#ddd6fe',
+    borderColor: '#bfdbfe',
   },
   iconContainer: {
     width: 38,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
     marginLeft: SPACING.sm,
     marginTop: 4,
   },

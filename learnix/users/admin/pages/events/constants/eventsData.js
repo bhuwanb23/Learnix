@@ -1,5 +1,5 @@
 export const EVENT_STATS = [
-  { id: 'upcoming', label: 'Upcoming Events', value: '6', icon: 'calendar', color: '#7c3aed' },
+  { id: 'upcoming', label: 'Upcoming Events', value: '6', icon: 'calendar', color: '#2563eb' },
   { id: 'registrations', label: 'Total Registrations', value: '1,284', icon: 'person-add', color: '#059669' },
   { id: 'pending', label: 'Pending Approvals', value: '3', icon: 'hourglass', color: '#d97706' },
   { id: 'completed', label: 'Completed', value: '24', icon: 'checkmark-done', color: '#0284c7' },
@@ -15,7 +15,7 @@ export const EVENTS = [
     registrations: 420,
     capacity: 600,
     status: 'Approved',
-    color: '#7c3aed',
+    color: '#2563eb',
   },
   {
     id: 'E2',
@@ -64,7 +64,7 @@ export const EVENTS = [
 ];
 
 export const RECENT_REGISTRATIONS = [
-  { id: 'R1', student: 'Aarav Mehta', event: 'Tech Fest 2026', registeredAt: '2 hrs ago', color: '#7c3aed' },
+  { id: 'R1', student: 'Aarav Mehta', event: 'Tech Fest 2026', registeredAt: '2 hrs ago', color: '#2563eb' },
   { id: 'R2', student: 'Priya Sharma', event: 'Annual Sports Meet', registeredAt: '4 hrs ago', color: '#059669' },
   { id: 'R3', student: 'Rahul Verma', event: 'Hackathon: CodeSprint', registeredAt: '5 hrs ago', color: '#dc2626' },
   { id: 'R4', student: 'Sneha Patel', event: 'Cultural Night 2026', registeredAt: 'Yesterday', color: '#d97706' },

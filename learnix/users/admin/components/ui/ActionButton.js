@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { SPACING } from '../../../../constants/theme';
 
 export default function ActionButton({
   label,
@@ -33,17 +33,17 @@ export default function ActionButton({
       ]}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={isPrimary || isDanger ? '#ffffff' : '#7c3aed'} />
+        <ActivityIndicator size="small" color={isPrimary || isDanger ? '#ffffff' : '#0050d4'} />
       ) : (
         <>
           {icon ? (
             <Ionicons
               name={icon}
               size={16}
-              color={isPrimary || isDanger ? '#ffffff' : '#7c3aed'}
+              color={isPrimary || isDanger ? '#ffffff' : '#0050d4'}
             />
           ) : null}
           <Text
@@ -68,33 +68,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.sm,
     paddingVertical: 14,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: BORDER_RADIUS.xl,
+    paddingHorizontal: 20,
+    borderRadius: 14,
   },
   fullWidth: {
     alignSelf: 'stretch',
   },
   primary: {
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#0050d4',
+    shadowColor: '#0050d4',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   danger: {
     backgroundColor: '#dc2626',
   },
   secondary: {
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb14',
   },
   disabled: {
     opacity: 0.5,
   },
   label: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
   primaryLabel: {
     color: '#ffffff',
   },
   secondaryLabel: {
-    color: '#7c3aed',
+    color: '#0050d4',
   },
 });

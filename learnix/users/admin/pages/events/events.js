@@ -79,7 +79,7 @@ export default function EventsModule({ navigation }) {
               onPress={() => setSelectedEvent(event)}
               activeOpacity={0.8}
             >
-              <View style={[styles.eventIcon, { backgroundColor: event.color + '1A' }]}>
+              <View style={[styles.eventIcon, { backgroundColor: event.color + '14' }]}>
                 <Ionicons
                   name={event.category === 'Technical' ? 'hardware-chip' : event.category === 'Sports' ? 'fitness' : event.category === 'Cultural' ? 'musical-notes' : 'people'}
                   size={20}
@@ -124,7 +124,7 @@ export default function EventsModule({ navigation }) {
               activeOpacity={0.8}
               onPress={() => Alert.alert(reg.student, `${reg.event}\nRegistered ${reg.registeredAt}`)}
             >
-              <View style={[styles.regAvatar, { backgroundColor: reg.color + '1A' }]}>
+              <View style={[styles.regAvatar, { backgroundColor: reg.color + '14' }]}>
                 <Text style={[styles.regInitial, { color: reg.color }]}>{reg.student.charAt(0)}</Text>
               </View>
               <View style={styles.regInfo}>
@@ -144,11 +144,12 @@ export default function EventsModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
@@ -158,10 +159,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -170,24 +173,36 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   eventCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   eventIcon: {
     width: 44,
@@ -245,10 +260,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   regAvatar: {
     width: 40,

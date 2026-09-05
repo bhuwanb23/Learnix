@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -90,7 +89,7 @@ export default function EvaluationDashboard({
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
         {/* Progress Gauge */}
         {renderProgressGauge()}
 
@@ -112,7 +111,7 @@ export default function EvaluationDashboard({
             'Pending',
             evaluationStats.pending.toString(),
             '#6b7280',
-            '#f3f4f6'
+            '#f1f5f9'
           )}
         </View>
 
@@ -123,7 +122,7 @@ export default function EvaluationDashboard({
             {subjectProgress.map(renderSubjectProgress)}
           </View>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -176,6 +175,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: '100%',
   },
   gaugeContainer: {
     alignItems: 'center',
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',

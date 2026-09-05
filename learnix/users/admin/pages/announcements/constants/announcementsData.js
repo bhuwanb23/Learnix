@@ -1,5 +1,5 @@
 export const ANNOUNCEMENT_STATS = [
-  { id: 'published', label: 'Published', value: '18', icon: 'megaphone', color: '#7c3aed' },
+  { id: 'published', label: 'Published', value: '18', icon: 'megaphone', color: '#2563eb' },
   { id: 'drafts', label: 'Drafts', value: '4', icon: 'create', color: '#059669' },
   { id: 'pending', label: 'Pending Approval', value: '3', icon: 'hourglass', color: '#d97706' },
   { id: 'reach', label: 'Avg Reach', value: '1,180', icon: 'people', color: '#0284c7' },
@@ -13,7 +13,7 @@ export const PUBLISHED = [
     audience: 'All Students',
     author: 'Examination Cell',
     publishedAt: 'Today, 9:00 AM',
-    color: '#7c3aed',
+    color: '#2563eb',
   },
   {
     id: 'P2',

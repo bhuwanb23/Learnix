@@ -40,7 +40,7 @@ export default function TeacherDetail({ teacher, onBack, onEdit }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Header card */}
         <View style={styles.headerCard}>
-          <View style={[styles.avatar, { backgroundColor: teacher.avatarColor + '1A' }]}>
+          <View style={[styles.avatar, { backgroundColor: teacher.avatarColor + '14' }]}>
             <Text style={[styles.avatarText, { color: teacher.avatarColor }]}>
               {teacher.name.split(' ').map((w) => w[0]).join('')}
             </Text>
@@ -54,7 +54,7 @@ export default function TeacherDetail({ teacher, onBack, onEdit }) {
               </Text>
             </View>
             <View style={styles.statusChip}>
-              <Text style={[styles.statusText, { color: '#7c3aed' }]}>{teacher.subjects.length} Subjects</Text>
+              <Text style={[styles.statusText, { color: '#2563eb' }]}>{teacher.subjects.length} Subjects</Text>
             </View>
           </View>
         </View>
@@ -102,7 +102,7 @@ export default function TeacherDetail({ teacher, onBack, onEdit }) {
                 onPress={() => Alert.alert('Class Details', `${cls.name} — ${cls.subject} (${cls.students} students)`)}
               >
                 <View style={styles.classIcon}>
-                  <Ionicons name="people" size={18} color="#7c3aed" />
+                  <Ionicons name="people" size={18} color="#2563eb" />
                 </View>
                 <View style={styles.classInfo}>
                   <Text style={styles.className}>{cls.name}</Text>
@@ -127,7 +127,7 @@ export default function TeacherDetail({ teacher, onBack, onEdit }) {
                 { label: 'Subjects', value: teacher.subjects.join(', '), icon: 'book-outline' },
               ].map((row) => (
                 <View key={row.label} style={styles.infoRow}>
-                  <Ionicons name={row.icon} size={16} color="#7c3aed" />
+                  <Ionicons name={row.icon} size={16} color="#2563eb" />
                   <Text style={styles.infoLabel}>{row.label}</Text>
                   <Text style={styles.infoValue}>{row.value}</Text>
                 </View>
@@ -166,7 +166,7 @@ export default function TeacherDetail({ teacher, onBack, onEdit }) {
       {/* Bottom actions */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.secondaryBtn} onPress={handleMessage} activeOpacity={0.8}>
-          <Ionicons name="chatbubble-outline" size={18} color="#7c3aed" />
+          <Ionicons name="chatbubble-outline" size={18} color="#2563eb" />
           <Text style={styles.secondaryBtnText}>Message</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.editBtn} onPress={onEdit} activeOpacity={0.8}>
@@ -181,19 +181,26 @@ export default function TeacherDetail({ teacher, onBack, onEdit }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.lg,
     alignItems: 'center',
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   avatar: {
     width: 64,
@@ -229,7 +236,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
   },
   statusText: {
     fontSize: 10,
@@ -238,10 +245,16 @@ const styles = StyleSheet.create({
   },
   workloadCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   workloadHeader: {
     flexDirection: 'row',
@@ -262,7 +275,7 @@ const styles = StyleSheet.create({
   },
   workloadTrack: {
     height: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -278,10 +291,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -290,7 +305,12 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
     fontSize: TYPOGRAPHY.fontSize.xs,
@@ -298,22 +318,28 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-SemiBold',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#2563eb',
   },
   classCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   classIcon: {
     width: 38,
     height: 38,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -329,7 +355,7 @@ const styles = StyleSheet.create({
   },
   classSubject: {
     fontSize: 11,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
     marginTop: 1,
   },
@@ -341,10 +367,16 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   infoRow: {
     flexDirection: 'row',
@@ -367,14 +399,20 @@ const styles = StyleSheet.create({
   },
   attendanceCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     height: 180,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   barColumn: {
     alignItems: 'center',
@@ -391,7 +429,7 @@ const styles = StyleSheet.create({
   barTrack: {
     width: 18,
     height: 100,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     borderRadius: BORDER_RADIUS.sm,
     justifyContent: 'flex-end',
     overflow: 'hidden',
@@ -427,12 +465,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     paddingVertical: 14,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: '#7c3aed1A',
+    borderRadius: 16,
+    backgroundColor: '#2563eb1A',
   },
   secondaryBtnText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
   },
   editBtn: {
@@ -442,8 +480,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     paddingVertical: 14,
-    borderRadius: BORDER_RADIUS.xl,
-    backgroundColor: '#7c3aed',
+    borderRadius: 16,
+    backgroundColor: '#2563eb',
   },
   editBtnText: {
     fontSize: TYPOGRAPHY.fontSize.sm,

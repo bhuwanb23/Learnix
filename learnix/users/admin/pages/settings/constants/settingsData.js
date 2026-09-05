@@ -1,12 +1,12 @@
 export const ROLES = [
-  { id: 'R1', name: 'Super Admin', users: 2, desc: 'Full access to all modules and settings', permissions: 24, color: '#7c3aed' },
+  { id: 'R1', name: 'Super Admin', users: 2, desc: 'Full access to all modules and settings', permissions: 24, color: '#2563eb' },
   { id: 'R2', name: 'Admin', users: 4, desc: 'Manage students, teachers, courses, reports', permissions: 20, color: '#059669' },
   { id: 'R3', name: 'Teacher', users: 89, desc: 'Classes, syllabus, quizzes, assignments, grading', permissions: 12, color: '#d97706' },
   { id: 'R4', name: 'Placement Cell', users: 3, desc: 'Manage drives, companies, applications', permissions: 8, color: '#0284c7' },
   { id: 'R5', name: 'Examination Cell', users: 3, desc: 'Exams, timetable, results, hall tickets', permissions: 9, color: '#dc2626' },
   { id: 'R6', name: 'Library Staff', users: 2, desc: 'Catalog, issues, returns, fines', permissions: 6, color: '#0891b2' },
   { id: 'R7', name: 'Accounts', users: 2, desc: 'Fees, collections, receipts, scholarships', permissions: 7, color: '#dc2626' },
-  { id: 'R8', name: 'Student', users: 1234, desc: 'Classes, assignments, events, placement portal', permissions: 5, color: '#7c3aed' },
+  { id: 'R8', name: 'Student', users: 1234, desc: 'Classes, assignments, events, placement portal', permissions: 5, color: '#2563eb' },
 ];
 
 export const PERMISSION_GROUPS = [

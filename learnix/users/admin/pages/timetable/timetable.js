@@ -57,7 +57,7 @@ export default function TimetableModule({ navigation }) {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       {/* Stats */}
       <View style={styles.statsRow}>
-        <StatCard icon="calendar" value="96" label="Periods / Week" color="#7c3aed" />
+        <StatCard icon="calendar" value="96" label="Periods / Week" color="#2563eb" />
         <StatCard icon="people" value="89" label="Teachers" color="#059669" />
         <StatCard icon="business" value="28" label="Rooms Used" color="#d97706" />
         <StatCard icon="warning" value={CONFLICTS.length} label="Conflicts" color="#dc2626" />
@@ -116,7 +116,7 @@ export default function TimetableModule({ navigation }) {
                 <Text style={styles.periodTeacher}>{period.teacher}</Text>
               </View>
               <View style={styles.roomBox}>
-                <Ionicons name="business" size={14} color="#7c3aed" />
+                <Ionicons name="business" size={14} color="#2563eb" />
                 <Text style={styles.roomText}>{period.room}</Text>
               </View>
             </TouchableOpacity>
@@ -132,7 +132,7 @@ export default function TimetableModule({ navigation }) {
           {TEACHER_ALLOCATION.map((alloc) => (
             <View key={alloc.id} style={styles.allocCard}>
               <View style={styles.allocHeader}>
-                <View style={[styles.allocAvatar, { backgroundColor: alloc.color + '1A' }]}>
+                <View style={[styles.allocAvatar, { backgroundColor: alloc.color + '14' }]}>
                   <Text style={[styles.allocInitial, { color: alloc.color }]}>{alloc.teacher.charAt(0)}</Text>
                 </View>
                 <View style={styles.allocInfo}>
@@ -157,13 +157,13 @@ export default function TimetableModule({ navigation }) {
           <SectionHeader title="Conflict Detection" actionLabel="Resolve All" actionIcon="checkmark-done" onAction={() => Alert.alert('Resolved', 'All conflicts auto-resolved.')} />
           {CONFLICTS.map((conflict) => (
             <View key={conflict.id} style={styles.conflictCard}>
-              <View style={[styles.conflictIcon, { backgroundColor: conflict.color + '1A' }]}>
+              <View style={[styles.conflictIcon, { backgroundColor: conflict.color + '14' }]}>
                 <Ionicons name="warning" size={18} color={conflict.color} />
               </View>
               <View style={styles.conflictInfo}>
                 <View style={styles.conflictHeaderRow}>
                   <Text style={styles.conflictType}>{conflict.type}</Text>
-                  <View style={[styles.severityBadge, { backgroundColor: conflict.color + '1A' }]}>
+                  <View style={[styles.severityBadge, { backgroundColor: conflict.color + '14' }]}>
                     <Text style={[styles.severityText, { color: conflict.color }]}>{conflict.severity}</Text>
                   </View>
                 </View>
@@ -187,11 +187,12 @@ export default function TimetableModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
@@ -201,10 +202,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -213,15 +216,21 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   dayScroll: {
     flexGrow: 0,
@@ -234,11 +243,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.full,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     marginRight: SPACING.sm,
   },
   dayChipActive: {
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
   },
   dayText: {
     fontSize: TYPOGRAPHY.fontSize.xs,
@@ -251,7 +260,7 @@ const styles = StyleSheet.create({
   dayFull: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: SPACING.sm,
   },
@@ -259,10 +268,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   timeBox: {
     width: 64,
@@ -272,7 +287,7 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   timeSub: {
@@ -305,7 +320,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: BORDER_RADIUS.full,
@@ -313,15 +328,21 @@ const styles = StyleSheet.create({
   roomText: {
     fontSize: 11,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
   },
   allocCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   allocHeader: {
     flexDirection: 'row',
@@ -362,7 +383,7 @@ const styles = StyleSheet.create({
   },
   allocTrack: {
     height: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -380,10 +401,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   conflictIcon: {
     width: 38,
@@ -427,7 +454,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: SPACING.sm,

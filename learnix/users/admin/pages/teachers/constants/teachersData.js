@@ -11,7 +11,7 @@ export const TEACHERS = [
     workload: 18,
     maxWorkload: 24,
     status: 'Active',
-    avatarColor: '#7c3aed',
+    avatarColor: '#2563eb',
   },
   {
     id: 'TCH002',
@@ -81,7 +81,7 @@ export const TEACHERS = [
     workload: 15,
     maxWorkload: 24,
     status: 'Active',
-    avatarColor: '#7c3aed',
+    avatarColor: '#2563eb',
   },
   {
     id: 'TCH007',

@@ -41,7 +41,7 @@ export default function ExportReport({ dataType, onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#7c3aed" />
+            <Ionicons name="arrow-back" size={22} color="#2563eb" />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Export Report</Text>
@@ -51,7 +51,7 @@ export default function ExportReport({ dataType, onBack }) {
 
         <View style={styles.reportCard}>
           <View style={styles.reportIcon}>
-            <Ionicons name="analytics" size={22} color="#7c3aed" />
+            <Ionicons name="analytics" size={22} color="#2563eb" />
           </View>
           <Text style={styles.reportTitle}>{report.title}</Text>
           <Text style={styles.reportDesc}>{report.desc}</Text>
@@ -65,14 +65,14 @@ export default function ExportReport({ dataType, onBack }) {
             onPress={() => setFormat(f.id)}
             activeOpacity={0.8}
           >
-            <View style={[styles.formatIcon, { backgroundColor: f.color + '1A' }]}>
+            <View style={[styles.formatIcon, { backgroundColor: f.color + '14' }]}>
               <Ionicons name={f.icon} size={18} color={f.color} />
             </View>
             <Text style={styles.formatLabel}>{f.label}</Text>
             <Ionicons
               name={format === f.id ? 'radio-button-on' : 'radio-button-off'}
               size={20}
-              color={format === f.id ? '#7c3aed' : '#cbd5e1'}
+              color={format === f.id ? '#2563eb' : '#cbd5e1'}
             />
           </TouchableOpacity>
         ))}
@@ -100,11 +100,12 @@ export default function ExportReport({ dataType, onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerRow: {
     flexDirection: 'row',
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -138,16 +139,22 @@ const styles = StyleSheet.create({
   reportCard: {
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   reportIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.sm,
@@ -169,7 +176,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-Bold',
     marginBottom: SPACING.sm,
     marginTop: SPACING.sm,
@@ -178,15 +185,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     borderWidth: 2,
     borderColor: 'transparent',
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   formatCardActive: {
-    borderColor: '#7c3aed',
+    borderColor: '#2563eb',
   },
   formatIcon: {
     width: 36,
@@ -205,10 +218,16 @@ const styles = StyleSheet.create({
   },
   optionsCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.lg,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   optionRow: {
     flexDirection: 'row',

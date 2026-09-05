@@ -39,7 +39,7 @@ export default function EventDetail({ event, onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#7c3aed" />
+            <Ionicons name="arrow-back" size={22} color="#2563eb" />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>{event.name}</Text>
@@ -48,7 +48,7 @@ export default function EventDetail({ event, onBack }) {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={[styles.eventIcon, { backgroundColor: event.color + '1A' }]}>
+          <View style={[styles.eventIcon, { backgroundColor: event.color + '14' }]}>
             <Ionicons name="calendar" size={26} color={event.color} />
           </View>
           <Text style={styles.eventName}>{event.name}</Text>
@@ -114,8 +114,8 @@ export default function EventDetail({ event, onBack }) {
             <SectionHeader title={`Registered Students (${event.registrations})`} actionLabel="Export" actionIcon="download" onAction={() => Alert.alert('Exported', 'Registration list downloaded as Excel.')} />
             {['Aarav Mehta', 'Priya Sharma', 'Ananya Reddy', 'Kabir Joshi', 'Meghna Das', 'Rohan Gupta'].map((name, i) => (
               <View key={name} style={styles.studentRow}>
-                <View style={[styles.studentAvatar, { backgroundColor: ['#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#7c3aed'][i] + '1A' }]}>
-                  <Text style={[styles.studentInitial, { color: ['#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#7c3aed'][i] }]}>
+                <View style={[styles.studentAvatar, { backgroundColor: ['#2563eb', '#059669', '#d97706', '#dc2626', '#0891b2', '#2563eb'][i] + '14' }]}>
+                  <Text style={[styles.studentInitial, { color: ['#2563eb', '#059669', '#d97706', '#dc2626', '#0891b2', '#2563eb'][i] }]}>
                     {name.split(' ').map((w) => w[0]).join('')}
                   </Text>
                 </View>
@@ -136,11 +136,12 @@ export default function EventDetail({ event, onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerRow: {
     flexDirection: 'row',
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -173,11 +174,17 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.lg,
     alignItems: 'center',
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   eventIcon: {
     width: 56,
@@ -207,10 +214,16 @@ const styles = StyleSheet.create({
   },
   capacityCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   capacityHeader: {
     flexDirection: 'row',
@@ -230,7 +243,7 @@ const styles = StyleSheet.create({
   },
   capacityTrack: {
     height: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -246,10 +259,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -258,22 +273,34 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   infoCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   infoRow: {
     flexDirection: 'row',
@@ -300,10 +327,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   studentAvatar: {
     width: 38,

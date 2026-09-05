@@ -7,17 +7,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
-export default function StatCard({ icon, value, label, subtitle, color = '#7c3aed', onPress, compact }) {
+export default function StatCard({ icon, value, label, subtitle, color = '#2563eb', onPress, compact }) {
   const content = (
     <View style={[styles.card, compact && styles.compactCard]}>
-      <View style={[styles.iconContainer, { backgroundColor: color + '1A' }]}>
+      <View style={[styles.iconContainer, { backgroundColor: color + '14' }]}>
         <Ionicons name={icon} size={compact ? 16 : 20} color={color} />
       </View>
       <Text style={[styles.value, compact && styles.compactValue]}>{value}</Text>
       <Text style={styles.label} numberOfLines={1}>{label}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
     </View>
   );
 
@@ -33,45 +31,53 @@ export default function StatCard({ icon, value, label, subtitle, color = '#7c3ae
 const styles = StyleSheet.create({
   wrapper: {
     width: '48%',
-    marginBottom: SPACING.sm,
+    marginBottom: 12,
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    ...SHADOWS.sm,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 2,
   },
   compactCard: {
-    padding: SPACING.sm,
-    borderRadius: BORDER_RADIUS.lg,
+    padding: 14,
+    borderRadius: 14,
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: BORDER_RADIUS.lg,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.sm,
+    marginBottom: 12,
   },
   value: {
-    fontSize: TYPOGRAPHY.fontSize.xl,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#0f172a',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1e293b',
     fontFamily: 'PlusJakartaSans-Bold',
+    letterSpacing: -0.5,
   },
   compactValue: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
+    fontSize: 18,
   },
   label: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-Medium',
+    fontWeight: '500',
     marginTop: 2,
   },
   subtitle: {
     fontSize: 10,
     color: '#94a3b8',
     fontFamily: 'Manrope-Regular',
-    marginTop: 1,
+    marginTop: 2,
   },
 });

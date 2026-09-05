@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -68,7 +67,7 @@ export default function TimetableGenerator({
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.iconContainer}>
-            <Ionicons name="sparkles-outline" size={20} color="#7c3aed" />
+            <Ionicons name="sparkles-outline" size={20} color="#2563eb" />
           </View>
           <View>
             <Text style={styles.title}>Auto Timetable Generator</Text>
@@ -93,7 +92,7 @@ export default function TimetableGenerator({
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
         {/* Dropdowns */}
         <View style={styles.dropdownsContainer}>
           {renderDropdown(
@@ -132,7 +131,7 @@ export default function TimetableGenerator({
         {/* Smart Suggestions */}
         <View style={styles.suggestionsContainer}>
           <View style={styles.suggestionHeader}>
-            <Ionicons name="bulb-outline" size={20} color="#7c3aed" />
+            <Ionicons name="bulb-outline" size={20} color="#2563eb" />
             <View style={styles.suggestionContent}>
               <Text style={styles.suggestionTitle}>{smartSuggestions.title}</Text>
               <Text style={styles.suggestionDescription}>
@@ -151,7 +150,7 @@ export default function TimetableGenerator({
             </TouchableOpacity>
           ) : null}
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -182,7 +181,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 40,
     height: 40,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f1f5f9',
     borderRadius: BORDER_RADIUS.lg,
     justifyContent: 'center',
     alignItems: 'center',
@@ -202,7 +201,7 @@ const styles = StyleSheet.create({
   generateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.lg,
@@ -219,6 +218,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: '100%',
   },
   dropdownsContainer: {
     flexDirection: 'row',
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
   },
   conflictContainer: {
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md,
     marginBottom: SPACING.lg,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
   },
   suggestionsContainer: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f1f5f9',
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md,
     borderWidth: 1,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
   suggestionTitle: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-SemiBold',
     marginBottom: SPACING.xs,
   },
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.sm,
-    backgroundColor: '#7c3aed',
+    backgroundColor: '#2563eb',
     borderRadius: BORDER_RADIUS.lg,
     paddingVertical: SPACING.md,
     marginTop: SPACING.md,

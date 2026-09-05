@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -113,7 +112,7 @@ export default function AICheatingDetection({
         </View>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
         {/* Detection Stats */}
         <View style={styles.detectionStatsContainer}>
           {getDetectionStats().map(renderDetectionCard)}
@@ -139,7 +138,7 @@ export default function AICheatingDetection({
         {/* AI Insights */}
         <View style={styles.insightsContainer}>
           <View style={styles.insightsHeader}>
-            <Ionicons name="bulb-outline" size={20} color="#7c3aed" />
+            <Ionicons name="bulb-outline" size={20} color="#2563eb" />
             <View style={styles.insightsContent}>
               <Text style={styles.insightsTitle}>AI Insights</Text>
               <Text style={styles.insightsDescription}>
@@ -148,7 +147,7 @@ export default function AICheatingDetection({
             </View>
           </View>
         </View>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -210,6 +209,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: '100%',
   },
   detectionStatsContainer: {
     flexDirection: 'row',
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   },
   viewAllText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-Medium',
   },
   alertsList: {
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xs,
   },
   insightsContainer: {
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#f1f5f9',
     borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.md,
     borderWidth: 1,
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   insightsTitle: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-SemiBold',
     marginBottom: SPACING.xs,
   },

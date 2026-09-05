@@ -38,7 +38,7 @@ export const TIMETABLE = {
 };
 
 export const TEACHER_ALLOCATION = [
-  { id: '1', teacher: 'Dr. Meera Iyer', department: 'Computer Science', classes: 4, hours: 18, maxHours: 24, utilization: 75, color: '#7c3aed' },
+  { id: '1', teacher: 'Dr. Meera Iyer', department: 'Computer Science', classes: 4, hours: 18, maxHours: 24, utilization: 75, color: '#2563eb' },
   { id: '2', teacher: 'Dr. Sunita Rao', department: 'Computer Science', classes: 5, hours: 22, maxHours: 24, utilization: 92, color: '#d97706' },
   { id: '3', teacher: 'Prof. Rajesh Kumar', department: 'Electronics', classes: 3, hours: 16, maxHours: 24, utilization: 67, color: '#059669' },
   { id: '4', teacher: 'Prof. Anand Krishnan', department: 'Mechanical', classes: 3, hours: 14, maxHours: 24, utilization: 58, color: '#0891b2' },

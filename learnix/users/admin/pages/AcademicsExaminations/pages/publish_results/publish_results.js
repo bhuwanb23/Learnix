@@ -47,7 +47,7 @@ export default function PublishResults({ onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#7c3aed" />
+            <Ionicons name="arrow-back" size={22} color="#2563eb" />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Publish Results</Text>
@@ -89,11 +89,11 @@ export default function PublishResults({ onBack }) {
               <Text style={styles.subjectName}>{subj.name}</Text>
               <Text style={styles.subjectMeta}>{subj.code} • {subj.students} students</Text>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: subj.color + '1A' }]}>
+            <View style={[styles.statusBadge, { backgroundColor: subj.color + '14' }]}>
               <Text style={[styles.statusText, { color: subj.color }]}>{subj.status}</Text>
             </View>
             {selectedSubject === subj.id ? (
-              <Ionicons name="checkmark-circle" size={18} color="#7c3aed" style={styles.checkIcon} />
+              <Ionicons name="checkmark-circle" size={18} color="#2563eb" style={styles.checkIcon} />
             ) : null}
           </TouchableOpacity>
         ))}
@@ -121,11 +121,12 @@ export default function PublishResults({ onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerRow: {
     flexDirection: 'row',
@@ -136,7 +137,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -164,10 +165,16 @@ const styles = StyleSheet.create({
   summaryBox: {
     flex: 1,
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     alignItems: 'center',
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   summaryValue: {
     fontSize: TYPOGRAPHY.fontSize.xl,
@@ -184,21 +191,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     borderWidth: 2,
     borderColor: 'transparent',
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   subjectCardSelected: {
-    borderColor: '#7c3aed',
+    borderColor: '#2563eb',
   },
   subjectIcon: {
     width: 40,
     height: 40,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#eef1f3',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,

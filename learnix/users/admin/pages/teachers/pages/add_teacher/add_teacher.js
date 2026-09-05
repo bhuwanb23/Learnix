@@ -79,7 +79,7 @@ export default function AddTeacher({ teacher, onBack, onSave }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#7c3aed" />
+            <Ionicons name="arrow-back" size={22} color="#2563eb" />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>{teacher ? 'Edit Teacher' : 'Add New Teacher'}</Text>
@@ -97,7 +97,7 @@ export default function AddTeacher({ teacher, onBack, onSave }) {
         {/* Designation picker */}
         <Text style={styles.fieldLabel}>Designation</Text>
         <TouchableOpacity style={styles.picker} onPress={() => setShowDesignationPicker(!showDesignationPicker)} activeOpacity={0.8}>
-          <Ionicons name="ribbon-outline" size={16} color="#7c3aed" />
+          <Ionicons name="ribbon-outline" size={16} color="#2563eb" />
           <Text style={styles.pickerText}>{form.designation}</Text>
           <Ionicons name="chevron-down" size={16} color="#94a3b8" />
         </TouchableOpacity>
@@ -111,7 +111,7 @@ export default function AddTeacher({ teacher, onBack, onSave }) {
                 activeOpacity={0.7}
               >
                 <Text style={[styles.pickerItemText, form.designation === d && styles.pickerItemTextActive]}>{d}</Text>
-                {form.designation === d ? <Ionicons name="checkmark" size={16} color="#7c3aed" /> : null}
+                {form.designation === d ? <Ionicons name="checkmark" size={16} color="#2563eb" /> : null}
               </TouchableOpacity>
             ))}
           </View>
@@ -130,7 +130,7 @@ export default function AddTeacher({ teacher, onBack, onSave }) {
               <Ionicons
                 name={isSelected ? 'checkbox' : 'square-outline'}
                 size={20}
-                color={isSelected ? '#7c3aed' : '#cbd5e1'}
+                color={isSelected ? '#2563eb' : '#cbd5e1'}
               />
               <Text style={[styles.classRowText, isSelected && styles.classRowTextActive]}>{cls}</Text>
             </TouchableOpacity>
@@ -163,11 +163,12 @@ function Field({ label, icon, ...props }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerRow: {
     flexDirection: 'row',
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-Bold',
     marginTop: SPACING.sm,
     marginBottom: SPACING.sm,
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
     borderWidth: 1,
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     paddingHorizontal: SPACING.md,
     paddingVertical: 14,
     borderWidth: 1,
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
   },
   pickerList: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#f1f5f9',
     marginBottom: SPACING.md,
@@ -266,7 +267,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   pickerItemActive: {
-    backgroundColor: '#7c3aed0D',
+    backgroundColor: '#2563eb0D',
   },
   pickerItemText: {
     fontSize: TYPOGRAPHY.fontSize.sm,
@@ -274,14 +275,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Regular',
   },
   pickerItemTextActive: {
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
   },
   classRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     paddingHorizontal: SPACING.md,
     paddingVertical: 14,
     marginBottom: SPACING.sm,
@@ -289,8 +290,8 @@ const styles = StyleSheet.create({
     borderColor: '#f1f5f9',
   },
   classRowActive: {
-    borderColor: '#7c3aed',
-    backgroundColor: '#7c3aed0D',
+    borderColor: '#2563eb',
+    backgroundColor: '#2563eb0D',
   },
   classRowText: {
     flex: 1,
@@ -300,7 +301,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Regular',
   },
   classRowTextActive: {
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
   },
   spacer: {

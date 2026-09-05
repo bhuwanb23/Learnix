@@ -80,7 +80,7 @@ export default function PlacementsModule({ navigation }) {
               onPress={() => setSelectedDrive(drive)}
               activeOpacity={0.8}
             >
-              <View style={[styles.companyIcon, { backgroundColor: drive.color + '1A' }]}>
+              <View style={[styles.companyIcon, { backgroundColor: drive.color + '14' }]}>
                 <Text style={[styles.companyInitial, { color: drive.color }]}>{drive.company.charAt(0)}</Text>
               </View>
               <View style={styles.driveInfo}>
@@ -89,8 +89,8 @@ export default function PlacementsModule({ navigation }) {
                 <Text style={styles.driveMeta}>{drive.date} • {drive.mode} • {drive.applications} applied</Text>
               </View>
               <View style={styles.driveRight}>
-                <View style={[styles.driveStatus, { backgroundColor: drive.status === 'Approved' ? '#0596691A' : drive.status === 'Pending' ? '#d977061A' : '#7c3aed1A' }]}>
-                  <Text style={[styles.driveStatusText, { color: drive.status === 'Approved' ? '#059669' : drive.status === 'Pending' ? '#d97706' : '#7c3aed' }]}>
+                <View style={[styles.driveStatus, { backgroundColor: drive.status === 'Approved' ? '#0596691A' : drive.status === 'Pending' ? '#d977061A' : '#2563eb1A' }]}>
+                  <Text style={[styles.driveStatusText, { color: drive.status === 'Approved' ? '#059669' : drive.status === 'Pending' ? '#d97706' : '#2563eb' }]}>
                     {drive.status}
                   </Text>
                 </View>
@@ -121,7 +121,7 @@ export default function PlacementsModule({ navigation }) {
               activeOpacity={0.8}
               onPress={() => Alert.alert(app.student, `${app.role} at ${app.company}\nApplied ${app.appliedAt} • ${app.status}`)}
             >
-              <View style={[styles.appAvatar, { backgroundColor: app.color + '1A' }]}>
+              <View style={[styles.appAvatar, { backgroundColor: app.color + '14' }]}>
                 <Text style={[styles.appInitial, { color: app.color }]}>{app.student.charAt(0)}</Text>
               </View>
               <View style={styles.appInfo}>
@@ -129,8 +129,8 @@ export default function PlacementsModule({ navigation }) {
                 <Text style={styles.appMeta}>{app.company} • {app.role}</Text>
                 <Text style={styles.appTime}>{app.appliedAt}</Text>
               </View>
-              <View style={[styles.appStatus, { backgroundColor: app.status === 'Shortlisted' ? '#0596691A' : '#7c3aed1A' }]}>
-                <Text style={[styles.appStatusText, { color: app.status === 'Shortlisted' ? '#059669' : '#7c3aed' }]}>
+              <View style={[styles.appStatus, { backgroundColor: app.status === 'Shortlisted' ? '#0596691A' : '#2563eb1A' }]}>
+                <Text style={[styles.appStatusText, { color: app.status === 'Shortlisted' ? '#059669' : '#2563eb' }]}>
                   {app.status}
                 </Text>
               </View>
@@ -149,7 +149,7 @@ export default function PlacementsModule({ navigation }) {
               activeOpacity={0.8}
               onPress={() => Alert.alert(company.name, `${company.sector}\n${company.jobs} active job postings • ${company.hires} hired this year`)}
             >
-              <View style={[styles.companyIcon, { backgroundColor: company.color + '1A' }]}>
+              <View style={[styles.companyIcon, { backgroundColor: company.color + '14' }]}>
                 <Text style={[styles.companyInitial, { color: company.color }]}>{company.name.charAt(0)}</Text>
               </View>
               <View style={styles.companyInfo}>
@@ -171,11 +171,12 @@ export default function PlacementsModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
@@ -185,10 +186,12 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     padding: 4,
-    marginBottom: SPACING.md,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.15)',
   },
   tab: {
     flex: 1,
@@ -197,24 +200,36 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.lg,
   },
   activeTab: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2563eb',
+    shadowColor: '#2563eb',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#64748b',
     fontFamily: 'Manrope-SemiBold',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#7c3aed',
+    color: '#ffffff',
   },
   driveCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   companyIcon: {
     width: 44,
@@ -240,7 +255,7 @@ const styles = StyleSheet.create({
   },
   driveRole: {
     fontSize: 11,
-    color: '#7c3aed',
+    color: '#2563eb',
     fontFamily: 'Manrope-SemiBold',
     marginTop: 1,
   },
@@ -277,10 +292,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   appAvatar: {
     width: 40,
@@ -331,10 +352,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   companyInfo: {
     flex: 1,

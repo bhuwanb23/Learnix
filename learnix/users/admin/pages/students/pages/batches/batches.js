@@ -31,7 +31,7 @@ export default function Batches({ onBack }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.7}>
-            <Ionicons name="arrow-back" size={22} color="#7c3aed" />
+            <Ionicons name="arrow-back" size={22} color="#2563eb" />
           </TouchableOpacity>
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Batches</Text>
@@ -49,7 +49,7 @@ export default function Batches({ onBack }) {
               activeOpacity={0.8}
             >
               <View style={styles.batchIcon}>
-                <Ionicons name="people" size={20} color="#7c3aed" />
+                <Ionicons name="people" size={20} color="#2563eb" />
               </View>
               <View style={styles.batchInfo}>
                 <Text style={styles.batchName}>{batch.name}</Text>
@@ -61,7 +61,7 @@ export default function Batches({ onBack }) {
                   onPress={() => handleExport(batch)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="download-outline" size={18} color="#7c3aed" />
+                  <Ionicons name="download-outline" size={18} color="#2563eb" />
                 </TouchableOpacity>
                 <Ionicons name={expandedBatch === batch.id ? 'chevron-up' : 'chevron-down'} size={18} color="#94a3b8" />
               </View>
@@ -105,11 +105,12 @@ export default function Batches({ onBack }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   headerRow: {
     flexDirection: 'row',
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -141,9 +142,15 @@ const styles = StyleSheet.create({
   },
   batchCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: 16,
     marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
     overflow: 'hidden',
   },
   batchHeader: {
@@ -155,7 +162,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
@@ -184,7 +191,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#7c3aed1A',
+    backgroundColor: '#2563eb1A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -215,8 +222,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: SPACING.sm,
-    backgroundColor: '#7c3aed',
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: '#2563eb',
+    borderRadius: 16,
     paddingVertical: 12,
     marginTop: SPACING.sm,
   },

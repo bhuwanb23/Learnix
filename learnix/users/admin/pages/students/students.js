@@ -20,8 +20,6 @@ import StudentDetail from './pages/student_detail/student_detail';
 import AddStudent from './pages/add_student/add_student';
 import Batches from './pages/batches/batches';
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
 export default function StudentsModule({ navigation }) {
   const [screen, setScreen] = useState('list');
   const [search, setSearch] = useState('');
@@ -47,7 +45,6 @@ export default function StudentsModule({ navigation }) {
   };
 
   const handleApprove = (id) => {
-    // Approve pending enrollment
     navigation.openModule('Notifications');
   };
 
@@ -86,7 +83,7 @@ export default function StudentsModule({ navigation }) {
           icon="people"
           value="1,234"
           label="Total Students"
-          color="#7c3aed"
+          color="#2563eb"
           onPress={() => setScreen('batches')}
         />
         <StatCard
@@ -111,85 +108,89 @@ export default function StudentsModule({ navigation }) {
 
       {/* Pending approvals */}
       {PENDING_APPROVALS.length > 0 ? (
-        <View style={styles.approvalsCard}>
-          <SectionHeader title="Pending Enrollments" actionLabel="Review all" onAction={() => navigation.openModule('Notifications')} />
-          {PENDING_APPROVALS.map((p) => (
-            <View key={p.id} style={styles.approvalRow}>
-              <View style={styles.approvalAvatar}>
-                <Text style={styles.approvalInitial}>{p.name.charAt(0)}</Text>
+        <View style={styles.block}>
+          <SectionHeader title="Pending Enrollments" subtitle="Approve or reject new student applications" actionLabel="Review all" onAction={() => navigation.openModule('Notifications')} />
+          <View style={styles.approvalsCard}>
+            {PENDING_APPROVALS.map((p) => (
+              <View key={p.id} style={styles.approvalRow}>
+                <View style={styles.approvalAvatar}>
+                  <Text style={styles.approvalInitial}>{p.name.charAt(0)}</Text>
+                </View>
+                <View style={styles.approvalContent}>
+                  <Text style={styles.approvalName}>{p.name}</Text>
+                  <Text style={styles.approvalMeta}>{p.program} • {p.rollNo}</Text>
+                  <Text style={styles.approvalTime}>{p.appliedAt}</Text>
+                </View>
+                <View style={styles.approvalActions}>
+                  <TouchableOpacity
+                    style={[styles.approveBtn, styles.approvePrimary]}
+                    onPress={() => handleApprove(p.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="checkmark" size={14} color="#ffffff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.approveBtn, styles.approveReject]}
+                    onPress={() => handleApprove(p.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="close" size={14} color="#dc2626" />
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.approvalContent}>
-                <Text style={styles.approvalName}>{p.name}</Text>
-                <Text style={styles.approvalMeta}>{p.program} • {p.rollNo}</Text>
-                <Text style={styles.approvalTime}>{p.appliedAt}</Text>
-              </View>
-              <View style={styles.approvalActions}>
-                <TouchableOpacity
-                  style={[styles.approveBtn, styles.approvePrimary]}
-                  onPress={() => handleApprove(p.id)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="checkmark" size={14} color="#ffffff" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.approveBtn, styles.approveReject]}
-                  onPress={() => handleApprove(p.id)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="close" size={14} color="#dc2626" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
       ) : null}
 
       {/* Search + Filter */}
-      <SearchBar value={search} onChangeText={setSearch} placeholder="Search by name, roll no, email..." />
-      <FilterChips options={DEPARTMENT_FILTERS} selected={department} onSelect={setDepartment} />
+      <View style={styles.block}>
+        <SearchBar value={search} onChangeText={setSearch} placeholder="Search by name, roll no, email..." />
+        <FilterChips options={DEPARTMENT_FILTERS} selected={department} onSelect={setDepartment} />
 
-      {/* Student list */}
-      <SectionHeader
-        title={`Students (${filteredStudents.length})`}
-        actionLabel="Add Student"
-        actionIcon="add"
-        onAction={() => {
-          setSelectedStudent(null);
-          setScreen('add');
-        }}
-      />
+        <SectionHeader
+          title="Students"
+          subtitle={`${filteredStudents.length} of ${STUDENTS.length} shown`}
+          actionLabel="Add Student"
+          actionIcon="add"
+          onAction={() => {
+            setSelectedStudent(null);
+            setScreen('add');
+          }}
+        />
 
-      {filteredStudents.length === 0 ? (
-        <EmptyState icon="people-outline" title="No students found" message="Try a different search or filter." />
-      ) : (
-        filteredStudents.map((student) => (
-          <TouchableOpacity
-            key={student.id}
-            style={styles.studentCard}
-            onPress={() => handleStudentPress(student)}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.avatar, { backgroundColor: student.avatarColor + '1A' }]}>
-              <Text style={[styles.avatarText, { color: student.avatarColor }]}>
-                {student.name.split(' ').map((w) => w[0]).join('')}
-              </Text>
-            </View>
-            <View style={styles.studentInfo}>
-              <Text style={styles.studentName}>{student.name}</Text>
-              <Text style={styles.studentMeta}>{student.rollNo} • {student.program}</Text>
-              <View style={styles.chipRow}>
-                <View style={[styles.statusChip, { backgroundColor: student.status === 'Active' ? '#0596691A' : '#d977061A' }]}>
-                  <Text style={[styles.statusText, { color: student.status === 'Active' ? '#059669' : '#d97706' }]}>
-                    {student.status}
-                  </Text>
-                </View>
-                <Text style={styles.cgpaText}>CGPA {student.cgpa}</Text>
+        {filteredStudents.length === 0 ? (
+          <EmptyState icon="people-outline" title="No students found" message="Try a different search or filter." />
+        ) : (
+          filteredStudents.map((student) => (
+            <TouchableOpacity
+              key={student.id}
+              style={styles.studentCard}
+              onPress={() => handleStudentPress(student)}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.avatar, { backgroundColor: student.avatarColor + '14' }]}>
+                <Text style={[styles.avatarText, { color: student.avatarColor }]}>
+                  {student.name.split(' ').map((w) => w[0]).join('')}
+                </Text>
               </View>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
-          </TouchableOpacity>
-        ))
-      )}
+              <View style={styles.studentInfo}>
+                <Text style={styles.studentName}>{student.name}</Text>
+                <Text style={styles.studentMeta}>{student.rollNo} • {student.program}</Text>
+                <View style={styles.chipRow}>
+                  <View style={[styles.statusChip, { backgroundColor: student.status === 'Active' ? '#05966914' : '#d9770614' }]}>
+                    <Text style={[styles.statusText, { color: student.status === 'Active' ? '#059669' : '#d97706' }]}>
+                      {student.status}
+                    </Text>
+                  </View>
+                  <Text style={styles.cgpaText}>CGPA {student.cgpa}</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -197,53 +198,63 @@ export default function StudentsModule({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#f5f7f9',
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: SPACING.xl,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: SPACING.md,
+  },
+  block: {
+    marginTop: 24,
   },
   approvalsCard: {
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.04,
+    shadowRadius: 20,
+    elevation: 2,
   },
   approvalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: SPACING.sm,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(171, 173, 175, 0.08)',
   },
   approvalAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#7c3aed1A',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#2563eb14',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: 14,
   },
   approvalInitial: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#7c3aed',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2563eb',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   approvalContent: {
     flex: 1,
   },
   approvalName: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1e293b',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   approvalMeta: {
     fontSize: 11,
@@ -257,12 +268,12 @@ const styles = StyleSheet.create({
   },
   approvalActions: {
     flexDirection: 'row',
-    gap: SPACING.sm,
+    gap: 10,
   },
   approveBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -276,33 +287,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    ...SHADOWS.sm,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(171, 173, 175, 0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.03,
+    shadowRadius: 16,
+    elevation: 1,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md,
+    marginRight: 14,
   },
   avatarText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
+    fontSize: 14,
+    fontWeight: '700',
     fontFamily: 'PlusJakartaSans-Bold',
   },
   studentInfo: {
     flex: 1,
-    marginRight: SPACING.sm,
+    marginRight: 10,
   },
   studentName: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
+    fontFamily: 'PlusJakartaSans-Bold',
   },
   studentMeta: {
     fontSize: 11,
@@ -313,18 +330,18 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: 10,
     marginTop: 4,
   },
   statusChip: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 9999,
   },
   statusText: {
     fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
   cgpaText: {
     fontSize: 10,
