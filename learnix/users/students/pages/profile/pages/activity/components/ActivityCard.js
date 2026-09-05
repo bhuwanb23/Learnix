@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ACTIVITY_COLORS } from '../constants/activityData';
 
@@ -58,6 +58,7 @@ export default function ActivityCard({ activity, isLast }) {
                                             action.icon && styles.iconActionButton,
                                         ]}
                                         activeOpacity={0.7}
+                                        onPress={() => Alert.alert(action.label, activity.title)}
                                     >
                                         {action.icon ? (
                                             <MaterialIcons

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { CERTIFICATION_COLORS } from '../constants/certificationData';
 
@@ -35,7 +35,7 @@ export default function CertificateCard({ certificate, onPress }) {
                     <Text style={styles.date}>{certificate.date}</Text>
                 </View>
 
-                <TouchableOpacity style={styles.downloadButton} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.downloadButton} activeOpacity={0.7} onPress={() => Alert.alert('Download', `Downloading "${certificate.title}"…`)}>
                     <MaterialIcons name="download" size={18} color={CERTIFICATION_COLORS.onSurface} />
                     <Text style={styles.downloadText}>Download Certificate</Text>
                 </TouchableOpacity>

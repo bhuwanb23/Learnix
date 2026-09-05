@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { CERTIFICATION_COLORS, SUMMARY_DATA, CERTIFICATES, FILTERS } from './constants/certificationData';
 import SummaryCards from './components/SummaryCards';
@@ -19,7 +19,7 @@ export default function CertificationsPage({ route, navigation }) {
     };
 
     const handleCertificatePress = (certificate) => {
-        console.log('Certificate pressed:', certificate.id);
+        Alert.alert(certificate.title, `Issued on ${certificate.date}.`);
     };
 
     return (
