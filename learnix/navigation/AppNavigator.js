@@ -10,6 +10,7 @@ import AdminScreen from '../users/admin/admin';
 import PlacementScreen from '../users/placement_cell/placement_cell';
 import ExamCellScreen from '../users/exam_cell/exam_cell';
 import AccountsScreen from '../users/accounts_finance/accounts_finance';
+import LibraryStaffScreen from '../users/library_staff/library_staff';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -44,6 +45,8 @@ export default function AppNavigator() {
         return <ExamCellScreen navigation={{ navigate }} />;
       case 'Accounts':
         return <AccountsScreen navigation={{ navigate }} />;
+      case 'Library':
+        return <LibraryStaffScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:
