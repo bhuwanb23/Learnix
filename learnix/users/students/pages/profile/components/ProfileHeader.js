@@ -9,7 +9,13 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export default function ProfileHeader({ user }) {
+export default function ProfileHeader({ user, navigation }) {
+  const handleEditPress = () => {
+    if (navigation) {
+      navigation.navigate('ViewProfile');
+    }
+  };
+
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
   const contentPadding = isTablet ? 32 : 16;
@@ -20,7 +26,7 @@ export default function ProfileHeader({ user }) {
         {/* Title and Edit Button Row */}
         <View style={styles.topRow}>
           <Text style={styles.pageTitle}>Student Profile</Text>
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.editButton} activeOpacity={0.7} onPress={handleEditPress}>
             <MaterialIcons name="edit" size={16} color="#0050d4" />
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -51,11 +52,11 @@ export default function CampusWallet({ walletInfo }) {
 
         {/* Action Buttons */}
         <View style={styles.actions}>
-          <TouchableOpacity style={[styles.actionButton, styles.addFundsBtn]} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.actionButton, styles.addFundsBtn]} activeOpacity={0.8} onPress={() => Alert.alert('Add Funds', 'Funds can be added via your linked campus account.')}>
             <MaterialIcons name="add" size={16} color="#0050d4" />
             <Text style={styles.addFundsText}>Add Funds</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.payDuesBtn]} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.actionButton, styles.payDuesBtn]} activeOpacity={0.8} onPress={() => Alert.alert('Pay Dues', `Outstanding dues total $${walletInfo.dues.reduce((sum, d) => sum + d.amount, 0).toFixed(2)}.`)}>
             <Text style={styles.payDuesText}>Pay Dues</Text>
           </TouchableOpacity>
         </View>

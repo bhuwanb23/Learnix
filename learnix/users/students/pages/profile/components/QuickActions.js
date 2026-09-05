@@ -5,6 +5,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -71,7 +72,7 @@ export default function QuickActions({ categories, honors, navigation }) {
       <View style={styles.honorsSection}>
         <View style={styles.honorsHeader}>
           <Text style={styles.sectionTitle}>Honors & Recognitions</Text>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity activeOpacity={0.7} onPress={() => Alert.alert('Honors & Recognitions', 'All your honors and awards will open here.')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
