@@ -19,7 +19,6 @@ export default function ReviewPage({ navigation, route }) {
   };
 
   const handleStartNextQuiz = () => {
-    console.log('Start next quiz');
     if (navigation?.goBack) {
       navigation.goBack();
     }

@@ -6,6 +6,7 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { QUIZ_RESULTS_COLORS, QUIZ_RESULTS_DATA, PERFORMANCE_INSIGHT } from './constants/quizResultsData';
@@ -22,17 +23,19 @@ export default function ResultsPage({ navigation, route }) {
   };
 
   const handleReviewAnswers = () => {
-    console.log('Review answers');
     if (navigation?.navigateToReview) {
       navigation.navigateToReview();
     }
   };
 
   const handleTryAgain = () => {
-    console.log('Try again');
     if (navigation?.goBack) {
       navigation.goBack();
     }
+  };
+
+  const handleMenuPress = () => {
+    Alert.alert('Options', 'Share results or view certificates will appear here.');
   };
 
   return (
@@ -51,7 +54,7 @@ export default function ResultsPage({ navigation, route }) {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Quiz Results</Text>
         </View>
-        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={handleMenuPress}>
           <Ionicons name="ellipsis-vertical" size={20} color={QUIZ_RESULTS_COLORS.onSurfaceVariant} />
         </TouchableOpacity>
       </View>
