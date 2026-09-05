@@ -9,35 +9,18 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 export default function QuickActionsBento({ actions, navigation }) {
   const handlePress = (actionId) => {
-    console.log('Quick action pressed:', actionId);
-    
+    if (!navigation?.navigate) return;
+
     // Navigate to specific feature pages
     if (actionId === 'lecture-notes' || actionId === 'lecture_notes') {
-      if (navigation?.navigate) {
-        navigation.navigate('lecture_notes');
-      } else {
-        console.log('Navigation not available');
-      }
+      navigation.navigate('lecture_notes');
     } else if (actionId === 'weak-topics' || actionId === 'weak_topics') {
-      if (navigation?.navigate) {
-        navigation.navigate('weak_topics');
-      } else {
-        console.log('Navigation not available');
-      }
+      navigation.navigate('weak_topics');
     } else if (actionId === 'practice-quizzes' || actionId === 'quizzes' || actionId === 'quiz') {
-      if (navigation?.navigate) {
-        navigation.navigate('quizzes');
-      } else {
-        console.log('Navigation not available');
-      }
+      navigation.navigate('quizzes');
     } else if (actionId === 'syllabus-tracker' || actionId === 'syllabus_tracker') {
-      if (navigation?.navigate) {
-        navigation.navigate('syllabus_tracker');
-      } else {
-        console.log('Navigation not available');
-      }
+      navigation.navigate('syllabus_tracker');
     }
-    // Add more navigation routes as features are designed
   };
 
   return (

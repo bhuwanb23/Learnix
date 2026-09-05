@@ -4,11 +4,16 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function TodaysOverview({ liveClass }) {
+  const handleJoinSession = () => {
+    Alert.alert('Join Session', `Connecting to the live ${liveClass.subject} session…`);
+  };
+
   return (
     <LinearGradient
       colors={['#0050d4', '#0046bb']}
@@ -39,7 +44,7 @@ export default function TodaysOverview({ liveClass }) {
             <Text style={styles.materialsLabel}>Materials</Text>
           </View>
           
-          <TouchableOpacity style={styles.joinButton} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.joinButton} activeOpacity={0.8} onPress={handleJoinSession}>
             <MaterialIcons name="video-camera-front" size={20} color="#0050d4" />
             <Text style={styles.joinButtonText}>Join Session</Text>
           </TouchableOpacity>
