@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +48,7 @@ export default function JobDetails({ navigation, route }) {
           </View>
           <Text style={styles.topBarTitle}>Placement Portal</Text>
         </View>
-        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7} onPress={() => Alert.alert('Notifications', 'Job alerts will appear here.')}>
           <Ionicons name="notifications-outline" size={24} color="#595c5e" />
         </TouchableOpacity>
       </View>

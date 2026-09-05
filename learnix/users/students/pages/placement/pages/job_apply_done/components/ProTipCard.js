@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
@@ -23,7 +24,7 @@ export default function ProTipCard() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.button} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.button} activeOpacity={0.8} onPress={() => Alert.alert('Community', 'The Lumina community portal will open here.')}>
           <Text style={styles.buttonText}>Explore Community</Text>
         </TouchableOpacity>
       </View>
