@@ -13,9 +13,38 @@ import { QUIZ_ATTEMPT_COLORS, QUIZ_ATTEMPT_DATA, SAMPLE_QUESTION } from './const
 import ProgressIndicator from './components/ProgressIndicator';
 import OptionButton from './components/OptionButton';
 
+const QUESTIONS = [
+  SAMPLE_QUESTION,
+  {
+    id: 15,
+    text: 'What is the derivative of ln(x² + 1) with respect to x?',
+    options: [
+      { id: 'A', text: '2x / (x² + 1)', isSelected: false },
+      { id: 'B', text: '1 / (x² + 1)', isSelected: false },
+      { id: 'C', text: '2x', isSelected: false },
+      { id: 'D', text: '2 / (x² + 1)', isSelected: false },
+    ],
+    isFlagged: false,
+    hasHint: true,
+  },
+  {
+    id: 16,
+    text: 'Evaluate lim(x→∞) (3x² + 2) / (x² - 5).',
+    options: [
+      { id: 'A', text: '∞', isSelected: false },
+      { id: 'B', text: '0', isSelected: false },
+      { id: 'C', text: '3', isSelected: false },
+      { id: 'D', text: '1', isSelected: false },
+    ],
+    isFlagged: false,
+    hasHint: true,
+  },
+];
+
 export default function QuizAttemptPage({ navigation, route }) {
-  const [question, setQuestion] = useState(SAMPLE_QUESTION);
-  const [selectedOption, setSelectedOption] = useState('B');
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [question, setQuestion] = useState(QUESTIONS[0]);
+  const [selectedOption, setSelectedOption] = useState(null);
   const [showHint, setShowHint] = useState(false);
 
   const handleClose = () => {
@@ -25,7 +54,6 @@ export default function QuizAttemptPage({ navigation, route }) {
   };
 
   const handleSubmit = () => {
-    console.log('Quiz submitted');
     if (navigation?.navigateToResults) {
       navigation.navigateToResults();
     }
@@ -40,11 +68,23 @@ export default function QuizAttemptPage({ navigation, route }) {
   };
 
   const handlePrevious = () => {
-    console.log('Previous question');
+    if (questionIndex > 0) {
+      const nextIndex = questionIndex - 1;
+      setQuestionIndex(nextIndex);
+      setQuestion(QUESTIONS[nextIndex]);
+      setSelectedOption(null);
+      setShowHint(false);
+    }
   };
 
   const handleNext = () => {
-    console.log('Next question');
+    if (questionIndex < QUESTIONS.length - 1) {
+      const nextIndex = questionIndex + 1;
+      setQuestionIndex(nextIndex);
+      setQuestion(QUESTIONS[nextIndex]);
+      setSelectedOption(null);
+      setShowHint(false);
+    }
   };
 
   const handleOptionSelect = (optionId) => {
@@ -89,8 +129,8 @@ export default function QuizAttemptPage({ navigation, route }) {
       >
         {/* Progress Indicator */}
         <ProgressIndicator
-          current={QUIZ_ATTEMPT_DATA.currentQuestion}
-          total={QUIZ_ATTEMPT_DATA.totalQuestions}
+          current={questionIndex + 1}
+          total={QUESTIONS.length}
           time={QUIZ_ATTEMPT_DATA.timeRemaining}
         />
 

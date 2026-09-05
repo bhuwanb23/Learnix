@@ -33,12 +33,6 @@ export default function ProfessionalFormPage({ navigation, route }) {
   };
 
   const handleStartQuiz = () => {
-    console.log('Starting quiz with config:', {
-      mode: selectedMode,
-      questionCount: selectedCount,
-      difficulty: selectedDifficulty,
-      tweaks,
-    });
     if (navigation?.navigateToAttempt) {
       navigation.navigateToAttempt({
         mode: selectedMode,
