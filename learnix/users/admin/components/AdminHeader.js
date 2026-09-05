@@ -11,7 +11,13 @@ import { Ionicons } from '@expo/vector-icons';
 // Import theme
 import { COLORS, TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../constants/theme';
 
-export default function AdminHeader({ activeTab, currentScreen, onBackPress }) {
+export default function AdminHeader({
+  title,
+  icon = 'grid-outline',
+  showBack = false,
+  onBackPress,
+  onNotificationsPress,
+}) {
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -19,35 +25,17 @@ export default function AdminHeader({ activeTab, currentScreen, onBackPress }) {
     return 'Good Evening';
   };
 
-  const getScreenTitle = () => {
-    if (currentScreen === 'LectureNotes') return 'Lecture Notes';
-    if (currentScreen === 'QuizArena') return 'Quiz Arena';
-    if (currentScreen === 'SubjectTracker') return 'Subject Tracker';
-    if (currentScreen === 'WeakTopics') return 'Weak Topics';
-    return null;
-  };
-
-  const getScreenIcon = () => {
-    if (currentScreen === 'LectureNotes') return 'book-outline';
-    if (currentScreen === 'QuizArena') return 'help-circle-outline';
-    if (currentScreen === 'SubjectTracker') return 'list-outline';
-    if (currentScreen === 'WeakTopics') return 'analytics-outline';
-    return 'book-outline';
-  };
-
-  const screenTitle = getScreenTitle();
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#7c3aed" />
-      
+
       {/* Top Section */}
       <View style={styles.topSection}>
         <View style={styles.greetingContainer}>
-          {currentScreen && onBackPress ? (
+          {showBack ? (
             // Sub-screen header with back button and title
             <View style={styles.subScreenHeader}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.backButton}
                 onPress={onBackPress}
                 activeOpacity={0.7}
@@ -55,22 +43,26 @@ export default function AdminHeader({ activeTab, currentScreen, onBackPress }) {
                 <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
               </TouchableOpacity>
               <View style={styles.titleSection}>
-                <Ionicons name={getScreenIcon()} size={20} color="#FFFFFF" />
-                <Text style={styles.screenTitle}>{screenTitle}</Text>
+                <Ionicons name={icon} size={18} color="#FFFFFF" />
+                <Text style={styles.screenTitle} numberOfLines={1}>{title}</Text>
               </View>
             </View>
           ) : (
             // Main header with greeting
             <>
               <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.adminName}>Admin User</Text>
+              <Text style={styles.adminName}>{title}</Text>
             </>
           )}
         </View>
-        
+
         <View style={styles.headerActions}>
           {/* Notifications */}
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={onNotificationsPress}
+            activeOpacity={0.7}
+          >
             <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
             <View style={styles.notificationBadge}>
               <Text style={styles.badgeText}>3</Text>
@@ -78,7 +70,7 @@ export default function AdminHeader({ activeTab, currentScreen, onBackPress }) {
           </TouchableOpacity>
         </View>
       </View>
-      
+
     </View>
   );
 }
@@ -155,6 +147,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
+    flex: 1,
   },
   screenTitle: {
     fontSize: TYPOGRAPHY.fontSize.lg,
@@ -162,5 +155,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: 0.3,
+    flex: 1,
   },
-});
+});
