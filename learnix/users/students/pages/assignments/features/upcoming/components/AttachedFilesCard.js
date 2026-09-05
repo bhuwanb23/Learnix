@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { UPCOMING_ASSIGNMENT_COLORS } from '../constants/upcomingAssignmentData';
@@ -22,6 +23,7 @@ export default function AttachedFilesCard({ files }) {
             key={file.id}
             style={styles.fileItem}
             activeOpacity={0.7}
+            onPress={() => Alert.alert('Download', `Downloading ${file.name}…`)}
           >
             <View style={styles.fileInfo}>
               <MaterialIcons name="picture-as-pdf" size={20} color={UPCOMING_ASSIGNMENT_COLORS.error} />

@@ -7,6 +7,7 @@ import {
     StatusBar,
     TouchableOpacity,
     useWindowDimensions,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { UPCOMING_ASSIGNMENT_COLORS, UPCOMING_ASSIGNMENT_DATA } from './constants/upcomingAssignmentData';
@@ -36,18 +37,15 @@ export default function UpcomingAssignmentPage({ navigation, route }) {
     };
 
     const handleStartAssignment = () => {
-        console.log('Start assignment pressed');
-        // Add navigation to assignment work page
+        Alert.alert('Start Assignment', `Beginning "${assignmentData.title}" — open the Active tab to continue working.`);
     };
 
     const handlePreviewAssignment = () => {
-        console.log('Preview assignment pressed');
-        // Add preview functionality
+        Alert.alert('Preview', `Showing a preview of "${assignmentData.title}".`);
     };
 
     const handleSetReminder = () => {
-        console.log('Set reminder pressed');
-        // Add reminder functionality
+        Alert.alert('Reminder Set', `You will be reminded about "${assignmentData.title}".`);
     };
 
     return (
@@ -61,7 +59,7 @@ export default function UpcomingAssignmentPage({ navigation, route }) {
                     <Ionicons name="arrow-back" size={20} color={UPCOMING_ASSIGNMENT_COLORS.primary} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Assignment Details</Text>
-                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.moreButton} activeOpacity={0.7} onPress={() => Alert.alert('Options', 'More options for this assignment will appear here.')}>
                     <Ionicons name="ellipsis-vertical" size={20} color={UPCOMING_ASSIGNMENT_COLORS.primary} />
                 </TouchableOpacity>
             </View>
