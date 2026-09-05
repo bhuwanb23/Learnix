@@ -48,7 +48,7 @@ const buttonConfig = {
   },
 };
 
-export default function DriveCard({ drive }) {
+export default function DriveCard({ drive, onPress }) {
   const statusStyle = statusConfig[drive.statusType];
   const buttonStyle = buttonConfig[drive.buttonType];
 
@@ -79,7 +79,7 @@ export default function DriveCard({ drive }) {
   };
 
   return (
-    <TouchableOpacity style={styles.container} activeOpacity={0.9}>
+    <TouchableOpacity style={styles.container} activeOpacity={0.9} onPress={onPress}>
       {/* Gradient Header */}
       <LinearGradient
         colors={getGradientColors()}
@@ -149,6 +149,7 @@ export default function DriveCard({ drive }) {
           ]}
           activeOpacity={drive.buttonType === 'disabled' ? 1 : 0.85}
           disabled={drive.buttonType === 'disabled'}
+          onPress={onPress}
         >
           {drive.buttonType === 'primary' && (
             <Ionicons name="arrow-forward" size={16} color={COLORS.white} style={styles.buttonIcon} />

@@ -129,7 +129,7 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
           showsVerticalScrollIndicator={false}
         >
           {/* User Profile Header & Identity Hero */}
-          <ProfileHeader user={PROFILE_INFO} />
+          <ProfileHeader user={PROFILE_INFO} navigation={mockNavigation} />
           
           {/* Stats Grid (CGPA, Attendance, Credits, Rank) */}
           <ProfileStats stats={PROFILE_STATS} />
@@ -151,7 +151,7 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
               <CampusWallet walletInfo={WALLET_INFO} />
               
               {/* Quick Settings & Support */}
-              <Settings />
+              <Settings navigation={mockNavigation} />
             </View>
           </View>
 

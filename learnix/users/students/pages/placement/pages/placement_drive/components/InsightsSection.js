@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,7 +21,7 @@ export default function InsightsSection() {
           <Text style={styles.mainCardSubtitle}>
             Access exclusive preparation materials, mock test links, and previous year interview experiences curated for the upcoming drives.
           </Text>
-          <TouchableOpacity style={styles.mainCardButton} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.mainCardButton} activeOpacity={0.8} onPress={() => Alert.alert('Interview Prep', 'Preparation materials, mock tests and interview experiences will open here.')}>
             <Text style={styles.mainCardButtonText}>Explore Resources</Text>
           </TouchableOpacity>
         </View>
