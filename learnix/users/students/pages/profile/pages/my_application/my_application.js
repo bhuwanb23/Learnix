@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { APPLICATION_COLORS, APPLICATIONS, CTA_CARD } from './constants/applicationData';
 import SearchAndFilter from './components/SearchAndFilter';
@@ -7,6 +7,9 @@ import ApplicationCard from './components/ApplicationCard';
 import CTACard from './components/CTACard';
 
 export default function MyApplicationPage({ route, navigation }) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState('all');
+
     const handleBack = () => {
         if (navigation?.goBack) {
             navigation.goBack();
@@ -14,19 +17,30 @@ export default function MyApplicationPage({ route, navigation }) {
     };
 
     const handleSearch = (query) => {
-        console.log('Search:', query);
+        setSearchQuery(query);
     };
 
     const handleFilterChange = (filter) => {
-        console.log('Filter:', filter);
+        setActiveFilter(filter);
     };
 
+    const filteredApplications = APPLICATIONS.filter((application) => {
+        const matchesFilter =
+            activeFilter === 'all' || application.status.toLowerCase() === activeFilter;
+        const q = searchQuery.trim().toLowerCase();
+        const matchesSearch =
+            q === '' ||
+            application.role.toLowerCase().includes(q) ||
+            application.company.toLowerCase().includes(q);
+        return matchesFilter && matchesSearch;
+    });
+
     const handleApplicationPress = (application) => {
-        console.log('Application pressed:', application.id);
+        Alert.alert(application.role, `${application.company} • ${application.status}`);
     };
 
     const handleBrowsePlacements = () => {
-        console.log('Browse placements');
+        Alert.alert('Browse Placements', 'Open the Placement tab to explore 50+ new opportunities.');
     };
 
     return (
@@ -40,7 +54,7 @@ export default function MyApplicationPage({ route, navigation }) {
                     />
                     <Text style={styles.headerTitle}>Scholar Flow</Text>
                 </View>
-                <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.notificationButton} activeOpacity={0.7} onPress={() => Alert.alert('Notifications', 'Application status updates will appear here.')}>
                     <MaterialIcons name="notifications" size={24} color={APPLICATION_COLORS.primary} />
                 </TouchableOpacity>
             </View>
@@ -64,7 +78,7 @@ export default function MyApplicationPage({ route, navigation }) {
 
                     {/* Applications Grid */}
                     <View style={styles.grid}>
-                        {APPLICATIONS.map((application) => (
+                        {filteredApplications.map((application) => (
                             <View key={application.id} style={styles.gridItem}>
                                 <ApplicationCard
                                     application={application}

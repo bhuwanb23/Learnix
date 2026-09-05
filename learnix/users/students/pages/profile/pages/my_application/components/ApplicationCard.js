@@ -36,6 +36,7 @@ export default function ApplicationCard({ application, onPress }) {
             <TouchableOpacity
                 style={styles.viewButton}
                 activeOpacity={0.7}
+                onPress={() => onPress && onPress(application)}
             >
                 <Text style={styles.viewButtonText}>View Details</Text>
             </TouchableOpacity>

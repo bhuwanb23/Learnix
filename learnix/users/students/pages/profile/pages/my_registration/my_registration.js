@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { REGISTRATION_COLORS, REGISTRATIONS } from './constants/registrationData';
 import SearchAndFilter from './components/SearchAndFilter';
 import RegistrationCard from './components/RegistrationCard';
 
 export default function MyRegistrationPage({ route, navigation }) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeFilter, setActiveFilter] = useState('upcoming');
+
     const handleBack = () => {
         if (navigation?.goBack) {
             navigation.goBack();
@@ -13,15 +16,24 @@ export default function MyRegistrationPage({ route, navigation }) {
     };
 
     const handleSearch = (query) => {
-        console.log('Search:', query);
+        setSearchQuery(query);
     };
 
     const handleFilterChange = (filter) => {
-        console.log('Filter:', filter);
+        setActiveFilter(filter);
     };
 
+    const filteredRegistrations = REGISTRATIONS.filter((registration) => {
+        const matchesFilter =
+            (activeFilter === 'upcoming' && !registration.isCompleted) ||
+            (activeFilter === 'past' && registration.isCompleted);
+        const q = searchQuery.trim().toLowerCase();
+        const matchesSearch = q === '' || registration.title.toLowerCase().includes(q);
+        return matchesFilter && matchesSearch;
+    });
+
     const handleRegistrationPress = (registration) => {
-        console.log('Registration pressed:', registration.id);
+        Alert.alert(registration.title, `${registration.status} • ${registration.date}`);
     };
 
     return (
@@ -58,7 +70,7 @@ export default function MyRegistrationPage({ route, navigation }) {
 
                     {/* Registrations List */}
                     <View style={styles.list}>
-                        {REGISTRATIONS.map((registration) => (
+                        {filteredRegistrations.map((registration) => (
                             <RegistrationCard
                                 key={registration.id}
                                 registration={registration}
