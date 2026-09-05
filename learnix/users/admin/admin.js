@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  ScrollView,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 // Import components
 import AdminHeader from './components/AdminHeader';
@@ -34,7 +30,7 @@ import SettingsModule from './pages/settings/settings';
 import NotificationsScreen from './pages/notifications/notifications';
 
 // Import theme
-import { COLORS, TYPOGRAPHY, SPACING } from '../../constants/theme';
+import { COLORS } from '../../constants/theme';
 
 // Import hooks
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
