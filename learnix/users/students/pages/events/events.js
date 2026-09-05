@@ -8,6 +8,7 @@ import {
   FlatList,
   Animated,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -67,6 +68,18 @@ export default function EventsPage() {
     setCurrentView('details');
   };
 
+  // Apply category filter to the discovery list
+  const handleCategoryChange = (categoryId) => {
+    setActiveCategory(categoryId);
+    const filtered =
+      categoryId === 'all'
+        ? DISCOVERY_EVENTS
+        : DISCOVERY_EVENTS.filter(
+            (event) => event.categoryId === categoryId || event.category === categoryId
+          );
+    setFilteredEvents(filtered);
+  };
+
   // Navigate back to list
   const handleBackToList = () => {
     setCurrentView('list');
@@ -93,9 +106,9 @@ export default function EventsPage() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={handleCategoryChange}
         categories={EVENT_CATEGORIES}
-        events={DISCOVERY_EVENTS}
+        events={filteredEvents}
         setFilteredEvents={setFilteredEvents}
       />
       <View style={[styles.discoverHeader, { paddingHorizontal: isDesktop ? 0 : (isTablet ? 32 : 16) }]}>
@@ -103,7 +116,7 @@ export default function EventsPage() {
           <Text style={styles.discoverTitle}>Upcoming Discoveries</Text>
           <Text style={styles.discoverSubtitle}>Selected curated events based on your interests</Text>
         </View>
-        <TouchableOpacity style={styles.viewMapBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.viewMapBtn} activeOpacity={0.7} onPress={() => Alert.alert('Campus Map', 'Interactive campus map will open here.')}>
           <Text style={styles.viewMapText}>View Map</Text>
           <MaterialIcons name="map" size={16} color={COLORS.primary} />
         </TouchableOpacity>
@@ -115,7 +128,7 @@ export default function EventsPage() {
     <Animated.View style={[styles.desktopGrid, { opacity: fadeAnim }]}>
       <View style={styles.desktopLeft}>
         <View style={styles.eventsGrid}>
-          {DISCOVERY_EVENTS.map((event, index) => <EventCard key={event.id} item={event} index={index} onPress={handleEventPress} />)}
+          {filteredEvents.map((event, index) => <EventCard key={event.id} item={event} index={index} onPress={handleEventPress} />)}
         </View>
       </View>
       <View style={styles.desktopRight}>

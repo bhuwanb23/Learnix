@@ -47,6 +47,7 @@ export const DASHBOARD_DATA = {
     message: "Hey Alex! I see you have a calculus class coming up. Want to review the Taylor Series before you head in?",
     placeholder: 'Ask anything...',
     status: 'Online & Thinking',
+    focusTopic: 'Taylor Series',
   },
   
   performance: {

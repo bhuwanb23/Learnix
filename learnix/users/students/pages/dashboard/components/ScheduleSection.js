@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-export default function ScheduleSection({ scheduleData }) {
+export default function ScheduleSection({ scheduleData, navigation }) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
 
@@ -41,6 +41,7 @@ export default function ScheduleSection({ scheduleData }) {
             key={classItem.id}
             classItem={classItem}
             delay={index * 100}
+            onPress={() => navigation?.navigate?.('Classes')}
           />
         ))}
       </View>
@@ -48,7 +49,7 @@ export default function ScheduleSection({ scheduleData }) {
   );
 }
 
-function ScheduleCard({ classItem, delay = 0 }) {
+function ScheduleCard({ classItem, delay = 0, onPress }) {
   const opacityAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(20)).current;
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
@@ -110,6 +111,7 @@ function ScheduleCard({ classItem, delay = 0 }) {
     >
       <TouchableOpacity
         style={styles.card}
+        onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={0.9}
