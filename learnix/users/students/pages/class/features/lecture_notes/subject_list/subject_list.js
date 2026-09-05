@@ -27,11 +27,8 @@ export default function SubjectListPage({ navigation, onSubjectPress }) {
   const handleResume = () => {
     Alert.alert(
       'Resume Study',
-      `Continue studying ${CONTINUE_STUDYING.title}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Resume', onPress: () => console.log('Resume studying') },
-      ]
+      `Opening ${CONTINUE_STUDYING.title} where you left off…`,
+      [{ text: 'OK' }]
     );
   };
 
@@ -40,27 +37,15 @@ export default function SubjectListPage({ navigation, onSubjectPress }) {
   };
 
   const handleSubjectPress = (subject) => {
-    console.log('Subject pressed:', subject);
-    
     if (onSubjectPress) {
-      console.log('Calling onSubjectPress with:', subject.title);
       onSubjectPress(subject);
     } else {
-      console.log('onSubjectPress not provided, showing alert');
-      Alert.alert(
-        'Open Subject',
-        `Open ${subject.title} lecture notes?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Open', onPress: () => console.log('Open subject:', subject.id) },
-        ]
-      );
+      Alert.alert('Open Subject', `Open ${subject.title} lecture notes?`);
     }
   };
 
   const handleFilterChange = (filterId) => {
     setActiveFilter(filterId);
-    console.log('Filter changed to:', filterId);
   };
 
   return (

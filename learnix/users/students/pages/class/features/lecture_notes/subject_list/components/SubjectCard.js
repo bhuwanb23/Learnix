@@ -4,17 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/lectureNotesData';
 
 export default function SubjectCard({ subject, onPress }) {
   const handlePress = () => {
-    console.log('SubjectCard pressed:', subject?.title);
     if (onPress) {
       onPress(subject);
-    } else {
-      console.warn('onPress not provided to SubjectCard');
     }
   };
 
@@ -54,6 +52,7 @@ export default function SubjectCard({ subject, onPress }) {
       <TouchableOpacity 
         style={styles.menuButton}
         activeOpacity={0.7}
+        onPress={() => Alert.alert(subject.title, 'More options for this subject will appear here.')}
       >
         <Ionicons name="ellipsis-vertical" size={20} color={COLORS.onSurfaceVariant} />
       </TouchableOpacity>
