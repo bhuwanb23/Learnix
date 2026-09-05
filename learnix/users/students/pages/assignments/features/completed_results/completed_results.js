@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Text, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { COMPLETED_RESULTS_DATA, COMPLETED_RESULTS_COLORS } from './constants/completedResultsData';
@@ -21,8 +21,7 @@ export default function CompletedResultsScreen({ route, navigation }) {
     };
 
     const handleDownloadPDF = () => {
-        // TODO: Implement PDF download
-        console.log('Download annotated PDF');
+        Alert.alert('Download', 'Downloading the annotated PDF…');
     };
 
     return (

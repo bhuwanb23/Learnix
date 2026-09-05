@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import HeaderSection from './components/HeaderSection';
 import SuccessCard from './components/SuccessCard';
 import StudentInfoFooter from './components/StudentInfoFooter';
@@ -20,11 +20,14 @@ export default function SubmissionReviewScreen({ route, navigation, onNavigate }
     };
 
     const handleReturnDashboard = () => {
-        console.log('Return to dashboard');
+        Alert.alert('Submission Complete', 'Your assignment has been submitted successfully.');
+        if (onNavigate) {
+            onNavigate('details');
+        }
     };
 
     const handleViewDetails = () => {
-        console.log('View submission details');
+        Alert.alert('Submission Details', 'Your submission receipt will open here.');
     };
 
     return (
