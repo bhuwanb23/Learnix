@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WEAK_TOPICS_COLORS } from '../constants/weakTopicsData';
@@ -12,7 +13,12 @@ export default function ActionCards({ cards }) {
   return (
     <View style={styles.container}>
       {cards.map((card) => (
-        <TouchableOpacity key={card.id} style={styles.card} activeOpacity={0.7}>
+        <TouchableOpacity
+          key={card.id}
+          style={styles.card}
+          activeOpacity={0.7}
+          onPress={() => Alert.alert(card.title, card.description)}
+        >
           <View style={[styles.iconContainer, { backgroundColor: card.bgColor }]}>
             <Ionicons name={card.icon} size={24} color={card.color} />
           </View>

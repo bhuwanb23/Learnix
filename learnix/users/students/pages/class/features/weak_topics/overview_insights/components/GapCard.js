@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WEAK_TOPICS_COLORS } from '../constants/weakTopicsData';
@@ -30,7 +31,7 @@ export default function GapCard({ gap }) {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.actionBar} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.actionBar} activeOpacity={0.7} onPress={() => Alert.alert(gap.title, `Launching ${gap.actionText.toLowerCase()} for this concept…`)}>
         <Text style={styles.actionText}>{gap.actionText}</Text>
         <Ionicons name={gap.actionIcon} size={20} color={WEAK_TOPICS_COLORS.primary} />
       </TouchableOpacity>

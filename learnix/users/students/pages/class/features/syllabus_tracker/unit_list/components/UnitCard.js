@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { UNIT_LIST_COLORS } from '../constants/unitListData';
@@ -12,7 +13,7 @@ export default function UnitCard({ unit, isExpanded, onToggle, onPress }) {
   const renderStatusIcon = () => {
     if (unit.isCompleted) {
       return (
-        <TouchableOpacity style={styles.statusIconContainer} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.statusIconContainer} activeOpacity={0.7} onPress={onPress}>
           <MaterialIcons name="check-circle" size={20} color={UNIT_LIST_COLORS.primary} />
         </TouchableOpacity>
       );
@@ -36,7 +37,7 @@ export default function UnitCard({ unit, isExpanded, onToggle, onPress }) {
     
     // Not started - show circle outline
     return (
-      <TouchableOpacity style={styles.statusIconContainer} activeOpacity={0.7}>
+      <TouchableOpacity style={styles.statusIconContainer} activeOpacity={0.7} onPress={onPress}>
         <MaterialIcons name="radio-button-unchecked" size={20} color={UNIT_LIST_COLORS.outlineVariant} />
       </TouchableOpacity>
     );
@@ -52,6 +53,7 @@ export default function UnitCard({ unit, isExpanded, onToggle, onPress }) {
             key={topic.id} 
             style={styles.topicItem}
             activeOpacity={0.7}
+            onPress={() => Alert.alert(topic.title, 'Opening this topic…')}
           >
             <View style={styles.topicLeft}>
               <MaterialIcons name={topic.icon} size={18} color={UNIT_LIST_COLORS.primary} />
