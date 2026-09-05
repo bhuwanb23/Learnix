@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { UNIT_COLORS } from '../constants/unitListData';
@@ -38,6 +39,7 @@ export default function QuickResources({ resources }) {
                   { backgroundColor: resource.textColor }
                 ]}
                 activeOpacity={0.7}
+                onPress={() => Alert.alert(resource.title, resource.description)}
               >
                 <Text style={[styles.resourceButtonText, { color: resource.bgColor }]}>
                   {resource.buttonText}

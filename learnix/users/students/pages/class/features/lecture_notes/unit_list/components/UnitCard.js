@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { UNIT_COLORS } from '../constants/unitListData';
@@ -12,6 +13,21 @@ export default function UnitCard({ unit, onPress }) {
   const isCompleted = unit.status === 'completed';
   const isInProgress = unit.status === 'in-progress';
   const isLocked = unit.status === 'locked';
+
+  const handleActionPress = () => {
+    if (isInProgress) {
+      Alert.alert(
+        'Mark Unit Complete',
+        `Finish ${unit.title}? This updates your unit progress.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Mark Complete', onPress: () => Alert.alert('Completed', `${unit.title} marked as complete.`) },
+        ]
+      );
+    } else if (isCompleted) {
+      Alert.alert('Completed', `${unit.title} was already marked as complete.`);
+    }
+  };
 
   const renderProgressCircle = () => {
     if (isLocked) {
@@ -36,7 +52,7 @@ export default function UnitCard({ unit, onPress }) {
   const renderActionButton = () => {
     if (isCompleted) {
       return (
-        <TouchableOpacity style={[styles.actionButton, styles.completedButton]} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.actionButton, styles.completedButton]} activeOpacity={0.7} onPress={handleActionPress}>
           <Ionicons name="checkmark-circle" size={20} color={UNIT_COLORS.onSurfaceVariant} />
           <Text style={styles.completedButtonText}>Completed</Text>
         </TouchableOpacity>
@@ -45,7 +61,7 @@ export default function UnitCard({ unit, onPress }) {
 
     if (isInProgress) {
       return (
-        <TouchableOpacity style={[styles.actionButton, styles.continueButton]} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.actionButton, styles.continueButton]} activeOpacity={0.7} onPress={handleActionPress}>
           <Text style={styles.continueButtonText}>Mark unit complete</Text>
           <Ionicons name="arrow-forward" size={20} color="#ffffff" />
         </TouchableOpacity>
@@ -62,7 +78,6 @@ export default function UnitCard({ unit, onPress }) {
         isLocked && styles.lockedContainer
       ]} 
       onPress={() => {
-        console.log('UnitCard pressed:', unit.title);
         if (onPress) onPress(unit);
       }}
       activeOpacity={0.7}
