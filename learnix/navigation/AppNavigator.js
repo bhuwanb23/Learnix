@@ -8,6 +8,7 @@ import StudentsScreen from '../users/students/students';
 import TeacherScreen from '../users/teachers/teacher';
 import AdminScreen from '../users/admin/admin';
 import PlacementScreen from '../users/placement_cell/placement_cell';
+import ExamCellScreen from '../users/exam_cell/exam_cell';
 
 // Import theme
 import { COLORS } from '../constants/theme';
@@ -38,6 +39,8 @@ export default function AppNavigator() {
         return <AdminScreen navigation={{ navigate }} />;
       case 'Placement':
         return <PlacementScreen navigation={{ navigate }} />;
+      case 'ExamCell':
+        return <ExamCellScreen navigation={{ navigate }} />;
       case 'Main':
         return <MainScreen navigation={{ navigate }} />;
       default:
