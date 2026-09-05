@@ -6,6 +6,7 @@ import {
     ScrollView,
     StatusBar,
     TouchableOpacity,
+    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TOPIC_TRACKER_COLORS, TOPIC_TRACKER_DATA, NOTES_DATA, QUIZ_DATA, STUDY_HISTORY_DATA } from './constants/topicTrackerData';
@@ -21,15 +22,15 @@ export default function TopicTrackerPage({ navigation, route }) {
     };
 
     const handleOpenNotes = () => {
-        console.log('Opening notes');
+        Alert.alert('Lecture Notes', `Opening notes for ${TOPIC_TRACKER_DATA.topicTitle}…`);
     };
 
     const handleRetryQuiz = () => {
-        console.log('Retrying quiz');
+        Alert.alert('Retry Quiz', 'Starting a fresh attempt of this topic quiz…');
     };
 
     const handleViewLogs = () => {
-        console.log('Viewing logs');
+        Alert.alert('Study History', 'Your full study log will open here.');
     };
 
     return (

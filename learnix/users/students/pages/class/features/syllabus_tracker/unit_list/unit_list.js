@@ -6,6 +6,7 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { UNIT_LIST_COLORS, UNIT_LIST_DATA, UNITS_DATA, MILESTONES_DATA, RESOURCES_DATA } from './constants/unitListData';
@@ -25,11 +26,11 @@ export default function UnitListPage({ navigation, route }) {
   };
 
   const handleResourcePress = (resource) => {
-    console.log('Resource pressed:', resource.title);
+    Alert.alert(resource.title, 'Opening this resource…');
   };
 
   const handleMilestonePress = (milestone) => {
-    console.log('Milestone pressed:', milestone.title);
+    Alert.alert(milestone.title, `Milestone due on ${milestone.date}.`);
   };
 
   return (

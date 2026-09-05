@@ -7,6 +7,7 @@ import {
   StatusBar,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { TOPIC_LIST_COLORS, TOPIC_LIST_DATA, TOPICS_DATA, RESOURCES_DATA } from './constants/topicListData';
@@ -26,15 +27,15 @@ export default function TopicListPage({ navigation, route }) {
   };
 
   const handleMorePress = (topic) => {
-    console.log('More options for:', topic.title);
+    Alert.alert(topic.title, 'More options for this topic will appear here.');
   };
 
   const handleStartChallenge = () => {
-    console.log('Starting challenge');
+    Alert.alert('Practice Challenge', 'Launching a timed practice challenge for this unit…');
   };
 
   const handleVideoPress = () => {
-    console.log('Opening video');
+    Alert.alert('Video Lesson', 'Opening the video lesson player…');
   };
 
   return (
