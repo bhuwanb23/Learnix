@@ -18,6 +18,7 @@ import PlacementDrivePage from './pages/placement/pages/placement_drive';
 import JobDetailsPage from './pages/placement/pages/job_details';
 import JobApplyPage from './pages/placement/pages/jobs_apply/job_apply';
 import JobApplyDonePage from './pages/placement/pages/job_apply_done/job_apply_done';
+import NotificationsPage from './pages/notifications/notifications';
 
 // Import components
 import StudentHeader from './components/StudentHeader';
@@ -54,6 +55,9 @@ export default function StudentsScreen() {
   };
 
   const renderContent = () => {
+    if (currentScreen === 'Notifications') {
+      return <NotificationsPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;
     }
@@ -98,7 +102,7 @@ export default function StudentsScreen() {
 
     switch (activeTab) {
       case 'Home':
-        return <Dashboard />;
+        return <Dashboard navigation={{ navigate: (tabName) => handleTabChange(tabName) }} />;
       case 'Classes':
         return <ClassPage />;
       case 'Assignments':
@@ -120,6 +124,7 @@ export default function StudentsScreen() {
       <StudentHeader 
         activeTab={activeTab} 
         onProfilePress={handleProfilePress}
+        onNotificationsPress={() => navigateToScreen('Notifications')}
       />
       
       {/* Main Content */}
