@@ -119,3 +119,9 @@ export const BROADCAST_CHANNEL = ['IN_APP', 'EMAIL', 'PUSH'] as const;
 export const ANNOUNCEMENT_STATUS = ['DRAFT', 'PENDING_ADMIN', 'PUBLISHED', 'REJECTED'] as const;
 export const EMAIL_STATUS = ['QUEUED', 'SENT', 'FAILED'] as const;
 export const AI_FEATURE = ['STUDY_BUDDY', 'TEACHING_INSIGHT', 'PERFORMANCE_NOTE'] as const;
+
+// ── Domain L — System ──
+export const FILE_PURPOSE = [
+  'NOTE_ATTACHMENT', 'ASSIGNMENT_ATTACHMENT', 'SUBMISSION', 'AVATAR', 'COVER', 'PAYSLIP', 'LOGO', 'RESUME',
+] as const;
+export const PLATFORM_ADMIN_LEVEL = ['SUPER', 'SUPPORT'] as const;
