@@ -1,195 +1,252 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { transportApi } from '../../../../services/api';
 
-const initialServices = [
-  { id: '1', reg: 'KA-01-1876', issue: 'Routine service due', odometer: '9,800 km', nextDue: '200 km left', priority: 'High', status: 'Scheduled' },
-  { id: '2', reg: 'KA-01-2210', issue: 'AC not cooling', odometer: '54,200 km', nextDue: 'In progress', priority: 'Medium', status: 'In Service' },
-  { id: '3', reg: 'KA-01-2045', issue: 'Tyre pressure check', odometer: '86,400 km', nextDue: '1,500 km left', priority: 'Low', status: 'Scheduled' },
-  { id: '4', reg: 'KA-01-1982', issue: 'Brake inspection', odometer: '42,300 km', nextDue: 'Completed', priority: 'Medium', status: 'Completed' },
-];
+const rupees = (minor) => `₹${(minor / 100).toLocaleString('en-IN')}`;
+const fmtDate = (iso) => new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-const fuelLog = [
-  { date: 'Today 6:40 AM', reg: 'KA-01-2210', litres: '120 L', amount: '₹9,200', odometer: '54,150' },
-  { date: 'Yesterday 5:00 PM', reg: 'KA-01-2045', litres: '105 L', amount: '₹8,050', odometer: '86,200' },
-  { date: 'Yesterday 6:10 PM', reg: 'KA-01-1876', litres: '130 L', amount: '₹9,960', odometer: '9,650' },
-];
-
-const priorityStyle = (p) => {
-  if (p === 'High') return { bg: '#fee2e2', color: '#dc2626' };
-  if (p === 'Medium') return { bg: '#fef3c7', color: '#d97706' };
-  return { bg: '#dcfce7', color: '#059669' };
-};
-
-const statusStyle = (s) => {
-  if (s === 'Completed') return { bg: '#dcfce7', color: '#059669' };
-  if (s === 'In Service') return { bg: '#dbeafe', color: '#2563eb' };
-  return { bg: '#fef3c7', color: '#d97706' };
+const STATUS_STYLE = {
+  SCHEDULED: { bg: '#dbeafe', color: '#2563eb' },
+  IN_PROGRESS: { bg: '#fef3c7', color: '#d97706' },
+  COMPLETED: { bg: '#dcfce7', color: '#059669' },
 };
 
 export default function MaintenanceModule({ navigation }) {
-  const [services, setServices] = useState(initialServices);
-  const [showFuelForm, setShowFuelForm] = useState(false);
-  const [fuelForm, setFuelForm] = useState({ reg: 'KA-01-2045', litres: '', amount: '' });
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [tab, setTab] = useState('Service Queue');
+  const [showFuel, setShowFuel] = useState(false);
+  const [form, setForm] = useState({ vehicleId: null, litres: '', amount: '' });
 
-  const handleLogFuel = () => {
-    if (!fuelForm.litres.trim() || !fuelForm.amount.trim()) {
-      Alert.alert('Incomplete', 'Enter litres and amount.');
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const d = await transportApi.maintenance();
+      setData(d);
+    } catch (e) {
+      setError(e.message || 'Failed to load maintenance');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const completeService = async (record) => {
+    try {
+      const res = await transportApi.completeService(record.id);
+      Alert.alert('Completed', `${res.vehicle} service marked complete — bus set to Idle.`);
+      load(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  const submitFuel = async () => {
+    const litres = parseFloat(form.litres || '0');
+    const amount = Math.round(parseFloat(form.amount || '0') * 100);
+    if (!form.vehicleId || !litres || !amount) {
+      Alert.alert('Incomplete', 'Pick a vehicle and enter litres + amount.');
       return;
     }
-    Alert.alert('Fuel Logged', `${fuelForm.litres} L recorded for ${fuelForm.reg} — ₹${fuelForm.amount}.`);
-    setFuelForm({ reg: 'KA-01-2045', litres: '', amount: '' });
-    setShowFuelForm(false);
+    try {
+      const res = await transportApi.addFuel(form.vehicleId, litres, amount);
+      Alert.alert('Fuel logged', `${res.vehicle} now at ${res.fuelPct}% fuel.`);
+      setShowFuel(false);
+      setForm({ vehicleId: null, litres: '', amount: '' });
+      load(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
   };
 
-  const handleComplete = (id) => {
-    setServices(
-      services.map((s) => (s.id === id ? { ...s, status: 'Completed', nextDue: 'Completed' } : s))
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
     );
-    Alert.alert('Service Completed', 'Vehicle back in rotation. Maintenance record saved.');
-  };
+  }
 
-  const handleSchedule = () => {
-    Alert.alert('Schedule Service', 'Pick a vehicle and service date to queue it for the workshop.');
-  };
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const { stats, queue, fuelLogs } = data;
+  // vehicles that appear in the fuel-log history are pickable for logging
+  const fuelVehicles = [...new Map(fuelLogs.map((f) => [f.vehicleId, f.vehicle])).entries()];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>6</Text>
-          <Text style={styles.statLabel}>Due Services</Text>
+          <Text style={styles.statValue}>{stats.scheduled + stats.inProgress}</Text>
+          <Text style={styles.statLabel}>Open Jobs</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>2</Text>
-          <Text style={styles.statLabel}>In Workshop</Text>
+          <Text style={styles.statValue}>{stats.completed}</Text>
+          <Text style={styles.statLabel}>Completed</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>₹1.8L</Text>
-          <Text style={styles.statLabel}>Sep Spend</Text>
+          <Text style={styles.statValue}>{rupees(stats.fuelSpendMinor)}</Text>
+          <Text style={styles.statLabel}>Fuel Spend</Text>
         </View>
       </View>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Service Queue</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={handleSchedule}>
-          <Ionicons name="add" size={15} color="#fff" />
-          <Text style={styles.addText}>Schedule</Text>
-        </TouchableOpacity>
+      <View style={styles.tabsRow}>
+        {['Service Queue', 'Fuel Log'].map((t) => (
+          <TouchableOpacity
+            key={t}
+            style={[styles.tab, tab === t && styles.tabActive]}
+            onPress={() => setTab(t)}
+          >
+            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>{t}</Text>
+          </TouchableOpacity>
+        ))}
+        {tab === 'Fuel Log' && (
+          <TouchableOpacity style={styles.logBtn} onPress={() => setShowFuel(true)}>
+            <Ionicons name="flame-outline" size={13} color="#fff" />
+            <Text style={styles.logBtnText}>Log Fuel</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      {services.map((s) => {
-        const pr = priorityStyle(s.priority);
-        const st = statusStyle(s.status);
-        return (
-          <View key={s.id} style={styles.card}>
-            <View style={styles.cardTop}>
-              <View style={styles.regIcon}>
-                <Ionicons name="construct-outline" size={16} color="#2563eb" />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+      >
+        {tab === 'Service Queue' ? (
+          <>
+            {queue.length === 0 && <Text style={styles.empty}>No service records yet.</Text>}
+            {queue.map((q) => {
+              const st = STATUS_STYLE[q.status] || STATUS_STYLE.SCHEDULED;
+              const open = q.status !== 'COMPLETED';
+              return (
+                <View key={q.id} style={styles.card}>
+                  <View style={styles.cardTop}>
+                    <View style={styles.svcIcon}>
+                      <Ionicons name="construct-outline" size={16} color="#dc2626" />
+                    </View>
+                    <View style={styles.cardBody}>
+                      <Text style={styles.svcTitle}>
+                        {q.vehicle} · {q.type}
+                      </Text>
+                      <Text style={styles.svcMeta}>
+                        {fmtDate(q.serviceDate)} · {rupees(q.costMinor)}
+                      </Text>
+                    </View>
+                    <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
+                      <Text style={[styles.statusText, { color: st.color }]}>{q.status.replace('_', ' ')}</Text>
+                    </View>
+                  </View>
+                  {open && (
+                    <TouchableOpacity style={styles.completeBtn} onPress={() => completeService(q)}>
+                      <Ionicons name="checkmark-circle-outline" size={14} color="#059669" />
+                      <Text style={styles.completeText}>Mark Completed</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })}
+          </>
+        ) : (
+          <>
+            {fuelLogs.length === 0 && <Text style={styles.empty}>No fuel fills logged yet.</Text>}
+            {fuelLogs.map((f) => (
+              <View key={f.id} style={styles.card}>
+                <View style={[styles.svcIcon, { backgroundColor: '#fef3c7' }]}>
+                  <Ionicons name="flame-outline" size={16} color="#d97706" />
+                </View>
+                <View style={styles.cardBody}>
+                  <Text style={styles.svcTitle}>
+                    {f.vehicle} · {f.litres} L
+                  </Text>
+                  <Text style={styles.svcMeta}>
+                    {fmtDate(f.filledAt)} · {rupees(f.amountMinor)}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.cardHeader}>
-                <Text style={styles.reg}>{s.reg}</Text>
-                <Text style={styles.issue}>{s.issue}</Text>
-              </View>
-              <View style={[styles.priorityChip, { backgroundColor: pr.bg }]}>
-                <Text style={[styles.priorityText, { color: pr.color }]}>{s.priority}</Text>
-              </View>
-            </View>
-            <Text style={styles.odo}>Odometer {s.odometer}</Text>
-            <View style={styles.cardBottom}>
-              <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-                <Text style={[styles.statusText, { color: st.color }]}>{s.status}</Text>
-              </View>
-              {s.status !== 'Completed' && (
-                <TouchableOpacity style={styles.completeBtn} onPress={() => handleComplete(s.id)}>
-                  <Text style={styles.completeText}>Mark Completed</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        );
-      })}
+            ))}
+          </>
+        )}
+      </ScrollView>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Fuel Log</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => setShowFuelForm(!showFuelForm)}
-        >
-          <Ionicons name="flame-outline" size={14} color="#fff" />
-          <Text style={styles.addText}>{showFuelForm ? 'Cancel' : 'Log Fuel'}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {showFuelForm && (
-        <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Record fuel refill</Text>
-          <Text style={styles.formLabel}>Vehicle</Text>
-          <View style={styles.vehicleRow}>
-            {['KA-01-2045', 'KA-01-1876', 'KA-01-2210'].map((r) => (
+      {/* Log fuel modal */}
+      <Modal visible={showFuel} transparent animationType="fade" onRequestClose={() => setShowFuel(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Log Fuel Fill</Text>
+            <Text style={styles.modalSub}>
+              {fuelVehicles.length === 0
+                ? 'No vehicles have fuel history yet — log from the vehicle page first.'
+                : 'Pick the vehicle and enter the fill details.'}
+            </Text>
+            {fuelVehicles.map(([vid, reg]) => (
               <TouchableOpacity
-                key={r}
-                style={[styles.vehicleChip, fuelForm.reg === r && styles.vehicleChipActive]}
-                onPress={() => setFuelForm({ ...fuelForm, reg: r })}
+                key={vid}
+                style={[styles.vehiclePick, form.vehicleId === vid && styles.vehiclePickActive]}
+                onPress={() => setForm({ ...form, vehicleId: vid })}
               >
-                <Text style={[styles.vehicleChipText, fuelForm.reg === r && styles.vehicleChipTextActive]}>
-                  {r}
+                <Text style={[styles.vehiclePickText, form.vehicleId === vid && styles.vehiclePickTextActive]}>
+                  {reg}
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
-          <View style={styles.formRow}>
-            <View style={styles.formHalf}>
-              <Text style={styles.formLabel}>Litres</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. 120"
-                placeholderTextColor="#9ca3af"
-                keyboardType="numeric"
-                value={fuelForm.litres}
-                onChangeText={(t) => setFuelForm({ ...fuelForm, litres: t })}
-              />
+            <TextInput
+              style={styles.input}
+              placeholder="Litres"
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+              value={form.litres}
+              onChangeText={(v) => setForm({ ...form, litres: v })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Amount (₹)"
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+              value={form.amount}
+              onChangeText={(v) => setForm({ ...form, amount: v })}
+            />
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalCancel]} onPress={() => setShowFuel(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalSave]} onPress={submitFuel}>
+                <Text style={styles.modalSaveText}>Log Fill</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.formHalf}>
-              <Text style={styles.formLabel}>Amount (₹)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g. 9200"
-                placeholderTextColor="#9ca3af"
-                keyboardType="numeric"
-                value={fuelForm.amount}
-                onChangeText={(t) => setFuelForm({ ...fuelForm, amount: t })}
-              />
-            </View>
           </View>
-          <TouchableOpacity style={styles.confirmBtn} onPress={handleLogFuel}>
-            <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-            <Text style={styles.confirmText}>Save Fuel Record</Text>
-          </TouchableOpacity>
         </View>
-      )}
-
-      {fuelLog.map((f, idx) => (
-        <View key={idx} style={styles.fuelCard}>
-          <View style={styles.fuelIcon}>
-            <Ionicons name="flame-outline" size={15} color="#d97706" />
-          </View>
-          <View style={styles.cardBody}>
-            <Text style={styles.fuelReg}>{f.reg} · {f.litres}</Text>
-            <Text style={styles.fuelMeta}>
-              {f.date} · odo {f.odometer}
-            </Text>
-          </View>
-          <Text style={styles.fuelAmount}>{f.amount}</Text>
-        </View>
-      ))}
-    </ScrollView>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', marginTop: 24 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -206,7 +263,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Manrope-ExtraBold',
     color: theme.colors.text,
   },
@@ -216,32 +273,41 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 2,
   },
-  sectionHeader: {
+  tabsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 18,
-    marginBottom: 10,
+    marginTop: 14,
   },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
+  tab: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surfaceMuted,
+    marginRight: 8,
   },
-  addBtn: {
+  tabActive: { backgroundColor: theme.colors.primary },
+  tabText: {
+    fontSize: 12,
+    fontFamily: 'Manrope-SemiBold',
+    color: theme.colors.textMuted,
+  },
+  tabTextActive: { color: '#fff' },
+  logBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 11,
+    borderRadius: 20,
+    paddingHorizontal: 12,
     paddingVertical: 7,
+    marginLeft: 'auto',
   },
-  addText: {
+  logBtnText: {
     fontSize: 12,
     fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 3,
   },
+  list: { paddingTop: 12, paddingBottom: 24 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -254,50 +320,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  regIcon: {
+  svcIcon: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#fee2e2',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
-  cardHeader: { flex: 1 },
-  reg: {
+  cardBody: { flex: 1, marginRight: 8 },
+  svcTitle: {
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  issue: {
+  svcMeta: {
     fontSize: 11,
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
-    marginTop: 1,
-  },
-  priorityChip: {
-    borderRadius: 7,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  priorityText: {
-    fontSize: 9,
-    fontFamily: 'Manrope-Bold',
-  },
-  odo: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 9,
-  },
-  cardBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
+    marginTop: 2,
   },
   statusChip: {
-    borderRadius: 7,
+    borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -306,59 +351,62 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
   },
   completeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#dcfce7',
     borderRadius: 9,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+    paddingVertical: 9,
+    marginTop: 10,
   },
   completeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Manrope-Bold',
     color: '#059669',
+    marginLeft: 4,
   },
-  formCard: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
     backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 18,
   },
-  formTitle: {
-    fontSize: 13,
+  modalTitle: {
+    fontSize: 16,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  formLabel: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Bold',
+  modalSub: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 12,
-    marginBottom: 6,
+    marginTop: 3,
+    marginBottom: 10,
   },
-  vehicleRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  vehiclePick: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
   },
-  vehicleChip: {
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-    borderRadius: 8,
-    backgroundColor: theme.colors.surfaceMuted,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  vehicleChipActive: { backgroundColor: theme.colors.primary },
-  vehicleChipText: {
-    fontSize: 11,
+  vehiclePickActive: { borderColor: theme.colors.primary, backgroundColor: '#eff6ff' },
+  vehiclePickText: {
+    fontSize: 12,
     fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.textMuted,
+    color: theme.colors.text,
   },
-  vehicleChipTextActive: { color: '#fff' },
-  formRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  formHalf: { flex: 1, marginRight: 8 },
+  vehiclePickTextActive: { color: theme.colors.primary },
   input: {
     backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 10,
@@ -367,56 +415,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
+    marginTop: 8,
   },
-  confirmBtn: {
+  modalBtnRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-    paddingVertical: 12,
     marginTop: 14,
   },
-  confirmText: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 6,
-  },
-  fuelCard: {
-    flexDirection: 'row',
+  modalBtn: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 10,
+    paddingVertical: 11,
+    marginHorizontal: 4,
   },
-  fuelIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 9,
-    backgroundColor: '#fef3c7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  cardBody: { flex: 1 },
-  fuelReg: {
-    fontSize: 13,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.text,
-  },
-  fuelMeta: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  fuelAmount: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
+  modalSave: { backgroundColor: theme.colors.primary },
+  modalSaveText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  modalCancel: { backgroundColor: theme.colors.surfaceMuted },
+  modalCancelText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted },
 });
