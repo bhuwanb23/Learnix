@@ -115,8 +115,10 @@ async function main() {
   await seedDomainC(institution.id);
   await seedDomainD(institution.id);
   await seedDomainE(institution.id);
+  await seedDomainF(institution.id);
+  await seedDomainG(institution.id);
 
-  console.log('Seed complete (base + Domains A–E).');
+  console.log('Seed complete (base + Domains A–G).');
 }
 
 main()
@@ -740,5 +742,115 @@ async function seedDomainE(institutionId: string): Promise<void> {
   });
 
   console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
+}
   console.log('  ✓ payroll DRAFT 2026-08 (₹60,000 net), LABS budget+expense PENDING, merit scholarship APPROVED');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain F — Library seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainF(institutionId: string): Promise<void> {
+  console.log('Seeding Domain F (library)…');
+
+  const teacher = await db.user.findFirst({ where: { email: 'teacher@learnix.dev', institutionId } });
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!teacher || !student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+  const program = await db.program.findFirst({ where: { code: 'BT-CSE' } });
+  if (!program) throw new Error('BT-CSE missing');
+
+  // Books
+  const cleanCode = await db.book.upsert({
+    where: { id: 'seed-book-clean-code' },
+    update: {},
+    create: {},
+  }).catch(() => null);
+  let book1 = await db.book.findFirst({ where: { institutionId, isbn: '9780132350884' } });
+  if (!book1) {
+    book1 = await db.book.create({
+      data: { institutionId, title: 'Clean Code', author: 'Robert C. Martin', isbn: '9780132350884', category: 'CS', totalCopies: 5, availableCopies: 4, rackLocation: 'R2-A3' },
+    });
+  }
+  let book2 = await db.book.findFirst({ where: { institutionId, isbn: '9781455502810' } });
+  if (!book2) {
+    book2 = await db.book.create({
+      data: { institutionId, title: 'Sapiens', author: 'Yuval Noah Harari', isbn: '9781455502810', category: 'GENERAL', totalCopies: 3, availableCopies: 3, rackLocation: 'R5-B1' },
+    });
+  }
+
+  // Issue 1: OVERDUE with a PAID fine (payment + receipt chain)
+  let overdueIssue = await db.bookIssue.findFirst({ where: { bookId: book1.id, studentProfileId: studentProfile.id, status: 'OVERDUE' } });
+  if (!overdueIssue) {
+    overdueIssue = await db.bookIssue.create({
+      data: {
+        bookId: book1.id,
+        studentProfileId: studentProfile.id,
+        issueDate: new Date('2026-07-01'),
+        dueDate: new Date('2026-07-15'),
+        status: 'OVERDUE',
+        issuedByUserId: teacher.id,
+      },
+    });
+    await db.book.update({ where: { id: book1.id }, data: { availableCopies: { decrement: 1 } } });
+  }
+  const fine = await db.fine.findUnique({ where: { bookIssueId: overdueIssue.id } });
+  if (!fine) {
+    const finePayment = await db.payment.create({
+      data: {
+        institutionId,
+        payerUserId: student.id,
+        studentProfileId: studentProfile.id,
+        category: 'FINE',
+        referenceNo: 'PAY-2026-0002',
+        amountMinor: 5000, // ₹50
+        method: 'CASH',
+        status: 'CLEARED',
+        paidAt: new Date(),
+        recordedByUserId: teacher.id,
+      },
+    });
+    await db.receipt.create({ data: { paymentId: finePayment.id, receiptNo: 'RCP-2025-26-0002' } });
+    const fineRow = await db.fine.create({
+      data: { bookIssueId: overdueIssue.id, amountMinor: 5000, daysOverdue: 10, status: 'PENDING' },
+    });
+    await db.finePayment.create({ data: { paymentId: finePayment.id, bookIssueId: overdueIssue.id } });
+    await db.fine.update({ where: { id: fineRow.id }, data: { status: 'PAID', paidPaymentId: finePayment.id } });
+  }
+
+  // Issue 2: active ISSUED book
+  const activeIssue = await db.bookIssue.findFirst({ where: { bookId: book2.id, studentProfileId: studentProfile.id, status: 'ISSUED' } });
+  if (!activeIssue) {
+    await db.bookIssue.create({
+      data: {
+        bookId: book2.id,
+        studentProfileId: studentProfile.id,
+        issueDate: new Date(),
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        status: 'ISSUED',
+        issuedByUserId: teacher.id,
+      },
+    });
+    await db.book.update({ where: { id: book2.id }, data: { availableCopies: { decrement: 1 } } });
+  }
+
+  // Book request PENDING
+  const request = await db.bookRequest.findFirst({ where: { studentProfileId: studentProfile.id, title: 'Designing Data-Intensive Applications' } });
+  if (!request) {
+    await db.bookRequest.create({
+      data: { studentProfileId: studentProfile.id, title: 'Designing Data-Intensive Applications', author: 'Martin Kleppmann', reason: 'Needed for DBMS project', status: 'PENDING' },
+    });
+  }
+
+  // Digital resource + grant to BT-CSE
+  const resource = await db.digitalResource.findFirst({ where: { institutionId, title: 'IEEE Xplore — CS Collection' } });
+  if (!resource) {
+    const res = await db.digitalResource.create({
+      data: { institutionId, title: 'IEEE Xplore — CS Collection', type: 'JOURNAL', subject: 'Computer Science', license: 'Campus-wide 2026', accessCount: 0 },
+    });
+    await db.digitalAccessGrant.create({ data: { resourceId: res.id, programId: program.id } });
+  }
+
+  console.log('  ✓ 2 books, 1 OVERDUE issue + fine ₹50 PAID (PAY-2026-0002 + receipt), 1 ISSUED, request PENDING, IEEE grant');
 }
