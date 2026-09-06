@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,47 +6,59 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { alumniApi } from '../../../../services/api';
 import AlumniDetail from './pages/alumni_detail/alumni_detail';
 
-const stats = [
-  { label: 'Total Alumni', value: '12,450', icon: 'people-outline', color: '#2563eb' },
-  { label: 'Employed', value: '9,820', icon: 'briefcase-outline', color: '#059669' },
-  { label: 'Entrepreneurs', value: '640', icon: 'rocket-outline', color: '#d97706' },
-  { label: 'Higher Ed', value: '1,120', icon: 'school-outline', color: '#0891b2' },
-];
-
-const alumni = [
-  { id: 'A1', name: 'Rohit Malhotra', batch: '2021', company: 'Google', role: 'Software Engineer', location: 'Bengaluru', status: 'Active', color: '#2563eb' },
-  { id: 'A2', name: 'Sneha Iyer', batch: '2020', company: 'Microsoft', role: 'Product Manager', location: 'Hyderabad', status: 'Active', color: '#059669' },
-  { id: 'A3', name: 'Arjun Nair', batch: '2019', company: 'Founder, Nova Labs', role: 'Entrepreneur', location: 'Bengaluru', status: 'Active', color: '#d97706' },
-  { id: 'A4', name: 'Priya Reddy', batch: '2022', company: 'TCS', role: 'Data Analyst', location: 'Chennai', status: 'Active', color: '#0891b2' },
-  { id: 'A5', name: 'Karthik Menon', batch: '2018', company: 'Amazon', role: 'Sr. Solutions Architect', location: 'Pune', status: 'Inactive', color: '#64748b' },
-  { id: 'A6', name: 'Divya Sharma', batch: '2021', company: 'IIT Madras', role: 'M.Tech Scholar', location: 'Chennai', status: 'Active', color: '#dc2626' },
-  { id: 'A7', name: 'Vikram Singh', batch: '2020', company: 'Flipkart', role: 'SDE-II', location: 'Bengaluru', status: 'Active', color: '#7c3aed' },
-  { id: 'A8', name: 'Ananya Joshi', batch: '2023', company: 'Deloitte', role: 'Consultant', location: 'Mumbai', status: 'Active', color: '#0d9488' },
-];
-
-const batches = ['All', '2024', '2023', '2022', '2021', '2020'];
+const COLORS = ['#2563eb', '#059669', '#d97706', '#0891b2', '#dc2626', '#7c3aed', '#0d9488', '#64748b'];
 
 export default function AlumniDirectory({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
-  const [batch, setBatch] = useState('All');
+  const [batch, setBatch] = useState(null); // null = All
   const [selected, setSelected] = useState(null);
 
-  const filtered = alumni.filter((a) => {
-    const matchesQuery = a.name.toLowerCase().includes(query.toLowerCase()) ||
-      a.company.toLowerCase().includes(query.toLowerCase());
-    const matchesBatch = batch === 'All' || a.batch === batch;
-    return matchesQuery && matchesBatch;
-  });
+  const load = useCallback(
+    async (params = {}, showSpinner = false) => {
+      try {
+        if (showSpinner) setLoading(true);
+        setError(null);
+        const d = await alumniApi.directory(params);
+        setData(d);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [],
+  );
+
+  // Debounced server-side search: query + batch → /alumni/directory
+  useEffect(() => {
+    const t = setTimeout(() => {
+      load({ q: query || undefined, batch: batch || undefined });
+    }, query ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [query, batch, load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load({ q: query || undefined, batch: batch || undefined }, false);
+  };
 
   if (selected) {
     return (
       <AlumniDetail
-        alumni={selected}
+        alumniId={selected}
         navigation={{
           goBack: () => setSelected(null),
           openModule: (key) => navigation.openModule(key),
@@ -55,90 +67,144 @@ export default function AlumniDirectory({ navigation }) {
     );
   }
 
+  const stats = data?.stats ?? { total: 0, active: 0 };
+  const inactive = Math.max(stats.total - stats.active, 0);
+  const alumni = data?.alumni ?? [];
+  const batches = [...new Set(alumni.map((a) => a.graduationYear))].sort((a, b) => b - a);
+
+  const statCards = [
+    { label: 'Total Alumni', value: String(stats.total), icon: 'people-outline', color: '#2563eb' },
+    { label: 'Active', value: String(stats.active), icon: 'checkmark-circle-outline', color: '#059669' },
+    { label: 'Needs Outreach', value: String(inactive), icon: 'warning-outline', color: '#d97706' },
+  ];
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.statsRow}>
-        {stats.map((s) => (
-          <View key={s.label} style={styles.statCard}>
-            <Ionicons name={s.icon} size={14} color={s.color} />
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.searchWrap}>
-        <Ionicons name="search-outline" size={16} color={theme.colors.textMuted} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search alumni, company..."
-          placeholderTextColor={theme.colors.textMuted}
-          value={query}
-          onChangeText={setQuery}
-        />
-        {query.length > 0 && (
-          <TouchableOpacity onPress={() => setQuery('')}>
-            <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+    <View style={styles.flex}>
+      {error && !data ? (
+        <View style={styles.center}>
+          <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => load({}, true)}>
+            <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
-        )}
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipsRow}
-        contentContainerStyle={styles.chipsContent}
-      >
-        {batches.map((b) => (
-          <TouchableOpacity
-            key={b}
-            style={[styles.chip, batch === b && styles.chipActive]}
-            onPress={() => setBatch(b)}
-          >
-            <Text style={[styles.chipText, batch === b && styles.chipTextActive]}>
-              {b === 'All' ? 'All Batches' : `Batch ${b}`}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <Text style={styles.countText}>{filtered.length} alumni found</Text>
-
-      {filtered.map((a) => (
-        <TouchableOpacity
-          key={a.id}
-          style={styles.card}
-          onPress={() => setSelected(a)}
-          activeOpacity={0.8}
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.container}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <View style={[styles.avatar, { backgroundColor: a.color + '1a' }]}>
-            <Text style={[styles.avatarText, { color: a.color }]}>
-              {a.name.split(' ').map((n) => n[0]).join('')}
-            </Text>
-          </View>
-          <View style={styles.cardBody}>
-            <View style={styles.nameRow}>
-              <Text style={styles.name}>{a.name}</Text>
-              <View style={[styles.statusChip, { backgroundColor: a.status === 'Active' ? '#dcfce7' : '#f1f5f9' }]}>
-                <Text style={[styles.statusText, { color: a.status === 'Active' ? '#059669' : '#64748b' }]}>
-                  {a.status}
-                </Text>
+          <View style={styles.statsRow}>
+            {statCards.map((s) => (
+              <View key={s.label} style={styles.statCard}>
+                <Ionicons name={s.icon} size={14} color={s.color} />
+                <Text style={styles.statValue}>{s.value}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
               </View>
-            </View>
-            <Text style={styles.role}>{a.role} · {a.company}</Text>
-            <Text style={styles.meta}>
-              Batch {a.batch} · {a.location}
-            </Text>
+            ))}
           </View>
-          <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+
+          <View style={styles.searchWrap}>
+            <Ionicons name="search-outline" size={16} color={theme.colors.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search alumni, role, city..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={query}
+              onChangeText={setQuery}
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery('')}>
+                <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {batches.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipsRow}
+              contentContainerStyle={styles.chipsContent}
+            >
+              {[null, ...batches].map((b) => (
+                <TouchableOpacity
+                  key={b ?? 'all'}
+                  style={[styles.chip, batch === b && styles.chipActive]}
+                  onPress={() => setBatch(b)}
+                >
+                  <Text style={[styles.chipText, batch === b && styles.chipTextActive]}>
+                    {b === null ? 'All Batches' : `Batch ${b}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          <Text style={styles.countText}>{alumni.length} alumni found</Text>
+
+          {alumni.map((a, idx) => {
+            const color = COLORS[idx % COLORS.length];
+            const active = a.engagementStatus === 'ACTIVE';
+            return (
+              <TouchableOpacity
+                key={a.id}
+                style={styles.card}
+                onPress={() => setSelected(a.id)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
+                  <Text style={[styles.avatarText, { color }]}>
+                    {a.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                  </Text>
+                </View>
+                <View style={styles.cardBody}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.name} numberOfLines={1}>{a.name}</Text>
+                    <View style={[styles.statusChip, { backgroundColor: active ? '#dcfce7' : '#f1f5f9' }]}>
+                      <Text style={[styles.statusText, { color: active ? '#059669' : '#64748b' }]}>
+                        {a.engagementStatus}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.role} numberOfLines={1}>
+                    {a.currentRole || '—'}{a.company ? ` · ${a.company}` : ''}
+                  </Text>
+                  <Text style={styles.meta}>
+                    Batch {a.graduationYear}{a.location ? ` · ${a.location}` : ''}
+                    {a.chapter ? ` · ${a.chapter.city} Chapter` : ''}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            );
+          })}
+          {!loading && alumni.length === 0 && (
+            <Text style={styles.emptyText}>No alumni match your search.</Text>
+          )}
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   statsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -147,7 +213,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   statCard: {
-    width: '48.5%',
+    width: '31.5%',
     backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
@@ -162,7 +228,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
@@ -254,6 +320,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginRight: 8,
+    flexShrink: 1,
   },
   statusChip: {
     borderRadius: 6,

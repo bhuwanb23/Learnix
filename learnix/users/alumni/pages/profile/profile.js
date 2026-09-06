@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
+import { alumniApi } from '../../../../services/api';
 
 const toggles = [
   { id: 'T1', label: 'Event invites & RSVP alerts', icon: 'calendar-outline', color: '#2563eb', default: true },
@@ -19,46 +21,124 @@ const menuItems = [
 ];
 
 export default function AlumniProfile({ navigation }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [prefs, setPrefs] = useState(
-    toggles.reduce((acc, t) => ({ ...acc, [t.id]: t.default }), {})
+    toggles.reduce((acc, t) => ({ ...acc, [t.id]: t.default }), {}),
   );
+
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const p = await alumniApi.profile();
+      setProfile(p);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
 
   const togglePref = (id) => {
     setPrefs((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const onLogout = () => {
+    Alert.alert('Logout', 'Clear the session and re-login as the demo user?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.removeItem('learnix.refreshToken');
+          Alert.alert('Logged out', 'Session cleared. The app will re-authenticate on next load.');
+        },
+      },
+    ]);
+  };
+
+  if (loading && !profile) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !profile) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const initials = profile.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2);
+  const ps = profile.programStats ?? {};
+  const statCards = [
+    { value: String(ps.activeMentorships ?? 0), label: 'Mentor Pairs' },
+    { value: String(ps.sessionsLogged ?? 0), label: 'Sessions' },
+    { value: String(ps.activeCampaigns ?? 0), label: 'Campaigns' },
+  ];
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>AR</Text>
+          <Text style={styles.avatarText}>{initials}</Text>
         </View>
-        <Text style={styles.name}>Priya Krishnan</Text>
-        <Text style={styles.role}>Director, Alumni Relations</Text>
+        <Text style={styles.name}>{profile.fullName}</Text>
+        <Text style={styles.role}>
+          {(profile.roles ?? []).includes('ADMIN') ? 'Director' : 'Staff'}, Alumni Relations
+        </Text>
         <View style={styles.badgeRow}>
-          <View style={styles.badge}>
-            <Ionicons name="ribbon-outline" size={11} color="#fff" />
-            <Text style={styles.badgeText}>8 yrs at Learnix</Text>
-          </View>
-          <View style={styles.badge}>
-            <Ionicons name="school-outline" size={11} color="#fff" />
-            <Text style={styles.badgeText}>Batch 2016</Text>
-          </View>
+          {(profile.roles ?? []).map((r) => (
+            <View key={r} style={styles.badge}>
+              <Ionicons name="shield-checkmark-outline" size={11} color="#fff" />
+              <Text style={styles.badgeText}>{r}</Text>
+            </View>
+          ))}
         </View>
       </LinearGradient>
 
       <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>12,450</Text>
-          <Text style={styles.statLabel}>Alumni</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>14</Text>
-          <Text style={styles.statLabel}>Chapters</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>₹24.5L</Text>
-          <Text style={styles.statLabel}>FY Donations</Text>
+        {statCards.map((s) => (
+          <View key={s.label} style={styles.statCard}>
+            <Text style={styles.statValue}>{s.value}</Text>
+            <Text style={styles.statLabel}>{s.label}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Contact</Text>
+        <View style={styles.menuCard}>
+          <View style={styles.menuRow}>
+            <Ionicons name="mail-outline" size={17} color={theme.colors.textMuted} />
+            <Text style={styles.menuLabel}>Email</Text>
+            <Text style={styles.menuValue} numberOfLines={1}>{profile.email}</Text>
+          </View>
         </View>
       </View>
 
@@ -92,7 +172,7 @@ export default function AlumniProfile({ navigation }) {
             <TouchableOpacity
               key={m.id}
               style={[styles.menuRow, idx < menuItems.length - 1 && styles.menuRowBorder]}
-              onPress={() => Alert.alert(m.label, 'Coming soon')}
+              onPress={() => Alert.alert(m.label, 'Coming in a later phase.')}
               activeOpacity={0.7}
             >
               <Ionicons name={m.icon} size={17} color={theme.colors.textMuted} />
@@ -103,10 +183,7 @@ export default function AlumniProfile({ navigation }) {
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.logoutBtn}
-        onPress={() => Alert.alert('Logout', 'You will be returned to the login screen.')}
-      >
+      <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
         <Ionicons name="log-out-outline" size={16} color="#dc2626" />
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -116,6 +193,10 @@ export default function AlumniProfile({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   hero: {
     margin: 16,
     borderRadius: 20,
@@ -270,6 +351,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
     marginLeft: 12,
+  },
+  menuValue: {
+    fontSize: 12,
+    fontFamily: 'Manrope-SemiBold',
+    color: theme.colors.textMuted,
+    maxWidth: '55%',
+    textAlign: 'right',
   },
   logoutBtn: {
     flexDirection: 'row',

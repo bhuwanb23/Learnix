@@ -1,74 +1,77 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { alumniApi } from '../../../../services/api';
 
-const stats = [
-  { label: 'Chapters', value: '14', icon: 'location-outline', color: '#2563eb' },
-  { label: 'Members', value: '3,240', icon: 'people-outline', color: '#059669' },
-  { label: 'Chapter Events', value: '6', icon: 'calendar-outline', color: '#d97706' },
-];
-
-const chapters = [
-  {
-    id: 'CH1',
-    city: 'Bengaluru',
-    members: 620,
-    president: 'Rohit Malhotra (2021)',
-    nextEvent: 'Chapter Meet — Dec 6',
-    color: '#2563eb',
-  },
-  {
-    id: 'CH2',
-    city: 'Mumbai',
-    members: 480,
-    president: 'Ananya Joshi (2023)',
-    nextEvent: 'Tech Talk — Jan 16',
-    color: '#059669',
-  },
-  {
-    id: 'CH3',
-    city: 'Hyderabad',
-    members: 390,
-    president: 'Sneha Iyer (2020)',
-    nextEvent: 'Startup Pitch Night — Jan 23',
-    color: '#0891b2',
-  },
-  {
-    id: 'CH4',
-    city: 'Chennai',
-    members: 340,
-    president: 'Divya Sharma (2021)',
-    nextEvent: 'Career Guidance Session — Feb 7',
-    color: '#d97706',
-  },
-  {
-    id: 'CH5',
-    city: 'Pune',
-    members: 280,
-    president: 'Karthik Menon (2018)',
-    nextEvent: 'Cloud Careers Workshop — Feb 14',
-    color: '#dc2626',
-  },
-  {
-    id: 'CH6',
-    city: 'Delhi NCR',
-    members: 310,
-    president: 'Vikram Singh (2020)',
-    nextEvent: 'Annual Chapter Dinner — Feb 21',
-    color: '#7c3aed',
-  },
-];
+const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
 
 export default function ChaptersModule({ navigation }) {
+  const [chapters, setChapters] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [query, setQuery] = useState('');
 
-  const filtered = chapters.filter((c) =>
-    c.city.toLowerCase().includes(query.toLowerCase())
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const list = await alumniApi.chapters();
+      setChapters(list);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
+  if (loading && !chapters) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#059669" />
+      </View>
+    );
+  }
+
+  if (error && !chapters) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const filtered = (chapters ?? []).filter((c) =>
+    c.city.toLowerCase().includes(query.toLowerCase()),
   );
+  const totalMembers = (chapters ?? []).reduce((s, c) => s + c.memberCount, 0);
+  const stats = [
+    { label: 'Chapters', value: String((chapters ?? []).length), icon: 'location-outline', color: '#2563eb' },
+    { label: 'Members', value: String(totalMembers), icon: 'people-outline', color: '#059669' },
+    { label: 'Upcoming', value: String((chapters ?? []).filter((c) => c.nextEventAt).length), icon: 'calendar-outline', color: '#d97706' },
+  ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.statsRow}>
         {stats.map((s) => (
           <View key={s.label} style={styles.statCard}>
@@ -90,35 +93,51 @@ export default function ChaptersModule({ navigation }) {
         />
       </View>
 
-      {filtered.map((c) => (
-        <View key={c.id} style={styles.chapterCard}>
-          <View style={[styles.cityIcon, { backgroundColor: c.color + '1a' }]}>
-            <Ionicons name="location" size={18} color={c.color} />
-          </View>
-          <View style={styles.chapterBody}>
-            <Text style={styles.chapterCity}>{c.city} Chapter</Text>
-            <Text style={styles.chapterMeta}>
-              {c.members} members · President: {c.president}
-            </Text>
-            <View style={styles.eventChip}>
-              <Ionicons name="calendar-outline" size={11} color={c.color} />
-              <Text style={[styles.eventText, { color: c.color }]}>{c.nextEvent}</Text>
+      {filtered.map((c, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        return (
+          <View key={c.id} style={styles.chapterCard}>
+            <View style={[styles.cityIcon, { backgroundColor: color + '1a' }]}>
+              <Ionicons name="location" size={18} color={color} />
             </View>
+            <View style={styles.chapterBody}>
+              <Text style={styles.chapterCity}>{c.city} Chapter</Text>
+              <Text style={styles.chapterMeta}>
+                {c.memberCount} member{c.memberCount === 1 ? '' : 's'}
+                {c.president ? ` · President: ${c.president}` : ''}
+              </Text>
+              {c.nextEventAt ? (
+                <View style={styles.eventChip}>
+                  <Ionicons name="calendar-outline" size={11} color={color} />
+                  <Text style={[styles.eventText, { color }]}>
+                    Next event — {new Date(c.nextEventAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            <TouchableOpacity
+              style={styles.msgBtn}
+              onPress={() => Alert.alert('Chapter Contact', c.president ? `President of ${c.city} chapter: ${c.president}` : 'No president assigned yet.')}
+            >
+              <Ionicons name="chatbubble-ellipses-outline" size={16} color="#2563eb" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.msgBtn}
-            onPress={() => Alert.alert('Chapter Message', `Opening chat with ${c.city} chapter president...`)}
-          >
-            <Ionicons name="chatbubble-ellipses-outline" size={16} color="#2563eb" />
-          </TouchableOpacity>
-        </View>
-      ))}
+        );
+      })}
+      {filtered.length === 0 && (
+        <Text style={styles.emptyText}>No chapters match your search.</Text>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#059669', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

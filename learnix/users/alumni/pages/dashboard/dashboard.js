@@ -1,26 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
+import { alumniApi } from '../../../../services/api';
 
-const stats = [
-  { label: 'Registered', value: '12,450', sub: 'across 14 chapters', color: '#2563eb', icon: 'people-outline' },
-  { label: 'Events', value: '8', sub: '3 this month', color: '#059669', icon: 'calendar-outline' },
-  { label: 'Donations', value: '₹24.5L', sub: 'FY 2026', color: '#d97706', icon: 'gift-outline' },
-  { label: 'Mentors', value: '52', sub: '36 active pairs', color: '#0891b2', icon: 'hand-left-outline' },
-];
-
-const upcomingEvents = [
-  { id: '1', name: 'Alumni Networking Meet', date: 'Dec 18, 2026', venue: 'Seminar Hall B', rsvps: 85, capacity: 150, color: '#0891b2' },
-  { id: '2', name: 'Bengaluru Chapter Meet', date: 'Dec 6, 2026', venue: 'JW Marriott, Bengaluru', rsvps: 42, capacity: 60, color: '#2563eb' },
-  { id: '3', name: 'GenAI in Industry — Webinar', date: 'Jan 9, 2027', venue: 'Online (Zoom)', rsvps: 120, capacity: 200, color: '#059669' },
-];
-
-const alerts = [
-  { id: '1', title: '3 mentorship requests pending', detail: 'Batch 2024 alumni waiting for mentor assignment', severity: 'High' },
-  { id: '2', title: 'Networking Meet at 57% RSVP', detail: '85 of 150 confirmed — send reminders to batch 2020-23', severity: 'Medium' },
-];
+const fmt = (n) => {
+  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)} L`;
+  return `₹${n.toLocaleString('en-IN')}`;
+};
 
 const modules = [
   { id: 'Mentorship', title: 'Mentorship', icon: 'hand-left-outline', color: '#2563eb' },
@@ -28,41 +17,101 @@ const modules = [
   { id: 'Notifications', title: 'Notify', icon: 'megaphone-outline', color: '#d97706' },
 ];
 
-const activity = [
-  { text: 'Donation received — ₹50,000 from Rohit Malhotra (2021)', time: '2 hrs ago', icon: 'gift-outline', color: '#059669' },
-  { text: 'Mentorship request approved — Aarav Mehta ↔ Rajesh Iyer', time: '4 hrs ago', icon: 'hand-left-outline', color: '#2563eb' },
-  { text: 'New chapter event — Mumbai Chapter Tech Talk scheduled', time: '6 hrs ago', icon: 'location-outline', color: '#0891b2' },
-  { text: 'Newsletter sent to 12,450 alumni', time: 'Yesterday', icon: 'mail-outline', color: '#d97706' },
-];
-
 export default function AlumniDashboard({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const d = await alumniApi.dashboard();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const engagement = data?.engagement ?? { totalAlumni: 0, activeAlumni: 0, percentage: 0 };
+  const stats = data?.stats ?? {};
+  const events = data?.upcomingEvents ?? [];
+  const alerts = data?.alerts ?? [];
+  const campaigns = data?.campaigns ?? [];
+
+  const statCards = [
+    { label: 'Registered', value: String(stats.alumni ?? 0), sub: `${engagement.activeAlumni} active`, color: '#2563eb', icon: 'people-outline' },
+    { label: 'Events', value: String(stats.upcomingEvents ?? 0), sub: 'upcoming', color: '#059669', icon: 'calendar-outline' },
+    { label: 'Donations', value: fmt(stats.donationsReceivedRupees ?? 0), sub: 'received FY', color: '#d97706', icon: 'gift-outline' },
+    { label: 'Mentors', value: String(stats.activeMentorships ?? 0), sub: `${stats.pendingMentorships ?? 0} pending`, color: '#0891b2', icon: 'hand-left-outline' },
+  ];
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
         <Text style={styles.heroLabel}>ALUMNI RELATIONS OFFICE</Text>
         <Text style={styles.heroTitle}>Engagement Overview</Text>
         <View style={styles.heroProgress}>
-          <View style={[styles.heroProgressFill, { width: '68%' }]} />
+          <View style={[styles.heroProgressFill, { width: `${engagement.percentage}%` }]} />
         </View>
         <View style={styles.heroRow}>
           <View>
-            <Text style={styles.heroValue}>68%</Text>
-            <Text style={styles.heroSub}>FY engagement · 12,450 alumni</Text>
+            <Text style={styles.heroValue}>{engagement.percentage}%</Text>
+            <Text style={styles.heroSub}>engagement · {engagement.totalAlumni} alumni</Text>
           </View>
-          <View style={styles.heroBadge}>
-            <Ionicons name="ribbon-outline" size={14} color="#fff" />
-            <Text style={styles.heroBadgeText}>NAAC Ready</Text>
-          </View>
+          {(data?.unreadNotifications ?? 0) > 0 && (
+            <View style={styles.heroBadge}>
+              <Ionicons name="notifications-outline" size={14} color="#fff" />
+              <Text style={styles.heroBadgeText}>{data.unreadNotifications} unread</Text>
+            </View>
+          )}
         </View>
       </LinearGradient>
 
       <View style={styles.statsGrid}>
-        {stats.map((s) => (
+        {statCards.map((s) => (
           <View key={s.label} style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: s.color + '1a' }]}>
               <Ionicons name={s.icon} size={16} color={s.color} />
             </View>
-            <Text style={styles.statValue}>{s.value}</Text>
+            <Text style={styles.statValue} numberOfLines={1}>{s.value}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
             <Text style={[styles.statSub, { color: s.color }]}>{s.sub}</Text>
           </View>
@@ -76,53 +125,70 @@ export default function AlumniDashboard({ navigation }) {
             <Text style={styles.seeAll}>View all</Text>
           </TouchableOpacity>
         </View>
-        {upcomingEvents.map((e) => {
-          const pct = Math.round((e.rsvps / e.capacity) * 100);
+        {events.map((e) => {
+          const pct = e.capacity > 0 ? Math.min(Math.round((e.rsvps / e.capacity) * 100), 100) : 0;
           return (
             <View key={e.id} style={styles.listCard}>
-              <View style={[styles.typeIcon, { backgroundColor: e.color + '1a' }]}>
-                <Ionicons name="calendar-outline" size={16} color={e.color} />
+              <View style={[styles.typeIcon, { backgroundColor: '#0891b21a' }]}>
+                <Ionicons name="calendar-outline" size={16} color="#0891b2" />
               </View>
               <View style={styles.listBody}>
-                <Text style={styles.listTitle}>{e.name}</Text>
+                <Text style={styles.listTitle} numberOfLines={1}>{e.title}</Text>
                 <Text style={styles.listSub}>
-                  {e.date} · {e.venue}
+                  {new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {e.venue ? ` · ${e.venue}` : ''}
                 </Text>
                 <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: e.color }]} />
+                  <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: '#0891b2' }]} />
                 </View>
-                <Text style={[styles.rsvpText, { color: e.color }]}>
+                <Text style={[styles.rsvpText, { color: '#0891b2' }]}>
                   {e.rsvps}/{e.capacity} RSVPs
                 </Text>
               </View>
             </View>
           );
         })}
+        {events.length === 0 && <Text style={styles.emptyText}>No upcoming events scheduled.</Text>}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Office Alerts</Text>
-        {alerts.map((a) => (
-          <View key={a.id} style={styles.alertCard}>
-            <View
-              style={[
-                styles.alertIcon,
-                { backgroundColor: a.severity === 'High' ? '#fee2e2' : '#fef3c7' },
-              ]}
-            >
-              <Ionicons
-                name={a.severity === 'High' ? 'warning-outline' : 'alert-circle-outline'}
-                size={16}
-                color={a.severity === 'High' ? '#dc2626' : '#d97706'}
-              />
+      {alerts.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Office Alerts</Text>
+          {alerts.map((a, idx) => (
+            <View key={idx} style={styles.alertCard}>
+              <View style={styles.alertIcon}>
+                <Ionicons name="warning-outline" size={16} color="#d97706" />
+              </View>
+              <View style={styles.listBody}>
+                <Text style={styles.listTitle}>{a.message}</Text>
+                <Text style={styles.listSub}>{a.type}</Text>
+              </View>
             </View>
-            <View style={styles.listBody}>
-              <Text style={styles.listTitle}>{a.title}</Text>
-              <Text style={styles.listSub}>{a.detail}</Text>
+          ))}
+        </View>
+      )}
+
+      {campaigns.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Fundraising Campaigns</Text>
+          {campaigns.map((c, idx) => (
+            <View key={c.name} style={styles.listCard}>
+              <View style={[styles.typeIcon, { backgroundColor: '#d977061a' }]}>
+                <Ionicons name="gift-outline" size={16} color="#d97706" />
+              </View>
+              <View style={styles.listBody}>
+                <Text style={styles.listTitle} numberOfLines={1}>{c.name}</Text>
+                <View style={styles.progressTrack}>
+                  <View style={[styles.progressFill, { width: `${Math.min(c.percent, 100)}%`, backgroundColor: '#d97706' }]} />
+                </View>
+                <Text style={[styles.rsvpText, { color: '#d97706' }]}>
+                  {fmt(c.raisedRupees)} of {fmt(c.targetRupees)} · {c.percent}%
+                </Text>
+              </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
@@ -141,27 +207,17 @@ export default function AlumniDashboard({ navigation }) {
           ))}
         </View>
       </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {activity.map((a, idx) => (
-          <View key={idx} style={styles.activityRow}>
-            <View style={[styles.activityIcon, { backgroundColor: a.color + '1a' }]}>
-              <Ionicons name={a.icon} size={14} color={a.color} />
-            </View>
-            <View style={styles.activityBody}>
-              <Text style={styles.activityText}>{a.text}</Text>
-              <Text style={styles.activityTime}>{a.time}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, paddingVertical: 8 },
   hero: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -305,6 +361,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
+    backgroundColor: '#fef3c7',
   },
   listBody: { flex: 1, marginRight: 8 },
   listTitle: {
@@ -370,30 +427,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
-  },
-  activityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  activityIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  activityBody: { flex: 1 },
-  activityText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.text,
-  },
-  activityTime: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 1,
   },
 });

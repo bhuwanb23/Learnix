@@ -1,52 +1,139 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { alumniApi } from '../../../../services/api';
 
-const initialInbox = [
-  { id: 'N1', type: 'Event', title: 'Alumni Networking Meet — RSVP Reminder', time: '1 hr ago', unread: true, color: '#2563eb', icon: 'calendar-outline' },
-  { id: 'N2', type: 'Donation', title: '₹1,00,000 pledge received from Arjun Nair', time: '3 hrs ago', unread: true, color: '#059669', icon: 'gift-outline' },
-  { id: 'N3', type: 'Mentorship', title: 'New mentorship request — Vikram Singh ↔ Ishaan Gupta', time: '5 hrs ago', unread: true, color: '#0891b2', icon: 'hand-left-outline' },
-  { id: 'N4', type: 'Chapter', title: 'Bengaluru chapter meet confirmed — Dec 6', time: 'Yesterday', unread: false, color: '#d97706', icon: 'location-outline' },
-  { id: 'N5', type: 'Event', title: 'Golden Jubilee Reunion photo gallery published', time: '2 days ago', unread: false, color: '#dc2626', icon: 'images-outline' },
-  { id: 'N6', type: 'Newsletter', title: 'November newsletter delivered to 12,450 alumni', time: '3 days ago', unread: false, color: '#7c3aed', icon: 'mail-outline' },
+const TYPE_META = {
+  EVENT: { label: 'Event', color: '#2563eb', icon: 'calendar-outline' },
+  DONATION: { label: 'Donation', color: '#059669', icon: 'gift-outline' },
+  MENTORSHIP: { label: 'Mentorship', color: '#0891b2', icon: 'hand-left-outline' },
+  BROADCAST: { label: 'Broadcast', color: '#7c3aed', icon: 'megaphone-outline' },
+  ANNOUNCEMENT: { label: 'Announcement', color: '#d97706', icon: 'megaphone-outline' },
+  SYSTEM: { label: 'System', color: '#64748b', icon: 'server-outline' },
+};
+
+const AUDIENCES = [
+  { key: 'ALL_ALUMNI', label: 'All Alumni' },
+  { key: 'BATCH_2024', label: 'Batch 2024' },
+  { key: 'CITY_BENGALURU', label: 'Bengaluru' },
+  { key: 'MENTORS', label: 'Mentors' },
 ];
 
-const audiences = ['All Alumni', 'Batch 2024', 'Bengaluru', 'Mentors'];
-
-const templates = [
-  { id: 'T1', title: 'Event Invite', icon: 'calendar-outline', color: '#2563eb' },
-  { id: 'T2', title: 'Newsletter', icon: 'mail-outline', color: '#059669' },
-  { id: 'T3', title: 'Reunion Announcement', icon: 'people-outline', color: '#d97706' },
-  { id: 'T4', title: 'Donation Appeal', icon: 'gift-outline', color: '#0891b2' },
+const TEMPLATES = [
+  { key: 'EVENT_INVITE', title: 'Event Invite', icon: 'calendar-outline', color: '#2563eb', subject: 'You are invited to our upcoming event', body: 'We are hosting an upcoming alumni event on campus. Check the Events tab for details and RSVP.' },
+  { key: 'NEWSLETTER', title: 'Newsletter', icon: 'mail-outline', color: '#059669', subject: 'Learnix Alumni Newsletter', body: 'Read the latest news, achievements and chapter updates from the alumni network.' },
+  { key: 'REUNION', title: 'Reunion', icon: 'people-outline', color: '#d97706', subject: 'Reunion announcement', body: 'Save the date — our next alumni reunion is being planned. Details coming soon.' },
+  { key: 'DONATION_APPEAL', title: 'Donation Appeal', icon: 'gift-outline', color: '#0891b2', subject: 'Support the new library wing', body: 'The New Library Wing campaign is underway. Every contribution counts — donate from the Donations tab.' },
 ];
 
 const tabs = ['Inbox', 'Broadcast'];
 
 export default function NotificationsScreen({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('Inbox');
-  const [inbox, setInbox] = useState(initialInbox);
-  const [audience, setAudience] = useState('All Alumni');
+  const [audience, setAudience] = useState('ALL_ALUMNI');
+  const [template, setTemplate] = useState(null);
+  const [customTitle, setCustomTitle] = useState('');
+  const [customBody, setCustomBody] = useState('');
+  const [sending, setSending] = useState(false);
+  const [marking, setMarking] = useState(false);
 
-  const unreadCount = inbox.filter((n) => n.unread).length;
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const d = await alumniApi.notifications();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  const markAllRead = () => {
-    setInbox((prev) => prev.map((n) => ({ ...n, unread: false })));
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
   };
 
-  const markRead = (id) => {
-    setInbox((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
+  const onMarkAllRead = async () => {
+    setMarking(true);
+    try {
+      await alumniApi.markAllRead();
+      await load(false);
+    } catch (e) {
+      Alert.alert('Cannot mark read', e.message);
+    } finally {
+      setMarking(false);
+    }
   };
 
-  const sendBroadcast = (template) => {
-    Alert.alert(
-      'Broadcast Sent',
-      `${template.title} queued for ${audience}. Push notification + email delivery.`
+  const onSend = async () => {
+    const t = template;
+    const title = customTitle.trim() || t?.subject;
+    const body = customBody.trim() || t?.body;
+    if (!t && !title && !body) {
+      Alert.alert('Pick a template', 'Choose a template or write a custom title + message.');
+      return;
+    }
+    setSending(true);
+    try {
+      const res = await alumniApi.broadcast({
+        audience,
+        templateKey: t?.key ?? 'NEWSLETTER',
+        title: title || 'Alumni update',
+        body: body || 'Update from the Alumni Relations Office.',
+      });
+      Alert.alert('Broadcast Sent', `${res.recipients} alumn${res.recipients === 1 ? 'us' : 'i'} notified (in-app).`);
+      setTemplate(null);
+      setCustomTitle('');
+      setCustomBody('');
+    } catch (e) {
+      Alert.alert('Cannot send', e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
     );
-  };
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const inbox = data?.notifications ?? [];
+  const unreadCount = data?.unread ?? 0;
+  const selectedAudience = AUDIENCES.find((a) => a.key === audience);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.tabsWrap}>
         {tabs.map((t) => (
           <TouchableOpacity
@@ -69,31 +156,37 @@ export default function NotificationsScreen({ navigation }) {
           <View style={styles.inboxHeader}>
             <Text style={styles.inboxCount}>{unreadCount} unread</Text>
             {unreadCount > 0 && (
-              <TouchableOpacity onPress={markAllRead}>
-                <Text style={styles.markAll}>Mark all read</Text>
+              <TouchableOpacity disabled={marking} onPress={onMarkAllRead}>
+                {marking ? (
+                  <ActivityIndicator size="small" color="#2563eb" />
+                ) : (
+                  <Text style={styles.markAll}>Mark all read</Text>
+                )}
               </TouchableOpacity>
             )}
           </View>
-          {inbox.map((n) => (
-            <TouchableOpacity
-              key={n.id}
-              style={[styles.notifCard, n.unread && styles.notifCardUnread]}
-              onPress={() => markRead(n.id)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.notifIcon, { backgroundColor: n.color + '1a' }]}>
-                <Ionicons name={n.icon} size={16} color={n.color} />
-              </View>
-              <View style={styles.notifBody}>
-                <View style={styles.notifTop}>
-                  <Text style={[styles.notifType, { color: n.color }]}>{n.type}</Text>
-                  {n.unread && <View style={styles.unreadDot} />}
+          {inbox.map((n) => {
+            const meta = TYPE_META[n.type] ?? TYPE_META.SYSTEM;
+            return (
+              <View key={n.id} style={[styles.notifCard, !n.read && styles.notifCardUnread]}>
+                <View style={[styles.notifIcon, { backgroundColor: meta.color + '1a' }]}>
+                  <Ionicons name={meta.icon} size={16} color={meta.color} />
                 </View>
-                <Text style={styles.notifTitle}>{n.title}</Text>
-                <Text style={styles.notifTime}>{n.time}</Text>
+                <View style={styles.notifBody}>
+                  <View style={styles.notifTop}>
+                    <Text style={[styles.notifType, { color: meta.color }]}>{meta.label}</Text>
+                    {!n.read && <View style={styles.unreadDot} />}
+                  </View>
+                  <Text style={styles.notifTitle}>{n.title}</Text>
+                  <Text style={styles.notifBodyText} numberOfLines={2}>{n.body}</Text>
+                  <Text style={styles.notifTime}>
+                    {new Date(n.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
               </View>
-            </TouchableOpacity>
-          ))}
+            );
+          })}
+          {inbox.length === 0 && <Text style={styles.emptyText}>Inbox is empty.</Text>}
         </>
       )}
 
@@ -105,23 +198,23 @@ export default function NotificationsScreen({ navigation }) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.audienceRow}
           >
-            {audiences.map((a) => (
+            {AUDIENCES.map((a) => (
               <TouchableOpacity
-                key={a}
-                style={[styles.chip, audience === a && styles.chipActive]}
-                onPress={() => setAudience(a)}
+                key={a.key}
+                style={[styles.chip, audience === a.key && styles.chipActive]}
+                onPress={() => setAudience(a.key)}
               >
-                <Text style={[styles.chipText, audience === a && styles.chipTextActive]}>{a}</Text>
+                <Text style={[styles.chipText, audience === a.key && styles.chipTextActive]}>{a.label}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
           <Text style={styles.broadcastLabel}>Message Template</Text>
-          {templates.map((t) => (
+          {TEMPLATES.map((t) => (
             <TouchableOpacity
-              key={t.id}
-              style={styles.templateCard}
-              onPress={() => sendBroadcast(t)}
+              key={t.key}
+              style={[styles.templateCard, template?.key === t.key && styles.templateCardActive]}
+              onPress={() => setTemplate(t)}
               activeOpacity={0.8}
             >
               <View style={[styles.templateIcon, { backgroundColor: t.color + '1a' }]}>
@@ -129,18 +222,48 @@ export default function NotificationsScreen({ navigation }) {
               </View>
               <View style={styles.templateBody}>
                 <Text style={styles.templateTitle}>{t.title}</Text>
-                <Text style={styles.templateSub}>
-                  Push + email to {audience}
-                </Text>
+                <Text style={styles.templateSub}>{t.subject}</Text>
               </View>
-              <Ionicons name="send-outline" size={16} color={theme.colors.primary} />
+              <Ionicons
+                name={template?.key === t.key ? 'checkmark-circle' : 'chevron-forward'}
+                size={16}
+                color={theme.colors.primary}
+              />
             </TouchableOpacity>
           ))}
+
+          <Text style={styles.broadcastLabel}>Customize (optional)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Title"
+            placeholderTextColor={theme.colors.textMuted}
+            value={customTitle}
+            onChangeText={setCustomTitle}
+          />
+          <TextInput
+            style={[styles.input, styles.inputMultiline]}
+            placeholder="Message"
+            placeholderTextColor={theme.colors.textMuted}
+            value={customBody}
+            onChangeText={setCustomBody}
+            multiline
+          />
+
+          <TouchableOpacity style={styles.sendBtn} disabled={sending} onPress={onSend}>
+            {sending ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="send" size={14} color="#fff" />
+            )}
+            <Text style={styles.sendText}>
+              Send to {selectedAudience?.label ?? audience}
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.noteCard}>
             <Ionicons name="information-circle-outline" size={15} color={theme.colors.primary} />
             <Text style={styles.noteText}>
-              Broadcasts are delivered instantly to the student and alumni apps.
+              Broadcasts are delivered in-app to every matched alumnus; email/push channels arrive with the messaging phase.
             </Text>
           </View>
         </>
@@ -151,6 +274,11 @@ export default function NotificationsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   tabsWrap: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -214,7 +342,6 @@ const styles = StyleSheet.create({
   },
   notifCard: {
     flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
@@ -259,11 +386,17 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginTop: 3,
   },
+  notifBodyText: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Regular',
+    color: theme.colors.textMuted,
+    marginTop: 2,
+  },
   notifTime: {
     fontSize: 10,
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
-    marginTop: 2,
+    marginTop: 3,
   },
   broadcastLabel: {
     fontSize: 13,
@@ -308,6 +441,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 10,
   },
+  templateCardActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: '#f5f9ff',
+  },
   templateIcon: {
     width: 40,
     height: 40,
@@ -327,6 +464,39 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.text,
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
+  inputMultiline: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  sendBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 4,
+  },
+  sendText: {
+    fontSize: 13,
+    fontFamily: 'Manrope-Bold',
+    color: '#fff',
+    marginLeft: 6,
   },
   noteCard: {
     flexDirection: 'row',

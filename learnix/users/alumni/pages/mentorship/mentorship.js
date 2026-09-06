@@ -1,67 +1,90 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { alumniApi } from '../../../../services/api';
 
-const stats = [
-  { label: 'Active Pairs', value: '36', icon: 'hand-left-outline', color: '#2563eb' },
-  { label: 'Mentors', value: '52', icon: 'people-outline', color: '#059669' },
-  { label: 'Sessions (Nov)', value: '148', icon: 'videocam-outline', color: '#d97706' },
-];
-
-const initialPairs = [
-  { id: 'P1', mentor: 'Sneha Iyer', mentorRole: 'Product Manager, Microsoft', mentee: 'Aarav Mehta', field: 'Product Management', sessions: 4, next: 'Dec 4, 5:00 PM', color: '#2563eb' },
-  { id: 'P2', mentor: 'Rohit Malhotra', mentorRole: 'Software Engineer, Google', mentee: 'Priya Reddy', field: 'Software Engineering', sessions: 6, next: 'Dec 6, 6:30 PM', color: '#059669' },
-  { id: 'P3', mentor: 'Ananya Joshi', mentorRole: 'Consultant, Deloitte', mentee: 'Rahul Verma', field: 'Consulting & Analytics', sessions: 2, next: 'Dec 9, 4:00 PM', color: '#0891b2' },
-  { id: 'P4', mentor: 'Arjun Nair', mentorRole: 'Founder, Nova Labs', mentee: 'Kavya Rao', field: 'Entrepreneurship', sessions: 8, next: 'Dec 11, 11:00 AM', color: '#d97706' },
-];
-
-const initialRequests = [
-  { id: 'R1', mentor: 'Vikram Singh', mentorRole: 'SDE-II, Flipkart', mentee: 'Ishaan Gupta', batch: '2025', field: 'Software Engineering', status: 'Pending', color: '#7c3aed' },
-  { id: 'R2', mentor: 'Divya Sharma', mentorRole: 'M.Tech Scholar, IIT Madras', mentee: 'Tanvi Kulkarni', batch: '2025', field: 'Higher Education', status: 'Pending', color: '#0d9488' },
-  { id: 'R3', mentor: 'Karthik Menon', mentorRole: 'Sr. Solutions Architect, Amazon', mentee: 'Aditya Jain', batch: '2024', field: 'Cloud Architecture', status: 'Pending', color: '#dc2626' },
-];
-
-const sessions = [
-  { id: 'S1', mentor: 'Rohit Malhotra', mentee: 'Priya Reddy', topic: 'DSA & Interview Prep', date: 'Nov 29', done: true },
-  { id: 'S2', mentor: 'Sneha Iyer', mentee: 'Aarav Mehta', topic: 'Resume Review', date: 'Nov 27', done: true },
-  { id: 'S3', mentor: 'Ananya Joshi', mentee: 'Rahul Verma', topic: 'Case Interview Practice', date: 'Nov 25', done: true },
-];
-
+const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#7c3aed', '#dc2626'];
 const tabs = ['Active Pairs', 'Requests'];
 
 export default function MentorshipModule({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('Active Pairs');
-  const [pairs, setPairs] = useState(initialPairs);
-  const [requests, setRequests] = useState(initialRequests);
+  const [busyId, setBusyId] = useState(null);
 
-  const approveRequest = (id) => {
-    const req = requests.find((r) => r.id === id);
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-    setPairs((prev) => [
-      {
-        id: `P${prev.length + 1}`,
-        mentor: req.mentor,
-        mentorRole: req.mentorRole,
-        mentee: req.mentee,
-        field: req.field,
-        sessions: 0,
-        next: 'Schedule first session',
-        color: req.color,
-      },
-      ...prev,
-    ]);
-    Alert.alert('Pair Approved', `${req.mentor} ↔ ${req.mentee} added to the program.`);
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const d = await alumniApi.mentorship();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
   };
 
-  const rejectRequest = (id) => {
-    const req = requests.find((r) => r.id === id);
-    setRequests((prev) => prev.filter((r) => r.id !== id));
-    Alert.alert('Request Declined', `${req.mentor} ↔ ${req.mentee} pairing declined.`);
+  const act = async (pairId, action, successMsg) => {
+    setBusyId(pairId);
+    try {
+      await alumniApi.mentorshipAction(pairId, action);
+      await load(false);
+      Alert.alert('Done', successMsg);
+    } catch (e) {
+      Alert.alert('Cannot update pair', e.message);
+    } finally {
+      setBusyId(null);
+    }
   };
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const pairs = activeTab === 'Active Pairs' ? (data?.active ?? []) : (data?.pending ?? []);
+  const sessions = data?.recentSessions ?? [];
+  const stats = [
+    { label: 'Active Pairs', value: String((data?.active ?? []).length), icon: 'hand-left-outline', color: '#2563eb' },
+    { label: 'Pending', value: String((data?.pending ?? []).length), icon: 'hourglass-outline', color: '#d97706' },
+    { label: 'Sessions Logged', value: String(sessions.length), icon: 'videocam-outline', color: '#059669' },
+  ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.statsRow}>
         {stats.map((s) => (
           <View key={s.label} style={styles.statCard}>
@@ -80,9 +103,9 @@ export default function MentorshipModule({ navigation }) {
             onPress={() => setActiveTab(t)}
           >
             <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>{t}</Text>
-            {t === 'Requests' && requests.length > 0 && (
+            {t === 'Requests' && (data?.pending ?? []).length > 0 && (
               <View style={styles.tabBadge}>
-                <Text style={styles.tabBadgeText}>{requests.length}</Text>
+                <Text style={styles.tabBadgeText}>{data.pending.length}</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -91,98 +114,132 @@ export default function MentorshipModule({ navigation }) {
 
       {activeTab === 'Active Pairs' && (
         <>
-          {pairs.map((p) => (
-            <View key={p.id} style={styles.pairCard}>
-              <View style={styles.pairRow}>
-                <View style={[styles.mentorAvatar, { backgroundColor: p.color + '1a' }]}>
-                  <Text style={[styles.initials, { color: p.color }]}>
-                    {p.mentor.split(' ').map((n) => n[0]).join('')}
+          {pairs.map((p, idx) => {
+            const color = COLORS[idx % COLORS.length];
+            return (
+              <View key={p.id} style={styles.pairCard}>
+                <View style={styles.pairRow}>
+                  <View style={[styles.mentorAvatar, { backgroundColor: color + '1a' }]}>
+                    <Text style={[styles.initials, { color }]}>
+                      {p.mentor.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                    </Text>
+                  </View>
+                  <View style={styles.pairBody}>
+                    <Text style={styles.pairTitle} numberOfLines={1}>
+                      {p.mentor.name} → {p.mentee}
+                    </Text>
+                    <Text style={styles.pairMeta}>
+                      {p.field}{p.mentor.batch ? ` · Batch ${p.mentor.batch}` : ''}
+                      {p.mentor.role ? ` · ${p.mentor.role}` : ''}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.pairFooter}>
+                  <View style={styles.sessionChip}>
+                    <Ionicons name="videocam-outline" size={11} color={color} />
+                    <Text style={[styles.sessionText, { color }]}>{p.sessions} sessions</Text>
+                  </View>
+                  <Text style={styles.nextSession}>
+                    Requested {new Date(p.requestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                   </Text>
                 </View>
-                <View style={styles.pairBody}>
-                  <Text style={styles.pairTitle}>
-                    {p.mentor} <Ionicons name="arrow-forward" size={11} color={theme.colors.textMuted} /> {p.mentee}
-                  </Text>
-                  <Text style={styles.pairMeta}>{p.field}</Text>
-                </View>
+                <TouchableOpacity
+                  style={styles.remindBtn}
+                  disabled={busyId === p.id}
+                  onPress={() => act(p.id, 'remind', `Session reminder sent to ${p.mentor.name}.`)}
+                >
+                  {busyId === p.id ? (
+                    <ActivityIndicator size="small" color="#2563eb" />
+                  ) : (
+                    <Ionicons name="notifications-outline" size={13} color="#2563eb" />
+                  )}
+                  <Text style={styles.remindText}>Send Reminder</Text>
+                </TouchableOpacity>
               </View>
-              <View style={styles.pairFooter}>
-                <View style={styles.sessionChip}>
-                  <Ionicons name="videocam-outline" size={11} color={p.color} />
-                  <Text style={[styles.sessionText, { color: p.color }]}>{p.sessions} sessions</Text>
-                </View>
-                <Text style={styles.nextSession}>Next: {p.next}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.remindBtn}
-                onPress={() => Alert.alert('Reminder Sent', `Session reminder sent to ${p.mentor} and ${p.mentee}.`)}
-              >
-                <Ionicons name="notifications-outline" size={13} color="#2563eb" />
-                <Text style={styles.remindText}>Send Reminder</Text>
-              </TouchableOpacity>
+            );
+          })}
+          {pairs.length === 0 && (
+            <View style={styles.emptyCard}>
+              <Ionicons name="hand-left-outline" size={28} color="#2563eb" />
+              <Text style={styles.emptyTitle}>No active pairs yet</Text>
+              <Text style={styles.emptySub}>Approve requests or add mentors from the directory.</Text>
             </View>
-          ))}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recent Sessions</Text>
-            {sessions.map((s) => (
-              <View key={s.id} style={styles.sessionRow}>
-                <View style={styles.sessionIcon}>
-                  <Ionicons name="checkmark-circle" size={16} color="#059669" />
+          )}
+
+          {sessions.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Recent Sessions</Text>
+              {sessions.map((s) => (
+                <View key={s.id} style={styles.sessionRow}>
+                  <View style={styles.sessionIcon}>
+                    <Ionicons name="checkmark-circle" size={16} color="#059669" />
+                  </View>
+                  <View style={styles.sessionBody}>
+                    <Text style={styles.sessionTopic} numberOfLines={1}>
+                      {s.field}{s.notes ? ` — ${s.notes}` : ''}
+                    </Text>
+                    <Text style={styles.sessionMeta}>
+                      {s.mentor} ↔ {s.mentee} · {new Date(s.sessionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.sessionBody}>
-                  <Text style={styles.sessionTopic}>{s.topic}</Text>
-                  <Text style={styles.sessionMeta}>
-                    {s.mentor} ↔ {s.mentee} · {s.date}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
         </>
       )}
 
       {activeTab === 'Requests' && (
         <>
-          {requests.length === 0 && (
+          {pairs.length === 0 && (
             <View style={styles.emptyCard}>
               <Ionicons name="checkmark-done-outline" size={28} color="#059669" />
               <Text style={styles.emptyTitle}>All caught up!</Text>
               <Text style={styles.emptySub}>No pending mentorship requests.</Text>
             </View>
           )}
-          {requests.map((r) => (
-            <View key={r.id} style={styles.requestCard}>
-              <View style={[styles.mentorAvatar, { backgroundColor: r.color + '1a' }]}>
-                <Text style={[styles.initials, { color: r.color }]}>
-                  {r.mentor.split(' ').map((n) => n[0]).join('')}
-                </Text>
-              </View>
-              <View style={styles.pairBody}>
-                <Text style={styles.pairTitle}>
-                  {r.mentor} <Ionicons name="arrow-forward" size={11} color={theme.colors.textMuted} /> {r.mentee}
-                </Text>
-                <Text style={styles.pairMeta}>
-                  {r.field} · {r.mentee} (Batch {r.batch})
-                </Text>
-                <View style={styles.requestActions}>
-                  <TouchableOpacity
-                    style={styles.approveBtn}
-                    onPress={() => approveRequest(r.id)}
-                  >
-                    <Ionicons name="checkmark" size={13} color="#fff" />
-                    <Text style={styles.approveText}>Approve</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.rejectBtn}
-                    onPress={() => rejectRequest(r.id)}
-                  >
-                    <Ionicons name="close" size={13} color="#dc2626" />
-                    <Text style={styles.rejectText}>Decline</Text>
-                  </TouchableOpacity>
+          {pairs.map((r, idx) => {
+            const color = COLORS[idx % COLORS.length];
+            return (
+              <View key={r.id} style={styles.requestCard}>
+                <View style={[styles.mentorAvatar, { backgroundColor: color + '1a' }]}>
+                  <Text style={[styles.initials, { color }]}>
+                    {r.mentor.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
+                  </Text>
+                </View>
+                <View style={styles.pairBody}>
+                  <Text style={styles.pairTitle} numberOfLines={1}>
+                    {r.mentor.name} → {r.mentee}
+                  </Text>
+                  <Text style={styles.pairMeta}>
+                    {r.field} · Batch {r.mentor.batch ?? '—'}
+                  </Text>
+                  <View style={styles.requestActions}>
+                    <TouchableOpacity
+                      style={styles.approveBtn}
+                      disabled={busyId === r.id}
+                      onPress={() => act(r.id, 'approve', `${r.mentor.name} ↔ ${r.mentee} is now active.`)}
+                    >
+                      {busyId === r.id ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Ionicons name="checkmark" size={13} color="#fff" />
+                      )}
+                      <Text style={styles.approveText}>Approve</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.rejectBtn}
+                      disabled={busyId === r.id}
+                      onPress={() => act(r.id, 'decline', `${r.mentor.name} ↔ ${r.mentee} pairing declined.`)}
+                    >
+                      <Ionicons name="close" size={13} color="#dc2626" />
+                      <Text style={styles.rejectText}>Decline</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </>
       )}
     </ScrollView>
@@ -191,6 +248,10 @@ export default function MentorshipModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

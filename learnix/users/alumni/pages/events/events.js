@@ -1,100 +1,93 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { alumniApi } from '../../../../services/api';
 import EventDetail from './pages/event_detail/event_detail';
 
-const stats = [
-  { label: 'Upcoming', value: '4', icon: 'calendar-outline', color: '#2563eb' },
-  { label: 'Total RSVPs', value: '326', icon: 'people-outline', color: '#059669' },
-  { label: 'Completed', value: '12', icon: 'checkmark-done-outline', color: '#0891b2' },
-];
-
-const events = [
-  {
-    id: 'E1',
-    name: 'Alumni Networking Meet',
-    date: 'Dec 18, 2026',
-    time: '5:00 PM - 8:00 PM',
-    venue: 'Seminar Hall B',
-    rsvps: 85,
-    capacity: 150,
-    status: 'Upcoming',
-    color: '#0891b2',
-    desc: 'Annual networking evening with industry leaders, startup founders and senior alumni. Speed-networking rounds followed by dinner.',
-  },
-  {
-    id: 'E2',
-    name: 'Bengaluru Chapter Meet',
-    date: 'Dec 6, 2026',
-    time: '11:00 AM - 2:00 PM',
-    venue: 'JW Marriott, Bengaluru',
-    rsvps: 42,
-    capacity: 60,
-    status: 'Upcoming',
-    color: '#2563eb',
-    desc: 'Quarterly meet of the Bengaluru chapter — guest talk by a Learnix alumna now at Microsoft, followed by lunch.',
-  },
-  {
-    id: 'E3',
-    name: 'GenAI in Industry — Webinar',
-    date: 'Jan 9, 2027',
-    time: '6:30 PM - 8:00 PM',
-    venue: 'Online (Zoom)',
-    rsvps: 120,
-    capacity: 200,
-    status: 'Upcoming',
-    color: '#059669',
-    desc: 'Panel discussion with alumni working on LLMs at top AI companies. Open to students and alumni.',
-  },
-  {
-    id: 'E4',
-    name: 'Mumbai Chapter Tech Talk',
-    date: 'Jan 16, 2027',
-    time: '4:00 PM - 6:00 PM',
-    venue: 'WeWork BKC, Mumbai',
-    rsvps: 24,
-    capacity: 40,
-    status: 'Upcoming',
-    color: '#d97706',
-    desc: 'Hands-on session on system design interviews led by senior alumni.',
-  },
-  {
-    id: 'E5',
-    name: 'Golden Jubilee Reunion',
-    date: 'Aug 15, 2026',
-    time: '10:00 AM - 5:00 PM',
-    venue: 'Main Campus',
-    rsvps: 210,
-    capacity: 210,
-    status: 'Completed',
-    color: '#dc2626',
-    desc: '50th anniversary reunion — 210 alumni from 1980-2020 batches attended campus tours and the grand dinner.',
-  },
-];
-
+const COLORS = ['#0891b2', '#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'];
 const tabs = ['Upcoming', 'Completed'];
 
 export default function EventsModule({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('Upcoming');
-  const [selected, setSelected] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
-  const filtered = events.filter((e) => e.status === activeTab);
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const d = await alumniApi.events();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  if (selected) {
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
+  if (selectedId) {
     return (
       <EventDetail
-        event={selected}
+        eventId={selectedId}
         navigation={{
-          goBack: () => setSelected(null),
+          goBack: () => setSelectedId(null),
           openModule: (key) => navigation.openModule(key),
         }}
       />
     );
   }
 
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const upcoming = data?.upcoming ?? [];
+  const completed = data?.completed ?? [];
+  const filtered = activeTab === 'Upcoming' ? upcoming : completed;
+  const totalRsvps = upcoming.reduce((s, e) => s + e.rsvps, 0);
+
+  const stats = [
+    { label: 'Upcoming', value: String(upcoming.length), icon: 'calendar-outline', color: '#2563eb' },
+    { label: 'Total RSVPs', value: String(totalRsvps), icon: 'people-outline', color: '#059669' },
+    { label: 'Completed', value: String(completed.length), icon: 'checkmark-done-outline', color: '#0891b2' },
+  ];
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.statsRow}>
         {stats.map((s) => (
           <View key={s.label} style={styles.statCard}>
@@ -117,45 +110,56 @@ export default function EventsModule({ navigation }) {
         ))}
       </View>
 
-      {filtered.map((e) => {
-        const pct = Math.round((e.rsvps / e.capacity) * 100);
+      {filtered.map((e, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        const pct = e.capacity > 0 ? Math.min(Math.round((e.rsvps / e.capacity) * 100), 100) : 0;
+        const dateStr = new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        const timeStr = new Date(e.startDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         return (
           <TouchableOpacity
             key={e.id}
             style={styles.card}
-            onPress={() => setSelected(e)}
+            onPress={() => setSelectedId(e.id)}
             activeOpacity={0.8}
           >
             <View style={styles.cardHeader}>
-              <View style={[styles.dateBadge, { backgroundColor: e.color + '1a' }]}>
-                <Text style={[styles.dateBadgeText, { color: e.color }]}>{e.date}</Text>
+              <View style={[styles.dateBadge, { backgroundColor: color + '1a' }]}>
+                <Text style={[styles.dateBadgeText, { color }]}>{dateStr}</Text>
               </View>
               <View style={styles.cardHeaderBody}>
-                <Text style={styles.cardTitle}>{e.name}</Text>
-                <Text style={styles.cardMeta}>
-                  {e.time} · {e.venue}
+                <Text style={styles.cardTitle} numberOfLines={1}>{e.title}</Text>
+                <Text style={styles.cardMeta} numberOfLines={1}>
+                  {timeStr}{e.venue ? ` · ${e.venue}` : ''}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
             </View>
             <View style={styles.progressRow}>
               <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: e.color }]} />
+                <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: color }]} />
               </View>
-              <Text style={[styles.rsvpText, { color: e.color }]}>{pct}%</Text>
+              <Text style={[styles.rsvpText, { color }]}>{pct}%</Text>
             </View>
             <Text style={styles.rsvpCount}>
-              {e.rsvps} of {e.capacity} RSVPs
+              {e.rsvps} of {e.capacity} RSVPs · {e.status}
             </Text>
           </TouchableOpacity>
         );
       })}
+      {filtered.length === 0 && (
+        <Text style={styles.emptyText}>No {activeTab.toLowerCase()} events.</Text>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
