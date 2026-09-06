@@ -1,0 +1,51 @@
+// Domain G2 — Mess: weekly menu, meal attendance, feedback.
+// Docs: 08-hostel.md §3.4. itemsJson = ["Chapati","Paneer Curry",…].
+
+model MessMenuItem {
+  id         String   @id @default(cuid())
+  institutionId String
+  dayOfWeek  Int // 0=Sun … 6=Sat
+  meal       String // BREAKFAST | LUNCH | DINNER
+  itemsJson  String
+  isVeg      Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([institutionId, dayOfWeek, meal])
+  @@index([institutionId])
+  @@map("mess_menu_items")
+}
+
+model MealAttendance {
+  id               String   @id @default(cuid())
+  institutionId    String
+  date             DateTime
+  meal             String // BREAKFAST | LUNCH | DINNER
+  studentProfileId String
+  count            Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([date, meal, studentProfileId])
+  @@index([studentProfileId])
+  @@map("meal_attendance")
+}
+
+model MessFeedback {
+  id               String   @id @default(cuid())
+  studentProfileId String
+  mealDate         DateTime
+  meal             String
+  rating           Int // 1–5
+  comment          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([mealDate, meal, studentProfileId])
+  @@index([studentProfileId])
+  @@map("mess_feedback")
+}

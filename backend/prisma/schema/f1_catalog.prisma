@@ -1,0 +1,74 @@
+// Domain F1 — Catalog: physical books + digital resources + procurements.
+// Docs: 07-library-staff.md §3.2 · §3.5 · §3.6 · 03-admin.md §3.12
+// availableCopies is denormalized — service layer keeps it in sync with issues.
+// Access grants point at programs/batches (scalars until Domain B FK flip —
+// programId is a real FK already; batchId too). requestId on procurements is
+// optional link to book_requests.
+
+model Book {
+  id              String   @id @default(cuid())
+  institutionId   String
+  title           String
+  author          String?
+  isbn            String?
+  category        String? // CS | MECH | FICTION | REFERENCE …
+  totalCopies     Int      @default(1)
+  availableCopies Int      @default(1) // denorm — never exceeds totalCopies
+  rackLocation    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  issues BookIssue[]
+
+  @@index([institutionId])
+  @@index([title])
+  @@map("books")
+}
+
+model DigitalResource {
+  id            String   @id @default(cuid())
+  institutionId String
+  title         String
+  type          String // PDF | EBOOK | JOURNAL
+  subject       String?
+  license       String?
+  accessCount   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  grants DigitalAccessGrant[]
+
+  @@index([institutionId])
+  @@map("digital_resources")
+}
+
+model DigitalAccessGrant {
+  id         String   @id @default(cuid())
+  resourceId String
+  programId  String? // grant to whole program
+  batchId    String? // or narrow to a batch
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  resource DigitalResource @relation(fields: [resourceId], references: [id])
+  program  Program?        @relation(fields: [programId], references: [id])
+  batch    Batch?          @relation(fields: [batchId], references: [id])
+
+  @@index([resourceId])
+  @@map("digital_access_grants")
+}
+
+model BookProcurement {
+  id            String   @id @default(cuid())
+  requestId     String? // scalar → book_requests.id (same domain)
+  institutionId String
+  title         String
+  copies        Int      @default(1)
+  costMinor     Int      @default(0)
+  status        String   @default("REQUESTED") // REQUESTED | APPROVED | ORDERED | RECEIVED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([institutionId])
+  @@map("book_procurements")
+}

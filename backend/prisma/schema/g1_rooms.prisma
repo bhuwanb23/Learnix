@@ -1,0 +1,74 @@
+// Domain G1 — Hostel inventory: blocks → rooms → beds → allocations.
+// Docs: 08-hostel.md §3.2 · 05-state-machines.md §allocation
+// wardenUserId scalar actor-stamp. occupiedCount denormalized. The
+// "uq active allocation per bed" rule is enforced in the service layer
+// (partial unique not expressible in SQLite via Prisma).
+
+model HostelBlock {
+  id            String   @id @default(cuid())
+  institutionId String
+  name          String // "Block A"
+  wardenUserId  String? // scalar → users.id
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rooms Room[]
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@map("hostel_blocks")
+}
+
+model Room {
+  id            String   @id @default(cuid())
+  blockId       String
+  floor         Int
+  number        String
+  capacity      Int      @default(2)
+  occupiedCount Int      @default(0) // denorm — kept ≤ capacity by service layer
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  block HostelBlock @relation(fields: [blockId], references: [id])
+  beds  Bed[]
+
+  @@unique([blockId, number])
+  @@index([blockId])
+  @@map("rooms")
+}
+
+model Bed {
+  id        String   @id @default(cuid())
+  roomId    String
+  bedNo     Int
+  status    String   @default("VACANT") // VACANT | ALLOCATED | MAINTENANCE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  room        Room               @relation(fields: [roomId], references: [id])
+  allocations HostelAllocation[]
+
+  @@unique([roomId, bedNo])
+  @@index([roomId])
+  @@map("beds")
+}
+
+model HostelAllocation {
+  id               String    @id @default(cuid())
+  studentProfileId String
+  bedId            String
+  fromDate         DateTime
+  toDate           DateTime?
+  status           String    @default("ACTIVE") // ACTIVE | TRANSFERRED | VACATED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  bed            Bed            @relation(fields: [bedId], references: [id])
+  rentDues       HostelRentDue[]
+
+  @@index([studentProfileId])
+  @@index([bedId])
+  @@index([status])
+  @@map("hostel_allocations")
+}

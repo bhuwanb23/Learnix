@@ -1,0 +1,61 @@
+// Domain F2 — Circulation: issues → overdue → fine → payment chain.
+// Docs: 07-library-staff.md §3.3 · §3.4 · §3.5 · 05-state-machines.md
+// issuedByUserId scalar actor-stamp. fines.paidPaymentId scalar until the
+// fine→payment write-through service is built (Phase 4); fine_payments
+// (Domain E) already FKs to BookIssue.
+
+model BookIssue {
+  id               String    @id @default(cuid())
+  bookId           String
+  studentProfileId String
+  issueDate        DateTime  @default(now())
+  dueDate          DateTime
+  returnDate       DateTime?
+  status           String    @default("ISSUED") // ISSUED | RETURNED | OVERDUE
+  issuedByUserId   String // scalar → users.id
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  book           Book           @relation(fields: [bookId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  fine           Fine?
+
+  @@unique([bookId, studentProfileId, returnDate])
+  @@index([bookId])
+  @@index([studentProfileId])
+  @@map("book_issues")
+}
+
+model Fine {
+  id            String   @id @default(cuid())
+  bookIssueId   String   @unique // one fine per issue
+  amountMinor   Int
+  daysOverdue   Int
+  status        String   @default("PENDING") // PENDING | PAID | WAIVED
+  waivedReason  String?
+  paidPaymentId String? // scalar → payments.id (write-through target)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  bookIssue BookIssue @relation(fields: [bookIssueId], references: [id])
+
+  @@index([bookIssueId])
+  @@map("fines")
+}
+
+model BookRequest {
+  id               String   @id @default(cuid())
+  studentProfileId String
+  title            String
+  author           String?
+  reason           String?
+  status           String   @default("PENDING") // PENDING | APPROVED | REJECTED | PROCURED
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([studentProfileId])
+  @@index([status])
+  @@map("book_requests")
+}

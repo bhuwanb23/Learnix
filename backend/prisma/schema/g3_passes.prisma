@@ -1,0 +1,60 @@
+// Domain G3 — Gate passes, complaints, visitors.
+// Docs: 08-hostel.md §3.5–3.7 · 05-state-machines.md
+// decidedByUserId / assignedToUserId scalar actor-stamps.
+
+model GatePass {
+  id               String    @id @default(cuid())
+  studentProfileId String
+  reason           String
+  outAt            DateTime
+  expectedInAt     DateTime
+  actualInAt       DateTime?
+  status           String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  decidedByUserId  String? // scalar → users.id
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([studentProfileId])
+  @@index([status])
+  @@map("gate_passes")
+}
+
+model HostelComplaint {
+  id               String    @id @default(cuid())
+  studentProfileId String
+  category         String // PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE
+  description      String
+  severity         String // LOW | MEDIUM | HIGH
+  status           String    @default("OPEN") // OPEN | ASSIGNED | RESOLVED
+  assignedToUserId String? // scalar → users.id
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([studentProfileId])
+  @@index([status])
+  @@map("hostel_complaints")
+}
+
+model Visitor {
+  id                      String    @id @default(cuid())
+  institutionId           String
+  name                    String
+  visitingStudentProfileId String
+  relation                String
+  checkInAt               DateTime  @default(now())
+  checkOutAt              DateTime?
+  status                  String    @default("IN") // IN | OUT
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  visitingStudent StudentProfile @relation(fields: [visitingStudentProfileId], references: [id])
+
+  @@index([visitingStudentProfileId])
+  @@index([status])
+  @@map("visitors")
+}
