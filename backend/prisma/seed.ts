@@ -62,6 +62,24 @@ const USERS: SeedUser[] = [
     roles: ['STUDENT'],
     student: { rollNo: 'STU-2026-001', section: 'A', currentSemester: 4 },
   },
+  {
+    email: 'sports@learnix.dev',
+    fullName: 'R. Subramaniam',
+    roles: ['SPORTS'],
+    staff: { employeeNo: 'EMP-0007', designation: 'Director · Sports & Cultural Affairs' },
+  },
+  {
+    email: 'sneha.patel@learnix.dev',
+    fullName: 'Sneha Patel',
+    roles: ['STUDENT'],
+    student: { rollNo: 'CSE-23-014', section: 'A', currentSemester: 4 },
+  },
+  {
+    email: 'vikram.nair@learnix.dev',
+    fullName: 'Vikram Nair',
+    roles: ['STUDENT'],
+    student: { rollNo: 'ME-23-054', section: 'B', currentSemester: 4 },
+  },
 ];
 
 async function main() {
@@ -1340,6 +1358,101 @@ async function seedDomainI(institutionId: string): Promise<void> {
 
   console.log('  ✓ venues (Auditorium, Ground), TechFest PUBLISHED (Arjun CONFIRMED + volunteer), Alumni Meet APPROVED');
   console.log('  ✓ Football Cup ONGOING (2 teams, Arjun PLAYER, fixture UPCOMING, standings 6/3 pts), venue booking PENDING, 1 football issued');
+
+  // ── Sports-office module data (docs/users/10) ──
+  const sportsDirector = await db.user.findFirst({ where: { email: 'sports@learnix.dev', institutionId } });
+  const sneha = await db.user.findFirst({ where: { email: 'sneha.patel@learnix.dev', institutionId } });
+  const vikram = await db.user.findFirst({ where: { email: 'vikram.nair@learnix.dev', institutionId } });
+  if (sneha && vikram) {
+    // Link the extra students to the program/batch (needed for registration lists)
+    const program = await db.program.findFirst({ where: { department: { institutionId } } });
+    const batch = await db.batch.findFirst({ where: { programId: program!.id } });
+    for (const su of [sneha, vikram]) {
+      await db.studentProfile.updateMany({
+        where: { userId: su.id, programId: null },
+        data: { programId: program!.id, batchId: batch!.id },
+      });
+    }
+
+    // Registration approvals mix: Vikram PENDING on TechFest, Sneha PENDING on Alumni Meet
+    if (vikram) {
+      await db.eventRegistration.upsert({
+        where: { eventId_registrantUserId: { eventId: techfest.id, registrantUserId: vikram.id } },
+        update: { status: 'PENDING' },
+        create: { eventId: techfest.id, registrantUserId: vikram.id, status: 'PENDING' },
+      });
+    }
+    if (sneha) {
+      await db.eventRegistration.upsert({
+        where: { eventId_registrantUserId: { eventId: alumniMeet.id, registrantUserId: sneha.id } },
+        update: { status: 'PENDING' },
+        create: { eventId: alumniMeet.id, registrantUserId: sneha.id, status: 'PENDING' },
+      });
+    }
+
+    // Dance Crew — standing practice squad (tournamentId null), Sneha captain
+    let danceCrew = await db.team.findFirst({ where: { institutionId, name: 'Dance Crew' } });
+    if (!danceCrew) {
+      danceCrew = await db.team.create({
+        data: {
+          institutionId, name: 'Dance Crew', sport: 'Cultural', tournamentId: null,
+          captainStudentProfileId: (await db.studentProfile.findFirst({ where: { userId: sneha.id } }))!.id,
+        },
+      });
+      await db.teamMember.create({ data: { teamId: danceCrew.id, studentProfileId: (await db.studentProfile.findFirst({ where: { userId: sneha.id } }))!.id, role: 'CAPTAIN' } });
+    }
+
+    // Day-wise schedule for TechFest (SP-02 schedule checklist)
+    const scheduleSeed = [
+      { day: 1, order: 1, item: 'Opening ceremony + registrations', isDone: true },
+      { day: 1, order: 2, item: 'Preliminary rounds', isDone: true },
+      { day: 2, order: 1, item: 'Finals', isDone: false },
+      { day: 2, order: 2, item: 'Prize distribution', isDone: false },
+    ];
+    for (const s of scheduleSeed) {
+      await db.eventScheduleItem.upsert({
+        where: { eventId_day_order: { eventId: techfest.id, day: s.day, order: s.order } },
+        update: { isDone: s.isDone },
+        create: { eventId: techfest.id, day: s.day, order: s.order, item: s.item, isDone: s.isDone },
+      });
+    }
+
+    // Equipment inventory breadth: cricket bats, badminton rackets + 1 OVERDUE issue (Vikram)
+    let bats = await db.equipmentItem.findFirst({ where: { institutionId, name: 'Cricket Bat (Kashmir Willow)' } });
+    if (!bats) {
+      bats = await db.equipmentItem.create({ data: { institutionId, name: 'Cricket Bat (Kashmir Willow)', category: 'SPORTS', totalUnits: 24, availableUnits: 18, condition: 'GOOD' } });
+      await db.equipmentIssue.create({
+        data: { itemId: bats.id, studentProfileId: (await db.studentProfile.findFirst({ where: { userId: vikram.id } }))!.id, issuedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000), dueAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), status: 'OVERDUE' },
+      });
+      await db.equipmentItem.update({ where: { id: bats.id }, data: { availableUnits: { decrement: 1 } } });
+    }
+    let rackets = await db.equipmentItem.findFirst({ where: { institutionId, name: 'Badminton Racket' } });
+    if (!rackets) {
+      rackets = await db.equipmentItem.create({ data: { institutionId, name: 'Badminton Racket', category: 'SPORTS', totalUnits: 20, availableUnits: 15, condition: 'NEEDS_REPAIR' } });
+      await db.equipmentIssue.create({
+        data: { itemId: rackets.id, studentProfileId: (await db.studentProfile.findFirst({ where: { userId: sneha.id } }))!.id, issuedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), dueAt: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), status: 'ISSUED' },
+      });
+      await db.equipmentItem.update({ where: { id: rackets.id }, data: { availableUnits: { decrement: 1 } } });
+    }
+
+    // Sports-office inbox notifications
+    if (sportsDirector) {
+      const notifSeed = [
+        { type: 'EVENT_REG', title: 'Registration pending: Alumni Networking Meet', body: 'Sneha Patel requested registration — needs approval.', data: { module: 'events' } },
+        { type: 'EQUIPMENT', title: 'Cricket bat overdue', body: 'Vikram Nair — cricket bat due 6 days ago. Send a reminder.', data: { module: 'equipment' } },
+        { type: 'VENUE', title: 'Venue booking request', body: 'Football Ground Finals booking (15:00-18:00) awaiting your approval.', data: { module: 'venues' } },
+      ];
+      for (const n of notifSeed) {
+        const exists = await db.notification.findFirst({ where: { recipientUserId: sportsDirector.id, title: n.title } });
+        if (!exists) {
+          await db.notification.create({
+            data: { institutionId, recipientUserId: sportsDirector.id, type: n.type, title: n.title, body: n.body, dataJson: JSON.stringify(n.data), sourceModule: 'sports' },
+          });
+        }
+      }
+    }
+  }
+  console.log('  ✓ sports office: 2 PENDING registrations, Dance Crew, TechFest schedule, 3 equipment items (+1 OVERDUE), sports inbox');
 }
 
 // ─────────────────────────────────────────────────────────────
