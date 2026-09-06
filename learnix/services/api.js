@@ -205,3 +205,33 @@ export const hodApi = {
   broadcast: (payload) => api.post('/hod/broadcasts', payload),
   profile: () => api.get('/hod/profile'),
 };
+
+// ── Hostel endpoints (docs/users/08 §4) ──
+export const hostelApi = {
+  dashboard: () => api.get('/hostel/dashboard'),
+  rooms: () => api.get('/hostel/rooms'),
+  roomDetail: (roomNumber) => api.get(`/hostel/rooms/${roomNumber}`),
+  allocate: (rollNo, roomNumber) => api.post('/hostel/allocations', { rollNo, roomNumber }),
+  vacateBed: (bedId) => api.post(`/hostel/beds/${bedId}/vacate`),
+  transferBed: (bedId, toRoomNumber) => api.post(`/hostel/beds/${bedId}/transfer`, { toRoomNumber }),
+  residents: () => api.get('/hostel/residents'),
+  residentDetail: (studentProfileId) => api.get(`/hostel/residents/${studentProfileId}`),
+  collectRent: (dueId, method) => api.post(`/hostel/rent/${dueId}/collect`, { method }),
+  mess: () => api.get('/hostel/mess'),
+  updateMenu: (dayOfWeek, meal, items) => api.put('/hostel/mess/menu', { dayOfWeek, meal, items }),
+  sendMessSurvey: () => api.post('/hostel/mess/survey'),
+  gatePasses: () => api.get('/hostel/gate-passes'),
+  decideGatePass: (id, decision) => api.post(`/hostel/gate-passes/${id}/decide`, { decision }),
+  complaints: () => api.get('/hostel/complaints'),
+  createComplaint: (payload) => api.post('/hostel/complaints', payload),
+  assignComplaint: (id) => api.post(`/hostel/complaints/${id}/assign`),
+  resolveComplaint: (id) => api.post(`/hostel/complaints/${id}/resolve`),
+  visitors: () => api.get('/hostel/visitors'),
+  checkInVisitor: (name, studentProfileId, relation) =>
+    api.post('/hostel/visitors/checkin', { name, studentProfileId, relation }),
+  checkOutVisitor: (id) => api.post(`/hostel/visitors/${id}/checkout`),
+  notifications: () => api.get('/hostel/notifications'),
+  markAllRead: () => api.post('/hostel/notifications/read-all'),
+  broadcast: (payload) => api.post('/hostel/broadcasts', payload),
+  profile: () => api.get('/hostel/profile'),
+};

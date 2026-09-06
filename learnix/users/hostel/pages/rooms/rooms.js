@@ -1,79 +1,83 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { hostelApi } from '../../../../services/api';
 import RoomDetail from './pages/room_detail/room_detail';
 
-const blocks = [
-  {
-    id: 'A',
-    name: 'Block A',
-    type: 'Girls Hostel',
-    floors: 4,
-    capacity: 440,
-    occupied: 412,
-    color: '#2563eb',
-    rooms: [
-      { id: 'A-101', capacity: 3, occupied: 3, status: 'Full' },
-      { id: 'A-102', capacity: 3, occupied: 2, status: 'Partial' },
-      { id: 'A-103', capacity: 3, occupied: 0, status: 'Vacant' },
-      { id: 'A-104', capacity: 3, occupied: 3, status: 'Full' },
-      { id: 'A-105', capacity: 3, occupied: 1, status: 'Partial' },
-      { id: 'A-106', capacity: 3, occupied: 3, status: 'Full' },
-    ],
-  },
-  {
-    id: 'B',
-    name: 'Block B',
-    type: 'Boys Hostel',
-    floors: 4,
-    capacity: 480,
-    occupied: 458,
-    color: '#0891b2',
-    rooms: [
-      { id: 'B-201', capacity: 3, occupied: 3, status: 'Full' },
-      { id: 'B-202', capacity: 3, occupied: 2, status: 'Partial' },
-      { id: 'B-203', capacity: 3, occupied: 3, status: 'Full' },
-      { id: 'B-204', capacity: 3, occupied: 2, status: 'Partial' },
-      { id: 'B-205', capacity: 3, occupied: 0, status: 'Vacant' },
-      { id: 'B-206', capacity: 3, occupied: 3, status: 'Full' },
-    ],
-  },
-  {
-    id: 'C',
-    name: 'Block C',
-    type: 'Boys Hostel',
-    floors: 3,
-    capacity: 400,
-    occupied: 378,
-    color: '#059669',
-    rooms: [
-      { id: 'C-301', capacity: 3, occupied: 3, status: 'Full' },
-      { id: 'C-302', capacity: 3, occupied: 1, status: 'Partial' },
-      { id: 'C-303', capacity: 3, occupied: 3, status: 'Full' },
-      { id: 'C-304', capacity: 3, occupied: 0, status: 'Vacant' },
-      { id: 'C-305', capacity: 3, occupied: 2, status: 'Partial' },
-      { id: 'C-306', capacity: 3, occupied: 3, status: 'Full' },
-    ],
-  },
-];
+const BLOCK_COLORS = ['#2563eb', '#0891b2', '#059669', '#d97706', '#7c3aed'];
 
 export default function RoomsModule({ navigation }) {
-  const [selectedBlock, setSelectedBlock] = useState('A');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedBlockIdx, setSelectedBlockIdx] = useState(0);
   const [selectedRoom, setSelectedRoom] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const d = await hostelApi.rooms();
+      setData(d);
+    } catch (e) {
+      setError(e.message || 'Failed to load rooms');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // keep the selected index valid after refresh
+  const blockIdx = Math.min(selectedBlockIdx, (data?.blocks?.length ?? 1) - 1);
 
   if (selectedRoom) {
     return (
       <RoomDetail
-        roomId={selectedRoom.id}
-        block={selectedRoom.block}
-        onBack={() => setSelectedRoom(null)}
+        roomNumber={selectedRoom.number}
+        onBack={() => {
+          setSelectedRoom(null);
+          load(); // refresh occupancy after allocate/vacate
+        }}
       />
     );
   }
 
-  const block = blocks.find((b) => b.id === selectedBlock);
-  const pct = Math.round((block.occupied / block.capacity) * 100);
+  if (loading && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.muted}>Loading rooms…</Text>
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Ionicons name="cloud-offline-outline" size={32} color={theme.colors.textMuted} />
+        <Text style={[styles.muted, { marginTop: 8 }]}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!data) return null;
+
+  const blocks = data.blocks;
+  const block = blocks[blockIdx];
+  const color = BLOCK_COLORS[blockIdx % BLOCK_COLORS.length];
+  const totalOccupied = blocks.reduce((n, b) => n + b.occupied, 0);
+  const totalCapacity = blocks.reduce((n, b) => n + b.capacity, 0);
+  const vacantBeds = totalCapacity - totalOccupied;
+  const fullRooms = blocks.reduce(
+    (n, b) => n + b.roomList.filter((r) => r.status === 'Full').length,
+    0,
+  );
 
   const getStatusStyle = (status) => {
     if (status === 'Full') return { bg: '#fee2e2', color: '#dc2626' };
@@ -82,30 +86,34 @@ export default function RoomsModule({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>1,248</Text>
+          <Text style={styles.statValue}>{totalOccupied}</Text>
           <Text style={styles.statLabel}>Occupied Beds</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>72</Text>
+          <Text style={styles.statValue}>{vacantBeds}</Text>
           <Text style={styles.statLabel}>Vacant Beds</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>6</Text>
-          <Text style={styles.statLabel}>Full Blocks</Text>
+          <Text style={styles.statValue}>{fullRooms}</Text>
+          <Text style={styles.statLabel}>Full Rooms</Text>
         </View>
       </View>
 
       <View style={styles.blockTabs}>
-        {blocks.map((b) => (
+        {blocks.map((b, i) => (
           <TouchableOpacity
             key={b.id}
-            style={[styles.blockTab, selectedBlock === b.id && styles.blockTabActive]}
-            onPress={() => setSelectedBlock(b.id)}
+            style={[styles.blockTab, blockIdx === i && styles.blockTabActive]}
+            onPress={() => setSelectedBlockIdx(i)}
           >
-            <Text style={[styles.blockTabText, selectedBlock === b.id && styles.blockTabTextActive]}>
+            <Text style={[styles.blockTabText, blockIdx === i && styles.blockTabTextActive]}>
               {b.name}
             </Text>
           </TouchableOpacity>
@@ -115,55 +123,48 @@ export default function RoomsModule({ navigation }) {
       <View style={styles.blockCard}>
         <View style={styles.blockHeader}>
           <View>
-            <Text style={styles.blockName}>{block.name} · {block.type}</Text>
+            <Text style={styles.blockName}>{block.name}</Text>
             <Text style={styles.blockSub}>
-              {block.occupied} of {block.capacity} beds · {block.floors} floors
+              {block.occupied} of {block.capacity} beds · {block.rooms} rooms
             </Text>
           </View>
-          <View style={[styles.pctChip, { backgroundColor: block.color + '1a' }]}>
-            <Text style={[styles.pctText, { color: block.color }]}>{pct}%</Text>
+          <View style={[styles.pctChip, { backgroundColor: color + '1a' }]}>
+            <Text style={[styles.pctText, { color }]}>{block.occupancyPct}%</Text>
           </View>
         </View>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: pct + '%', backgroundColor: block.color }]} />
+          <View
+            style={[styles.progressFill, { width: `${block.occupancyPct}%`, backgroundColor: color }]}
+          />
         </View>
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Rooms — Floor {selectedBlock}1–{selectedBlock}6</Text>
-        <TouchableOpacity
-          style={styles.allocateBtn}
-          onPress={() =>
-            Alert.alert('Allocate Room', 'Student search opens here — pick a student and an available bed.')
-          }
-        >
-          <Ionicons name="add" size={16} color="#fff" />
-          <Text style={styles.allocateText}>Allocate</Text>
-        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>Rooms — {block.name}</Text>
       </View>
 
       <View style={styles.roomGrid}>
-        {block.rooms.map((room) => {
+        {block.roomList.map((room) => {
           const st = getStatusStyle(room.status);
           return (
             <TouchableOpacity
               key={room.id}
               style={styles.roomCard}
-              onPress={() => setSelectedRoom({ id: room.id, block: block.id })}
+              onPress={() => setSelectedRoom({ number: room.number })}
             >
               <View style={styles.roomTop}>
-                <Text style={styles.roomId}>{room.id}</Text>
+                <Text style={styles.roomId}>{room.number}</Text>
                 <View style={[styles.roomStatus, { backgroundColor: st.bg }]}>
                   <Text style={[styles.roomStatusText, { color: st.color }]}>{room.status}</Text>
                 </View>
               </View>
               <View style={styles.bedRow}>
-                {[0, 1, 2].map((i) => (
+                {Array.from({ length: room.capacity }).map((_, i) => (
                   <View
                     key={i}
                     style={[
                       styles.bed,
-                      i < room.occupied ? { backgroundColor: block.color } : styles.bedEmpty,
+                      i < room.occupied ? { backgroundColor: color } : styles.bedEmpty,
                     ]}
                   />
                 ))}
@@ -181,6 +182,16 @@ export default function RoomsModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
+  retryBtn: {
+    marginTop: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 12, fontFamily: 'Manrope-Bold', color: '#fff' },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -279,24 +290,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  allocateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  allocateText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 2,
-  },
   roomGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    paddingBottom: 24,
   },
   roomCard: {
     width: '31.5%',

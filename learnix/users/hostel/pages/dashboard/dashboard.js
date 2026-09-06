@@ -1,27 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
-
-const stats = [
-  { label: 'Occupancy', value: '1,248/1,320', sub: '94%', color: '#2563eb', icon: 'bed-outline' },
-  { label: 'Pending Passes', value: '14', sub: '5 urgent', color: '#d97706', icon: 'exit-outline' },
-  { label: 'Complaints', value: '23', sub: '8 open', color: '#dc2626', icon: 'construct-outline' },
-  { label: 'Mess Rating', value: '4.1★', sub: 'this week', color: '#059669', icon: 'restaurant-outline' },
-];
-
-const todayPasses = [
-  { id: '1', name: 'Arjun Mehta', room: 'B-204', time: '5:00 PM', reason: 'Weekend home visit', status: 'Approved' },
-  { id: '2', name: 'Sneha Reddy', room: 'A-118', time: '6:30 PM', reason: 'Medical appointment', status: 'Pending' },
-  { id: '3', name: 'Karan Singh', room: 'C-312', time: '7:00 PM', reason: 'Sibling visit', status: 'Pending' },
-];
-
-const complaints = [
-  { id: '1', title: 'Water leakage in B-210 bathroom', room: 'B-210', type: 'Plumbing', age: '2 days', severity: 'High' },
-  { id: '2', title: 'Wi-Fi down on Floor 3', room: 'C-Floor 3', type: 'Network', age: '1 day', severity: 'Medium' },
-  { id: '3', title: 'Broken window grill', room: 'A-105', type: 'Maintenance', age: '3 days', severity: 'Low' },
-];
+import { hostelApi } from '../../../../services/api';
 
 const modules = [
   { id: 'GatePasses', title: 'Gate Passes', icon: 'exit-outline', color: '#2563eb' },
@@ -30,30 +19,110 @@ const modules = [
   { id: 'Notifications', title: 'Notify', icon: 'megaphone-outline', color: '#d97706' },
 ];
 
-const activity = [
-  { text: 'Gate pass approved for Priya Sharma (A-102)', time: '10 min ago', icon: 'checkmark-circle-outline', color: '#059669' },
-  { text: 'Complaint #214 resolved — AC repair in B-308', time: '1 hr ago', icon: 'hammer-outline', color: '#2563eb' },
-  { text: 'Room C-115 allotted to new resident Vikram Nair', time: '3 hrs ago', icon: 'bed-outline', color: '#0891b2' },
-  { text: 'Mess feedback: dinner rating 4.3 — best this week', time: '5 hrs ago', icon: 'restaurant-outline', color: '#d97706' },
-];
+const fmtTime = (iso) => {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
+};
 
 export default function HostelDashboard({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await hostelApi.dashboard());
+    } catch (e) {
+      setError(e.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.muted}>Loading dashboard…</Text>
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Ionicons name="cloud-offline-outline" size={32} color={theme.colors.textMuted} />
+        <Text style={[styles.muted, { marginTop: 8 }]}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!data) return null;
+
+  const occ = data.occupancy;
+  const stats = [
+    {
+      label: 'Occupancy',
+      value: `${occ.occupied}/${occ.total}`,
+      sub: `${occ.pct}%`,
+      color: '#2563eb',
+      icon: 'bed-outline',
+    },
+    {
+      label: 'Pending Passes',
+      value: String(data.stats.pendingPasses),
+      sub: 'needs action',
+      color: '#d97706',
+      icon: 'exit-outline',
+    },
+    {
+      label: 'Complaints',
+      value: String(data.stats.openComplaints),
+      sub: 'open',
+      color: '#dc2626',
+      icon: 'construct-outline',
+    },
+    {
+      label: 'Mess Rating',
+      value: data.stats.messRating ? `${data.stats.messRating}★` : '—',
+      sub: 'avg feedback',
+      color: '#059669',
+      icon: 'restaurant-outline',
+    },
+  ];
+
+  const sevColor = (s) => (s === 'HIGH' ? '#dc2626' : s === 'MEDIUM' ? '#d97706' : '#4f46e5');
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+    >
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
-        <Text style={styles.heroLabel}>RESIDENTIAL YEAR 2026-27</Text>
+        <Text style={styles.heroLabel}>RESIDENTIAL LIFE</Text>
         <Text style={styles.heroTitle}>Hostel Overview</Text>
         <View style={styles.heroProgress}>
-          <View style={[styles.heroProgressFill, { width: '94%' }]} />
+          <View style={[styles.heroProgressFill, { width: `${occ.pct}%` }]} />
         </View>
         <View style={styles.heroRow}>
           <View>
-            <Text style={styles.heroValue}>94%</Text>
-            <Text style={styles.heroSub}>Beds occupied across 3 blocks</Text>
+            <Text style={styles.heroValue}>{occ.pct}%</Text>
+            <Text style={styles.heroSub}>
+              Beds occupied across {occ.blocks.length} block{occ.blocks.length === 1 ? '' : 's'}
+            </Text>
           </View>
           <View style={styles.heroBadge}>
             <Ionicons name="shield-checkmark-outline" size={14} color="#fff" />
-            <Text style={styles.heroBadgeText}>All clear</Text>
+            <Text style={styles.heroBadgeText}>{data.stats.residents} residents</Text>
           </View>
         </View>
       </LinearGradient>
@@ -78,28 +147,51 @@ export default function HostelDashboard({ navigation }) {
             <Text style={styles.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
-        {todayPasses.map((p) => (
+        {data.todayPasses.length === 0 && (
+          <View style={styles.emptyCard}>
+            <Text style={styles.muted}>No gate passes for today.</Text>
+          </View>
+        )}
+        {data.todayPasses.map((p) => (
           <View key={p.id} style={styles.listCard}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{p.name.charAt(0)}</Text>
+              <Text style={styles.avatarText}>{p.student.charAt(0)}</Text>
             </View>
             <View style={styles.listBody}>
-              <Text style={styles.listTitle}>{p.name} · {p.room}</Text>
-              <Text style={styles.listSub}>{p.reason} · {p.time}</Text>
+              <Text style={styles.listTitle}>
+                {p.student} · {p.room}
+              </Text>
+              <Text style={styles.listSub}>
+                {p.reason} · out {fmtTime(p.outAt)}
+              </Text>
             </View>
             <View
               style={[
                 styles.statusChip,
-                { backgroundColor: p.status === 'Approved' ? '#dcfce7' : '#fef3c7' },
+                {
+                  backgroundColor:
+                    p.status === 'APPROVED'
+                      ? '#dcfce7'
+                      : p.status === 'REJECTED'
+                        ? '#fee2e2'
+                        : '#fef3c7',
+                },
               ]}
             >
               <Text
                 style={[
                   styles.statusText,
-                  { color: p.status === 'Approved' ? '#059669' : '#d97706' },
+                  {
+                    color:
+                      p.status === 'APPROVED'
+                        ? '#059669'
+                        : p.status === 'REJECTED'
+                          ? '#dc2626'
+                          : '#d97706',
+                  },
                 ]}
               >
-                {p.status}
+                {p.status.charAt(0) + p.status.slice(1).toLowerCase()}
               </Text>
             </View>
           </View>
@@ -113,29 +205,26 @@ export default function HostelDashboard({ navigation }) {
             <Text style={styles.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
-        {complaints.map((c) => (
+        {data.openComplaints.length === 0 && (
+          <View style={styles.emptyCard}>
+            <Text style={styles.muted}>No open complaints — all clear.</Text>
+          </View>
+        )}
+        {data.openComplaints.map((c) => (
           <View key={c.id} style={styles.listCard}>
-            <View style={[styles.complaintIcon, { backgroundColor: '#fee2e2' }]}>
-              <Ionicons name="construct-outline" size={16} color="#dc2626" />
+            <View style={[styles.complaintIcon, { backgroundColor: sevColor(c.severity) + '1a' }]}>
+              <Ionicons name="construct-outline" size={16} color={sevColor(c.severity)} />
             </View>
             <View style={styles.listBody}>
-              <Text style={styles.listTitle} numberOfLines={1}>{c.title}</Text>
-              <Text style={styles.listSub}>{c.room} · {c.type} · {c.age} ago</Text>
-            </View>
-            <View
-              style={[
-                styles.statusChip,
-                { backgroundColor: c.severity === 'High' ? '#fee2e2' : '#fef3c7' },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusText,
-                  { color: c.severity === 'High' ? '#dc2626' : '#d97706' },
-                ]}
-              >
-                {c.severity}
+              <Text style={styles.listTitle} numberOfLines={1}>
+                {c.description}
               </Text>
+              <Text style={styles.listSub}>
+                {c.category} · by {c.by}
+              </Text>
+            </View>
+            <View style={[styles.statusChip, { backgroundColor: sevColor(c.severity) + '1a' }]}>
+              <Text style={[styles.statusText, { color: sevColor(c.severity) }]}>{c.severity}</Text>
             </View>
           </View>
         ))}
@@ -161,17 +250,32 @@ export default function HostelDashboard({ navigation }) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {activity.map((a, idx) => (
-          <View key={idx} style={styles.activityRow}>
-            <View style={[styles.activityIcon, { backgroundColor: a.color + '1a' }]}>
-              <Ionicons name={a.icon} size={14} color={a.color} />
-            </View>
-            <View style={styles.activityBody}>
-              <Text style={styles.activityText}>{a.text}</Text>
-              <Text style={styles.activityTime}>{a.time}</Text>
-            </View>
+        {data.activity.length === 0 && (
+          <View style={styles.emptyCard}>
+            <Text style={styles.muted}>No recent activity yet.</Text>
           </View>
-        ))}
+        )}
+        {data.activity.map((a, idx) => {
+          const isResolve = a.action.includes('resolve');
+          const isVacate = a.action.includes('vacate');
+          const color = isResolve ? '#059669' : isVacate ? '#dc2626' : '#2563eb';
+          const icon = isResolve
+            ? 'checkmark-circle-outline'
+            : isVacate
+              ? 'log-out-outline'
+              : 'bed-outline';
+          return (
+            <View key={idx} style={styles.activityRow}>
+              <View style={[styles.activityIcon, { backgroundColor: color + '1a' }]}>
+                <Ionicons name={icon} size={14} color={color} />
+              </View>
+              <View style={styles.activityBody}>
+                <Text style={styles.activityText}>{a.action}</Text>
+                <Text style={styles.activityTime}>{fmtTime(a.at)}</Text>
+              </View>
+            </View>
+          );
+        })}
       </View>
     </ScrollView>
   );
@@ -179,6 +283,16 @@ export default function HostelDashboard({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
+  retryBtn: {
+    marginTop: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 12, fontFamily: 'Manrope-Bold', color: '#fff' },
   hero: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -401,5 +515,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 1,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 20,
+    marginBottom: 8,
   },
 });

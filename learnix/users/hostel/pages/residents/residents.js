@@ -1,42 +1,60 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { hostelApi } from '../../../../services/api';
 import ResidentDetail from './pages/resident_detail/resident_detail';
 
-const residents = [
-  { id: '1', name: 'Sneha Reddy', roll: '21CS118', branch: 'CSE', year: '3rd', block: 'A', room: 'A-101', bed: 'A-101-1', phone: '98765 43210', joined: 'Aug 2023', dues: '₹0' },
-  { id: '2', name: 'Priya Sharma', roll: '21EC042', branch: 'ECE', year: '3rd', block: 'A', room: 'A-101', bed: 'A-101-2', phone: '98765 11223', joined: 'Aug 2023', dues: '₹0' },
-  { id: '3', name: 'Ananya Iyer', roll: '21ME077', branch: 'ME', year: '3rd', block: 'A', room: 'A-101', bed: 'A-101-3', phone: '99887 66554', joined: 'Aug 2023', dues: '₹2,400' },
-  { id: '4', name: 'Arjun Mehta', roll: '22CS045', branch: 'CSE', year: '2nd', block: 'B', room: 'B-204', bed: 'B-204-1', phone: '91234 56789', joined: 'Aug 2024', dues: '₹0' },
-  { id: '5', name: 'Rahul Verma', roll: '22IT031', branch: 'IT', year: '2nd', block: 'B', room: 'B-204', bed: 'B-204-2', phone: '90123 45678', joined: 'Aug 2024', dues: '₹0' },
-  { id: '6', name: 'Karan Singh', roll: '20CS098', branch: 'CSE', year: '4th', block: 'C', room: 'C-302', bed: 'C-302-1', phone: '98989 89898', joined: 'Aug 2022', dues: '₹1,200' },
-  { id: '7', name: 'Vikram Nair', roll: '23ME054', branch: 'ME', year: '2nd', block: 'C', room: 'C-115', bed: 'C-115-1', phone: '90909 09090', joined: 'Jan 2025', dues: '₹0' },
-  { id: '8', name: 'Divya Menon', roll: '22CS102', branch: 'CSE', year: '2nd', block: 'A', room: 'A-118', bed: 'A-118-1', phone: '97654 32109', joined: 'Aug 2024', dues: '₹0' },
-];
-
-const blockColors = { A: '#2563eb', B: '#0891b2', C: '#059669' };
+const BLOCK_COLORS = { 'Block A': '#2563eb', 'Block B': '#0891b2', 'Block C': '#059669' };
 
 export default function ResidentsModule({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [blockFilter, setBlockFilter] = useState('All');
   const [selectedResident, setSelectedResident] = useState(null);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await hostelApi.residents());
+    } catch (e) {
+      setError(e.message || 'Failed to load residents');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const blockNames = useMemo(
+    () => ['All', ...new Set((data ?? []).map((r) => r.block))],
+    [data],
+  );
+
   if (selectedResident) {
     return (
       <ResidentDetail
-        resident={selectedResident}
-        onBack={() => setSelectedResident(null)}
+        studentProfileId={selectedResident.studentProfileId}
+        onBack={() => {
+          setSelectedResident(null);
+          load(); // refresh dues after rent collection
+        }}
       />
     );
   }
 
-  const filtered = residents.filter((r) => {
+  const filtered = (data ?? []).filter((r) => {
+    const q = search.toLowerCase();
     const matchesSearch =
-      !search ||
-      r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.roll.toLowerCase().includes(search.toLowerCase()) ||
-      r.room.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      r.name.toLowerCase().includes(q) ||
+      r.room.toLowerCase().includes(q) ||
+      r.bedLabel.toLowerCase().includes(q);
     const matchesBlock = blockFilter === 'All' || r.block === blockFilter;
     return matchesSearch && matchesBlock;
   });
@@ -47,31 +65,43 @@ export default function ResidentsModule({ navigation }) {
         <Ionicons name="search-outline" size={16} color={theme.colors.textMuted} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search name, roll or room…"
+          placeholder="Search name, room or bed…"
           placeholderTextColor="#9ca3af"
           value={search}
           onChangeText={setSearch}
         />
       </View>
       <View style={styles.filterRow}>
-        {['All', 'A', 'B', 'C'].map((b) => (
+        {blockNames.map((b) => (
           <TouchableOpacity
             key={b}
             style={[styles.filterChip, blockFilter === b && styles.filterChipActive]}
             onPress={() => setBlockFilter(b)}
           >
             <Text style={[styles.filterText, blockFilter === b && styles.filterTextActive]}>
-              {b === 'All' ? 'All Blocks' : `Block ${b}`}
+              {b === 'All' ? 'All Blocks' : b}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+      >
+        {error && !data && <Text style={styles.errorText}>{error}</Text>}
+        {loading && !data && <Text style={styles.muted}>Loading residents…</Text>}
+        {data && filtered.length === 0 && (
+          <View style={styles.emptyCard}>
+            <Ionicons name="people-outline" size={28} color={theme.colors.textMuted} />
+            <Text style={styles.muted}>No residents match your search.</Text>
+          </View>
+        )}
         {filtered.map((r) => {
-          const color = blockColors[r.block];
+          const color = BLOCK_COLORS[r.block] ?? '#2563eb';
           return (
             <TouchableOpacity
-              key={r.id}
+              key={r.allocationId}
               style={styles.card}
               onPress={() => setSelectedResident(r)}
             >
@@ -80,16 +110,24 @@ export default function ResidentsModule({ navigation }) {
               </View>
               <View style={styles.cardBody}>
                 <Text style={styles.name}>{r.name}</Text>
-                <Text style={styles.meta}>
-                  {r.roll} · {r.branch} · {r.year} yr
-                </Text>
+                <Text style={styles.meta}>{r.phone || 'No phone on file'}</Text>
                 <View style={styles.roomChip}>
                   <Ionicons name="bed-outline" size={11} color={color} />
                   <Text style={[styles.roomText, { color }]}>
-                    {r.room} · Bed {r.bed}
+                    {r.room} · Bed {r.bedLabel}
                   </Text>
                 </View>
               </View>
+              {r.duesCount > 0 ? (
+                <View style={styles.dueChip}>
+                  <Text style={styles.dueText}>₹{Math.round(r.outstandingMinor / 100).toLocaleString('en-IN')} due</Text>
+                </View>
+              ) : (
+                <View style={styles.clearChip}>
+                  <Ionicons name="checkmark" size={12} color="#059669" />
+                  <Text style={styles.clearText}>Clear</Text>
+                </View>
+              )}
               <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
             </TouchableOpacity>
           );
@@ -119,13 +157,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
   },
-  filterRow: { flexDirection: 'row', marginTop: 12 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
     backgroundColor: theme.colors.surfaceMuted,
     marginRight: 8,
+    marginBottom: 6,
   },
   filterChipActive: { backgroundColor: theme.colors.primary },
   filterText: {
@@ -135,6 +174,16 @@ const styles = StyleSheet.create({
   },
   filterTextActive: { color: '#fff' },
   list: { paddingBottom: 24, paddingTop: 12 },
+  muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
+  errorText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: '#dc2626' },
+  emptyCard: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 24,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -184,4 +233,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-SemiBold',
     marginLeft: 4,
   },
+  dueChip: {
+    backgroundColor: '#fee2e2',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 6,
+  },
+  dueText: { fontSize: 10, fontFamily: 'Manrope-Bold', color: '#dc2626' },
+  clearChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#dcfce7',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 6,
+  },
+  clearText: { fontSize: 10, fontFamily: 'Manrope-Bold', color: '#059669', marginLeft: 2 },
 });

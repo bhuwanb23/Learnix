@@ -1,85 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
+import { hostelApi } from '../../../../../../services/api';
 
-const roomInfo = {
-  A: {
-    block: 'Block A',
-    type: 'Girls Hostel',
-    color: '#2563eb',
-    residents: [
-      { id: '1', name: 'Sneha Reddy', roll: '21CS118', branch: 'CSE', year: '3rd', bed: 'A-101-1' },
-      { id: '2', name: 'Priya Sharma', roll: '21EC042', branch: 'ECE', year: '3rd', bed: 'A-101-2' },
-      { id: '3', name: 'Ananya Iyer', roll: '21ME077', branch: 'ME', year: '3rd', bed: 'A-101-3' },
-    ],
-  },
-  B: {
-    block: 'Block B',
-    type: 'Boys Hostel',
-    color: '#0891b2',
-    residents: [
-      { id: '1', name: 'Arjun Mehta', roll: '22CS045', branch: 'CSE', year: '2nd', bed: 'B-204-1' },
-      { id: '2', name: 'Rahul Verma', roll: '22IT031', branch: 'IT', year: '2nd', bed: 'B-204-2' },
-    ],
-  },
-  C: {
-    block: 'Block C',
-    type: 'Boys Hostel',
-    color: '#059669',
-    residents: [
-      { id: '1', name: 'Karan Singh', roll: '20CS098', branch: 'CSE', year: '4th', bed: 'C-302-1' },
-    ],
-  },
-};
-
-export default function RoomDetail({ roomId, block, onBack }) {
-  const [residents, setResidents] = useState(
-    roomInfo[block.charAt(0)]?.residents || roomInfo.A.residents
-  );
+export default function RoomDetail({ roomNumber, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [studentName, setStudentName] = useState('');
   const [studentRoll, setStudentRoll] = useState('');
-  const [studentBranch, setStudentBranch] = useState('CSE');
-  const [studentYear, setStudentYear] = useState('1st');
+  const [busy, setBusy] = useState(false);
 
-  const info = roomInfo[block.charAt(0)] || roomInfo.A;
-  const capacity = 3;
-  const occupied = residents.length;
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await hostelApi.roomDetail(roomNumber));
+    } catch (e) {
+      setError(e.message || 'Failed to load room');
+    } finally {
+      setLoading(false);
+    }
+  }, [roomNumber]);
 
-  const handleAllocate = () => {
-    if (!studentName.trim() || !studentRoll.trim()) {
-      Alert.alert('Incomplete', 'Enter the student name and roll number.');
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleAllocate = async () => {
+    if (!studentRoll.trim()) {
+      Alert.alert('Incomplete', 'Enter the student roll number.');
       return;
     }
-    setResidents([
-      ...residents,
-      {
-        id: String(Date.now()),
-        name: studentName.trim(),
-        roll: studentRoll.trim().toUpperCase(),
-        branch: studentBranch,
-        year: studentYear,
-        bed: `${roomId}-${residents.length + 1}`,
-      },
-    ]);
-    setStudentName('');
-    setStudentRoll('');
-    setShowForm(false);
-    Alert.alert('Allocated', `${studentName.trim()} allotted bed ${roomId}-${residents.length + 1}.`);
+    setBusy(true);
+    try {
+      const res = await hostelApi.allocate(studentRoll.trim().toUpperCase(), roomNumber);
+      setStudentRoll('');
+      setShowForm(false);
+      Alert.alert('Allocated', `${res.student} allotted bed ${res.bedLabel}.`);
+      await load();
+    } catch (e) {
+      Alert.alert('Cannot allocate', e.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleVacate = (resident) => {
-    Alert.alert('Vacate Room', `Remove ${resident.name} from ${roomId}?`, [
+    Alert.alert('Vacate Bed', `Remove ${resident.name} from bed ${resident.bedLabel}?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Vacate',
         style: 'destructive',
-        onPress: () => setResidents(residents.filter((r) => r.id !== resident.id)),
+        onPress: async () => {
+          try {
+            await hostelApi.vacateBed(resident.bedId);
+            Alert.alert('Vacated', `${resident.name} has been checked out of ${roomNumber}.`);
+            await load();
+          } catch (e) {
+            Alert.alert('Cannot vacate', e.message);
+          }
+        },
       },
     ]);
   };
+
+  if (loading && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.muted}>Loading room…</Text>
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.muted}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!data) return null;
+
+  const occupied = data.residents.length;
 
   return (
     <View style={styles.container}>
@@ -88,13 +97,13 @@ export default function RoomDetail({ roomId, block, onBack }) {
           <TouchableOpacity style={styles.backBtn} onPress={onBack}>
             <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.roomId}>{roomId}</Text>
+          <Text style={styles.roomId}>{data.number}</Text>
           <Text style={styles.roomSub}>
-            {info.block} · {info.type} · {occupied}/{capacity} beds occupied
+            {data.block} · Floor {data.floor} · {occupied}/{data.capacity} beds occupied
           </Text>
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{capacity - occupied}</Text>
+              <Text style={styles.heroStatValue}>{data.capacity - occupied}</Text>
               <Text style={styles.heroStatLabel}>Beds Free</Text>
             </View>
             <View style={styles.heroStatDivider} />
@@ -104,7 +113,7 @@ export default function RoomDetail({ roomId, block, onBack }) {
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>₹6,000</Text>
+              <Text style={styles.heroStatValue}>₹35,000</Text>
               <Text style={styles.heroStatLabel}>Rent / Month</Text>
             </View>
           </View>
@@ -120,82 +129,52 @@ export default function RoomDetail({ roomId, block, onBack }) {
               {showForm ? 'Cancel' : 'Allocate Resident'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.actionSecondary]}
-            onPress={() => Alert.alert('Transfer', 'Pick a target room to transfer a resident.')}
-          >
-            <Ionicons name="swap-horizontal-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionSecondaryText}>Transfer</Text>
-          </TouchableOpacity>
         </View>
 
         {showForm && (
           <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Allocate a bed in {roomId}</Text>
-            <Text style={styles.formLabel}>Student Name</Text>
-            <TextInput style={styles.input} placeholder="Full name" value={studentName} onChangeText={setStudentName} placeholderTextColor="#9ca3af" />
-            <Text style={styles.formLabel}>Roll Number</Text>
-            <TextInput style={styles.input} placeholder="e.g. 22CS045" value={studentRoll} onChangeText={setStudentRoll} placeholderTextColor="#9ca3af" />
-            <View style={styles.formRow}>
-              <View style={styles.formHalf}>
-                <Text style={styles.formLabel}>Branch</Text>
-                <View style={styles.pickerRow}>
-                  {['CSE', 'IT', 'ECE', 'ME'].map((b) => (
-                    <TouchableOpacity
-                      key={b}
-                      style={[styles.pickerChip, studentBranch === b && styles.pickerChipActive]}
-                      onPress={() => setStudentBranch(b)}
-                    >
-                      <Text style={[styles.pickerText, studentBranch === b && styles.pickerTextActive]}>{b}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-              <View style={styles.formHalf}>
-                <Text style={styles.formLabel}>Year</Text>
-                <View style={styles.pickerRow}>
-                  {['1st', '2nd', '3rd', '4th'].map((y) => (
-                    <TouchableOpacity
-                      key={y}
-                      style={[styles.pickerChip, studentYear === y && styles.pickerChipActive]}
-                      onPress={() => setStudentYear(y)}
-                    >
-                      <Text style={[styles.pickerText, studentYear === y && styles.pickerTextActive]}>{y}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.confirmBtn} onPress={handleAllocate}>
+            <Text style={styles.formTitle}>Allocate a bed in {data.number}</Text>
+            <Text style={styles.formLabel}>Student Roll Number</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. STU-2026-001"
+              autoCapitalize="characters"
+              value={studentRoll}
+              onChangeText={setStudentRoll}
+              placeholderTextColor="#9ca3af"
+            />
+            <Text style={styles.formHint}>
+              The first vacant bed is assigned automatically and rent dues are generated.
+            </Text>
+            <TouchableOpacity
+              style={[styles.confirmBtn, busy && { opacity: 0.6 }]}
+              onPress={handleAllocate}
+              disabled={busy}
+            >
               <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-              <Text style={styles.confirmText}>Confirm Allocation</Text>
+              <Text style={styles.confirmText}>{busy ? 'Allocating…' : 'Confirm Allocation'}</Text>
             </TouchableOpacity>
           </View>
         )}
 
         <Text style={styles.sectionTitle}>Residents</Text>
-        {residents.map((r) => (
-          <View key={r.id} style={styles.residentCard}>
-            <View style={[styles.avatar, { backgroundColor: info.color + '1a' }]}>
-              <Text style={[styles.avatarText, { color: info.color }]}>{r.name.charAt(0)}</Text>
+        {data.residents.map((r) => (
+          <View key={r.allocationId} style={styles.residentCard}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{r.name.charAt(0)}</Text>
             </View>
             <View style={styles.residentBody}>
               <Text style={styles.residentName}>{r.name}</Text>
-              <Text style={styles.residentMeta}>
-                {r.roll} · {r.branch} · {r.year} yr
-              </Text>
-              <Text style={styles.bedChip}>Bed {r.bed}</Text>
+              <Text style={styles.residentMeta}>{r.phone || 'No phone on file'}</Text>
+              <Text style={styles.bedChip}>Bed {r.bedLabel}</Text>
             </View>
-            <TouchableOpacity
-              style={styles.vacateBtn}
-              onPress={() => handleVacate(r)}
-            >
+            <TouchableOpacity style={styles.vacateBtn} onPress={() => handleVacate(r)}>
               <Ionicons name="close-circle-outline" size={16} color="#dc2626" />
               <Text style={styles.vacateText}>Vacate</Text>
             </TouchableOpacity>
           </View>
         ))}
-        {residents.length === 0 && (
+        {data.residents.length === 0 && (
           <View style={styles.emptyCard}>
             <Ionicons name="bed-outline" size={28} color={theme.colors.textMuted} />
             <Text style={styles.emptyText}>Room is vacant — allocate a resident.</Text>
@@ -208,6 +187,16 @@ export default function RoomDetail({ roomId, block, onBack }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
+  retryBtn: {
+    marginTop: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 12, fontFamily: 'Manrope-Bold', color: '#fff' },
   content: { paddingBottom: 32 },
   hero: {
     marginHorizontal: 16,
@@ -277,17 +266,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 6,
   },
-  actionSecondary: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-  },
-  actionSecondaryText: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.primary,
-    marginLeft: 6,
-  },
   formCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -321,24 +299,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.text,
   },
-  formRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  formHalf: { flex: 1, marginRight: 8 },
-  pickerRow: { flexDirection: 'row', flexWrap: 'wrap' },
-  pickerChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: theme.colors.surfaceMuted,
-    marginRight: 6,
-    marginBottom: 6,
-  },
-  pickerChipActive: { backgroundColor: theme.colors.primary },
-  pickerText: {
+  formHint: {
     fontSize: 11,
-    fontFamily: 'Manrope-SemiBold',
+    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
+    marginTop: 8,
   },
-  pickerTextActive: { color: '#fff' },
   confirmBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -377,6 +343,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -384,6 +351,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 15,
     fontFamily: 'Manrope-Bold',
+    color: '#2563eb',
   },
   residentBody: { flex: 1 },
   residentName: {
