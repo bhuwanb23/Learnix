@@ -60,3 +60,15 @@ export const DRIVE_MODE = ['ON_CAMPUS', 'VIRTUAL'] as const;
 export const APPLICATION_STATUS = ['APPLIED', 'SHORTLISTED', 'INTERVIEW', 'OFFERED', 'REJECTED', 'WITHDRAWN'] as const;
 export const OFFER_STATUS = ['EXTENDED', 'ACCEPTED', 'DECLINED'] as const;
 export const DRIVE_REG_STATUS = ['REGISTERED', 'ATTENDED', 'ABSENT'] as const;
+
+// ── Domain E — Finance ──
+export const FEE_STRUCTURE_STATUS = ['ACTIVE', 'REVISION_REQUESTED', 'REVISION_APPROVED'] as const;
+export const FEE_DUE_STATUS = ['UNPAID', 'PARTIAL', 'CLEARED', 'WAIVED'] as const;
+export const PAYMENT_CATEGORY = ['TUITION', 'HOSTEL_RENT', 'MESS', 'TRANSPORT', 'FINE', 'DONATION', 'MISC'] as const;
+export const PAYMENT_METHOD = ['UPI', 'NET_BANKING', 'CARD', 'CASH'] as const;
+export const PAYMENT_STATUS = ['CLEARED', 'PARTIAL', 'PENDING', 'FAILED'] as const;
+export const PAYROLL_STATUS = ['DRAFT', 'RUN', 'PAID'] as const;
+export const PAYROLL_ENTRY_STATUS = ['PENDING', 'PAID'] as const;
+export const EXPENSE_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export const SCHOLARSHIP_TYPE = ['MERIT', 'NEED_BASED'] as const;
+export const SCHOLARSHIP_AWARD_STATUS = ['APPROVED', 'DISBURSED', 'REJECTED'] as const;
