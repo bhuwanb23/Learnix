@@ -117,8 +117,9 @@ async function main() {
   await seedDomainE(institution.id);
   await seedDomainF(institution.id);
   await seedDomainG(institution.id);
+  await seedDomainH(institution.id);
 
-  console.log('Seed complete (base + Domains A–G).');
+  console.log('Seed complete (base + Domains A–H).');
 }
 
 main()
@@ -977,4 +978,135 @@ async function seedDomainG(institutionId: string): Promise<void> {
 
   console.log('  ✓ Block A → A-101 (2 beds), Arjun allocated bed 1, rent dues Jul+Aug UNPAID');
   console.log('  ✓ 7-day mess menu ×3 meals, lunch attendance + feedback, gate pass PENDING, WiFi complaint OPEN, visitor IN');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain H — Transport seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainH(institutionId: string): Promise<void> {
+  console.log('Seeding Domain H (transport)…');
+
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+  const ay = await db.academicYear.findFirst({ where: { institutionId, isCurrent: true } });
+  if (!ay) throw new Error('Academic year missing');
+
+  // Vehicles — one ON_ROAD with live position, one in SERVICE
+  let v1 = await db.vehicle.findFirst({ where: { institutionId, regNo: 'KA-01-F-2045' } });
+  if (!v1) {
+    v1 = await db.vehicle.create({
+      data: { institutionId, regNo: 'KA-01-F-2045', model: 'TATA Starbus Ultra', capacity: 50, odometerKm: 86400, fuelPct: 68, status: 'ON_ROAD' },
+    });
+  }
+  let v2 = await db.vehicle.findFirst({ where: { institutionId, regNo: 'KA-01-F-3310' } });
+  if (!v2) {
+    v2 = await db.vehicle.create({
+      data: { institutionId, regNo: 'KA-01-F-3310', model: 'Eicher Skyline Pro', capacity: 40, odometerKm: 51230, fuelPct: 41, status: 'SERVICE' },
+    });
+  }
+
+  const docsExist = await db.vehicleDocument.findUnique({ where: { vehicleId: v1.id } });
+  if (!docsExist) {
+    await db.vehicleDocument.create({
+      data: {
+        vehicleId: v1.id,
+        registrationExpiry: new Date('2027-03-31'),
+        insuranceExpiry: new Date('2026-12-15'),
+        fitnessExpiry: new Date('2027-01-20'),
+      },
+    });
+  }
+
+  // Driver
+  const driverExists = await db.driver.findFirst({ where: { institutionId, licenseNo: 'KA0320190004521' } });
+  if (!driverExists) {
+    await db.driver.create({
+      data: { institutionId, name: 'Manjunath S', licenseNo: 'KA0320190004521', licenseExpiry: new Date('2029-06-30'), experienceYears: 12, dutyStatus: 'ON_DUTY' },
+    });
+  }
+
+  // Route 01 on v1 with 4 stops
+  let route1 = await db.route.findFirst({ where: { institutionId, name: 'Route 01' } });
+  if (!route1) {
+    route1 = await db.route.create({
+      data: { institutionId, name: 'Route 01', distanceKm: 18.5, vehicleId: v1.id },
+    });
+    const stops = [
+      { order: 1, stopName: 'Hebbal Bridge', time: '07:10', lat: 13.0358, lng: 77.597 },
+      { order: 2, stopName: 'Manyata Tech Park', time: '07:25', lat: 13.0452, lng: 77.6208 },
+      { order: 3, stopName: 'Thanisandra Main Road', time: '07:40', lat: 13.0515, lng: 77.6452 },
+      { order: 4, stopName: 'Campus Gate', time: '08:00', lat: 13.0632, lng: 77.6612 },
+    ];
+    for (const s of stops) {
+      await db.routeStop.create({ data: { routeId: route1.id, order: s.order, stopName: s.stopName, time: s.time, lat: s.lat, lng: s.lng } });
+    }
+  }
+
+  // Route 02 on v2 (in service → no live position)
+  let route2 = await db.route.findFirst({ where: { institutionId, name: 'Route 02' } });
+  if (!route2) {
+    route2 = await db.route.create({
+      data: { institutionId, name: 'Route 02', distanceKm: 24.0, vehicleId: v2.id },
+    });
+    await db.routeStop.create({ data: { routeId: route2.id, order: 1, stopName: 'Yelahanka New Town', time: '07:05', lat: 13.1007, lng: 77.5963 } });
+    await db.routeStop.create({ data: { routeId: route2.id, order: 2, stopName: 'Campus Gate', time: '07:55', lat: 13.0632, lng: 77.6612 } });
+  }
+
+  // Arjun enrolled on Route 01 at stop 2 (Manyata Tech Park)
+  const stop2 = await db.routeStop.findFirst({ where: { routeId: route1.id, order: 2 } });
+  if (stop2) {
+    await db.routeEnrollment.upsert({
+      where: { studentProfileId_routeId: { studentProfileId: studentProfile.id, routeId: route1.id } },
+      update: { stopId: stop2.id },
+      create: { routeId: route1.id, stopId: stop2.id, studentProfileId: studentProfile.id, status: 'ACTIVE' },
+    });
+  }
+
+  // Live position for v1: between stop 2 and 3, on time
+  const posExists = await db.busPosition.findUnique({ where: { vehicleId: v1.id } });
+  if (!posExists && stop2) {
+    await db.busPosition.create({
+      data: {
+        vehicleId: v1.id,
+        routeId: route1.id,
+        currentStopId: stop2.id,
+        speedKmh: 32,
+        lat: 13.0491,
+        lng: 77.6331,
+        etaMin: 18,
+        status: 'ON_TIME',
+        pingedAt: new Date(),
+      },
+    });
+  }
+
+  // Service record on v2 (IN_PROGRESS) + fuel log on v1
+  const svcExists = await db.serviceRecord.findFirst({ where: { vehicleId: v2.id, type: 'PERIODIC' } });
+  if (!svcExists) {
+    await db.serviceRecord.create({
+      data: { vehicleId: v2.id, type: 'PERIODIC', costMinor: 850000, serviceDate: new Date(), status: 'IN_PROGRESS' },
+    });
+  }
+  const fuelExists = await db.fuelLog.findFirst({ where: { vehicleId: v1.id } });
+  if (!fuelExists) {
+    await db.fuelLog.create({
+      data: { vehicleId: v1.id, litres: 60, amountMinor: 630000, filledAt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    });
+  }
+
+  // Transport fee due for Arjun (2025-26) — UNPAID, will link to payments in Phase 4
+  const tfdExists = await db.transportFeeDue.findUnique({
+    where: { studentProfileId_academicYearId: { studentProfileId: studentProfile.id, academicYearId: ay.id } },
+  });
+  if (!tfdExists) {
+    await db.transportFeeDue.create({
+      data: { studentProfileId: studentProfile.id, academicYearId: ay.id, amountMinor: 1800000, status: 'UNPAID' }, // ₹18,000/yr
+    });
+  }
+
+  console.log('  ✓ 2 vehicles (KA-01-F-2045 ON_ROAD w/ GPS, KA-01-F-3310 SERVICE), driver Manjunath ON_DUTY');
+  console.log('  ✓ Route 01 (4 stops, Arjun @ stop 2, live ON_TIME eta 18min), Route 02, service IN_PROGRESS, fuel log, transport fee ₹18k UNPAID');
 }

@@ -162,6 +162,32 @@ async function main(): Promise<void> {
   if (gp) console.log(`GATE PASS ${gp.studentProfile.user.fullName} [${gp.status}] out:${gp.outAt.toISOString().slice(0, 10)}`);
   if (complaint) console.log(`COMPLAINT ${complaint.category} [${complaint.status}] sev:${complaint.severity} | ${complaint.studentProfile.user.fullName}`);
   if (visitor) console.log(`VISITOR ${visitor.name} (${visitor.relation}) [${visitor.status}] for ${visitor.visitingStudent.user.fullName}`);
+
+  console.log('── Domain H spine ──');
+  const bus = await db.busPosition.findFirst({
+    include: {
+      vehicle: true,
+      route: { include: { stops: { orderBy: { order: 'asc' } }, enrollments: { include: { studentProfile: { include: { user: true } }, stop: true } } } },
+      currentStop: true,
+    },
+  });
+  if (bus) {
+    const rider = bus.route.enrollments[0];
+    console.log(
+      `LIVE BUS ${bus.vehicle.regNo} on ${bus.route.name} near ${bus.currentStop?.stopName ?? '-'} | ${bus.speedKmh}km/h eta:${bus.etaMin ?? '-'}min [${bus.status}] pinged:${bus.pingedAt.toISOString().slice(11, 16)}`,
+    );
+    if (rider) {
+      console.log(`  └ rider ${rider.studentProfile.user.fullName} boards @ stop ${rider.stop.order} ${rider.stop.stopName} (${rider.stop.time})`);
+    }
+  }
+  const v2 = await db.vehicle.findFirst({ where: { status: 'SERVICE' }, include: { serviceRecords: true, document: true } });
+  if (v2) {
+    console.log(`FLEET ${v2.regNo} [${v2.status}] fuel:${v2.fuelPct}% odometer:${v2.odometerKm}km | services:${v2.serviceRecords.length} | reg expires:${v2.document?.registrationExpiry.toISOString().slice(0, 10) ?? '-'}`);
+  }
+  const tfd = await db.transportFeeDue.findFirst({ include: { studentProfile: { include: { user: true } }, academicYear: true } });
+  if (tfd) {
+    console.log(`TRANSPORT FEE ${tfd.studentProfile.user.fullName} AY ${tfd.academicYear.name} ₹${tfd.amountMinor / 100} [${tfd.status}]`);
+  }
 }
 
 main()

@@ -142,7 +142,9 @@
 | `hostel_complaints` | studentProfileId, category(PLUMBING/ELECTRICAL/NETWORK/MAINTENANCE), description, severity(LOW/MEDIUM/HIGH), status(OPEN/ASSIGNED/RESOLVED), assignedToUserId?, resolvedAt? | 08 §3.6 |
 | `visitors` | name, visitingStudentProfileId, relation, checkInAt, checkOutAt?, status(IN/OUT) | 08 §3.7 check-in/out |
 
-## Domain H — Transport (owner: Transport dept) — 9 tables
+## Domain H — Transport (owner: Transport dept) — 9 tables ✅ COMPLETE
+
+> **Live status:** built as `h1_routes / h2_fleet / h3_tracking`. Migration `domain_h_transport`. routes uq(inst,name) → stops uq(route,order) → enrollments uq(student,route) w/ stop FK (pickup point); route.vehicleId real FK (shared vehicle across routes allowed); drivers uq(inst,licenseNo), staffUserId scalar (driver may lack app account); **bus_positions: one row per vehicle (uq vehicleId), GPS ping = upsert**, currentStopId FK to route_stops; service/fuel money in paise. transport_fee_dues (E) links student×AY. Seed: KA-01-F-2045 ON_ROAD w/ docs + live position (32km/h, ON_TIME, eta 18min) on Route 01 (4 stops, Arjun @ stop 2 07:25), KA-01-F-3310 SERVICE w/ PERIODIC IN_PROGRESS, driver Manjunath ON_DUTY, fuel 60L ₹6,300, transport fee ₹18,000 UNPAID. Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|

@@ -88,3 +88,11 @@ export const GATE_PASS_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
 export const COMPLAINT_CATEGORY = ['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE'] as const;
 export const COMPLAINT_STATUS = ['OPEN', 'ASSIGNED', 'RESOLVED'] as const;
 export const VISITOR_STATUS = ['IN', 'OUT'] as const;
+
+// ── Domain H — Transport ──
+export const VEHICLE_STATUS = ['ON_ROAD', 'IDLE', 'SERVICE'] as const;
+export const DUTY_STATUS = ['ON_DUTY', 'OFF_DUTY', 'ON_LEAVE'] as const;
+export const ROUTE_ENROLLMENT_STATE = ['ACTIVE', 'REMOVED'] as const;
+export const BUS_STATUS = ['ON_TIME', 'DELAYED'] as const;
+export const SERVICE_TYPE = ['PERIODIC', 'REPAIR', 'INSPECTION'] as const;
+export const SERVICE_STATUS = ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] as const;
