@@ -192,6 +192,72 @@ export async function getAlumniDetail(institutionId: string, profileId: string) 
   };
 }
 
+// AL-02 actions: invite (notification) + add-mentor (creates PENDING pair)
+export async function inviteAlumni(institutionId: string, profileId: string, actorUserId: string) {
+  const profile = await prisma.alumniProfile.findFirst({
+    where: { id: profileId, user: { institutionId } },
+    include: { user: { select: { id: true, fullName: true } } },
+  });
+  if (!profile) throw notFound('Alumni not found');
+  await prisma.notification.create({
+    data: {
+      institutionId,
+      recipientUserId: profile.userId,
+      type: 'EVENT',
+      title: 'You are invited!',
+      body: 'The Alumni Relations Office has invited you to our upcoming alumni events. Check the events section for details.',
+      sourceModule: 'alumni',
+    },
+  });
+  await writeAudit({
+    actorUserId,
+    institutionId,
+    action: 'alumni.invite',
+    entityType: 'AlumniProfile',
+    entityId: profile.id,
+    after: { invited: profile.user.fullName },
+  });
+  return { id: profile.id, invited: profile.user.fullName };
+}
+
+export async function addMentor(institutionId: string, profileId: string, actorUserId: string) {
+  const profile = await prisma.alumniProfile.findFirst({
+    where: { id: profileId, user: { institutionId } },
+    include: { user: { select: { id: true, fullName: true } } },
+  });
+  if (!profile) throw notFound('Alumni not found');
+
+  // Demo mentee: the first active student profile in the institution
+  const mentee = await prisma.studentProfile.findFirst({
+    where: { user: { institutionId, deletedAt: null } },
+    include: { user: { select: { id: true, fullName: true } } },
+  });
+  if (!mentee) throw unprocessable('No student available to pair as mentee');
+
+  const existing = await prisma.mentorshipPair.findFirst({
+    where: { mentorAlumniUserId: profile.userId, menteeStudentProfileId: mentee.id, status: { in: ['PENDING', 'ACTIVE'] } },
+  });
+  if (existing) throw conflict('Already a mentor for an active/pending pair');
+
+  const pair = await prisma.mentorshipPair.create({
+    data: {
+      mentorAlumniUserId: profile.userId,
+      menteeStudentProfileId: mentee.id,
+      field: profile.currentRole ? 'Career Guidance' : 'Career',
+      status: 'PENDING',
+    },
+  });
+  await writeAudit({
+    actorUserId,
+    institutionId,
+    action: 'mentorship.request',
+    entityType: 'MentorshipPair',
+    entityId: pair.id,
+    after: { mentor: profile.user.fullName, mentee: mentee.user.fullName },
+  });
+  return { id: pair.id, mentor: profile.user.fullName, mentee: mentee.user.fullName, status: 'PENDING' };
+}
+
 // ── AL-03 Events + RSVP ─────────────────────────────────────
 export async function listEvents(institutionId: string) {
   const events = await prisma.event.findMany({

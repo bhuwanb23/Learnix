@@ -52,6 +52,26 @@ router.get(
   }),
 );
 
+router.post(
+  '/directory/:id/invite',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.inviteAlumni(req.auth!.institutionId, String(req.params.id), req.auth!.userId),
+    });
+  }),
+);
+
+router.post(
+  '/directory/:id/add-mentor',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.addMentor(req.auth!.institutionId, String(req.params.id), req.auth!.userId),
+    });
+  }),
+);
+
 // AL-03 events + RSVP decisions
 router.get(
   '/events',
