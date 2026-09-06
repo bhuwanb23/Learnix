@@ -112,8 +112,9 @@ async function main() {
   }
 
   await seedDomainB(institution.id);
+  await seedDomainC(institution.id);
 
-  console.log('Seed complete (base + Domain B).');
+  console.log('Seed complete (base + Domains A–C).');
 }
 
 main()
@@ -294,4 +295,188 @@ async function seedDomainB(institutionId: string): Promise<void> {
 
   console.log('  ✓ CSE → BT-CSE → CSE 2027 → Section A → 2 offerings (CS401, CS402)');
   console.log('  ✓ enrollment, syllabus v1 (3 units / 6 topics), 1 note, 1 assignment + rubric');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain C — Quizzes & Exams seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainC(institutionId: string): Promise<void> {
+  console.log('Seeding Domain C (quizzes & exams)…');
+
+  const teacher = await db.user.findFirst({ where: { email: 'teacher@learnix.dev', institutionId } });
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!teacher || !student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+
+  const ay = await db.academicYear.findFirst({ where: { institutionId, isCurrent: true } });
+  if (!ay) throw new Error('Academic year missing — run Domain B seed');
+
+  const dbmsOffering = await db.courseOffering.findFirst({
+    where: { course: { code: 'CS401' }, section: { name: 'Section A' }, academicYearId: ay.id },
+  });
+  if (!dbmsOffering) throw new Error('CS401 offering missing');
+
+  // ── Quiz: 3 questions, published, one AUTO_GRADED attempt ──
+  let quiz = await db.quiz.findFirst({ where: { offeringId: dbmsOffering.id, title: 'ER & SQL Rapid Quiz' } });
+  if (!quiz) {
+    quiz = await db.quiz.create({
+      data: {
+        offeringId: dbmsOffering.id,
+        title: 'ER & SQL Rapid Quiz',
+        durationMin: 15,
+        difficulty: 'MEDIUM',
+        status: 'PUBLISHED',
+        shuffleQuestions: true,
+        allowRetake: true,
+        createdByUserId: teacher.id,
+      },
+    });
+
+    const questions = [
+      { type: 'MCQ', prompt: 'Which symbol represents a weak entity in an ER diagram?', options: ['Double rectangle', 'Double diamond', 'Oval', 'Line'], correct: 'Double rectangle', order: 1 },
+      { type: 'TRUE_FALSE', prompt: 'A foreign key can contain NULL values.', options: ['true', 'false'], correct: 'true', order: 2 },
+      { type: 'MCQ', prompt: 'Which SQL clause filters rows AFTER grouping?', options: ['WHERE', 'HAVING', 'ORDER BY', 'LIMIT'], correct: 'HAVING', order: 3 },
+    ] as const;
+    for (const q of questions) {
+      await db.question.create({
+        data: {
+          quizId: quiz.id,
+          type: q.type,
+          prompt: q.prompt,
+          optionsJson: JSON.stringify(q.options),
+          correctAnswer: q.correct,
+          marks: 1,
+          order: q.order,
+        },
+      });
+    }
+
+    // One completed attempt: 2/3 correct → AUTO_GRADED with score 2
+    const attempt = await db.quizAttempt.create({
+      data: {
+        quizId: quiz.id,
+        studentProfileId: studentProfile.id,
+        status: 'IN_PROGRESS',
+      },
+    });
+    const qs = await db.question.findMany({ where: { quizId: quiz.id }, orderBy: { order: 'asc' } });
+    const responses = [
+      { q: qs[0], given: 'Double rectangle' }, // correct
+      { q: qs[1], given: 'true' }, // correct
+      { q: qs[2], given: 'WHERE' }, // wrong
+    ];
+    let score = 0;
+    for (const r of responses) {
+      const isCorrect = r.given === r.q.correctAnswer;
+      if (isCorrect) score += r.q.marks;
+      await db.quizAnswer.create({
+        data: {
+          attemptId: attempt.id,
+          questionId: r.q.id,
+          answerJson: JSON.stringify(r.given),
+          isCorrect,
+          marksAwarded: isCorrect ? r.q.marks : 0,
+        },
+      });
+    }
+    await db.quizAttempt.update({
+      where: { id: attempt.id },
+      data: { status: 'AUTO_GRADED', submittedAt: new Date(), scoreMarks: score },
+    });
+  }
+
+  // ── Exam: MID_TERM sem 4 with slot on CS401 ──
+  let exam = await db.exam.findFirst({ where: { name: 'Mid Term Exams — Sem 4', academicYearId: ay.id } });
+  if (!exam) {
+    exam = await db.exam.create({
+      data: {
+        institutionId,
+        academicYearId: ay.id,
+        semester: 4,
+        type: 'MID_TERM',
+        name: 'Mid Term Exams — Sem 4',
+        createdByUserId: teacher.id,
+        status: 'ONGOING',
+      },
+    });
+    await db.gradingDeadline.create({
+      data: { examId: exam.id, dueAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) },
+    });
+  }
+
+  let slot = await db.examSlot.findFirst({ where: { examId: exam.id, offeringId: dbmsOffering.id } });
+  if (!slot) {
+    slot = await db.examSlot.create({
+      data: {
+        examId: exam.id,
+        offeringId: dbmsOffering.id,
+        date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        startTime: '10:00',
+        endTime: '12:00',
+        room: 'L-201',
+        seats: 40,
+        status: 'SCHEDULED',
+      },
+    });
+    await db.examRoomAllocation.create({
+      data: { examSlotId: slot.id, roomId: 'ROOM-L201', invigilatorUserId: teacher.id },
+    });
+  }
+
+  await db.hallTicket.upsert({
+    where: { examSlotId_studentProfileId: { examSlotId: slot.id, studentProfileId: studentProfile.id } },
+    update: {},
+    create: {
+      examSlotId: slot.id,
+      studentProfileId: studentProfile.id,
+      seatNo: 'A-12',
+      qrPayload: JSON.stringify({ slotId: slot.id, rollNo: studentProfile.rollNo, seat: 'A-12' }),
+      status: 'GENERATED',
+    },
+  });
+
+  await db.evaluation.upsert({
+    where: { examSlotId_subjectOfferingId: { examSlotId: slot.id, subjectOfferingId: dbmsOffering.id } },
+    update: {},
+    create: {
+      examSlotId: slot.id,
+      subjectOfferingId: dbmsOffering.id,
+      totalPapers: 1,
+      completedPapers: 0,
+      inProgressPapers: 0,
+      evaluatorUserId: teacher.id,
+      status: 'PENDING',
+    },
+  });
+
+  const evaluation = await db.evaluation.findFirst({ where: { examSlotId: slot.id } });
+  if (evaluation) {
+    await db.evaluationPaper.upsert({
+      where: { evaluationId_studentProfileId: { evaluationId: evaluation.id, studentProfileId: studentProfile.id } },
+      update: {},
+      create: { evaluationId: evaluation.id, studentProfileId: studentProfile.id, status: 'PENDING' },
+    });
+  }
+
+  const cheatExists = await db.cheatingCase.findFirst({
+    where: { examSlotId: slot.id, studentProfileId: studentProfile.id, issue: 'Frequent gaze deviation detected' },
+  });
+  if (!cheatExists) {
+    await db.cheatingCase.create({
+      data: {
+        examSlotId: slot.id,
+        studentProfileId: studentProfile.id,
+        issue: 'Frequent gaze deviation detected',
+        riskLevel: 'LOW',
+        evidenceJson: JSON.stringify({ events: 4, windowMin: 15 }),
+        source: 'AI',
+        status: 'UNDER_REVIEW',
+      },
+    });
+  }
+
+  console.log('  ✓ quiz (3 Qs, AUTO_GRADED attempt 2/3), MID_TERM exam + slot + hall ticket A-12');
+  console.log('  ✓ evaluation + 1 paper PENDING, grading deadline, 1 AI cheating case UNDER_REVIEW');
 }

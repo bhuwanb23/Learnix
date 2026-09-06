@@ -35,3 +35,20 @@ export const ASSIGNMENT_STATUS = ['DRAFT', 'PUBLISHED', 'CLOSED'] as const;
 export const SUBMISSION_STATUS = ['PENDING', 'UNDER_REVIEW', 'GRADED', 'FLAGGED', 'RETURNED'] as const;
 export const COURSE_TYPE = ['CORE', 'ELECTIVE'] as const;
 export const PROGRAM_LEVEL = ['UG', 'PG'] as const;
+
+// ── Domain C — Quizzes & Exams ──
+export const QUIZ_STATUS = ['DRAFT', 'PUBLISHED', 'CLOSED'] as const;
+export const QUIZ_DIFFICULTY = ['EASY', 'MEDIUM', 'HARD'] as const;
+export const QUESTION_TYPE = ['MCQ', 'TRUE_FALSE'] as const;
+export const QUIZ_ATTEMPT_STATUS = ['IN_PROGRESS', 'SUBMITTED', 'AUTO_GRADED', 'FLAGGED'] as const;
+export const EXAM_TYPE = ['MID_TERM', 'FINAL', 'QUIZ', 'ASSIGNMENT'] as const;
+export const EXAM_STATUS = ['SCHEDULED', 'ONGOING', 'COMPLETED', 'RESULTS_PUBLISHED'] as const;
+export const EXAM_SLOT_STATUS = ['SCHEDULED', 'COMPLETED', 'RESCHEDULED'] as const;
+export const HALL_TICKET_STATUS = ['GENERATED', 'DOWNLOADED', 'NOT_GENERATED'] as const;
+export const EVALUATION_STATUS = ['PENDING', 'IN_PROGRESS', 'COMPLETED'] as const;
+export const EVALUATION_PAPER_STATUS = ['PENDING', 'EVALUATING', 'DONE'] as const;
+export const REEVAL_STATUS = ['REQUESTED', 'APPROVED', 'COMPLETED', 'REJECTED'] as const;
+export const CHEATING_CASE_STATUS = ['UNDER_REVIEW', 'CONFIRMED', 'DISMISSED', 'ESCALATED'] as const;
+export const RISK_LEVEL = ['HIGH', 'MEDIUM', 'LOW'] as const;
+export const CHEATING_SOURCE = ['AI', 'INVIGILATOR'] as const;
+export const EXAM_CONFLICT_TYPE = ['ROOM', 'TEACHER', 'SUBJECT'] as const;
