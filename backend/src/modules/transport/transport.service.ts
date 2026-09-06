@@ -771,7 +771,7 @@ export async function collectFee(
   const count = await prisma.payment.count({ where: { institutionId, referenceNo: { startsWith: `PAY-${year}` } } });
   const referenceNo = `PAY-${year}-${String(count + 1).padStart(4, '0')}`;
 
-  // Unified money-in write-through (R-08 → Domain E)
+  // Unified money-in write-through (R-08 → Domain E) + receipt
   const payment = await prisma.payment.create({
     data: {
       institutionId,
@@ -786,6 +786,13 @@ export async function collectFee(
     },
   });
 
+  const rcCount = await prisma.receipt.count({
+    where: { payment: { institutionId }, receiptNo: { startsWith: `RCP-${year}` } },
+  });
+  const receipt = await prisma.receipt.create({
+    data: { paymentId: payment.id, receiptNo: `RCP-${year}-${String(rcCount + 1).padStart(4, '0')}` },
+  });
+
   await prisma.transportFeeDue.update({ where: { id: due.id }, data: { status: 'PAID', paymentId: payment.id } });
 
   await writeAudit({
@@ -797,7 +804,7 @@ export async function collectFee(
     after: { student: due.studentProfile.user.fullName, amount: due.amountMinor, referenceNo, method },
   });
 
-  return { id: payment.id, referenceNo, student: due.studentProfile.user.fullName, amountMinor: due.amountMinor, status: 'PAID' };
+  return { id: payment.id, referenceNo, receiptNo: receipt.receiptNo, student: due.studentProfile.user.fullName, amountMinor: due.amountMinor, status: 'PAID' };
 }
 
 export async function requestFeeRevision(
