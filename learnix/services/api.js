@@ -146,6 +146,41 @@ export const sportsApi = {
   profile: () => api.get('/sports/profile'),
 };
 
+// ── Transport endpoints (docs/users/09 §4) ──
+export const transportApi = {
+  dashboard: () => api.get('/transport/dashboard'),
+  routes: () => api.get('/transport/routes'),
+  routeDetail: (id) => api.get(`/transport/routes/${id}`),
+  createRoute: (payload) => api.post('/transport/routes', payload),
+  addStop: (routeId, stopName, time) =>
+    api.post(`/transport/routes/${routeId}/stops`, { stopName, time }),
+  enrollStudent: (routeId, rollNo, order) =>
+    api.post(`/transport/routes/${routeId}/enroll`, { rollNo, order }),
+  removeEnrollment: (id) => api.post(`/transport/enrollments/${id}/remove`),
+  fleet: () => api.get('/transport/fleet'),
+  vehicleDetail: (id) => api.get(`/transport/fleet/${id}`),
+  recordService: (vehicleId, payload) => api.post(`/transport/fleet/${vehicleId}/service`, payload),
+  addFuel: (vehicleId, litres, amountMinor) =>
+    api.post(`/transport/fleet/${vehicleId}/fuel`, { litres, amountMinor }),
+  completeService: (serviceId, odometerKm) =>
+    api.post(`/transport/service-records/${serviceId}/complete`,
+      odometerKm ? { odometerKm } : {}),
+  drivers: () => api.get('/transport/drivers'),
+  setDuty: (driverId, dutyStatus) => api.post(`/transport/drivers/${driverId}/duty`, { dutyStatus }),
+  tracking: () => api.get('/transport/tracking'),
+  ping: (vehicleId, payload) => api.post(`/transport/vehicles/${vehicleId}/ping`, payload),
+  maintenance: () => api.get('/transport/maintenance'),
+  fees: () => api.get('/transport/fees'),
+  remindFee: (id) => api.post(`/transport/fees/${id}/remind`),
+  collectFee: (id, method) => api.post(`/transport/fees/${id}/collect`, { method }),
+  requestFeeRevision: (requestedMinor, reason) =>
+    api.post('/transport/fee-structure/revision', { requestedMinor, reason }),
+  notifications: () => api.get('/transport/notifications'),
+  markAllRead: () => api.post('/transport/notifications/read-all'),
+  broadcast: (payload) => api.post('/transport/broadcasts', payload),
+  profile: () => api.get('/transport/profile'),
+};
+
 // ── HOD endpoints (docs/users/11 §4) ──
 export const hodApi = {
   dashboard: () => api.get('/hod/dashboard'),

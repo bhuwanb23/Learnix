@@ -28,6 +28,10 @@ import { COLORS } from '../../constants/theme';
 // Import hooks
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 
+// Demo identity for the transport office (matches backend seed)
+import { setDemoUser } from '../../services/api';
+setDemoUser('transport@learnix.dev');
+
 // Feature module registry: key -> { title, component }
 const FEATURE_MODULES = {
   Tracking: { title: 'Live Tracking', component: TrackingModule },
