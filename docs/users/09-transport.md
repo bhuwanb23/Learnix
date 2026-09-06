@@ -84,3 +84,32 @@ POST /api/transport/broadcasts
 - Writes → **Student**: route/bus assignment, delay alerts, fee dues, broadcast notices.
 - Writes → **Accounts**: transport fee collections.
 - Reads ← **Admin**: student master (fee eligibility), institution config.
+
+## 6. Wiring Status — LIVE (backend + app wired end to end)
+
+**Backend:** `backend/src/modules/transport/` (routes · service · zod schemas), mounted at `/api/v1/transport`, role-gated `TRANSPORT | ADMIN`. Demo login: `transport@learnix.dev` / `Passw0rd!`.
+
+| Endpoint | Notes |
+|---|---|
+| `GET /dashboard` | real fleet stats (on-road/service, routes, students, on-time %), route statuses from live GPS, alerts from service queue + low fuel (<30%) |
+| `GET /routes` · `GET /routes/:id` | stops timeline with per-stop passenger names, bus+driver card, live position (status/ETA/progress), passed/upcoming state |
+| `POST /routes` · `POST /routes/:id/stops` | create route (409 dup name), append stops (auto order) |
+| `POST /routes/:id/enroll` · `POST /enrollments/:id/remove` | enroll by roll no → **auto-generates ₹18k fee due** for the current AY + notifies student; remove is soft (REMOVED) |
+| `GET /fleet` · `GET /fleet/:id` | fuel bars, status, docs-expiry flags (≤60 days), service history, fuel logs, live position |
+| `POST /fleet/:id/service` · `POST /service-records/:id/complete` | schedule (PERIODIC/REPAIR/INSPECTION) → complete sets vehicle IDLE, optional odometer update |
+| `POST /fleet/:id/fuel` | fuel log + raises fuelPct (capped 100) |
+| `GET /drivers` · `POST /drivers/:id/duty` | roster with license-expiry countdown (≤90d warning), duty cycle toggle |
+| `GET /tracking` · `POST /vehicles/:id/ping` | live positions with route progress %; ping **upserts** (one row/vehicle); first ON_TIME→DELAYED flip notifies all enrolled students |
+| `GET /maintenance` | service queue + fuel log with spend totals |
+| `GET /fees` · `POST /fees/:id/remind` · `POST /fees/:id/collect` | collection stats; remind notifies student; collect creates unified **Payment (TRANSPORT) + Receipt write-through** (409 on re-collect, PAY/RCP sequence numbers) |
+| `POST /fee-structure/revision` | notifies all ADMIN users + audited (structure itself is Accounts-owned) |
+| `GET /notifications` · `POST /notifications/read-all` · `POST /broadcasts` | fan-out: `ALL_STUDENTS` (transport-enrolled) / `ROUTE` (routeId) / `DEFAULTERS` (UNPAID/PARTIAL) |
+| `GET /profile` | identity + fleet stats |
+
+**App:** all 11 screens wired via `transportApi` (`services/api.js`), demo identity `setDemoUser('transport@learnix.dev')` in `transport.js`. Every static array removed; loading/error/retry/pull-to-refresh throughout. Fees module has the collect sheet (method picker) showing the returned payment+receipt numbers; tracking has flag-delay / back-on-time ping buttons; route detail has enroll + add-stop + delay-alert actions.
+
+**Deltas from the §4 sketch:** service-record completion covers the maintenance flow (`POST /maintenance/{id}/complete` became `POST /service-records/{id}/complete`); fee collection returns payment + receipt refs; GPS pings are officer-triggered from the tracking screen until a device/Gateway phase exists; map view is a placeholder (no WS/maps SDK yet, positions upsert via API per ADR).
+
+**Seed (idempotent, restores demo state):** `transport@learnix.dev` (K. Harish Kumar, Transport Officer), drivers Manjunath S (ON_DUTY, app-linked) & Suresh P (OFF_DUTY), Route 01 (4 stops, Arjun @ stop 2, live ON_TIME eta 18 min) + Route 02, Vikram's PAID fee with PAY-TF-0001 write-through, Arjun UNPAID ₹18k, 3 officer alerts. Re-seed undoes e2e collections/delays/duty toggles.
+
+**Verified live:** dashboard `2 vehicles (1 on-road) · 2 routes · 2 students · 100% on-time` → fee collect → `PAY-2026-0005` + receipt, 409 re-collect → GPS DELAYED ping → Arjun's inbox got `DELAY: Route 01 is delayed` → enroll Vikram (auto fee due) → route broadcast `recipients:1` → driver duty toggle → add stop → fee revision `notifiedAdmins:1` → 403 for non-TRANSPORT token. Typecheck ✅ · all 13 files parse ✅.
