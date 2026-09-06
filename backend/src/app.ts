@@ -3,6 +3,7 @@ import { requestContext } from './middlewares/requestContext.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import alumniRoutes from './modules/alumni/alumni.routes.js';
+import hodRoutes from './modules/hod/hod.routes.js';
 
 export function createApp() {
   const app = express();
@@ -18,6 +19,7 @@ export function createApp() {
 
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/alumni', alumniRoutes);
+  app.use('/api/v1/hod', hodRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });

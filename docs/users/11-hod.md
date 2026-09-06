@@ -71,3 +71,32 @@ POST /api/hod/broadcasts
 - Writes → **Admin**: approved syllabi, leave decisions, department stats.
 - Writes → **Teacher**: approval status + change feedback.
 - Reads ← **Admin**: departments/programs/courses master, student master.
+
+## 6. Wiring Status (backend v1) — ✅ COMPLETE
+Implemented in `backend/src/modules/hod/` (routes + service + zod schemas), mounted at
+`/api/v1/hod` (role gate: `HOD` or `ADMIN`). App wired in `learnix/users/hod/**` via
+`learnix/services/api.js` (`hodApi`; demo login: `hod@learnix.dev` — Meera Iyer, HOD CSE).
+
+Schema addition: `leave_requests` table (`h1_hod_leaves.prisma`) — the flagged HD-04 gap —
+with type MEDICAL|CASUAL|EARNED, days, reason, PENDING→APPROVED|REJECTED, optional
+`substituteUserId`, decided-by stamps. Also repaired a latent schema bug: `Program.department`
+had been an implicit many-to-many; now a proper FK relation (migration
+`20260906220000_fix_program_department_relation`).
+
+Final API surface (vs §4 sketch):
+- Dashboard `GET /dashboard` — utilization = weekly schedule-slot hours vs maxWorkloadHours
+- Faculty `GET /faculty` (+ detail from same payload); reassign via `POST /offerings/{id}/reassign`
+  with **max-hours enforcement** (422 when the move exceeds the target's maxWorkloadHours)
+- Syllabus `GET /syllabus`; decisions `POST /syllabus/{id}/approve` and
+  `POST /syllabus/{id}/request-changes { feedback }` (SUBMITTED-only, 409 otherwise; notify + audit)
+- Leave `GET /leave`; `POST /leave/{id}/approve { substituteUserId? }` and `/reject`
+- Students `GET /students?year={semester}` — department programs scope
+- Courses `GET /courses` + `GET /courses/{id}` — offerings oversight with latest syllabus status
+- Analytics `GET /analytics` — attendance % / pass rate aggregates (null until attendance
+  sessions and published results exist)
+- Notifications `GET /notifications` + `POST /notifications/read-all`; broadcast
+  `POST /broadcasts { audience: ALL_FACULTY | DEPT_STUDENTS, title, body }`
+- Profile `GET /profile` — real user, roles, designation, department
+
+HD-02/HD-06 evaluation-score and message/reassign alerts remain UI-phase features; leave
+balance cards on faculty detail arrive with the leave-accrual policy.
