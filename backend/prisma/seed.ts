@@ -118,8 +118,9 @@ async function main() {
   await seedDomainF(institution.id);
   await seedDomainG(institution.id);
   await seedDomainH(institution.id);
+  await seedDomainI(institution.id);
 
-  console.log('Seed complete (base + Domains A–H).');
+  console.log('Seed complete (base + Domains A–I).');
 }
 
 main()
@@ -1109,4 +1110,126 @@ async function seedDomainH(institutionId: string): Promise<void> {
 
   console.log('  ✓ 2 vehicles (KA-01-F-2045 ON_ROAD w/ GPS, KA-01-F-3310 SERVICE), driver Manjunath ON_DUTY');
   console.log('  ✓ Route 01 (4 stops, Arjun @ stop 2, live ON_TIME eta 18min), Route 02, service IN_PROGRESS, fuel log, transport fee ₹18k UNPAID');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain I — Events, Sports & Cultural seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainI(institutionId: string): Promise<void> {
+  console.log('Seeding Domain I (events & sports)…');
+
+  const teacher = await db.user.findFirst({ where: { email: 'teacher@learnix.dev', institutionId } });
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!teacher || !student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+
+  // Venues
+  let auditorium = await db.venue.findFirst({ where: { institutionId, name: 'Main Auditorium' } });
+  if (!auditorium) {
+    auditorium = await db.venue.create({ data: { institutionId, name: 'Main Auditorium', location: 'Block C, Ground Floor', capacity: 500 } });
+  }
+  let ground = await db.venue.findFirst({ where: { institutionId, name: 'Football Ground' } });
+  if (!ground) {
+    ground = await db.venue.create({ data: { institutionId, name: 'Football Ground', location: 'East Campus', capacity: 1000 } });
+  }
+
+  // Event 1: TechFest — PUBLISHED at auditorium
+  let techfest = await db.event.findFirst({ where: { institutionId, title: 'TechFest 2026' } });
+  if (!techfest) {
+    const start = new Date(Date.now() + 12 * 24 * 60 * 60 * 1000);
+    techfest = await db.event.create({
+      data: {
+        institutionId,
+        title: 'TechFest 2026',
+        description: 'Annual technical festival — hackathon, robotics, tech talks.',
+        category: 'TECH',
+        startDate: start,
+        endDate: new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000),
+        venueId: auditorium.id,
+        capacity: 500,
+        organizerUserId: teacher.id,
+        status: 'PUBLISHED',
+      },
+    });
+    await db.eventScheduleItem.create({ data: { eventId: techfest.id, day: 1, item: 'Hackathon kickoff', order: 1 } });
+    await db.eventScheduleItem.create({ data: { eventId: techfest.id, day: 1, item: 'Robotics demo', order: 2 } });
+    await db.eventScheduleItem.create({ data: { eventId: techfest.id, day: 2, item: 'Tech talks & closing', order: 1 } });
+    await db.eventRegistration.create({
+      data: {
+        eventId: techfest.id,
+        registrantUserId: student.id,
+        status: 'CONFIRMED',
+        qrPayload: JSON.stringify({ eventId: techfest.id, userId: student.id }),
+        reminderAt: new Date(start.getTime() - 24 * 60 * 60 * 1000),
+      },
+    });
+    await db.eventVolunteer.create({ data: { eventId: techfest.id, studentProfileId: studentProfile.id, role: 'Registration desk' } });
+  }
+
+  // Event 2: Alumni Networking Meet — APPROVED (the admin-visible event)
+  const alumniMeet = await db.event.findFirst({ where: { institutionId, title: 'Alumni Networking Meet 2026' } });
+  if (!alumniMeet) {
+    await db.event.create({
+      data: {
+        institutionId,
+        title: 'Alumni Networking Meet 2026',
+        description: 'Batch of 2026 meets alumni mentors — networking dinner.',
+        category: 'ALUMNI',
+        startDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        venueId: auditorium.id,
+        capacity: 200,
+        organizerUserId: teacher.id,
+        status: 'APPROVED',
+      },
+    });
+  }
+
+  // Tournament: football cup, 2 teams, fixture, standings
+  let cup = await db.tournament.findFirst({ where: { institutionId, name: 'Inter-College Football Cup' } });
+  if (!cup) {
+    cup = await db.tournament.create({
+      data: { institutionId, name: 'Inter-College Football Cup', sport: 'Football', category: 'SPORTS', status: 'ONGOING', organizerUserId: teacher.id },
+    });
+    const teamA = await db.team.create({ data: { institutionId, name: 'CSE Strikers', sport: 'Football', tournamentId: cup.id } });
+    const teamB = await db.team.create({ data: { institutionId, name: 'ECE Chargers', sport: 'Football', tournamentId: cup.id } });
+    await db.teamMember.create({ data: { teamId: teamA.id, studentProfileId: studentProfile.id, role: 'PLAYER' } });
+    await db.fixture.create({
+      data: {
+        tournamentId: cup.id,
+        teamAId: teamA.id,
+        teamBId: teamB.id,
+        fixtureDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        status: 'UPCOMING',
+      },
+    });
+    await db.standing.create({ data: { tournamentId: cup.id, teamId: teamA.id, played: 2, won: 2, lost: 0, points: 6 } });
+    await db.standing.create({ data: { tournamentId: cup.id, teamId: teamB.id, played: 2, won: 1, lost: 1, points: 3 } });
+  }
+
+  // Venue booking PENDING for the ground
+  const bookingExists = await db.venueBooking.findFirst({ where: { venueId: ground.id, eventTitle: 'Inter-College Football Cup — Finals' } });
+  if (!bookingExists) {
+    await db.venueBooking.create({
+      data: { venueId: ground.id, eventTitle: 'Inter-College Football Cup — Finals', requestedByUserId: teacher.id, date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000), timeSlot: '15:00-18:00', status: 'PENDING' },
+    });
+  }
+
+  // Equipment: footballs — 1 issued to Arjun
+  let footballs = await db.equipmentItem.findFirst({ where: { institutionId, name: 'Football (Size 5)' } });
+  if (!footballs) {
+    footballs = await db.equipmentItem.create({ data: { institutionId, name: 'Football (Size 5)', category: 'SPORTS', totalUnits: 10, availableUnits: 10, condition: 'GOOD' } });
+  }
+  const equipIssue = await db.equipmentIssue.findFirst({ where: { itemId: footballs.id, studentProfileId: studentProfile.id, status: 'ISSUED' } });
+  if (!equipIssue) {
+    await db.equipmentIssue.create({
+      data: { itemId: footballs.id, studentProfileId: studentProfile.id, dueAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), status: 'ISSUED' },
+    });
+    await db.equipmentItem.update({ where: { id: footballs.id }, data: { availableUnits: { decrement: 1 } } });
+  }
+
+  console.log('  ✓ venues (Auditorium, Ground), TechFest PUBLISHED (Arjun CONFIRMED + volunteer), Alumni Meet APPROVED');
+  console.log('  ✓ Football Cup ONGOING (2 teams, Arjun PLAYER, fixture UPCOMING, standings 6/3 pts), venue booking PENDING, 1 football issued');
 }

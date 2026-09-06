@@ -96,3 +96,14 @@ export const ROUTE_ENROLLMENT_STATE = ['ACTIVE', 'REMOVED'] as const;
 export const BUS_STATUS = ['ON_TIME', 'DELAYED'] as const;
 export const SERVICE_TYPE = ['PERIODIC', 'REPAIR', 'INSPECTION'] as const;
 export const SERVICE_STATUS = ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'] as const;
+
+// ── Domain I — Events, Sports & Cultural ──
+export const EVENT_CATEGORY = ['TECH', 'SPORTS', 'CULTURAL', 'ALUMNI', 'OTHER'] as const;
+export const EVENT_STATUS = ['DRAFT', 'PENDING_ADMIN', 'APPROVED', 'PUBLISHED', 'COMPLETED', 'CANCELLED'] as const;
+export const EVENT_REG_STATUS = ['PENDING', 'APPROVED', 'REJECTED', 'CONFIRMED', 'DECLINED'] as const;
+export const TOURNAMENT_STATUS = ['UPCOMING', 'ONGOING', 'COMPLETED'] as const;
+export const FIXTURE_STATUS = ['UPCOMING', 'TODAY', 'COMPLETED'] as const;
+export const VENUE_STATUS = ['AVAILABLE', 'BOOKED', 'MAINTENANCE'] as const;
+export const VENUE_BOOKING_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export const EQUIPMENT_CONDITION = ['GOOD', 'NEEDS_REPAIR'] as const;
+export const EQUIPMENT_ISSUE_STATUS = ['ISSUED', 'RETURNED', 'OVERDUE'] as const;
