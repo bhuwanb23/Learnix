@@ -72,3 +72,19 @@ export const PAYROLL_ENTRY_STATUS = ['PENDING', 'PAID'] as const;
 export const EXPENSE_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
 export const SCHOLARSHIP_TYPE = ['MERIT', 'NEED_BASED'] as const;
 export const SCHOLARSHIP_AWARD_STATUS = ['APPROVED', 'DISBURSED', 'REJECTED'] as const;
+
+// ── Domain F — Library ──
+export const BOOK_ISSUE_STATUS = ['ISSUED', 'RETURNED', 'OVERDUE'] as const;
+export const FINE_STATUS = ['PENDING', 'PAID', 'WAIVED'] as const;
+export const BOOK_REQUEST_STATUS = ['PENDING', 'APPROVED', 'REJECTED', 'PROCURED'] as const;
+export const DIGITAL_RESOURCE_TYPE = ['PDF', 'EBOOK', 'JOURNAL'] as const;
+export const PROCUREMENT_STATUS = ['REQUESTED', 'APPROVED', 'ORDERED', 'RECEIVED'] as const;
+
+// ── Domain G — Hostel ──
+export const BED_STATUS = ['VACANT', 'ALLOCATED', 'MAINTENANCE'] as const;
+export const ALLOCATION_STATUS = ['ACTIVE', 'TRANSFERRED', 'VACATED'] as const;
+export const MEAL = ['BREAKFAST', 'LUNCH', 'DINNER'] as const;
+export const GATE_PASS_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+export const COMPLAINT_CATEGORY = ['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE'] as const;
+export const COMPLAINT_STATUS = ['OPEN', 'ASSIGNED', 'RESOLVED'] as const;
+export const VISITOR_STATUS = ['IN', 'OUT'] as const;
