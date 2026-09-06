@@ -87,3 +87,21 @@ POST /api/alumni/broadcasts
 - Writes → **Student**: event RSVPs/announcements, mentorship pairing, broadcasts.
 - Reads ← **Admin**: alumni event config, batch master.
 - Reads ← **Placement**: hiring/mentorship opportunities for alumni.
+
+## 6. Wiring Status (backend v1) — ✅ COMPLETE
+Implemented in `backend/src/modules/alumni/` (routes + service + zod schemas) and wired
+into `learnix/users/alumni/**` via `learnix/services/api.js` (demo login: `priya@learnix.dev`).
+
+Deltas vs the sketch above (final API surface):
+- RSVP decide is `POST /api/v1/alumni/rsvps/{id}/decide` body `{ decision: CONFIRMED | DECLINED }`
+- Mentorship actions: `POST /api/v1/alumni/mentorship/{id}/approve|decline|remind`
+- Invite / add-mentor: `POST /api/v1/alumni/directory/{id}/invite` and `.../add-mentor`
+- Notifications: `GET /api/v1/alumni/notifications` + `POST .../notifications/read-all`
+- Broadcast: `POST /api/v1/alumni/broadcasts` `{ audience, templateKey, title, body }`
+  (audience: ALL_ALUMNI | BATCH_2024 | CITY_BENGALURU | MENTORS) → notifications + audit
+
+Verified live: dashboard engagement %, directory search/batch filter, events + RSVP decide,
+donation record → payment PAY-2026-0004 + receipt (409 on re-record), mentorship
+approve/decline/remind, chapters, read-all, broadcast fan-out. Campaign share is a client
+side action in v1 (no endpoint needed). All actions write audit_logs; state changes notify
+the affected user.
