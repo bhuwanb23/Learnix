@@ -44,6 +44,9 @@ model StudentProfile {
   hostelComplaints  HostelComplaint[]
   visitorsHosted    Visitor[]
   routeEnrollments  RouteEnrollment[]
+  eventVolunteering EventVolunteer[]
+  teamMemberships   TeamMember[]
+  equipmentIssues   EquipmentIssue[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])

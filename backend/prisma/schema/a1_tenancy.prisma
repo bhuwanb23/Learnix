@@ -39,6 +39,7 @@ model User {
   alumniProfile  AlumniProfile?
   refreshTokens  RefreshToken[]
   passwordResets PasswordReset[]
+  eventRegistrations EventRegistration[]
 
   @@unique([institutionId, email]) // email unique per institution
   @@index([institutionId])
