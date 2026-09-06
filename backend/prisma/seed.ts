@@ -119,8 +119,9 @@ async function main() {
   await seedDomainG(institution.id);
   await seedDomainH(institution.id);
   await seedDomainI(institution.id);
+  await seedDomainJ_K(institution.id);
 
-  console.log('Seed complete (base + Domains A–I).');
+  console.log('Seed complete (base + Domains A–K).');
 }
 
 main()
@@ -1232,4 +1233,142 @@ async function seedDomainI(institutionId: string): Promise<void> {
 
   console.log('  ✓ venues (Auditorium, Ground), TechFest PUBLISHED (Arjun CONFIRMED + volunteer), Alumni Meet APPROVED');
   console.log('  ✓ Football Cup ONGOING (2 teams, Arjun PLAYER, fixture UPCOMING, standings 6/3 pts), venue booking PENDING, 1 football issued');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domains J + K — Alumni & Communication seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainJ_K(institutionId: string): Promise<void> {
+  console.log('Seeding Domains J+K (alumni & communication)…');
+
+  const admin = await db.user.findFirst({ where: { email: 'admin@learnix.dev', institutionId } });
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!admin || !student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+  const passwordHash = await bcrypt.hash(PASSWORD, 10);
+
+  // ── J: alumni user Priya (ALUMNI role + profile) ──
+  let priya = await db.user.findFirst({ where: { email: 'priya@learnix.dev', institutionId } });
+  if (!priya) {
+    priya = await db.user.create({
+      data: {
+        institutionId,
+        email: 'priya@learnix.dev',
+        passwordHash,
+        fullName: 'Priya Nair',
+        roles: { create: { role: 'ALUMNI' } },
+        alumniProfile: {
+          create: { institutionId, graduationYear: 2023, currentRole: 'Senior Software Engineer', location: 'Bengaluru', engagementStatus: 'ACTIVE' },
+        },
+      },
+    });
+  }
+
+  // Bengaluru chapter, Priya as president, memberCount 1
+  let chapter = await db.alumniChapter.findFirst({ where: { institutionId, city: 'Bengaluru' } });
+  if (!chapter) {
+    chapter = await db.alumniChapter.create({
+      data: { institutionId, city: 'Bengaluru', presidentAlumniUserId: priya.id, memberCount: 0, nextEventAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) },
+    });
+  }
+  const profile = await db.alumniProfile.findFirst({ where: { userId: priya.id } });
+  if (profile && profile.chapterId !== chapter.id) {
+    await db.alumniProfile.update({ where: { id: profile.id }, data: { chapterId: chapter.id } });
+    await db.alumniChapter.update({ where: { id: chapter.id }, data: { memberCount: { increment: 1 } } });
+  }
+
+  // Campaign ₹50L target, ₹24.5L raised
+  const campaign = await db.fundraisingCampaign.upsert({
+    where: { institutionId_name: { institutionId, name: 'New Library Wing' } },
+    update: {},
+    create: { institutionId, name: 'New Library Wing', description: 'Expanding the central library with a digital reading hall.', targetMinor: 500000000, raisedMinor: 245000000, deadline: new Date('2026-12-31'), status: 'ACTIVE' },
+  });
+
+  // Donation PLEDGED ₹25,000 (awaiting record)
+  const pledged = await db.donation.findFirst({ where: { alumniUserId: priya.id, status: 'PLEDGED', fund: 'LIBRARY' } });
+  if (!pledged) {
+    await db.donation.create({
+      data: { institutionId, campaignId: campaign.id, alumniUserId: priya.id, fund: 'LIBRARY', amountMinor: 2500000, status: 'PLEDGED' },
+    });
+  }
+
+  // Donation RECEIVED ₹5,00,000 with full write-through: payment + receipt + link
+  const received = await db.donation.findFirst({ where: { alumniUserId: priya.id, status: 'RECEIVED' } });
+  if (!received) {
+    const donation = await db.donation.create({
+      data: { institutionId, campaignId: campaign.id, alumniUserId: priya.id, fund: 'INFRASTRUCTURE', amountMinor: 50000000, status: 'PLEDGED' },
+    });
+    const donationPayment = await db.payment.create({
+      data: {
+        institutionId,
+        payerUserId: priya.id,
+        studentProfileId: null, // donations credit no student
+        category: 'DONATION',
+        referenceNo: 'PAY-2026-0003',
+        amountMinor: 50000000,
+        method: 'NET_BANKING',
+        status: 'CLEARED',
+        paidAt: new Date(),
+        recordedByUserId: admin.id,
+      },
+    });
+    await db.receipt.create({ data: { paymentId: donationPayment.id, receiptNo: 'RCP-2025-26-0003' } });
+    await db.donationPayment.create({ data: { paymentId: donationPayment.id, donationId: donation.id } });
+    await db.donation.update({ where: { id: donation.id }, data: { status: 'RECEIVED', receivedAt: new Date(), paymentId: donationPayment.id } });
+  }
+
+  // Mentorship: Priya mentors Arjun (ACTIVE) + 1 logged session
+  const pair = await db.mentorshipPair.findFirst({ where: { mentorAlumniUserId: priya.id, menteeStudentProfileId: studentProfile.id } });
+  if (!pair) {
+    const p = await db.mentorshipPair.create({
+      data: { mentorAlumniUserId: priya.id, menteeStudentProfileId: studentProfile.id, field: 'Higher Studies', status: 'ACTIVE', requestedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), approvedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) },
+    });
+    await db.mentorshipSession.create({
+      data: { pairId: p.id, sessionDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), notes: 'Discussed MS vs M.Tech, GRE timeline, shortlisting universities.', loggedByUserId: priya.id },
+    });
+  }
+
+  // ── K: notifications, broadcast, announcement, AI log ──
+  const notifs = await db.notification.count({ where: { recipientUserId: student.id } });
+  if (notifs === 0) {
+    await db.notification.createMany({
+      data: [
+        { institutionId, recipientUserId: student.id, type: 'FEE', title: 'Exam Fee due soon', body: '₹1,500 exam fee due on ' + new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) + '.', sourceModule: 'accounts' },
+        { institutionId, recipientUserId: student.id, type: 'EVENT', title: 'TechFest registration confirmed', body: 'Your TechFest 2026 pass is ready — show the QR at the gate.', dataJson: JSON.stringify({ module: 'events', eventId: (await db.event.findFirst({ where: { title: 'TechFest 2026' } }))?.id }), sourceModule: 'events' },
+        { institutionId, recipientUserId: student.id, type: 'MENTORSHIP', title: 'Mentorship session logged', body: 'Priya Nair logged a session on Higher Studies.', readAt: new Date(), sourceModule: 'alumni' },
+      ],
+    });
+  }
+
+  const broadcast = await db.broadcast.findFirst({ where: { institutionId, title: 'Mid-term exam timings announced' } });
+  if (!broadcast) {
+    await db.broadcast.create({
+      data: { institutionId, senderUserId: admin.id, audienceJson: JSON.stringify({ role: 'STUDENT' }), templateKey: 'EVENT_INVITE', title: 'Mid-term exam timings announced', body: 'Sem 4 mid-term seat plan and timings are live in the exam section.', channels: 'IN_APP', sentAt: new Date() },
+    });
+  }
+
+  const announcement = await db.announcement.findFirst({ where: { institutionId, title: 'Library extended hours during exams' } });
+  if (!announcement) {
+    await db.announcement.create({
+      data: { institutionId, authorUserId: admin.id, title: 'Library extended hours during exams', content: 'Library will stay open until 11 PM from next week.', audienceJson: JSON.stringify({ role: 'STUDENT' }), status: 'PUBLISHED', approvedByUserId: admin.id, publishedAt: new Date() },
+    });
+  }
+  const pendingAnn = await db.announcement.findFirst({ where: { institutionId, title: 'CS401 guest lecture on NoSQL' } });
+  if (!pendingAnn) {
+    await db.announcement.create({
+      data: { institutionId, authorUserId: (await db.user.findFirst({ where: { email: 'teacher@learnix.dev', institutionId } }))!.id, title: 'CS401 guest lecture on NoSQL', content: 'Industry guest speaking on MongoDB at scale — Friday 2 PM.', audienceJson: JSON.stringify({ sectionId: (await db.section.findFirst({ where: { name: 'Section A' } }))?.id }), status: 'PENDING_ADMIN' },
+    });
+  }
+
+  const ai = await db.aiInteraction.findFirst({ where: { userId: student.id, feature: 'STUDY_BUDDY' } });
+  if (!ai) {
+    await db.aiInteraction.create({
+      data: { userId: student.id, feature: 'STUDY_BUDDY', prompt: 'Explain BCNF in simple words', response: 'A table is in BCNF when every determinant is a candidate key — no non-key column should decide another column.', tokensUsed: 180 },
+    });
+  }
+
+  console.log('  ✓ alumni Priya (Bengaluru chapter president), campaign ₹50L/₹24.5L, donation RECEIVED ₹5L → PAY-2026-0003 + receipt');
+  console.log('  ✓ mentorship ACTIVE + session, 3 notifications, broadcast, announcements PUBLISHED+PENDING, AI STUDY_BUDDY log');
 }

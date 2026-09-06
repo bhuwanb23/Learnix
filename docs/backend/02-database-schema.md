@@ -178,7 +178,9 @@
 | `equipment_items` | name, category, totalUnits, availableUnits(denorm), condition(GOOD/NEEDS_REPAIR) | 10 §3.4 |
 | `equipment_issues` | itemId, studentProfileId, issuedAt, dueAt, returnedAt?, status(ISSUED/RETURNED/OVERDUE) | Issued-out tab |
 
-## Domain J — Alumni (owner: Alumni Relations) — 5 tables
+## Domain J — Alumni (owner: Alumni Relations) — 5 tables ✅ COMPLETE
+
+> **Live status:** built as `j1_fundraising / j2_mentorship`. Migration `domain_j_k_alumni_comms` (shared with K). **donations.alumniUserId + mentorship_pairs.mentorAlumniUserId are real User FKs** (upgraded from blueprint scalars — no cycle since User is Domain A); campaignId→campaign FK; **donation_payments (E) now FKs to Donation** (last E scalar flipped); AlumniProfile.chapterId → AlumniChapter FK with memberCount denorm; mentorship uq(mentor, mentee). Record flow (seeded end-to-end): donation PLEDGED → Payment(DONATION) + Receipt + DonationPayment link → RECEIVED + paymentId. Seed: alumni Priya Nair (2023, Bengaluru chapter president), campaign New Library Wing ₹50L target/₹24.5L raised, ₹5L donation → PAY-2026-0003 + RCP-2025-26-0003, ₹25k PLEDGED, mentorship ACTIVE w/ Arjun + 1 session. Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|
@@ -188,7 +190,9 @@
 | `mentorship_sessions` | pairId, sessionDate, notes, loggedByUserId | Sessions log |
 | `alumni_chapters` | city, presidentAlumniUserId, memberCount(denorm), nextEventAt? | 12 §3.6 |
 
-## Domain K — Communication (owner: all) — 6 tables
+## Domain K — Communication (owner: all) — 6 tables ✅ COMPLETE
+
+> **Live status:** built as `k1_messaging / k2_channels`. Same migration as J. notifications uq-free but indexed (recipient, recipient+readAt) w/ dataJson deep-link payload; broadcasts audienceJson resolved at fan-out (service concern, Phase 6); announcements carry the DRAFT→PENDING_ADMIN→PUBLISHED/REJECTED approval queue; push_tokens/email_log/ai_interactions ready but dormant until their phases. Seed: 3 notifications for Arjun (1 read, FEE/EVENT/MENTORSHIP), broadcast to role:STUDENT, 1 PUBLISHED + 1 PENDING_ADMIN announcement, 1 STUDY_BUDDY interaction (180 tokens). Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|

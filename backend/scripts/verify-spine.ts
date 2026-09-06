@@ -222,6 +222,39 @@ async function main(): Promise<void> {
   if (booking) console.log(`VENUE BOOKING ${booking.venue.name} ${booking.eventTitle} ${booking.timeSlot} [${booking.status}]`);
   const equip = await db.equipmentIssue.findFirst({ include: { item: true, studentProfile: { include: { user: true } } } });
   if (equip) console.log(`EQUIPMENT ${equip.item.name} → ${equip.studentProfile.user.fullName} due:${equip.dueAt.toISOString().slice(0, 10)} [${equip.status}] (available:${equip.item.availableUnits}/${equip.item.totalUnits})`);
+
+  console.log('── Domain J+K spine ──');
+ const receivedDonation = await db.donation.findFirst({
+    where: { status: 'RECEIVED' },
+    include: { alumniUser: true, paymentLinks: { include: { payment: { include: { receipt: true } } } } },
+  });
+  if (receivedDonation) {
+    const link = receivedDonation.paymentLinks[0];
+    console.log(`DONATION ${receivedDonation.alumniUser.fullName} ${receivedDonation.fund} ₹${receivedDonation.amountMinor / 100} [RECEIVED] → ${link ? `${link.payment.referenceNo} receipt:${link.payment.receipt?.receiptNo}` : '-'}`);
+  }
+  const campaign = await db.fundraisingCampaign.findFirst();
+  if (campaign) {
+    console.log(`CAMPAIGN ${campaign.name} ₹${(campaign.raisedMinor / 1e7).toFixed(1)}L / ₹${(campaign.targetMinor / 1e7).toFixed(1)}L [${campaign.status}]`);
+  }
+  const pairRow = await db.mentorshipPair.findFirst({
+    include: { mentorAlumniUser: true, menteeStudentProfile: { include: { user: true } }, sessions: true },
+  });
+  if (pairRow) {
+    console.log(`MENTORSHIP ${pairRow.mentorAlumniUser.fullName} → ${pairRow.menteeStudentProfile.user.fullName} (${pairRow.field}) [${pairRow.status}] sessions:${pairRow.sessions.length}`);
+  }
+  const chapterRow = await db.alumniChapter.findFirst({ include: { members: true } });
+  if (chapterRow) {
+    console.log(`CHAPTER ${chapterRow.city} members:${chapterRow.memberCount} (profiles linked:${chapterRow.members.length})`);
+  }
+  const unread = await db.notification.count({ where: { readAt: null } });
+  const total = await db.notification.count();
+  console.log(`NOTIFICATIONS total:${total} unread:${unread}`);
+  const bc = await db.broadcast.findFirst();
+  if (bc) console.log(`BROADCAST "${bc.title}" audience:${bc.audienceJson} channels:${bc.channels}`);
+  const anns = await db.announcement.findMany();
+  console.log(`ANNOUNCEMENTS ${anns.map((a) => `${a.status.toLowerCase()}`).join(', ')}`);
+  const aiRow = await db.aiInteraction.findFirst({ include: { user: true } });
+  if (aiRow) console.log(`AI ${aiRow.user.fullName} ${aiRow.feature} tokens:${aiRow.tokensUsed ?? '-'}`);
 }
 
 main()
