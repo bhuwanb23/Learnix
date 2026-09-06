@@ -1,109 +1,113 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
+import { sportsApi } from '../../../../services/api';
 
-const initialNotifications = [
-  {
-    id: '1',
-    title: 'Football friendly tonight vs NIT',
-    message: 'Match at 6:30 PM on the Football Field. All players report by 5:45 PM with kits.',
-    time: '1 hr ago',
-    audience: 'Football Team',
-    type: 'team',
-    unread: true,
-  },
-  {
-    id: '2',
-    title: 'Cultural Night 2026 registrations open',
-    message: 'Registrations for Cultural Night close Nov 30. Performances, dance and music categories available.',
-    time: '3 hrs ago',
-    audience: 'All Students',
-    type: 'event',
-    unread: true,
-  },
-  {
-    id: '3',
-    title: 'Cricket kit due — Nov 20',
-    message: 'Karan Singh — the cricket kit issued on Nov 10 is due for return on Nov 20.',
-    time: 'Yesterday',
-    audience: 'Karan Singh',
-    type: 'equipment',
-    unread: false,
-  },
-  {
-    id: '4',
-    title: 'Venue booked: Main Auditorium',
-    message: 'Tech Fest Committee booking for Nov 21-22 approved. Setup allowed from Nov 20 evening.',
-    time: '2 days ago',
-    audience: 'Tech Fest Committee',
-    type: 'venue',
-    unread: false,
-  },
-  {
-    id: '5',
-    title: 'Basketball tryouts this Saturday',
-    message: 'Tryouts at 9 AM on the Indoor Court. Open to all years — bring sports shoes.',
-    time: '3 days ago',
-    audience: 'All Students',
-    type: 'tryout',
-    unread: false,
-  },
+const audiences = [
+  { key: 'ALL_STUDENTS', label: 'All Students' },
+  { key: 'ALL_TEAMS', label: 'All Teams' },
+  { key: 'VOLUNTEERS', label: 'Volunteers' },
 ];
 
-const audiences = ['All Students', 'Football Team', 'Cricket Team', 'Dance Crew', 'Volunteers'];
+const TYPE_COLORS = {
+  BROADCAST: '#2563eb',
+  EVENT: '#059669',
+  EQUIPMENT: '#d97706',
+  VENUE: '#0891b2',
+  TEAM: '#7c3aed',
+  EVENT_REG: '#dc2626',
+  SYSTEM: '#64748b',
+};
+
+const TYPE_ICONS = {
+  BROADCAST: 'megaphone-outline',
+  EVENT: 'calendar-outline',
+  EQUIPMENT: 'basketball-outline',
+  VENUE: 'location-outline',
+  TEAM: 'people-outline',
+  EVENT_REG: 'person-add-outline',
+  SYSTEM: 'information-circle-outline',
+};
+
+const fmtAgo = (iso) => {
+  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+};
 
 export default function Notifications({ navigation }) {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [data, setData] = useState({ notifications: [], unread: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('Inbox');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [audience, setAudience] = useState('All Students');
+  const [audience, setAudience] = useState('ALL_STUDENTS');
 
-  const markAllRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, unread: false })));
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const d = await sportsApi.notifications();
+      setData(d);
+    } catch (e) {
+      setError(e.message || 'Failed to load notifications');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const markAllRead = async () => {
+    try {
+      const res = await sportsApi.markAllRead();
+      Alert.alert('All caught up', `${res.updated} notification(s) marked as read.`);
+      load(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
   };
 
-  const markRead = (id) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
-  };
-
-  const sendBroadcast = () => {
+  const sendBroadcast = async () => {
     if (!subject.trim() || !message.trim()) {
       Alert.alert('Incomplete', 'Add a subject and message before broadcasting.');
       return;
     }
-    Alert.alert('Broadcast sent', `"${subject}" was pushed to ${audience}.`);
-    setSubject('');
-    setMessage('');
-  };
-
-  const unreadCount = notifications.filter((n) => n.unread).length;
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'team': return '#059669';
-      case 'event': return '#2563eb';
-      case 'equipment': return '#d97706';
-      case 'venue': return '#0891b2';
-      case 'tryout': return '#dc2626';
-      default: return '#0891b2';
+    try {
+      const res = await sportsApi.broadcast({
+        audience,
+        title: subject.trim(),
+        body: message.trim(),
+      });
+      Alert.alert('Broadcast sent', `"${subject.trim()}" was delivered to ${res.recipients} recipient(s).`);
+      setSubject('');
+      setMessage('');
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
     }
   };
 
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'team': return 'people-outline';
-      case 'event': return 'calendar-outline';
-      case 'equipment': return 'basketball-outline';
-      case 'venue': return 'location-outline';
-      case 'tryout': return 'fitness-outline';
-      default: return 'information-circle-outline';
-    }
-  };
+  const unreadCount = data.unread;
+
+  const getTypeColor = (type) => TYPE_COLORS[type] || TYPE_COLORS.SYSTEM;
+  const getTypeIcon = (type) => TYPE_ICONS[type] || TYPE_ICONS.SYSTEM;
+
+  if (loading && data.notifications.length === 0 && !error) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -118,8 +122,9 @@ export default function Notifications({ navigation }) {
           </TouchableOpacity>
         </View>
         {activeTab === 'Inbox' && (
-          <Text style={styles.headerSub}>{unreadCount} unread · tap the bell to mark all read</Text>
+          <Text style={styles.headerSub}>{unreadCount} unread · tap the check to mark all read</Text>
         )}
+        {error && <Text style={styles.headerSub}>{error} — pull to retry</Text>}
       </LinearGradient>
 
       <View style={styles.tabsRow}>
@@ -135,9 +140,16 @@ export default function Notifications({ navigation }) {
       </View>
 
       {activeTab === 'Inbox' ? (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notifications.map((n) => (
-            <TouchableOpacity key={n.id} style={styles.card} onPress={() => markRead(n.id)}>
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+        >
+          {data.notifications.length === 0 && (
+            <Text style={styles.emptyInbox}>Your inbox is empty.</Text>
+          )}
+          {data.notifications.map((n) => (
+            <View key={n.id} style={[styles.card, !n.read && styles.cardUnread]}>
               <View style={styles.iconWrap}>
                 <View
                   style={[
@@ -147,20 +159,20 @@ export default function Notifications({ navigation }) {
                 >
                   <Ionicons name={getTypeIcon(n.type)} size={18} color={getTypeColor(n.type)} />
                 </View>
-                {n.unread && <View style={styles.unreadDot} />}
+                {!n.read && <View style={styles.unreadDot} />}
               </View>
               <View style={styles.cardBody}>
                 <View style={styles.cardTop}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{n.title}</Text>
-                  <Text style={styles.cardTime}>{n.time}</Text>
+                  <Text style={styles.cardTime}>{fmtAgo(n.createdAt)}</Text>
                 </View>
-                <Text style={styles.cardMessage} numberOfLines={2}>{n.message}</Text>
+                <Text style={styles.cardMessage} numberOfLines={2}>{n.body}</Text>
                 <View style={styles.audienceChip}>
-                  <Ionicons name="people-outline" size={11} color={theme.colors.textMuted} />
-                  <Text style={styles.audienceText}>{n.audience}</Text>
+                  <Ionicons name="pulse-outline" size={11} color={theme.colors.textMuted} />
+                  <Text style={styles.audienceText}>{n.type}</Text>
                 </View>
               </View>
-            </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
       ) : (
@@ -169,7 +181,7 @@ export default function Notifications({ navigation }) {
             <Text style={styles.formLabel}>Subject</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Cultural Night registrations close"
+              placeholder="e.g. Basketball tryouts this Saturday"
               placeholderTextColor="#9ca3af"
               value={subject}
               onChangeText={setSubject}
@@ -188,31 +200,31 @@ export default function Notifications({ navigation }) {
             <View style={styles.audienceRow}>
               {audiences.map((a) => (
                 <TouchableOpacity
-                  key={a}
-                  style={[styles.audienceChipBtn, audience === a && styles.audienceChipActive]}
-                  onPress={() => setAudience(a)}
+                  key={a.key}
+                  style={[styles.audienceChipBtn, audience === a.key && styles.audienceChipActive]}
+                  onPress={() => setAudience(a.key)}
                 >
                   <Text
                     style={[
                       styles.audienceChipText,
-                      audience === a && styles.audienceChipTextActive,
+                      audience === a.key && styles.audienceChipTextActive,
                     ]}
                   >
-                    {a}
+                    {a.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
             <TouchableOpacity style={styles.sendBtn} onPress={sendBroadcast}>
               <Ionicons name="megaphone-outline" size={18} color="#fff" />
-              <Text style={styles.sendBtnText}>Broadcast to Students</Text>
+              <Text style={styles.sendBtnText}>Broadcast Now</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.infoCard}>
             <Ionicons name="information-circle-outline" size={18} color={theme.colors.primary} />
             <Text style={styles.infoText}>
-              Broadcasts push instantly to the student app. Tryout reminders, match alerts and
-              equipment due notices are sent automatically.
+              Broadcasts land instantly in the student app inbox. Tryout reminders, match alerts and
+              equipment due notices are sent automatically by the system.
             </Text>
           </View>
         </ScrollView>
@@ -223,6 +235,7 @@ export default function Notifications({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
   header: {
     paddingTop: theme.spacing.xl + 10,
     paddingHorizontal: theme.spacing.lg,
@@ -285,6 +298,13 @@ const styles = StyleSheet.create({
   },
   tabTextActive: { color: theme.colors.primary },
   content: { flex: 1, paddingHorizontal: theme.spacing.lg },
+  emptyInbox: {
+    fontSize: 13,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginTop: 40,
+  },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -294,6 +314,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 12,
   },
+  cardUnread: { borderColor: '#bfdbfe' },
   iconWrap: { position: 'relative', marginRight: 12 },
   iconCircle: {
     width: 42,

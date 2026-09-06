@@ -83,3 +83,33 @@ POST /api/sports/broadcasts
 - Writes → **Student**: event visibility/registration, team tryouts, match alerts, broadcasts.
 - Writes → **Admin**: event approval requests (institution Events module).
 - Reads ← **Admin**: event configuration, venue master.
+
+## 6. Wiring Status — LIVE (backend + app wired end to end)
+
+**Backend:** `backend/src/modules/sports/` (routes · service · zod schemas), mounted at `/api/v1/sports`, role-gated `SPORTS | ADMIN`. Demo login: `sports@learnix.dev` / `Passw0rd!`.
+
+| Endpoint | Notes |
+|---|---|
+| `GET /dashboard` | real stats (upcoming events, teams, pending regs, equipment out/overdue), today+upcoming schedule (events + fixtures), pending-approval preview, recent alerts |
+| `GET /events` · `GET /events/:id` | non-ALUMNI events; detail = schedule checklist + volunteers + registration list |
+| `POST /registrations/:id/decide` | `APPROVED\|REJECTED` on PENDING only (409 re-decide guard); notifies student, audited |
+| `POST /events/:id/schedule` · `POST /schedule-items/:id/toggle` | add day items, tap-to-toggle checklist |
+| `POST /events/:id/volunteers` | by roll no, notifies student (409 on dup) |
+| `POST /events/:id/announce` | fan-out notification to all students |
+| `GET /teams` · `GET /teams/:id` | roster + captain (resolved from scalar id) + fixtures + standings record |
+| `POST /teams/:id/players` | by roll no, CAPTAIN role updates team captain (409 on dup) |
+| `GET /tournaments` | fixtures with parsed results + standings (points-desc) |
+| `POST /fixtures` | schedule fixture — validates teams belong to the tournament (422 otherwise) |
+| `POST /fixtures/:id/result` | `{winner: A\|B\|DRAW, scoreA, scoreB}` — **auto-updates standings** (win 3 / draw 1), 409 on re-record |
+| `GET /equipment` · `POST /equipment` · `POST /equipment/issue` · `POST /equipment-issues/:id/return` | availability denorm synced on issue/return, 422 when 0 units, OVERDUE surfaced |
+| `GET /venues` · `POST /venue-bookings/:id/decide` · `POST /venue-bookings` | approve flips venue → BOOKED, same-slot clash check (409), MAINTENANCE venues blocked |
+| `GET /notifications` · `POST /notifications/read-all` · `POST /broadcasts` | audience fan-out: `ALL_STUDENTS` / `ALL_TEAMS` (distinct team members) / `VOLUNTEERS` |
+| `GET /profile` | identity + live dept stats |
+
+**App:** all 12 screens wired via `sportsApi` (`services/api.js`), demo identity `setDemoUser('sports@learnix.dev')` in `sports.js`. Every static array removed; loading/error/retry states everywhere.
+
+**Deltas from the §4 sketch:** decide is a single `decide` endpoint with a decision body (not separate approve/reject paths); results are recorded per fixture with winner+scores instead of manual standings edits — standings auto-derive; tryouts/match-alert are covered by broadcasts + announce.
+
+**Seed (idempotent):** SPORTS director R. Subramaniam, students Sneha Patel (CSE-23-014) & Vikram Nair (ME-23-054), Dance Crew (captain Sneha), TechFest schedule (4 items), 2 PENDING registrations, 3 equipment items (bat/racket/football) with issue history, 3 seeded inbox alerts. Re-seed restores the demo state after e2e actions.
+
+**Verified live:** dashboard `2 events · 3 teams · 2 pending regs` → registration approve → 409 re-decide → announce `recipients:3` → volunteer assign → add player + 409 dup → equipment return/issue (denorm synced) → venue booking APPROVE → broadcast `ALL_TEAMS recipients:2` → read-all → 403 for non-SPORTS token. Typecheck ✅ · all 12 files parse ✅.

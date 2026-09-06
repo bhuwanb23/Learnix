@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
-
-const stats = [
-  { label: 'Events', value: '24' },
-  { label: 'Teams', value: '12' },
-  { label: 'Coaches', value: '9' },
-];
+import { sportsApi } from '../../../../services/api';
 
 const menuItems = [
   { icon: 'people-outline', label: 'Coaches & Staff', color: '#2563eb' },
@@ -19,16 +15,56 @@ const menuItems = [
 ];
 
 export default function Profile({ navigation }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [eventAlerts, setEventAlerts] = useState(true);
   const [tryoutAlerts, setTryoutAlerts] = useState(true);
   const [equipmentAlerts, setEquipmentAlerts] = useState(true);
 
+  const load = useCallback(async () => {
+    try {
+      const p = await sportsApi.profile();
+      setProfile(p);
+    } catch (e) {
+      Alert.alert('Load failed', e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Logout', 'Clear the session and re-login as the demo user?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.removeItem('learnix.refreshToken');
+          Alert.alert('Logged out', 'Session cleared. The app will re-authenticate on next load.');
+        },
+      },
     ]);
   };
+
+  if (loading && !profile) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  const fullName = profile?.fullName ?? 'Sports Office';
+  const designation = profile?.designation ?? 'Sports & Cultural Affairs';
+  const stats = [
+    { label: 'Events', value: String(profile?.stats?.events ?? 0) },
+    { label: 'Teams', value: String(profile?.stats?.teams ?? 0) },
+    { label: 'Equipment', value: String(profile?.stats?.equipment ?? 0) },
+  ];
 
   return (
     <View style={styles.container}>
@@ -36,13 +72,13 @@ export default function Profile({ navigation }) {
         <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={40} color="#fff" />
+              <Text style={styles.avatarInitial}>{fullName.charAt(0)}</Text>
             </View>
             <View style={styles.onlineDot} />
           </View>
-          <Text style={styles.name}>Mr. R. Subramaniam</Text>
-          <Text style={styles.role}>Director · Sports & Cultural Affairs</Text>
-          <Text style={styles.dept}>Student Activities, Learnix Campus</Text>
+          <Text style={styles.name}>{fullName}</Text>
+          <Text style={styles.role}>{designation}</Text>
+          <Text style={styles.dept}>{profile?.email ?? ''}</Text>
           <View style={styles.statsRow}>
             {stats.map((s) => (
               <View key={s.label} style={styles.statItem}>
@@ -141,6 +177,7 @@ export default function Profile({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background },
   content: { paddingBottom: 40 },
   header: {
     paddingTop: theme.spacing.xl + 10,
@@ -160,6 +197,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: 'rgba(255,255,255,0.6)',
+  },
+  avatarInitial: {
+    fontSize: 34,
+    fontFamily: 'Manrope-ExtraBold',
+    color: '#fff',
   },
   onlineDot: {
     position: 'absolute',

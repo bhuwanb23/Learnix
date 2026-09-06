@@ -1,49 +1,119 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { sportsApi } from '../../../../services/api';
 
-const venues = [
-  { id: 'V1', name: 'Main Ground', capacity: 2000, type: 'Outdoor', status: 'Booked', today: 'Cricket Cup — 9 AM', color: '#059669' },
-  { id: 'V2', name: 'Indoor Court', capacity: 400, type: 'Indoor', status: 'Available', today: 'Free', color: '#2563eb' },
-  { id: 'V3', name: 'Open Air Theatre', capacity: 800, type: 'Outdoor', status: 'Booked', today: 'Dance rehearsal — 5:30 PM', color: '#d97706' },
-  { id: 'V4', name: 'Main Auditorium', capacity: 1200, type: 'Indoor', status: 'Booked', today: 'Tech Fest setup', color: '#dc2626' },
-  { id: 'V5', name: 'Football Field', capacity: 1500, type: 'Outdoor', status: 'Booked', today: 'Friendly vs NIT — 6:30 PM', color: '#0891b2' },
-  { id: 'V6', name: 'Seminar Hall B', capacity: 150, type: 'Indoor', status: 'Available', today: 'Free', color: '#2563eb' },
-];
-
-const bookingRequests = [
-  { id: '1', venue: 'Main Auditorium', by: 'Tech Fest Committee', date: 'Nov 21-22', purpose: 'Tech Fest 2026', time: '9 AM - 6 PM', status: 'Pending' },
-  { id: '2', venue: 'Open Air Theatre', by: 'Cultural Committee', date: 'Dec 5', purpose: 'Cultural Night 2026', time: '6 PM - 10 PM', status: 'Pending' },
-];
+const fmtDate = (iso) => new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
 export default function VenuesModule({ navigation }) {
-  const [requests, setRequests] = useState(bookingRequests);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showBook, setShowBook] = useState(false);
+  const [bookForm, setBookForm] = useState({ venueName: '', eventTitle: '', date: '', timeSlot: '' });
 
-  const handleRequest = (id, action) => {
-    setRequests(
-      requests.map((r) => (r.id === id ? { ...r, status: action === 'approve' ? 'Approved' : 'Rejected' } : r))
-    );
-    if (action === 'approve') {
-      Alert.alert('Approved', 'Venue booking confirmed. Calendar updated.');
-    } else {
-      Alert.alert('Rejected', 'Booking request rejected. Committee notified.');
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const d = await sportsApi.venues();
+      setData(d);
+    } catch (e) {
+      setError(e.message || 'Failed to load venues');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const decide = async (bookingId, decision, eventTitle) => {
+    try {
+      await sportsApi.decideVenueBooking(bookingId, decision);
+      Alert.alert(
+        decision === 'APPROVED' ? 'Approved' : 'Rejected',
+        decision === 'APPROVED'
+          ? `"${eventTitle}" booking confirmed. Calendar updated.`
+          : `"${eventTitle}" booking rejected.`
+      );
+      load(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
     }
   };
 
+  const book = async () => {
+    const venue = (data?.venues || []).find((v) =>
+      v.name.toLowerCase().includes(bookForm.venueName.toLowerCase().trim())
+    );
+    if (!venue) {
+      Alert.alert('Venue not found', `Available: ${(data?.venues || []).map((v) => v.name).join(', ')}`);
+      return;
+    }
+    if (!bookForm.eventTitle.trim() || !bookForm.date.trim() || !bookForm.timeSlot.trim()) {
+      Alert.alert('Incomplete', 'Fill event title, date (YYYY-MM-DD) and time slot (e.g. 15:00-18:00).');
+      return;
+    }
+    try {
+      const res = await sportsApi.bookVenue({
+        venueId: venue.id,
+        eventTitle: bookForm.eventTitle.trim(),
+        date: bookForm.date.trim(),
+        timeSlot: bookForm.timeSlot.trim(),
+      });
+      Alert.alert('Requested', `${res.venue} booking for "${bookForm.eventTitle}" is now pending approval.`);
+      setShowBook(false);
+      setBookForm({ venueName: '', eventTitle: '', date: '', timeSlot: '' });
+      load(false);
+    } catch (e) {
+      Alert.alert('Booking failed', e.message);
+    }
+  };
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const { stats, bookings, venues } = data;
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>14</Text>
+          <Text style={styles.statValue}>{stats.venues}</Text>
           <Text style={styles.statLabel}>Venues</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>6</Text>
-          <Text style={styles.statLabel}>Booked Today</Text>
+          <Text style={styles.statValue}>{venues.filter((v) => v.status === 'BOOKED').length}</Text>
+          <Text style={styles.statLabel}>Booked</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>2</Text>
+          <Text style={styles.statValue}>{stats.pending}</Text>
           <Text style={styles.statLabel}>Pending Req.</Text>
         </View>
       </View>
@@ -51,7 +121,10 @@ export default function VenuesModule({ navigation }) {
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Booking Requests</Text>
       </View>
-      {requests.map((r) => (
+      {bookings.length === 0 && (
+        <Text style={styles.empty}>No pending booking requests.</Text>
+      )}
+      {bookings.map((r) => (
         <View key={r.id} style={styles.requestCard}>
           <View style={styles.requestTop}>
             <View style={styles.requestIcon}>
@@ -59,55 +132,32 @@ export default function VenuesModule({ navigation }) {
             </View>
             <View style={styles.requestBody}>
               <Text style={styles.requestVenue}>{r.venue}</Text>
+              <Text style={styles.requestMeta}>{r.eventTitle}</Text>
               <Text style={styles.requestMeta}>
-                {r.by} · {r.purpose}
-              </Text>
-              <Text style={styles.requestMeta}>
-                {r.date} · {r.time}
+                {fmtDate(r.date)} · {r.timeSlot}
               </Text>
             </View>
-            {r.status === 'Pending' ? (
-              <View style={styles.requestActions}>
-                <TouchableOpacity
-                  style={styles.rejectBtn}
-                  onPress={() => handleRequest(r.id, 'reject')}
-                >
-                  <Ionicons name="close-outline" size={14} color="#dc2626" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.approveBtn}
-                  onPress={() => handleRequest(r.id, 'approve')}
-                >
-                  <Ionicons name="checkmark-outline" size={14} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View
-                style={[
-                  styles.reqStatusChip,
-                  { backgroundColor: r.status === 'Approved' ? '#dcfce7' : '#fee2e2' },
-                ]}
+            <View style={styles.requestActions}>
+              <TouchableOpacity
+                style={styles.rejectBtn}
+                onPress={() => decide(r.id, 'REJECTED', r.eventTitle)}
               >
-                <Text
-                  style={[
-                    styles.reqStatusText,
-                    { color: r.status === 'Approved' ? '#059669' : '#dc2626' },
-                  ]}
-                >
-                  {r.status}
-                </Text>
-              </View>
-            )}
+                <Ionicons name="close-outline" size={14} color="#dc2626" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.approveBtn}
+                onPress={() => decide(r.id, 'APPROVED', r.eventTitle)}
+              >
+                <Ionicons name="checkmark-outline" size={14} color="#fff" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       ))}
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Venue Availability — Today</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => Alert.alert('Book Venue', 'Venue booking form opens here — date, time and purpose.')}
-        >
+        <Text style={styles.sectionTitle}>Venue Availability</Text>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setShowBook(true)}>
           <Ionicons name="add" size={15} color="#fff" />
           <Text style={styles.addText}>Book</Text>
         </TouchableOpacity>
@@ -115,39 +165,85 @@ export default function VenuesModule({ navigation }) {
 
       {venues.map((v) => (
         <View key={v.id} style={styles.card}>
-          <View style={[styles.venueIcon, { backgroundColor: v.color + '1a' }]}>
-            <Ionicons name="location-outline" size={17} color={v.color} />
+          <View style={[styles.venueIcon, { backgroundColor: v.status === 'AVAILABLE' ? '#dcfce7' : '#fee2e2' }]}>
+            <Ionicons name="location-outline" size={17} color={v.status === 'AVAILABLE' ? '#059669' : '#dc2626'} />
           </View>
           <View style={styles.cardBody}>
             <Text style={styles.venueName}>{v.name}</Text>
             <Text style={styles.venueMeta}>
-              {v.type} · Capacity {v.capacity}
+              {v.location || 'On campus'} · Capacity {v.capacity}
             </Text>
-            <Text style={styles.venueToday}>{v.today}</Text>
+            {v.pendingRequests > 0 && (
+              <Text style={styles.venuePending}>{v.pendingRequests} pending request(s)</Text>
+            )}
           </View>
           <View
             style={[
               styles.availChip,
-              { backgroundColor: v.status === 'Available' ? '#dcfce7' : '#fee2e2' },
+              { backgroundColor: v.status === 'AVAILABLE' ? '#dcfce7' : v.status === 'BOOKED' ? '#fee2e2' : '#fef3c7' },
             ]}
           >
-            <Text
-              style={[
-                styles.availText,
-                { color: v.status === 'Available' ? '#059669' : '#dc2626' },
-              ]}
-            >
-              {v.status}
-            </Text>
+            <Text style={styles.availText}>{v.status}</Text>
           </View>
         </View>
       ))}
+
+      {/* Book venue modal */}
+      <Modal visible={showBook} transparent animationType="fade" onRequestClose={() => setShowBook(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Book a Venue</Text>
+            <Text style={styles.modalSub}>Creates a PENDING request — conflicts are rejected automatically.</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Venue name (partial ok)"
+              placeholderTextColor="#9ca3af"
+              value={bookForm.venueName}
+              onChangeText={(v) => setBookForm({ ...bookForm, venueName: v })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Event title"
+              placeholderTextColor="#9ca3af"
+              value={bookForm.eventTitle}
+              onChangeText={(v) => setBookForm({ ...bookForm, eventTitle: v })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Date (YYYY-MM-DD)"
+              placeholderTextColor="#9ca3af"
+              value={bookForm.date}
+              onChangeText={(v) => setBookForm({ ...bookForm, date: v })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Time slot (e.g. 15:00-18:00)"
+              placeholderTextColor="#9ca3af"
+              value={bookForm.timeSlot}
+              onChangeText={(v) => setBookForm({ ...bookForm, timeSlot: v })}
+            />
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalCancel]} onPress={() => setShowBook(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, styles.modalSave]} onPress={book}>
+                <Text style={styles.modalSaveText}>Request Booking</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 4, marginBottom: 8 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -253,15 +349,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reqStatusChip: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  reqStatusText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -292,11 +379,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 2,
   },
-  venueToday: {
-    fontSize: 11,
+  venuePending: {
+    fontSize: 10,
     fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.text,
-    marginTop: 4,
+    color: '#d97706',
+    marginTop: 3,
   },
   availChip: {
     borderRadius: 8,
@@ -307,4 +394,54 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: 'Manrope-Bold',
+    color: theme.colors.text,
+  },
+  modalSub: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    marginTop: 3,
+    marginBottom: 10,
+  },
+  input: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.text,
+    marginTop: 8,
+  },
+  modalBtnRow: {
+    flexDirection: 'row',
+    marginTop: 14,
+  },
+  modalBtn: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingVertical: 11,
+    marginHorizontal: 4,
+  },
+  modalSave: { backgroundColor: theme.colors.primary },
+  modalSaveText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  modalCancel: { backgroundColor: theme.colors.surfaceMuted },
+  modalCancelText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted },
 });
