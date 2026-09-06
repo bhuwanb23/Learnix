@@ -1,0 +1,82 @@
+// Domain L — System (platform-owned). Docs: 00-decisions.md ADR-08/10 · 03-admin.md §3.15
+// files: polymorphic attachments — every *FileId across the schema points here
+//        (storageKey is the object-store path; local disk in dev).
+// audit_logs: every state-changing mutation (writeAudit in src/lib/audit.ts).
+// system_config: per-institution knobs (attendanceThreshold, backlogLimit,
+//        passingMarks, reEvalWindowDays, institutionName, supportEmail…).
+// feature_flags: per-institution rollout control.
+// platform_admins: PLATFORM_ADMIN role detail (level e.g. "SUPER" | "SUPPORT").
+
+model File {
+  id             String   @id @default(cuid())
+  institutionId  String
+  uploaderUserId String // scalar → users.id
+  purpose        String // NOTE_ATTACHMENT | ASSIGNMENT_ATTACHMENT | SUBMISSION | AVATAR | COVER | PAYSLIP | LOGO | RESUME
+  mimeType       String
+  sizeBytes      Int
+  storageKey     String // unique object path
+  originalName   String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([storageKey])
+  @@index([institutionId])
+  @@index([purpose])
+  @@map("files")
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorUserId   String? // scalar → users.id (system actions have no actor)
+  institutionId String?
+  action        String // e.g. "syllabus.approve", "fee.waive", "payment.record"
+  entityType    String
+  entityId      String?
+  beforeJson    String?
+  afterJson     String?
+  ip            String?
+  createdAt     DateTime @default(now())
+
+  @@index([institutionId])
+  @@index([entityType, entityId])
+  @@index([actorUserId])
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id            String   @id @default(cuid())
+  institutionId String
+  key           String
+  valueJson     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([institutionId, key])
+  @@index([institutionId])
+  @@map("system_config")
+}
+
+model FeatureFlag {
+  id            String   @id @default(cuid())
+  institutionId String
+  key           String // e.g. "ai_study_buddy", "transport_live_tracking"
+  enabled       Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([institutionId, key])
+  @@index([institutionId])
+  @@map("feature_flags")
+}
+
+model PlatformAdmin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  level     String   @default("SUPPORT") // SUPER | SUPPORT
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("platform_admins")
+}
