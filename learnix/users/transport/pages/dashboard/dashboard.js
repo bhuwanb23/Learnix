@@ -1,27 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
-
-const stats = [
-  { label: 'Buses On Road', value: '26/30', sub: '86%', color: '#2563eb', icon: 'bus-outline' },
-  { label: 'Active Routes', value: '18', sub: '2 delayed', color: '#d97706', icon: 'map-outline' },
-  { label: 'Students', value: '2,340', sub: 'using service', color: '#0891b2', icon: 'people-outline' },
-  { label: 'Avg. On-Time', value: '91%', sub: 'this week', color: '#059669', icon: 'time-outline' },
-];
-
-const todayRoutes = [
-  { id: '1', name: 'Route 01 — Central City', time: '7:05 AM', status: 'On Time', bus: 'KA-01-2045', delay: null },
-  { id: '2', name: 'Route 07 — Electronic City', time: '7:15 AM', status: 'Delayed', bus: 'KA-01-1876', delay: '12 min' },
-  { id: '3', name: 'Route 12 — Whitefield', time: '7:20 AM', status: 'On Time', bus: 'KA-01-2210', delay: null },
-];
-
-const alerts = [
-  { id: '1', title: 'Bus KA-01-1876 needs service', detail: 'Odometer at 9,800 km — service due in 200 km', type: 'service', severity: 'Due Soon' },
-  { id: '2', title: 'Route 07 morning delay', detail: 'Traffic on Outer Ring Road — arrived 12 min late', type: 'delay', severity: 'Delayed' },
-  { id: '3', title: 'Fuel level low — Bus KA-01-2045', detail: '27% remaining, refuel before evening trip', type: 'fuel', severity: 'Low Fuel' },
-];
+import { transportApi } from '../../../../services/api';
 
 const modules = [
   { id: 'Tracking', title: 'Live Tracking', icon: 'navigate-outline', color: '#2563eb' },
@@ -30,26 +12,88 @@ const modules = [
   { id: 'Notifications', title: 'Notify', icon: 'megaphone-outline', color: '#d97706' },
 ];
 
-const activity = [
-  { text: 'Route 04 morning trip completed on time', time: '40 min ago', icon: 'checkmark-circle-outline', color: '#059669' },
-  { text: 'Service logged for Bus KA-01-1764 (oil change)', time: '2 hrs ago', icon: 'construct-outline', color: '#2563eb' },
-  { text: 'Driver Ramesh K. assigned to Route 12', time: '4 hrs ago', icon: 'person-add-outline', color: '#0891b2' },
-  { text: 'Fuel refill recorded — ₹9,200 for Bus KA-01-2210', time: '6 hrs ago', icon: 'flame-outline', color: '#d97706' },
-];
+const fmtPct = (v) => `${v}%`;
 
 export default function TransportDashboard({ navigation }) {
+  const [data, setData] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const [dash, notifs] = await Promise.all([
+        transportApi.dashboard(),
+        transportApi.notifications().catch(() => ({ notifications: [] })),
+      ]);
+      setData(dash);
+      setAlerts((notifs.notifications || []).slice(0, 4));
+    } catch (e) {
+      setError(e.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    load(false);
+  }, [load]);
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const { stats, todayRoutes } = data;
+  const idle = stats.vehicles - stats.onRoad - stats.inService;
+
+  const statCards = [
+    { label: 'Buses On Road', value: `${stats.onRoad}/${stats.vehicles}`, sub: `${stats.inService} in service`, color: '#2563eb', icon: 'bus-outline' },
+    { label: 'Active Routes', value: String(stats.routes), sub: `${stats.delayedRoutes} delayed`, color: '#d97706', icon: 'map-outline' },
+    { label: 'Students', value: String(stats.students), sub: 'using service', color: '#0891b2', icon: 'people-outline' },
+    { label: 'Avg. On-Time', value: fmtPct(stats.onTimePct), sub: `${stats.servicePending} service open`, color: '#059669', icon: 'time-outline' },
+  ];
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
-        <Text style={styles.heroLabel}>FLEET OPERATIONS · SEP 2026</Text>
+        <Text style={styles.heroLabel}>FLEET OPERATIONS · LIVE</Text>
         <Text style={styles.heroTitle}>Transport Overview</Text>
         <View style={styles.heroProgress}>
-          <View style={[styles.heroProgressFill, { width: '86%' }]} />
+          <View style={[styles.heroProgressFill, { width: `${stats.onTimePct}%` }]} />
         </View>
         <View style={styles.heroRow}>
           <View>
-            <Text style={styles.heroValue}>26 of 30</Text>
-            <Text style={styles.heroSub}>buses on road · 4 idle</Text>
+            <Text style={styles.heroValue}>{stats.onRoad} of {stats.vehicles}</Text>
+            <Text style={styles.heroSub}>buses on road · {idle} idle</Text>
           </View>
           <View style={styles.heroBadge}>
             <Ionicons name="radio-outline" size={14} color="#fff" />
@@ -59,7 +103,7 @@ export default function TransportDashboard({ navigation }) {
       </LinearGradient>
 
       <View style={styles.statsGrid}>
-        {stats.map((s) => (
+        {statCards.map((s) => (
           <View key={s.label} style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: s.color + '1a' }]}>
               <Ionicons name={s.icon} size={16} color={s.color} />
@@ -78,32 +122,43 @@ export default function TransportDashboard({ navigation }) {
             <Text style={styles.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
+        {todayRoutes.length === 0 && (
+          <View style={styles.listCard}>
+            <Text style={styles.listSub}>No routes configured yet.</Text>
+          </View>
+        )}
         {todayRoutes.map((r) => (
           <View key={r.id} style={styles.listCard}>
-            <View style={[styles.routeIcon, { backgroundColor: '#dbeafe' }]}>
+            <View style={styles.routeIcon}>
               <Ionicons name="bus-outline" size={17} color="#2563eb" />
             </View>
             <View style={styles.listBody}>
               <Text style={styles.listTitle}>{r.name}</Text>
               <Text style={styles.listSub}>
-                {r.time} · {r.bus}
+                {r.students} students · {r.bus || 'no bus'}
               </Text>
             </View>
-            <View
-              style={[
-                styles.statusChip,
-                { backgroundColor: r.status === 'On Time' ? '#dcfce7' : '#fee2e2' },
-              ]}
-            >
-              <Text
+            {r.status ? (
+              <View
                 style={[
-                  styles.statusText,
-                  { color: r.status === 'On Time' ? '#059669' : '#dc2626' },
+                  styles.statusChip,
+                  { backgroundColor: r.status === 'ON_TIME' ? '#dcfce7' : '#fee2e2' },
                 ]}
               >
-                {r.status === 'On Time' ? 'On Time' : `${r.delay} late`}
-              </Text>
-            </View>
+                <Text
+                  style={[
+                    styles.statusText,
+                    { color: r.status === 'ON_TIME' ? '#059669' : '#dc2626' },
+                  ]}
+                >
+                  {r.status === 'ON_TIME' ? 'On Time' : 'Delayed'}
+                </Text>
+              </View>
+            ) : (
+              <View style={[styles.statusChip, { backgroundColor: '#f1f5f9' }]}>
+                <Text style={[styles.statusText, { color: theme.colors.textMuted }]}>Idle</Text>
+              </View>
+            )}
           </View>
         ))}
       </View>
@@ -115,30 +170,28 @@ export default function TransportDashboard({ navigation }) {
             <Text style={styles.seeAll}>View</Text>
           </TouchableOpacity>
         </View>
-        {alerts.map((a) => (
-          <View key={a.id} style={styles.alertCard}>
+        {data.alerts.length === 0 && (
+          <View style={styles.alertCard}>
+            <Text style={styles.listSub}>No service or fuel alerts — fleet is healthy.</Text>
+          </View>
+        )}
+        {data.alerts.map((a, idx) => (
+          <View key={idx} style={styles.alertCard}>
             <View
               style={[
                 styles.alertIcon,
-                {
-                  backgroundColor:
-                    a.type === 'service'
-                      ? '#fef3c7'
-                      : a.type === 'delay'
-                      ? '#fee2e2'
-                      : '#dcfce7',
-                },
+                { backgroundColor: a.type === 'FUEL' ? '#fef3c7' : '#fee2e2' },
               ]}
             >
               <Ionicons
-                name={a.type === 'service' ? 'construct-outline' : a.type === 'delay' ? 'time-outline' : 'flame-outline'}
+                name={a.type === 'FUEL' ? 'flame-outline' : 'construct-outline'}
                 size={16}
-                color={a.type === 'service' ? '#d97706' : a.type === 'delay' ? '#dc2626' : '#059669'}
+                color={a.type === 'FUEL' ? '#d97706' : '#dc2626'}
               />
             </View>
             <View style={styles.listBody}>
-              <Text style={styles.listTitle}>{a.title}</Text>
-              <Text style={styles.listSub}>{a.detail}</Text>
+              <Text style={styles.listTitle}>{a.severity === 'HIGH' ? 'High priority' : 'Due soon'}</Text>
+              <Text style={styles.listSub}>{a.message}</Text>
             </View>
           </View>
         ))}
@@ -163,15 +216,16 @@ export default function TransportDashboard({ navigation }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {activity.map((a, idx) => (
-          <View key={idx} style={styles.activityRow}>
-            <View style={[styles.activityIcon, { backgroundColor: a.color + '1a' }]}>
-              <Ionicons name={a.icon} size={14} color={a.color} />
+        <Text style={styles.sectionTitle}>Recent Alerts</Text>
+        {alerts.length === 0 && <Text style={styles.listSub}>No recent notifications.</Text>}
+        {alerts.map((a) => (
+          <View key={a.id} style={styles.activityRow}>
+            <View style={[styles.activityIcon, { backgroundColor: a.read ? theme.colors.surfaceMuted : '#dbeafe' }]}>
+              <Ionicons name="notifications-outline" size={14} color={a.read ? theme.colors.textMuted : '#2563eb'} />
             </View>
             <View style={styles.activityBody}>
-              <Text style={styles.activityText}>{a.text}</Text>
-              <Text style={styles.activityTime}>{a.time}</Text>
+              <Text style={styles.activityText} numberOfLines={1}>{a.title}</Text>
+              <Text style={styles.activityTime}>{new Date(a.createdAt).toLocaleDateString()}</Text>
             </View>
           </View>
         ))}
@@ -182,6 +236,10 @@ export default function TransportDashboard({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
   hero: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -314,6 +372,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 10,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
