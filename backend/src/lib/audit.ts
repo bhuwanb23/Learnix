@@ -1,6 +1,7 @@
-// Audit helper. The audit_logs table belongs to Domain L (system), which lands
-// later in the domain-by-domain build — until then this is a console stub so
-// the request path never breaks. Wire to prisma.auditLog when Domain L lands.
+// Audit helper (ADR-10) — persists every state-changing mutation to audit_logs
+// (Domain L). Audit writes must never break the request path: failures are
+// logged and swallowed. actorUserId/institutionId may be null for system actions.
+import { prisma } from '../db/prisma.js';
 
 export async function writeAudit(entry: {
   actorUserId?: string | null;
@@ -12,8 +13,20 @@ export async function writeAudit(entry: {
   after?: unknown;
   ip?: string | null;
 }): Promise<void> {
-  // TODO(Domain L): persist to audit_logs table.
-  console.info(
-    `[audit] ${entry.action} ${entry.entityType}:${entry.entityId ?? '-'} by ${entry.actorUserId ?? '-'}`,
-  );
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorUserId: entry.actorUserId ?? null,
+        institutionId: entry.institutionId ?? null,
+        action: entry.action,
+        entityType: entry.entityType,
+        entityId: entry.entityId ?? null,
+        beforeJson: entry.before === undefined ? null : JSON.stringify(entry.before),
+        afterJson: entry.after === undefined ? null : JSON.stringify(entry.after),
+        ip: entry.ip ?? null,
+      },
+    });
+  } catch (err) {
+    console.error('[audit] write failed', err);
+  }
 }

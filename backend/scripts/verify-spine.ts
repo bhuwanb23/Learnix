@@ -255,6 +255,23 @@ async function main(): Promise<void> {
   console.log(`ANNOUNCEMENTS ${anns.map((a) => `${a.status.toLowerCase()}`).join(', ')}`);
   const aiRow = await db.aiInteraction.findFirst({ include: { user: true } });
   if (aiRow) console.log(`AI ${aiRow.user.fullName} ${aiRow.feature} tokens:${aiRow.tokensUsed ?? '-'}`);
+
+  console.log('── Domain L spine ──');
+  const configRows = await db.systemConfig.findMany({ orderBy: { key: 'asc' } });
+  console.log(`SYSTEM_CONFIG ${configRows.length} keys: ${configRows.map((c) => c.key).join(', ')}`);
+  const flags = await db.featureFlag.findMany();
+  console.log(`FEATURE_FLAGS ${flags.map((f) => `${f.key}:${f.enabled ? 'on' : 'off'}`).join(', ')}`);
+  const pa = await db.platformAdmin.findFirst({ include: { user: true } });
+  if (pa) console.log(`PLATFORM ADMIN ${pa.user.fullName} level:${pa.level}`);
+  const avatar = await db.file.findFirst({ where: { purpose: 'AVATAR' } });
+  if (avatar) {
+    const owner = await db.user.findFirst({ where: { avatarFileId: avatar.id } });
+    console.log(`FILE ${avatar.originalName} ${avatar.mimeType} ${avatar.sizeBytes}B → linked to ${owner?.fullName ?? '-'} via avatarFileId`);
+  }
+  const audits = await db.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 3 });
+  for (const a of audits) {
+    console.log(`AUDIT ${a.action} ${a.entityType}:${(a.entityId ?? '-').slice(0, 8)}…`);
+  }
 }
 
 main()

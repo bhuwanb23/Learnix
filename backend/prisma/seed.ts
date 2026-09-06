@@ -120,8 +120,9 @@ async function main() {
   await seedDomainH(institution.id);
   await seedDomainI(institution.id);
   await seedDomainJ_K(institution.id);
+  await seedDomainL(institution.id);
 
-  console.log('Seed complete (base + Domains A–K).');
+  console.log('Seed complete — ALL DOMAINS (A–L).');
 }
 
 main()
@@ -1371,4 +1372,89 @@ async function seedDomainJ_K(institutionId: string): Promise<void> {
 
   console.log('  ✓ alumni Priya (Bengaluru chapter president), campaign ₹50L/₹24.5L, donation RECEIVED ₹5L → PAY-2026-0003 + receipt');
   console.log('  ✓ mentorship ACTIVE + session, 3 notifications, broadcast, announcements PUBLISHED+PENDING, AI STUDY_BUDDY log');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain L — System seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainL(institutionId: string): Promise<void> {
+  console.log('Seeding Domain L (system)…');
+
+  const platformUser = await db.user.findFirst({ where: { email: 'platform@learnix.dev', institutionId } });
+  if (!platformUser) throw new Error('Platform user missing');
+
+  // platform_admins row for the PLATFORM_ADMIN user
+  await db.platformAdmin.upsert({
+    where: { userId: platformUser.id },
+    update: {},
+    create: { userId: platformUser.id, level: 'SUPER' },
+  });
+
+  // System config knobs (admin Settings 03 §3.15)
+  const configs = [
+    { key: 'attendanceThreshold', valueJson: '75' },
+    { key: 'backlogLimit', valueJson: '4' },
+    { key: 'passingMarks', valueJson: '40' },
+    { key: 'reEvalWindowDays', valueJson: '7' },
+    { key: 'institutionName', valueJson: '"Learnix Demo University"' },
+    { key: 'supportEmail', valueJson: '"support@learnix.dev"' },
+  ] as const;
+  for (const c of configs) {
+    await db.systemConfig.upsert({
+      where: { institutionId_key: { institutionId, key: c.key } },
+      update: {},
+      create: { institutionId, key: c.key, valueJson: c.valueJson },
+    });
+  }
+
+  // Feature flags
+  const flags = [
+    { key: 'ai_study_buddy', enabled: true },
+    { key: 'transport_live_tracking', enabled: true },
+    { key: 'placement_drive_admin_approval', enabled: true },
+  ] as const;
+  for (const f of flags) {
+    await db.featureFlag.upsert({
+      where: { institutionId_key: { institutionId, key: f.key } },
+      update: {},
+      create: { institutionId, key: f.key, enabled: f.enabled },
+    });
+  }
+
+  // Sample file row (avatar of the demo student)
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (student) {
+    const fileExists = await db.file.findFirst({ where: { purpose: 'AVATAR', uploaderUserId: student.id } });
+    if (!fileExists) {
+      await db.file.create({
+        data: {
+          institutionId,
+          uploaderUserId: student.id,
+          purpose: 'AVATAR',
+          mimeType: 'image/png',
+          sizeBytes: 45231,
+          storageKey: `avatars/${student.id}.png`,
+          originalName: 'arjun-avatar.png',
+        },
+      });
+      await db.user.update({ where: { id: student.id }, data: { avatarFileId: (await db.file.findFirst({ where: { purpose: 'AVATAR', uploaderUserId: student.id } }))!.id } });
+    }
+  }
+
+  // Real audit entry via the wired helper (proves writeAudit works)
+  const { writeAudit } = await import('../src/lib/audit.js');
+  const auditExists = await db.auditLog.findFirst({ where: { action: 'system.seed' } });
+  if (!auditExists) {
+    await writeAudit({
+      actorUserId: platformUser.id,
+      institutionId,
+      action: 'system.seed',
+      entityType: 'Institution',
+      entityId: institutionId,
+      after: { note: 'All domains seeded' },
+    });
+  }
+
+  console.log('  ✓ platform admin SUPER, 6 system_config knobs, 3 feature flags, avatar file linked, audit entry written');
 }
