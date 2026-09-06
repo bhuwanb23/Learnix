@@ -24,7 +24,9 @@
 | `password_resets` | userId, tokenHash, expiresAt, usedAt | One-time |
 | `academic_years` | institutionId, name("2025-26"), startDate, endDate, isCurrent, semesterCount | 03-admin Settings §3.15 |
 
-## Domain B — Academic Core (owner: Teacher/HOD/Admin) — 22 tables
+## Domain B — Academic Core (owner: Teacher/HOD/Admin) — 23 tables ✅ COMPLETE
+
+> **Live status:** built as `b1_structure / b2_offerings / b3_syllabus / b4_notes / b5_attendance / b6_assignments` (paste spec = 23 tables incl. `assignment_attachments`). Migration `domain_b_academic_core`. FK rule applied: **structural spine = real relations** (offering→course/section/AY, enrollment→studentProfile, submission→studentProfile, syllabus→course, rubric chains); **actor stamps = scalars** (hodUserId, teacherUserId, submittedByUserId, authorUserId, takenByUserId, createdByUserId, gradedByUserId, staffUserId). Seed: CSE→BT-CSE→CSE 2027→Section A→CS401/CS402 offerings + enrollment + syllabus v1 (SUBMITTED, 3 units/6 topics) + 1 note + 1 assignment w/ rubric. Spine verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|
