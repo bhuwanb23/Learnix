@@ -1,0 +1,27 @@
+// Domain H1 — HOD leaves (HD-04). Flagged gap from the 12-domain blueprint:
+// the HOD doc needs a leave_requests table; added as its own file.
+// actor stamps scalar; staffUserId → users.id is a safe Domain-A FK.
+// substituteUserId stays nullable until an arrangement is confirmed.
+
+model LeaveRequest {
+  id               String    @id @default(cuid())
+  institutionId    String
+  staffUserId      String
+  type             String // MEDICAL | CASUAL | EARNED
+  fromDate         DateTime
+  toDate           DateTime
+  days             Int
+  reason           String
+  status           String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  substituteUserId String? // scalar → users.id
+  decidedByUserId  String? // scalar → users.id
+  decidedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  staffUser User @relation("LeaveStaff", fields: [staffUserId], references: [id])
+
+  @@index([institutionId])
+  @@index([staffUserId])
+  @@map("leave_requests")
+}

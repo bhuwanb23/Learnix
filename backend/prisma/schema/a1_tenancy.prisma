@@ -46,6 +46,7 @@ model User {
   donationsMade    Donation[]
   mentorshipsAsMentor MentorshipPair[]
   platformAdmin      PlatformAdmin?
+  leavesRequested    LeaveRequest[]   @relation("LeaveStaff")
 
   @@unique([institutionId, email]) // email unique per institution
   @@index([institutionId])
