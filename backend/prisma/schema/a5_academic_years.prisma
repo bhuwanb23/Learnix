@@ -13,6 +13,8 @@ model AcademicYear {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  offerings CourseOffering[]
+
   @@unique([institutionId, name])
   @@index([institutionId])
   @@map("academic_years")

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "prisma:migrate": "prisma migrate dev --schema prisma/schema",
     "prisma:generate": "prisma generate --schema prisma/schema",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "verify:spine": "tsx scripts/verify-spine.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",

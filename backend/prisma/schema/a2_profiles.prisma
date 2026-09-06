@@ -19,6 +19,10 @@ model StudentProfile {
 
   user User @relation(fields: [userId], references: [id])
 
+  enrollments       Enrollment[]
+  attendanceRecords AttendanceRecord[]
+  submissions       Submission[]
+
   @@unique([institutionId, rollNo])
   @@index([institutionId])
   @@map("student_profiles")
