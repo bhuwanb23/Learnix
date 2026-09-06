@@ -1,0 +1,21 @@
+// Domain D1 — Companies (recruiters). Docs: 04-placement-cell.md §3.6 · 03-admin.md
+// hrContact is a free-text contact (name/email/phone JSON or string).
+
+model Company {
+  id            String   @id @default(cuid())
+  institutionId String
+  name          String
+  sector        String? // IT | CORE | FINANCE | CONSULTING | …
+  website       String?
+  hrContact     String?
+  rating        Float? // placement-cell's own rating, 0–5
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  jobs   Job[]
+  drives PlacementDrive[]
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@map("companies")
+}

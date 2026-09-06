@@ -28,6 +28,9 @@ model StudentProfile {
   results           Result[]
   reEvaluations     ReEvaluationRequest[]
   cheatingCases     CheatingCase[]
+  jobApplications   JobApplication[]
+  placementEligibility PlacementEligibility?
+  driveRegistrations   DriveRegistration[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])

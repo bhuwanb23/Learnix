@@ -1,0 +1,75 @@
+// Domain D3 — Application pipeline + offers + eligibility pool + drive attendance.
+// Docs: 04-placement-cell.md §3.3–3.4 · 05-state-machines.md §application
+// Either jobId OR driveId is set (check constraint enforced in service layer).
+// decidedByUserId is a scalar actor-stamp.
+
+model JobApplication {
+  id               String    @id @default(cuid())
+  jobId            String? // exactly one of jobId / driveId
+  driveId          String?
+  studentProfileId String
+  status           String    @default("APPLIED") // APPLIED | SHORTLISTED | INTERVIEW | OFFERED | REJECTED | WITHDRAWN
+  appliedAt        DateTime  @default(now())
+  decidedByUserId  String? // scalar → users.id
+  decidedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  job            Job?             @relation(fields: [jobId], references: [id])
+  drive          PlacementDrive?  @relation(fields: [driveId], references: [id])
+  studentProfile StudentProfile   @relation(fields: [studentProfileId], references: [id])
+  offers         PlacementOffer[]
+
+  @@index([studentProfileId])
+  @@index([jobId])
+  @@index([driveId])
+  @@index([status])
+  @@map("job_applications")
+}
+
+model PlacementOffer {
+  id            String   @id @default(cuid())
+  applicationId String
+  ctcMinor      Int
+  offerDate     DateTime @default(now())
+  status        String   @default("EXTENDED") // EXTENDED | ACCEPTED | DECLINED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application JobApplication @relation(fields: [applicationId], references: [id])
+
+  @@unique([applicationId])
+  @@index([applicationId])
+  @@map("placement_offers")
+}
+
+model PlacementEligibility {
+  id                  String   @id @default(cuid())
+  studentProfileId    String   @unique
+  isEligible          Boolean  @default(true)
+  blockedReason       String?
+  registeredForDrives Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@map("placement_eligibility")
+}
+
+model DriveRegistration {
+  id               String   @id @default(cuid())
+  driveId          String
+  studentProfileId String
+  status           String   @default("REGISTERED") // REGISTERED | ATTENDED | ABSENT
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  drive          PlacementDrive @relation(fields: [driveId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([driveId, studentProfileId])
+  @@index([driveId])
+  @@index([studentProfileId])
+  @@map("drive_registrations")
+}

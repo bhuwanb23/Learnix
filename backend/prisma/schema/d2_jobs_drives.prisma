@@ -1,0 +1,50 @@
+// Domain D2 — Jobs (direct postings) + Placement Drives (admin-approved events).
+// Docs: 04-placement-cell.md §3.5 (jobs) · §3.2 (drives) · 03-admin.md §3.10 (approval)
+// Money = Int paise per annum (packageMinorPerAnnum). postedByUserId /
+// createdByUserId / approvedByUserId are scalar actor-stamps.
+
+model Job {
+  id                    String    @id @default(cuid())
+  companyId             String
+  postedByUserId        String // scalar → users.id (placement staff)
+  role                  String
+  packageMinorPerAnnum  Int
+  location              String?
+  openings              Int       @default(1)
+  deadline              DateTime?
+  description           String?
+  status                String    @default("OPEN") // OPEN | CLOSED
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  company     Company @relation(fields: [companyId], references: [id])
+  applications JobApplication[]
+
+  @@index([companyId])
+  @@index([status])
+  @@map("jobs")
+}
+
+model PlacementDrive {
+  id                   String    @id @default(cuid())
+  companyId            String
+  title                String
+  role                 String
+  packageMinorPerAnnum Int
+  driveDate            DateTime
+  mode                 String    @default("ON_CAMPUS") // ON_CAMPUS | VIRTUAL
+  eligibilityJson      String // { minCgpa, maxBacklogs, allowedBranches[] }
+  status               String    @default("DRAFT") // DRAFT | PENDING_ADMIN | APPROVED | SCHEDULED | COMPLETED
+  createdByUserId      String // scalar → users.id
+  approvedByUserId     String? // scalar → users.id
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  company       Company             @relation(fields: [companyId], references: [id])
+  applications  JobApplication[]
+  registrations DriveRegistration[]
+
+  @@index([companyId])
+  @@index([status])
+  @@map("placement_drives")
+}
