@@ -107,3 +107,15 @@ export const VENUE_STATUS = ['AVAILABLE', 'BOOKED', 'MAINTENANCE'] as const;
 export const VENUE_BOOKING_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
 export const EQUIPMENT_CONDITION = ['GOOD', 'NEEDS_REPAIR'] as const;
 export const EQUIPMENT_ISSUE_STATUS = ['ISSUED', 'RETURNED', 'OVERDUE'] as const;
+
+// ── Domain J — Alumni ──
+export const CAMPAIGN_STATUS = ['ACTIVE', 'COMPLETED'] as const;
+export const DONATION_STATUS = ['PLEDGED', 'RECEIVED'] as const;
+export const DONATION_FUND = ['GENERAL', 'LIBRARY', 'SCHOLARSHIP', 'INFRASTRUCTURE'] as const;
+export const MENTORSHIP_STATUS = ['PENDING', 'ACTIVE', 'DECLINED', 'COMPLETED'] as const;
+
+// ── Domain K — Communication ──
+export const BROADCAST_CHANNEL = ['IN_APP', 'EMAIL', 'PUSH'] as const;
+export const ANNOUNCEMENT_STATUS = ['DRAFT', 'PENDING_ADMIN', 'PUBLISHED', 'REJECTED'] as const;
+export const EMAIL_STATUS = ['QUEUED', 'SENT', 'FAILED'] as const;
+export const AI_FEATURE = ['STUDY_BUDDY', 'TEACHING_INSIGHT', 'PERFORMANCE_NOTE'] as const;
