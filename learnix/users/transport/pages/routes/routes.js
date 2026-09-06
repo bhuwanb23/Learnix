@@ -1,83 +1,131 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { transportApi } from '../../../../services/api';
 import RouteDetail from './pages/route_detail/route_detail';
 
-const routes = [
-  { id: 'R1', name: 'Route 01 — Central City', stops: 12, students: 156, bus: 'KA-01-2045', driver: 'Ramesh K.', departure: '7:05 AM', arrival: '8:40 AM', status: 'On Time', distance: '18 km', color: '#2563eb' },
-  { id: 'R2', name: 'Route 07 — Electronic City', stops: 10, students: 142, bus: 'KA-01-1876', driver: 'Suresh P.', departure: '7:15 AM', arrival: '9:00 AM', status: 'Delayed', distance: '22 km', color: '#dc2626' },
-  { id: 'R3', name: 'Route 12 — Whitefield', stops: 14, students: 178, bus: 'KA-01-2210', driver: 'Manoj G.', departure: '7:20 AM', arrival: '8:55 AM', status: 'On Time', distance: '20 km', color: '#0891b2' },
-  { id: 'R4', name: 'Route 04 — Koramangala', stops: 9, students: 134, bus: 'KA-01-1764', driver: 'Lakshman R.', departure: '7:10 AM', arrival: '8:35 AM', status: 'Completed', distance: '16 km', color: '#059669' },
-  { id: 'R5', name: 'Route 09 — Hebbal', stops: 11, students: 121, bus: 'KA-01-1982', driver: 'Venkat S.', departure: '7:25 AM', arrival: '9:10 AM', status: 'On Time', distance: '24 km', color: '#d97706' },
-];
-
-const statusStyle = (s) => {
-  if (s === 'On Time') return { bg: '#dcfce7', color: '#059669' };
-  if (s === 'Delayed') return { bg: '#fee2e2', color: '#dc2626' };
-  return { bg: '#dbeafe', color: '#2563eb' };
-};
-
 export default function RoutesModule({ navigation }) {
-  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [routes, setRoutes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState(null);
 
-  if (selectedRoute) {
-    return <RouteDetail route={selectedRoute} onBack={() => setSelectedRoute(null)} />;
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const data = await transportApi.routes();
+      setRoutes(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message || 'Failed to load routes');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  if (selectedRouteId) {
+    return (
+      <RouteDetail
+        routeId={selectedRouteId}
+        onBack={() => {
+          setSelectedRouteId(null);
+          load(false);
+        }}
+      />
+    );
   }
 
+  const totalStudents = routes.reduce((s, r) => s + r.students, 0);
+  const liveCount = routes.filter((r) => r.status !== 'IDLE').length;
+  const onTimePct =
+    liveCount === 0
+      ? 100
+      : Math.round((routes.filter((r) => r.status === 'ON_TIME').length / liveCount) * 100);
+
+  if (loading && routes.length === 0) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && routes.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const statusStyle = (s) => {
+    if (s === 'ON_TIME') return { bg: '#dcfce7', color: '#059669', label: 'On Time' };
+    if (s === 'DELAYED') return { bg: '#fee2e2', color: '#dc2626', label: 'Delayed' };
+    return { bg: '#f1f5f9', color: theme.colors.textMuted, label: 'Idle' };
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>18</Text>
+          <Text style={styles.statValue}>{routes.length}</Text>
           <Text style={styles.statLabel}>Active Routes</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>2,340</Text>
+          <Text style={styles.statValue}>{totalStudents}</Text>
           <Text style={styles.statLabel}>Students</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>91%</Text>
+          <Text style={styles.statValue}>{onTimePct}%</Text>
           <Text style={styles.statLabel}>On-Time Rate</Text>
         </View>
       </View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>All Routes</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => Alert.alert('New Route', 'Route builder opens here — add stops and assign a bus.')}
-        >
-          <Ionicons name="add" size={15} color="#fff" />
-          <Text style={styles.addText}>New Route</Text>
-        </TouchableOpacity>
       </View>
 
+      {routes.length === 0 && <Text style={styles.empty}>No routes yet.</Text>}
       {routes.map((r) => {
         const st = statusStyle(r.status);
         return (
           <TouchableOpacity
             key={r.id}
             style={styles.card}
-            onPress={() => setSelectedRoute(r)}
+            onPress={() => setSelectedRouteId(r.id)}
           >
-            <View style={[styles.routeIcon, { backgroundColor: r.color + '1a' }]}>
-              <Ionicons name="bus-outline" size={18} color={r.color} />
+            <View style={[styles.routeIcon, { backgroundColor: st.bg }]}>
+              <Ionicons name="bus-outline" size={18} color={st.color} />
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.name}>{r.name}</Text>
               <Text style={styles.meta}>
-                {r.stops} stops · {r.students} students · {r.distance}
+                {r.stops} stops · {r.students} students · {r.distanceKm} km
               </Text>
               <View style={styles.timeRow}>
                 <Ionicons name="time-outline" size={11} color={theme.colors.textMuted} />
                 <Text style={styles.timeText}>
-                  {r.departure} → {r.arrival} · {r.bus}
+                  {r.firstPickup || '—'} → {r.lastDrop || '—'} · {r.bus || 'no bus'}
                 </Text>
               </View>
             </View>
             <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-              <Text style={[styles.statusText, { color: st.color }]}>{r.status}</Text>
+              <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
             </View>
           </TouchableOpacity>
         );
@@ -88,6 +136,11 @@ export default function RoutesModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', marginTop: 20 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -125,20 +178,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-  },
-  addText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 3,
   },
   card: {
     flexDirection: 'row',
