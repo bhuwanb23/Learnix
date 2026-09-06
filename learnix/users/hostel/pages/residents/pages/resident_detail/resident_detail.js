@@ -1,35 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
+import { hostelApi } from '../../../../../../services/api';
 
-const blockColors = { A: '#2563eb', B: '#0891b2', C: '#059669' };
+const fmtMonth = (month) => {
+  const [y, m] = month.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+};
 
-const history = [
-  { date: '05 Sep 2026', item: 'Hostel rent — August', amount: '₹6,000', status: 'Paid' },
-  { date: '05 Aug 2026', item: 'Hostel rent — July', amount: '₹6,000', status: 'Paid' },
-  { date: '05 Jul 2026', item: 'Hostel rent — June', amount: '₹6,000', status: 'Paid' },
-];
+const METHODS = ['CASH', 'UPI', 'CARD', 'NET_BANKING'];
 
-export default function ResidentDetail({ resident, onBack }) {
-  const [dues, setDues] = useState(resident.dues);
-  const color = blockColors[resident.block];
+export default function ResidentDetail({ studentProfileId, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [paySheetFor, setPaySheetFor] = useState(null); // due being collected
+  const [method, setMethod] = useState('CASH');
+  const [busy, setBusy] = useState(false);
 
-  const handleMessage = () => {
-    Alert.alert('Message', `Opening chat with ${resident.name}...`);
-  };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await hostelApi.residentDetail(studentProfileId));
+    } catch (e) {
+      setError(e.message || 'Failed to load resident');
+    } finally {
+      setLoading(false);
+    }
+  }, [studentProfileId]);
 
-  const handleTransfer = () => {
-    Alert.alert('Transfer Room', 'Pick a target room in the room picker to move this resident.');
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleCollect = async () => {
+    setBusy(true);
+    try {
+      const res = await hostelApi.collectRent(paySheetFor, method);
+      setPaySheetFor(null);
+      Alert.alert(
+        'Payment Received',
+        `${res.student}'s ${fmtMonth(res.month)} rent collected.\nPayment ${res.referenceNo} · Receipt ${res.receiptNo}`,
+      );
+      await load();
+    } catch (e) {
+      Alert.alert('Cannot collect', e.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleVacate = () => {
-    Alert.alert('Vacate Room', `Remove ${resident.name} from ${resident.room}?`, [
+    Alert.alert('Vacate Room', `Remove ${data.name} from ${data.room}?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Vacate', style: 'destructive' },
+      {
+        text: 'Vacate',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await hostelApi.vacateBed(data.bedId);
+            Alert.alert('Vacated', `${data.name} has been checked out. Dues remain in the ledger.`);
+            onBack();
+          } catch (e) {
+            Alert.alert('Cannot vacate', e.message);
+          }
+        },
+      },
     ]);
   };
+
+  if (loading && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.muted}>Loading resident…</Text>
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.muted}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!data) return null;
+
+  const outstanding = data.outstandingMinor;
 
   return (
     <View style={styles.container}>
@@ -39,30 +103,23 @@ export default function ResidentDetail({ resident, onBack }) {
             <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{resident.name.charAt(0)}</Text>
+            <Text style={styles.avatarText}>{data.name.charAt(0)}</Text>
           </View>
-          <Text style={styles.name}>{resident.name}</Text>
-          <Text style={styles.meta}>
-            {resident.roll} · {resident.branch} · {resident.year} Year
-          </Text>
+          <Text style={styles.name}>{data.name}</Text>
+          <Text style={styles.meta}>Resident since {new Date(data.fromDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</Text>
           <View style={styles.roomBadge}>
             <Ionicons name="bed-outline" size={13} color="#fff" />
             <Text style={styles.roomBadgeText}>
-              {resident.room} · Bed {resident.bed} · Block {resident.block}
+              {data.room} · Bed {data.bedLabel} · {data.block}
             </Text>
           </View>
         </LinearGradient>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleMessage}>
-            <Ionicons name="chatbubble-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Message</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleTransfer}>
-            <Ionicons name="swap-horizontal-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Transfer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn} onPress={handleVacate}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionDanger]}
+            onPress={handleVacate}
+          >
             <Ionicons name="log-out-outline" size={16} color="#dc2626" />
             <Text style={[styles.actionText, { color: '#dc2626' }]}>Vacate</Text>
           </TouchableOpacity>
@@ -72,9 +129,9 @@ export default function ResidentDetail({ resident, onBack }) {
           <Text style={styles.sectionTitle}>Resident Details</Text>
           <View style={styles.infoCard}>
             {[
-              { label: 'Phone', value: resident.phone },
-              { label: 'Joined', value: resident.joined },
-              { label: 'Guardian', value: `${resident.name.split(' ')[0]} family` },
+              { label: 'Phone', value: data.phone || '—' },
+              { label: 'Room', value: `${data.room} (${data.block})` },
+              { label: 'Bed', value: data.bedLabel },
             ].map((row, idx) => (
               <View key={row.label}>
                 <View style={styles.infoRow}>
@@ -88,27 +145,21 @@ export default function ResidentDetail({ resident, onBack }) {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Payments</Text>
+          <Text style={styles.sectionTitle}>Rent Payments</Text>
           <View style={styles.paymentCard}>
             <View style={styles.paymentTop}>
               <View>
                 <Text style={styles.paymentLabel}>Outstanding Dues</Text>
-                <Text style={[styles.paymentValue, { color: dues === '₹0' ? '#059669' : '#dc2626' }]}>
-                  {dues}
+                <Text
+                  style={[
+                    styles.paymentValue,
+                    { color: outstanding === 0 ? '#059669' : '#dc2626' },
+                  ]}
+                >
+                  ₹{Math.round(outstanding / 100).toLocaleString('en-IN')}
                 </Text>
               </View>
-              {dues !== '₹0' ? (
-                <TouchableOpacity
-                  style={styles.receiveBtn}
-                  onPress={() => {
-                    setDues('₹0');
-                    Alert.alert('Payment Received', `${resident.name}'s dues cleared.`);
-                  }}
-                >
-                  <Ionicons name="cash-outline" size={14} color="#fff" />
-                  <Text style={styles.receiveText}>Mark Paid</Text>
-                </TouchableOpacity>
-              ) : (
+              {outstanding === 0 && (
                 <View style={styles.clearChip}>
                   <Ionicons name="checkmark-circle-outline" size={14} color="#059669" />
                   <Text style={styles.clearText}>Clear</Text>
@@ -116,37 +167,84 @@ export default function ResidentDetail({ resident, onBack }) {
               )}
             </View>
             <View style={styles.divider} />
-            {history.map((h) => (
-              <View key={h.date} style={styles.historyRow}>
+            {data.dues.map((d) => (
+              <View key={d.id} style={styles.historyRow}>
                 <View style={styles.historyBody}>
-                  <Text style={styles.historyItem}>{h.item}</Text>
-                  <Text style={styles.historyDate}>{h.date}</Text>
+                  <Text style={styles.historyItem}>Hostel rent — {fmtMonth(d.month)}</Text>
+                  <Text style={styles.historyDate}>{d.paid ? 'Receipt issued' : 'Unpaid'}</Text>
                 </View>
-                <Text style={styles.historyAmount}>{h.amount}</Text>
-                <View style={styles.paidChip}>
-                  <Text style={styles.paidText}>{h.status}</Text>
-                </View>
+                <Text style={styles.historyAmount}>
+                  ₹{Math.round(d.amountMinor / 100).toLocaleString('en-IN')}
+                </Text>
+                {d.status === 'PAID' ? (
+                  <View style={styles.paidChip}>
+                    <Text style={styles.paidText}>PAID</Text>
+                  </View>
+                ) : paySheetFor === d.id ? (
+                  <View style={styles.methodRow}>
+                    {METHODS.map((m) => (
+                      <TouchableOpacity
+                        key={m}
+                        style={[styles.methodChip, method === m && styles.methodChipActive]}
+                        onPress={() => setMethod(m)}
+                      >
+                        <Text style={[styles.methodText, method === m && styles.methodTextActive]}>
+                          {m}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity
+                      style={styles.confirmPayBtn}
+                      onPress={handleCollect}
+                      disabled={busy}
+                    >
+                      <Text style={styles.confirmPayText}>{busy ? '…' : 'Confirm'}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.receiveBtn}
+                    onPress={() => {
+                      setMethod('CASH');
+                      setPaySheetFor(d.id);
+                    }}
+                  >
+                    <Ionicons name="cash-outline" size={14} color="#fff" />
+                    <Text style={styles.receiveText}>Mark Paid</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ))}
+            {data.dues.length === 0 && (
+              <Text style={styles.muted}>No rent dues recorded.</Text>
+            )}
           </View>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Complaints</Text>
-          <View style={styles.complaintCard}>
-            <Ionicons name="checkmark-circle-outline" size={16} color="#059669" />
-            <View style={styles.complaintBody}>
-              <Text style={styles.complaintTitle}>Wi-Fi router replaced — resolved</Text>
-              <Text style={styles.complaintMeta}>Aug 20 · Network</Text>
+          {data.complaints.length === 0 && (
+            <View style={styles.emptyCard}>
+              <Text style={styles.muted}>No complaints on file.</Text>
             </View>
-          </View>
-          <View style={styles.complaintCard}>
-            <Ionicons name="time-outline" size={16} color="#d97706" />
-            <View style={styles.complaintBody}>
-              <Text style={styles.complaintTitle}>Washbasin leak in bathroom</Text>
-              <Text style={styles.complaintMeta}>Sep 3 · Plumbing · In progress</Text>
+          )}
+          {data.complaints.map((c) => (
+            <View key={c.id} style={styles.complaintCard}>
+              <Ionicons
+                name={c.status === 'RESOLVED' ? 'checkmark-circle-outline' : 'time-outline'}
+                size={16}
+                color={c.status === 'RESOLVED' ? '#059669' : '#d97706'}
+              />
+              <View style={styles.complaintBody}>
+                <Text style={styles.complaintTitle} numberOfLines={1}>
+                  {c.description}
+                </Text>
+                <Text style={styles.complaintMeta}>
+                  {c.category} · {c.severity} · {c.status}
+                </Text>
+              </View>
             </View>
-          </View>
+          ))}
         </View>
       </ScrollView>
     </View>
@@ -155,6 +253,16 @@ export default function ResidentDetail({ resident, onBack }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
+  retryBtn: {
+    marginTop: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+  },
+  retryText: { fontSize: 12, fontFamily: 'Manrope-Bold', color: '#fff' },
   content: { paddingBottom: 32 },
   hero: {
     marginHorizontal: 16,
@@ -305,6 +413,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 5,
   },
+  methodRow: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center' },
+  methodChip: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 7,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    marginLeft: 4,
+    marginBottom: 4,
+  },
+  methodChipActive: { backgroundColor: '#dbeafe' },
+  methodText: { fontSize: 9, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted },
+  methodTextActive: { color: '#2563eb' },
+  confirmPayBtn: {
+    backgroundColor: '#059669',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    marginLeft: 6,
+    marginBottom: 4,
+  },
+  confirmPayText: { fontSize: 11, fontFamily: 'Manrope-Bold', color: '#fff' },
   clearChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -374,5 +503,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 20,
   },
 });
