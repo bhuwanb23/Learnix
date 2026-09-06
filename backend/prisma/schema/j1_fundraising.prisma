@@ -1,0 +1,48 @@
+// Domain J1 — Fundraising campaigns + donations.
+// Docs: 12-alumni-relations.md §3.4 · 05-state-machines.md §donation
+// Record flow: donation PLEDGED → on receipt, create Payment(category DONATION)
+// + Receipt + DonationPayment link, then donation.status = RECEIVED with
+// paymentId set. raisedMinor is denormalized (sum of RECEIVED donations).
+// alumniUserId scalar → users.id (alumni are users).
+
+model FundraisingCampaign {
+  id            String    @id @default(cuid())
+  institutionId String
+  name          String
+  description   String?
+  targetMinor   Int
+  raisedMinor   Int       @default(0) // denorm — service-updated on donation receipt
+  deadline      DateTime?
+  status        String    @default("ACTIVE") // ACTIVE | COMPLETED
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  donations Donation[]
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@map("fundraising_campaigns")
+}
+
+model Donation {
+  id           String    @id @default(cuid())
+  institutionId String
+  campaignId   String? // optional — unrestricted gifts allowed
+  alumniUserId String // scalar → users.id
+  fund         String // GENERAL | LIBRARY | SCHOLARSHIP | INFRASTRUCTURE
+  amountMinor  Int
+  status       String    @default("PLEDGED") // PLEDGED | RECEIVED
+  receivedAt   DateTime?
+  paymentId    String? // scalar → payments.id (set by the write-through)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  campaign FundraisingCampaign? @relation(fields: [campaignId], references: [id])
+  alumniUser User @relation(fields: [alumniUserId], references: [id])
+  paymentLinks DonationPayment[]
+
+  @@index([alumniUserId])
+  @@index([campaignId])
+  @@index([status])
+  @@map("donations")
+}

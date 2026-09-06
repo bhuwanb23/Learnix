@@ -1,0 +1,61 @@
+// Domain K1 — Communication core. Docs: 05-state-machines.md §notification matrix
+// notifications: the single inbox every app reads. broadcasts: audience resolved
+// at fan-out time (audienceJson: {role?, departmentId?, batchId?, sectionId?…}).
+// announcements: admin approval queue → student notices.
+// senderUserId / authorUserId / approvedByUserId scalar actor-stamps.
+
+model Notification {
+  id             String    @id @default(cuid())
+  institutionId  String
+  recipientUserId String
+  type           String // EVENT | FEE | GRADE | MENTORSHIP | COMPLAINT | BROADCAST | SYSTEM | …
+  title          String
+  body           String
+  dataJson       String? // deep-link payload { module, id }
+  readAt         DateTime?
+  sourceModule   String? // which app raised it
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  recipient User @relation(fields: [recipientUserId], references: [id])
+
+  @@index([recipientUserId])
+  @@index([recipientUserId, readAt])
+  @@map("notifications")
+}
+
+model Broadcast {
+  id             String    @id @default(cuid())
+  institutionId  String
+  senderUserId   String // scalar → users.id
+  audienceJson   String // { role?, departmentId?, batchId?, sectionId?, chapterCity? }
+  templateKey    String? // EVENT_INVITE | NEWSLETTER | REUNION | DONATION_APPEAL…
+  title          String
+  body           String
+  channels       String // "IN_APP" | "IN_APP,EMAIL,PUSH"
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([institutionId])
+  @@index([senderUserId])
+  @@map("broadcasts")
+}
+
+model Announcement {
+  id               String    @id @default(cuid())
+  institutionId    String
+  authorUserId     String // scalar → users.id
+  title            String
+  content          String
+  audienceJson     String // { role?, departmentId?, batchId?, sectionId? }
+  status           String    @default("DRAFT") // DRAFT | PENDING_ADMIN | PUBLISHED | REJECTED
+  approvedByUserId String? // scalar → users.id
+  publishedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([institutionId])
+  @@index([status])
+  @@map("announcements")
+}

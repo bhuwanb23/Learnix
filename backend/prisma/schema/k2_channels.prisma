@@ -1,0 +1,51 @@
+// Domain K2 — Delivery channels + AI history.
+// push_tokens: reserved for the push phase (Phase 8). email_log: delivery
+// tracking when the mailer lands. ai_interactions: student AI buddy +
+// teacher AI insights history.
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  platform  String // IOS | ANDROID | WEB
+  token     String   @unique // expo push token
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+model EmailLog {
+  id             String    @id @default(cuid())
+  institutionId  String
+  recipientEmail String
+  templateKey    String
+  payloadJson    String?
+  status         String    @default("QUEUED") // QUEUED | SENT | FAILED
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([recipientEmail])
+  @@index([status])
+  @@map("email_log")
+}
+
+model AiInteraction {
+  id         String   @id @default(cuid())
+  userId     String
+  feature    String // STUDY_BUDDY | TEACHING_INSIGHT | PERFORMANCE_NOTE
+  prompt     String
+  response   String
+  tokensUsed Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([feature])
+  @@map("ai_interactions")
+}

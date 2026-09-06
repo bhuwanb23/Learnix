@@ -1,0 +1,57 @@
+// Domain J2 — Mentorship + city chapters.
+// Docs: 12-alumni-relations.md §3.5–3.6 · 05-state-machines.md §mentorship
+// mentorship_pairs join an alumni USER to a student PROFILE.
+// approvedAt/nextEventAt timestamps; presidentAlumniUserId scalar → users.id.
+
+model MentorshipPair {
+  id                     String    @id @default(cuid())
+  mentorAlumniUserId     String // scalar → users.id
+  menteeStudentProfileId String
+  field                  String // "Career", "Higher Studies", "Entrepreneurship"…
+  status                 String    @default("PENDING") // PENDING | ACTIVE | DECLINED | COMPLETED
+  requestedAt            DateTime  @default(now())
+  approvedAt             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  mentorAlumniUser     User                @relation(fields: [mentorAlumniUserId], references: [id])
+  menteeStudentProfile StudentProfile      @relation(fields: [menteeStudentProfileId], references: [id])
+  sessions             MentorshipSession[]
+
+  @@unique([mentorAlumniUserId, menteeStudentProfileId])
+  @@index([menteeStudentProfileId])
+  @@index([status])
+  @@map("mentorship_pairs")
+}
+
+model MentorshipSession {
+  id             String   @id @default(cuid())
+  pairId         String
+  sessionDate    DateTime
+  notes          String?
+  loggedByUserId String // scalar → users.id (who logged the session)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  pair MentorshipPair @relation(fields: [pairId], references: [id])
+
+  @@index([pairId])
+  @@map("mentorship_sessions")
+}
+
+model AlumniChapter {
+  id                    String   @id @default(cuid())
+  institutionId         String
+  city                  String
+  presidentAlumniUserId String // scalar → users.id
+  memberCount           Int      @default(0) // denorm
+  nextEventAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  members AlumniProfile[]
+
+  @@unique([institutionId, city])
+  @@index([institutionId])
+  @@map("alumni_chapters")
+}
