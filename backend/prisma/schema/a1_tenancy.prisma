@@ -45,6 +45,7 @@ model User {
   aiInteractions  AiInteraction[]
   donationsMade    Donation[]
   mentorshipsAsMentor MentorshipPair[]
+  platformAdmin      PlatformAdmin?
 
   @@unique([institutionId, email]) // email unique per institution
   @@index([institutionId])
