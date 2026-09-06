@@ -1,0 +1,128 @@
+// Domain C3 — Hall tickets, evaluation workflow, results, re-evaluation, cheating.
+// Docs: 05-exam-cell.md §3.3–3.6 · 05-state-machines.md §cheating
+// evaluatorUserId/publishedByUserId/decidedByUserId/reviewedByUserId are scalar
+// actor-stamps. NOTE: cheating status is DISMISSED (05 doc spelling; 02 had a typo).
+
+model HallTicket {
+  id               String    @id @default(cuid())
+  examSlotId       String
+  studentProfileId String
+  seatNo           String
+  qrPayload        String?
+  status           String    @default("GENERATED") // GENERATED | DOWNLOADED | NOT_GENERATED
+  generatedAt      DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  examSlot       ExamSlot       @relation(fields: [examSlotId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([examSlotId, studentProfileId])
+  @@unique([examSlotId, seatNo])
+  @@index([examSlotId])
+  @@index([studentProfileId])
+  @@map("hall_tickets")
+}
+
+model Evaluation {
+  id                String   @id @default(cuid())
+  examSlotId        String
+  subjectOfferingId String // the offering whose papers are evaluated
+  totalPapers       Int      @default(0)
+  completedPapers   Int      @default(0)
+  inProgressPapers  Int      @default(0)
+  evaluatorUserId   String? // scalar → users.id
+  status            String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  examSlot          ExamSlot          @relation(fields: [examSlotId], references: [id])
+  subjectOffering   CourseOffering    @relation("SlotOffering", fields: [subjectOfferingId], references: [id])
+  papers            EvaluationPaper[]
+
+  @@unique([examSlotId, subjectOfferingId])
+  @@index([examSlotId])
+  @@index([subjectOfferingId])
+  @@map("evaluations")
+}
+
+model EvaluationPaper {
+  id               String    @id @default(cuid())
+  evaluationId     String
+  studentProfileId String
+  evaluatorUserId  String? // scalar → users.id
+  marksEntered     Int?
+  status           String    @default("PENDING") // PENDING | EVALUATING | DONE
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  evaluation     Evaluation     @relation(fields: [evaluationId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([evaluationId, studentProfileId])
+  @@index([evaluationId])
+  @@index([studentProfileId])
+  @@map("evaluation_papers")
+}
+
+model Result {
+  id               String    @id @default(cuid())
+  examSlotId       String
+  studentProfileId String
+  marksObtained    Int
+  maxMarks         Int
+  grade            String
+  isPass           Boolean   @default(false)
+  publishedAt      DateTime?
+  publishedByUserId String? // scalar → users.id
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  examSlot       ExamSlot             @relation(fields: [examSlotId], references: [id])
+  studentProfile StudentProfile       @relation(fields: [studentProfileId], references: [id])
+  reEvaluations  ReEvaluationRequest[]
+
+  @@unique([examSlotId, studentProfileId])
+  @@index([examSlotId])
+  @@index([studentProfileId])
+  @@map("results")
+}
+
+model ReEvaluationRequest {
+  id               String    @id @default(cuid())
+  resultId         String
+  studentProfileId String
+  reason           String
+  status           String    @default("REQUESTED") // REQUESTED | APPROVED | COMPLETED | REJECTED
+  decidedByUserId  String? // scalar → users.id
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  result         Result         @relation(fields: [resultId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([resultId])
+  @@index([studentProfileId])
+  @@map("re_evaluation_requests")
+}
+
+model CheatingCase {
+  id               String    @id @default(cuid())
+  examSlotId       String
+  studentProfileId String
+  issue            String
+  riskLevel        String // HIGH | MEDIUM | LOW
+  evidenceJson     String?
+  source           String // AI | INVIGILATOR
+  status           String    @default("UNDER_REVIEW") // UNDER_REVIEW | CONFIRMED | DISMISSED | ESCALATED
+  reviewedByUserId String? // scalar → users.id
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  examSlot       ExamSlot       @relation(fields: [examSlotId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([examSlotId])
+  @@index([studentProfileId])
+  @@map("cheating_cases")
+}

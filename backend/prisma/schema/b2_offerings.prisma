@@ -26,6 +26,9 @@ model CourseOffering {
   attendanceSessions AttendanceSession[]
   classSessions      ClassSession[]
   assignments        Assignment[]
+  quizzes            Quiz[]
+  examSlots          ExamSlot[]
+  slotOfferings      Evaluation[] @relation("SlotOffering")
 
   @@unique([courseId, sectionId, semester, academicYearId])
   @@index([teacherUserId])

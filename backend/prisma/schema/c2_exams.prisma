@@ -1,0 +1,98 @@
+// Domain C2 — Exam scheduling + conflict machinery.
+// Docs: 03-admin.md §3.6 · 05-exam-cell.md §3.2 · 05-state-machines.md §exam
+// institutionId denormalized on Exam for tenant-scoped queries (real anchor is
+// academicYear). roomId/invigilatorUserId/createdByUserId are scalars.
+
+model Exam {
+  id             String   @id @default(cuid())
+  institutionId  String // denorm — tenant anchor is academicYear
+  academicYearId String
+  semester       Int
+  type           String // MID_TERM | FINAL | QUIZ | ASSIGNMENT
+  name           String
+  createdByUserId String // scalar → users.id
+  status         String   @default("SCHEDULED") // SCHEDULED | ONGOING | COMPLETED | RESULTS_PUBLISHED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  academicYear    AcademicYear      @relation(fields: [academicYearId], references: [id])
+  examSlots       ExamSlot[]
+  examConflicts   ExamConflict[]
+  gradingDeadline GradingDeadline?
+
+  @@unique([institutionId, semester, type, name])
+  @@index([institutionId])
+  @@index([academicYearId])
+  @@map("exams")
+}
+
+model ExamSlot {
+  id         String   @id @default(cuid())
+  examId     String
+  offeringId String
+  date       DateTime
+  startTime  String // "HH:MM"
+  endTime    String
+  room       String?
+  seats      Int      @default(30)
+  status     String   @default("SCHEDULED") // SCHEDULED | COMPLETED | RESCHEDULED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  exam      Exam           @relation(fields: [examId], references: [id])
+  offering  CourseOffering @relation(fields: [offeringId], references: [id])
+  roomAllocations ExamRoomAllocation[]
+  hallTickets     HallTicket[]
+  evaluations     Evaluation[]
+  results         Result[]
+  cheatingCases   CheatingCase[]
+
+  @@unique([examId, offeringId, date, startTime])
+  @@index([examId])
+  @@index([offeringId])
+  @@map("exam_slots")
+}
+
+model ExamRoomAllocation {
+  id                String   @id @default(cuid())
+  examSlotId        String
+  roomId            String // scalar — room master lands with Domain I venues
+  invigilatorUserId String? // scalar → users.id
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  examSlot ExamSlot @relation(fields: [examSlotId], references: [id])
+
+  @@unique([examSlotId, roomId])
+  @@index([examSlotId])
+  @@map("exam_room_allocations")
+}
+
+model ExamConflict {
+  id          String    @id @default(cuid())
+  examId      String
+  type        String // ROOM | TEACHER | SUBJECT
+  description String
+  severity    String // HIGH | MEDIUM | LOW
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  exam Exam @relation(fields: [examId], references: [id])
+
+  @@index([examId])
+  @@map("exam_conflicts")
+}
+
+model GradingDeadline {
+  id         String    @id @default(cuid())
+  examId     String    @unique
+  dueAt      DateTime
+  remindedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  exam Exam @relation(fields: [examId], references: [id])
+
+  @@map("grading_deadlines")
+}

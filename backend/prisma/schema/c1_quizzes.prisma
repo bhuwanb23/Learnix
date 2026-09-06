@@ -1,0 +1,84 @@
+// Domain C1 — Quizzes (teacher-created, student-attempted, MCQ/TF auto-graded).
+// Docs: 02-teachers.md §3.5 → 01-students.md §3.2 · 05-state-machines.md §quiz
+// createdByUserId is a scalar actor-stamp. Multiple attempts allowed (allowRetake).
+
+model Quiz {
+  id               String   @id @default(cuid())
+  offeringId       String
+  title            String
+  durationMin      Int
+  difficulty       String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  status           String   @default("DRAFT") // DRAFT | PUBLISHED | CLOSED
+  shuffleQuestions Boolean  @default(false)
+  allowRetake      Boolean  @default(false)
+  createdByUserId  String // scalar → users.id
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+  questions Question[]
+  attempts  QuizAttempt[]
+
+  @@index([offeringId])
+  @@index([createdByUserId])
+  @@map("quizzes")
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  quizId        String
+  type          String   @default("MCQ") // MCQ | TRUE_FALSE
+  prompt        String
+  optionsJson   String // ["A","B","C","D"] for MCQ; ["true","false"] for TF
+  correctAnswer String
+  marks         Int      @default(1)
+  order         Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  quiz    Quiz         @relation(fields: [quizId], references: [id])
+  answers QuizAnswer[]
+
+  @@unique([quizId, order])
+  @@index([quizId])
+  @@map("questions")
+}
+
+model QuizAttempt {
+  id               String    @id @default(cuid())
+  quizId           String
+  studentProfileId String
+  startedAt        DateTime  @default(now())
+  submittedAt      DateTime?
+  scoreMarks       Int?
+  status           String    @default("IN_PROGRESS") // IN_PROGRESS | SUBMITTED | AUTO_GRADED | FLAGGED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  quiz          Quiz           @relation(fields: [quizId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  answers       QuizAnswer[]
+
+  @@index([quizId])
+  @@index([studentProfileId])
+  @@map("quiz_attempts")
+}
+
+model QuizAnswer {
+  id           String   @id @default(cuid())
+  attemptId    String
+  questionId   String
+  answerJson   String
+  isCorrect    Boolean?
+  marksAwarded Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  attempt  QuizAttempt @relation(fields: [attemptId], references: [id])
+  question Question    @relation(fields: [questionId], references: [id])
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("quiz_answers")
+}

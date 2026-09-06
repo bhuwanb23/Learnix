@@ -22,6 +22,12 @@ model StudentProfile {
   enrollments       Enrollment[]
   attendanceRecords AttendanceRecord[]
   submissions       Submission[]
+  quizAttempts      QuizAttempt[]
+  hallTickets       HallTicket[]
+  evaluationPapers  EvaluationPaper[]
+  results           Result[]
+  reEvaluations     ReEvaluationRequest[]
+  cheatingCases     CheatingCase[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])
