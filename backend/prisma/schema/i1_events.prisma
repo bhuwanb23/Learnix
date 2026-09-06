@@ -1,0 +1,83 @@
+// Domain I1 — Institution events: one table serves student registration,
+// sports approvals, and alumni RSVPs (audience flows read the same rows).
+// Docs: 03-admin.md §3.11 · 01-students.md §3.4 · 10-sports-cultural.md §3.2 · 12-alumni-relations.md §3.3
+// organizerUserId scalar actor-stamp; coverFileId scalar (files → Domain L).
+
+model Event {
+  id              String    @id @default(cuid())
+  institutionId   String
+  title           String
+  description     String?
+  category        String // TECH | SPORTS | CULTURAL | ALUMNI | OTHER
+  startDate       DateTime
+  endDate         DateTime
+  venueId         String? // FK → venues (i3, same domain)
+  capacity        Int       @default(100)
+  organizerUserId String // scalar → users.id
+  status          String    @default("DRAFT") // DRAFT | PENDING_ADMIN | APPROVED | PUBLISHED | COMPLETED | CANCELLED
+  coverFileId     String? // scalar → files.id (Domain L)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  venue          Venue?             @relation(fields: [venueId], references: [id])
+  registrations  EventRegistration[]
+  scheduleItems  EventScheduleItem[]
+  volunteers     EventVolunteer[]
+
+  @@index([institutionId])
+  @@index([category])
+  @@index([status])
+  @@map("events")
+}
+
+model EventRegistration {
+  id               String    @id @default(cuid())
+  eventId          String
+  registrantUserId String // user-level: students, staff, alumni all register
+  status           String    @default("PENDING") // PENDING | APPROVED | REJECTED | CONFIRMED | DECLINED
+  qrPayload        String?
+  reminderAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  event      Event @relation(fields: [eventId], references: [id])
+  registrant User   @relation(fields: [registrantUserId], references: [id])
+
+  @@unique([eventId, registrantUserId])
+  @@index([eventId])
+  @@index([registrantUserId])
+  @@map("event_registrations")
+}
+
+model EventScheduleItem {
+  id       String   @id @default(cuid())
+  eventId  String
+  day      Int // day 1, 2, …
+  item     String
+  isDone   Boolean  @default(false)
+  order    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([eventId, day, order])
+  @@index([eventId])
+  @@map("event_schedule_items")
+}
+
+model EventVolunteer {
+  id               String   @id @default(cuid())
+  eventId          String
+  studentProfileId String
+  role             String? // "Registration desk", "Stage crew"…
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  event          Event          @relation(fields: [eventId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([eventId, studentProfileId])
+  @@index([eventId])
+  @@map("event_volunteers")
+}

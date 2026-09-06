@@ -1,0 +1,99 @@
+// Domain I2 — Tournaments & teams. Docs: 10-sports-cultural.md §3.3 · §3.5
+// organizerUserId / captainStudentProfileId scalars. resultJson = { scoreA, scoreB, winner }.
+
+model Tournament {
+  id              String   @id @default(cuid())
+  institutionId   String
+  name            String
+  sport           String
+  category        String // SPORTS | CULTURAL
+  status          String   @default("UPCOMING") // UPCOMING | ONGOING | COMPLETED
+  organizerUserId String // scalar → users.id
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  teams     Team[]
+  fixtures  Fixture[]
+  standings Standing[]
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@map("tournaments")
+}
+
+model Team {
+  id                      String   @id @default(cuid())
+  institutionId           String
+  name                    String
+  sport                   String
+  captainStudentProfileId String? // scalar → student_profiles.id
+  tournamentId            String? // null = standing practice squad
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  tournament Tournament?    @relation(fields: [tournamentId], references: [id])
+  members    TeamMember[]
+  fixturesA  Fixture[]      @relation("TeamA")
+  fixturesB  Fixture[]      @relation("TeamB")
+  standings  Standing[]
+
+  @@unique([institutionId, name])
+  @@index([tournamentId])
+  @@map("teams")
+}
+
+model TeamMember {
+  id               String   @id @default(cuid())
+  teamId           String
+  studentProfileId String
+  role             String   @default("PLAYER") // PLAYER | CAPTAIN
+  joinedAt         DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  team           Team           @relation(fields: [teamId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([teamId, studentProfileId])
+  @@index([teamId])
+  @@map("team_members")
+}
+
+model Fixture {
+  id           String    @id @default(cuid())
+  tournamentId String
+  teamAId      String
+  teamBId      String
+  fixtureDate  DateTime
+  resultJson   String?
+  status       String    @default("UPCOMING") // UPCOMING | TODAY | COMPLETED
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  teamA      Team       @relation("TeamA", fields: [teamAId], references: [id])
+  teamB      Team       @relation("TeamB", fields: [teamBId], references: [id])
+
+  @@index([tournamentId])
+  @@index([fixtureDate])
+  @@map("fixtures")
+}
+
+model Standing {
+  id           String   @id @default(cuid())
+  tournamentId String
+  teamId       String
+  played       Int      @default(0)
+  won          Int      @default(0)
+  lost         Int      @default(0)
+  points       Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  team       Team       @relation(fields: [teamId], references: [id])
+
+  @@unique([tournamentId, teamId])
+  @@index([tournamentId])
+  @@map("standings")
+}

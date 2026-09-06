@@ -1,0 +1,75 @@
+// Domain I3 — Venues + equipment. Docs: 10-sports-cultural.md §3.4 · §3.6
+// Venues are institution-wide (also used by exam room allocation via roomId scalar in C2).
+// availableUnits on equipment is denormalized, service-synced.
+
+model Venue {
+  id            String   @id @default(cuid())
+  institutionId String
+  name          String // "Main Auditorium"
+  location      String?
+  capacity      Int      @default(100)
+  status        String   @default("AVAILABLE") // AVAILABLE | BOOKED | MAINTENANCE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  events  Event[]
+  bookings VenueBooking[]
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@map("venues")
+}
+
+model VenueBooking {
+  id                String   @id @default(cuid())
+  venueId           String
+  eventTitle        String
+  requestedByUserId String // scalar → users.id
+  date              DateTime
+  timeSlot          String // "10:00-12:00"
+  status            String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  venue Venue @relation(fields: [venueId], references: [id])
+
+  @@unique([venueId, date, timeSlot])
+  @@index([venueId])
+  @@map("venue_bookings")
+}
+
+model EquipmentItem {
+  id             String   @id @default(cuid())
+  institutionId  String
+  name           String
+  category       String // SPORTS | CULTURAL | IT
+  totalUnits     Int      @default(1)
+  availableUnits Int      @default(1) // denorm
+  condition      String   @default("GOOD") // GOOD | NEEDS_REPAIR
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  issues EquipmentIssue[]
+
+  @@index([institutionId])
+  @@map("equipment_items")
+}
+
+model EquipmentIssue {
+  id               String    @id @default(cuid())
+  itemId           String
+  studentProfileId String
+  issuedAt         DateTime  @default(now())
+  dueAt            DateTime
+  returnedAt       DateTime?
+  status           String    @default("ISSUED") // ISSUED | RETURNED | OVERDUE
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  item           EquipmentItem  @relation(fields: [itemId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([itemId])
+  @@index([studentProfileId])
+  @@map("equipment_issues")
+}
