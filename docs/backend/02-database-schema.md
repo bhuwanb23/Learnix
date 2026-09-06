@@ -54,7 +54,9 @@
 | `rubric_criteria` | assignmentId, title, maxMarks, order | 02 §3.8 rubric card |
 | `rubric_scores` | submissionId, rubricCriterionId, marks | Per-criterion grading |
 
-## Domain C — Quizzes & Exams (owner: Teacher + Exam Cell) — 15 tables
+## Domain C — Quizzes & Exams (owner: Teacher + Exam Cell) — 15 tables ✅ COMPLETE
+
+> **Live status:** built as `c1_quizzes / c2_exams / c3_results`. Migration `domain_c_quizzes_exams`. Cheating status spelling fixed to `DISMISSED` per `05-state-machines.md` (typo in this file's table row). FKs: quiz→offering, question→quiz, attempt→quiz+studentProfile, answer→attempt+question, exam→academicYear (+denorm institutionId), examSlot→exam+offering, hallTicket/evaluation/evaluationPaper/result/reEvaluation/cheatingCase → examSlot(+offering for evaluation)+studentProfile. Actor stamps scalar (createdByUserId, evaluatorUserId, publishedByUserId, decidedByUserId, reviewedByUserId, invigilatorUserId). Results have no publishedAt until exam → RESULTS_PUBLISHED. Seed: quiz 3Qs + AUTO_GRADED attempt 2/3, MID_TERM sem-4 exam [ONGOING] + CS401 slot (L-201, invigilated) + hall ticket A-12 + evaluation PENDING 0/1 + grading deadline + 1 AI case UNDER_REVIEW. Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|
