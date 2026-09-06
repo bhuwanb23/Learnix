@@ -52,3 +52,11 @@ export const CHEATING_CASE_STATUS = ['UNDER_REVIEW', 'CONFIRMED', 'DISMISSED', '
 export const RISK_LEVEL = ['HIGH', 'MEDIUM', 'LOW'] as const;
 export const CHEATING_SOURCE = ['AI', 'INVIGILATOR'] as const;
 export const EXAM_CONFLICT_TYPE = ['ROOM', 'TEACHER', 'SUBJECT'] as const;
+
+// ── Domain D — Placement ──
+export const JOB_STATUS = ['OPEN', 'CLOSED'] as const;
+export const DRIVE_STATUS = ['DRAFT', 'PENDING_ADMIN', 'APPROVED', 'SCHEDULED', 'COMPLETED'] as const;
+export const DRIVE_MODE = ['ON_CAMPUS', 'VIRTUAL'] as const;
+export const APPLICATION_STATUS = ['APPLIED', 'SHORTLISTED', 'INTERVIEW', 'OFFERED', 'REJECTED', 'WITHDRAWN'] as const;
+export const OFFER_STATUS = ['EXTENDED', 'ACCEPTED', 'DECLINED'] as const;
+export const DRIVE_REG_STATUS = ['REGISTERED', 'ATTENDED', 'ABSENT'] as const;

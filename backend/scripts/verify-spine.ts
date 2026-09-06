@@ -73,6 +73,31 @@ async function main(): Promise<void> {
     }
     console.log(`grading deadline: ${exam.gradingDeadline ? exam.gradingDeadline.dueAt.toISOString().slice(0, 10) : '-'}`);
   }
+
+  console.log('── Domain D spine ──');
+  const apps = await db.jobApplication.findMany({
+    include: {
+      job: { include: { company: true } },
+      drive: { include: { company: true } },
+      studentProfile: { include: { user: true } },
+      offers: true,
+    },
+  });
+  for (const a of apps) {
+    const target = a.job ? `JOB ${a.job.role} @ ${a.job.company.name}` : `DRIVE ${a.drive?.title} @ ${a.drive?.company.name}`;
+    const offer = a.offers[0];
+    console.log(
+      `APPLICATION ${target} | ${a.studentProfile.user.fullName} | ${a.status}${offer ? ` | offer ${offer.status} ₹${(offer.ctcMinor / 1e7).toFixed(1)}L` : ''}`,
+    );
+  }
+  const reg = await db.driveRegistration.findFirst({ include: { drive: true, studentProfile: { include: { user: true } } } });
+  if (reg) {
+    console.log(`DRIVE REG ${reg.drive.title} | ${reg.studentProfile.user.fullName} | ${reg.status}`);
+  }
+  const elig = await db.placementEligibility.findFirst({ include: { studentProfile: { include: { user: true } } } });
+  if (elig) {
+    console.log(`ELIGIBILITY ${elig.studentProfile.user.fullName} | eligible:${elig.isEligible} registered:${elig.registeredForDrives}`);
+  }
 }
 
 main()

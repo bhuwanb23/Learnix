@@ -113,8 +113,9 @@ async function main() {
 
   await seedDomainB(institution.id);
   await seedDomainC(institution.id);
+  await seedDomainD(institution.id);
 
-  console.log('Seed complete (base + Domains A–C).');
+  console.log('Seed complete (base + Domains A–D).');
 }
 
 main()
@@ -479,4 +480,112 @@ async function seedDomainC(institutionId: string): Promise<void> {
 
   console.log('  ✓ quiz (3 Qs, AUTO_GRADED attempt 2/3), MID_TERM exam + slot + hall ticket A-12');
   console.log('  ✓ evaluation + 1 paper PENDING, grading deadline, 1 AI cheating case UNDER_REVIEW');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain D — Placement seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainD(institutionId: string): Promise<void> {
+  console.log('Seeding Domain D (placement)…');
+
+  const admin = await db.user.findFirst({ where: { email: 'admin@learnix.dev', institutionId } });
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!admin || !student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+
+  // Companies
+  const infotech = await db.company.upsert({
+    where: { institutionId_name: { institutionId, name: 'Infotech Solutions' } },
+    update: {},
+    create: { institutionId, name: 'Infotech Solutions', sector: 'IT', website: 'https://infotech.example', hrContact: 'hr@infotech.example', rating: 4.2 },
+  });
+  const quanta = await db.company.upsert({
+    where: { institutionId_name: { institutionId, name: 'Quanta Analytics' } },
+    update: {},
+    create: { institutionId, name: 'Quanta Analytics', sector: 'FINANCE', website: 'https://quanta.example', hrContact: 'talent@quanta.example', rating: 4.5 },
+  });
+
+  // Job (OPEN)
+  let job = await db.job.findFirst({ where: { companyId: infotech.id, role: 'Software Engineer Trainee' } });
+  if (!job) {
+    job = await db.job.create({
+      data: {
+        companyId: infotech.id,
+        postedByUserId: admin.id,
+        role: 'Software Engineer Trainee',
+        packageMinorPerAnnum: 4_50_000_00, // ₹4.5 LPA in paise
+        location: 'Bengaluru',
+        openings: 12,
+        deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        description: 'Full-stack graduate role. React + Node.',
+        status: 'OPEN',
+      },
+    });
+  }
+
+  // Drive (admin-approved, scheduled)
+  let drive = await db.placementDrive.findFirst({ where: { companyId: quanta.id, title: 'Quanta Analytics Campus Drive 2026' } });
+  if (!drive) {
+    drive = await db.placementDrive.create({
+      data: {
+        companyId: quanta.id,
+        title: 'Quanta Analytics Campus Drive 2026',
+        role: 'Data Analyst',
+        packageMinorPerAnnum: 6_00_000_00, // ₹6 LPA
+        driveDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
+        mode: 'ON_CAMPUS',
+        eligibilityJson: JSON.stringify({ minCgpa: 7.0, maxBacklogs: 0, allowedBranches: ['CSE', 'ISE', 'ECE'] }),
+        status: 'SCHEDULED',
+        createdByUserId: admin.id,
+        approvedByUserId: admin.id,
+      },
+    });
+  }
+
+  // Eligibility pool entry for the demo student
+  await db.placementEligibility.upsert({
+    where: { studentProfileId: studentProfile.id },
+    update: { registeredForDrives: true },
+    create: { studentProfileId: studentProfile.id, isEligible: true, registeredForDrives: true },
+  });
+
+  // Application → job (APPLIED), application → drive (pipeline advanced to INTERVIEW)
+  let jobApp = await db.jobApplication.findFirst({ where: { jobId: job.id, studentProfileId: studentProfile.id } });
+  if (!jobApp) {
+    jobApp = await db.jobApplication.create({
+      data: { jobId: job.id, studentProfileId: studentProfile.id, status: 'APPLIED' },
+    });
+  }
+
+  let driveApp = await db.jobApplication.findFirst({ where: { driveId: drive.id, studentProfileId: studentProfile.id } });
+  if (!driveApp) {
+    driveApp = await db.jobApplication.create({
+      data: {
+        driveId: drive.id,
+        studentProfileId: studentProfile.id,
+        status: 'INTERVIEW',
+        decidedByUserId: admin.id,
+        decidedAt: new Date(),
+      },
+    });
+  }
+
+  // Offer on the drive application (EXTENDED — not yet accepted)
+  await db.placementOffer.upsert({
+    where: { applicationId: driveApp.id },
+    update: {},
+    create: { applicationId: driveApp.id, ctcMinor: 6_00_000_00, status: 'EXTENDED' },
+  });
+
+  // Drive registration (registered, not yet attended)
+  await db.driveRegistration.upsert({
+    where: { driveId_studentProfileId: { driveId: drive.id, studentProfileId: studentProfile.id } },
+    update: {},
+    create: { driveId: drive.id, studentProfileId: studentProfile.id, status: 'REGISTERED' },
+  });
+
+  console.log('  ✓ 2 companies, job (OPEN ₹4.5L), drive (SCHEDULED ₹6L, approved)');
+  console.log('  ✓ eligibility ✓, job application APPLIED, drive application INTERVIEW + offer EXTENDED, registration REGISTERED');
 }
