@@ -246,7 +246,7 @@ export async function toggleScheduleItem(
 }
 
 export async function addVolunteer(
-  userId: string,
+  _userId: string,
   institutionId: string,
   eventId: string,
   body: { rollNo: string; role?: string },
