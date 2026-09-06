@@ -1,1 +1,0 @@
-This is a test document for Learnix Academic System. It contains sample content for testing document upload, metadata extraction, and other document management features.
