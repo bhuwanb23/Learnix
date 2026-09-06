@@ -98,6 +98,31 @@ async function main(): Promise<void> {
   if (elig) {
     console.log(`ELIGIBILITY ${elig.studentProfile.user.fullName} | eligible:${elig.isEligible} registered:${elig.registeredForDrives}`);
   }
+
+  console.log('── Domain E spine ──');
+  const inr = (paise: number): string => `₹${(paise / 1e7).toFixed(2)}L`;
+  const payment = await db.payment.findFirst({ include: { studentProfile: { include: { user: true } }, receipt: true } });
+  if (payment) {
+    console.log(
+      `PAYMENT ${payment.referenceNo} ${payment.category} ${inr(payment.amountMinor)} via ${payment.method} [${payment.status}] | ${payment.studentProfile?.user.fullName ?? '-'} | receipt:${payment.receipt?.receiptNo ?? '-'}`,
+    );
+  }
+  const dues = await db.feeDue.findMany({ include: { studentProfile: { include: { user: true } } } });
+  for (const d of dues) {
+    console.log(`FEE DUE ${d.title} ${inr(d.amountMinor)} due ${d.dueDate.toISOString().slice(0, 10)} [${d.status}] | ${d.studentProfile.user.fullName}`);
+  }
+  const run = await db.payrollRun.findFirst({ include: { entries: true } });
+  if (run) {
+    console.log(`PAYROLL ${run.month} [${run.status}] total:${inr(run.totalMinor)} entries:${run.entries.length} (net ${inr(run.entries[0]?.netMinor ?? 0)})`);
+  }
+  const exp = await db.expense.findFirst({ include: { budget: true } });
+  if (exp) {
+    console.log(`EXPENSE ${exp.category} ${exp.vendor ?? '-'} ${inr(exp.amountMinor)} [${exp.status}] | budget ${exp.budget?.category ?? '-'} planned:${exp.budget ? inr(exp.budget.plannedMinor) : '-'}`);
+  }
+  const award = await db.scholarshipAward.findFirst({ include: { scholarship: true, studentProfile: { include: { user: true } } } });
+  if (award) {
+    console.log(`SCHOLARSHIP ${award.scholarship.name} (${award.scholarship.coveragePercent}%) ${inr(award.amountMinor)} [${award.status}] | ${award.studentProfile.user.fullName}`);
+  }
 }
 
 main()

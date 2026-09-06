@@ -114,8 +114,9 @@ async function main() {
   await seedDomainB(institution.id);
   await seedDomainC(institution.id);
   await seedDomainD(institution.id);
+  await seedDomainE(institution.id);
 
-  console.log('Seed complete (base + Domains A–D).');
+  console.log('Seed complete (base + Domains A–E).');
 }
 
 main()
@@ -588,4 +589,156 @@ async function seedDomainD(institutionId: string): Promise<void> {
 
   console.log('  ✓ 2 companies, job (OPEN ₹4.5L), drive (SCHEDULED ₹6L, approved)');
   console.log('  ✓ eligibility ✓, job application APPLIED, drive application INTERVIEW + offer EXTENDED, registration REGISTERED');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain E — Finance seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainE(institutionId: string): Promise<void> {
+  console.log('Seeding Domain E (finance)…');
+
+  const admin = await db.user.findFirst({ where: { email: 'admin@learnix.dev', institutionId } });
+  const teacher = await db.user.findFirst({ where: { email: 'teacher@learnix.dev', institutionId } });
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!admin || !teacher || !student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+
+  const ay = await db.academicYear.findFirst({ where: { institutionId, isCurrent: true } });
+  if (!ay) throw new Error('Academic year missing');
+  const program = await db.program.findFirst({ where: { code: 'BT-CSE' } });
+  if (!program) throw new Error('BT-CSE program missing');
+
+  // Fee structure: ₹1,20,000 tuition + ₹15,000 other = ₹1,35,000 (paise)
+  const feeStructure = await db.feeStructure.upsert({
+    where: { programId_academicYearId: { programId: program.id, academicYearId: ay.id } },
+    update: {},
+    create: {
+      institutionId,
+      programId: program.id,
+      academicYearId: ay.id,
+      tuitionMinor: 12000000, // ₹1,20,000
+      otherMinor: 1500000, // ₹15,000
+      totalMinor: 13500000, // ₹1,35,000
+      status: 'ACTIVE',
+    },
+  });
+
+  // Due 1: tuition — CLEARED via payment + receipt (the unified chain)
+  let tuition = await db.feeDue.findFirst({
+    where: { studentProfileId: studentProfile.id, title: 'Sem 4 Tuition' },
+  });
+  if (!tuition) {
+    tuition = await db.feeDue.create({
+      data: {
+        studentProfileId: studentProfile.id,
+        feeStructureId: feeStructure.id,
+        title: 'Sem 4 Tuition',
+        amountMinor: 13500000,
+        dueDate: new Date('2025-08-15'),
+        status: 'CLEARED',
+      },
+    });
+  }
+
+  let tuitionPayment = await db.payment.findFirst({
+    where: { studentProfileId: studentProfile.id, category: 'TUITION', status: 'CLEARED' },
+  });
+  if (!tuitionPayment) {
+    tuitionPayment = await db.payment.create({
+      data: {
+        institutionId,
+        payerUserId: student.id,
+        studentProfileId: studentProfile.id,
+        category: 'TUITION',
+        referenceNo: 'PAY-2026-0001',
+        amountMinor: 13500000,
+        method: 'UPI',
+        status: 'CLEARED',
+        paidAt: new Date('2025-08-10'),
+        recordedByUserId: admin.id,
+      },
+    });
+    await db.receipt.create({
+      data: { paymentId: tuitionPayment.id, receiptNo: 'RCP-2025-26-0001' },
+    });
+  }
+
+  // Due 2: exam fee — UNPAID
+  const examFee = await db.feeDue.findFirst({
+    where: { studentProfileId: studentProfile.id, title: 'Exam Fee' },
+  });
+  if (!examFee) {
+    await db.feeDue.create({
+      data: {
+        studentProfileId: studentProfile.id,
+        feeStructureId: feeStructure.id,
+        title: 'Exam Fee',
+        amountMinor: 150000, // ₹1,500
+        dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+        status: 'UNPAID',
+      },
+    });
+  }
+
+  // Payroll run DRAFT for 2026-08 with the teacher's entry
+  const payrollRun = await db.payrollRun.upsert({
+    where: { institutionId_month: { institutionId, month: '2026-08' } },
+    update: {},
+    create: { institutionId, month: '2026-08', status: 'DRAFT', runByUserId: admin.id, totalMinor: 0 },
+  });
+  const payrollEntry = await db.payrollEntry.findFirst({ where: { payrollRunId: payrollRun.id, staffUserId: teacher.id } });
+  if (!payrollEntry) {
+    await db.payrollEntry.create({
+      data: {
+        payrollRunId: payrollRun.id,
+        staffUserId: teacher.id,
+        grossMinor: 6500000, // ₹65,000
+        deductionsMinor: 500000, // ₹5,000
+        netMinor: 6000000, // ₹60,000
+        status: 'PENDING',
+      },
+    });
+    await db.payrollRun.update({ where: { id: payrollRun.id }, data: { totalMinor: 6000000 } });
+  }
+
+  // Budget + expense (LABS)
+  const budget = await db.budget.findFirst({ where: { institutionId, fiscalYear: '2025-26', category: 'LABS' } });
+  let labBudget = budget;
+  if (!labBudget) {
+    labBudget = await db.budget.create({
+      data: { institutionId, fiscalYear: '2025-26', category: 'LABS', plannedMinor: 50000000 }, // ₹5,00,000
+    });
+  }
+  const labExpense = await db.expense.findFirst({ where: { institutionId, category: 'LABS', vendor: 'Syslab Instruments' } });
+  if (!labExpense) {
+    await db.expense.create({
+      data: {
+        institutionId,
+        category: 'LABS',
+        vendor: 'Syslab Instruments',
+        amountMinor: 2500000, // ₹25,000
+        date: new Date(),
+        status: 'PENDING',
+        requestedByUserId: teacher.id,
+        budgetId: labBudget.id,
+      },
+    });
+  }
+
+  // Scholarship + award (APPROVED, 25% coverage)
+  const scholarship = await db.scholarship.upsert({
+    where: { institutionId_name_academicYearId: { institutionId, name: 'Merit Scholarship', academicYearId: ay.id } },
+    update: {},
+    create: { institutionId, name: 'Merit Scholarship', type: 'MERIT', coveragePercent: 25, academicYearId: ay.id },
+  });
+  await db.scholarshipAward.upsert({
+    where: { scholarshipId_studentProfileId: { scholarshipId: scholarship.id, studentProfileId: studentProfile.id } },
+    update: {},
+    create: { scholarshipId: scholarship.id, studentProfileId: studentProfile.id, amountMinor: 3375000, status: 'APPROVED' }, // 25% of ₹1,35,000
+  });
+
+  console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
+  console.log('  ✓ payroll DRAFT 2026-08 (₹60,000 net), LABS budget+expense PENDING, merit scholarship APPROVED');
 }

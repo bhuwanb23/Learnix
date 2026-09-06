@@ -90,7 +90,9 @@
 | `placement_eligibility` | studentProfileId, isEligible, blockedReason?, registeredForDrives | 04 §3.4 pool |
 | `drive_registrations` | driveId, studentProfileId, status(REGISTERED/ATTENDED/ABSENT) | Test/interview attendance |
 
-## Domain E — Finance (owner: Accounts & Finance) — 14 tables
+## Domain E — Finance (owner: Accounts & Finance) — 14 tables ✅ COMPLETE
+
+> **Live status:** built as `e1_fees / e2_payments / e3_operations / e4_scholarships`. Migration `domain_e_finance`. THE unified `payments` table: institutionId + unique referenceNo per inst, category (TUITION/HOSTEL_RENT/MESS/TRANSPORT/FINE/DONATION/MISC), 1—1 receipt (receiptNo per inst), and link rows `donation_payments`/`transport_fee_dues`/`hostel_rent_dues`/`fine_payments` (donationId/bookIssueId/allocationId are scalars until Domains F/G/J land). feeStructure uq(program, AY); fee_dues per student w/ denorm daysOverdue; payroll uq(inst, month) + entries uq(run, staff); budgets uq(inst, fiscalYear, category, departmentId) w/ denorm spentMinor; scholarship awards uq(scholarship, student), disbursedPaymentId scalar. All money Int paise. Seed: ₹1.35L fee structure, tuition CLEARED via PAY-2026-0001 + RCP-2025-26-0001, exam fee UNPAID, payroll DRAFT 2026-08, LABS budget ₹5L + expense ₹25k PENDING, merit scholarship 25% APPROVED. Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|
