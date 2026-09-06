@@ -1,0 +1,66 @@
+// Domain A2 — Role profiles: student, staff, alumni
+// One profile row per user per kind. programId/batchId/departmentId/companyId/
+// chapterId become FKs when their owning domains (B/D/J) land — plain scalars now.
+// institutionId is denormalized here solely to power per-institution uniques.
+
+model StudentProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  institutionId   String
+  rollNo          String
+  programId       String? // FK → programs (Domain B)
+  batchId         String? // FK → batches (Domain B)
+  section         String?
+  currentSemester Int?
+  admissionDate   DateTime?
+  status          String    @default("ACTIVE") // ACTIVE | ALUMNUS | DROPPED
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([institutionId, rollNo])
+  @@index([institutionId])
+  @@map("student_profiles")
+}
+
+model StaffProfile {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  institutionId    String
+  employeeNo       String
+  designation      String?
+  departmentId     String? // FK → departments (Domain B)
+  joiningDate      DateTime?
+  maxWorkloadHours Int       @default(18)
+  status           String    @default("ACTIVE")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([institutionId, employeeNo])
+  @@index([institutionId])
+  @@map("staff_profiles")
+}
+
+model AlumniProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  institutionId    String
+  batchId          String? // FK → batches (Domain B)
+  graduationYear   Int?
+  companyId        String? // FK → companies (Domain D)
+  currentRole      String?
+  location         String?
+  chapterId        String? // FK → alumni_chapters (Domain J)
+  engagementStatus String   @default("ACTIVE") // ACTIVE | INACTIVE | LOST
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([institutionId])
+  @@index([graduationYear])
+  @@map("alumni_profiles")
+}

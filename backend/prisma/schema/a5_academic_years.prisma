@@ -1,0 +1,19 @@
+// Domain A5 — Academic years (admin Settings, docs/users/03-admin.md §3.15)
+// e.g. name "2025-26", semesterCount 8. isCurrent: exactly one per institution
+// (enforced in service layer when flipping).
+
+model AcademicYear {
+  id            String   @id @default(cuid())
+  institutionId String
+  name          String // "2025-26"
+  startDate     DateTime
+  endDate       DateTime
+  isCurrent     Boolean  @default(false)
+  semesterCount Int      @default(8)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@map("academic_years")
+}

@@ -1,0 +1,61 @@
+// Domain A1 — Tenancy & Identity: institutions, users, user_roles
+// Docs: docs/backend/02-database-schema.md §A · docs/users/03-admin.md
+
+model Institution {
+  id         String   @id @default(cuid())
+  name       String
+  code       String   @unique // short code, e.g. "DEMO" — used at login
+  timezone   String   @default("Asia/Kolkata")
+  address    String?
+  logoFileId String? // FK → files (Domain L, added later)
+  plan       String   @default("STANDARD")
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users User[]
+
+  @@map("institutions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  institutionId String
+  email         String
+  passwordHash  String
+  fullName      String
+  phone         String?
+  avatarFileId  String? // FK → files (Domain L)
+  status        String    @default("ACTIVE") // ACTIVE | SUSPENDED
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // soft delete (ADR-02)
+
+  institution    Institution      @relation(fields: [institutionId], references: [id])
+  roles          UserRole[]
+  studentProfile StudentProfile?
+  staffProfile   StaffProfile?
+  alumniProfile  AlumniProfile?
+  refreshTokens  RefreshToken[]
+  passwordResets PasswordReset[]
+
+  @@unique([institutionId, email]) // email unique per institution
+  @@index([institutionId])
+  @@index([email])
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String // STUDENT | TEACHER | ADMIN | PLACEMENT | EXAMCELL | ACCOUNTS | LIBRARY | HOSTEL | TRANSPORT | SPORTS | HOD | ALUMNI | PLATFORM_ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, role])
+  @@index([userId])
+  @@map("user_roles")
+}

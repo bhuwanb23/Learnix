@@ -1,0 +1,14 @@
+// Learnix backend — multi-file schema (Prisma 6 supports folder schemas).
+// One file per domain group; all models share one global namespace.
+// Domain map: A identity/tenancy/RBAC → B academic → C exams → D placement
+// → E finance → F library → G hostel → H transport → I events/sports
+// → J alumni → K communication → L system. Added one role piece at a time.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}

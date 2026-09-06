@@ -1,0 +1,31 @@
+// Domain A3 — RBAC: permission groups + role→permission map
+// Seeded from admin Settings (docs/users/03-admin.md §3.15).
+// No FKs — role is a string mirror of user_roles.role; permissionKey mirrors
+// permission_groups.key.
+
+model PermissionGroup {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. "students.read", "fees.waive"
+  name      String
+  category  String // ACADEMICS | EXAMS | STUDENTS | FINANCE | PLACEMENT | LIBRARY | HOSTEL | TRANSPORT | SPORTS | ALUMNI | SYSTEM
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("permission_groups")
+}
+
+model RolePermission {
+  id            String   @id @default(cuid())
+  role          String // mirrors user_roles.role
+  permissionKey String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  permissionGroup PermissionGroup @relation(fields: [permissionKey], references: [key])
+
+  @@unique([role, permissionKey])
+  @@index([role])
+  @@map("role_permissions")
+}
