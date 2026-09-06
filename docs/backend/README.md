@@ -20,14 +20,16 @@ Supporting docs: [`docs/users/*`](../users/README.md) — per-role frontend cont
 
 ## 🔒 Locked decisions (one line each)
 
-SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role) · Zod validation · shared-schema tenancy (`institutionId` everywhere + scoped client) · one `users` table + multi-role via `user_roles` + separate profile tables · JWT access 15m + rotating refresh · bcrypt cost 12 · platform super-admin provisions colleges · money in integer paise · full schema built in one pass, API in phases · actions as `POST /{entity}/{id}/{action}`.
+SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role) · Zod validation · shared-schema tenancy (`institutionId` everywhere + scoped client) · one `users` table + multi-role via `user_roles` + separate profile tables · JWT access 15m + rotating refresh · bcrypt cost 12 (dev 10) · platform super-admin provisions colleges · money in integer paise · actions as `POST /{entity}/{id}/{action}`.
+
+> **ADR-13 (added):** schema is built **one user-role piece at a time** — not big-bang. Each role piece = schema slice → seed data → service → routes → smoke test → docs tick, all in one change. Domain A (identity/tenancy) and Domain L (audit/files/system) landed with the base; every other domain lands with its owning role.
 
 ## 📊 Live status
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Scaffold + full Prisma schema + seed | ⬜ Not started |
-| 1 | Auth, tenancy, platform, master data | ⬜ Not started |
+| 0 | Scaffold + base schema slice + auth + seed | ✅ **Done** (boot smoke-tested) |
+| 1 | Tenancy core, platform, master data | ⬜ Not started |
 | 2 | Academic core (teacher/student/hod/admin + attendance + assignments) | ⬜ Not started |
 | 3 | Exams & results | ⬜ Not started |
 | 4 | Money (accounts, unified payments, write-throughs) | ⬜ Not started |
@@ -36,7 +38,7 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 | 7 | Frontend integration (all 12 apps) | ⬜ Not started |
 | 8 | Hardening + Postgres + deploy | ⬜ Not started |
 
-**Next up:** Phase 0 — scaffold `backend/` and write the full `schema.prisma` from `02-database-schema.md`.
+**Next up:** Phase 1 — tenancy core (`withTenant` enforcement), platform module, master data module. Then role pieces one at a time: teacher → student → admin → placement → …
 
 ## 🔁 How to work on the backend (any future session)
 
