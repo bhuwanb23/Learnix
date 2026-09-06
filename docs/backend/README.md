@@ -38,7 +38,7 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 | 7 | Frontend integration (all 12 apps) | ⬜ Not started |
 | 8 | Hardening + Postgres + deploy | ⬜ Not started |
 
-**Next up:** Phase 1 — tenancy core (`withTenant` enforcement), platform module, master data module. Then role pieces one at a time: teacher → student → admin → placement → …
+**Next up:** ~~schema~~ ✅ **DATABASE SCHEMA COMPLETE — 125 tables, all 12 domains (A–L) built, migrated, seeded, spine-verified** (`backend/prisma/schema/`, 17 files; `npm run verify:spine`). Phases restart at API work per the one-role-at-a-time protocol: teacher → student → admin → …
 
 ## 🔁 How to work on the backend (any future session)
 

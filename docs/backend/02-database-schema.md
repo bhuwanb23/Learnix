@@ -203,7 +203,15 @@
 | `email_log` | recipientEmail, templateKey, payloadJson, status, sentAt | Delivery tracking when mailer lands |
 | `ai_interactions` | userId, feature(STUDY_BUDDY/TEACHING_INSIGHT/PERFORMANCE_NOTE), prompt, response, tokensUsed? | Student AI buddy + teacher AI insights history |
 
-## Domain L — System (owner: platform) — 5 tables
+## Domain L — System (owner: platform) — 5 tables ✅ COMPLETE
+
+> **Live status:** built as `l1_system.prisma`. Migration `domain_l_system`. files unique by storageKey (purpose enum in `enums.ts` FILE_PURPOSE); audit_logs indexed (inst, entityType+entityId, actor) and **`writeAudit` in `src/lib/audit.ts` now persists for real** (non-blocking, failures logged not thrown); system_config uq(inst,key) seeded with the 6 admin-Settings knobs (attendanceThreshold 75, backlogLimit 4, passingMarks 40, reEvalWindowDays 7, institutionName, supportEmail); feature_flags uq(inst,key); platform_admins 1—1 User (seeded SUPER). Seed also linked a File row to `users.avatarFileId` — first live polymorphic-attachment link. Verified via `npm run verify:spine`.
+
+---
+
+## 🏁 SCHEMA COMPLETE — 125 tables across 12 domains (A–L)
+
+> Blueprint estimated ~96; the role-doc paste specs grew B (23) and I (13). Every cross-domain scalar from the blueprint that could become an FK **is now one** (fine_payments→BookIssue, hostel_rent_dues→HostelAllocation, donation_payments→Donation, donations→User, mentorship→User, profiles→AcademicYear anchors). Remaining deliberate scalars: actor stamps (createdBy/gradedBy/approvedBy… — services validate), fileId pointer rows whose `files` FK is by-id lookups (logoFileId, coverFileId, payslipFileId, avatarFileId, fines.paidPaymentId, scholarship_awards.disbursedPaymentId), deferred masters (roomId until venue sync, HodUser, drivers.staffUserId), and Domain-B placeholders (programId/batchId/departmentId/companyId) awaiting their owning-module FKs by design choice.
 
 | Table | Key fields | Notes |
 |---|---|---|
