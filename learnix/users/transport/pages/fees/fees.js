@@ -1,70 +1,150 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { transportApi } from '../../../../services/api';
 
-const initialDefaulters = [
-  { id: '1', name: 'Aarav Gupta', roll: '22CS045', route: 'Route 01', fee: '₹18,000', due: '₹4,200', status: 'Partial' },
-  { id: '2', name: 'Meera Joshi', roll: '21EC042', route: 'Route 12', fee: '₹18,000', due: '₹18,000', status: 'Unpaid' },
-  { id: '3', name: 'Rohan Kulkarni', roll: '23ME054', route: 'Route 07', fee: '₹18,000', due: '₹9,600', status: 'Partial' },
-  { id: '4', name: 'Sana Sheikh', roll: '22IT031', route: 'Route 04', fee: '₹18,000', due: '₹18,000', status: 'Unpaid' },
-  { id: '5', name: 'Kabir Anand', roll: '21CS118', route: 'Route 09', fee: '₹18,000', due: '₹0', status: 'Paid' },
-];
+const rupees = (minor) => `₹${(minor / 100).toLocaleString('en-IN')}`;
+
+const STATUS_STYLE = {
+  PAID: { bg: '#dcfce7', color: '#059669' },
+  PARTIAL: { bg: '#fef3c7', color: '#d97706' },
+  UNPAID: { bg: '#fee2e2', color: '#dc2626' },
+};
 
 export default function FeesModule({ navigation }) {
-  const [defaulters, setDefaulters] = useState(initialDefaulters);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [collecting, setCollecting] = useState(null); // due being collected
+  const [method, setMethod] = useState('CASH');
 
-  const handleCollect = (id) => {
-    setDefaulters(
-      defaulters.map((d) => (d.id === id ? { ...d, due: '₹0', status: 'Paid' } : d))
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const d = await transportApi.fees();
+      setData(d);
+    } catch (e) {
+      setError(e.message || 'Failed to load fees');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const remind = async (due) => {
+    try {
+      const res = await transportApi.remindFee(due.id);
+      Alert.alert('Reminder sent', `${res.student} was notified about the pending fee.`);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  const collect = async (due) => {
+    try {
+      const res = await transportApi.collectFee(due.id, method);
+      Alert.alert(
+        'Collected',
+        `${rupees(res.amountMinor)} received from ${res.student}.\nPayment ${res.referenceNo} · Receipt ${res.receiptNo} issued.`
+      );
+      setCollecting(null);
+      load(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  const requestRevision = () => {
+    Alert.prompt
+      ? null
+      : null;
+    // simple two-step revision request
+    Alert.alert(
+      'Request Fee Revision',
+      'The transport fee structure is Accounts-owned. Send a revision request to Admin with a reason?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Request',
+          onPress: () =>
+            transportApi
+              .requestFeeRevision(2000000, 'Requested from mobile app — fuel and route cost review')
+              .then((res) => Alert.alert('Sent', `Admin notified (${res.notifiedAdmins}). They will review the fee structure.`))
+              .catch((e) => Alert.alert('Action failed', e.message)),
+        },
+      ]
     );
-    Alert.alert('Payment Collected', 'Receipt issued and forwarded to Accounts & Finance.');
   };
 
-  const handleRemind = (id) => {
-    Alert.alert('Reminder Sent', `Payment reminder pushed to the student's app.`);
-  };
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const { stats, dues } = data;
+  const perYear = dues.length > 0 ? dues[0].amountMinor : 0;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>₹8.4L</Text>
-          <Text style={styles.statLabel}>Collected (FY)</Text>
+          <Text style={styles.statValue}>{rupees(stats.collectedMinor)}</Text>
+          <Text style={styles.statLabel}>Collected</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>₹1.2L</Text>
-          <Text style={styles.statLabel}>Outstanding</Text>
+          <Text style={styles.statValue}>{rupees(stats.expectedMinor)}</Text>
+          <Text style={styles.statLabel}>Expected</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>86%</Text>
-          <Text style={styles.statLabel}>Collection</Text>
+        <View style={[styles.statCard, stats.unpaid > 0 && { borderColor: '#fecaca' }]}>
+          <Text style={[styles.statValue, stats.unpaid > 0 && { color: '#dc2626' }]}>{stats.unpaid}</Text>
+          <Text style={styles.statLabel}>Unpaid</Text>
+        </View>
+      </View>
+
+      <View style={styles.progressCard}>
+        <View style={styles.progressHeader}>
+          <Text style={styles.progressTitle}>Collection Rate</Text>
+          <Text style={styles.progressPct}>{stats.collectionPct}%</Text>
+        </View>
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${stats.collectionPct}%` }]} />
         </View>
       </View>
 
       <View style={styles.structureCard}>
-        <Text style={styles.structureTitle}>Fee Structure 2026-27</Text>
-        <View style={styles.feeRow}>
-          <View>
-            <Text style={styles.feeLabel}>Annual Transport Fee</Text>
-            <Text style={styles.feeMeta}>All routes · 2 semesters</Text>
-          </View>
-          <Text style={styles.feeValue}>₹18,000</Text>
+        <View style={styles.structureBody}>
+          <Text style={styles.structureTitle}>Yearly fee per student</Text>
+          <Text style={styles.structureValue}>{rupees(perYear)}</Text>
         </View>
-        <View style={styles.divider} />
-        <View style={styles.feeRow}>
-          <View>
-            <Text style={styles.feeLabel}>Per Semester</Text>
-            <Text style={styles.feeMeta}>Payable at semester start</Text>
-          </View>
-          <Text style={styles.feeValue}>₹9,000</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.editBtn}
-          onPress={() => Alert.alert('Edit Structure', 'Fee revision opens here — requires Accounts approval.')}
-        >
-          <Ionicons name="create-outline" size={14} color={theme.colors.primary} />
-          <Text style={styles.editText}>Request Revision</Text>
+        <TouchableOpacity style={styles.revisionBtn} onPress={requestRevision}>
+          <Ionicons name="swap-horizontal-outline" size={13} color={theme.colors.primary} />
+          <Text style={styles.revisionText}>Request Revision</Text>
         </TouchableOpacity>
       </View>
 
@@ -72,55 +152,87 @@ export default function FeesModule({ navigation }) {
         <Text style={styles.sectionTitle}>Payment Status</Text>
       </View>
 
-      {defaulters.map((d) => {
-        const st =
-          d.status === 'Paid'
-            ? { bg: '#dcfce7', color: '#059669' }
-            : d.status === 'Partial'
-            ? { bg: '#fef3c7', color: '#d97706' }
-            : { bg: '#fee2e2', color: '#dc2626' };
+      {dues.length === 0 && (
+        <Text style={styles.empty}>No fee dues yet — enroll students on routes to generate them.</Text>
+      )}
+      {dues.map((d) => {
+        const st = STATUS_STYLE[d.status] || STATUS_STYLE.UNPAID;
+        const open = d.status !== 'PAID';
         return (
           <View key={d.id} style={styles.card}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{d.name.charAt(0)}</Text>
+              <Text style={styles.avatarText}>{d.student.charAt(0)}</Text>
             </View>
             <View style={styles.cardBody}>
-              <Text style={styles.name}>{d.name} · {d.roll}</Text>
-              <Text style={styles.meta}>{d.route} · Fee {d.fee}</Text>
-              <Text style={[styles.due, { color: st.color }]}>Due: {d.due}</Text>
+              <Text style={styles.student}>{d.student}</Text>
+              <Text style={styles.meta}>
+                {d.year} · {rupees(d.amountMinor)}
+                {d.paidRef ? ` · ${d.paidRef}` : ''}
+              </Text>
             </View>
-            <View style={styles.rightCol}>
+            {open ? (
+              <View style={styles.actionsCol}>
+                <TouchableOpacity style={styles.remindBtn} onPress={() => remind(d)}>
+                  <Text style={styles.remindText}>Remind</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.collectBtn, collecting === d.id && styles.collectBtnBusy]}
+                  onPress={() => {
+                    setCollecting(d.id);
+                    setMethod('CASH');
+                  }}
+                >
+                  <Text style={styles.collectText}>Collect</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
               <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
                 <Text style={[styles.statusText, { color: st.color }]}>{d.status}</Text>
               </View>
-              {d.status !== 'Paid' ? (
-                <View style={styles.actions}>
-                  <TouchableOpacity
-                    style={styles.remindBtn}
-                    onPress={() => handleRemind(d.id)}
-                  >
-                    <Ionicons name="megaphone-outline" size={13} color={theme.colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.collectBtn}
-                    onPress={() => handleCollect(d.id)}
-                  >
-                    <Text style={styles.collectText}>Collect</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <Ionicons name="checkmark-circle" size={20} color="#059669" style={styles.paidIcon} />
-              )}
-            </View>
+            )}
           </View>
         );
       })}
+
+      {collecting && (
+        <View style={styles.collectSheet}>
+          <Text style={styles.collectTitle}>Collect {rupees(dues.find((d) => d.id === collecting)?.amountMinor || 0)}</Text>
+          <Text style={styles.collectSub}>from {dues.find((d) => d.id === collecting)?.student}</Text>
+          <View style={styles.methodRow}>
+            {['CASH', 'UPI', 'CARD', 'NET_BANKING'].map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.methodChip, method === m && styles.methodChipActive]}
+                onPress={() => setMethod(m)}
+              >
+                <Text style={[styles.methodText, method === m && styles.methodTextActive]}>{m.replace('_', ' ')}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.collectBtnRow}>
+            <TouchableOpacity style={styles.sheetCancel} onPress={() => setCollecting(null)}>
+              <Text style={styles.sheetCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sheetConfirm}
+              onPress={() => collect(dues.find((d) => d.id === collecting))}
+            >
+              <Text style={styles.sheetConfirmText}>Confirm Payment</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', marginTop: 16 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -137,7 +249,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Manrope-ExtraBold',
     color: theme.colors.text,
   },
@@ -147,57 +259,76 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 2,
   },
-  structureCard: {
+  progressCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 14,
-    marginTop: 14,
+    marginTop: 12,
   },
-  structureTitle: {
-    fontSize: 14,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginBottom: 4,
-  },
-  feeRow: {
+  progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
+    marginBottom: 8,
   },
-  feeLabel: {
+  progressTitle: {
     fontSize: 13,
-    fontFamily: 'Manrope-SemiBold',
+    fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  feeMeta: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 1,
-  },
-  feeValue: {
-    fontSize: 15,
+  progressPct: {
+    fontSize: 13,
     fontFamily: 'Manrope-ExtraBold',
     color: theme.colors.primary,
   },
-  divider: { height: 1, backgroundColor: theme.colors.border },
-  editBtn: {
+  progressTrack: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: theme.colors.surfaceMuted,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: theme.colors.primary,
+  },
+  structureCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#eff6ff',
-    borderRadius: 10,
-    paddingVertical: 10,
-    marginTop: 8,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 14,
+    marginTop: 12,
   },
-  editText: {
-    fontSize: 12,
+  structureBody: { flex: 1 },
+  structureTitle: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+  },
+  structureValue: {
+    fontSize: 16,
+    fontFamily: 'Manrope-ExtraBold',
+    color: theme.colors.text,
+    marginTop: 2,
+  },
+  revisionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  revisionText: {
+    fontSize: 11,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.primary,
-    marginLeft: 5,
+    marginLeft: 4,
   },
   sectionHeader: {
     marginTop: 18,
@@ -219,21 +350,21 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   avatarText: {
-    fontSize: 15,
+    fontSize: 14,
     fontFamily: 'Manrope-Bold',
     color: '#2563eb',
   },
   cardBody: { flex: 1, marginRight: 8 },
-  name: {
+  student: {
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
@@ -244,12 +375,32 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 2,
   },
-  due: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    marginTop: 4,
+  actionsCol: { alignItems: 'flex-end' },
+  remindBtn: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 9,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    marginBottom: 6,
   },
-  rightCol: { alignItems: 'flex-end' },
+  remindText: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Bold',
+    color: theme.colors.textMuted,
+  },
+  collectBtn: {
+    backgroundColor: '#dcfce7',
+    borderRadius: 9,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+  },
+  collectBtnBusy: { backgroundColor: '#bfdbfe' },
+  collectText: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Bold',
+    color: '#059669',
+  },
   statusChip: {
     borderRadius: 8,
     paddingHorizontal: 8,
@@ -259,30 +410,73 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
   },
-  actions: {
+  collectSheet: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    padding: 16,
+    marginTop: 14,
+    marginBottom: 24,
+  },
+  collectTitle: {
+    fontSize: 15,
+    fontFamily: 'Manrope-ExtraBold',
+    color: theme.colors.text,
+  },
+  collectSub: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    marginTop: 2,
+  },
+  methodRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 7,
+    flexWrap: 'wrap',
+    marginTop: 12,
   },
-  remindBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 6,
+  methodChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surfaceMuted,
+    marginRight: 8,
+    marginBottom: 8,
   },
-  collectBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 9,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-  },
-  collectText: {
+  methodChipActive: { backgroundColor: theme.colors.primary },
+  methodText: {
     fontSize: 11,
+    fontFamily: 'Manrope-SemiBold',
+    color: theme.colors.textMuted,
+  },
+  methodTextActive: { color: '#fff' },
+  collectBtnRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  sheetCancel: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginRight: 8,
+  },
+  sheetCancelText: {
+    fontSize: 13,
+    fontFamily: 'Manrope-Bold',
+    color: theme.colors.textMuted,
+  },
+  sheetConfirm: {
+    flex: 2,
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+  },
+  sheetConfirmText: {
+    fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: '#fff',
   },
-  paidIcon: { marginTop: 7 },
 });
