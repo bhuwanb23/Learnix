@@ -1,118 +1,174 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { hodApi } from '../../../../services/api';
 
-const yearStats = [
-  { year: '1st', students: 108, avg: 7.2, atRisk: 8 },
-  { year: '2nd', students: 104, avg: 7.5, atRisk: 6 },
-  { year: '3rd', students: 102, avg: 7.9, atRisk: 4 },
-  { year: '4th', students: 96, avg: 8.1, atRisk: 3 },
-];
-
-const students = [
-  { id: '1', name: 'Aarav Gupta', roll: 'CSE-22-045', year: '3rd', cgpa: 8.9, status: 'Top', color: '#059669' },
-  { id: '2', name: 'Meera Joshi', roll: 'CSE-22-112', year: '3rd', cgpa: 8.4, status: 'Good', color: '#2563eb' },
-  { id: '3', name: 'Kabir Anand', roll: 'CSE-21-118', year: '4th', cgpa: 9.2, status: 'Top', color: '#059669' },
-  { id: '4', name: 'Rohan Kulkarni', roll: 'CSE-23-054', year: '2nd', cgpa: 6.1, status: 'At Risk', color: '#dc2626' },
-  { id: '5', name: 'Divya Menon', roll: 'CSE-22-102', year: '3rd', cgpa: 7.6, status: 'Good', color: '#2563eb' },
-  { id: '6', name: 'Sana Sheikh', roll: 'CSE-23-031', year: '2nd', cgpa: 5.8, status: 'At Risk', color: '#dc2626' },
-];
-
-const statusStyle = (s) => {
-  if (s === 'Top') return { bg: '#dcfce7', color: '#059669' };
-  if (s === 'Good') return { bg: '#dbeafe', color: '#2563eb' };
-  return { bg: '#fee2e2', color: '#dc2626' };
-};
+const COLORS = ['#059669', '#2563eb', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
 
 export default function StudentsModule({ navigation }) {
-  const [year, setYear] = useState('All');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [year, setYear] = useState(null); // null = All
 
-  const filtered = year === 'All' ? students : students.filter((s) => s.year === year);
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const d = await hodApi.students(year ?? undefined);
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [year]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const stats = data?.stats ?? { total: 0, bySemester: [] };
+  const students = data?.students ?? [];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>410</Text>
+          <Text style={styles.statValue}>{stats.total}</Text>
           <Text style={styles.statLabel}>Students</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>7.8</Text>
-          <Text style={styles.statLabel}>Avg CGPA</Text>
+          <Text style={styles.statValue}>{stats.bySemester.length}</Text>
+          <Text style={styles.statLabel}>Semesters</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>21</Text>
-          <Text style={styles.statLabel}>At Risk</Text>
+          <Text style={styles.statValue}>{students.filter((s) => s.status !== 'ACTIVE').length}</Text>
+          <Text style={styles.statLabel}>Inactive</Text>
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-        {['All', '1st', '2nd', '3rd', '4th'].map((y) => (
-          <TouchableOpacity
-            key={y}
-            style={[styles.chip, year === y && styles.chipActive]}
-            onPress={() => setYear(y)}
-          >
-            <Text style={[styles.chipText, year === y && styles.chipTextActive]}>
-              {y === 'All' ? 'All Years' : `${y} Year`}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {stats.bySemester.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+          {[null, ...stats.bySemester.map((s) => s.semester)].map((y) => (
+            <TouchableOpacity
+              key={y ?? 'all'}
+              style={[styles.chip, year === y && styles.chipActive]}
+              onPress={() => setYear(y)}
+            >
+              <Text style={[styles.chipText, year === y && styles.chipTextActive]}>
+                {y === null ? 'All Years' : `Sem ${y}`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Performance by Year</Text>
-        {yearStats.map((y) => (
-          <View key={y.year} style={styles.yearCard}>
-            <Text style={styles.yearLabel}>{y.year} Year</Text>
-            <View style={styles.yearMeta}>
-              <Text style={styles.yearSub}>{y.students} students</Text>
-              <Text style={styles.yearSub}>{y.atRisk} at risk</Text>
-            </View>
-            <View style={styles.yearBarRow}>
-              <Text style={styles.yearBarLabel}>CGPA</Text>
-              <View style={styles.yearTrack}>
-                <View
-                  style={[
-                    styles.yearFill,
-                    {
-                      width: (y.avg / 10) * 100 + '%',
-                      backgroundColor: y.avg < 7 ? '#dc2626' : y.avg < 8 ? '#d97706' : '#059669',
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.yearValue}>{y.avg}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Student List</Text>
-        {filtered.map((s) => {
-          const st = statusStyle(s.status);
+        <Text style={styles.sectionTitle}>Performance by Semester</Text>
+        {stats.bySemester.map((s, idx) => {
+          const color = COLORS[idx % COLORS.length];
           return (
-            <View key={s.id} style={styles.card}>
-              <View style={[styles.avatar, { backgroundColor: s.color + '1a' }]}>
-                <Text style={[styles.avatarText, { color: s.color }]}>{s.name.charAt(0)}</Text>
+            <View key={s.semester} style={styles.yearCard}>
+              <Text style={styles.yearLabel}>Semester {s.semester}</Text>
+              <View style={styles.yearMeta}>
+                <Text style={styles.yearSub}>{s.count} students</Text>
               </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.name}>{s.name}</Text>
-                <Text style={styles.meta}>
-                  {s.roll} · {s.year} Year
-                </Text>
-              </View>
-              <View style={styles.cgpaWrap}>
-                <Text style={styles.cgpa}>{s.cgpa}</Text>
-                <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-                  <Text style={[styles.statusText, { color: st.color }]}>{s.status}</Text>
+              <View style={styles.yearBarRow}>
+                <Text style={styles.yearBarLabel}>Share</Text>
+                <View style={styles.yearTrack}>
+                  <View
+                    style={[
+                      styles.yearFill,
+                      {
+                        width: `${stats.total === 0 ? 0 : Math.round((s.count / stats.total) * 100)}%`,
+                        backgroundColor: color,
+                      },
+                    ]}
+                  />
                 </View>
+                <Text style={styles.yearValue}>
+                  {stats.total === 0 ? 0 : Math.round((s.count / stats.total) * 100)}%
+                </Text>
               </View>
             </View>
           );
         })}
+        {stats.bySemester.length === 0 && (
+          <Text style={styles.emptyText}>No students enrolled yet.</Text>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Student List</Text>
+        {students.map((s, idx) => {
+          const color = COLORS[idx % COLORS.length];
+          return (
+            <View key={s.id} style={styles.card}>
+              <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
+                <Text style={[styles.avatarText, { color }]}>{s.name.charAt(0)}</Text>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={styles.name}>{s.name}</Text>
+                <Text style={styles.meta}>
+                  {s.rollNo}
+                  {s.section ? ` · Section ${s.section}` : ''}
+                  {s.semester ? ` · Sem ${s.semester}` : ''}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.statusChip,
+                  { backgroundColor: s.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9' },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusText,
+                    { color: s.status === 'ACTIVE' ? '#059669' : '#64748b' },
+                  ]}
+                >
+                  {s.status}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+        {students.length === 0 && (
+          <Text style={styles.emptyText}>No students match this filter.</Text>
+        )}
       </View>
     </ScrollView>
   );
@@ -120,6 +176,11 @@ export default function StudentsModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 16 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -238,7 +299,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Manrope-Bold',
   },
-  cardBody: { flex: 1, marginRight: 8 },
+  cardBody: { flex: 1 },
   name: {
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
@@ -250,17 +311,10 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 2,
   },
-  cgpaWrap: { alignItems: 'flex-end' },
-  cgpa: {
-    fontSize: 15,
-    fontFamily: 'Manrope-ExtraBold',
-    color: theme.colors.text,
-  },
   statusChip: {
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    marginTop: 4,
   },
   statusText: {
     fontSize: 10,

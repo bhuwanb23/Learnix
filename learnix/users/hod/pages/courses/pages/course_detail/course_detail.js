@@ -1,28 +1,109 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
+import { hodApi } from '../../../../../../services/api';
 
-const units = [
-  { id: '1', title: 'Unit 1 — Arrays & Linked Lists', hours: 8, status: 'Completed' },
-  { id: '2', title: 'Unit 2 — Stacks & Queues', hours: 7, status: 'Completed' },
-  { id: '3', title: 'Unit 3 — Trees & Graphs', hours: 10, status: 'In Progress' },
-  { id: '4', title: 'Unit 4 — Sorting & Searching', hours: 8, status: 'Pending' },
-  { id: '5', title: 'Unit 5 — Hashing & Heaps', hours: 6, status: 'Pending' },
-];
+export default function CourseDetail({ courseId, onBack }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
 
-export default function CourseDetail({ course, onBack }) {
-  const [syllabus, setSyllabus] = useState(course.syllabus);
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const d = await hodApi.courseDetail(courseId);
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [courseId]);
 
-  const handleApprove = () => {
-    setSyllabus('Approved');
-    Alert.alert('Approved', `${course.name} syllabus approved and forwarded to Admin.`);
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onApprove = async () => {
+    setBusy(true);
+    try {
+      await hodApi.approveSyllabus(data.syllabus.id);
+      await load();
+      Alert.alert('Approved', `${data.code} syllabus approved and forwarded to Admin.`);
+    } catch (e) {
+      Alert.alert('Cannot approve', e.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleChanges = () => {
-    Alert.alert('Changes Requested', `Feedback sent to ${course.teacher} for syllabus revision.`);
+  const onRequestChanges = () => {
+    Alert.prompt(
+      'Request Changes',
+      'Feedback for the course teacher:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send',
+          onPress: async (feedback) => {
+            if (!feedback || feedback.trim().length < 3) {
+              Alert.alert('Feedback required', 'Write at least a short note for the teacher.');
+              return;
+            }
+            setBusy(true);
+            try {
+              await hodApi.requestSyllabusChanges(data.syllabus.id, feedback.trim());
+              await load();
+              Alert.alert('Sent', 'Feedback sent to the course teacher.');
+            } catch (e) {
+              Alert.alert('Cannot send', e.message);
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+      'plain-text',
+    );
   };
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.backLink} onPress={onBack}>
+          <Text style={styles.backLinkText}>Go back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const syllabusChip =
+    data.syllabus?.status === 'HOD_APPROVED' || data.syllabus?.status === 'ADMIN_APPROVED'
+      ? { bg: '#dcfce7', color: '#059669', label: 'Approved' }
+      : data.syllabus?.status === 'SUBMITTED'
+        ? { bg: '#fef3c7', color: '#d97706', label: 'Pending' }
+        : data.syllabus?.status === 'CHANGES_REQUESTED'
+          ? { bg: '#fee2e2', color: '#dc2626', label: 'Changes Requested' }
+          : { bg: '#e0e7ff', color: '#4f46e5', label: 'Draft' };
+
+  const canDecide = data.syllabus && data.syllabus.status === 'SUBMITTED';
 
   return (
     <View style={styles.container}>
@@ -33,112 +114,126 @@ export default function CourseDetail({ course, onBack }) {
           </TouchableOpacity>
           <View style={styles.heroTop}>
             <View style={styles.codeBadge}>
-              <Text style={styles.codeText}>{course.code}</Text>
+              <Text style={styles.codeText}>{data.code}</Text>
             </View>
-            <Text style={styles.courseName}>{course.name}</Text>
+            <Text style={styles.courseName}>{data.name}</Text>
             <Text style={styles.courseMeta}>
-              {course.program} · Sem {course.semester} · {course.credits} credits
+              Sem {data.semester} · {data.credits} credits · {data.type}
             </Text>
           </View>
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{course.credits}</Text>
+              <Text style={styles.heroStatValue}>{data.credits}</Text>
               <Text style={styles.heroStatLabel}>Credits</Text>
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>62</Text>
+              <Text style={styles.heroStatValue}>{data.totalStudents}</Text>
               <Text style={styles.heroStatLabel}>Students</Text>
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>76%</Text>
-              <Text style={styles.heroStatLabel}>Pass Rate</Text>
+              <Text style={styles.heroStatValue}>{data.syllabus ? `v${data.syllabus.version}` : '—'}</Text>
+              <Text style={styles.heroStatLabel}>Syllabus</Text>
             </View>
           </View>
         </LinearGradient>
 
         <View style={styles.teacherCard}>
           <View style={[styles.teacherAvatar, { backgroundColor: '#dbeafe' }]}>
-            <Text style={styles.teacherAvatarText}>{course.teacher.charAt(0)}</Text>
+            <Text style={styles.teacherAvatarText}>{(data.teachers[0] ?? '?').charAt(0)}</Text>
           </View>
           <View style={styles.teacherBody}>
-            <Text style={styles.teacherLabel}>Course Teacher</Text>
-            <Text style={styles.teacherName}>{course.teacher}</Text>
+            <Text style={styles.teacherLabel}>Course Teacher{data.teachers.length > 1 ? 's' : ''}</Text>
+            <Text style={styles.teacherName}>{data.teachers.join(', ') || 'Unassigned'}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.msgBtn}
-            onPress={() => Alert.alert('Message', `Opening chat with ${course.teacher}...`)}
-          >
-            <Ionicons name="chatbubble-outline" size={15} color={theme.colors.primary} />
-          </TouchableOpacity>
         </View>
 
-        <View style={styles.syllabusCard}>
-          <View style={styles.syllabusTop}>
-            <Text style={styles.syllabusTitle}>Syllabus Status</Text>
-            <View
-              style={[
-                styles.syllabusChip,
-                {
-                  backgroundColor:
-                    syllabus === 'Approved' ? '#dcfce7' : syllabus === 'Pending' ? '#fef3c7' : '#e0e7ff',
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.syllabusChipText,
-                  { color: syllabus === 'Approved' ? '#059669' : syllabus === 'Pending' ? '#d97706' : '#4f46e5' },
-                ]}
-              >
-                {syllabus}
+        {data.syllabus ? (
+          <View style={styles.syllabusCard}>
+            <View style={styles.syllabusTop}>
+              <Text style={styles.syllabusTitle}>Syllabus Status</Text>
+              <View style={[styles.syllabusChip, { backgroundColor: syllabusChip.bg }]}>
+                <Text style={[styles.syllabusChipText, { color: syllabusChip.color }]}>{syllabusChip.label}</Text>
+              </View>
+            </View>
+            {canDecide ? (
+              <View style={styles.syllabusActions}>
+                <TouchableOpacity style={styles.changesBtn} disabled={busy} onPress={onRequestChanges}>
+                  <Ionicons name="create-outline" size={14} color="#d97706" />
+                  <Text style={styles.changesText}>Request Changes</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.approveBtn} disabled={busy} onPress={onApprove}>
+                  {busy ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Ionicons name="checkmark-outline" size={14} color="#fff" />
+                  )}
+                  <Text style={styles.approveText}>Approve</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+            {data.syllabus.feedback ? (
+              <Text style={styles.feedbackText} numberOfLines={2}>
+                Feedback: {data.syllabus.feedback}
+              </Text>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.syllabusCard}>
+            <Text style={styles.syllabusTitle}>No syllabus submitted yet</Text>
+          </View>
+        )}
+
+        {data.syllabus && data.syllabus.units.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>Syllabus Units</Text>
+            {data.syllabus.units.map((u) => {
+              const done = u.topics > 0 && u.completed === u.topics;
+              const started = u.completed > 0 && !done;
+              return (
+                <View key={u.id} style={styles.unitCard}>
+                  <View
+                    style={[
+                      styles.unitDot,
+                      { backgroundColor: done ? '#059669' : started ? '#d97706' : '#e5e7eb' },
+                    ]}
+                  />
+                  <View style={styles.unitBody}>
+                    <Text style={styles.unitTitle}>{u.title}</Text>
+                    <Text style={styles.unitMeta}>
+                      {u.completed}/{u.topics} topics completed
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      styles.unitStatus,
+                      { color: done ? '#059669' : started ? '#d97706' : '#9ca3af' },
+                    ]}
+                  >
+                    {done ? 'Completed' : started ? 'In Progress' : 'Pending'}
+                  </Text>
+                </View>
+              );
+            })}
+          </>
+        )}
+
+        <Text style={styles.sectionTitle}>Offerings</Text>
+        {data.offerings.map((o) => (
+          <View key={o.id} style={styles.unitCard}>
+            <View style={[styles.unitDot, { backgroundColor: '#2563eb' }]} />
+            <View style={styles.unitBody}>
+              <Text style={styles.unitTitle}>{o.section}</Text>
+              <Text style={styles.unitMeta}>
+                {o.students} students · {o.weeklyHours} hrs/week
               </Text>
             </View>
           </View>
-          {syllabus !== 'Approved' && (
-            <View style={styles.syllabusActions}>
-              <TouchableOpacity style={styles.changesBtn} onPress={handleChanges}>
-                <Ionicons name="create-outline" size={14} color="#d97706" />
-                <Text style={styles.changesText}>Request Changes</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.approveBtn} onPress={handleApprove}>
-                <Ionicons name="checkmark-outline" size={14} color="#fff" />
-                <Text style={styles.approveText}>Approve</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.sectionTitle}>Syllabus Units</Text>
-        {units.map((u) => (
-          <View key={u.id} style={styles.unitCard}>
-            <View
-              style={[
-                styles.unitDot,
-                {
-                  backgroundColor:
-                    u.status === 'Completed' ? '#059669' : u.status === 'In Progress' ? '#d97706' : '#e5e7eb',
-                },
-              ]}
-            />
-            <View style={styles.unitBody}>
-              <Text style={styles.unitTitle}>{u.title}</Text>
-              <Text style={styles.unitMeta}>{u.hours} hours</Text>
-            </View>
-            <Text
-              style={[
-                styles.unitStatus,
-                {
-                  color:
-                    u.status === 'Completed' ? '#059669' : u.status === 'In Progress' ? '#d97706' : '#9ca3af',
-                },
-              ]}
-            >
-              {u.status}
-            </Text>
-          </View>
         ))}
+        {data.offerings.length === 0 && (
+          <Text style={styles.emptyText}>Not offered this academic year.</Text>
+        )}
       </ScrollView>
     </View>
   );
@@ -146,6 +241,13 @@ export default function CourseDetail({ course, onBack }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  backLink: { marginTop: 14 },
+  backLinkText: { fontSize: 12, fontFamily: 'Manrope-SemiBold', color: '#2563eb' },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 8, marginHorizontal: 16 },
   content: { paddingBottom: 32 },
   hero: {
     marginHorizontal: 16,
@@ -245,14 +347,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginTop: 1,
   },
-  msgBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   syllabusCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -315,6 +409,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: '#fff',
     marginLeft: 4,
+  },
+  feedbackText: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    marginTop: 10,
   },
   sectionTitle: {
     fontSize: 15,

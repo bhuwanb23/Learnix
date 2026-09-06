@@ -1,26 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
-
-const stats = [
-  { label: 'Faculty', value: '18', sub: '2 on leave', color: '#2563eb', icon: 'people-outline' },
-  { label: 'Students', value: '410', sub: '3 programs', color: '#059669', icon: 'school-outline' },
-  { label: 'Courses', value: '32', sub: '5 pending', color: '#d97706', icon: 'book-outline' },
-  { label: 'Avg. CGPA', value: '7.8', sub: 'up 0.2', color: '#0891b2', icon: 'trending-up-outline' },
-];
-
-const pendingApprovals = [
-  { id: '1', type: 'Syllabus', item: 'DBMS Syllabus — Sem 5', by: 'Dr. Sunita Rao', time: '2 hrs ago' },
-  { id: '2', type: 'Syllabus', item: 'Thermodynamics Syllabus — Sem 5', by: 'Prof. Anand Krishnan', time: '5 hrs ago' },
-  { id: '3', type: 'Leave', item: 'Medical Leave — Oct 12-14 (3 days)', by: 'Prof. Anand Krishnan', time: 'Yesterday' },
-];
-
-const classAlerts = [
-  { id: '1', title: 'CS301 attendance below 75%', detail: 'Data Structures — 68% this week, 6 students at risk', severity: 'High' },
-  { id: '2', title: 'Dr. Sunita Rao at 22/24 workload', detail: 'Consider balancing DBMS with another faculty', severity: 'Medium' },
-];
+import { hodApi } from '../../../../services/api';
 
 const modules = [
   { id: 'Syllabus', title: 'Syllabus Approvals', icon: 'document-text-outline', color: '#2563eb' },
@@ -28,36 +11,104 @@ const modules = [
   { id: 'Notifications', title: 'Notify', icon: 'megaphone-outline', color: '#d97706' },
 ];
 
-const activity = [
-  { text: 'Syllabus approved — Operating Systems (Sem 5)', time: '1 hr ago', icon: 'checkmark-circle-outline', color: '#059669' },
-  { text: 'Leave approved for Dr. Neha Kapoor (Oct 20-21)', time: '3 hrs ago', icon: 'calendar-outline', color: '#2563eb' },
-  { text: 'New course CS306 (AI) added by Dr. Meera Iyer', time: '5 hrs ago', icon: 'add-circle-outline', color: '#0891b2' },
-  { text: 'Faculty meeting scheduled for Friday 4 PM', time: 'Yesterday', icon: 'people-outline', color: '#d97706' },
-];
-
 export default function HodDashboard({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const d = await hodApi.dashboard();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const dept = data.department ?? { name: 'Department' };
+  const eng = data.engagement ?? { utilizationPct: 0, totalLoad: 0, totalMax: 0, students: 0 };
+  const stats = data.stats ?? {};
+  const approvals = data.pendingApprovals ?? { syllabus: 0, leaves: 0 };
+
+  const statCards = [
+    { label: 'Faculty', value: String(stats.faculty ?? 0), sub: 'in department', color: '#2563eb', icon: 'people-outline' },
+    { label: 'Students', value: String(stats.students ?? 0), sub: 'enrolled', color: '#059669', icon: 'school-outline' },
+    { label: 'Courses', value: String(stats.courses ?? 0), sub: 'department', color: '#d97706', icon: 'book-outline' },
+    { label: 'Pending', value: String(approvals.syllabus + approvals.leaves), sub: 'approvals', color: '#0891b2', icon: 'hourglass-outline' },
+  ];
+
+  const approvalRows = [
+    ...(approvals.syllabus > 0
+      ? [{ id: 'syl', type: 'Syllabus', item: `${approvals.syllabus} syllabus version(s) awaiting review`, module: 'Syllabus' }]
+      : []),
+    ...(approvals.leaves > 0
+      ? [{ id: 'lv', type: 'Leave', item: `${approvals.leaves} leave request(s) awaiting decision`, module: 'Leave' }]
+      : []),
+  ];
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
-        <Text style={styles.heroLabel}>COMPUTER SCIENCE DEPARTMENT</Text>
+        <Text style={styles.heroLabel}>{dept.name.toUpperCase()}</Text>
         <Text style={styles.heroTitle}>Department Overview</Text>
         <View style={styles.heroProgress}>
-          <View style={[styles.heroProgressFill, { width: '82%' }]} />
+          <View style={[styles.heroProgressFill, { width: `${eng.utilizationPct}%` }]} />
         </View>
         <View style={styles.heroRow}>
           <View>
-            <Text style={styles.heroValue}>82%</Text>
-            <Text style={styles.heroSub}>workload utilized · 410 students</Text>
+            <Text style={styles.heroValue}>{eng.utilizationPct}%</Text>
+            <Text style={styles.heroSub}>
+              workload · {eng.totalLoad}/{eng.totalMax} hrs · {eng.students} students
+            </Text>
           </View>
           <View style={styles.heroBadge}>
             <Ionicons name="shield-checkmark-outline" size={14} color="#fff" />
-            <Text style={styles.heroBadgeText}>NAAC Ready</Text>
+            <Text style={styles.heroBadgeText}>{dept.code}</Text>
           </View>
         </View>
       </LinearGradient>
 
       <View style={styles.statsGrid}>
-        {stats.map((s) => (
+        {statCards.map((s) => (
           <View key={s.label} style={styles.statCard}>
             <View style={[styles.statIcon, { backgroundColor: s.color + '1a' }]}>
               <Ionicons name={s.icon} size={16} color={s.color} />
@@ -69,63 +120,69 @@ export default function HodDashboard({ navigation }) {
         ))}
       </View>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Pending Approvals</Text>
-          <TouchableOpacity onPress={() => navigation.openModule('Syllabus')}>
-            <Text style={styles.seeAll}>Review</Text>
-          </TouchableOpacity>
+      {approvalRows.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Pending Approvals</Text>
+            <TouchableOpacity onPress={() => navigation.openModule('Syllabus')}>
+              <Text style={styles.seeAll}>Review</Text>
+            </TouchableOpacity>
+          </View>
+          {approvalRows.map((p) => (
+            <TouchableOpacity
+              key={p.id}
+              style={styles.listCard}
+              onPress={() => navigation.openModule(p.module)}
+            >
+              <View
+                style={[
+                  styles.typeIcon,
+                  { backgroundColor: p.type === 'Syllabus' ? '#dbeafe' : '#dcfce7' },
+                ]}
+              >
+                <Ionicons
+                  name={p.type === 'Syllabus' ? 'document-text-outline' : 'calendar-outline'}
+                  size={16}
+                  color={p.type === 'Syllabus' ? '#2563eb' : '#059669'}
+                />
+              </View>
+              <View style={styles.listBody}>
+                <Text style={styles.listTitle}>{p.item}</Text>
+                <Text style={styles.listSub}>Tap to open {p.module}</Text>
+              </View>
+              <View style={styles.pendingChip}>
+                <Text style={styles.pendingText}>Pending</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
-        {pendingApprovals.map((p) => (
-          <View key={p.id} style={styles.listCard}>
-            <View
-              style={[
-                styles.typeIcon,
-                { backgroundColor: p.type === 'Syllabus' ? '#dbeafe' : '#dcfce7' },
-              ]}
-            >
-              <Ionicons
-                name={p.type === 'Syllabus' ? 'document-text-outline' : 'calendar-outline'}
-                size={16}
-                color={p.type === 'Syllabus' ? '#2563eb' : '#059669'}
-              />
-            </View>
-            <View style={styles.listBody}>
-              <Text style={styles.listTitle}>{p.item}</Text>
-              <Text style={styles.listSub}>
-                {p.by} · {p.time}
-              </Text>
-            </View>
-            <View style={styles.pendingChip}>
-              <Text style={styles.pendingText}>Pending</Text>
-            </View>
-          </View>
-        ))}
-      </View>
+      )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Department Alerts</Text>
-        {classAlerts.map((a) => (
-          <View key={a.id} style={styles.alertCard}>
-            <View
-              style={[
-                styles.alertIcon,
-                { backgroundColor: a.severity === 'High' ? '#fee2e2' : '#fef3c7' },
-              ]}
-            >
-              <Ionicons
-                name={a.severity === 'High' ? 'warning-outline' : 'alert-circle-outline'}
-                size={16}
-                color={a.severity === 'High' ? '#dc2626' : '#d97706'}
-              />
+      {(data.alerts ?? []).length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Department Alerts</Text>
+          {data.alerts.map((a, idx) => (
+            <View key={idx} style={styles.alertCard}>
+              <View
+                style={[
+                  styles.alertIcon,
+                  { backgroundColor: a.severity === 'HIGH' ? '#fee2e2' : '#fef3c7' },
+                ]}
+              >
+                <Ionicons
+                  name={a.severity === 'HIGH' ? 'warning-outline' : 'alert-circle-outline'}
+                  size={16}
+                  color={a.severity === 'HIGH' ? '#dc2626' : '#d97706'}
+                />
+              </View>
+              <View style={styles.listBody}>
+                <Text style={styles.listTitle}>{a.message}</Text>
+                <Text style={styles.listSub}>{a.type}</Text>
+              </View>
             </View>
-            <View style={styles.listBody}>
-              <Text style={styles.listTitle}>{a.title}</Text>
-              <Text style={styles.listSub}>{a.detail}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
@@ -144,27 +201,16 @@ export default function HodDashboard({ navigation }) {
           ))}
         </View>
       </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {activity.map((a, idx) => (
-          <View key={idx} style={styles.activityRow}>
-            <View style={[styles.activityIcon, { backgroundColor: a.color + '1a' }]}>
-              <Ionicons name={a.icon} size={14} color={a.color} />
-            </View>
-            <View style={styles.activityBody}>
-              <Text style={styles.activityText}>{a.text}</Text>
-              <Text style={styles.activityTime}>{a.time}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   hero: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -368,30 +414,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
-  },
-  activityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  activityIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  activityBody: { flex: 1 },
-  activityText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.text,
-  },
-  activityTime: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 1,
   },
 });

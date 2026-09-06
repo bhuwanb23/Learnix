@@ -1,88 +1,149 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { hodApi } from '../../../../services/api';
 import CourseDetail from './pages/course_detail/course_detail';
 
-const courses = [
-  { id: 'C1', code: 'CS301', name: 'Data Structures', program: 'B.Tech CSE', semester: 5, credits: 4, teacher: 'Dr. Meera Iyer', syllabus: 'Approved', color: '#2563eb' },
-  { id: 'C2', code: 'CS302', name: 'Operating Systems', program: 'B.Tech CSE', semester: 5, credits: 4, teacher: 'Dr. Sunita Rao', syllabus: 'Approved', color: '#3b82f6' },
-  { id: 'C3', code: 'CS304', name: 'DBMS', program: 'B.Tech CSE', semester: 5, credits: 4, teacher: 'Dr. Sunita Rao', syllabus: 'Pending', color: '#059669' },
-  { id: 'C4', code: 'CS305', name: 'Computer Networks', program: 'B.Tech CSE', semester: 5, credits: 3, teacher: 'Dr. Sunita Rao', syllabus: 'Approved', color: '#0891b2' },
-  { id: 'C5', code: 'CS306', name: 'Artificial Intelligence', program: 'B.Tech CSE', semester: 6, credits: 4, teacher: 'Dr. Arjun Nair', syllabus: 'Draft', color: '#d97706' },
-];
+const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
 
 const syllabusStyle = (s) => {
-  if (s === 'Approved') return { bg: '#dcfce7', color: '#059669' };
-  if (s === 'Pending') return { bg: '#fef3c7', color: '#d97706' };
-  return { bg: '#e0e7ff', color: '#4f46e5' };
+  if (s === 'HOD_APPROVED' || s === 'ADMIN_APPROVED') return { bg: '#dcfce7', color: '#059669', label: 'Approved' };
+  if (s === 'SUBMITTED') return { bg: '#fef3c7', color: '#d97706', label: 'Pending' };
+  if (s === 'CHANGES_REQUESTED') return { bg: '#fee2e2', color: '#dc2626', label: 'Changes Req.' };
+  return { bg: '#e0e7ff', color: '#4f46e5', label: 'Draft' };
 };
 
 export default function CoursesModule({ navigation }) {
-  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
-  if (selectedCourse) {
-    return <CourseDetail course={selectedCourse} onBack={() => setSelectedCourse(null)} />;
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const d = await hodApi.courses();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
+  if (selectedId) {
+    return <CourseDetail courseId={selectedId} onBack={() => setSelectedId(null)} />;
   }
 
+  if (loading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const courses = data?.courses ?? [];
+  const stats = data?.stats ?? { total: 0, approved: 0, pending: 0 };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>32</Text>
+          <Text style={styles.statValue}>{stats.total}</Text>
           <Text style={styles.statLabel}>Courses</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>27</Text>
+          <Text style={styles.statValue}>{stats.approved}</Text>
           <Text style={styles.statLabel}>Approved</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>5</Text>
+          <Text style={styles.statValue}>{stats.pending}</Text>
           <Text style={styles.statLabel}>Pending</Text>
         </View>
       </View>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Semester 5 & 6 Courses</Text>
+        <Text style={styles.sectionTitle}>Department Courses</Text>
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => Alert.alert('New Course', 'Course creation form opens here — code, credits and teacher.')}
+          onPress={() => Alert.alert('New Course', 'Course creation is handled by Admin — courses appear here once added to your department.')}
         >
           <Ionicons name="add" size={15} color="#fff" />
           <Text style={styles.addText}>New Course</Text>
         </TouchableOpacity>
       </View>
 
-      {courses.map((c) => {
-        const st = syllabusStyle(c.syllabus);
+      {courses.map((c, idx) => {
+        const color = COLORS[idx % COLORS.length];
+        const st = syllabusStyle(c.syllabusStatus);
         return (
           <TouchableOpacity
             key={c.id}
             style={styles.card}
-            onPress={() => setSelectedCourse(c)}
+            onPress={() => setSelectedId(c.id)}
           >
-            <View style={[styles.courseIcon, { backgroundColor: c.color + '1a' }]}>
-              <Text style={[styles.courseCode, { color: c.color }]}>{c.code}</Text>
+            <View style={[styles.courseIcon, { backgroundColor: color + '1a' }]}>
+              <Text style={[styles.courseCode, { color }]}>{c.code}</Text>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.name}>{c.name}</Text>
               <Text style={styles.meta}>
-                {c.program} · Sem {c.semester} · {c.credits} credits
+                Sem {c.semester} · {c.credits} credits · {c.offerings.reduce((s, o) => s + o.students, 0)} students
               </Text>
-              <Text style={styles.teacher}>{c.teacher}</Text>
+              <Text style={styles.teacher} numberOfLines={1}>
+                {[...new Set(c.offerings.map((o) => o.teacher))].join(', ') || 'Not offered this year'}
+              </Text>
             </View>
             <View style={[styles.syllabusChip, { backgroundColor: st.bg }]}>
-              <Text style={[styles.syllabusText, { color: st.color }]}>{c.syllabus}</Text>
+              <Text style={[styles.syllabusText, { color: st.color }]}>{st.label}</Text>
             </View>
           </TouchableOpacity>
         );
       })}
+      {courses.length === 0 && (
+        <Text style={styles.emptyText}>No courses in your department yet.</Text>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

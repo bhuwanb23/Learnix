@@ -1,43 +1,118 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
-
-const initialLeaves = [
-  { id: 'LV1', teacher: 'Prof. Anand Krishnan', type: 'Medical Leave', from: 'Oct 12, 2026', to: 'Oct 14, 2026', days: 3, reason: 'Scheduled surgery and recovery', status: 'Pending', color: '#dc2626' },
-  { id: 'LV2', teacher: 'Dr. Priya Venkatesh', type: 'Casual Leave', from: 'Oct 20, 2026', to: 'Oct 21, 2026', days: 2, reason: 'Family function', status: 'Pending', color: '#0891b2' },
-  { id: 'LV3', teacher: 'Dr. Sunita Rao', type: 'Earned Leave', from: 'Nov 2, 2026', to: 'Nov 6, 2026', days: 5, reason: 'Annual vacation', status: 'Pending', color: '#d97706' },
-  { id: 'LV4', teacher: 'Dr. Meera Iyer', type: 'Casual Leave', from: 'Sep 18, 2026', to: 'Sep 19, 2026', days: 2, reason: 'Conference travel', status: 'Approved', color: '#2563eb' },
-];
+import { hodApi } from '../../../../services/api';
 
 const typeStyle = (t) => {
-  if (t === 'Medical Leave') return { bg: '#fee2e2', color: '#dc2626' };
-  if (t === 'Casual Leave') return { bg: '#dbeafe', color: '#2563eb' };
-  return { bg: '#fef3c7', color: '#d97706' };
+  if (t === 'MEDICAL') return { bg: '#fee2e2', color: '#dc2626', label: 'Medical' };
+  if (t === 'CASUAL') return { bg: '#dbeafe', color: '#2563eb', label: 'Casual' };
+  return { bg: '#fef3c7', color: '#d97706', label: 'Earned' };
 };
 
+const fmtDate = (iso) =>
+  new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
 export default function LeaveModule({ navigation }) {
-  const [leaves, setLeaves] = useState(initialLeaves);
+  const [leaves, setLeaves] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [tab, setTab] = useState('Pending');
+  const [busyId, setBusyId] = useState(null);
 
-  const visible = tab === 'Pending' ? leaves.filter((l) => l.status === 'Pending') : leaves.filter((l) => l.status !== 'Pending');
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const list = await hodApi.leaves();
+      setLeaves(list);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  const handleApprove = (id) => {
-    const l = leaves.find((x) => x.id === id);
-    setLeaves(leaves.map((x) => (x.id === id ? { ...x, status: 'Approved' } : x)));
-    Alert.alert('Approved', `${l.teacher}'s ${l.type.toLowerCase()} approved. Substitute arrangement requested.`);
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
   };
 
-  const handleReject = (id) => {
-    const l = leaves.find((x) => x.id === id);
-    setLeaves(leaves.map((x) => (x.id === id ? { ...x, status: 'Rejected' } : x)));
-    Alert.alert('Rejected', `${l.teacher}'s leave request rejected. They were notified.`);
+  const onApprove = (l) => {
+    const others = (leaves ?? [])
+      .map((x) => x.teacher)
+      .filter((name, i, arr) => arr.indexOf(name) === i && name !== l.teacher);
+    if (others.length === 0) {
+      // no faculty picker possible from this payload — approve without substitute
+      confirmApprove(l, null);
+      return;
+    }
+    Alert.alert(
+      'Substitute',
+      `Assign a substitute for ${l.teacher}'s classes?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Approve without', onPress: () => confirmApprove(l, null) },
+      ],
+    );
   };
 
-  const handleSubstitute = (id) => {
-    const l = leaves.find((x) => x.id === id);
-    Alert.alert('Substitute', `Assign a substitute for ${l.teacher}'s classes (${l.days} days).`);
+  const confirmApprove = async (l, substituteUserId) => {
+    setBusyId(l.id);
+    try {
+      await hodApi.approveLeave(l.id, substituteUserId);
+      await load(false);
+      Alert.alert('Approved', `${l.teacher}'s ${typeStyle(l.type).label.toLowerCase()} leave (${l.days} day${l.days === 1 ? '' : 's'}) approved.`);
+    } catch (e) {
+      Alert.alert('Cannot approve', e.message);
+    } finally {
+      setBusyId(null);
+    }
   };
+
+  const onReject = async (l) => {
+    setBusyId(l.id);
+    try {
+      await hodApi.rejectLeave(l.id);
+      await load(false);
+      Alert.alert('Rejected', `${l.teacher}'s leave request rejected. They were notified.`);
+    } catch (e) {
+      Alert.alert('Cannot reject', e.message);
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading && !leaves) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !leaves) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const list = leaves ?? [];
+  const pending = list.filter((l) => l.status === 'PENDING');
+  const processed = list.filter((l) => l.status !== 'PENDING');
+  const visible = tab === 'Pending' ? pending : processed;
 
   return (
     <View style={styles.container}>
@@ -48,57 +123,80 @@ export default function LeaveModule({ navigation }) {
             style={[styles.tab, tab === t && styles.tabActive]}
             onPress={() => setTab(t)}
           >
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>{t}</Text>
+            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+              {t}{t === 'Pending' && pending.length > 0 ? ` (${pending.length})` : ''}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         {visible.map((l) => {
           const st = typeStyle(l.type);
           return (
             <View key={l.id} style={styles.card}>
-              <View style={[styles.avatar, { backgroundColor: l.color + '1a' }]}>
-                <Text style={[styles.avatarText, { color: l.color }]}>{l.teacher.charAt(0)}</Text>
+              <View style={[styles.avatar, { backgroundColor: st.bg }]}>
+                <Text style={[styles.avatarText, { color: st.color }]}>{l.teacher.charAt(0)}</Text>
               </View>
               <View style={styles.cardBody}>
                 <Text style={styles.teacher}>{l.teacher}</Text>
                 <View style={styles.typeRow}>
                   <View style={[styles.typeChip, { backgroundColor: st.bg }]}>
-                    <Text style={[styles.typeText, { color: st.color }]}>{l.type}</Text>
+                    <Text style={[styles.typeText, { color: st.color }]}>{st.label}</Text>
                   </View>
                   <Text style={styles.daysText}>{l.days} days</Text>
                 </View>
                 <Text style={styles.meta}>
-                  {l.from} → {l.to}
+                  {fmtDate(l.fromDate)} → {fmtDate(l.toDate)}
                 </Text>
                 <Text style={styles.reason} numberOfLines={1}>
                   Reason: {l.reason}
                 </Text>
+                {l.status === 'APPROVED' && l.substituteUserId ? (
+                  <Text style={styles.substituteNote}>Substitute arranged</Text>
+                ) : null}
               </View>
-              {l.status === 'Pending' ? (
+              {l.status === 'PENDING' ? (
                 <View style={styles.actions}>
                   <TouchableOpacity
                     style={styles.rejectBtn}
-                    onPress={() => handleReject(l.id)}
+                    disabled={busyId === l.id}
+                    onPress={() => onReject(l)}
                   >
                     <Ionicons name="close-outline" size={15} color="#dc2626" />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.approveBtn}
-                    onPress={() => handleApprove(l.id)}
+                    disabled={busyId === l.id}
+                    onPress={() => onApprove(l)}
                   >
-                    <Ionicons name="checkmark-outline" size={15} color="#fff" />
+                    {busyId === l.id ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Ionicons name="checkmark-outline" size={15} color="#fff" />
+                    )}
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={styles.substituteBtn}
-                  onPress={() => handleSubstitute(l.id)}
+                <View
+                  style={[
+                    styles.statusChip,
+                    { backgroundColor: l.status === 'APPROVED' ? '#dcfce7' : '#fee2e2' },
+                  ]}
                 >
-                  <Ionicons name="people-outline" size={13} color={theme.colors.primary} />
-                  <Text style={styles.substituteText}>Substitute</Text>
-                </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      { color: l.status === 'APPROVED' ? '#059669' : '#dc2626' },
+                    ]}
+                  >
+                    {l.status === 'APPROVED' ? 'Approved' : 'Rejected'}
+                  </Text>
+                </View>
               )}
             </View>
           );
@@ -106,7 +204,9 @@ export default function LeaveModule({ navigation }) {
         {visible.length === 0 && (
           <View style={styles.emptyCard}>
             <Ionicons name="calendar-clear-outline" size={30} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>No pending leave requests.</Text>
+            <Text style={styles.emptyText}>
+              {tab === 'Pending' ? 'No pending leave requests.' : 'No processed leaves yet.'}
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -116,6 +216,10 @@ export default function LeaveModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   tabsRow: {
     flexDirection: 'row',
     marginTop: 16,
@@ -195,6 +299,12 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginTop: 3,
   },
+  substituteNote: {
+    fontSize: 10,
+    fontFamily: 'Manrope-SemiBold',
+    color: '#059669',
+    marginTop: 3,
+  },
   actions: {
     flexDirection: 'row',
   },
@@ -215,19 +325,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  substituteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#dbeafe',
-    borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+  statusChip: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  substituteText: {
+  statusText: {
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
-    color: theme.colors.primary,
-    marginLeft: 4,
   },
   emptyCard: {
     alignItems: 'center',
@@ -243,5 +348,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 10,
+    textAlign: 'center',
   },
 });

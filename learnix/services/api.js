@@ -7,10 +7,16 @@ const BASE_URL =
   Platform.OS === 'android' ? 'http://10.0.2.2:4000/api/v1' : 'http://localhost:4000/api/v1';
 
 // Demo credentials — replaced by the real login flow once auth screens wire up.
-const DEMO_LOGIN = {
-  email: 'priya@learnix.dev',
-  password: 'Passw0rd!',
-};
+// Each user app sets its demo identity at startup via setDemoUser().
+let demoEmail = 'priya@learnix.dev';
+const DEMO_PASSWORD = 'Passw0rd!';
+
+export function setDemoUser(email) {
+  if (demoEmail !== email) {
+    demoEmail = email;
+    accessToken = null; // force re-login as the new demo user
+  }
+}
 
 let accessToken = null;
 let refreshPromise = null;
@@ -19,7 +25,7 @@ async function login() {
   const res = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(DEMO_LOGIN),
+    body: JSON.stringify({ email: demoEmail, password: DEMO_PASSWORD }),
   });
   const json = await res.json();
   if (!res.ok || !json.data) throw new Error(json.error?.message || 'Login failed');
@@ -104,4 +110,29 @@ export const alumniApi = {
   markAllRead: () => api.post('/alumni/notifications/read-all'),
   broadcast: (payload) => api.post('/alumni/broadcasts', payload),
   profile: () => api.get('/alumni/profile'),
+};
+
+// ── HOD endpoints (docs/users/11 §4) ──
+export const hodApi = {
+  dashboard: () => api.get('/hod/dashboard'),
+  faculty: () => api.get('/hod/faculty'),
+  reassign: (offeringId, toUserId) =>
+    api.post(`/hod/offerings/${offeringId}/reassign`, { toUserId }),
+  syllabus: () => api.get('/hod/syllabus'),
+  approveSyllabus: (id) => api.post(`/hod/syllabus/${id}/approve`),
+  requestSyllabusChanges: (id, feedback) =>
+    api.post(`/hod/syllabus/${id}/request-changes`, { feedback }),
+  students: (year) => api.get(`/hod/students${year ? `?year=${year}` : ''}`),
+  courses: () => api.get('/hod/courses'),
+  courseDetail: (id) => api.get(`/hod/courses/${id}`),
+  leaves: () => api.get('/hod/leave'),
+  approveLeave: (id, substituteUserId) =>
+    api.post(`/hod/leave/${id}/approve`,
+      substituteUserId ? { substituteUserId } : {}),
+  rejectLeave: (id) => api.post(`/hod/leave/${id}/reject`),
+  analytics: () => api.get('/hod/analytics'),
+  notifications: () => api.get('/hod/notifications'),
+  markAllRead: () => api.post('/hod/notifications/read-all'),
+  broadcast: (payload) => api.post('/hod/broadcasts', payload),
+  profile: () => api.get('/hod/profile'),
 };

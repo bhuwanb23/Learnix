@@ -1,98 +1,168 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { hodApi } from '../../../../services/api';
 import FacultyDetail from './pages/faculty_detail/faculty_detail';
 
-const faculty = [
-  { id: 'TCH001', name: 'Dr. Meera Iyer', designation: 'Professor', subjects: ['Data Structures', 'Algorithms'], classes: 4, workload: 18, maxWorkload: 24, status: 'Active', color: '#2563eb' },
-  { id: 'TCH002', name: 'Dr. Sunita Rao', designation: 'Assistant Professor', subjects: ['DBMS', 'Computer Networks'], classes: 5, workload: 22, maxWorkload: 24, status: 'Active', color: '#d97706' },
-  { id: 'TCH003', name: 'Prof. Sanjay Tiwari', designation: 'Assistant Professor', subjects: ['Python', 'Web Development'], classes: 5, workload: 23, maxWorkload: 24, status: 'Active', color: '#dc2626' },
-  { id: 'TCH004', name: 'Dr. Arjun Nair', designation: 'Associate Professor', subjects: ['AI', 'Machine Learning'], classes: 4, workload: 19, maxWorkload: 24, status: 'Active', color: '#059669' },
-  { id: 'TCH005', name: 'Dr. Priya Venkatesh', designation: 'Associate Professor', subjects: ['Computer Architecture', 'OS'], classes: 3, workload: 15, maxWorkload: 24, status: 'On Leave', color: '#0891b2' },
-];
-
-const statusStyle = (s) => {
-  if (s === 'Active') return { bg: '#dcfce7', color: '#059669' };
-  return { bg: '#fef3c7', color: '#d97706' };
-};
+const COLORS = ['#2563eb', '#d97706', '#dc2626', '#059669', '#0891b2', '#7c3aed'];
 
 export default function FacultyModule({ navigation }) {
-  const [selectedFaculty, setSelectedFaculty] = useState(null);
+  const [faculty, setFaculty] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
-  if (selectedFaculty) {
-    return <FacultyDetail faculty={selectedFaculty} onBack={() => setSelectedFaculty(null)} />;
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const list = await hodApi.faculty();
+      setFaculty(list);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
+  if (selectedId) {
+    return (
+      <FacultyDetail
+        facultyId={selectedId}
+        facultyList={faculty ?? []}
+        onBack={() => {
+          setSelectedId(null);
+          load(false);
+        }}
+      />
+    );
   }
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>18</Text>
-          <Text style={styles.statLabel}>Faculty</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>16</Text>
-          <Text style={styles.statLabel}>Active</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>80%</Text>
-          <Text style={styles.statLabel}>Avg Workload</Text>
-        </View>
+  if (loading && !faculty) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
       </View>
+    );
+  }
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Department Faculty</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => Alert.alert('Add Faculty', 'Faculty onboarding form opens here — designation, subjects and workload.')}
-        >
-          <Ionicons name="add" size={15} color="#fff" />
-          <Text style={styles.addText}>Add</Text>
+  if (error && !faculty) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
+    );
+  }
 
-      {faculty.map((f) => {
-        const st = statusStyle(f.status);
-        const pct = Math.round((f.workload / f.maxWorkload) * 100);
-        return (
+  const list = faculty ?? [];
+  const active = list.filter((f) => f.status === 'ACTIVE').length;
+  const avgPct = list.length === 0 ? 0 : Math.round(list.reduce((s, f) => s + f.utilizationPct, 0) / list.length);
+
+  return (
+    <View style={styles.flex}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{list.length}</Text>
+            <Text style={styles.statLabel}>Faculty</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{active}</Text>
+            <Text style={styles.statLabel}>Active</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{avgPct}%</Text>
+            <Text style={styles.statLabel}>Avg Workload</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Department Faculty</Text>
           <TouchableOpacity
-            key={f.id}
-            style={styles.card}
-            onPress={() => setSelectedFaculty(f)}
+            style={styles.addBtn}
+            onPress={() => Alert.alert('Add Faculty', 'Faculty onboarding is handled by Admin — new staff appear here once assigned to your department.')}
           >
-            <View style={[styles.avatar, { backgroundColor: f.color + '1a' }]}>
-              <Text style={[styles.avatarText, { color: f.color }]}>{f.name.charAt(0)}</Text>
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.name}>{f.name}</Text>
-              <Text style={styles.meta}>
-                {f.designation} · {f.classes} classes
-              </Text>
-              <View style={styles.workloadRow}>
-                <View style={styles.workloadTrack}>
-                  <View
-                    style={[
-                      styles.workloadFill,
-                      { width: pct + '%', backgroundColor: pct > 90 ? '#dc2626' : pct > 75 ? '#d97706' : '#2563eb' },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.workloadText}>{f.workload}/{f.maxWorkload}</Text>
-              </View>
-            </View>
-            <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-              <Text style={[styles.statusText, { color: st.color }]}>{f.status}</Text>
-            </View>
+            <Ionicons name="add" size={15} color="#fff" />
+            <Text style={styles.addText}>Add</Text>
           </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+        </View>
+
+        {list.map((f, idx) => {
+          const color = COLORS[idx % COLORS.length];
+          const st = f.status === 'ACTIVE'
+            ? { bg: '#dcfce7', color: '#059669', label: 'Active' }
+            : { bg: '#fef3c7', color: '#d97706', label: 'On Leave' };
+          const pct = Math.min(f.utilizationPct, 100);
+          return (
+            <TouchableOpacity
+              key={f.id}
+              style={styles.card}
+              onPress={() => setSelectedId(f.id)}
+            >
+              <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
+                <Text style={[styles.avatarText, { color }]}>{f.name.charAt(0)}</Text>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={styles.name} numberOfLines={1}>
+                  {f.name}{f.isHod ? ' · HOD' : ''}
+                </Text>
+                <Text style={styles.meta}>
+                  {f.designation} · {f.classes.length} classes
+                </Text>
+                <View style={styles.workloadRow}>
+                  <View style={styles.workloadTrack}>
+                    <View
+                      style={[
+                        styles.workloadFill,
+                        { width: pct + '%', backgroundColor: pct > 90 ? '#dc2626' : pct > 75 ? '#d97706' : '#2563eb' },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.workloadText}>{f.workload}/{f.maxWorkload}</Text>
+                </View>
+              </View>
+              <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
+                <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+        {list.length === 0 && (
+          <Text style={styles.emptyText}>No faculty assigned to your department yet.</Text>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -1,109 +1,87 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
+import { hodApi } from '../../../../services/api';
 
-const initialNotifications = [
-  {
-    id: '1',
-    title: 'Syllabus submitted for approval',
-    message: 'Dr. Arjun Nair submitted the AI & ML syllabus (Sem 6, 6 units) for department approval.',
-    time: '30 min ago',
-    audience: 'Department',
-    type: 'syllabus',
-    unread: true,
-  },
-  {
-    id: '2',
-    title: 'Leave request — Dr. Priya Venkatesh',
-    message: 'Casual leave Oct 20-21 (2 days). Approve or reject before the faculty meeting.',
-    time: '2 hrs ago',
-    audience: 'HOD',
-    type: 'leave',
-    unread: true,
-  },
-  {
-    id: '3',
-    title: 'CS301 attendance below 75%',
-    message: 'Data Structures dropped to 68% this week. 6 students flagged at risk of detention.',
-    time: '4 hrs ago',
-    audience: 'Faculty',
-    type: 'alert',
-    unread: false,
-  },
-  {
-    id: '4',
-    title: 'Department meeting Friday 4 PM',
-    message: 'Agenda: semester-end evaluation schedule, new course proposals and NAAC documentation.',
-    time: 'Yesterday',
-    audience: 'Faculty',
-    type: 'meeting',
-    unread: false,
-  },
-  {
-    id: '5',
-    title: 'Exam results published',
-    message: 'Semester 5 results for CSE published by the Exam Cell. Department pass rate 91%.',
-    time: '2 days ago',
-    audience: 'Department',
-    type: 'result',
-    unread: false,
-  },
+const TYPE_META = {
+  SYLLABUS: { color: '#2563eb', icon: 'document-text-outline' },
+  LEAVE: { color: '#059669', icon: 'calendar-outline' },
+  BROADCAST: { color: '#7c3aed', icon: 'megaphone-outline' },
+  MENTORSHIP: { color: '#0891b2', icon: 'people-outline' },
+  EVENT: { color: '#d97706', icon: 'calendar-outline' },
+  SYSTEM: { color: '#64748b', icon: 'information-circle-outline' },
+};
+
+const AUDIENCES = [
+  { key: 'ALL_FACULTY', label: 'All Faculty' },
+  { key: 'DEPT_STUDENTS', label: 'Dept Students' },
 ];
 
-const audiences = ['All Faculty', 'Department Students', 'HOD Office', 'All CSE'];
-
 export default function Notifications({ navigation }) {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('Inbox');
+  const [audience, setAudience] = useState('ALL_FACULTY');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [audience, setAudience] = useState('All Faculty');
+  const [sending, setSending] = useState(false);
+  const [marking, setMarking] = useState(false);
 
-  const markAllRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, unread: false })));
+  const load = useCallback(async () => {
+    try {
+      setError(null);
+      const d = await hodApi.notifications();
+      setData(d);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const markAllRead = async () => {
+    setMarking(true);
+    try {
+      await hodApi.markAllRead();
+      await load();
+    } catch (e) {
+      Alert.alert('Cannot mark read', e.message);
+    } finally {
+      setMarking(false);
+    }
   };
 
-  const markRead = (id) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
-  };
-
-  const sendBroadcast = () => {
+  const sendBroadcast = async () => {
     if (!subject.trim() || !message.trim()) {
       Alert.alert('Incomplete', 'Add a subject and message before broadcasting.');
       return;
     }
-    Alert.alert('Broadcast sent', `"${subject}" was pushed to ${audience}.`);
-    setSubject('');
-    setMessage('');
-  };
-
-  const unreadCount = notifications.filter((n) => n.unread).length;
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'syllabus': return '#2563eb';
-      case 'leave': return '#059669';
-      case 'alert': return '#dc2626';
-      case 'meeting': return '#d97706';
-      case 'result': return '#0891b2';
-      default: return '#0891b2';
+    setSending(true);
+    try {
+      const res = await hodApi.broadcast({
+        audience,
+        title: subject.trim(),
+        body: message.trim(),
+      });
+      Alert.alert('Broadcast sent', `"${subject.trim()}" was delivered to ${res.recipients} recipient${res.recipients === 1 ? '' : 's'}.`);
+      setSubject('');
+      setMessage('');
+    } catch (e) {
+      Alert.alert('Cannot send', e.message);
+    } finally {
+      setSending(false);
     }
   };
 
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'syllabus': return 'document-text-outline';
-      case 'leave': return 'calendar-outline';
-      case 'alert': return 'warning-outline';
-      case 'meeting': return 'people-outline';
-      case 'result': return 'school-outline';
-      default: return 'information-circle-outline';
-    }
-  };
+  const unreadCount = data?.unread ?? 0;
+  const notifications = data?.notifications ?? [];
 
   return (
     <View style={styles.container}>
@@ -113,12 +91,16 @@ export default function Notifications({ navigation }) {
             <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
-          <TouchableOpacity style={styles.headerIconBtn} onPress={markAllRead}>
-            <Ionicons name="checkmark-done-outline" size={20} color="#fff" />
+          <TouchableOpacity style={styles.headerIconBtn} disabled={marking || unreadCount === 0} onPress={markAllRead}>
+            {marking ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="checkmark-done-outline" size={20} color="#fff" />
+            )}
           </TouchableOpacity>
         </View>
         {activeTab === 'Inbox' && (
-          <Text style={styles.headerSub}>{unreadCount} unread · tap the bell to mark all read</Text>
+          <Text style={styles.headerSub}>{unreadCount} unread · tap the check to mark all read</Text>
         )}
       </LinearGradient>
 
@@ -134,38 +116,72 @@ export default function Notifications({ navigation }) {
         ))}
       </View>
 
-      {activeTab === 'Inbox' ? (
+      {loading && !data ? (
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color="#2563eb" />
+        </View>
+      ) : error && !data ? (
+        <View style={styles.center}>
+          <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={load}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : activeTab === 'Inbox' ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notifications.map((n) => (
-            <TouchableOpacity key={n.id} style={styles.card} onPress={() => markRead(n.id)}>
-              <View style={styles.iconWrap}>
-                <View
-                  style={[
-                    styles.iconCircle,
-                    { backgroundColor: getTypeColor(n.type) + '1a' },
-                  ]}
-                >
-                  <Ionicons name={getTypeIcon(n.type)} size={18} color={getTypeColor(n.type)} />
+          {notifications.map((n) => {
+            const meta = TYPE_META[n.type] ?? TYPE_META.SYSTEM;
+            return (
+              <View key={n.id} style={styles.card}>
+                <View style={styles.iconWrap}>
+                  <View style={[styles.iconCircle, { backgroundColor: meta.color + '1a' }]}>
+                    <Ionicons name={meta.icon} size={18} color={meta.color} />
+                  </View>
+                  {!n.read && <View style={styles.unreadDot} />}
                 </View>
-                {n.unread && <View style={styles.unreadDot} />}
+                <View style={styles.cardBody}>
+                  <View style={styles.cardTop}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{n.title}</Text>
+                    <Text style={styles.cardTime}>
+                      {new Date(n.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </Text>
+                  </View>
+                  <Text style={styles.cardMessage} numberOfLines={2}>{n.body}</Text>
+                  <View style={styles.audienceChip}>
+                    <Ionicons name="business-outline" size={11} color={theme.colors.textMuted} />
+                    <Text style={styles.audienceText}>{n.type}</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.cardBody}>
-                <View style={styles.cardTop}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{n.title}</Text>
-                  <Text style={styles.cardTime}>{n.time}</Text>
-                </View>
-                <Text style={styles.cardMessage} numberOfLines={2}>{n.message}</Text>
-                <View style={styles.audienceChip}>
-                  <Ionicons name="business-outline" size={11} color={theme.colors.textMuted} />
-                  <Text style={styles.audienceText}>{n.audience}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
+            );
+          })}
+          {notifications.length === 0 && (
+            <Text style={styles.emptyText}>Inbox is empty.</Text>
+          )}
         </ScrollView>
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.formCard}>
+            <Text style={styles.formLabel}>Audience</Text>
+            <View style={styles.audienceRow}>
+              {AUDIENCES.map((a) => (
+                <TouchableOpacity
+                  key={a.key}
+                  style={[styles.audienceChipBtn, audience === a.key && styles.audienceChipActive]}
+                  onPress={() => setAudience(a.key)}
+                >
+                  <Text
+                    style={[
+                      styles.audienceChipText,
+                      audience === a.key && styles.audienceChipTextActive,
+                    ]}
+                  >
+                    {a.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             <Text style={styles.formLabel}>Subject</Text>
             <TextInput
               style={styles.input}
@@ -184,35 +200,20 @@ export default function Notifications({ navigation }) {
               multiline
               textAlignVertical="top"
             />
-            <Text style={styles.formLabel}>Audience</Text>
-            <View style={styles.audienceRow}>
-              {audiences.map((a) => (
-                <TouchableOpacity
-                  key={a}
-                  style={[styles.audienceChipBtn, audience === a && styles.audienceChipActive]}
-                  onPress={() => setAudience(a)}
-                >
-                  <Text
-                    style={[
-                      styles.audienceChipText,
-                      audience === a && styles.audienceChipTextActive,
-                    ]}
-                  >
-                    {a}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity style={styles.sendBtn} onPress={sendBroadcast}>
-              <Ionicons name="megaphone-outline" size={18} color="#fff" />
+            <TouchableOpacity style={styles.sendBtn} disabled={sending} onPress={sendBroadcast}>
+              {sending ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="megaphone-outline" size={18} color="#fff" />
+              )}
               <Text style={styles.sendBtnText}>Broadcast</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.infoCard}>
             <Ionicons name="information-circle-outline" size={18} color={theme.colors.primary} />
             <Text style={styles.infoText}>
-              Broadcasts reach faculty and students instantly. Syllabus submissions, leave requests
-              and attendance alerts arrive automatically.
+              Broadcasts reach your department instantly in-app. Syllabus submissions, leave
+              requests and alerts arrive automatically in this inbox.
             </Text>
           </View>
         </ScrollView>
@@ -223,6 +224,11 @@ export default function Notifications({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   header: {
     paddingTop: theme.spacing.xl + 10,
     paddingHorizontal: theme.spacing.lg,

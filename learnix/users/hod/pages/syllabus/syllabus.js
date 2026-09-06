@@ -1,97 +1,213 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { hodApi } from '../../../../services/api';
 
-const initialTemplates = [
-  { id: 'S1', name: 'DBMS Syllabus', program: 'B.Tech CSE', semester: 5, units: 5, by: 'Dr. Sunita Rao', submitted: '2 hrs ago', status: 'Pending', color: '#059669' },
-  { id: 'S2', name: 'Thermodynamics Syllabus', program: 'B.Tech ME', semester: 5, units: 5, by: 'Prof. Anand Krishnan', submitted: '5 hrs ago', status: 'Pending', color: '#d97706' },
-  { id: 'S3', name: 'AI & ML Syllabus', program: 'B.Tech CSE', semester: 6, units: 6, by: 'Dr. Arjun Nair', submitted: 'Yesterday', status: 'Pending', color: '#2563eb' },
-  { id: 'S4', name: 'Data Structures Syllabus', program: 'B.Tech CSE', semester: 5, units: 5, by: 'Dr. Meera Iyer', submitted: 'Jun 2026', status: 'Approved', color: '#2563eb' },
-  { id: 'S5', name: 'Operating Systems Syllabus', program: 'B.Tech CSE', semester: 5, units: 6, by: 'Dr. Sunita Rao', submitted: 'Jun 2026', status: 'Approved', color: '#3b82f6' },
-];
+const COLORS = ['#059669', '#d97706', '#2563eb', '#0891b2', '#7c3aed', '#dc2626'];
 
 export default function SyllabusModule({ navigation }) {
-  const [templates, setTemplates] = useState(initialTemplates);
+  const [versions, setVersions] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [tab, setTab] = useState('Pending');
+  const [busyId, setBusyId] = useState(null);
 
-  const pending = templates.filter((t) => t.status === 'Pending');
-  const visible = tab === 'Pending' ? pending : templates.filter((t) => t.status === 'Approved');
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const list = await hodApi.syllabus();
+      setVersions(list);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  const handleApprove = (id) => {
-    const t = templates.find((x) => x.id === id);
-    setTemplates(templates.map((x) => (x.id === id ? { ...x, status: 'Approved' } : x)));
-    Alert.alert('Approved', `${t.name} approved and forwarded to Admin for final sign-off.`);
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
   };
 
-  const handleChanges = (id) => {
-    const t = templates.find((x) => x.id === id);
-    Alert.alert('Changes Requested', `Feedback sent to ${t.by} for syllabus revision.`);
+  const onApprove = async (v) => {
+    setBusyId(v.id);
+    try {
+      await hodApi.approveSyllabus(v.id);
+      await load(false);
+      Alert.alert('Approved', `${v.courseCode} syllabus approved and forwarded to Admin.`);
+    } catch (e) {
+      Alert.alert('Cannot approve', e.message);
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const handlePreview = (t) => {
-    Alert.alert(t.name, `${t.program} · Sem ${t.semester}\n${t.units} units · submitted by ${t.by}`);
+  const onRequestChanges = (v) => {
+    Alert.prompt(
+      'Request Changes',
+      `Feedback for ${v.submittedBy} on ${v.courseCode}:`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send',
+          onPress: async (feedback) => {
+            if (!feedback || feedback.trim().length < 3) {
+              Alert.alert('Feedback required', 'Write at least a short note for the teacher.');
+              return;
+            }
+            setBusyId(v.id);
+            try {
+              await hodApi.requestSyllabusChanges(v.id, feedback.trim());
+              await load(false);
+              Alert.alert('Sent', `Feedback sent to ${v.submittedBy}.`);
+            } catch (e) {
+              Alert.alert('Cannot send', e.message);
+            } finally {
+              setBusyId(null);
+            }
+          },
+        },
+      ],
+      'plain-text',
+    );
   };
+
+  if (loading && !versions) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !versions) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const list = versions ?? [];
+  const pending = list.filter((v) => v.status === 'SUBMITTED');
+  const decided = list.filter((v) => v.status !== 'SUBMITTED');
+  const visible = tab === 'Pending' ? pending : decided;
 
   return (
     <View style={styles.container}>
       <View style={styles.tabsRow}>
-        {['Pending', 'Approved'].map((t) => (
+        {['Pending', 'Decided'].map((t) => (
           <TouchableOpacity
             key={t}
             style={[styles.tab, tab === t && styles.tabActive]}
             onPress={() => setTab(t)}
           >
-            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>{t}</Text>
+            <Text style={[styles.tabText, tab === t && styles.tabTextActive]}>
+              {t}{t === 'Pending' && pending.length > 0 ? ` (${pending.length})` : ''}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-        {visible.map((t) => (
-          <View key={t.id} style={styles.card}>
-            <View style={[styles.syllabusIcon, { backgroundColor: t.color + '1a' }]}>
-              <Ionicons name="document-text-outline" size={19} color={t.color} />
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.name}>{t.name}</Text>
-              <Text style={styles.meta}>
-                {t.program} · Sem {t.semester} · {t.units} units
-              </Text>
-              <Text style={styles.submitted}>
-                by {t.by} · {t.submitted}
-              </Text>
-            </View>
-            {t.status === 'Pending' ? (
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={styles.changesBtn}
-                  onPress={() => handleChanges(t.id)}
-                >
-                  <Ionicons name="create-outline" size={14} color="#d97706" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.approveBtn}
-                  onPress={() => handleApprove(t.id)}
-                >
-                  <Ionicons name="checkmark-outline" size={14} color="#fff" />
-                </TouchableOpacity>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {visible.map((v, idx) => {
+          const color = COLORS[idx % COLORS.length];
+          const isPending = v.status === 'SUBMITTED';
+          return (
+            <View key={v.id} style={styles.card}>
+              <View style={[styles.syllabusIcon, { backgroundColor: color + '1a' }]}>
+                <Ionicons name="document-text-outline" size={19} color={color} />
               </View>
-            ) : (
-              <View style={styles.approvedChip}>
-                <Ionicons name="checkmark-circle" size={14} color="#059669" />
-                <Text style={styles.approvedText}>Approved</Text>
+              <View style={styles.cardBody}>
+                <Text style={styles.name}>{v.courseCode} — {v.courseName}</Text>
+                <Text style={styles.meta}>
+                  Sem {v.semester} · v{v.version} · {v.units} units
+                </Text>
+                <Text style={styles.submitted}>
+                  by {v.submittedBy} · {new Date(v.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </Text>
               </View>
-            )}
-            <TouchableOpacity style={styles.previewBtn} onPress={() => handlePreview(t)}>
-              <Ionicons name="eye-outline" size={14} color={theme.colors.textMuted} />
-            </TouchableOpacity>
-          </View>
-        ))}
+              {isPending ? (
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    style={styles.changesBtn}
+                    disabled={busyId === v.id}
+                    onPress={() => onRequestChanges(v)}
+                  >
+                    <Ionicons name="create-outline" size={14} color="#d97706" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.approveBtn}
+                    disabled={busyId === v.id}
+                    onPress={() => onApprove(v)}
+                  >
+                    {busyId === v.id ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Ionicons name="checkmark-outline" size={14} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.approvedChip,
+                    v.status === 'CHANGES_REQUESTED' && { backgroundColor: '#fee2e2' },
+                  ]}
+                >
+                  <Ionicons
+                    name={v.status === 'CHANGES_REQUESTED' ? 'alert-circle' : 'checkmark-circle'}
+                    size={14}
+                    color={v.status === 'CHANGES_REQUESTED' ? '#dc2626' : '#059669'}
+                  />
+                  <Text
+                    style={[
+                      styles.approvedText,
+                      { color: v.status === 'CHANGES_REQUESTED' ? '#dc2626' : '#059669' },
+                    ]}
+                  >
+                    {v.status === 'CHANGES_REQUESTED' ? 'Changes' : v.status === 'ADMIN_APPROVED' ? 'Admin' : 'Approved'}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.previewBtn}
+                onPress={() =>
+                  Alert.alert(
+                    `${v.courseCode} v${v.version}`,
+                    `${v.courseName}\nSem ${v.semester} · ${v.units} units · submitted by ${v.submittedBy}${v.feedback ? `\n\nFeedback: ${v.feedback}` : ''}`,
+                  )
+                }
+              >
+                <Ionicons name="eye-outline" size={14} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          );
+        })}
         {visible.length === 0 && (
           <View style={styles.emptyCard}>
             <Ionicons name="checkmark-done-outline" size={30} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>No pending syllabus approvals — all caught up!</Text>
+            <Text style={styles.emptyText}>
+              {tab === 'Pending'
+                ? 'No pending syllabus approvals — all caught up!'
+                : 'No decided syllabus versions yet.'}
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -101,6 +217,10 @@ export default function SyllabusModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   tabsRow: {
     flexDirection: 'row',
     marginTop: 16,
@@ -187,7 +307,6 @@ const styles = StyleSheet.create({
   approvedText: {
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
-    color: '#059669',
     marginLeft: 4,
   },
   previewBtn: {

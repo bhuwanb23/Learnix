@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
-
-const stats = [
-  { label: 'Faculty', value: '18' },
-  { label: 'Students', value: '410' },
-  { label: 'Courses', value: '32' },
-];
+import { hodApi } from '../../../../services/api';
 
 const menuItems = [
   { icon: 'people-outline', label: 'Department Committees', color: '#2563eb' },
@@ -19,39 +15,120 @@ const menuItems = [
 ];
 
 export default function Profile({ navigation }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [approvalAlerts, setApprovalAlerts] = useState(true);
   const [attendanceAlerts, setAttendanceAlerts] = useState(true);
   const [meetingAlerts, setMeetingAlerts] = useState(true);
 
+  const load = useCallback(async (showSpinner = true) => {
+    try {
+      if (showSpinner) setLoading(true);
+      setError(null);
+      const p = await hodApi.profile();
+      setProfile(p);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    load(false);
+  };
+
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Logout', 'Clear the session and re-login as the demo HOD?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.removeItem('learnix.refreshToken');
+          Alert.alert('Logged out', 'Session cleared. The app will re-authenticate on next load.');
+        },
+      },
     ]);
   };
 
+  if (loading && !profile) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
+    );
+  }
+
+  if (error && !profile) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const initials = profile.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2);
+
   return (
     <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={40} color="#fff" />
+              <Text style={styles.avatarText}>{initials}</Text>
             </View>
             <View style={styles.onlineDot} />
           </View>
-          <Text style={styles.name}>Dr. Meera Iyer</Text>
-          <Text style={styles.role}>Head of Department · Computer Science</Text>
-          <Text style={styles.dept}>Learnix Institute of Technology</Text>
+          <Text style={styles.name}>{profile.fullName}</Text>
+          <Text style={styles.role}>
+            Head of Department{profile.department ? ` · ${profile.department.code}` : ''}
+          </Text>
+          <Text style={styles.dept}>
+            {profile.department?.name ?? 'Learnix Institute'}{profile.designation ? ` · ${profile.designation}` : ''}
+          </Text>
           <View style={styles.statsRow}>
-            {stats.map((s) => (
-              <View key={s.label} style={styles.statItem}>
-                <Text style={styles.statValue}>{s.value}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
-              </View>
-            ))}
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{(profile.roles ?? []).length}</Text>
+              <Text style={styles.statLabel}>Roles</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{profile.department?.code ?? '—'}</Text>
+              <Text style={styles.statLabel}>Dept</Text>
+            </View>
           </View>
         </LinearGradient>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Contact</Text>
+          <View style={styles.card}>
+            <View style={styles.rowItem}>
+              <View style={[styles.iconWrap, { backgroundColor: '#0891b21a' }]}>
+                <Ionicons name="mail-outline" size={18} color="#0891b2" />
+              </View>
+              <View style={styles.rowBody}>
+                <Text style={styles.rowLabel}>Email</Text>
+              </View>
+              <Text style={styles.rowValue} numberOfLines={1}>{profile.email}</Text>
+            </View>
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Preferences</Text>
@@ -113,7 +190,7 @@ export default function Profile({ navigation }) {
               <View key={item.label}>
                 <TouchableOpacity
                   style={styles.rowItem}
-                  onPress={() => Alert.alert(item.label, 'Coming soon')}
+                  onPress={() => Alert.alert(item.label, 'Coming in a later phase.')}
                 >
                   <View style={[styles.iconWrap, { backgroundColor: item.color + '1a' }]}>
                     <Ionicons name={item.icon} size={18} color={item.color} />
@@ -141,6 +218,10 @@ export default function Profile({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   content: { paddingBottom: 40 },
   header: {
     paddingTop: theme.spacing.xl + 10,
@@ -160,6 +241,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: 'rgba(255,255,255,0.6)',
+  },
+  avatarText: {
+    fontSize: 28,
+    fontFamily: 'Manrope-ExtraBold',
+    color: '#fff',
   },
   onlineDot: {
     position: 'absolute',
@@ -189,6 +275,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.75)',
     marginTop: 2,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   statsRow: {
     flexDirection: 'row',
@@ -251,6 +339,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
+  },
+  rowValue: {
+    fontSize: 12,
+    fontFamily: 'Manrope-SemiBold',
+    color: theme.colors.textMuted,
+    maxWidth: '55%',
+    textAlign: 'right',
   },
   divider: { height: 1, backgroundColor: theme.colors.border },
   logoutBtn: {
