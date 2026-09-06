@@ -88,6 +88,7 @@ async function main() {
         studentProfile: u.student
           ? {
               create: {
+                institutionId: institution.id,
                 rollNo: u.student.rollNo,
                 section: u.student.section,
                 currentSemester: u.student.currentSemester,
@@ -98,6 +99,7 @@ async function main() {
         staffProfile: u.staff
           ? {
               create: {
+                institutionId: institution.id,
                 employeeNo: u.staff.employeeNo,
                 designation: u.staff.designation,
                 joiningDate: new Date('2023-06-01'),

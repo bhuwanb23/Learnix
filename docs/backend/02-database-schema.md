@@ -1,6 +1,8 @@
 # 02 — Database Schema Blueprint (all 12 roles)
 
 > The complete base schema. Grounded in `docs/users/*` (each domain cites its owning doc). Status values exactly match `05-state-machines.md`. Money = `Int` paise (`*Minor`). Every tenant table: `institutionId` + `@@index([institutionId])` (omitted below for brevity but **mandatory**). PK = `cuid()`. All models also get `createdAt/updatedAt`.
+>
+> **✅ Live status:** schema is **multi-file** at `backend/prisma/schema/` — `main.prisma` (generator/datasource) + one file per domain group (`a1_tenancy.prisma`, `a2_profiles.prisma`, …). `--schema prisma/schema` is baked into npm scripts. **Domain A COMPLETE** (all 11 tables, migration `domain_a_identity_tenancy_rbac`); `audit_logs` (Domain L) deferred with its domain — `src/lib/audit.ts` is a console stub until then. Domain B lands next, with the teacher role piece.
 
 **≈ 96 tables.** Domains: **A** Identity & Tenancy · **B** Academic Core · **C** Assessment & Exams · **D** Placement · **E** Finance · **F** Library · **G** Hostel · **H** Transport · **I** Events & Sports · **J** Alumni · **K** Communication · **L** System.
 
@@ -13,8 +15,8 @@
 | `institutions` | name, code(uq), timezone, address, logoFileId, plan, status | Platform-owned; NOT tenant-filtered itself |
 | `users` | institutionId, email(uq per inst), passwordHash, fullName, phone, avatarFileId, status(ACTIVE/SUSPENDED), lastLoginAt | Soft-delete. One row per person per institution |
 | `user_roles` | userId, role | Rows: STUDENT/TEACHER/ADMIN/PLACEMENT/EXAMCELL/ACCOUNTS/LIBRARY/HOSTEL/TRANSPORT/SPORTS/HOD/ALUMNI. uq(userId, role) |
-| `student_profiles` | userId(uq), rollNo(uq per inst), programId, batchId, section, currentSemester, admissionDate, status | 01-students · 03-admin |
-| `staff_profiles` | userId(uq), employeeNo(uq per inst), designation, departmentId, joiningDate, maxWorkloadHours, status | All staff roles incl. teacher/HOD (02, 03, 11) |
+| `student_profiles` | userId(uq), institutionId(denorm), rollNo(**uq per inst**), programId, batchId, section, currentSemester, admissionDate, status | 01-students · 03-admin |
+| `staff_profiles` | userId(uq), institutionId(denorm), employeeNo(**uq per inst**), designation, departmentId, joiningDate, maxWorkloadHours, status | All staff roles incl. teacher/HOD (02, 03, 11) |
 | `alumni_profiles` | userId(uq), batchId, graduationYear, companyId?, currentRole, location, chapterId?, engagementStatus | 12-alumni |
 | `role_permissions` | role, permissionKey | RBAC map seeded from admin Settings module (03 §3.15) |
 | `permission_groups` | key, name, category | Academics/Exams/Students/Finance groupings |
