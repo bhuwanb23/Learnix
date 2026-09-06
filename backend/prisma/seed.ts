@@ -1240,7 +1240,27 @@ async function seedDomainH(institutionId: string): Promise<void> {
     await db.transportFeeDue.create({
       data: { studentProfileId: studentProfile.id, academicYearId: ay.id, amountMinor: 1800000, status: 'UNPAID' }, // ₹18,000/yr
     });
+  } else {
+    // restore demo state on re-seed (undoes e2e collections)
+    await db.transportFeeDue.update({
+      where: { id: tfdExists.id },
+      data: { status: 'UNPAID', paymentId: null },
+    });
   }
+
+  // restore live position to ON_TIME (undoes e2e delay pings)
+  if (posExists) {
+    const stop2Again = await db.routeStop.findFirst({ where: { routeId: route1.id, order: 2 } });
+    await db.busPosition.update({
+      where: { vehicleId: v1.id },
+      data: { status: 'ON_TIME', speedKmh: 32, etaMin: 18, currentStopId: stop2Again?.id ?? null, pingedAt: new Date() },
+    });
+  }
+  // restore second driver to OFF_DUTY (undoes e2e duty toggles)
+  await db.driver.updateMany({
+    where: { institutionId, licenseNo: 'KA0320210007834' },
+    data: { dutyStatus: 'OFF_DUTY' },
+  });
   if (vikramProfile) {
     const vikramDue = await db.transportFeeDue.findUnique({
       where: { studentProfileId_academicYearId: { studentProfileId: vikramProfile.id, academicYearId: ay.id } },
