@@ -1,105 +1,116 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
+import { transportApi } from '../../../../services/api';
 
-const initialNotifications = [
-  {
-    id: '1',
-    title: 'Route 07 delayed this morning',
-    message: 'Heavy traffic on Outer Ring Road — bus KA-01-1876 arrived 12 minutes late. Students on this route were notified.',
-    time: '2 hrs ago',
-    audience: 'Route 07',
-    type: 'delay',
-    unread: true,
-  },
-  {
-    id: '2',
-    title: 'Transport fee due reminder',
-    message: '132 students have unpaid transport fees. Final reminder before bus pass suspension on Oct 1.',
-    time: '4 hrs ago',
-    audience: 'Defaulters',
-    type: 'fee',
-    unread: true,
-  },
-  {
-    id: '3',
-    title: 'New route added — Route 18 (Sarjapur)',
-    message: 'From next Monday, a new pickup at Sarjapur with 3 stops. Students can register in the transport tab.',
-    time: 'Yesterday',
-    audience: 'All Students',
-    type: 'info',
-    unread: false,
-  },
-  {
-    id: '4',
-    title: 'Bus KA-01-1982 back in service',
-    message: 'Brake inspection completed and the bus is back on Route 09 from the evening trip.',
-    time: '2 days ago',
-    audience: 'Route 09',
-    type: 'maintenance',
-    unread: false,
-  },
-  {
-    id: '5',
-    title: 'Holiday schedule — Sep 15',
-    message: 'No transport on the college holiday (Sep 15). Regular schedule resumes Sep 16.',
-    time: '3 days ago',
-    audience: 'All Students',
-    type: 'info',
-    unread: false,
-  },
-];
+const TYPE_COLORS = {
+  BROADCAST: '#2563eb',
+  DELAY: '#dc2626',
+  FEE: '#d97706',
+  MAINTENANCE: '#0891b2',
+  TRANSPORT: '#059669',
+  SYSTEM: '#64748b',
+};
 
-const audiences = ['All Students', 'Route 01', 'Route 07', 'Route 12', 'Defaulters'];
+const TYPE_ICONS = {
+  BROADCAST: 'megaphone-outline',
+  DELAY: 'time-outline',
+  FEE: 'cash-outline',
+  MAINTENANCE: 'construct-outline',
+  TRANSPORT: 'bus-outline',
+  SYSTEM: 'information-circle-outline',
+};
+
+const fmtAgo = (iso) => {
+  const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hr ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+};
 
 export default function Notifications({ navigation }) {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [data, setData] = useState({ notifications: [], unread: 0 });
+  const [routes, setRoutes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('Inbox');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [audience, setAudience] = useState('All Students');
+  const [audience, setAudience] = useState('ALL_STUDENTS');
+  const [routeId, setRouteId] = useState(null);
 
-  const markAllRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, unread: false })));
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const [d, r] = await Promise.all([
+        transportApi.notifications(),
+        transportApi.routes().catch(() => []),
+      ]);
+      setData(d);
+      setRoutes(Array.isArray(r) ? r : []);
+    } catch (e) {
+      setError(e.message || 'Failed to load notifications');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const markAllRead = async () => {
+    try {
+      const res = await transportApi.markAllRead();
+      Alert.alert('All caught up', `${res.updated} notification(s) marked as read.`);
+      load(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
   };
 
-  const markRead = (id) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
-  };
-
-  const sendBroadcast = () => {
+  const sendBroadcast = async () => {
     if (!subject.trim() || !message.trim()) {
       Alert.alert('Incomplete', 'Add a subject and message before broadcasting.');
       return;
     }
-    Alert.alert('Broadcast sent', `"${subject}" was pushed to ${audience}.`);
-    setSubject('');
-    setMessage('');
-  };
-
-  const unreadCount = notifications.filter((n) => n.unread).length;
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'delay': return '#dc2626';
-      case 'fee': return '#d97706';
-      case 'maintenance': return '#2563eb';
-      default: return '#0891b2';
+    if (audience === 'ROUTE' && !routeId) {
+      Alert.alert('Pick a route', 'Select which route should receive this broadcast.');
+      return;
+    }
+    try {
+      const res = await transportApi.broadcast({
+        audience,
+        routeId: audience === 'ROUTE' ? routeId : undefined,
+        title: subject.trim(),
+        body: message.trim(),
+      });
+      Alert.alert('Broadcast sent', `"${subject.trim()}" was delivered to ${res.recipients} student(s).`);
+      setSubject('');
+      setMessage('');
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
     }
   };
 
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'delay': return 'time-outline';
-      case 'fee': return 'cash-outline';
-      case 'maintenance': return 'construct-outline';
-      default: return 'information-circle-outline';
-    }
-  };
+  const unreadCount = data.unread;
+
+  const getTypeColor = (type) => TYPE_COLORS[type] || TYPE_COLORS.SYSTEM;
+  const getTypeIcon = (type) => TYPE_ICONS[type] || TYPE_ICONS.SYSTEM;
+
+  if (loading && data.notifications.length === 0 && !error) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -114,8 +125,9 @@ export default function Notifications({ navigation }) {
           </TouchableOpacity>
         </View>
         {activeTab === 'Inbox' && (
-          <Text style={styles.headerSub}>{unreadCount} unread · tap the bell to mark all read</Text>
+          <Text style={styles.headerSub}>{unreadCount} unread · tap the check to mark all read</Text>
         )}
+        {error && <Text style={styles.headerSub}>{error} — pull to retry</Text>}
       </LinearGradient>
 
       <View style={styles.tabsRow}>
@@ -131,32 +143,33 @@ export default function Notifications({ navigation }) {
       </View>
 
       {activeTab === 'Inbox' ? (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notifications.map((n) => (
-            <TouchableOpacity key={n.id} style={styles.card} onPress={() => markRead(n.id)}>
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+        >
+          {data.notifications.length === 0 && (
+            <Text style={styles.emptyInbox}>Your inbox is empty.</Text>
+          )}
+          {data.notifications.map((n) => (
+            <View key={n.id} style={[styles.card, !n.read && styles.cardUnread]}>
               <View style={styles.iconWrap}>
-                <View
-                  style={[
-                    styles.iconCircle,
-                    { backgroundColor: getTypeColor(n.type) + '1a' },
-                  ]}
-                >
+                <View style={[styles.iconCircle, { backgroundColor: getTypeColor(n.type) + '1a' }]}>
                   <Ionicons name={getTypeIcon(n.type)} size={18} color={getTypeColor(n.type)} />
                 </View>
-                {n.unread && <View style={styles.unreadDot} />}
+                {!n.read && <View style={styles.unreadDot} />}
               </View>
               <View style={styles.cardBody}>
                 <View style={styles.cardTop}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{n.title}</Text>
-                  <Text style={styles.cardTime}>{n.time}</Text>
+                  <Text style={styles.cardTime}>{fmtAgo(n.createdAt)}</Text>
                 </View>
-                <Text style={styles.cardMessage} numberOfLines={2}>{n.message}</Text>
-                <View style={styles.audienceChip}>
-                  <Ionicons name="bus-outline" size={11} color={theme.colors.textMuted} />
-                  <Text style={styles.audienceText}>{n.audience}</Text>
+                <Text style={styles.cardMessage} numberOfLines={2}>{n.body}</Text>
+                <View style={styles.typeChip}>
+                  <Text style={styles.typeChipText}>{n.type}</Text>
                 </View>
               </View>
-            </TouchableOpacity>
+            </View>
           ))}
         </ScrollView>
       ) : (
@@ -165,7 +178,7 @@ export default function Notifications({ navigation }) {
             <Text style={styles.formLabel}>Subject</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Route 12 delay tomorrow"
+              placeholder="e.g. Route 02 timing change from Monday"
               placeholderTextColor="#9ca3af"
               value={subject}
               onChangeText={setSubject}
@@ -173,7 +186,7 @@ export default function Notifications({ navigation }) {
             <Text style={styles.formLabel}>Message</Text>
             <TextInput
               style={[styles.input, styles.messageInput]}
-              placeholder="Write the announcement for students..."
+              placeholder="Write the notice for students and parents..."
               placeholderTextColor="#9ca3af"
               value={message}
               onChangeText={setMessage}
@@ -182,33 +195,50 @@ export default function Notifications({ navigation }) {
             />
             <Text style={styles.formLabel}>Audience</Text>
             <View style={styles.audienceRow}>
-              {audiences.map((a) => (
+              {[
+                { key: 'ALL_STUDENTS', label: 'All Students' },
+                { key: 'ROUTE', label: 'Single Route' },
+                { key: 'DEFAULTERS', label: 'Fee Defaulters' },
+              ].map((a) => (
                 <TouchableOpacity
-                  key={a}
-                  style={[styles.audienceChipBtn, audience === a && styles.audienceChipActive]}
-                  onPress={() => setAudience(a)}
+                  key={a.key}
+                  style={[styles.audienceChipBtn, audience === a.key && styles.audienceChipActive]}
+                  onPress={() => {
+                    setAudience(a.key);
+                    if (a.key !== 'ROUTE') setRouteId(null);
+                  }}
                 >
-                  <Text
-                    style={[
-                      styles.audienceChipText,
-                      audience === a && styles.audienceChipTextActive,
-                    ]}
-                  >
-                    {a}
+                  <Text style={[styles.audienceChipText, audience === a.key && styles.audienceChipTextActive]}>
+                    {a.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
+            {audience === 'ROUTE' && (
+              <View style={styles.routeRow}>
+                {routes.map((r) => (
+                  <TouchableOpacity
+                    key={r.id}
+                    style={[styles.routeChip, routeId === r.id && styles.routeChipActive]}
+                    onPress={() => setRouteId(r.id)}
+                  >
+                    <Text style={[styles.routeChipText, routeId === r.id && styles.routeChipTextActive]}>
+                      {r.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
             <TouchableOpacity style={styles.sendBtn} onPress={sendBroadcast}>
               <Ionicons name="megaphone-outline" size={18} color="#fff" />
-              <Text style={styles.sendBtnText}>Broadcast to Students</Text>
+              <Text style={styles.sendBtnText}>Broadcast Now</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.infoCard}>
             <Ionicons name="information-circle-outline" size={18} color={theme.colors.primary} />
             <Text style={styles.infoText}>
-              Broadcasts push instantly to the student app. Route delays and maintenance notices are
-              sent automatically from the live tracking module.
+              Route delays notify enrolled students automatically when a GPS ping flips to DELAYED.
+              Fee reminders go straight to the student's inbox.
             </Text>
           </View>
         </ScrollView>
@@ -219,6 +249,7 @@ export default function Notifications({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
   header: {
     paddingTop: theme.spacing.xl + 10,
     paddingHorizontal: theme.spacing.lg,
@@ -281,6 +312,13 @@ const styles = StyleSheet.create({
   },
   tabTextActive: { color: theme.colors.primary },
   content: { flex: 1, paddingHorizontal: theme.spacing.lg },
+  emptyInbox: {
+    fontSize: 13,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginTop: 40,
+  },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -290,6 +328,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginTop: 12,
   },
+  cardUnread: { borderColor: '#bfdbfe' },
   iconWrap: { position: 'relative', marginRight: 12 },
   iconCircle: {
     width: 42,
@@ -334,9 +373,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 4,
   },
-  audienceChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  typeChip: {
     alignSelf: 'flex-start',
     backgroundColor: theme.colors.surfaceMuted,
     borderRadius: 6,
@@ -344,11 +381,10 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     marginTop: 8,
   },
-  audienceText: {
+  typeChipText: {
     fontSize: 10,
     fontFamily: 'Manrope-SemiBold',
     color: theme.colors.textMuted,
-    marginLeft: 4,
   },
   formCard: {
     backgroundColor: '#fff',
@@ -393,6 +429,24 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
   },
   audienceChipTextActive: { color: '#fff' },
+  routeRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4 },
+  routeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  routeChipActive: { borderColor: theme.colors.primary, backgroundColor: '#eff6ff' },
+  routeChipText: {
+    fontSize: 12,
+    fontFamily: 'Manrope-SemiBold',
+    color: theme.colors.text,
+  },
+  routeChipTextActive: { color: theme.colors.primary },
   sendBtn: {
     flexDirection: 'row',
     alignItems: 'center',

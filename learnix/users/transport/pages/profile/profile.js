@@ -1,34 +1,69 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
-
-const stats = [
-  { label: 'Fleet', value: '30' },
-  { label: 'Routes', value: '18' },
-  { label: 'Drivers', value: '22' },
-];
+import { transportApi } from '../../../../services/api';
 
 const menuItems = [
-  { icon: 'people-outline', label: 'Transport Staff', color: '#2563eb' },
-  { icon: 'document-text-outline', label: 'Compliance & Documents', color: '#0891b2' },
+  { icon: 'map-outline', label: 'Route Master', color: '#2563eb' },
+  { icon: 'document-text-outline', label: 'Fleet Reports', color: '#0891b2' },
   { icon: 'shield-checkmark-outline', label: 'Access & Permissions', color: '#059669' },
-  { icon: 'bar-chart-outline', label: 'Transport Reports', color: '#d97706' },
   { icon: 'help-circle-outline', label: 'Help & Support', color: '#dc2626' },
 ];
 
 export default function Profile({ navigation }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [delayAlerts, setDelayAlerts] = useState(true);
   const [serviceAlerts, setServiceAlerts] = useState(true);
-  const [lowFuelAlerts, setLowFuelAlerts] = useState(true);
+  const [fuelAlerts, setFuelAlerts] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const p = await transportApi.profile();
+      setProfile(p);
+    } catch (e) {
+      Alert.alert('Load failed', e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+    Alert.alert('Logout', 'Clear the session and re-login as the demo user?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await AsyncStorage.removeItem('learnix.refreshToken');
+          Alert.alert('Logged out', 'Session cleared. The app will re-authenticate on next load.');
+        },
+      },
     ]);
   };
+
+  if (loading && !profile) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  const fullName = profile?.fullName ?? 'Transport Office';
+  const designation = profile?.designation ?? 'Transport Department';
+  const stats = [
+    { label: 'Buses', value: String(profile?.stats?.vehicles ?? 0) },
+    { label: 'Routes', value: String(profile?.stats?.routes ?? 0) },
+    { label: 'Students', value: String(profile?.stats?.students ?? 0) },
+  ];
 
   return (
     <View style={styles.container}>
@@ -36,13 +71,13 @@ export default function Profile({ navigation }) {
         <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={40} color="#fff" />
+              <Text style={styles.avatarInitial}>{fullName.charAt(0)}</Text>
             </View>
             <View style={styles.onlineDot} />
           </View>
-          <Text style={styles.name}>Capt. S. Krishnan</Text>
-          <Text style={styles.role}>Transport Officer · Fleet Operations</Text>
-          <Text style={styles.dept}>Transport Office, Learnix Campus</Text>
+          <Text style={styles.name}>{fullName}</Text>
+          <Text style={styles.role}>{designation}</Text>
+          <Text style={styles.dept}>{profile?.email ?? ''}</Text>
           <View style={styles.statsRow}>
             {stats.map((s) => (
               <View key={s.label} style={styles.statItem}>
@@ -57,12 +92,12 @@ export default function Profile({ navigation }) {
           <Text style={styles.sectionLabel}>Preferences</Text>
           <View style={styles.card}>
             <View style={styles.rowItem}>
-              <View style={[styles.iconWrap, { backgroundColor: '#2563eb1a' }]}>
-                <Ionicons name="time-outline" size={18} color="#2563eb" />
+              <View style={[styles.iconWrap, { backgroundColor: '#dc26261a' }]}>
+                <Ionicons name="time-outline" size={18} color="#dc2626" />
               </View>
               <View style={styles.rowBody}>
-                <Text style={styles.rowLabel}>Route delay alerts</Text>
-                <Text style={styles.rowSub}>Notify me when any bus is delayed</Text>
+                <Text style={styles.rowLabel}>Delay alerts</Text>
+                <Text style={styles.rowSub}>Route delays flagged by GPS pings</Text>
               </View>
               <Switch
                 value={delayAlerts}
@@ -73,12 +108,12 @@ export default function Profile({ navigation }) {
             </View>
             <View style={styles.divider} />
             <View style={styles.rowItem}>
-              <View style={[styles.iconWrap, { backgroundColor: '#d977061a' }]}>
-                <Ionicons name="construct-outline" size={18} color="#d97706" />
+              <View style={[styles.iconWrap, { backgroundColor: '#2563eb1a' }]}>
+                <Ionicons name="construct-outline" size={18} color="#2563eb" />
               </View>
               <View style={styles.rowBody}>
                 <Text style={styles.rowLabel}>Service reminders</Text>
-                <Text style={styles.rowSub}>Maintenance due alerts for the fleet</Text>
+                <Text style={styles.rowSub}>Open jobs in the maintenance queue</Text>
               </View>
               <Switch
                 value={serviceAlerts}
@@ -89,18 +124,18 @@ export default function Profile({ navigation }) {
             </View>
             <View style={styles.divider} />
             <View style={styles.rowItem}>
-              <View style={[styles.iconWrap, { backgroundColor: '#0596691a' }]}>
-                <Ionicons name="flame-outline" size={18} color="#059669" />
+              <View style={[styles.iconWrap, { backgroundColor: '#d977061a' }]}>
+                <Ionicons name="flame-outline" size={18} color="#d97706" />
               </View>
               <View style={styles.rowBody}>
                 <Text style={styles.rowLabel}>Low fuel alerts</Text>
-                <Text style={styles.rowSub}>Warn when any bus drops below 30%</Text>
+                <Text style={styles.rowSub}>Vehicles below 30% fuel</Text>
               </View>
               <Switch
-                value={lowFuelAlerts}
-                onValueChange={setLowFuelAlerts}
+                value={fuelAlerts}
+                onValueChange={setFuelAlerts}
                 trackColor={{ false: '#e5e7eb', true: '#93c5fd' }}
-                thumbColor={lowFuelAlerts ? '#2563eb' : '#f4f4f5'}
+                thumbColor={fuelAlerts ? '#2563eb' : '#f4f4f5'}
               />
             </View>
           </View>
@@ -141,6 +176,7 @@ export default function Profile({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background },
   content: { paddingBottom: 40 },
   header: {
     paddingTop: theme.spacing.xl + 10,
@@ -160,6 +196,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: 'rgba(255,255,255,0.6)',
+  },
+  avatarInitial: {
+    fontSize: 34,
+    fontFamily: 'Manrope-ExtraBold',
+    color: '#fff',
   },
   onlineDot: {
     position: 'absolute',
