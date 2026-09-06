@@ -1,0 +1,56 @@
+// Domain B3 — Syllabus: versions (HOD approval loop), units, topics.
+// Docs: 11-hod.md §3.5 · 02-teachers.md §3.6 · 01-students.md §3.2 (tracker)
+// submittedByUserId / actionedByUserId are scalar actor-stamps.
+
+model SyllabusVersion {
+  id                String    @id @default(cuid())
+  courseId          String
+  version           Int
+  submittedByUserId String // scalar → users.id
+  status            String    @default("DRAFT") // DRAFT | SUBMITTED | HOD_APPROVED | CHANGES_REQUESTED | ADMIN_APPROVED
+  feedback          String?
+  actionedByUserId  String? // scalar → users.id
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id])
+  units  SyllabusUnit[]
+
+  @@unique([courseId, version])
+  @@index([courseId])
+  @@map("syllabus_versions")
+}
+
+model SyllabusUnit {
+  id                String   @id @default(cuid())
+  syllabusVersionId String
+  order             Int
+  title             String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  syllabusVersion SyllabusVersion @relation(fields: [syllabusVersionId], references: [id])
+  topics          SyllabusTopic[]
+
+  @@unique([syllabusVersionId, order])
+  @@index([syllabusVersionId])
+  @@map("syllabus_units")
+}
+
+model SyllabusTopic {
+  id          String    @id @default(cuid())
+  unitId      String
+  order       Int
+  title       String
+  description String?
+  status      String    @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | COMPLETED
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  unit SyllabusUnit @relation(fields: [unitId], references: [id])
+
+  @@unique([unitId, order])
+  @@index([unitId])
+  @@map("syllabus_topics")
+}

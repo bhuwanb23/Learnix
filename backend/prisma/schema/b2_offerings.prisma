@@ -1,0 +1,105 @@
+// Domain B2 — Offerings & scheduling: course_offerings (THE spine), weekly
+// offering slots, master timetable grid, enrollments, teaching assistants.
+// Docs: docs/users/02-teachers.md §3.9–3.10 · 03-admin.md §3.7 · 01-students.md §3.1
+// Time fields are "HH:MM" strings (SQLite has no native time type).
+// teacherUserId is a scalar actor-stamp (no FK) to avoid User↔Offering cycles.
+
+model CourseOffering {
+  id             String   @id @default(cuid())
+  courseId       String
+  sectionId      String
+  teacherUserId  String // scalar → users.id
+  semester       Int
+  academicYearId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  course      Course          @relation(fields: [courseId], references: [id])
+  section     Section         @relation(fields: [sectionId], references: [id])
+  academicYear       AcademicYear           @relation(fields: [academicYearId], references: [id])
+
+  scheduleSlots      OfferingScheduleSlot[]
+  timetableSlots     TimetableSlot[]
+  enrollments        Enrollment[]
+  teachingAssistants TeachingAssistant[]
+  lectureNotes       LectureNote[]
+  attendanceSessions AttendanceSession[]
+  classSessions      ClassSession[]
+  assignments        Assignment[]
+
+  @@unique([courseId, sectionId, semester, academicYearId])
+  @@index([teacherUserId])
+  @@index([sectionId])
+  @@index([courseId])
+  @@map("course_offerings")
+}
+
+model OfferingScheduleSlot {
+  id         String   @id @default(cuid())
+  offeringId String
+  dayOfWeek  Int // 0=Sun … 6=Sat
+  startTime  String // "HH:MM"
+  endTime    String // "HH:MM"
+  room       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+
+  @@unique([offeringId, dayOfWeek, startTime])
+  @@index([offeringId])
+  @@map("offering_schedule_slots")
+}
+
+model TimetableSlot {
+  id             String   @id @default(cuid())
+  sectionId      String
+  offeringId     String
+  dayOfWeek      Int
+  startTime      String
+  endTime        String
+  room           String?
+  lockedByAdmin  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  section  Section        @relation(fields: [sectionId], references: [id])
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+
+  @@unique([sectionId, dayOfWeek, startTime])
+  @@index([sectionId])
+  @@index([offeringId])
+  @@map("timetable_slots")
+}
+
+model Enrollment {
+  id               String   @id @default(cuid())
+  studentProfileId String
+  offeringId       String
+  status           String   @default("ACTIVE") // ACTIVE | DROPPED | COMPLETED
+  enrolledAt       DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  offering       CourseOffering @relation(fields: [offeringId], references: [id])
+
+  @@unique([studentProfileId, offeringId])
+  @@index([studentProfileId])
+  @@index([offeringId])
+  @@map("enrollments")
+}
+
+model TeachingAssistant {
+  id          String   @id @default(cuid())
+  offeringId  String
+  staffUserId String // scalar → users.id
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+
+  @@unique([offeringId, staffUserId])
+  @@index([offeringId])
+  @@map("teaching_assistants")
+}

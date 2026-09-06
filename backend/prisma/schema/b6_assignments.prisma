@@ -1,0 +1,98 @@
+// Domain B6 — Assignments, submissions, rubrics.
+// Docs: 02-teachers.md §3.8 → 01-students.md §3.3
+// createdByUserId / gradedByUserId are scalar actor-stamps. fileId scalar (Domain L).
+
+model Assignment {
+  id              String    @id @default(cuid())
+  offeringId      String
+  title           String
+  instructions    String?
+  dueAt           DateTime?
+  maxMarks        Int
+  weightage       Int? // % of final grade
+  status          String    @default("DRAFT") // DRAFT | PUBLISHED | CLOSED
+  createdByUserId String // scalar → users.id
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  offering     CourseOffering        @relation(fields: [offeringId], references: [id])
+  attachments  AssignmentAttachment[]
+  submissions  Submission[]
+  rubricCriteria RubricCriterion[]
+
+  @@index([offeringId])
+  @@index([createdByUserId])
+  @@map("assignments")
+}
+
+model AssignmentAttachment {
+  id           String   @id @default(cuid())
+  assignmentId String
+  fileId       String // scalar → files.id (Domain L)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+
+  @@unique([assignmentId, fileId])
+  @@index([assignmentId])
+  @@map("assignment_attachments")
+}
+
+model Submission {
+  id               String    @id @default(cuid())
+  assignmentId     String
+  studentProfileId String
+  text             String?
+  fileId           String? // scalar → files.id (uploaded answer sheet)
+  submittedAt      DateTime?
+  status           String    @default("PENDING") // PENDING | UNDER_REVIEW | GRADED | FLAGGED | RETURNED
+  gradeMarks       Int?
+  feedback         String?
+  gradedByUserId   String? // scalar → users.id
+  gradedAt         DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  assignment   Assignment      @relation(fields: [assignmentId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  rubricScores RubricScore[]
+
+  @@unique([assignmentId, studentProfileId])
+  @@index([assignmentId])
+  @@index([studentProfileId])
+  @@map("submissions")
+}
+
+model RubricCriterion {
+  id           String   @id @default(cuid())
+  assignmentId String
+  title        String
+  maxMarks     Int
+  order        Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignment Assignment     @relation(fields: [assignmentId], references: [id])
+  scores     RubricScore[]
+
+  @@unique([assignmentId, order])
+  @@index([assignmentId])
+  @@map("rubric_criteria")
+}
+
+model RubricScore {
+  id               String   @id @default(cuid())
+  submissionId     String
+  rubricCriterionId String
+  marks            Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  submission      Submission      @relation(fields: [submissionId], references: [id])
+  rubricCriterion RubricCriterion @relation(fields: [rubricCriterionId], references: [id])
+
+  @@unique([submissionId, rubricCriterionId])
+  @@index([submissionId])
+  @@map("rubric_scores")
+}

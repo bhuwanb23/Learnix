@@ -1,0 +1,38 @@
+// Domain B4 — Lecture notes + attachments.
+// Docs: 02-teachers.md §3.4 → 01-students.md §3.2 (reader)
+// authorUserId is a scalar actor-stamp. fileId → files table (Domain L, scalar now).
+
+model LectureNote {
+  id         String    @id @default(cuid())
+  offeringId String
+  unitTitle  String
+  topicTitle String?
+  title      String
+  bodyJson   String // rich text JSON blocks
+  status     String    @default("DRAFT") // DRAFT | PUBLISHED
+  publishedAt DateTime?
+  authorUserId String // scalar → users.id
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  offering    CourseOffering  @relation(fields: [offeringId], references: [id])
+  attachments NoteAttachment[]
+
+  @@index([offeringId])
+  @@index([authorUserId])
+  @@map("lecture_notes")
+}
+
+model NoteAttachment {
+  id            String   @id @default(cuid())
+  lectureNoteId String
+  fileId        String // scalar → files.id (Domain L)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  lectureNote LectureNote @relation(fields: [lectureNoteId], references: [id])
+
+  @@unique([lectureNoteId, fileId])
+  @@index([lectureNoteId])
+  @@map("note_attachments")
+}

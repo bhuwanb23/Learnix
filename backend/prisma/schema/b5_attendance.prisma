@@ -1,0 +1,57 @@
+// Domain B5 — Attendance + live class sessions.
+// Docs: 03-admin.md §3.8 · 01-students.md §3.1 (live widget) · 02-teachers.md §3.10
+// takenByUserId is a scalar actor-stamp.
+
+model AttendanceSession {
+  id            String   @id @default(cuid())
+  offeringId    String
+  date          DateTime
+  takenByUserId String // scalar → users.id
+  status        String   @default("OPEN") // OPEN | FINALIZED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  offering CourseOffering     @relation(fields: [offeringId], references: [id])
+  records  AttendanceRecord[]
+
+  @@unique([offeringId, date])
+  @@index([offeringId])
+  @@map("attendance_sessions")
+}
+
+model AttendanceRecord {
+  id               String   @id @default(cuid())
+  sessionId        String
+  studentProfileId String
+  state            String // PRESENT | ABSENT | LATE
+  markedAt         DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  session        AttendanceSession @relation(fields: [sessionId], references: [id])
+  studentProfile StudentProfile    @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([sessionId, studentProfileId])
+  @@index([sessionId])
+  @@index([studentProfileId])
+  @@map("attendance_records")
+}
+
+model ClassSession {
+  id         String    @id @default(cuid())
+  offeringId String
+  date       DateTime
+  startTime  String
+  endTime    String
+  mode       String    @default("OFFLINE") // OFFLINE | VIRTUAL
+  meetLink   String?
+  status     String    @default("SCHEDULED") // SCHEDULED | LIVE | COMPLETED | CANCELLED
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  offering CourseOffering @relation(fields: [offeringId], references: [id])
+
+  @@index([offeringId])
+  @@index([date])
+  @@map("class_sessions")
+}

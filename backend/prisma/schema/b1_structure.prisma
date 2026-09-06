@@ -1,0 +1,99 @@
+// Domain B1 — Academic structure: departments, programs, batches, sections, courses
+// Docs: docs/users/03-admin.md §3.4 · 11-hod.md
+// hodUserId is a scalar actor-stamp (no FK) — avoids User↔Department cycles.
+
+model Department {
+  id            String   @id @default(cuid())
+  institutionId String
+  name          String
+  code          String
+  hodUserId     String? // scalar → users.id
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  programs Program[]
+  courses  Course[]
+
+  @@unique([institutionId, code])
+  @@index([institutionId])
+  @@map("departments")
+}
+
+model Program {
+  id             String   @id @default(cuid())
+  departmentId   String
+  name           String
+  code           String
+  level          String   @default("UG") // UG | PG
+  durationYears  Int      @default(4)
+  totalSemesters Int      @default(8)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  department Department[]
+  batches    Batch[]
+  sections   Section[]
+
+  @@unique([departmentId, code])
+  @@index([departmentId])
+  @@map("programs")
+}
+
+model Batch {
+  id             String   @id @default(cuid())
+  programId      String
+  name           String // "CSE 2027"
+  startYear      Int
+  graduationYear Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  program  Program @relation(fields: [programId], references: [id])
+  sections Section[]
+
+  @@unique([programId, startYear])
+  @@index([programId])
+  @@map("batches")
+}
+
+model Section {
+  id              String   @id @default(cuid())
+  programId       String
+  batchId         String
+  name            String // "Section A"
+  currentSemester Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  program   Program          @relation(fields: [programId], references: [id])
+  batch     Batch            @relation(fields: [batchId], references: [id])
+  offerings CourseOffering[]
+  slots     TimetableSlot[]
+
+  @@unique([batchId, name])
+  @@index([batchId])
+  @@index([programId])
+  @@map("sections")
+}
+
+model Course {
+  id            String   @id @default(cuid())
+  departmentId  String
+  institutionId String // denorm for per-institution code uniqueness
+  code          String
+  name          String
+  credits       Int      @default(3)
+  semester      Int
+  type          String   @default("CORE") // CORE | ELECTIVE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  department    Department       @relation(fields: [departmentId], references: [id])
+  offerings     CourseOffering[]
+  syllabusVersions SyllabusVersion[]
+
+  @@unique([institutionId, code])
+  @@index([institutionId])
+  @@index([departmentId])
+  @@map("courses")
+}
