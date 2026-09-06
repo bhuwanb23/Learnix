@@ -1,35 +1,144 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
+import { sportsApi } from '../../../../../../services/api';
 
-const initialRegistrations = [
-  { id: '1', name: 'Aarav Mehta', roll: 'CSE-22-045', event: '100m Sprint', status: 'Approved' },
-  { id: '2', name: 'Priya Sharma', roll: 'ECE-23-019', event: 'Classical Dance', status: 'Pending' },
-  { id: '3', name: 'Rahul Verma', roll: 'IT-22-031', event: 'Coding Challenge', status: 'Pending' },
-  { id: '4', name: 'Sneha Patel', roll: 'CSE-23-014', event: 'Cultural Night Performance', status: 'Approved' },
-  { id: '5', name: 'Vikram Nair', roll: 'ME-23-054', event: 'Football', status: 'Pending' },
-];
+const fmtRange = (start, end) => {
+  const s = new Date(start);
+  const e = new Date(end);
+  const sameDay = s.toDateString() === e.toDateString();
+  if (sameDay) return s.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return `${s.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${e.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+};
 
-export default function EventDetail({ event, onBack }) {
-  const [registrations, setRegistrations] = useState(initialRegistrations);
+const STATUS_LABEL = {
+  PENDING: { label: 'Pending', bg: '#fef3c7', color: '#d97706' },
+  APPROVED: { label: 'Approved', bg: '#dcfce7', color: '#059669' },
+  CONFIRMED: { label: 'Confirmed', bg: '#dcfce7', color: '#059669' },
+  REJECTED: { label: 'Rejected', bg: '#fee2e2', color: '#dc2626' },
+  DECLINED: { label: 'Declined', bg: '#fee2e2', color: '#dc2626' },
+};
 
-  const pending = registrations.filter((r) => r.status === 'Pending').length;
+export default function EventDetail({ eventId, onBack }) {
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showVolunteer, setShowVolunteer] = useState(false);
+  const [volunteerRoll, setVolunteerRoll] = useState('');
+  const [volunteerRole, setVolunteerRole] = useState('');
+  const [newItem, setNewItem] = useState('');
 
-  const handleAction = (id, action) => {
-    const reg = registrations.find((r) => r.id === id);
-    setRegistrations(
-      registrations.map((r) =>
-        r.id === id ? { ...r, status: action === 'approve' ? 'Approved' : 'Rejected' } : r
-      )
-    );
-    if (action === 'approve') {
-      Alert.alert('Approved', `${reg.name}'s registration confirmed. They were notified.`);
-    } else {
-      Alert.alert('Rejected', `${reg.name}'s registration rejected and notified.`);
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      const data = await sportsApi.eventDetail(eventId);
+      setEvent(data);
+    } catch (e) {
+      setError(e.message || 'Failed to load event');
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const decide = async (regId, decision) => {
+    try {
+      await sportsApi.decideRegistration(regId, decision);
+      setEvent((prev) => ({
+        ...prev,
+        pendingCount: prev.pendingCount - 1,
+        registrationList: prev.registrationList.map((r) =>
+          r.id === regId ? { ...r, status: decision } : r
+        ),
+      }));
+      Alert.alert(
+        decision === 'APPROVED' ? 'Approved' : 'Rejected',
+        decision === 'APPROVED'
+          ? 'Registration confirmed. The student was notified.'
+          : 'Registration rejected. The student was notified.'
+      );
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
     }
   };
+
+  const announce = async () => {
+    try {
+      const res = await sportsApi.announceEvent(eventId);
+      Alert.alert('Announced', `Pushed to ${res.recipients} students.`);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  const addScheduleItem = async () => {
+    if (!newItem.trim()) return;
+    try {
+      const nextDay = event.schedule.length > 0 ? event.schedule[event.schedule.length - 1].day : 1;
+      const item = await sportsApi.addScheduleItem(eventId, nextDay, newItem.trim());
+      setEvent((prev) => ({ ...prev, schedule: [...prev.schedule, item] }));
+      setNewItem('');
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  const toggleItem = async (itemId, isDone) => {
+    setEvent((prev) => ({
+      ...prev,
+      schedule: prev.schedule.map((s) => (s.id === itemId ? { ...s, isDone } : s)),
+    }));
+    try {
+      await sportsApi.toggleScheduleItem(itemId, isDone);
+    } catch (e) {
+      Alert.alert('Update failed', e.message);
+      load();
+    }
+  };
+
+  const addVolunteer = async () => {
+    if (!volunteerRoll.trim()) {
+      Alert.alert('Missing roll no', 'Enter the student roll number to add a volunteer.');
+      return;
+    }
+    try {
+      const vol = await sportsApi.addVolunteer(eventId, volunteerRoll.trim(), volunteerRole.trim() || undefined);
+      setEvent((prev) => ({ ...prev, volunteers: [...prev.volunteers, vol] }));
+      Alert.alert('Volunteer added', `${vol.name} was assigned and notified.`);
+      setVolunteerRoll('');
+      setVolunteerRole('');
+      setShowVolunteer(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error || 'Event not found'}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const pending = event.pendingCount;
 
   return (
     <View style={styles.container}>
@@ -39,22 +148,11 @@ export default function EventDetail({ event, onBack }) {
             <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
           <View style={styles.categoryChip}>
-            <Ionicons
-              name={
-                event.category === 'Sports'
-                  ? 'football-outline'
-                  : event.category === 'Cultural'
-                  ? 'musical-notes-outline'
-                  : 'hardware-chip-outline'
-              }
-              size={12}
-              color="#fff"
-            />
             <Text style={styles.categoryText}>{event.category}</Text>
           </View>
-          <Text style={styles.eventName}>{event.name}</Text>
+          <Text style={styles.eventName}>{event.title}</Text>
           <Text style={styles.eventMeta}>
-            {event.date} · {event.venue}
+            {fmtRange(event.startDate, event.endDate)} · {event.venue || 'TBD'}
           </Text>
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
@@ -75,108 +173,121 @@ export default function EventDetail({ event, onBack }) {
         </LinearGradient>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() =>
-              Alert.alert('Announce', `Push "${event.name}" announcement to all students.`)
-            }
-          >
+          <TouchableOpacity style={styles.actionBtn} onPress={announce}>
             <Ionicons name="megaphone-outline" size={16} color={theme.colors.primary} />
             <Text style={styles.actionText}>Announce</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionBtn}
-            onPress={() =>
-              Alert.alert('Schedule', `Add a schedule slot for ${event.name} — date, time and venue.`)
-            }
-          >
-            <Ionicons name="calendar-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Schedule</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() =>
-              Alert.alert('Volunteers', `Assign student volunteers for ${event.name}.`)
-            }
+            onPress={() => setShowVolunteer(!showVolunteer)}
           >
             <Ionicons name="people-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Volunteers</Text>
+            <Text style={styles.actionText}>{showVolunteer ? 'Cancel' : 'Volunteers'}</Text>
           </TouchableOpacity>
         </View>
+
+        {showVolunteer && (
+          <View style={styles.formCard}>
+            <Text style={styles.formLabel}>Student roll no</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. CSE-23-014"
+              placeholderTextColor="#9ca3af"
+              value={volunteerRoll}
+              onChangeText={setVolunteerRoll}
+            />
+            <Text style={styles.formLabel}>Role (optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Registration desk"
+              placeholderTextColor="#9ca3af"
+              value={volunteerRole}
+              onChangeText={setVolunteerRole}
+            />
+            <TouchableOpacity style={styles.confirmBtn} onPress={addVolunteer}>
+              <Ionicons name="person-add" size={15} color="#fff" />
+              <Text style={styles.confirmText}>Assign Volunteer</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.scheduleCard}>
           <Text style={styles.scheduleTitle}>Schedule</Text>
-          {[
-            { time: 'Day 1 · 9:00 AM', item: 'Opening ceremony + registrations', done: true },
-            { time: 'Day 1 · 11:00 AM', item: 'Preliminary rounds', done: true },
-            { time: 'Day 2 · 10:00 AM', item: 'Finals', done: false },
-            { time: 'Day 2 · 5:00 PM', item: 'Prize distribution', done: false },
-          ].map((s, idx) => (
-            <View key={idx} style={styles.scheduleRow}>
+          {event.schedule.length === 0 && (
+            <Text style={styles.scheduleEmpty}>No schedule items yet — add the first one below.</Text>
+          )}
+          {event.schedule.map((s) => (
+            <TouchableOpacity key={s.id} style={styles.scheduleRow} onPress={() => toggleItem(s.id, !s.isDone)}>
               <View
                 style={[
                   styles.scheduleDot,
-                  { backgroundColor: s.done ? '#059669' : '#fef3c7' },
+                  { backgroundColor: s.isDone ? '#059669' : '#fef3c7' },
                 ]}
               >
-                {s.done && <Ionicons name="checkmark" size={9} color="#fff" />}
+                {s.isDone && <Ionicons name="checkmark" size={9} color="#fff" />}
               </View>
               <View style={styles.scheduleBody}>
                 <Text style={styles.scheduleItem}>{s.item}</Text>
-                <Text style={styles.scheduleTime}>{s.time}</Text>
+                <Text style={styles.scheduleTime}>Day {s.day}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
+          <View style={styles.scheduleAddRow}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Add schedule item…"
+              placeholderTextColor="#9ca3af"
+              value={newItem}
+              onChangeText={setNewItem}
+            />
+            <TouchableOpacity style={styles.scheduleAddBtn} onPress={addScheduleItem}>
+              <Ionicons name="add" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Registrations</Text>
+          <Text style={styles.sectionTitle}>Registrations</Text>
           <Text style={styles.sectionCount}>{pending} pending</Text>
         </View>
 
-        {registrations.map((r) => (
-          <View key={r.id} style={styles.regCard}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{r.name.charAt(0)}</Text>
-            </View>
-            <View style={styles.regBody}>
-              <Text style={styles.regName}>{r.name} · {r.roll}</Text>
-              <Text style={styles.regEvent}>{r.event}</Text>
-            </View>
-            {r.status === 'Pending' ? (
-              <View style={styles.regActions}>
-                <TouchableOpacity
-                  style={styles.rejectBtn}
-                  onPress={() => handleAction(r.id, 'reject')}
-                >
-                  <Ionicons name="close-outline" size={14} color="#dc2626" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.approveBtn}
-                  onPress={() => handleAction(r.id, 'approve')}
-                >
-                  <Ionicons name="checkmark-outline" size={14} color="#fff" />
-                </TouchableOpacity>
+        {event.registrationList.length === 0 && (
+          <Text style={styles.empty}>No registrations yet.</Text>
+        )}
+        {event.registrationList.map((r) => {
+          const st = STATUS_LABEL[r.status] || STATUS_LABEL.PENDING;
+          return (
+            <View key={r.id} style={styles.regCard}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{r.name.charAt(0)}</Text>
               </View>
-            ) : (
-              <View
-                style={[
-                  styles.approvedChip,
-                  { backgroundColor: r.status === 'Approved' ? '#dcfce7' : '#fee2e2' },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.approvedText,
-                    { color: r.status === 'Approved' ? '#059669' : '#dc2626' },
-                  ]}
-                >
-                  {r.status}
-                </Text>
+              <View style={styles.regBody}>
+                <Text style={styles.regName}>{r.name}</Text>
+                <Text style={styles.regEvent}>{new Date(r.at).toLocaleDateString()}</Text>
               </View>
-            )}
-          </View>
-        ))}
+              {r.status === 'PENDING' ? (
+                <View style={styles.regActions}>
+                  <TouchableOpacity
+                    style={styles.rejectBtn}
+                    onPress={() => decide(r.id, 'REJECTED')}
+                  >
+                    <Ionicons name="close-outline" size={14} color="#dc2626" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.approveBtn}
+                    onPress={() => decide(r.id, 'APPROVED')}
+                  >
+                    <Ionicons name="checkmark-outline" size={14} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={[styles.approvedChip, { backgroundColor: st.bg }]}>
+                  <Text style={[styles.approvedText, { color: st.color }]}>{st.label}</Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -185,6 +296,10 @@ export default function EventDetail({ event, onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingBottom: 32 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
   hero: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -213,7 +328,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Manrope-SemiBold',
     color: '#fff',
-    marginLeft: 4,
   },
   eventName: {
     fontSize: 22,
@@ -271,6 +385,47 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     marginLeft: 4,
   },
+  formCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 12,
+  },
+  formLabel: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Bold',
+    color: theme.colors.textMuted,
+    textTransform: 'uppercase',
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.text,
+  },
+  confirmBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingVertical: 11,
+    marginTop: 12,
+  },
+  confirmText: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Bold',
+    color: '#fff',
+    marginLeft: 5,
+  },
   scheduleCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -285,6 +440,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginBottom: 6,
+  },
+  scheduleEmpty: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    paddingVertical: 6,
   },
   scheduleRow: {
     flexDirection: 'row',
@@ -311,6 +472,20 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 1,
   },
+  scheduleAddRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  scheduleAddBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -328,6 +503,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'Manrope-SemiBold',
     color: '#d97706',
+  },
+  empty: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 10,
   },
   regCard: {
     flexDirection: 'row',

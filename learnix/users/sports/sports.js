@@ -27,6 +27,10 @@ import { COLORS } from '../../constants/theme';
 // Import hooks
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 
+// Demo identity for the sports office (matches backend seed)
+import { setDemoUser } from '../../services/api';
+setDemoUser('sports@learnix.dev');
+
 // Feature module registry: key -> { title, component }
 const FEATURE_MODULES = {
   Tournaments: { title: 'Tournaments', component: TournamentsModule },

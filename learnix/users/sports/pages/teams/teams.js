@@ -1,78 +1,149 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { sportsApi } from '../../../../services/api';
 import TeamDetail from './pages/team_detail/team_detail';
 
-const teams = [
-  { id: 'T1', name: 'Cricket', members: 18, captain: 'Karan Singh', coach: 'Mr. Patil', nextMatch: 'Nov 20 vs RV College', color: '#2563eb', icon: 'baseball-outline' },
-  { id: 'T2', name: 'Football', members: 18, captain: 'Vikram Nair', coach: "Mr. D'Souza", nextMatch: 'Today 6:30 PM vs NIT', color: '#059669', icon: 'football-outline' },
-  { id: 'T3', name: 'Basketball', members: 12, captain: 'Arjun Mehta', coach: 'Ms. Rao', nextMatch: 'Nov 22 vs BMS', color: '#d97706', icon: 'basketball-outline' },
-  { id: 'T4', name: 'Badminton', members: 10, captain: 'Divya Menon', coach: 'Mr. Fernandes', nextMatch: 'Tryouts Nov 18', color: '#0891b2', icon: 'tennisball-outline' },
-  { id: 'T5', name: 'Athletics', members: 24, captain: 'Rohan Kulkarni', coach: 'Mr. Patil', nextMatch: 'Annual Sports Meet', color: '#dc2626', icon: 'fitness-outline' },
-  { id: 'T6', name: 'Dance Crew', members: 14, captain: 'Sneha Patel', coach: 'Ms. Iyer', nextMatch: 'Cultural Night Dec 5', color: '#0891b2', icon: 'musical-notes-outline' },
-];
+const SPORT_ICONS = {
+  Football: 'football-outline',
+  Cricket: 'baseball-outline',
+  Basketball: 'basketball-outline',
+  Badminton: 'tennisball-outline',
+  Athletics: 'fitness-outline',
+  Cultural: 'musical-notes-outline',
+};
+
+const SPORT_COLORS = {
+  Football: '#059669',
+  Cricket: '#2563eb',
+  Basketball: '#d97706',
+  Badminton: '#0891b2',
+  Athletics: '#dc2626',
+  Cultural: '#7c3aed',
+};
 
 export default function TeamsModule({ navigation }) {
-  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [teams, setTeams] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedTeamId, setSelectedTeamId] = useState(null);
 
-  if (selectedTeam) {
-    return <TeamDetail team={selectedTeam} onBack={() => setSelectedTeam(null)} />;
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const data = await sportsApi.teams();
+      setTeams(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message || 'Failed to load teams');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  if (selectedTeamId) {
+    return (
+      <TeamDetail
+        teamId={selectedTeamId}
+        onBack={() => {
+          setSelectedTeamId(null);
+          load(false);
+        }}
+      />
+    );
+  }
+
+  const totalPlayers = teams.reduce((s, t) => s + t.members, 0);
+
+  if (loading && teams.length === 0) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && teams.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>12</Text>
+          <Text style={styles.statValue}>{teams.length}</Text>
           <Text style={styles.statLabel}>Active Teams</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>148</Text>
+          <Text style={styles.statValue}>{totalPlayers}</Text>
           <Text style={styles.statLabel}>Players</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>9</Text>
-          <Text style={styles.statLabel}>Coaches</Text>
+          <Text style={styles.statValue}>{new Set(teams.map((t) => t.sport)).size}</Text>
+          <Text style={styles.statLabel}>Sports</Text>
         </View>
       </View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>All Teams</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => Alert.alert('New Team', 'Team setup opens here — sport, coach and tryouts.')}
-        >
-          <Ionicons name="add" size={15} color="#fff" />
-          <Text style={styles.addText}>New Team</Text>
-        </TouchableOpacity>
       </View>
 
-      {teams.map((t) => (
-        <TouchableOpacity
-          key={t.id}
-          style={styles.card}
-          onPress={() => setSelectedTeam(t)}
-        >
-          <View style={[styles.teamIcon, { backgroundColor: t.color + '1a' }]}>
-            <Ionicons name={t.icon} size={19} color={t.color} />
-          </View>
-          <View style={styles.cardBody}>
-            <Text style={styles.name}>{t.name}</Text>
-            <Text style={styles.meta}>
-              {t.members} players · Captain {t.captain}
-            </Text>
-            <Text style={styles.nextMatch}>{t.nextMatch}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-        </TouchableOpacity>
-      ))}
+      {teams.length === 0 && (
+        <Text style={styles.empty}>No teams yet.</Text>
+      )}
+      {teams.map((t) => {
+        const color = SPORT_COLORS[t.sport] || '#2563eb';
+        const icon = SPORT_ICONS[t.sport] || 'people-outline';
+        return (
+          <TouchableOpacity
+            key={t.id}
+            style={styles.card}
+            onPress={() => setSelectedTeamId(t.id)}
+          >
+            <View style={[styles.teamIcon, { backgroundColor: color + '1a' }]}>
+              <Ionicons name={icon} size={19} color={color} />
+            </View>
+            <View style={styles.cardBody}>
+              <Text style={styles.name}>{t.name}</Text>
+              <Text style={styles.meta}>
+                {t.members} players · Captain {t.captain || '—'}
+              </Text>
+              {t.tournament && <Text style={styles.nextMatch}>{t.tournament}</Text>}
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+        );
+      })}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', marginTop: 20 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -110,20 +181,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-  },
-  addText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 3,
   },
   card: {
     flexDirection: 'row',

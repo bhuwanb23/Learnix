@@ -112,6 +112,40 @@ export const alumniApi = {
   profile: () => api.get('/alumni/profile'),
 };
 
+// ── Sports & Cultural endpoints (docs/users/10 §4) ──
+export const sportsApi = {
+  dashboard: () => api.get('/sports/dashboard'),
+  events: () => api.get('/sports/events'),
+  eventDetail: (id) => api.get(`/sports/events/${id}`),
+  decideRegistration: (id, decision) => api.post(`/sports/registrations/${id}/decide`, { decision }),
+  addScheduleItem: (eventId, day, item) =>
+    api.post(`/sports/events/${eventId}/schedule`, { day, item }),
+  toggleScheduleItem: (itemId, isDone) =>
+    api.post(`/sports/schedule-items/${itemId}/toggle`, { isDone }),
+  addVolunteer: (eventId, rollNo, role) =>
+    api.post(`/sports/events/${eventId}/volunteers`, { rollNo, role }),
+  announceEvent: (id) => api.post(`/sports/events/${id}/announce`),
+  teams: () => api.get('/sports/teams'),
+  teamDetail: (id) => api.get(`/sports/teams/${id}`),
+  addPlayer: (teamId, rollNo) => api.post(`/sports/teams/${teamId}/players`, { rollNo }),
+  tournaments: () => api.get('/sports/tournaments'),
+  scheduleFixture: (payload) => api.post('/sports/fixtures', payload),
+  recordResult: (fixtureId, winner, scoreA, scoreB) =>
+    api.post(`/sports/fixtures/${fixtureId}/result`, { winner, scoreA, scoreB }),
+  equipment: () => api.get('/sports/equipment'),
+  addEquipment: (payload) => api.post('/sports/equipment', payload),
+  issueEquipment: (itemId, rollNo, dueAt) =>
+    api.post('/sports/equipment/issue', { itemId, rollNo, dueAt }),
+  returnEquipment: (issueId) => api.post(`/sports/equipment-issues/${issueId}/return`),
+  venues: () => api.get('/sports/venues'),
+  decideVenueBooking: (id, decision) => api.post(`/sports/venue-bookings/${id}/decide`, { decision }),
+  bookVenue: (payload) => api.post('/sports/venue-bookings', payload),
+  notifications: () => api.get('/sports/notifications'),
+  markAllRead: () => api.post('/sports/notifications/read-all'),
+  broadcast: (payload) => api.post('/sports/broadcasts', payload),
+  profile: () => api.get('/sports/profile'),
+};
+
 // ── HOD endpoints (docs/users/11 §4) ──
 export const hodApi = {
   dashboard: () => api.get('/hod/dashboard'),

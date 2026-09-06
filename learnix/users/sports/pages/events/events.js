@@ -1,34 +1,97 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { sportsApi } from '../../../../services/api';
 import EventDetail from './pages/event_detail/event_detail';
 
-const events = [
-  { id: 'E1', name: 'Tech Fest 2026', category: 'Technical', date: 'Nov 21-22', venue: 'Main Auditorium', registrations: 420, capacity: 600, status: 'Approved', color: '#2563eb' },
-  { id: 'E2', name: 'Annual Sports Meet', category: 'Sports', date: 'Nov 28-30', venue: 'Sports Ground', registrations: 350, capacity: 500, status: 'Approved', color: '#059669' },
-  { id: 'E3', name: 'Cultural Night 2026', category: 'Cultural', date: 'Dec 5', venue: 'Open Air Theatre', registrations: 290, capacity: 450, status: 'Pending', color: '#d97706' },
-  { id: 'E4', name: 'Hackathon: CodeSprint', category: 'Technical', date: 'Dec 12-13', venue: 'CS Labs', registrations: 120, capacity: 200, status: 'Approved', color: '#dc2626' },
-  { id: 'E5', name: 'Basketball Inter-College', category: 'Sports', date: 'Dec 15-17', venue: 'Indoor Court', registrations: 96, capacity: 120, status: 'Planning', color: '#0891b2' },
-];
+const CATEGORY_MAP = {
+  SPORTS: { label: 'Sports', icon: 'football-outline', color: '#059669' },
+  CULTURAL: { label: 'Cultural', icon: 'musical-notes-outline', color: '#d97706' },
+  TECH: { label: 'Technical', icon: 'hardware-chip-outline', color: '#2563eb' },
+  OTHER: { label: 'Other', icon: 'star-outline', color: '#0891b2' },
+};
 
-const categories = ['All', 'Sports', 'Cultural', 'Technical'];
+const STATUS_STYLE = {
+  PUBLISHED: { bg: '#dcfce7', color: '#059669' },
+  APPROVED: { bg: '#dcfce7', color: '#059669' },
+  PENDING_ADMIN: { bg: '#fef3c7', color: '#d97706' },
+  DRAFT: { bg: '#e0e7ff', color: '#4f46e5' },
+  COMPLETED: { bg: '#f1f5f9', color: '#64748b' },
+  CANCELLED: { bg: '#fee2e2', color: '#dc2626' },
+};
 
-const statusStyle = (s) => {
-  if (s === 'Approved') return { bg: '#dcfce7', color: '#059669' };
-  if (s === 'Pending') return { bg: '#fef3c7', color: '#d97706' };
-  return { bg: '#e0e7ff', color: '#4f46e5' };
+const fmtRange = (start, end) => {
+  const s = new Date(start);
+  const e = new Date(end);
+  const sameDay = s.toDateString() === e.toDateString();
+  if (sameDay) return s.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return `${s.toLocaleDateString([], { month: 'short', day: 'numeric' })} - ${e.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
 };
 
 export default function EventsModule({ navigation }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [category, setCategory] = useState('All');
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEventId, setSelectedEventId] = useState(null);
 
-  if (selectedEvent) {
-    return <EventDetail event={selectedEvent} onBack={() => setSelectedEvent(null)} />;
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const data = await sportsApi.events();
+      setEvents(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message || 'Failed to load events');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  if (selectedEventId) {
+    return (
+      <EventDetail
+        eventId={selectedEventId}
+        onBack={() => {
+          setSelectedEventId(null);
+          load(false);
+        }}
+      />
+    );
   }
 
-  const filtered = category === 'All' ? events : events.filter((e) => e.category === category);
+  const categories = ['All', ...new Set(events.map((e) => CATEGORY_MAP[e.category]?.label || e.category))];
+  const filtered =
+    category === 'All'
+      ? events
+      : events.filter((e) => (CATEGORY_MAP[e.category]?.label || e.category) === category);
+
+  if (loading && events.length === 0) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && events.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -43,38 +106,36 @@ export default function EventsModule({ navigation }) {
           </TouchableOpacity>
         ))}
       </ScrollView>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+      >
+        {filtered.length === 0 && (
+          <Text style={styles.empty}>No events in this category yet.</Text>
+        )}
         {filtered.map((e) => {
-          const st = statusStyle(e.status);
-          const pct = Math.round((e.registrations / e.capacity) * 100);
+          const meta = CATEGORY_MAP[e.category] || CATEGORY_MAP.OTHER;
+          const st = STATUS_STYLE[e.status] || STATUS_STYLE.DRAFT;
+          const pct = e.capacity > 0 ? Math.round((e.registrations / e.capacity) * 100) : 0;
           return (
             <TouchableOpacity
               key={e.id}
               style={styles.card}
-              onPress={() => setSelectedEvent(e)}
+              onPress={() => setSelectedEventId(e.id)}
             >
-              <View style={[styles.eventIcon, { backgroundColor: e.color + '1a' }]}>
-                <Ionicons
-                  name={
-                    e.category === 'Sports'
-                      ? 'football-outline'
-                      : e.category === 'Cultural'
-                      ? 'musical-notes-outline'
-                      : 'hardware-chip-outline'
-                  }
-                  size={19}
-                  color={e.color}
-                />
+              <View style={[styles.eventIcon, { backgroundColor: meta.color + '1a' }]}>
+                <Ionicons name={meta.icon} size={19} color={meta.color} />
               </View>
               <View style={styles.cardBody}>
-                <Text style={styles.name}>{e.name}</Text>
+                <Text style={styles.name}>{e.title}</Text>
                 <Text style={styles.meta}>
-                  {e.date} · {e.venue}
+                  {fmtRange(e.startDate, e.endDate)} · {e.venue || 'TBD'}
                 </Text>
                 <View style={styles.progressRow}>
                   <View style={styles.progressTrack}>
                     <View
-                      style={[styles.progressFill, { width: pct + '%', backgroundColor: e.color }]}
+                      style={[styles.progressFill, { width: pct + '%', backgroundColor: meta.color }]}
                     />
                   </View>
                   <Text style={styles.progressText}>
@@ -83,7 +144,7 @@ export default function EventsModule({ navigation }) {
                 </View>
               </View>
               <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-                <Text style={[styles.statusText, { color: st.color }]}>{e.status}</Text>
+                <Text style={[styles.statusText, { color: st.color }]}>{e.status.replace('_', ' ')}</Text>
               </View>
             </TouchableOpacity>
           );
@@ -95,6 +156,11 @@ export default function EventsModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', marginTop: 30 },
   chipsRow: { flexGrow: 0, marginTop: 16 },
   chip: {
     paddingHorizontal: 14,

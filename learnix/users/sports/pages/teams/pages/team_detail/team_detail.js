@@ -1,25 +1,73 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
+import { sportsApi } from '../../../../../../services/api';
 
-const players = [
-  { id: '1', name: 'Karan Singh', role: 'Captain', position: 'Batsman', year: '4th' },
-  { id: '2', name: 'Arjun Mehta', role: 'Player', position: 'Bowler', year: '3rd' },
-  { id: '3', name: 'Rohan Kulkarni', role: 'Player', position: 'All-rounder', year: '3rd' },
-  { id: '4', name: 'Kabir Anand', role: 'Player', position: 'Wicket-keeper', year: '3rd' },
-  { id: '5', name: 'Nikhil Rao', role: 'Player', position: 'Batsman', year: '2nd' },
-];
+const fmtDate = (iso) =>
+  new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
-const fixtures = [
-  { date: 'Nov 20', vs: 'vs RV College', venue: 'Main Ground', result: 'Upcoming' },
-  { date: 'Nov 12', vs: 'vs BMS', venue: 'Main Ground', result: 'Won by 4 wickets' },
-  { date: 'Nov 05', vs: 'vs PES', venue: 'PES Ground', result: 'Lost by 22 runs' },
-];
-
-export default function TeamDetail({ team, onBack }) {
+export default function TeamDetail({ teamId, onBack }) {
+  const [team, setTeam] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [rollNo, setRollNo] = useState('');
+
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      const data = await sportsApi.teamDetail(teamId);
+      setTeam(data);
+    } catch (e) {
+      setError(e.message || 'Failed to load team');
+    } finally {
+      setLoading(false);
+    }
+  }, [teamId]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const addPlayer = async () => {
+    if (!rollNo.trim()) {
+      Alert.alert('Missing roll no', 'Enter the student roll number to add them to the roster.');
+      return;
+    }
+    try {
+      const res = await sportsApi.addPlayer(teamId, rollNo.trim());
+      Alert.alert('Player added', `${res.name} joined the roster and was notified.`);
+      setRollNo('');
+      setShowAdd(false);
+      load();
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error || !team) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error || 'Team not found'}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const record = team.record || { played: 0, won: 0, lost: 0, points: 0 };
 
   return (
     <View style={styles.container}>
@@ -29,71 +77,53 @@ export default function TeamDetail({ team, onBack }) {
             <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
           <View style={styles.heroIconWrap}>
-            <Ionicons name={team.icon} size={28} color="#fff" />
+            <Ionicons name="people" size={28} color="#fff" />
           </View>
-          <Text style={styles.teamName}>{team.name} Team</Text>
+          <Text style={styles.teamName}>{team.name}</Text>
           <Text style={styles.teamMeta}>
-            {team.members} players · Coach {team.coach}
+            {team.members.length} players · Captain {team.captain || '—'}
           </Text>
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{team.members}</Text>
+              <Text style={styles.heroStatValue}>{team.members.length}</Text>
               <Text style={styles.heroStatLabel}>Players</Text>
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>8</Text>
+              <Text style={styles.heroStatValue}>{record.won}</Text>
               <Text style={styles.heroStatLabel}>Wins</Text>
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>3</Text>
+              <Text style={styles.heroStatValue}>{record.lost}</Text>
               <Text style={styles.heroStatLabel}>Losses</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={styles.heroStatValue}>{record.points}</Text>
+              <Text style={styles.heroStatLabel}>Points</Text>
             </View>
           </View>
         </LinearGradient>
 
         <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() =>
-              Alert.alert('Tryouts', `Open ${team.name} tryouts for student registrations.`)
-            }
-          >
-            <Ionicons name="person-add-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Tryouts</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => setShowAdd(!showAdd)}
-          >
+          <TouchableOpacity style={styles.actionBtn} onPress={() => setShowAdd(!showAdd)}>
             <Ionicons name="add-circle-outline" size={16} color={theme.colors.primary} />
             <Text style={styles.actionText}>{showAdd ? 'Cancel' : 'Add Player'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() =>
-              Alert.alert('Match Alert', `Push match reminders for "${team.nextMatch}" to all team members.`)
-            }
-          >
-            <Ionicons name="megaphone-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Alert</Text>
           </TouchableOpacity>
         </View>
 
         {showAdd && (
           <View style={styles.addCard}>
-            <Text style={styles.addTitle}>Add player to {team.name} team</Text>
-            <Text style={styles.addText}>
-              Student search opens here — pick a student and their position, then confirm.
-            </Text>
-            <TouchableOpacity
-              style={styles.confirmBtn}
-              onPress={() => {
-                Alert.alert('Player Added', 'Player added to the team roster.');
-                setShowAdd(false);
-              }}
-            >
+            <Text style={styles.addTitle}>Add player to {team.name}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Student roll no — e.g. CSE-23-014"
+              placeholderTextColor="#9ca3af"
+              value={rollNo}
+              onChangeText={setRollNo}
+            />
+            <TouchableOpacity style={styles.confirmBtn} onPress={addPlayer}>
               <Ionicons name="checkmark-circle-outline" size={15} color="#fff" />
               <Text style={styles.confirmText}>Add to Roster</Text>
             </TouchableOpacity>
@@ -102,24 +132,24 @@ export default function TeamDetail({ team, onBack }) {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Roster</Text>
-          <Text style={styles.sectionCount}>{players.length} players</Text>
+          <Text style={styles.sectionCount}>{team.members.length} players</Text>
         </View>
-        {players.map((p) => (
+        {team.members.map((p) => (
           <View key={p.id} style={styles.playerCard}>
-            <View style={[styles.avatar, { backgroundColor: team.color + '1a' }]}>
-              <Text style={[styles.avatarText, { color: team.color }]}>{p.name.charAt(0)}</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{p.name.charAt(0)}</Text>
             </View>
             <View style={styles.playerBody}>
               <Text style={styles.playerName}>{p.name}</Text>
-              <Text style={styles.playerMeta}>
-                {p.position} · {p.year} yr
-              </Text>
+              <Text style={styles.playerMeta}>{p.role === 'CAPTAIN' ? 'Team captain' : 'Player'}</Text>
             </View>
-            <View style={[styles.roleChip, { backgroundColor: p.role === 'Captain' ? '#fef3c7' : '#f1f5f9' }]}>
+            <View
+              style={[styles.roleChip, { backgroundColor: p.role === 'CAPTAIN' ? '#fef3c7' : '#f1f5f9' }]}
+            >
               <Text
                 style={[
                   styles.roleText,
-                  { color: p.role === 'Captain' ? '#d97706' : theme.colors.textMuted },
+                  { color: p.role === 'CAPTAIN' ? '#d97706' : theme.colors.textMuted },
                 ]}
               >
                 {p.role}
@@ -128,39 +158,36 @@ export default function TeamDetail({ team, onBack }) {
           </View>
         ))}
 
-        <Text style={styles.sectionTitle}>Recent Fixtures</Text>
-        {fixtures.map((f, idx) => (
-          <View key={idx} style={styles.fixtureCard}>
-            <View style={styles.fixtureDate}>
-              <Text style={styles.fixtureDateText}>{f.date}</Text>
+        <Text style={styles.sectionTitleFlat}>Fixtures</Text>
+        {team.fixtures.length === 0 && (
+          <Text style={styles.empty}>No fixtures for this team yet.</Text>
+        )}
+        {team.fixtures.map((f) => {
+          const completed = f.status === 'COMPLETED' && f.result;
+          const won = completed && f.result.winner === f.side;
+          const draw = completed && f.result.winner === 'DRAW';
+          const label = !completed
+            ? f.status === 'TODAY' ? 'Today' : 'Upcoming'
+            : draw ? `Draw ${f.result.scoreA}-${f.result.scoreB}`
+            : won ? `Won ${f.result.scoreA}-${f.result.scoreB}`
+            : `Lost ${f.result.scoreA}-${f.result.scoreB}`;
+          const chipBg = !completed ? '#dbeafe' : draw ? '#f1f5f9' : won ? '#dcfce7' : '#fee2e2';
+          const chipColor = !completed ? '#2563eb' : draw ? '#64748b' : won ? '#059669' : '#dc2626';
+          return (
+            <View key={f.id} style={styles.fixtureCard}>
+              <View style={styles.fixtureDate}>
+                <Text style={styles.fixtureDateText}>{fmtDate(f.date)}</Text>
+              </View>
+              <View style={styles.fixtureBody}>
+                <Text style={styles.fixtureVs}>vs {f.opponent}</Text>
+                <Text style={styles.fixtureVenue}>{team.sport}</Text>
+              </View>
+              <View style={[styles.fixtureChip, { backgroundColor: chipBg }]}>
+                <Text style={[styles.fixtureText, { color: chipColor }]}>{label}</Text>
+              </View>
             </View>
-            <View style={styles.fixtureBody}>
-              <Text style={styles.fixtureVs}>{f.vs}</Text>
-              <Text style={styles.fixtureVenue}>{f.venue}</Text>
-            </View>
-            <View
-              style={[
-                styles.fixtureChip,
-                {
-                  backgroundColor:
-                    f.result === 'Upcoming' ? '#dbeafe' : f.result.startsWith('Won') ? '#dcfce7' : '#fee2e2',
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.fixtureText,
-                  {
-                    color:
-                      f.result === 'Upcoming' ? '#2563eb' : f.result.startsWith('Won') ? '#059669' : '#dc2626',
-                  },
-                ]}
-              >
-                {f.result}
-              </Text>
-            </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -169,6 +196,18 @@ export default function TeamDetail({ team, onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingBottom: 32 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
   hero: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -264,13 +303,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
+    marginBottom: 8,
   },
-  addText: {
-    fontSize: 12,
+  input: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
     fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 4,
-    lineHeight: 17,
+    color: theme.colors.text,
   },
   confirmBtn: {
     flexDirection: 'row',
@@ -299,6 +341,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
+  },
+  sectionTitleFlat: {
+    fontSize: 15,
+    fontFamily: 'Manrope-Bold',
+    color: theme.colors.text,
     marginTop: 18,
     marginBottom: 10,
     paddingHorizontal: 16,
@@ -323,6 +370,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -330,6 +378,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 14,
     fontFamily: 'Manrope-Bold',
+    color: '#2563eb',
   },
   playerBody: { flex: 1 },
   playerName: {
@@ -364,7 +413,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   fixtureDate: {
-    width: 46,
+    width: 52,
     alignItems: 'center',
   },
   fixtureDateText: {
