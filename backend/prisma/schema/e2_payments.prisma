@@ -1,0 +1,115 @@
+// Domain E2 — THE unified money-in table + receipts + per-category link rows.
+// Docs: 06-accounts-finance.md §3.2 · write-throughs from 07/08/09/12
+// Every rupee entering the institution becomes a payments row; the category +
+// optional link rows (donation_payments, transport_fee_dues, hostel_rent_dues,
+// fine_payments) give each source its detail. payerUserId / recordedByUserId
+// are scalar actor-stamps. gatewayRef reserved for the payment-gateway phase.
+
+model Payment {
+  id               String    @id @default(cuid())
+  institutionId    String
+  payerUserId      String? // scalar → users.id (who paid — may be a parent/donor)
+  studentProfileId String? // whose account it credits (donations may be null-student)
+  category         String // TUITION | HOSTEL_RENT | MESS | TRANSPORT | FINE | DONATION | MISC
+  referenceNo      String
+  amountMinor      Int
+  method           String // UPI | NET_BANKING | CARD | CASH
+  status           String    @default("PENDING") // CLEARED | PARTIAL | PENDING | FAILED
+  paidAt           DateTime?
+  recordedByUserId String? // scalar → users.id (staff who recorded cash/cheque)
+  gatewayRef       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  studentProfile StudentProfile? @relation(fields: [studentProfileId], references: [id])
+  receipt        Receipt?
+  donationLink   DonationPayment?
+  transportDue   TransportFeeDue?
+  hostelRentDue  HostelRentDue?
+  fineLink       FinePayment?
+
+  @@unique([institutionId, referenceNo])
+  @@index([institutionId])
+  @@index([category])
+  @@index([studentProfileId])
+  @@map("payments")
+}
+
+model Receipt {
+  id        String   @id @default(cuid())
+  paymentId String   @unique
+  receiptNo String // unique per institution — service-layer format RCP-2026-0001
+  issuedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@map("receipts")
+}
+
+// DONATION link — donationId → donations (Domain J, scalar until it lands)
+model DonationPayment {
+  id         String   @id @default(cuid())
+  paymentId  String   @unique
+  donationId String // scalar → donations.id (Domain J)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@map("donation_payments")
+}
+
+// TRANSPORT dues — per student per academic year
+model TransportFeeDue {
+  id               String    @id @default(cuid())
+  paymentId        String?   @unique
+  studentProfileId String
+  academicYearId   String
+  amountMinor      Int
+  status           String    @default("UNPAID") // UNPAID | PARTIAL | PAID
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  payment        Payment?       @relation(fields: [paymentId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  academicYear   AcademicYear   @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentProfileId, academicYearId])
+  @@index([studentProfileId])
+  @@map("transport_fee_dues")
+}
+
+// HOSTEL rent dues — per allocation per month (allocationId → hostel_allocations, Domain G scalar)
+model HostelRentDue {
+  id           String   @id @default(cuid())
+  paymentId    String?  @unique
+  allocationId String // scalar → hostel_allocations.id (Domain G)
+  month        String // "2026-08"
+  amountMinor  Int
+  status       String   @default("UNPAID") // UNPAID | PARTIAL | PAID
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@unique([allocationId, month])
+  @@map("hostel_rent_dues")
+}
+
+// FINE link — bookIssueId → book_issues (Domain F, scalar until it lands)
+model FinePayment {
+  id          String   @id @default(cuid())
+  paymentId   String   @unique
+  bookIssueId String // scalar → book_issues.id (Domain F)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@map("fine_payments")
+}

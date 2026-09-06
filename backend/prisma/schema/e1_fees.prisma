@@ -1,0 +1,47 @@
+// Domain E1 — Fee structures (per program × academic year) and student dues.
+// Docs: 03-admin.md §3.13 · 06-accounts-finance.md §3.3 · §3.5
+// All money = Int paise. requestedByUserId scalar actor-stamp.
+// daysOverdue is denormalized, recomputed by the dues-reminder job.
+
+model FeeStructure {
+  id             String   @id @default(cuid())
+  institutionId  String
+  programId      String
+  academicYearId String
+  tuitionMinor   Int
+  otherMinor     Int      @default(0)
+  totalMinor     Int
+  status         String   @default("ACTIVE") // ACTIVE | REVISION_REQUESTED | REVISION_APPROVED
+  requestedByUserId String? // scalar → users.id
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  program      Program      @relation(fields: [programId], references: [id])
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
+  dues         FeeDue[]
+
+  @@unique([programId, academicYearId])
+  @@index([institutionId])
+  @@map("fee_structures")
+}
+
+model FeeDue {
+  id               String    @id @default(cuid())
+  studentProfileId String
+  feeStructureId   String?
+  title            String // "Sem 4 Tuition", "Exam Fee"…
+  amountMinor      Int
+  dueDate          DateTime
+  status           String    @default("UNPAID") // UNPAID | PARTIAL | CLEARED | WAIVED
+  waivedReason     String?
+  daysOverdue      Int       @default(0) // denorm, job-recomputed
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  feeStructure   FeeStructure?  @relation(fields: [feeStructureId], references: [id])
+
+  @@index([studentProfileId])
+  @@index([status])
+  @@map("fee_dues")
+}

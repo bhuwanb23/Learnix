@@ -1,0 +1,39 @@
+// Domain E4 — Scholarships. Docs: 06-accounts-finance.md §3.7
+// Award disbursement creates a payment (or a write-off via fee_dues.waived) —
+// service-layer concern; disbursedPaymentId is scalar until written.
+
+model Scholarship {
+  id              String   @id @default(cuid())
+  institutionId   String
+  name            String
+  type            String // MERIT | NEED_BASED
+  coveragePercent Int // 0–100
+  academicYearId  String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  academicYear AcademicYear       @relation(fields: [academicYearId], references: [id])
+  awards       ScholarshipAward[]
+
+  @@unique([institutionId, name, academicYearId])
+  @@index([institutionId])
+  @@map("scholarships")
+}
+
+model ScholarshipAward {
+  id                 String   @id @default(cuid())
+  scholarshipId      String
+  studentProfileId   String
+  amountMinor        Int
+  status             String   @default("APPROVED") // APPROVED | DISBURSED | REJECTED
+  disbursedPaymentId String? // scalar → payments.id
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  scholarship    Scholarship    @relation(fields: [scholarshipId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([scholarshipId, studentProfileId])
+  @@index([studentProfileId])
+  @@map("scholarship_awards")
+}

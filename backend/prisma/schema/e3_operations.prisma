@@ -1,0 +1,80 @@
+// Domain E3 — Payroll, expenses, budgets (money-out side).
+// Docs: 06-accounts-finance.md §3.4 · §3.6 · §3.8
+// runByUserId / requestedByUserId / approvedByUserId are scalar actor-stamps.
+// payslipFileId scalar (files → Domain L). month format "2026-08".
+
+model PayrollRun {
+  id           String   @id @default(cuid())
+  institutionId String
+  month        String // "2026-08"
+  status       String   @default("DRAFT") // DRAFT | RUN | PAID
+  runByUserId  String // scalar → users.id
+  totalMinor   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  entries PayrollEntry[]
+
+  @@unique([institutionId, month])
+  @@index([institutionId])
+  @@map("payroll_runs")
+}
+
+model PayrollEntry {
+  id            String    @id @default(cuid())
+  payrollRunId  String
+  staffUserId   String // scalar → users.id
+  grossMinor    Int
+  deductionsMinor Int     @default(0)
+  netMinor      Int
+  status        String    @default("PENDING") // PENDING | PAID
+  paidAt        DateTime?
+  payslipFileId String? // scalar → files.id (Domain L)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  payrollRun PayrollRun @relation(fields: [payrollRunId], references: [id])
+
+  @@unique([payrollRunId, staffUserId])
+  @@index([payrollRunId])
+  @@map("payroll_entries")
+}
+
+model Expense {
+  id                String   @id @default(cuid())
+  institutionId     String
+  category          String // LABS | EVENTS | MAINTENANCE | UTILITIES | MISC
+  vendor            String?
+  amountMinor       Int
+  date              DateTime
+  status            String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  requestedByUserId String // scalar → users.id
+  approvedByUserId  String? // scalar → users.id
+  budgetId          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  budget Budget? @relation(fields: [budgetId], references: [id])
+
+  @@index([institutionId])
+  @@index([status])
+  @@map("expenses")
+}
+
+model Budget {
+  id            String   @id @default(cuid())
+  institutionId String
+  departmentId  String? // scalar → departments.id (institution-wide budget when null)
+  fiscalYear    String // "2025-26"
+  category      String
+  plannedMinor  Int
+  spentMinor    Int      @default(0) // denorm, recomputed on expense approval
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  expenses Expense[]
+
+  @@unique([institutionId, fiscalYear, category, departmentId])
+  @@index([institutionId])
+  @@map("budgets")
+}
