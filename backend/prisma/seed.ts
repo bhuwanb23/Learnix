@@ -80,6 +80,12 @@ const USERS: SeedUser[] = [
     roles: ['STUDENT'],
     student: { rollNo: 'ME-23-054', section: 'B', currentSemester: 4 },
   },
+  {
+    email: 'transport@learnix.dev',
+    fullName: 'K. Harish Kumar',
+    roles: ['TRANSPORT'],
+    staff: { employeeNo: 'EMP-0008', designation: 'Transport Officer' },
+  },
 ];
 
 async function main() {
@@ -1138,11 +1144,19 @@ async function seedDomainH(institutionId: string): Promise<void> {
     });
   }
 
-  // Driver
-  const driverExists = await db.driver.findFirst({ where: { institutionId, licenseNo: 'KA0320190004521' } });
-  if (!driverExists) {
+  // Driver — link the app account so the officer can assign him to routes
+  let driver1 = await db.driver.findFirst({ where: { institutionId, licenseNo: 'KA0320190004521' } });
+  if (!driver1) {
+    const transportUser = await db.user.findFirst({ where: { email: 'transport@learnix.dev', institutionId } });
+    driver1 = await db.driver.create({
+      data: { institutionId, staffUserId: transportUser?.id ?? null, name: 'Manjunath S', licenseNo: 'KA0320190004521', licenseExpiry: new Date('2029-06-30'), experienceYears: 12, dutyStatus: 'ON_DUTY' },
+    });
+  }
+  // Second driver OFF_DUTY for roster variety
+  const driver2Exists = await db.driver.findFirst({ where: { institutionId, licenseNo: 'KA0320210007834' } });
+  if (!driver2Exists) {
     await db.driver.create({
-      data: { institutionId, name: 'Manjunath S', licenseNo: 'KA0320190004521', licenseExpiry: new Date('2029-06-30'), experienceYears: 12, dutyStatus: 'ON_DUTY' },
+      data: { institutionId, name: 'Suresh P', licenseNo: 'KA0320210007834', licenseExpiry: new Date('2027-11-30'), experienceYears: 7, dutyStatus: 'OFF_DUTY' },
     });
   }
 
@@ -1215,7 +1229,10 @@ async function seedDomainH(institutionId: string): Promise<void> {
     });
   }
 
-  // Transport fee due for Arjun (2025-26) — UNPAID, will link to payments in Phase 4
+  // Transport fee dues — Arjun (UNPAID) + Vikram (PAID, write-through to payments)
+  const vikramUser = await db.user.findFirst({ where: { email: 'vikram.nair@learnix.dev', institutionId } });
+  const vikramProfile = vikramUser ? await db.studentProfile.findFirst({ where: { userId: vikramUser.id } }) : null;
+  const transportUserSeed = await db.user.findFirst({ where: { email: 'transport@learnix.dev', institutionId } });
   const tfdExists = await db.transportFeeDue.findUnique({
     where: { studentProfileId_academicYearId: { studentProfileId: studentProfile.id, academicYearId: ay.id } },
   });
@@ -1223,6 +1240,46 @@ async function seedDomainH(institutionId: string): Promise<void> {
     await db.transportFeeDue.create({
       data: { studentProfileId: studentProfile.id, academicYearId: ay.id, amountMinor: 1800000, status: 'UNPAID' }, // ₹18,000/yr
     });
+  }
+  if (vikramProfile) {
+    const vikramDue = await db.transportFeeDue.findUnique({
+      where: { studentProfileId_academicYearId: { studentProfileId: vikramProfile.id, academicYearId: ay.id } },
+    });
+    if (!vikramDue) {
+      const vikramPayment = await db.payment.create({
+        data: {
+          institutionId,
+          studentProfileId: vikramProfile.id,
+          category: 'TRANSPORT',
+          referenceNo: 'PAY-TF-0001',
+          amountMinor: 1800000,
+          method: 'UPI',
+          status: 'CLEARED',
+          paidAt: new Date(),
+          recordedByUserId: transportUserSeed?.id ?? null,
+        },
+      });
+      await db.transportFeeDue.create({
+        data: { studentProfileId: vikramProfile.id, academicYearId: ay.id, amountMinor: 1800000, status: 'PAID', paymentId: vikramPayment.id },
+      });
+    }
+  }
+
+  // Inbox alerts for the transport officer
+  if (transportUserSeed) {
+    const notifSeed = [
+      { type: 'MAINTENANCE', title: 'Service in progress', body: 'KA-01-F-3310 (Eicher Skyline Pro) — periodic service is IN_PROGRESS.', data: { module: 'Maintenance' } },
+      { type: 'FEE', title: 'Transport fee pending', body: '1 student still has an UNPAID transport fee for the current year.', data: { module: 'Fees' } },
+      { type: 'DELAY', title: 'Fuel low on Route 01 bus', body: 'KA-01-F-2045 is at 68% — plan a refuel before the evening trip.', data: { module: 'Tracking' } },
+    ];
+    for (const n of notifSeed) {
+      const exists = await db.notification.findFirst({ where: { recipientUserId: transportUserSeed.id, title: n.title } });
+      if (!exists) {
+        await db.notification.create({
+          data: { institutionId, recipientUserId: transportUserSeed.id, type: n.type, title: n.title, body: n.body, dataJson: JSON.stringify(n.data), sourceModule: 'transport' },
+        });
+      }
+    }
   }
 
   console.log('  ✓ 2 vehicles (KA-01-F-2045 ON_ROAD w/ GPS, KA-01-F-3310 SERVICE), driver Manjunath ON_DUTY');
