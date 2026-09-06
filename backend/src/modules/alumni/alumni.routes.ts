@@ -113,14 +113,20 @@ router.get(
   }),
 );
 
+const MENTORSHIP_ACTIONS = ['approve', 'decline', 'remind'] as const;
 router.post(
-  '/mentorship/:id/:action(approve|decline|remind)',
+  '/mentorship/:id/:action',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
+    const action = String(req.params.action);
+    if (!MENTORSHIP_ACTIONS.includes(action as never)) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Unknown mentorship action' } });
+      return;
+    }
     const result = await service.mentorshipAction(
       req.auth!.institutionId,
       String(req.params.id),
-      req.params.action as 'approve' | 'decline' | 'remind',
+      action as 'approve' | 'decline' | 'remind',
       req.auth!.userId,
     );
     res.json({ data: result });

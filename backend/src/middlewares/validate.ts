@@ -10,8 +10,13 @@ export function validate(schema: ZodTypeAny, target: Target = 'body') {
     if (!result.success) {
       return next(badRequest('Validation failed', result.error.flatten()));
     }
-    // parsed DTO replaces the raw value for downstream handlers
-    (req as unknown as Record<Target, unknown>)[target] = result.data;
+    if (target === 'body') {
+      // body is writable — replace with the parsed DTO
+      req.body = result.data;
+    } else {
+      // Express 5 query/params are getter-only — mutate contents in place
+      Object.assign(req[target] as Record<string, unknown>, result.data);
+    }
     next();
   };
 }
