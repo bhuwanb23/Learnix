@@ -35,6 +35,14 @@ model StudentProfile {
   payments          Payment[]
   transportFeeDues  TransportFeeDue[]
   scholarshipAwards ScholarshipAward[]
+  bookIssues        BookIssue[]
+  bookRequests      BookRequest[]
+  hostelAllocations HostelAllocation[]
+  mealAttendances   MealAttendance[]
+  messFeedback      MessFeedback[]
+  gatePasses        GatePass[]
+  hostelComplaints  HostelComplaint[]
+  visitorsHosted    Visitor[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])

@@ -83,32 +83,34 @@ model TransportFeeDue {
   @@map("transport_fee_dues")
 }
 
-// HOSTEL rent dues — per allocation per month (allocationId → hostel_allocations, Domain G scalar)
+// HOSTEL rent dues — per allocation per month (FK to Domain G, landed)
 model HostelRentDue {
   id           String   @id @default(cuid())
   paymentId    String?  @unique
-  allocationId String // scalar → hostel_allocations.id (Domain G)
+  allocationId String
   month        String // "2026-08"
   amountMinor  Int
   status       String   @default("UNPAID") // UNPAID | PARTIAL | PAID
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  payment Payment? @relation(fields: [paymentId], references: [id])
+  payment    Payment?         @relation(fields: [paymentId], references: [id])
+  allocation HostelAllocation @relation(fields: [allocationId], references: [id])
 
   @@unique([allocationId, month])
   @@map("hostel_rent_dues")
 }
 
-// FINE link — bookIssueId → book_issues (Domain F, scalar until it lands)
+// FINE link — FK to book_issues (Domain F, landed)
 model FinePayment {
   id          String   @id @default(cuid())
   paymentId   String   @unique
-  bookIssueId String // scalar → book_issues.id (Domain F)
+  bookIssueId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  payment Payment @relation(fields: [paymentId], references: [id])
+  payment   Payment   @relation(fields: [paymentId], references: [id])
+  bookIssue BookIssue @relation(fields: [bookIssueId], references: [id])
 
   @@index([paymentId])
   @@map("fine_payments")

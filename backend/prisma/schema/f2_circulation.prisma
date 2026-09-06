@@ -19,6 +19,7 @@ model BookIssue {
   book           Book           @relation(fields: [bookId], references: [id])
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
   fine           Fine?
+  finePayments   FinePayment[]
 
   @@unique([bookId, studentProfileId, returnDate])
   @@index([bookId])

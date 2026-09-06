@@ -34,6 +34,7 @@ model Program {
   batches    Batch[]
   sections   Section[]
   feeStructures FeeStructure[]
+  digitalGrants DigitalAccessGrant[]
 
   @@unique([departmentId, code])
   @@index([departmentId])
@@ -51,6 +52,7 @@ model Batch {
 
   program  Program @relation(fields: [programId], references: [id])
   sections Section[]
+  digitalGrants DigitalAccessGrant[]
 
   @@unique([programId, startYear])
   @@index([programId])
