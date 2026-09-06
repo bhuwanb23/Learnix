@@ -1171,9 +1171,9 @@ async function seedDomainI(institutionId: string): Promise<void> {
   }
 
   // Event 2: Alumni Networking Meet — APPROVED (the admin-visible event)
-  const alumniMeet = await db.event.findFirst({ where: { institutionId, title: 'Alumni Networking Meet 2026' } });
+  let alumniMeet = await db.event.findFirst({ where: { institutionId, title: 'Alumni Networking Meet 2026' } });
   if (!alumniMeet) {
-    await db.event.create({
+    alumniMeet = await db.event.create({
       data: {
         institutionId,
         title: 'Alumni Networking Meet 2026',
@@ -1186,6 +1186,15 @@ async function seedDomainI(institutionId: string): Promise<void> {
         organizerUserId: teacher.id,
         status: 'APPROVED',
       },
+    });
+  }
+  // Priya's PENDING RSVP on the alumni meet (for the office's confirm/decline flow)
+  const priyaForRsvp = await db.user.findFirst({ where: { email: 'priya@learnix.dev', institutionId } });
+  if (priyaForRsvp) {
+    await db.eventRegistration.upsert({
+      where: { eventId_registrantUserId: { eventId: alumniMeet.id, registrantUserId: priyaForRsvp.id } },
+      update: {},
+      create: { eventId: alumniMeet.id, registrantUserId: priyaForRsvp.id, status: 'PENDING' },
     });
   }
 
