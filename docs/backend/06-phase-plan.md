@@ -4,15 +4,16 @@
 
 ---
 
-## Phase 0 — Project scaffold ✅ ready to start
-- [ ] `backend/` package: deps (express5, prisma, zod, bcryptjs, jsonwebtoken, pino, dotenv), tsconfig strict, .env.example
-- [ ] `src/server.ts` + `src/app.ts` with requestContext + errorHandler, `GET /health`
-- [ ] `prisma/schema.prisma` — **full ~96-table schema, all domains A–L in one pass**
-- [ ] `prisma migrate dev` clean on SQLite + `prisma generate`
-- [ ] `prisma/seed.ts`: platform, demo institution, academic year, departments/programs/batches/sections, one user per role (`Passw0rd!`), courses + offerings + enrollments
-- [ ] README with setup commands
+## Phase 0 — Project scaffold ✅ DONE (base slice)
+- [x] `backend/` package: deps (express5, prisma, zod, bcryptjs, jsonwebtoken, pino, dotenv), tsconfig strict, .env.example
+- [x] `src/server.ts` + `src/app.ts` with requestContext + errorHandler, `GET /health`
+- [x] `prisma/schema.prisma` — **BASE slice: Domain A identity/tenancy core (institutions, users, user_roles, student_profiles, staff_profiles, refresh_tokens, audit_logs)**; business domains A–L are added one user-role piece at a time (strategy changed from big-bang schema per user request)
+- [x] `prisma migrate dev` clean on SQLite + `prisma generate`
+- [x] `prisma/seed.ts`: platform + demo institution (code `DEMO`) + 4 users (PLATFORM_ADMIN, ADMIN, TEACHER, STUDENT) with `Passw0rd!`; remaining role users + domain data seeded with each role piece
+- [x] README with setup commands
+- [x] Auth module shipped early: login (bcrypt), refresh with rotation + reuse detection (family revoke), logout, me
 
-**Exit criteria:** `npm run dev` boots; `/health` OK; seeded DB answers a tenant-scoped query per domain.
+**Exit criteria — verified:** typecheck clean; server boots; `/health`, `login`, `refresh`, `me` smoke-tested live; wrong password → 401 envelope. Remaining role users (placement → hod → alumni) seed with their domain pieces in Phases 2–6.
 
 ## Phase 1 — Auth & tenancy core
 - [ ] `modules/auth`: register-student, login, refresh (rotation + family revoke), logout, logout-all, me, forgot/reset/change-password

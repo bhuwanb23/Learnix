@@ -1,0 +1,150 @@
+// Learnix backend — Prisma schema
+// Phase 0 BASE slice: tenancy + identity + audit only.
+// Business domains (academic, exams, placement, finance…) are added
+// one user-role at a time per docs/backend/06-phase-plan.md.
+//
+// Conventions (docs/backend/01-architecture.md §5):
+//   - PK = cuid()
+//   - every model: createdAt / updatedAt
+//   - tenant models: institutionId + @@index([institutionId])
+//   - money: Int paise (*Minor) — added with finance domain
+//   - status values: strings matching docs/backend/05-state-machines.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain A — Identity, Tenancy & RBAC (base slice)
+// ─────────────────────────────────────────────────────────────
+
+model Institution {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  timezone  String   @default("Asia/Kolkata")
+  address   String?
+  logoFileId String?
+  plan      String   @default("STANDARD")
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users User[]
+
+  @@map("institutions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  institutionId String
+  email         String
+  passwordHash  String
+  fullName      String
+  phone         String?
+  avatarFileId  String?
+  status        String    @default("ACTIVE") // ACTIVE | SUSPENDED
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  institution    Institution      @relation(fields: [institutionId], references: [id])
+  roles          UserRole[]
+  studentProfile StudentProfile?
+  staffProfile   StaffProfile?
+  refreshTokens  RefreshToken[]
+
+  @@unique([institutionId, email])
+  @@index([institutionId])
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String // STUDENT | TEACHER | ADMIN | PLACEMENT | EXAMCELL | ACCOUNTS | LIBRARY | HOSTEL | TRANSPORT | SPORTS | HOD | ALUMNI | PLATFORM_ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, role])
+  @@index([userId])
+  @@map("user_roles")
+}
+
+model StudentProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  rollNo          String
+  programId       String?
+  batchId         String?
+  section         String?
+  currentSemester Int?
+  admissionDate   DateTime?
+  status          String    @default("ACTIVE") // ACTIVE | ALUMNUS | DROPPED
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("student_profiles")
+}
+
+model StaffProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  employeeNo        String
+  designation       String?
+  departmentId      String?
+  joiningDate       DateTime?
+  maxWorkloadHours  Int       @default(18)
+  status            String    @default("ACTIVE")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("staff_profiles")
+}
+
+model RefreshToken {
+  id            String    @id @default(cuid())
+  userId        String
+  tokenHash     String    @unique
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  replacedById  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorUserId   String?
+  institutionId String?
+  action        String
+  entityType    String
+  entityId      String?
+  beforeJson    String?
+  afterJson     String?
+  ip            String?
+  createdAt     DateTime @default(now())
+
+  @@index([institutionId])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
