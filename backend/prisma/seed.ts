@@ -33,6 +33,30 @@ const USERS: SeedUser[] = [
     staff: { employeeNo: 'EMP-0002', designation: 'Assistant Professor' },
   },
   {
+    email: 'hod@learnix.dev',
+    fullName: 'Meera Iyer',
+    roles: ['HOD'],
+    staff: { employeeNo: 'EMP-0003', designation: 'Professor & Head' },
+  },
+  {
+    email: 'sunita.rao@learnix.dev',
+    fullName: 'Sunita Rao',
+    roles: ['TEACHER'],
+    staff: { employeeNo: 'EMP-0004', designation: 'Assistant Professor' },
+  },
+  {
+    email: 'sanjay.tiwari@learnix.dev',
+    fullName: 'Sanjay Tiwari',
+    roles: ['TEACHER'],
+    staff: { employeeNo: 'EMP-0005', designation: 'Assistant Professor' },
+  },
+  {
+    email: 'priya.venkatesh@learnix.dev',
+    fullName: 'Priya Venkatesh',
+    roles: ['TEACHER'],
+    staff: { employeeNo: 'EMP-0006', designation: 'Associate Professor' },
+  },
+  {
     email: 'student@learnix.dev',
     fullName: 'Arjun Kumar',
     roles: ['STUDENT'],
@@ -121,8 +145,52 @@ async function main() {
   await seedDomainI(institution.id);
   await seedDomainJ_K(institution.id);
   await seedDomainL(institution.id);
+  await seedDomainHOD(institution.id);
 
-  console.log('Seed complete — ALL DOMAINS (A–L).');
+  console.log('Seed complete — ALL DOMAINS (A–L) + HOD module.');
+}
+
+// ─────────────────────────────────────────────────────────────
+// HOD module seed — leave requests for HD-04 (leave table added
+// later than the other domains, so it gets its own pass).
+// ─────────────────────────────────────────────────────────────
+async function seedDomainHOD(institutionId: string): Promise<void> {
+  console.log('Seeding HOD leaves (HD-04)…');
+
+  const sunita = await db.user.findFirst({ where: { email: 'sunita.rao@learnix.dev', institutionId } });
+  const priyaV = await db.user.findFirst({ where: { email: 'priya.venkatesh@learnix.dev', institutionId } });
+  const sanjay = await db.user.findFirst({ where: { email: 'sanjay.tiwari@learnix.dev', institutionId } });
+  if (!sunita || !priyaV || !sanjay) throw new Error('Faculty users missing — run base seed first');
+
+  const mkLeave = async (
+    staffUserId: string,
+    type: string,
+    fromDate: Date,
+    days: number,
+    reason: string,
+    status: string,
+  ) => {
+    const toDate = new Date(fromDate);
+    toDate.setDate(toDate.getDate() + days - 1);
+    const existing = await db.leaveRequest.findFirst({ where: { staffUserId, fromDate } });
+    if (existing) {
+      // restore demo state on re-seed (undoes e2e decisions)
+      await db.leaveRequest.update({
+        where: { id: existing.id },
+        data: { status, substituteUserId: null, decidedByUserId: null, decidedAt: null },
+      });
+      return;
+    }
+    await db.leaveRequest.create({
+      data: { institutionId, staffUserId, type, fromDate, toDate, days, reason, status },
+    });
+  };
+
+  await mkLeave(priyaV.id, 'MEDICAL', new Date('2026-10-12'), 3, 'Scheduled surgery and recovery', 'PENDING');
+  await mkLeave(sanjay.id, 'CASUAL', new Date('2026-10-20'), 2, 'Family function', 'PENDING');
+  await mkLeave(sunita.id, 'EARNED', new Date('2026-11-02'), 5, 'Annual vacation', 'APPROVED');
+
+  console.log('  ✓ 3 leave requests (2 PENDING, 1 APPROVED)');
 }
 
 main()
@@ -145,12 +213,26 @@ async function seedDomainB(institutionId: string): Promise<void> {
   const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
   if (!teacher || !student) throw new Error('Core users missing — run base seed first');
 
-  // Structure chain
+  // Structure chain — HOD owns the department when seeded
+  const hod = await db.user.findFirst({ where: { email: 'hod@learnix.dev', institutionId } });
   const cse = await db.department.upsert({
     where: { institutionId_code: { institutionId, code: 'CSE' } },
-    update: { hodUserId: teacher.id },
-    create: { institutionId, name: 'Computer Science & Engineering', code: 'CSE', hodUserId: teacher.id },
+    update: { hodUserId: hod?.id ?? teacher.id },
+    create: { institutionId, name: 'Computer Science & Engineering', code: 'CSE', hodUserId: hod?.id ?? teacher.id },
   });
+
+  // Link all CSE staff profiles to the department (HD-02 scope)
+  const staffEmails = [
+    'hod@learnix.dev',
+    'teacher@learnix.dev',
+    'sunita.rao@learnix.dev',
+    'sanjay.tiwari@learnix.dev',
+    'priya.venkatesh@learnix.dev',
+  ];
+  for (const email of staffEmails) {
+    const u = await db.user.findFirst({ where: { email, institutionId } });
+    if (u) await db.staffProfile.updateMany({ where: { userId: u.id }, data: { departmentId: cse.id } });
+  }
 
   const btechCse = await db.program.upsert({
     where: { departmentId_code: { departmentId: cse.id, code: 'BT-CSE' } },
@@ -201,41 +283,56 @@ async function seedDomainB(institutionId: string): Promise<void> {
   }
 
   // Offerings — teacher's subject↔section matrix (semester 4 courses to Section A)
+  // CS402 (Computer Networks) is taught by Sunita Rao — gives the HOD a real
+  // multi-faculty workload picture.
+  const sunita = await db.user.findFirst({ where: { email: 'sunita.rao@learnix.dev', institutionId } });
   const offerings = [];
   for (const course of courses.filter((c) => c.semester === 4)) {
+    const owner = course.code === 'CS402' && sunita ? sunita : teacher;
     const existing = await db.courseOffering.findFirst({
       where: { courseId: course.id, sectionId: sectionA.id, semester: 4, academicYearId: ay.id },
     });
     if (existing) {
+      if (existing.teacherUserId !== owner.id) {
+        await db.courseOffering.update({ where: { id: existing.id }, data: { teacherUserId: owner.id } });
+        existing.teacherUserId = owner.id;
+      }
       offerings.push(existing);
     } else {
       offerings.push(
         await db.courseOffering.create({
-          data: { courseId: course.id, sectionId: sectionA.id, teacherUserId: teacher.id, semester: 4, academicYearId: ay.id },
+          data: { courseId: course.id, sectionId: sectionA.id, teacherUserId: owner.id, semester: 4, academicYearId: ay.id },
         }),
       );
     }
-    await db.offeringScheduleSlot.upsert({
-      where: { offeringId_dayOfWeek_startTime: { offeringId: offerings[offerings.length - 1].id, dayOfWeek: 1, startTime: '09:00' } },
-      update: {},
-      create: { offeringId: offerings[offerings.length - 1].id, dayOfWeek: 1, startTime: '09:00', endTime: '10:00', room: 'L-204' },
-    });
+    // Mon–Fri weekly slots → drives real workload numbers for HD-02
+    for (const day of [1, 2, 3, 4, 5]) {
+      await db.offeringScheduleSlot.upsert({
+        where: { offeringId_dayOfWeek_startTime: { offeringId: offerings[offerings.length - 1].id, dayOfWeek: day, startTime: '09:00' } },
+        update: {},
+        create: { offeringId: offerings[offerings.length - 1].id, dayOfWeek: day, startTime: '09:00', endTime: '10:00', room: 'L-204' },
+      });
+    }
   }
 
-  // Enrollment: demo student into the DBMS offering
+  // Enrollment: demo student into the DBMS offering (+ link profile to program/batch)
   const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
   if (!studentProfile) throw new Error('Student profile missing');
+  await db.studentProfile.update({
+    where: { id: studentProfile.id },
+    data: { programId: btechCse.id, batchId: batch2027.id },
+  });
   await db.enrollment.upsert({
     where: { studentProfileId_offeringId: { studentProfileId: studentProfile.id, offeringId: offerings[0].id } },
     update: {},
     create: { studentProfileId: studentProfile.id, offeringId: offerings[0].id, status: 'ACTIVE' },
   });
 
-  // Syllabus v1 for CS401 (submitted, awaiting HOD)
+  // Syllabus v1 for CS401 (submitted, awaiting HOD — restored on re-seed)
   const dbms = courses.find((c) => c.code === 'CS401')!;
   const syllabus = await db.syllabusVersion.upsert({
     where: { courseId_version: { courseId: dbms.id, version: 1 } },
-    update: {},
+    update: { status: 'SUBMITTED', feedback: null, actionedByUserId: null },
     create: { courseId: dbms.id, version: 1, submittedByUserId: teacher.id, status: 'SUBMITTED' },
   });
   const existingUnits = await db.syllabusUnit.count({ where: { syllabusVersionId: syllabus.id } });

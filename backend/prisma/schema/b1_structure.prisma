@@ -30,7 +30,7 @@ model Program {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  department Department[]
+  department Department @relation(fields: [departmentId], references: [id])
   batches    Batch[]
   sections   Section[]
   feeStructures FeeStructure[]
