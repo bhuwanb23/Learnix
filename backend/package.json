@@ -8,8 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --schema prisma/schema",
+    "prisma:generate": "prisma generate --schema prisma/schema",
     "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
