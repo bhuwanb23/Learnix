@@ -31,6 +31,10 @@ model StudentProfile {
   jobApplications   JobApplication[]
   placementEligibility PlacementEligibility?
   driveRegistrations   DriveRegistration[]
+  feeDues           FeeDue[]
+  payments          Payment[]
+  transportFeeDues  TransportFeeDue[]
+  scholarshipAwards ScholarshipAward[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])

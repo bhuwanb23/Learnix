@@ -15,6 +15,9 @@ model AcademicYear {
 
   offerings CourseOffering[]
   exams     Exam[]
+  feeStructures FeeStructure[]
+  transportFeeDues TransportFeeDue[]
+  scholarships    Scholarship[]
 
   @@unique([institutionId, name])
   @@index([institutionId])

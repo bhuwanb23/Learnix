@@ -33,6 +33,7 @@ model Program {
   department Department[]
   batches    Batch[]
   sections   Section[]
+  feeStructures FeeStructure[]
 
   @@unique([departmentId, code])
   @@index([departmentId])
