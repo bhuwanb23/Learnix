@@ -1,79 +1,128 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { transportApi } from '../../../../services/api';
 
-const drivers = [
-  { id: 'D1', name: 'Ramesh K.', phone: '98450 11223', license: 'KA-2021-88432', exp: '11 yrs', route: 'Route 01', bus: 'KA-01-2045', status: 'On Duty', color: '#2563eb', licenseValid: 'Mar 2029' },
-  { id: 'D2', name: 'Suresh P.', phone: '98860 33445', license: 'KA-2019-55210', exp: '14 yrs', route: 'Route 07', bus: 'KA-01-1876', status: 'On Duty', color: '#0891b2', licenseValid: 'Nov 2028' },
-  { id: 'D3', name: 'Manoj G.', phone: '99010 55667', license: 'KA-2022-91345', exp: '8 yrs', route: 'Route 12', bus: 'KA-01-2210', status: 'On Duty', color: '#059669', licenseValid: 'Jan 2030' },
-  { id: 'D4', name: 'Lakshman R.', phone: '98120 77889', license: 'KA-2020-22768', exp: '12 yrs', route: 'Route 04', bus: 'KA-01-1764', status: 'On Duty', color: '#d97706', licenseValid: 'Aug 2028' },
-  { id: 'D5', name: 'Venkat S.', phone: '97430 99001', license: 'KA-2023-44671', exp: '6 yrs', route: 'Route 09', bus: 'KA-01-1982', status: 'Off Duty', color: '#dc2626', licenseValid: 'Jun 2031' },
-  { id: 'D6', name: 'Naveen B.', phone: '96320 12345', license: 'KA-2018-77120', exp: '15 yrs', route: 'Standby', bus: '—', status: 'On Leave', color: '#6b7280', licenseValid: 'Feb 2027' },
-];
+const DUTY_CYCLE = { ON_DUTY: 'OFF_DUTY', OFF_DUTY: 'ON_DUTY', ON_LEAVE: 'ON_DUTY' };
 
-const statusStyle = (s) => {
-  if (s === 'On Duty') return { bg: '#dcfce7', color: '#059669' };
-  if (s === 'Off Duty') return { bg: '#fef3c7', color: '#d97706' };
-  return { bg: '#e5e7eb', color: '#6b7280' };
+const DUTY_STYLE = {
+  ON_DUTY: { bg: '#dcfce7', color: '#059669' },
+  OFF_DUTY: { bg: '#f1f5f9', color: '#64748b' },
+  ON_LEAVE: { bg: '#fef3c7', color: '#d97706' },
 };
 
+const fmtDate = (iso) => new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+
 export default function DriversModule({ navigation }) {
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const data = await transportApi.drivers();
+      setDrivers(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message || 'Failed to load drivers');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const toggleDuty = async (driver) => {
+    const next = DUTY_CYCLE[driver.dutyStatus] || 'ON_DUTY';
+    try {
+      const res = await transportApi.setDuty(driver.id, next);
+      Alert.alert('Duty updated', `${res.name} is now ${res.dutyStatus.replace('_', ' ').toLowerCase()}.`);
+      load(false);
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  if (loading && drivers.length === 0) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && drivers.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const onDuty = drivers.filter((d) => d.dutyStatus === 'ON_DUTY').length;
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>22</Text>
-          <Text style={styles.statLabel}>Total Drivers</Text>
+          <Text style={styles.statValue}>{drivers.length}</Text>
+          <Text style={styles.statLabel}>Drivers</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>18</Text>
+          <Text style={styles.statValue}>{onDuty}</Text>
           <Text style={styles.statLabel}>On Duty</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>9.1</Text>
-          <Text style={styles.statLabel}>Avg. Yrs Exp</Text>
+          <Text style={styles.statValue}>{drivers.length - onDuty}</Text>
+          <Text style={styles.statLabel}>Off / Leave</Text>
         </View>
       </View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Driver Roster</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => Alert.alert('Add Driver', 'Driver onboarding form opens here — license, medical and documents.')}
-        >
-          <Ionicons name="add" size={15} color="#fff" />
-          <Text style={styles.addText}>Add Driver</Text>
-        </TouchableOpacity>
       </View>
 
+      {drivers.length === 0 && <Text style={styles.empty}>No drivers registered.</Text>}
       {drivers.map((d) => {
-        const st = statusStyle(d.status);
+        const st = DUTY_STYLE[d.dutyStatus] || DUTY_STYLE.OFF_DUTY;
+        const licSoon = d.licenseDaysLeft <= 90;
         return (
           <View key={d.id} style={styles.card}>
-            <View style={[styles.avatar, { backgroundColor: d.color + '1a' }]}>
-              <Text style={[styles.avatarText, { color: d.color }]}>{d.name.charAt(0)}</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{d.name.charAt(0)}</Text>
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.name}>{d.name}</Text>
               <Text style={styles.meta}>
-                {d.exp} exp · License {d.license}
+                {d.experienceYears} yrs exp · {d.route || 'unassigned'}
               </Text>
-              <Text style={styles.meta}>
-                {d.route} · {d.bus}
+              <Text style={[styles.license, licSoon && { color: '#dc2626' }]}>
+                Lic {d.licenseNo.slice(-6)} · exp {fmtDate(d.licenseExpiry)}
+                {licSoon ? ' ⚠' : ''}
               </Text>
             </View>
-            <View style={styles.rightCol}>
-              <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-                <Text style={[styles.statusText, { color: st.color }]}>{d.status}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.callBtn}
-                onPress={() => Alert.alert('Call', `Calling ${d.name} at ${d.phone}...`)}
-              >
-                <Ionicons name="call-outline" size={13} color={theme.colors.primary} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.dutyChip, { backgroundColor: st.bg }]}
+              onPress={() => toggleDuty(d)}
+            >
+              <Text style={[styles.dutyText, { color: st.color }]}>
+                {d.dutyStatus.replace('_', ' ')}
+              </Text>
+            </TouchableOpacity>
           </View>
         );
       })}
@@ -83,6 +132,11 @@ export default function DriversModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', marginTop: 20 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -121,20 +175,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-  },
-  addText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 3,
-  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,17 +189,19 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   avatarText: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: 'Manrope-Bold',
+    color: '#2563eb',
   },
   cardBody: { flex: 1, marginRight: 8 },
   name: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
@@ -169,23 +211,19 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     marginTop: 2,
   },
-  rightCol: { alignItems: 'flex-end' },
-  statusChip: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  license: {
+    fontSize: 10,
+    fontFamily: 'Manrope-SemiBold',
+    color: theme.colors.textMuted,
+    marginTop: 3,
   },
-  statusText: {
+  dutyChip: {
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  dutyText: {
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
-  },
-  callBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 7,
   },
 });
