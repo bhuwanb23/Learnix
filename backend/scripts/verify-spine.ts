@@ -188,6 +188,40 @@ async function main(): Promise<void> {
   if (tfd) {
     console.log(`TRANSPORT FEE ${tfd.studentProfile.user.fullName} AY ${tfd.academicYear.name} ₹${tfd.amountMinor / 100} [${tfd.status}]`);
   }
+
+  console.log('── Domain I spine ──');
+  const techfest = await db.event.findFirst({
+    include: {
+      venue: true,
+      registrations: { include: { registrant: true } },
+      scheduleItems: true,
+      volunteers: { include: { studentProfile: { include: { user: true } } } },
+    },
+  });
+  if (techfest) {
+    const reg = techfest.registrations[0];
+    console.log(`EVENT ${techfest.title} [${techfest.status}] @ ${techfest.venue?.name ?? '-'} | reg:${reg ? `${reg.registrant.fullName} ${reg.status}` : '-'} | schedule:${techfest.scheduleItems.length} volunteers:${techfest.volunteers.map((v) => v.studentProfile.user.fullName).join(',') || '-'}`);
+  }
+  const alumniMeet = await db.event.findFirst({ where: { category: 'ALUMNI' } });
+  if (alumniMeet) console.log(`EVENT ${alumniMeet.title} [${alumniMeet.status}] (${alumniMeet.category})`);
+  const cup = await db.tournament.findFirst({
+    include: {
+      teams: { include: { members: { include: { studentProfile: { include: { user: true } } } } } },
+      fixtures: { include: { teamA: true, teamB: true } },
+      standings: { include: { team: true } },
+    },
+  });
+  if (cup) {
+    const fx = cup.fixtures[0];
+    const table = cup.standings.map((s) => `${s.team.name}:${s.points}pts`).join(' | ');
+    const arjunTeam = cup.teams.find((t) => t.members.some((m) => m.studentProfile.user.fullName === 'Arjun Kumar'));
+    console.log(`TOURNAMENT ${cup.name} [${cup.status}] | fixture: ${fx.teamA.name} vs ${fx.teamB.name} [${fx.status}] | ${table}`);
+    console.log(`  └ Arjun plays for ${arjunTeam?.name ?? '-'}`);
+  }
+  const booking = await db.venueBooking.findFirst({ include: { venue: true } });
+  if (booking) console.log(`VENUE BOOKING ${booking.venue.name} ${booking.eventTitle} ${booking.timeSlot} [${booking.status}]`);
+  const equip = await db.equipmentIssue.findFirst({ include: { item: true, studentProfile: { include: { user: true } } } });
+  if (equip) console.log(`EQUIPMENT ${equip.item.name} → ${equip.studentProfile.user.fullName} due:${equip.dueAt.toISOString().slice(0, 10)} [${equip.status}] (available:${equip.item.availableUnits}/${equip.item.totalUnits})`);
 }
 
 main()

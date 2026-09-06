@@ -158,7 +158,9 @@
 | `service_records` | vehicleId, type, costMinor, serviceDate, status(SCHEDULED/IN_PROGRESS/COMPLETED) | 09 §3.6 |
 | `fuel_logs` | vehicleId, litres, amountMinor, filledAt | 09 §3.6 |
 
-## Domain I — Events, Sports & Cultural (owner: Admin + Sports) — 11 tables
+## Domain I — Events, Sports & Cultural (owner: Admin + Sports) — 13 tables ✅ COMPLETE
+
+> **Live status:** built as `i1_events / i2_sports / i3_venues` (paste spec = 13 tables incl. `event_volunteers` + `equipment_issues`). Migration `domain_i_events_sports`. event→venue real FK (same-domain); **event_registrations is USER-level** (uq event×user) — student registration, sports approvals, alumni RSVP all read these rows per 05-state-machines; teams carry named relations `fixturesA`/`fixturesB`; standings uq(tournament,team); venue_bookings uq(venue,date,slot); equipment availableUnits denorm service-synced. organizerUserId/requestedByUserId/captainStudentProfileId scalars; coverFileId scalar (Domain L). Seed: TechFest PUBLISHED @ Auditorium (Arjun CONFIRMED + volunteer, 3 schedule items), Alumni Networking Meet APPROVED, Football Cup ONGOING (fixture + standings 6/3pts, Arjun PLAYER), Finals venue booking PENDING, football issued 9/10. Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|
