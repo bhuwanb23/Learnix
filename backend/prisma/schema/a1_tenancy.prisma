@@ -40,6 +40,11 @@ model User {
   refreshTokens  RefreshToken[]
   passwordResets PasswordReset[]
   eventRegistrations EventRegistration[]
+  notifications   Notification[]
+  pushTokens      PushToken[]
+  aiInteractions  AiInteraction[]
+  donationsMade    Donation[]
+  mentorshipsAsMentor MentorshipPair[]
 
   @@unique([institutionId, email]) // email unique per institution
   @@index([institutionId])

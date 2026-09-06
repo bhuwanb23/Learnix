@@ -47,6 +47,7 @@ model StudentProfile {
   eventVolunteering EventVolunteer[]
   teamMemberships   TeamMember[]
   equipmentIssues   EquipmentIssue[]
+  mentorshipsAsMentee MentorshipPair[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])
@@ -82,12 +83,13 @@ model AlumniProfile {
   companyId        String? // FK → companies (Domain D)
   currentRole      String?
   location         String?
-  chapterId        String? // FK → alumni_chapters (Domain J)
+  chapterId        String? // FK → alumni_chapters (Domain J, landed)
   engagementStatus String   @default("ACTIVE") // ACTIVE | INACTIVE | LOST
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user    User           @relation(fields: [userId], references: [id])
+  chapter AlumniChapter? @relation(fields: [chapterId], references: [id])
 
   @@index([institutionId])
   @@index([graduationYear])

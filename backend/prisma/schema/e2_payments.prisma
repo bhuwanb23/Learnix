@@ -49,15 +49,16 @@ model Receipt {
   @@map("receipts")
 }
 
-// DONATION link — donationId → donations (Domain J, scalar until it lands)
+// DONATION link — FK to donations (Domain J, landed)
 model DonationPayment {
   id         String   @id @default(cuid())
   paymentId  String   @unique
-  donationId String // scalar → donations.id (Domain J)
+  donationId String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  payment Payment @relation(fields: [paymentId], references: [id])
+  payment  Payment  @relation(fields: [paymentId], references: [id])
+  donation Donation @relation(fields: [donationId], references: [id])
 
   @@index([paymentId])
   @@map("donation_payments")
