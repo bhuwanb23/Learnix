@@ -123,6 +123,45 @@ async function main(): Promise<void> {
   if (award) {
     console.log(`SCHOLARSHIP ${award.scholarship.name} (${award.scholarship.coveragePercent}%) ${inr(award.amountMinor)} [${award.status}] | ${award.studentProfile.user.fullName}`);
   }
+
+  console.log('── Domain F+G spine ──');
+  const fineRow = await db.fine.findFirst({
+    include: {
+      bookIssue: { include: { book: true, studentProfile: { include: { user: true } }, finePayments: { include: { payment: { include: { receipt: true } } } } } },
+    },
+  });
+  if (fineRow) {
+    const fp = fineRow.bookIssue.finePayments[0];
+    console.log(
+      `FINE ${fineRow.bookIssue.book.title} | ${fineRow.bookIssue.studentProfile.user.fullName} | overdue ${fineRow.daysOverdue}d ₹${fineRow.amountMinor / 100} [${fineRow.status}]${fp ? ` → PAYMENT ${fp.payment.referenceNo} receipt:${fp.payment.receipt?.receiptNo ?? '-'}` : ''}`,
+    );
+  }
+  const bookCount = await db.book.count();
+  const req = await db.bookRequest.findFirst({ include: { studentProfile: { include: { user: true } } } });
+  console.log(`BOOKS total:${bookCount} | request: ${req ? `${req.title} [${req.status}] by ${req.studentProfile.user.fullName}` : '-'}`);
+
+  const allocation = await db.hostelAllocation.findFirst({
+    include: {
+      studentProfile: { include: { user: true } },
+      bed: { include: { room: { include: { block: true } } } },
+      rentDues: true,
+    },
+  });
+  if (allocation) {
+    console.log(
+      `ALLOCATION ${allocation.studentProfile.user.fullName} → ${allocation.bed.room.block.name} ${allocation.bed.room.number} bed${allocation.bed.bedNo} | rent dues:${allocation.rentDues.length} (${allocation.rentDues.map((d) => `${d.month}:${d.status}`).join(', ')})`,
+    );
+  }
+  const room = await db.room.findFirst({ include: { beds: true } });
+  if (room) {
+    console.log(`ROOM ${room.number} occupied:${room.occupiedCount}/${room.capacity} beds:[${room.beds.map((b) => `${b.bedNo}:${b.status}`).join(', ')}]`);
+  }
+  const gp = await db.gatePass.findFirst({ include: { studentProfile: { include: { user: true } } } });
+  const complaint = await db.hostelComplaint.findFirst({ include: { studentProfile: { include: { user: true } } } });
+  const visitor = await db.visitor.findFirst({ include: { visitingStudent: { include: { user: true } } } });
+  if (gp) console.log(`GATE PASS ${gp.studentProfile.user.fullName} [${gp.status}] out:${gp.outAt.toISOString().slice(0, 10)}`);
+  if (complaint) console.log(`COMPLAINT ${complaint.category} [${complaint.status}] sev:${complaint.severity} | ${complaint.studentProfile.user.fullName}`);
+  if (visitor) console.log(`VISITOR ${visitor.name} (${visitor.relation}) [${visitor.status}] for ${visitor.visitingStudent.user.fullName}`);
 }
 
 main()

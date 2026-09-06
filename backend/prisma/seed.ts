@@ -742,7 +742,6 @@ async function seedDomainE(institutionId: string): Promise<void> {
   });
 
   console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
-}
   console.log('  ✓ payroll DRAFT 2026-08 (₹60,000 net), LABS budget+expense PENDING, merit scholarship APPROVED');
 }
 
@@ -762,11 +761,6 @@ async function seedDomainF(institutionId: string): Promise<void> {
   if (!program) throw new Error('BT-CSE missing');
 
   // Books
-  const cleanCode = await db.book.upsert({
-    where: { id: 'seed-book-clean-code' },
-    update: {},
-    create: {},
-  }).catch(() => null);
   let book1 = await db.book.findFirst({ where: { institutionId, isbn: '9780132350884' } });
   if (!book1) {
     book1 = await db.book.create({
@@ -853,4 +847,134 @@ async function seedDomainF(institutionId: string): Promise<void> {
   }
 
   console.log('  ✓ 2 books, 1 OVERDUE issue + fine ₹50 PAID (PAY-2026-0002 + receipt), 1 ISSUED, request PENDING, IEEE grant');
+}
+
+// ─────────────────────────────────────────────────────────────
+// Domain G — Hostel seed
+// ─────────────────────────────────────────────────────────────
+
+async function seedDomainG(institutionId: string): Promise<void> {
+  console.log('Seeding Domain G (hostel)…');
+
+  const teacher = await db.user.findFirst({ where: { email: 'teacher@learnix.dev', institutionId } });
+  const student = await db.user.findFirst({ where: { email: 'student@learnix.dev', institutionId } });
+  if (!teacher || !student) throw new Error('Core users missing');
+  const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
+  if (!studentProfile) throw new Error('Student profile missing');
+
+  // Block A → Room A-101 (2 beds) → allocate Arjun to bed 1
+  let blockA = await db.hostelBlock.findFirst({ where: { institutionId, name: 'Block A' } });
+  if (!blockA) {
+    blockA = await db.hostelBlock.create({
+      data: { institutionId, name: 'Block A', wardenUserId: teacher.id },
+    });
+  }
+
+  let room101 = await db.room.findFirst({ where: { blockId: blockA.id, number: 'A-101' } });
+  if (!room101) {
+    room101 = await db.room.create({
+      data: { blockId: blockA.id, floor: 1, number: 'A-101', capacity: 2, occupiedCount: 0 },
+    });
+  }
+
+  let bed1 = await db.bed.findFirst({ where: { roomId: room101.id, bedNo: 1 } });
+  if (!bed1) {
+    bed1 = await db.bed.create({ data: { roomId: room101.id, bedNo: 1, status: 'VACANT' } });
+  }
+  const bed2 = await db.bed.findFirst({ where: { roomId: room101.id, bedNo: 2 } });
+  if (!bed2) {
+    await db.bed.create({ data: { roomId: room101.id, bedNo: 2, status: 'VACANT' } });
+  }
+
+  const activeAllocation = await db.hostelAllocation.findFirst({
+    where: { studentProfileId: studentProfile.id, status: 'ACTIVE' },
+  });
+  if (!activeAllocation) {
+    await db.hostelAllocation.create({
+      data: { studentProfileId: studentProfile.id, bedId: bed1.id, fromDate: new Date('2026-07-01'), status: 'ACTIVE' },
+    });
+    await db.bed.update({ where: { id: bed1.id }, data: { status: 'ALLOCATED' } });
+    await db.room.update({ where: { id: room101.id }, data: { occupiedCount: { increment: 1 } } });
+  }
+
+  // Rent dues for Jul + Aug 2026 (UNPAID)
+  for (const month of ['2026-07', '2026-08']) {
+    const existing = await db.hostelRentDue.findFirst({
+      where: { allocationId: (activeAllocation ?? (await db.hostelAllocation.findFirst({ where: { studentProfileId: studentProfile.id, status: 'ACTIVE' } })))!.id, month },
+    });
+    if (!existing) {
+      await db.hostelRentDue.create({
+        data: {
+          allocationId: (activeAllocation ?? (await db.hostelAllocation.findFirst({ where: { studentProfileId: studentProfile.id, status: 'ACTIVE' } })))!.id,
+          month,
+          amountMinor: 3500000, // ₹35,000/mo
+          status: 'UNPAID',
+        },
+      });
+    }
+  }
+
+  // Mess menu Mon–Sun × 3 meals for Monday (representative) — fill all 7 days
+  const menuExists = await db.messMenuItem.findFirst({ where: { institutionId } });
+  if (!menuExists) {
+    const meals = [
+      { meal: 'BREAKFAST', items: ['Idli', 'Sambar', 'Coconut Chutney'], isVeg: true },
+      { meal: 'LUNCH', items: ['Rice', 'Dal Tadka', 'Beans Poriyal', 'Curd'], isVeg: true },
+      { meal: 'DINNER', items: ['Chapati', 'Paneer Butter Masala', 'Salad'], isVeg: true },
+    ] as const;
+    for (let day = 0; day < 7; day++) {
+      for (const m of meals) {
+        await db.messMenuItem.create({
+          data: { institutionId, dayOfWeek: day, meal: m.meal, itemsJson: JSON.stringify(m.items), isVeg: m.isVeg },
+        });
+      }
+    }
+  }
+
+  // Meal attendance today + feedback
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const attExists = await db.mealAttendance.findFirst({ where: { date: today, meal: 'LUNCH', studentProfileId: studentProfile.id } });
+  if (!attExists) {
+    await db.mealAttendance.create({ data: { institutionId, date: today, meal: 'LUNCH', studentProfileId: studentProfile.id, count: 1 } });
+  }
+  const fbExists = await db.messFeedback.findFirst({ where: { mealDate: today, meal: 'LUNCH', studentProfileId: studentProfile.id } });
+  if (!fbExists) {
+    await db.messFeedback.create({
+      data: { studentProfileId: studentProfile.id, mealDate: today, meal: 'LUNCH', rating: 4, comment: 'Dal was good, rice slightly cold' },
+    });
+  }
+
+  // Gate pass PENDING
+  const gpExists = await db.gatePass.findFirst({ where: { studentProfileId: studentProfile.id, status: 'PENDING' } });
+  if (!gpExists) {
+    await db.gatePass.create({
+      data: {
+        studentProfileId: studentProfile.id,
+        reason: 'Weekend home visit',
+        outAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        expectedInAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        status: 'PENDING',
+      },
+    });
+  }
+
+  // Complaint OPEN (NETWORK)
+  const complaintExists = await db.hostelComplaint.findFirst({ where: { studentProfileId: studentProfile.id, category: 'NETWORK' } });
+  if (!complaintExists) {
+    await db.hostelComplaint.create({
+      data: { studentProfileId: studentProfile.id, category: 'NETWORK', description: 'WiFi drops every evening in A-101', severity: 'MEDIUM', status: 'OPEN' },
+    });
+  }
+
+  // Visitor checked IN
+  const visitorExists = await db.visitor.findFirst({ where: { visitingStudentProfileId: studentProfile.id, status: 'IN' } });
+  if (!visitorExists) {
+    await db.visitor.create({
+      data: { institutionId, name: 'Suresh Kumar', visitingStudentProfileId: studentProfile.id, relation: 'Father', status: 'IN' },
+    });
+  }
+
+  console.log('  ✓ Block A → A-101 (2 beds), Arjun allocated bed 1, rent dues Jul+Aug UNPAID');
+  console.log('  ✓ 7-day mess menu ×3 meals, lunch attendance + feedback, gate pass PENDING, WiFi complaint OPEN, visitor IN');
 }

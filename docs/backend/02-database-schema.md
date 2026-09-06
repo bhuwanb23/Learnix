@@ -111,7 +111,9 @@
 | `scholarships` | name, type(MERIT/NEED_BASED), coveragePercent, academicYearId | 06 §3.7 |
 | `scholarship_awards` | scholarshipId, studentProfileId, amountMinor, status(APPROVED/DISBURSED/REJECTED), disbursedPaymentId? | 06 §3.7 → creates payment/write-off |
 
-## Domain F — Library (owner: Library Staff) — 7 tables
+## Domain F — Library (owner: Library Staff) — 7 tables ✅ COMPLETE
+
+> **Live status:** built as `f1_catalog / f2_circulation`. Migration `domain_f_g_library_hostel` (shared with G). book→bookIssue (availableCopies denorm, service-synced); issue 1—1 fine; fines.paidPaymentId scalar → set by the fine→payment write-through; **fine_payments (E) now FKs to BookIssue** (flipped from scalar when F landed). digitalAccessGrant → program/batch FKs. Seed: 2 books, OVERDUE issue + ₹50 fine PAID via PAY-2026-0002 + RCP-2025-26-0002, 1 active issue, request PENDING, IEEE journal grant to BT-CSE. Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|
@@ -123,7 +125,9 @@
 | `digital_access_grants` | resourceId, programId? , batchId? | Grant access per program |
 | `book_procurements` | requestId?, title, copies, costMinor, status(REQUESTED/APPROVED/ORDERED/RECEIVED) | Purchase pipeline |
 
-## Domain G — Hostel (owner: Hostel office) — 10 tables
+## Domain G — Hostel (owner: Hostel office) — 10 tables ✅ COMPLETE
+
+> **Live status:** built as `g1_rooms / g2_mess / g3_passes`. Same migration as F. blocks uq(inst,name) → rooms uq(block,number) → beds uq(room,bedNo); "one active allocation per bed/student" enforced in service layer (SQLite has no partial unique); **hostel_rent_dues (E) now FKs to HostelAllocation** (flipped from scalar); mess menu uq(inst, day, meal); meal attendance uq(date, meal, student); gate pass / complaint / visitor machines per 05-state-machines.md. Seed: Block A → A-101 (2 beds) → Arjun ALLOCATED bed 1 (occupied 1/2), rent Jul+Aug UNPAID ₹35k/mo, 7-day × 3-meal menu, attendance + feedback, gate pass PENDING, NETWORK complaint OPEN, visitor IN. Verified via `npm run verify:spine`.
 
 | Table | Key fields | Notes |
 |---|---|---|
