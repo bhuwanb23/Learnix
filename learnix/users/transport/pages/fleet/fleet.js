@@ -1,91 +1,135 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { transportApi } from '../../../../services/api';
 import VehicleDetail from './pages/vehicle_detail/vehicle_detail';
 
-const vehicles = [
-  { id: 'V1', reg: 'KA-01-2045', model: 'TATA Starbus Ultra', capacity: 50, odometer: '86,400', fuel: '68%', status: 'On Road', route: 'Route 01', driver: 'Ramesh K.', color: '#2563eb' },
-  { id: 'V2', reg: 'KA-01-1876', model: 'Ashok Leyland Viking', capacity: 60, odometer: '9,800', fuel: '41%', status: 'On Road', route: 'Route 07', driver: 'Suresh P.', color: '#0891b2' },
-  { id: 'V3', reg: 'KA-01-2210', model: 'Eicher Skyline Pro', capacity: 55, odometer: '54,200', fuel: '27%', status: 'On Road', route: 'Route 12', driver: 'Manoj G.', color: '#059669' },
-  { id: 'V4', reg: 'KA-01-1764', model: 'TATA Starbus Ultra', capacity: 50, odometer: '61,900', fuel: '82%', status: 'Idle', route: 'Standby', driver: '—', color: '#d97706' },
-  { id: 'V5', reg: 'KA-01-1982', model: 'Force Traveller', capacity: 30, odometer: '42,300', fuel: '55%', status: 'Servicing', route: '—', driver: '—', color: '#dc2626' },
-];
-
-const statusStyle = (s) => {
-  if (s === 'On Road') return { bg: '#dcfce7', color: '#059669' };
-  if (s === 'Idle') return { bg: '#fef3c7', color: '#d97706' };
-  return { bg: '#fee2e2', color: '#dc2626' };
+const STATUS_STYLE = {
+  ON_ROAD: { bg: '#dcfce7', color: '#059669', label: 'On Road' },
+  IDLE: { bg: '#f1f5f9', color: '#64748b', label: 'Idle' },
+  SERVICE: { bg: '#fee2e2', color: '#dc2626', label: 'Service' },
 };
 
 export default function FleetModule({ navigation }) {
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
 
-  if (selectedVehicle) {
-    return <VehicleDetail vehicle={selectedVehicle} onBack={() => setSelectedVehicle(null)} />;
+  const load = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    setError(null);
+    try {
+      const data = await transportApi.fleet();
+      setVehicles(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setError(e.message || 'Failed to load fleet');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  if (selectedVehicleId) {
+    return (
+      <VehicleDetail
+        vehicleId={selectedVehicleId}
+        onBack={() => {
+          setSelectedVehicleId(null);
+          load(false);
+        }}
+      />
+    );
   }
 
+  if (loading && vehicles.length === 0) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error && vehicles.length === 0) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const onRoad = vehicles.filter((v) => v.status === 'ON_ROAD').length;
+  const lowFuel = vehicles.filter((v) => v.fuelPct < 30).length;
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+    >
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>30</Text>
+          <Text style={styles.statValue}>{vehicles.length}</Text>
           <Text style={styles.statLabel}>Fleet Size</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>26</Text>
+          <Text style={styles.statValue}>{onRoad}</Text>
           <Text style={styles.statLabel}>On Road</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>2</Text>
-          <Text style={styles.statLabel}>In Service</Text>
+        <View style={[styles.statCard, lowFuel > 0 && { borderColor: '#fecaca' }]}>
+          <Text style={[styles.statValue, lowFuel > 0 && { color: '#dc2626' }]}>{lowFuel}</Text>
+          <Text style={styles.statLabel}>Low Fuel</Text>
         </View>
       </View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Vehicles</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => Alert.alert('Add Vehicle', 'Vehicle registration form opens here.')}
-        >
-          <Ionicons name="add" size={15} color="#fff" />
-          <Text style={styles.addText}>Add Vehicle</Text>
-        </TouchableOpacity>
       </View>
 
+      {vehicles.length === 0 && <Text style={styles.empty}>No vehicles registered.</Text>}
       {vehicles.map((v) => {
-        const st = statusStyle(v.status);
+        const st = STATUS_STYLE[v.status] || STATUS_STYLE.IDLE;
+        const fuelColor = v.fuelPct < 30 ? '#dc2626' : v.fuelPct < 50 ? '#d97706' : '#059669';
         return (
           <TouchableOpacity
             key={v.id}
             style={styles.card}
-            onPress={() => setSelectedVehicle(v)}
+            onPress={() => setSelectedVehicleId(v.id)}
           >
-            <View style={[styles.vehicleIcon, { backgroundColor: v.color + '1a' }]}>
-              <Ionicons name="bus-outline" size={18} color={v.color} />
+            <View style={styles.vehicleIcon}>
+              <Ionicons name="bus-outline" size={19} color="#2563eb" />
             </View>
             <View style={styles.cardBody}>
-              <Text style={styles.reg}>{v.reg}</Text>
+              <View style={styles.nameRow}>
+                <Text style={styles.name}>{v.regNo}</Text>
+                {v.docsExpiring.length > 0 && (
+                  <View style={styles.docDot}>
+                    <Text style={styles.docDotText}>{v.docsExpiring.length} doc</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.meta}>
-                {v.model} · {v.capacity} seats
+                {v.model} · {v.odometerKm.toLocaleString()} km · {v.route || 'unassigned'}
               </Text>
               <View style={styles.fuelRow}>
                 <View style={styles.fuelTrack}>
-                  <View
-                    style={[
-                      styles.fuelFill,
-                      { width: v.fuel, backgroundColor: parseInt(v.fuel) < 30 ? '#dc2626' : '#059669' },
-                    ]}
-                  />
+                  <View style={[styles.fuelFill, { width: `${v.fuelPct}%`, backgroundColor: fuelColor }]} />
                 </View>
-                <Text style={styles.fuelText}>{v.fuel}</Text>
+                <Text style={[styles.fuelText, { color: fuelColor }]}>{v.fuelPct}%</Text>
               </View>
             </View>
-            <View style={styles.rightCol}>
-              <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-                <Text style={[styles.statusText, { color: st.color }]}>{v.status}</Text>
-              </View>
-              <Text style={styles.routeText}>{v.route}</Text>
+            <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
+              <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
             </View>
           </TouchableOpacity>
         );
@@ -96,6 +140,11 @@ export default function FleetModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  empty: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', marginTop: 20 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -134,20 +183,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-  },
-  addText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 3,
-  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -162,15 +197,32 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 11,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   cardBody: { flex: 1, marginRight: 8 },
-  reg: {
-    fontSize: 14,
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  name: {
+    fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
+  },
+  docDot: {
+    marginLeft: 8,
+    backgroundColor: '#fef3c7',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  docDotText: {
+    fontSize: 9,
+    fontFamily: 'Manrope-Bold',
+    color: '#d97706',
   },
   meta: {
     fontSize: 11,
@@ -194,10 +246,8 @@ const styles = StyleSheet.create({
   fuelFill: { height: 5, borderRadius: 3 },
   fuelText: {
     fontSize: 10,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.textMuted,
+    fontFamily: 'Manrope-Bold',
   },
-  rightCol: { alignItems: 'flex-end' },
   statusChip: {
     borderRadius: 8,
     paddingHorizontal: 8,
@@ -206,11 +256,5 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
-  },
-  routeText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 5,
   },
 });

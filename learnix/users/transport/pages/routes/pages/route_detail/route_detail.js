@@ -1,20 +1,113 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
+import { transportApi } from '../../../../../../services/api';
 
-const stops = [
-  { id: '1', name: 'Central City Depot', time: '7:05 AM', boarding: 12, passed: true },
-  { id: '2', name: 'M.G. Road Junction', time: '7:18 AM', boarding: 24, passed: true },
-  { id: '3', name: 'Indiranagar Metro', time: '7:32 AM', boarding: 31, passed: true },
-  { id: '4', name: 'Domlur Flyover', time: '7:44 AM', boarding: 28, passed: true },
-  { id: '5', name: 'Marathahalli Bridge', time: '7:56 AM', boarding: 35, passed: false },
-  { id: '6', name: 'Learnix Campus Gate', time: '8:40 AM', boarding: 26, passed: false },
-];
+export default function RouteDetail({ routeId, onBack }) {
+  const [route, setRoute] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showEnroll, setShowEnroll] = useState(false);
+  const [showStop, setShowStop] = useState(false);
+  const [enrollRoll, setEnrollRoll] = useState('');
+  const [enrollStop, setEnrollStop] = useState('');
+  const [stopName, setStopName] = useState('');
+  const [stopTime, setStopTime] = useState('');
 
-export default function RouteDetail({ route, onBack }) {
-  const [showPassengers, setShowPassengers] = useState(false);
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      const data = await transportApi.routeDetail(routeId);
+      setRoute(data);
+    } catch (e) {
+      setError(e.message || 'Failed to load route');
+    } finally {
+      setLoading(false);
+    }
+  }, [routeId]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  const sendDelayAlert = async () => {
+    if (!route?.bus || !route?.live) {
+      Alert.alert('Not live', 'This route has no live GPS position to flag as delayed.');
+      return;
+    }
+    try {
+      await transportApi.ping(route.bus.id || route.bus.vehicleId, {
+        currentStopOrder: undefined,
+        speedKmh: route.live.speedKmh || 0,
+        etaMin: (route.live.etaMin || 0) + 15,
+        status: 'DELAYED',
+      });
+      Alert.alert('Delay flagged', 'Enrolled students were notified with the updated ETA.');
+      load();
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  const enroll = async () => {
+    const order = parseInt(enrollStop, 10);
+    if (!enrollRoll.trim() || !order) {
+      Alert.alert('Incomplete', 'Enter the roll no and stop number.');
+      return;
+    }
+    try {
+      const res = await transportApi.enrollStudent(routeId, enrollRoll.trim(), order);
+      Alert.alert('Enrolled', `${res.student} picks up at ${res.stop}. Fee due auto-generated.`);
+      setEnrollRoll('');
+      setEnrollStop('');
+      setShowEnroll(false);
+      load();
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  const addStop = async () => {
+    if (!stopName.trim() || !/^\d{2}:\d{2}$/.test(stopTime.trim())) {
+      Alert.alert('Incomplete', 'Enter a stop name and time (HH:MM).');
+      return;
+    }
+    try {
+      await transportApi.addStop(routeId, stopName.trim(), stopTime.trim());
+      Alert.alert('Stop added', `${stopName.trim()} appended to ${route.name}.`);
+      setStopName('');
+      setStopTime('');
+      setShowStop(false);
+      load();
+    } catch (e) {
+      Alert.alert('Action failed', e.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (error || !route) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
+        <Text style={styles.errorText}>{error || 'Route not found'}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={load}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const passedCount = route.timeline.filter((s) => s.passed).length;
+  const progressPct = route.timeline.length === 0 ? 0 : Math.round((passedCount / route.timeline.length) * 100);
 
   return (
     <View style={styles.container}>
@@ -24,117 +117,128 @@ export default function RouteDetail({ route, onBack }) {
             <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.routeName}>{route.name}</Text>
-          <Text style={styles.routeSub}>
-            {route.departure} → {route.arrival} · {route.distance}
+          <Text style={styles.routeMeta}>
+            {route.distanceKm} km · {route.timeline.length} stops · {route.students} students
           </Text>
-          <View style={styles.heroStats}>
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{route.stops}</Text>
-              <Text style={styles.heroStatLabel}>Stops</Text>
+          {route.live && (
+            <View style={styles.liveBadge}>
+              <View style={[styles.liveDot, { backgroundColor: route.live.status === 'ON_TIME' ? '#22c55e' : '#ef4444' }]} />
+              <Text style={styles.liveText}>
+                {route.live.status === 'ON_TIME' ? 'On time' : 'Delayed'} · ETA {route.live.etaMin ?? '?'} min
+                {route.live.at ? ` · at ${route.live.at}` : ''}
+              </Text>
             </View>
-            <View style={styles.heroStatDivider} />
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>{route.students}</Text>
-              <Text style={styles.heroStatLabel}>Students</Text>
-            </View>
-            <View style={styles.heroStatDivider} />
-            <View style={styles.heroStat}>
-              <Text style={styles.heroStatValue}>91%</Text>
-              <Text style={styles.heroStatLabel}>On-Time</Text>
-            </View>
+          )}
+          <View style={styles.heroProgress}>
+            <View style={[styles.heroProgressFill, { width: `${progressPct}%` }]} />
           </View>
         </LinearGradient>
 
-        <View style={styles.vehicleCard}>
-          <View style={[styles.vehicleIcon, { backgroundColor: '#dbeafe' }]}>
-            <Ionicons name="bus-outline" size={20} color="#2563eb" />
-          </View>
-          <View style={styles.vehicleBody}>
-            <Text style={styles.vehicleLabel}>Assigned Bus</Text>
-            <Text style={styles.vehicleName}>{route.bus}</Text>
-          </View>
-          <View style={[styles.vehicleIcon, { backgroundColor: '#dcfce7' }]}>
-            <Ionicons name="person-outline" size={20} color="#059669" />
-          </View>
-          <View style={styles.vehicleBody}>
-            <Text style={styles.vehicleLabel}>Driver</Text>
-            <Text style={styles.vehicleName}>{route.driver}</Text>
-          </View>
-        </View>
-
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => Alert.alert('Route Map', 'Live route map with GPS positions opens here.')}
-          >
-            <Ionicons name="navigate-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Live Map</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => setShowPassengers(!showPassengers)}
-          >
-            <Ionicons name="people-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Passengers</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() =>
-              Alert.alert('Delay Notice', 'Push a delay notification to all students on this route.')
-            }
-          >
-            <Ionicons name="megaphone-outline" size={16} color="#dc2626" />
-            <Text style={[styles.actionText, { color: '#dc2626' }]}>Delay Alert</Text>
-          </TouchableOpacity>
-        </View>
-
-        {showPassengers && (
-          <View style={styles.passengerCard}>
-            <Text style={styles.passengerTitle}>
-              {route.students} students on this route
-            </Text>
-            {['Aarav Gupta', 'Meera Joshi', 'Rohan Kulkarni', 'Sana Sheikh'].map((s, i) => (
-              <View key={s} style={styles.passengerRow}>
-                <View style={styles.passengerAvatar}>
-                  <Text style={styles.passengerAvatarText}>{s.charAt(0)}</Text>
-                </View>
-                <Text style={styles.passengerName}>{s}</Text>
-                <Text style={styles.passengerStop}>Boarding at stop {i + 2}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        <Text style={styles.sectionTitle}>Stop Timeline</Text>
-        {stops.map((s, idx) => (
-          <View key={s.id} style={styles.stopRow}>
-            <View style={styles.timeline}>
-              <View
-                style={[
-                  styles.timelineDot,
-                  s.passed ? styles.timelineDotPassed : styles.timelineDotUpcoming,
-                ]}
-              >
-                {s.passed && <Ionicons name="checkmark" size={10} color="#fff" />}
-              </View>
-              {idx < stops.length - 1 && <View style={styles.timelineLine} />}
+        {route.bus && (
+          <View style={styles.busCard}>
+            <View style={styles.busIcon}>
+              <Ionicons name="bus-outline" size={20} color="#2563eb" />
             </View>
-            <View style={styles.stopBody}>
-              <Text style={[styles.stopName, !s.passed && styles.stopNameUpcoming]}>
-                {s.name}
-              </Text>
-              <Text style={styles.stopMeta}>
-                {s.time} · {s.boarding} boarding
+            <View style={styles.busBody}>
+              <Text style={styles.busReg}>{route.bus.regNo}</Text>
+              <Text style={styles.busMeta}>
+                {route.bus.model} · Driver {route.driver || '—'}
               </Text>
             </View>
             <View
               style={[
-                styles.stopChip,
-                { backgroundColor: s.passed ? '#dcfce7' : '#f1f5f9' },
+                styles.busChip,
+                {
+                  backgroundColor:
+                    route.bus.status === 'ON_ROAD' ? '#dcfce7' : route.bus.status === 'SERVICE' ? '#fee2e2' : '#f1f5f9',
+                },
               ]}
             >
-              <Text style={[styles.stopChipText, { color: s.passed ? '#059669' : '#9ca3af' }]}>
-                {s.passed ? 'Passed' : 'Upcoming'}
+              <Text style={styles.busChipText}>{route.bus.status.replace('_', ' ')}</Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.actionsRow}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => setShowEnroll(!showEnroll)}>
+            <Ionicons name="person-add-outline" size={16} color={theme.colors.primary} />
+            <Text style={styles.actionText}>{showEnroll ? 'Cancel' : 'Enroll'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => setShowStop(!showStop)}>
+            <Ionicons name="add-circle-outline" size={16} color={theme.colors.primary} />
+            <Text style={styles.actionText}>{showStop ? 'Cancel' : 'Add Stop'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtn} onPress={sendDelayAlert}>
+            <Ionicons name="warning-outline" size={16} color={theme.colors.primary} />
+            <Text style={styles.actionText}>Delay Alert</Text>
+          </TouchableOpacity>
+        </View>
+
+        {showEnroll && (
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Enroll student on {route.name}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Student roll no — e.g. CSE-23-014"
+              placeholderTextColor="#9ca3af"
+              value={enrollRoll}
+              onChangeText={setEnrollRoll}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder={`Stop number (1–${route.timeline.length})`}
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+              value={enrollStop}
+              onChangeText={setEnrollStop}
+            />
+            <TouchableOpacity style={styles.confirmBtn} onPress={enroll}>
+              <Text style={styles.confirmText}>Enroll & Generate Fee</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {showStop && (
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Add stop (appends to the end)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Stop name — e.g. Jakkur Circle"
+              placeholderTextColor="#9ca3af"
+              value={stopName}
+              onChangeText={setStopName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Pickup time (HH:MM)"
+              placeholderTextColor="#9ca3af"
+              value={stopTime}
+              onChangeText={setStopTime}
+            />
+            <TouchableOpacity style={styles.confirmBtn} onPress={addStop}>
+              <Text style={styles.confirmText}>Add Stop</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <Text style={styles.sectionTitle}>Stop Timeline</Text>
+        {route.timeline.map((s, idx) => (
+          <View key={s.id} style={styles.stopRow}>
+            <View style={styles.stopRail}>
+              <View style={[styles.stopDot, { backgroundColor: s.passed ? '#059669' : '#e2e8f0' }]}>
+                {s.passed && <Ionicons name="checkmark" size={9} color="#fff" />}
+              </View>
+              {idx < route.timeline.length - 1 && (
+                <View style={[styles.stopLine, { backgroundColor: s.passed ? '#059669' : '#e2e8f0' }]} />
+              )}
+            </View>
+            <View style={styles.stopBody}>
+              <Text style={styles.stopName}>
+                {s.stopName} {s.passed ? '· passed' : ''}
+              </Text>
+              <Text style={styles.stopTime}>
+                {s.time}
+                {s.students.length > 0 ? ` · ${s.students.length} student(s): ${s.students.join(', ')}` : ''}
               </Text>
             </View>
           </View>
@@ -147,6 +251,10 @@ export default function RouteDetail({ route, onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { paddingBottom: 32 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
+  retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
+  retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
   hero: {
     marginHorizontal: 16,
     marginTop: 16,
@@ -160,41 +268,53 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   routeName: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: 'Manrope-ExtraBold',
     color: '#fff',
   },
-  routeSub: {
+  routeMeta: {
     fontSize: 12,
     fontFamily: 'Manrope-Medium',
     color: 'rgba(255,255,255,0.85)',
     marginTop: 4,
   },
-  heroStats: {
+  liveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 16,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 12,
-    paddingVertical: 12,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginTop: 10,
   },
-  heroStat: { flex: 1, alignItems: 'center' },
-  heroStatValue: {
-    fontSize: 16,
-    fontFamily: 'Manrope-ExtraBold',
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  liveText: {
+    fontSize: 11,
+    fontFamily: 'Manrope-SemiBold',
     color: '#fff',
   },
-  heroStatLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
+  heroProgress: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    marginTop: 14,
+    overflow: 'hidden',
   },
-  heroStatDivider: { width: 1, height: 26, backgroundColor: 'rgba(255,255,255,0.2)' },
-  vehicleCard: {
+  heroProgressFill: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#fff',
+  },
+  busCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -205,27 +325,35 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
   },
-  vehicleIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+  busIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 11,
+    backgroundColor: '#dbeafe',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
-  vehicleBody: { flex: 1 },
-  vehicleLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  vehicleName: {
+  busBody: { flex: 1, marginRight: 8 },
+  busReg: {
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
-    marginTop: 1,
+  },
+  busMeta: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    marginTop: 2,
+  },
+  busChip: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  busChipText: {
+    fontSize: 10,
+    fontFamily: 'Manrope-Bold',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -250,7 +378,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     marginLeft: 4,
   },
-  passengerCard: {
+  formCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
@@ -259,41 +387,33 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
   },
-  passengerTitle: {
+  formTitle: {
     fontSize: 13,
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
     marginBottom: 8,
   },
-  passengerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 5,
-  },
-  passengerAvatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: '#dbeafe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  passengerAvatarText: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Bold',
-    color: '#2563eb',
-  },
-  passengerName: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.text,
-  },
-  passengerStop: {
-    fontSize: 10,
+  input: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
     fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
+    color: theme.colors.text,
+    marginTop: 8,
+  },
+  confirmBtn: {
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 10,
+    paddingVertical: 11,
+    marginTop: 12,
+  },
+  confirmText: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Bold',
+    color: '#fff',
   },
   sectionTitle: {
     fontSize: 15,
@@ -307,50 +427,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
   },
-  timeline: {
-    width: 24,
+  stopRail: {
     alignItems: 'center',
+    marginRight: 12,
   },
-  timelineDot: {
+  stopDot: {
     width: 18,
     height: 18,
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  timelineDotPassed: { backgroundColor: '#059669' },
-  timelineDotUpcoming: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#d1d5db',
-  },
-  timelineLine: {
+  stopLine: {
     width: 2,
     flex: 1,
-    backgroundColor: '#e5e7eb',
+    minHeight: 26,
     marginVertical: 2,
   },
-  stopBody: { flex: 1, marginLeft: 8, paddingBottom: 18 },
+  stopBody: {
+    flex: 1,
+    paddingBottom: 16,
+  },
   stopName: {
     fontSize: 13,
-    fontFamily: 'Manrope-Bold',
+    fontFamily: 'Manrope-SemiBold',
     color: theme.colors.text,
   },
-  stopNameUpcoming: { color: theme.colors.textMuted },
-  stopMeta: {
+  stopTime: {
     fontSize: 11,
     fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
     marginTop: 2,
-  },
-  stopChip: {
-    alignSelf: 'flex-start',
-    borderRadius: 7,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  stopChipText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
   },
 });
