@@ -43,6 +43,7 @@ model StudentProfile {
   gatePasses        GatePass[]
   hostelComplaints  HostelComplaint[]
   visitorsHosted    Visitor[]
+  routeEnrollments  RouteEnrollment[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])

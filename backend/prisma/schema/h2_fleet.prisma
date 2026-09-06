@@ -1,0 +1,57 @@
+// Domain H2 — Fleet: vehicles, documents, drivers.
+// Docs: 09-transport.md §3.3–3.4. staffUserId scalar (driver may be non-staff
+// without a user account — name is the display anchor).
+
+model Vehicle {
+  id            String   @id @default(cuid())
+  institutionId String
+  regNo         String
+  model         String
+  capacity      Int      @default(50)
+  odometerKm    Int      @default(0)
+  fuelPct       Int      @default(100) // 0–100
+  status        String   @default("IDLE") // ON_ROAD | IDLE | SERVICE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  routes          Route[]
+  document        VehicleDocument?
+  serviceRecords  ServiceRecord[]
+  fuelLogs        FuelLog[]
+  position        BusPosition?
+
+  @@unique([institutionId, regNo])
+  @@index([institutionId])
+  @@map("vehicles")
+}
+
+model VehicleDocument {
+  id                 String   @id @default(cuid())
+  vehicleId          String   @unique
+  registrationExpiry DateTime
+  insuranceExpiry    DateTime
+  fitnessExpiry      DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+
+  @@map("vehicle_documents")
+}
+
+model Driver {
+  id              String   @id @default(cuid())
+  institutionId   String
+  staffUserId     String? // scalar → users.id (optional app account)
+  name            String
+  licenseNo       String
+  licenseExpiry   DateTime
+  experienceYears Int      @default(0)
+  dutyStatus      String   @default("OFF_DUTY") // ON_DUTY | OFF_DUTY | ON_LEAVE
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([institutionId, licenseNo])
+  @@index([institutionId])
+  @@map("drivers")
+}

@@ -1,0 +1,64 @@
+// Domain H1 — Routes, stops, student transport enrollment.
+// Docs: 09-transport.md §3.2 · 05-state-machines.md
+// vehicleId FKs to Vehicle (h2), driverUserId scalar actor-stamp.
+// route_enrollments ties a student to a specific stop (pickup point).
+
+model Route {
+  id            String   @id @default(cuid())
+  institutionId String
+  name          String // "Route 01"
+  distanceKm    Float
+  vehicleId     String? // FK → vehicles — one vehicle may serve multiple routes over the day
+  driverUserId  String? // scalar → users.id (mirror of drivers.staffUserId for quick auth checks)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vehicle     Vehicle?         @relation(fields: [vehicleId], references: [id])
+  stops       RouteStop[]
+  enrollments RouteEnrollment[]
+  positions   BusPosition[]
+
+  @@unique([institutionId, name])
+  @@index([institutionId])
+  @@index([vehicleId])
+  @@map("routes")
+}
+
+model RouteStop {
+  id       String   @id @default(cuid())
+  routeId  String
+  order    Int
+  stopName String
+  time     String // "HH:MM" pickup/drop time
+  lat      Float?
+  lng      Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  route       Route            @relation(fields: [routeId], references: [id])
+  enrollments RouteEnrollment[]
+  currentBuses BusPosition[]   @relation("CurrentStop")
+
+  @@unique([routeId, order])
+  @@index([routeId])
+  @@map("route_stops")
+}
+
+model RouteEnrollment {
+  id               String   @id @default(cuid())
+  routeId          String
+  stopId           String
+  studentProfileId String
+  status           String   @default("ACTIVE") // ACTIVE | REMOVED
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  route          Route          @relation(fields: [routeId], references: [id])
+  stop           RouteStop      @relation(fields: [stopId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@unique([studentProfileId, routeId])
+  @@index([routeId])
+  @@index([studentProfileId])
+  @@map("route_enrollments")
+}
