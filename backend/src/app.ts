@@ -6,6 +6,7 @@ import alumniRoutes from './modules/alumni/alumni.routes.js';
 import hodRoutes from './modules/hod/hod.routes.js';
 import sportsRoutes from './modules/sports/sports.routes.js';
 import transportRoutes from './modules/transport/transport.routes.js';
+import hostelRoutes from './modules/hostel/hostel.routes.js';
 
 export function createApp() {
   const app = express();
@@ -24,6 +25,7 @@ export function createApp() {
   app.use('/api/v1/hod', hodRoutes);
   app.use('/api/v1/sports', sportsRoutes);
   app.use('/api/v1/transport', transportRoutes);
+  app.use('/api/v1/hostel', hostelRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });

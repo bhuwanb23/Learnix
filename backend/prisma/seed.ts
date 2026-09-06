@@ -86,6 +86,12 @@ const USERS: SeedUser[] = [
     roles: ['TRANSPORT'],
     staff: { employeeNo: 'EMP-0008', designation: 'Transport Officer' },
   },
+  {
+    email: 'hostel@learnix.dev',
+    fullName: 'Dr. R. Nandakumar',
+    roles: ['HOSTEL'],
+    staff: { employeeNo: 'EMP-0009', designation: 'Chief Warden' },
+  },
 ];
 
 async function main() {
@@ -987,11 +993,21 @@ async function seedDomainG(institutionId: string): Promise<void> {
   const studentProfile = await db.studentProfile.findFirst({ where: { userId: student.id } });
   if (!studentProfile) throw new Error('Student profile missing');
 
-  // Block A → Room A-101 (2 beds) → allocate Arjun to bed 1
+  // Chief Warden owns the blocks; warden stamp for Block A/B
+  const warden = await db.user.findFirst({ where: { email: 'hostel@learnix.dev', institutionId } });
+  const wardenId = warden?.id ?? teacher.id;
+
+  // Blocks A + B
   let blockA = await db.hostelBlock.findFirst({ where: { institutionId, name: 'Block A' } });
   if (!blockA) {
     blockA = await db.hostelBlock.create({
-      data: { institutionId, name: 'Block A', wardenUserId: teacher.id },
+      data: { institutionId, name: 'Block A', wardenUserId: wardenId },
+    });
+  }
+  let blockB = await db.hostelBlock.findFirst({ where: { institutionId, name: 'Block B' } });
+  if (!blockB) {
+    blockB = await db.hostelBlock.create({
+      data: { institutionId, name: 'Block B', wardenUserId: wardenId },
     });
   }
 
@@ -1002,6 +1018,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     });
   }
 
+  // Beds for A-101
   let bed1 = await db.bed.findFirst({ where: { roomId: room101.id, bedNo: 1 } });
   if (!bed1) {
     bed1 = await db.bed.create({ data: { roomId: room101.id, bedNo: 1, status: 'VACANT' } });
@@ -1010,6 +1027,67 @@ async function seedDomainG(institutionId: string): Promise<void> {
   if (!bed2) {
     await db.bed.create({ data: { roomId: room101.id, bedNo: 2, status: 'VACANT' } });
   }
+
+  // More rooms for a real grid: A-102, A-118 (Block A), B-204, B-205 (Block B)
+  const extraRooms: { block: typeof blockA; number: string; floor: number; capacity: number }[] = [
+    { block: blockA, number: 'A-102', floor: 1, capacity: 2 },
+    { block: blockA, number: 'A-118', floor: 1, capacity: 2 },
+    { block: blockB, number: 'B-204', floor: 2, capacity: 3 },
+    { block: blockB, number: 'B-205', floor: 2, capacity: 3 },
+  ];
+  const roomsByNumber: Record<string, { id: string }> = { 'A-101': room101 };
+  for (const r of extraRooms) {
+    let room = await db.room.findFirst({ where: { blockId: r.block.id, number: r.number } });
+    if (!room) {
+      room = await db.room.create({
+        data: { blockId: r.block.id, floor: r.floor, number: r.number, capacity: r.capacity, occupiedCount: 0 },
+      });
+    }
+    const existingBeds = await db.bed.count({ where: { roomId: room.id } });
+    for (let b = existingBeds + 1; b <= r.capacity; b++) {
+      await db.bed.create({ data: { roomId: room.id, bedNo: b, status: 'VACANT' } });
+    }
+    roomsByNumber[r.number] = room;
+  }
+
+  // ensureResident: idempotently place a student in their demo bed (moves them
+  // back if an e2e test transferred/vacated them) — keeps bed + occupancy in sync
+  const ensureResident = async (
+    u: { id: string } | null | undefined,
+    roomNo: string,
+    bedNo: number,
+  ): Promise<void> => {
+    if (!u) return;
+    const prof = await db.studentProfile.findFirst({ where: { userId: u.id } });
+    if (!prof) return;
+    const room = roomsByNumber[roomNo];
+    const bed = await db.bed.findFirst({ where: { roomId: room.id, bedNo } });
+    if (!bed) return;
+    const active = await db.hostelAllocation.findFirst({
+      where: { studentProfileId: prof.id, status: 'ACTIVE' },
+      include: { bed: { include: { room: true } } },
+    });
+    if (active && active.bed.room.number === roomNo) return;
+    if (active) {
+      await db.hostelAllocation.update({
+        where: { id: active.id },
+        data: { status: 'VACATED', toDate: new Date() },
+      });
+      await db.bed.update({ where: { id: active.bedId }, data: { status: 'VACANT' } });
+      await db.room.update({ where: { id: active.bed.room.id }, data: { occupiedCount: { decrement: 1 } } });
+    }
+    await db.hostelAllocation.create({
+      data: { studentProfileId: prof.id, bedId: bed.id, fromDate: new Date('2026-07-01'), status: 'ACTIVE' },
+    });
+    await db.bed.update({ where: { id: bed.id }, data: { status: 'ALLOCATED' } });
+    await db.room.update({ where: { id: room.id }, data: { occupiedCount: { increment: 1 } } });
+  };
+
+  // Two more residents: Sneha (A-101 bed 2) + Vikram (B-204 bed 1)
+  const sneha = await db.user.findFirst({ where: { email: 'sneha.patel@learnix.dev', institutionId } });
+  const vikram = await db.user.findFirst({ where: { email: 'vikram.nair@learnix.dev', institutionId } });
+  await ensureResident(sneha, 'A-101', 2);
+  await ensureResident(vikram, 'B-204', 1);
 
   const activeAllocation = await db.hostelAllocation.findFirst({
     where: { studentProfileId: studentProfile.id, status: 'ACTIVE' },
@@ -1022,20 +1100,21 @@ async function seedDomainG(institutionId: string): Promise<void> {
     await db.room.update({ where: { id: room101.id }, data: { occupiedCount: { increment: 1 } } });
   }
 
-  // Rent dues for Jul + Aug 2026 (UNPAID)
-  for (const month of ['2026-07', '2026-08']) {
-    const existing = await db.hostelRentDue.findFirst({
-      where: { allocationId: (activeAllocation ?? (await db.hostelAllocation.findFirst({ where: { studentProfileId: studentProfile.id, status: 'ACTIVE' } })))!.id, month },
-    });
-    if (!existing) {
-      await db.hostelRentDue.create({
-        data: {
-          allocationId: (activeAllocation ?? (await db.hostelAllocation.findFirst({ where: { studentProfileId: studentProfile.id, status: 'ACTIVE' } })))!.id,
-          month,
-          amountMinor: 3500000, // ₹35,000/mo
-          status: 'UNPAID',
-        },
+  // ── Rent dues for ALL ACTIVE allocations (each resident Jul+Aug UNPAID) ──
+  const activeAllocations = await db.hostelAllocation.findMany({
+    where: { status: 'ACTIVE', bed: { room: { block: { institutionId } } } },
+    include: { studentProfile: { include: { user: { select: { fullName: true } } } } },
+  });
+  for (const alloc of activeAllocations) {
+    for (const month of ['2026-07', '2026-08']) {
+      const existing = await db.hostelRentDue.findFirst({
+        where: { allocationId: alloc.id, month },
       });
+      if (!existing) {
+        await db.hostelRentDue.create({
+          data: { allocationId: alloc.id, month, amountMinor: 3500000, status: 'UNPAID' }, // ₹35,000/mo
+        });
+      }
     }
   }
 
@@ -1056,21 +1135,37 @@ async function seedDomainG(institutionId: string): Promise<void> {
     }
   }
 
-  // Meal attendance today + feedback
+  // Meal attendance today (Arjun lunch; Sneha breakfast+lunch; Vikram all 3)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const attExists = await db.mealAttendance.findFirst({ where: { date: today, meal: 'LUNCH', studentProfileId: studentProfile.id } });
-  if (!attExists) {
-    await db.mealAttendance.create({ data: { institutionId, date: today, meal: 'LUNCH', studentProfileId: studentProfile.id, count: 1 } });
-  }
-  const fbExists = await db.messFeedback.findFirst({ where: { mealDate: today, meal: 'LUNCH', studentProfileId: studentProfile.id } });
-  if (!fbExists) {
-    await db.messFeedback.create({
-      data: { studentProfileId: studentProfile.id, mealDate: today, meal: 'LUNCH', rating: 4, comment: 'Dal was good, rice slightly cold' },
-    });
+  const attendanceSeed: [typeof studentProfile, string][] = [];
+  const snehaProf = sneha ? await db.studentProfile.findFirst({ where: { userId: sneha.id } }) : null;
+  const vikramProf = vikram ? await db.studentProfile.findFirst({ where: { userId: vikram.id } }) : null;
+  if (studentProfile) attendanceSeed.push([studentProfile, 'LUNCH']);
+  if (snehaProf) attendanceSeed.push([snehaProf, 'BREAKFAST'], [snehaProf, 'LUNCH']);
+  if (vikramProf) attendanceSeed.push([vikramProf, 'BREAKFAST'], [vikramProf, 'LUNCH'], [vikramProf, 'DINNER']);
+  for (const [prof, meal] of attendanceSeed) {
+    const attExists = await db.mealAttendance.findFirst({ where: { date: today, meal, studentProfileId: prof.id } });
+    if (!attExists) {
+      await db.mealAttendance.create({ data: { institutionId, date: today, meal, studentProfileId: prof.id, count: 1 } });
+    }
   }
 
-  // Gate pass PENDING
+  // Feedback from all three residents
+  const feedbackSeed: { prof: typeof studentProfile; meal: string; rating: number; comment: string }[] = [];
+  if (studentProfile) feedbackSeed.push({ prof: studentProfile, meal: 'LUNCH', rating: 4, comment: 'Dal was good, rice slightly cold' });
+  if (snehaProf) feedbackSeed.push({ prof: snehaProf, meal: 'DINNER', rating: 5, comment: 'Paneer butter masala was excellent' });
+  if (vikramProf) feedbackSeed.push({ prof: vikramProf, meal: 'BREAKFAST', rating: 3, comment: 'Idli batter needs more fermentation' });
+  for (const f of feedbackSeed) {
+    const fbExists = await db.messFeedback.findFirst({ where: { mealDate: today, meal: f.meal, studentProfileId: f.prof.id } });
+    if (!fbExists) {
+      await db.messFeedback.create({
+        data: { studentProfileId: f.prof.id, mealDate: today, meal: f.meal, rating: f.rating, comment: f.comment },
+      });
+    }
+  }
+
+  // Gate passes: Arjun PENDING + Sneha APPROVED + Vikram REJECTED
   const gpExists = await db.gatePass.findFirst({ where: { studentProfileId: studentProfile.id, status: 'PENDING' } });
   if (!gpExists) {
     await db.gatePass.create({
@@ -1083,25 +1178,164 @@ async function seedDomainG(institutionId: string): Promise<void> {
       },
     });
   }
+  if (snehaProf) {
+    const gp2 = await db.gatePass.findFirst({ where: { studentProfileId: snehaProf.id, reason: 'Medical appointment' } });
+    if (!gp2) {
+      await db.gatePass.create({
+        data: {
+          studentProfileId: snehaProf.id,
+          reason: 'Medical appointment',
+          outAt: new Date(Date.now() + 5 * 60 * 60 * 1000),
+          expectedInAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
+          status: 'APPROVED',
+          decidedByUserId: wardenId,
+        },
+      });
+    }
+  }
+  if (vikramProf) {
+    const gp3 = await db.gatePass.findFirst({ where: { studentProfileId: vikramProf.id, reason: 'Sibling visiting from Delhi' } });
+    if (!gp3) {
+      await db.gatePass.create({
+        data: {
+          studentProfileId: vikramProf.id,
+          reason: 'Sibling visiting from Delhi',
+          outAt: new Date(Date.now() + 6 * 60 * 60 * 1000),
+          expectedInAt: new Date(Date.now() + 10 * 60 * 60 * 1000),
+          status: 'REJECTED',
+          decidedByUserId: wardenId,
+        },
+      });
+    }
+  }
 
-  // Complaint OPEN (NETWORK)
+  // Complaints: Arjun OPEN (NETWORK), Sneha OPEN (PLUMBING, HIGH), Vikram ASSIGNED (MAINTENANCE)
   const complaintExists = await db.hostelComplaint.findFirst({ where: { studentProfileId: studentProfile.id, category: 'NETWORK' } });
   if (!complaintExists) {
     await db.hostelComplaint.create({
       data: { studentProfileId: studentProfile.id, category: 'NETWORK', description: 'WiFi drops every evening in A-101', severity: 'MEDIUM', status: 'OPEN' },
     });
   }
+  if (snehaProf) {
+    const c2 = await db.hostelComplaint.findFirst({ where: { studentProfileId: snehaProf.id, category: 'PLUMBING' } });
+    if (!c2) {
+      await db.hostelComplaint.create({
+        data: { studentProfileId: snehaProf.id, category: 'PLUMBING', description: 'Water leakage in A-101 bathroom', severity: 'HIGH', status: 'OPEN' },
+      });
+    }
+  }
+  if (vikramProf) {
+    const c3 = await db.hostelComplaint.findFirst({ where: { studentProfileId: vikramProf.id, category: 'MAINTENANCE' } });
+    if (!c3) {
+      await db.hostelComplaint.create({
+        data: { studentProfileId: vikramProf.id, category: 'MAINTENANCE', description: 'Broken window grill in B-204', severity: 'LOW', status: 'ASSIGNED', assignedToUserId: wardenId },
+      });
+    }
+  }
 
-  // Visitor checked IN
+  // Visitors: Arjun's father IN + Sneha's mother IN + Vikram's brother OUT
   const visitorExists = await db.visitor.findFirst({ where: { visitingStudentProfileId: studentProfile.id, status: 'IN' } });
   if (!visitorExists) {
     await db.visitor.create({
       data: { institutionId, name: 'Suresh Kumar', visitingStudentProfileId: studentProfile.id, relation: 'Father', status: 'IN' },
     });
   }
+  if (snehaProf) {
+    const v2 = await db.visitor.findFirst({ where: { visitingStudentProfileId: snehaProf.id, relation: 'Mother' } });
+    if (!v2) {
+      await db.visitor.create({
+        data: { institutionId, name: 'Meena Patel', visitingStudentProfileId: snehaProf.id, relation: 'Mother', status: 'IN' },
+      });
+    }
+  }
+  if (vikramProf) {
+    const v3 = await db.visitor.findFirst({ where: { visitingStudentProfileId: vikramProf.id, relation: 'Brother' } });
+    if (!v3) {
+      await db.visitor.create({
+        data: {
+          institutionId, name: 'Vijay Nair', visitingStudentProfileId: vikramProf.id, relation: 'Brother', status: 'OUT',
+          checkInAt: new Date(Date.now() - 6 * 60 * 60 * 1000), checkOutAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
+        },
+      });
+    }
+  }
 
-  console.log('  ✓ Block A → A-101 (2 beds), Arjun allocated bed 1, rent dues Jul+Aug UNPAID');
-  console.log('  ✓ 7-day mess menu ×3 meals, lunch attendance + feedback, gate pass PENDING, WiFi complaint OPEN, visitor IN');
+  // ── Restore demo state on re-seed (undoes e2e actions) ──
+  await ensureResident(sneha, 'A-101', 2);
+  await ensureResident(vikram, 'B-204', 1);
+  if (studentProfile) {
+    await db.gatePass.updateMany({
+      where: { studentProfileId: studentProfile.id, reason: 'Weekend home visit' },
+      data: { status: 'PENDING', decidedByUserId: null },
+    });
+    await db.hostelComplaint.updateMany({
+      where: { studentProfileId: studentProfile.id, category: 'NETWORK' },
+      data: { status: 'OPEN', assignedToUserId: null, resolvedAt: null },
+    });
+    await db.visitor.updateMany({
+      where: { visitingStudentProfileId: studentProfile.id, relation: 'Father' },
+      data: { status: 'IN', checkOutAt: null },
+    });
+  }
+  if (snehaProf) {
+    await db.gatePass.updateMany({
+      where: { studentProfileId: snehaProf.id, reason: 'Medical appointment' },
+      data: { status: 'APPROVED', decidedByUserId: wardenId },
+    });
+    await db.hostelComplaint.updateMany({
+      where: { studentProfileId: snehaProf.id, category: 'PLUMBING' },
+      data: { status: 'OPEN', assignedToUserId: null, resolvedAt: null },
+    });
+    await db.visitor.updateMany({
+      where: { visitingStudentProfileId: snehaProf.id, relation: 'Mother' },
+      data: { status: 'IN', checkOutAt: null },
+    });
+  }
+  if (vikramProf) {
+    await db.gatePass.updateMany({
+      where: { studentProfileId: vikramProf.id, reason: 'Sibling visiting from Delhi' },
+      data: { status: 'REJECTED', decidedByUserId: wardenId },
+    });
+    await db.hostelComplaint.updateMany({
+      where: { studentProfileId: vikramProf.id, category: 'MAINTENANCE' },
+      data: { status: 'ASSIGNED', resolvedAt: null },
+    });
+    await db.visitor.updateMany({
+      where: { visitingStudentProfileId: vikramProf.id, relation: 'Brother' },
+      data: { status: 'OUT', checkOutAt: new Date(Date.now() - 3 * 60 * 60 * 1000) },
+    });
+  }
+  // rent dues back to UNPAID (undoes e2e collections)
+  await db.hostelRentDue.updateMany({
+    where: { allocation: { bed: { room: { block: { institutionId } } } } },
+    data: { status: 'UNPAID', paymentId: null },
+  });
+  // mess menu Saturday lunch restored (undoes e2e menu edits)
+  const satLunch = await db.messMenuItem.findFirst({ where: { institutionId, dayOfWeek: 6, meal: 'LUNCH' } });
+  if (satLunch && satLunch.itemsJson !== JSON.stringify(['Rice', 'Dal Tadka', 'Beans Poriyal', 'Curd'])) {
+    await db.messMenuItem.update({
+      where: { id: satLunch.id },
+      data: { itemsJson: JSON.stringify(['Rice', 'Dal Tadka', 'Beans Poriyal', 'Curd']) },
+    });
+  }
+  // Warden inbox: 3 alerts so the app's Notifications tab is non-empty
+  if (warden) {
+    const wardenAlerts = [
+      { title: 'New gate pass request', body: 'Arjun Kumar (A-101) requested a weekend home visit outpass.' },
+      { title: 'New complaint — PLUMBING', body: 'Water leakage reported in A-101 bathroom (Sneha Patel). Severity HIGH.' },
+      { title: 'Visitor checked in', body: 'Suresh Kumar (Father) checked in to see Arjun Kumar, A-101.' },
+    ];
+    for (const a of wardenAlerts) {
+      const exists = await db.notification.findFirst({ where: { recipientUserId: warden.id, title: a.title } });
+      if (!exists) {
+        await db.notification.create({
+          data: { institutionId, recipientUserId: warden.id, type: 'HOSTEL', title: a.title, body: a.body, sourceModule: 'hostel' },
+        });
+      }
+    }
+  }
+
+  console.log(`  ✓ Blocks A+B → 5 rooms, 3 residents allocated, rent dues Jul+Aug, mess menu/attendance/feedback, 3 gate passes, 3 complaints, 3 visitors`);
 }
 
 // ─────────────────────────────────────────────────────────────
