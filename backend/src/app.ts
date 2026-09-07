@@ -11,6 +11,7 @@ import libraryRoutes from './modules/library/library.routes.js';
 import accountsRoutes from './modules/accounts/accounts.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
+import adminRoutes from './modules/admin/admin.routes.js';
 
 export function createApp() {
   const app = express();
@@ -34,6 +35,7 @@ export function createApp() {
   app.use('/api/v1/accounts', accountsRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
+  app.use('/api/v1/admin', adminRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
