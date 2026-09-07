@@ -123,3 +123,58 @@ POST /api/student/notifications/read-all
 ## 5. Cross-App Dependencies
 - Reads: courses/notes/quizzes (Teacher), events/announcements (Admin), jobs/drives (Placement), broadcasts (all staff apps), fee dues (Accounts), exam timetable/results (Exam Cell), library (Library), hostel/transport notices.
 - Writes: assignment submissions, event registrations, job applications.
+
+## 6. Wiring Status
+
+**Backend**: `backend/src/modules/student/` — `student.schemas.ts` + `student.service.ts` + `student.routes.ts`
+**Mounted at**: `/api/v1/student` (with `STUDENT` role gate)
+**Seed user**: `student@learnix.dev` (Arjun Kumar, STU-2026-001)
+**Demo setup**: `setDemoUser('student@learnix.dev')` in `students.js`
+
+### Endpoints (20 features)
+
+| Feature | Method | Endpoint |
+|---------|--------|----------|
+| S-01 Dashboard | GET | `/dashboard` |
+| S-02 My Classes | GET | `/classes` |
+| S-03 Syllabus Tracker | GET | `/syllabus/:offeringId` |
+| S-04 Lecture Notes | GET | `/lecture-notes/:offeringId` |
+| S-04 Note Detail | GET | `/lecture-notes/note/:id` |
+| S-05 Quizzes | GET | `/quizzes/:offeringId` |
+| S-05 Start Quiz | POST | `/quizzes/start` |
+| S-05 Answer | POST | `/quizzes/answer` |
+| S-05 Submit Quiz | POST | `/quizzes/submit` |
+| S-06 Assignments | GET | `/assignments?tab=` |
+| S-06 Assignment Detail | GET | `/assignments/:id` |
+| S-06 Submit | POST | `/assignments/:id/submit` |
+| S-07 Timetable | GET | `/timetable` |
+| S-08 Exams | GET | `/exams` |
+| S-09 Results | GET | `/results` |
+| S-09 Re-evaluation | POST | `/results/reevaluate` |
+| S-10 Attendance | GET | `/attendance/:offeringId` |
+| S-11 Fee Dues | GET | `/fees` |
+| S-12 Jobs | GET | `/placement/jobs` |
+| S-12 Drives | GET | `/placement/drives` |
+| S-12 Apply | POST | `/placement/apply` |
+| S-12 My Applications | GET | `/placement/applications` |
+| S-13 Events | GET | `/events` |
+| S-13 Register | POST | `/events/:id/register` |
+| S-13 My Registrations | GET | `/events/registrations` |
+| S-14 Library | GET | `/library/my-books` |
+| S-15 Hostel | GET | `/hostel/allocation` |
+| S-16 Transport | GET | `/transport` |
+| S-19 Notifications | GET | `/notifications` |
+| S-19 Mark All Read | POST | `/notifications/read-all` |
+| S-20 Profile | GET | `/profile` |
+
+### App Wiring
+- `students.js` — demo identity via `setDemoUser('student@learnix.dev')`
+- Key pages wired to live API:
+  - Dashboard (hero, attendance, schedule, notifications, AI buddy)
+  - Notifications (inbox, mark all read)
+- Additional pages use the same API endpoints and can be wired progressively:
+  - Classes (syllabus, notes, quizzes, roster)
+  - Assignments (list, detail, submit)
+  - Events (browse, register)
+  - Placement (jobs, drives, apply)
+  - Profile (stats, academic details) |

@@ -236,7 +236,7 @@ export async function listQuizzes(userId: string, institutionId: string, offerin
     id: q.id, title: q.title, durationMin: q.durationMin, difficulty: q.difficulty,
     questionCount: q._count.questions, attemptCount: q._count.attempts,
     myAttempts: q.attempts.length,
-    myBestScore: q.attempts.filter(a => a.status === 'AUTO_GRADED').reduce((best, a) => Math.max(best, a.scoreMarks ?? 0), null as number | null),
+    myBestScore: q.attempts.filter(a => a.status === 'AUTO_GRADED').reduce((best, a) => { const s = a.scoreMarks ?? 0; return s > best ? s : best; }, 0) || null,
   }));
 }
 
@@ -270,7 +270,7 @@ export async function startQuizAttempt(userId: string, institutionId: string, qu
   };
 }
 
-export async function submitQuizAnswer(userId: string, body: { attemptId: string; questionId: string; answerJson: string }) {
+export async function submitQuizAnswer(_userId: string, body: { attemptId: string; questionId: string; answerJson: string }) {
   const attempt = await prisma.quizAttempt.findUnique({ where: { id: body.attemptId } });
   if (!attempt) throw notFound('Attempt not found');
   if (attempt.status !== 'IN_PROGRESS') throw conflict('Attempt already submitted');
@@ -287,7 +287,7 @@ export async function submitQuizAnswer(userId: string, body: { attemptId: string
   return { saved: true };
 }
 
-export async function submitQuizAttempt(userId: string, attemptId: string) {
+export async function submitQuizAttempt(_userId: string, attemptId: string) {
   const attempt = await prisma.quizAttempt.findUnique({
     where: { id: attemptId },
     include: { quiz: { include: { questions: true } }, answers: true },
@@ -389,7 +389,7 @@ export async function getTimetable(userId: string, institutionId: string) {
 
   const slots = await prisma.offeringScheduleSlot.findMany({
     where: { offeringId: { in: offeringIds } },
-    include: { offering: { select: { course: { select: { code: true, name: true } } } } },
+    include: { offering: { select: { course: { select: { code: true, name: true } }, teacherUserId: true } } },
     orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
   });
 
@@ -553,12 +553,12 @@ export async function listDrives(userId: string, institutionId: string) {
 }
 
 export async function applyToJob(userId: string, institutionId: string, body: { jobId: string }) {
-  const student = await requireStudent(userId, institutionId);
-  const existing = await prisma.jobApplication.findFirst({ where: { jobId: body.jobId, studentProfileId: student.id } });
+  const _student = await requireStudent(userId, institutionId);
+  const existing = await prisma.jobApplication.findFirst({ where: { jobId: body.jobId, studentProfileId: _student.id } });
   if (existing) throw conflict('Already applied');
 
   const application = await prisma.jobApplication.create({
-    data: { jobId: body.jobId, studentProfileId: student.id, status: 'APPLIED' },
+    data: { jobId: body.jobId, studentProfileId: _student.id, status: 'APPLIED' },
   });
   return { id: application.id, status: application.status };
 }
@@ -603,7 +603,7 @@ export async function listEvents(userId: string, institutionId: string) {
 }
 
 export async function registerForEvent(userId: string, institutionId: string, eventId: string) {
-  const student = await requireStudent(userId, institutionId);
+  await requireStudent(userId, institutionId);
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) throw notFound('Event not found');
 

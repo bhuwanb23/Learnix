@@ -265,6 +265,41 @@ export const libraryApi = {
   profile: () => api.get('/library/profile'),
 };
 
+// ── Student endpoints (docs/users/01 §4) ──
+export const studentApi = {
+  dashboard: () => api.get('/student/dashboard'),
+  classes: () => api.get('/student/classes'),
+  syllabus: (offeringId) => api.get(`/student/syllabus/${offeringId}`),
+  lectureNotes: (offeringId) => api.get(`/student/lecture-notes/${offeringId}`),
+  lectureNote: (noteId) => api.get(`/student/lecture-notes/note/${noteId}`),
+  quizzes: (offeringId) => api.get(`/student/quizzes/${offeringId}`),
+  startQuiz: (quizId) => api.post('/student/quizzes/start', { quizId }),
+  answerQuiz: (payload) => api.post('/student/quizzes/answer', payload),
+  submitQuiz: (attemptId) => api.post('/student/quizzes/submit', { attemptId }),
+  assignments: (tab) => api.get(`/student/assignments${tab ? `?tab=${tab}` : ''}`),
+  assignmentDetail: (id) => api.get(`/student/assignments/${id}`),
+  submitAssignment: (id, payload) => api.post(`/student/assignments/${id}/submit`, payload),
+  timetable: () => api.get('/student/timetable'),
+  exams: () => api.get('/student/exams'),
+  results: () => api.get('/student/results'),
+  requestReevaluation: (payload) => api.post('/student/results/reevaluate', payload),
+  attendance: (offeringId) => api.get(`/student/attendance/${offeringId}`),
+  fees: () => api.get('/student/fees'),
+  jobs: () => api.get('/student/placement/jobs'),
+  drives: () => api.get('/student/placement/drives'),
+  applyJob: (payload) => api.post('/student/placement/apply', payload),
+  myApplications: () => api.get('/student/placement/applications'),
+  events: () => api.get('/student/events'),
+  registerEvent: (eventId) => api.post(`/student/events/${eventId}/register`),
+  myRegistrations: () => api.get('/student/events/registrations'),
+  libraryMyBooks: () => api.get('/student/library/my-books'),
+  hostelAllocation: () => api.get('/student/hostel/allocation'),
+  transport: () => api.get('/student/transport'),
+  notifications: () => api.get('/student/notifications'),
+  markAllRead: () => api.post('/student/notifications/read-all'),
+  profile: () => api.get('/student/profile'),
+};
+
 // ── Teacher endpoints (docs/users/02 §4) ──
 export const teacherApi = {
   dashboard: () => api.get('/teacher/dashboard'),

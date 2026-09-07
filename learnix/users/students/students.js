@@ -19,6 +19,10 @@ import JobDetailsPage from './pages/placement/pages/job_details';
 import JobApplyPage from './pages/placement/pages/jobs_apply/job_apply';
 import JobApplyDonePage from './pages/placement/pages/job_apply_done/job_apply_done';
 import NotificationsPage from './pages/notifications/notifications';
+import { setDemoUser } from '../../services/api';
+
+// Set demo identity for student app
+setDemoUser('student@learnix.dev');
 
 // Import components
 import StudentHeader from './components/StudentHeader';

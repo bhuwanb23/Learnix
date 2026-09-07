@@ -16,26 +16,26 @@
 
 | ID | Feature | Tables | Seed |
 |----|---------|--------|------|
-| S-01 | Home dashboard (live class widget, attendance %, pending work, notices) | B course_offerings/class_sessions/attendance, K announcements | — |
-| S-02 | My classes: enrolled offerings list + class detail | B course_offerings, enrollments | ✅ (CS401) |
-| S-03 | Syllabus tracker (units/topics progress, % complete) | B syllabus_versions/units/topics | ✅ (3u/6t) |
-| S-04 | Lecture notes reader (published notes + attachments) | B lecture_notes, note_attachments, L files | ✅ (1 note) |
-| S-05 | Practice quizzes: attempt, timer, MCQ/TF auto-grade, score | C quizzes/questions/quiz_attempts/quiz_answers | ✅ (2/3) |
-| S-06 | Assignments: list, detail, submit (text/file), see grade + feedback | B assignments/submissions, L files | ✅ (1 pub) |
-| S-07 | Timetable: weekly view from master slots | B timetable_slots / offering_schedule_slots | — |
-| S-08 | Exam schedule + hall ticket (QR) + seat | C exams/exam_slots/hall_tickets | ✅ (A-12) |
-| S-09 | Results view + re-evaluation request (window-gated) | C results, re_evaluation_requests, L system_config | — |
-| S-10 | Attendance detail (per subject, present/absent/late history) | B attendance_sessions/records | — |
-| S-11 | Fee dues + pay (gateway later) + receipts download | E fee_dues/payments/receipts | ✅ |
-| S-12 | Placement: browse jobs, apply, my applications, offers | D jobs/job_applications/placement_offers | ✅ |
-| S-13 | Events: browse, register (QR pass), my registrations | I events/event_registrations | ✅ |
-| S-14 | Library: my issued books, dues, request a book, digital resources | F books/book_issues/fines/book_requests, digital_resources | ✅ |
-| S-15 | Hostel: my allocation, mess menu/feedback, gate pass request, complaints | G hostel_allocations/mess_*/gate_passes/hostel_complaints | ✅ |
-| S-16 | Transport: my route/stop, live bus position, delay alerts, fee | H routes/route_stops/enrollments/bus_positions, E transport_fee_dues | ✅ |
-| S-17 | Sports: join team/tournament, see fixtures | I teams/team_members/fixtures | ✅ |
-| S-18 | Alumni mentorship: my mentor, request sessions | J mentorship_pairs/sessions | ✅ |
-| S-19 | Notifications inbox + AI Study Buddy chat | K notifications/ai_interactions | ✅ |
-| S-20 | Profile (avatar upload → files, personal/academic info) | A users, student_profiles, L files | ✅ |
+| S-01 | Home dashboard (live class widget, attendance %, pending work, notices) | B course_offerings/class_sessions/attendance, K announcements | ✅ wired |
+| S-02 | My classes: enrolled offerings list + class detail | B course_offerings, enrollments | ✅ wired |
+| S-03 | Syllabus tracker (units/topics progress, % complete) | B syllabus_versions/units/topics | ✅ wired |
+| S-04 | Lecture notes reader (published notes + attachments) | B lecture_notes, note_attachments, L files | ✅ wired |
+| S-05 | Practice quizzes: attempt, timer, MCQ/TF auto-grade, score | C quizzes/questions/quiz_attempts/quiz_answers | ✅ wired |
+| S-06 | Assignments: list, detail, submit (text/file), see grade + feedback | B assignments/submissions, L files | ✅ wired |
+| S-07 | Timetable: weekly view from master slots | B timetable_slots / offering_schedule_slots | ✅ wired |
+| S-08 | Exam schedule + hall ticket (QR) + seat | C exams/exam_slots/hall_tickets | ✅ wired |
+| S-09 | Results view + re-evaluation request (window-gated) | C results, re_evaluation_requests, L system_config | ✅ wired |
+| S-10 | Attendance detail (per subject, present/absent/late history) | B attendance_sessions/records | ✅ wired |
+| S-11 | Fee dues + pay (gateway later) + receipts download | E fee_dues/payments/receipts | ✅ wired |
+| S-12 | Placement: browse jobs, apply, my applications, offers | D jobs/job_applications/placement_offers | ✅ wired |
+| S-13 | Events: browse, register (QR pass), my registrations | I events/event_registrations | ✅ wired |
+| S-14 | Library: my issued books, dues, request a book, digital resources | F books/book_issues/fines/book_requests, digital_resources | ✅ wired |
+| S-15 | Hostel: my allocation, mess menu/feedback, gate pass request, complaints | G hostel_allocations/mess_*/gate_passes/hostel_complaints | ✅ wired |
+| S-16 | Transport: my route/stop, live bus position, delay alerts, fee | H routes/route_stops/enrollments/bus_positions, E transport_fee_dues | ✅ wired |
+| S-17 | Sports: join team/tournament, see fixtures | I teams/team_members/fixtures | ✅ wired |
+| S-18 | Alumni mentorship: my mentor, request sessions | J mentorship_pairs/sessions | ✅ wired |
+| S-19 | Notifications inbox + AI Study Buddy chat | K notifications/ai_interactions | ✅ wired |
+| S-20 | Profile (avatar upload → files, personal/academic info) | A users, student_profiles, L files | ✅ wired |
 
 ## Teacher app (T) — docs/users/02 · tables: A, B, C, K
 

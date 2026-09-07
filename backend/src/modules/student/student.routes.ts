@@ -33,21 +33,21 @@ router.get('/classes', wrap(async (req, res) => {
 
 // S-03 Syllabus Tracker
 router.get('/syllabus/:offeringId', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getSyllabus(req.auth!.userId, req.auth!.institutionId, req.params.offeringId) });
+  res.json({ data: await service.getSyllabus(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
 // S-04 Lecture Notes
 router.get('/lecture-notes/:offeringId', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.listLectureNotes(req.auth!.userId, req.auth!.institutionId, req.params.offeringId) });
+  res.json({ data: await service.listLectureNotes(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
 router.get('/lecture-notes/note/:id', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getLectureNote(req.auth!.userId, req.auth!.institutionId, req.params.id) });
+  res.json({ data: await service.getLectureNote(req.auth!.userId, req.auth!.institutionId, String(req.params.id)) });
 }));
 
 // S-05 Quizzes
 router.get('/quizzes/:offeringId', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.listQuizzes(req.auth!.userId, req.auth!.institutionId, req.params.offeringId) });
+  res.json({ data: await service.listQuizzes(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
 router.post('/quizzes/start', validate(startQuizAttemptSchema), wrap(async (req, res) => {
@@ -69,11 +69,11 @@ router.get('/assignments', wrap(async (req, res) => {
 }));
 
 router.get('/assignments/:id', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getAssignmentDetail(req.auth!.userId, req.auth!.institutionId, req.params.id) });
+  res.json({ data: await service.getAssignmentDetail(req.auth!.userId, req.auth!.institutionId, String(req.params.id)) });
 }));
 
 router.post('/assignments/:id/submit', validate(idParamSchema, 'params'), validate(submitAssignmentSchema), wrap(async (req, res) => {
-  res.json({ data: await service.submitAssignment(req.auth!.userId, req.auth!.institutionId, req.params.id, req.body) });
+  res.json({ data: await service.submitAssignment(req.auth!.userId, req.auth!.institutionId, String(req.params.id), req.body) });
 }));
 
 // S-07 Timetable
@@ -97,7 +97,7 @@ router.post('/results/reevaluate', validate(requestReevaluationSchema), wrap(asy
 
 // S-10 Attendance Detail
 router.get('/attendance/:offeringId', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getAttendanceDetail(req.auth!.userId, req.auth!.institutionId, req.params.offeringId) });
+  res.json({ data: await service.getAttendanceDetail(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
 // S-11 Fee Dues
@@ -128,7 +128,7 @@ router.get('/events', wrap(async (req, res) => {
 }));
 
 router.post('/events/:id/register', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.status(201).json({ data: await service.registerForEvent(req.auth!.userId, req.auth!.institutionId, req.params.id) });
+  res.status(201).json({ data: await service.registerForEvent(req.auth!.userId, req.auth!.institutionId, String(req.params.id)) });
 }));
 
 router.get('/events/registrations', wrap(async (req, res) => {

@@ -1,13 +1,5 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  RefreshControl,
-  Animated,
-} from 'react-native';
-
-// Import new components
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl, Animated } from 'react-native';
 import HeroHeader from './components/HeroHeader';
 import QuickActionCards from './components/QuickActionCards';
 import PerformanceHeatmap from './components/PerformanceHeatmap';
@@ -15,102 +7,88 @@ import AttendanceWidget from './components/AttendanceWidget';
 import ScheduleSection from './components/ScheduleSection';
 import NotificationsPanel from './components/NotificationsPanel';
 import AIStudyBuddyChat from './components/AIStudyBuddyChat';
-
-// Import data
-import { DASHBOARD_DATA } from './constants/dashboardData';
+import { api } from '../../../../services/api';
 
 export default function Dashboard({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
-  const [dashboardData, setDashboardData] = useState(DASHBOARD_DATA);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const scrollY = useRef(new Animated.Value(0)).current;
+
+  const fetchData = useCallback(async () => {
+    try {
+      const data = await api.studentApi.dashboard();
+      setDashboardData({
+        user: data.user || { name: 'Student', semester: '', program: '', avatar: '' },
+        quickActions: [
+          { id: 'classes', label: 'My Classes', icon: 'school', color: '#0050d4' },
+          { id: 'assignments', label: 'Assignments', icon: 'assignment', color: '#702ae1' },
+          { id: 'events', label: 'Events', icon: 'event', color: '#059669' },
+          { id: 'profile', label: 'Profile', icon: 'person', color: '#a23800' },
+        ],
+        attendance: data.attendance || { overallPct: 0, totalSessions: 0, present: 0, absent: 0, late: 0 },
+        schedule: data.schedule || [],
+        performance: { radarMetrics: [], attendanceStats: [], averageAttendance: data.attendance?.overallPct || 0 },
+        notifications: data.notifications || [],
+        aiBuddy: { quickPrompts: ['What classes do I have today?', 'Show my upcoming assignments', 'How is my attendance?'] },
+      });
+    } catch (e) {
+      console.warn('Failed to load dashboard:', e);
+      // Fallback to static data
+      setDashboardData({
+        user: { name: 'Student', semester: '', program: '', avatar: '' },
+        quickActions: [
+          { id: 'classes', label: 'My Classes', icon: 'school', color: '#0050d4' },
+          { id: 'assignments', label: 'Assignments', icon: 'assignment', color: '#702ae1' },
+          { id: 'events', label: 'Events', icon: 'event', color: '#059669' },
+          { id: 'profile', label: 'Profile', icon: 'person', color: '#a23800' },
+        ],
+        attendance: { overallPct: 0, totalSessions: 0, present: 0, absent: 0, late: 0 },
+        schedule: [],
+        performance: { radarMetrics: [], attendanceStats: [], averageAttendance: 0 },
+        notifications: [],
+        aiBuddy: { quickPrompts: ['What classes do I have today?'] },
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    // Simulate data refresh
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000);
+    fetchData().finally(() => setRefreshing(false));
   };
 
   const handleQuickAction = (actionId) => {
-    // Handle quick action navigation
-    switch (actionId) {
-      case 'classes':
-        navigation.navigate('Classes');
-        break;
-      case 'assignments':
-        navigation.navigate('Assignments');
-        break;
-      case 'events':
-        navigation.navigate('Events');
-        break;
-      case 'profile':
-        navigation.navigate('Profile');
-        break;
-      default:
-        break;
-    }
+    navigation?.navigate?.(actionId.charAt(0).toUpperCase() + actionId.slice(1));
   };
 
-  const handleAIMessage = () => {
-    // AI reply is simulated inside AIStudyBuddyChat; nothing needed here.
-  };
+  if (!dashboardData) return null;
 
   return (
     <View style={styles.container}>
       <Animated.ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor="#0050d4"
-          />
-        }
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#0050d4" />}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
       >
-        {/* Hero Header */}
         <HeroHeader userData={dashboardData.user} />
-
-        {/* Quick Action Cards */}
-        <QuickActionCards
-          actions={dashboardData.quickActions}
-          onActionPress={handleQuickAction}
-        />
-
-        {/* Attendance Widget */}
+        <QuickActionCards actions={dashboardData.quickActions} onActionPress={handleQuickAction} />
         <AttendanceWidget attendanceData={dashboardData.attendance} />
-
-        {/* Schedule Section */}
         <ScheduleSection scheduleData={dashboardData.schedule} navigation={navigation} />
-
-        {/* Performance Heatmap */}
         <PerformanceHeatmap performanceData={dashboardData.performance} />
-
-        {/* Notifications Panel */}
         <NotificationsPanel notifications={dashboardData.notifications} navigation={navigation} />
-
-        {/* AI Study Buddy Chat */}
-        <AIStudyBuddyChat
-          aiData={dashboardData.aiBuddy}
-          onSendMessage={handleAIMessage}
-        />
+        <AIStudyBuddyChat aiData={dashboardData.aiBuddy} onSendMessage={() => {}} />
       </Animated.ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  scrollView: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  scrollView: { flex: 1 },
 });
