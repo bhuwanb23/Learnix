@@ -24,21 +24,26 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 
 > **ADR-13 (added):** schema is built **one user-role piece at a time** — not big-bang. Each role piece = schema slice → seed data → service → routes → smoke test → docs tick, all in one change. Domain A (identity/tenancy) and Domain L (audit/files/system) landed with the base; every other domain lands with its owning role.
 
-## 📊 Live status
+## 📊 Live status — module-by-module wiring (one role at a time)
 
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | Scaffold + base schema slice + auth + seed | ✅ **Done** (boot smoke-tested) |
-| 1 | Tenancy core, platform, master data | ⬜ Not started |
-| 2 | Academic core (teacher/student/hod/admin + attendance + assignments) | ⬜ Not started |
-| 3 | Exams & results | ⬜ Not started |
-| 4 | Money (accounts, unified payments, write-throughs) | ⬜ Not started |
-| 5 | Library, hostel, transport | ⬜ Not started |
-| 6 | Placement, sports, alumni, events, comms | ⬜ Not started |
-| 7 | Frontend integration (all 12 apps) | ⬜ Not started |
-| 8 | Hardening + Postgres + deploy | ⬜ Not started |
+| Module | Role | Backend | Frontend | Status |
+|---|---|---|---|---|
+| Auth | all | ✅ `modules/auth` | ✅ login/refresh | Done |
+| Alumni Relations | ALUMNI | ✅ `modules/alumni` | ✅ wired end-to-end | Done |
+| HOD | HOD | ✅ `modules/hod` | ✅ wired end-to-end | Done |
+| Sports & Cultural | SPORTS | ✅ `modules/sports` | ✅ wired end-to-end | Done |
+| Transport | TRANSPORT | ✅ `modules/transport` | ✅ wired end-to-end | Done |
+| Hostel | HOSTEL | ✅ `modules/hostel` | ✅ wired end-to-end | Done |
+| **Library Staff** | **LIBRARY** | **✅ `modules/library`** | **✅ wired end-to-end** | **Done** |
+| Student | STUDENT | ⬜ | ⬜ | Not started |
+| Teacher | TEACHER | ⬜ | ⬜ | Not started |
+| Admin | ADMIN | ⬜ | ⬜ | Not started |
+| Placement Cell | PLACEMENT | ⬜ | ⬜ | Not started |
+| Exam Cell | EXAMCELL | ⬜ | ⬜ | Not started |
+| Accounts & Finance | ACCOUNTS | ⬜ | ⬜ | Not started |
+| Platform + Master | PLATFORM_ADMIN | ⬜ | ⬜ | Not started |
 
-**Next up:** ~~schema~~ ✅ **DATABASE SCHEMA COMPLETE — 125 tables, all 12 domains (A–L) built, migrated, seeded, spine-verified** (`backend/prisma/schema/`, 17 files; `npm run verify:spine`). Phases restart at API work per the one-role-at-a-time protocol: teacher → student → admin → …
+**Next up:** student → teacher → admin → … (remaining modules per the one-role-at-a-time protocol)
 
 ## 🔁 How to work on the backend (any future session)
 
