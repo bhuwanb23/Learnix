@@ -36,12 +36,13 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 | Hostel | HOSTEL | ✅ `modules/hostel` | ✅ wired end-to-end | Done |
 | **Library Staff** | **LIBRARY** | **✅ `modules/library`** | **✅ wired end-to-end** | **Done** |
 | **Accounts & Finance** | **ACCOUNTS** | **✅ `modules/accounts`** | **✅ wired end-to-end** | **Done** |
+| **Exam Cell** | **EXAMCELL** | **✅ `modules/examcell`** | **✅ wired end-to-end** | **Done** |
 | Student | STUDENT | ⬜ | ⬜ | Not started |
 | Teacher | TEACHER | ⬜ | ⬜ | Not started |
 | Admin | ADMIN | ⬜ | ⬜ | Not started |
 | Placement Cell | PLACEMENT | ⬜ | ⬜ | Not started |
-| Exam Cell | EXAMCELL | ⬜ | ⬜ | Not started |
-| Accounts & Finance | ACCOUNTS | ⬜ | ⬜ | Not started |
+
+
 | Platform + Master | PLATFORM_ADMIN | ⬜ | ⬜ | Not started |
 
 **Next up:** student → teacher → admin → … (remaining modules per the one-role-at-a-time protocol)

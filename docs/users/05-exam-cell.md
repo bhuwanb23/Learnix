@@ -63,3 +63,44 @@ POST /api/examcell/broadcasts
 - Reads ← **Admin**: exam configuration, academic calendar.
 - Reads ← **Teacher**: exam requests/grades.
 - Cheating cases shared with Admin's AI cheating detection module.
+
+## 6. Wiring Status
+
+Backend: `backend/src/modules/examcell/` (schemas, service, routes)
+Frontend: `learnix/users/exam_cell/` (8 pages wired to live API)
+
+| Endpoint | Method | Status |
+|----------|--------|--------|
+| `/examcell/dashboard` | GET | ✅ wired |
+| `/examcell/timetable` | GET | ✅ wired |
+| `/examcell/timetable` | POST | ✅ wired |
+| `/examcell/timetable/:id/slots` | POST | ✅ wired |
+| `/examcell/slots/:id/reschedule` | POST | ✅ wired |
+| `/examcell/slots/:id/allocations` | GET | ✅ wired |
+| `/examcell/slots/:id/allocations` | POST | ✅ wired |
+| `/examcell/hall-tickets` | GET | ✅ wired |
+| `/examcell/hall-tickets/generate` | POST | ✅ wired |
+| `/examcell/evaluations` | GET | ✅ wired |
+| `/examcell/evaluations/:id/assign` | POST | ✅ wired |
+| `/examcell/evaluations/:id/complete` | POST | ✅ wired |
+| `/examcell/results` | GET | ✅ wired |
+| `/examcell/results` | POST | ✅ wired |
+| `/examcell/results/publish` | POST | ✅ wired |
+| `/examcell/re-evaluations/:id/decide` | POST | ✅ wired |
+| `/examcell/cheating-cases` | GET | ✅ wired |
+| `/examcell/cheating-cases/:id/decide` | POST | ✅ wired |
+| `/examcell/notifications` | GET | ✅ wired |
+| `/examcell/notifications/read-all` | POST | ✅ wired |
+| `/examcell/broadcasts` | POST | ✅ wired |
+| `/examcell/profile` | GET | ✅ wired |
+
+**App wiring:**
+- `exam_cell.js`: demo user `setDemoUser('examcell@learnix.dev')`
+- Dashboard: live API (hero, stats, upcoming exams, cheating alerts, module hub)
+- Timetable: live API (exam list, create, slot conflicts, stats)
+- Evaluations: live API (progress, deadlines, mark complete)
+- Results: live API (pending/published, publish, re-evaluation decide)
+- Hall Tickets: live API (exam selector, generate batch, search)
+- Cheating Cases: live API (risk filters, confirm/dismiss/escalate)
+- Notifications: live API (inbox, mark all read, broadcast)
+- Profile: live API (name, stats, preferences, menu)
