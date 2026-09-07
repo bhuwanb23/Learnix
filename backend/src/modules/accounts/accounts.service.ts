@@ -292,7 +292,7 @@ export async function requestRevision(
 }
 
 // ── F-04 Fee dues ───────────────────────────────────────────
-export async function listDues(institutionId: string) {
+export async function listDues(_institutionId: string) {
   const dues = await prisma.feeDue.findMany({
     include: {
       studentProfile: { include: { user: { select: { fullName: true } } } },
