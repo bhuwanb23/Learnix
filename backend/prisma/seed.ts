@@ -104,6 +104,12 @@ const USERS: SeedUser[] = [
     roles: ['ACCOUNTS'],
     staff: { employeeNo: 'EMP-0011', designation: 'Chief Accounts Officer' },
   },
+  {
+    email: 'examcell@learnix.dev',
+    fullName: 'Mr. Arun Pillai',
+    roles: ['EXAMCELL'],
+    staff: { employeeNo: 'EMP-0012', designation: 'Controller of Examinations' },
+  },
 ];
 
 async function main() {
