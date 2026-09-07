@@ -84,14 +84,14 @@
 
 | ID | Feature | Tables | Seed |
 |----|---------|--------|------|
-| P-01 | Dashboard (drives, applications, offers, CTC stats) | D aggregates | — |
-| P-02 | Companies CRUD + ratings | D companies | ✅ (2) |
-| P-03 | Jobs: post, open/close, applicant lists | D jobs | ✅ (1) |
-| P-04 | Drives: create (eligibility JSON), submit for admin approval, schedule | D placement_drives | ✅ APPROVED→SCHEDULED |
-| P-05 | Applications pipeline: shortlist → interview → offer/reject | D job_applications | ✅ INTERVIEW |
-| P-06 | Offers: extend, mark accepted/declined | D placement_offers | ✅ EXTENDED |
-| P-07 | Student eligibility pool + drive registration + attendance | D placement_eligibility/drive_registrations | ✅ |
-| P-08 | Notifications + profile | K, A | ✅ |
+| P-01 | Dashboard (drives, applications, offers, CTC stats) | D aggregates | ✅ wired |
+| P-02 | Companies CRUD + ratings | D companies | ✅ wired |
+| P-03 | Jobs: post, open/close, applicant lists | D jobs | ✅ wired |
+| P-04 | Drives: create (eligibility JSON), submit for admin approval, schedule | D placement_drives | ✅ wired |
+| P-05 | Applications pipeline: shortlist → interview → offer/reject | D job_applications | ✅ wired |
+| P-06 | Offers: extend, mark accepted/declined | D placement_offers | ✅ wired |
+| P-07 | Student eligibility pool + drive registration + attendance | D placement_eligibility/drive_registrations | ✅ wired |
+| P-08 | Notifications + profile | K, A | ✅ wired |
 
 ## Exam Cell (X) — docs/users/05 · tables: C
 

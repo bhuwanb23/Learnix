@@ -70,3 +70,41 @@ POST /api/placement/broadcasts
 - Writes → **Admin**: drive approval requests, offer/placement stats.
 - Reads ← **Admin**: student master, batch eligibility.
 - Reads ← **Alumni**: mentorship/hiring referrals (future).
+
+## 6. Wiring Status
+
+Backend: `backend/src/modules/placement/` (schemas, service, routes)
+Frontend: `learnix/users/placement_cell/` (8 pages wired to live API)
+
+| Endpoint | Method | Status |
+|----------|--------|--------|
+| `/placement/dashboard` | GET | ✅ wired |
+| `/placement/companies` | GET | ✅ wired |
+| `/placement/companies` | POST | ✅ wired |
+| `/placement/companies/:id` | PUT | ✅ wired |
+| `/placement/jobs` | GET | ✅ wired |
+| `/placement/jobs` | POST | ✅ wired |
+| `/placement/jobs/:id/close` | POST | ✅ wired |
+| `/placement/drives` | GET | ✅ wired |
+| `/placement/drives` | POST | ✅ wired |
+| `/placement/drives/:id/submit` | POST | ✅ wired |
+| `/placement/applications` | GET | ✅ wired |
+| `/placement/applications/:id/decide` | POST | ✅ wired |
+| `/placement/offers/extend` | POST | ✅ wired |
+| `/placement/offers/:id/decide` | POST | ✅ wired |
+| `/placement/students` | GET | ✅ wired |
+| `/placement/notifications` | GET | ✅ wired |
+| `/placement/notifications/read-all` | POST | ✅ wired |
+| `/placement/broadcasts` | POST | ✅ wired |
+| `/placement/profile` | GET | ✅ wired |
+
+**App wiring:**
+- `placement_cell.js`: demo user `setDemoUser('placement@learnix.dev')`
+- Dashboard: live API (hero, stats, active drives, pending applications, module hub)
+- Drives: live API (list, create, submit for approval, filter)
+- Applications: live API (filter, shortlist/interview/reject decisions)
+- Students: live API (eligible pool, search, eligibility status)
+- Jobs: live API (list, post, close)
+- Companies: live API (directory, add, sector filter)
+- Notifications: live API (inbox, mark all read, broadcast)
+- Profile: live API (name, stats, preferences, menu)
