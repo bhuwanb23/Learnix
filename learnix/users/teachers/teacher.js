@@ -14,6 +14,10 @@ import TeacherProfilePage from './pages/profile/profile';
 import StudentPerformancePage from './pages/student_performance/student_performance';
 import NotificationsPage from './pages/notifications/notifications';
 import SchedulePage from './pages/schedule/schedule';
+import { setDemoUser } from '../../services/api';
+
+// Set demo identity for teacher app
+setDemoUser('teacher@learnix.dev');
 
 export default function TeacherScreen() {
   const [activeTab, setActiveTab] = useState('Dashboard');
