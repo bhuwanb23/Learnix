@@ -41,22 +41,22 @@
 
 | ID | Feature | Tables | Seed |
 |----|---------|--------|------|
-| T-01 | Teacher dashboard (today's classes, pending grading, alerts) | B offerings/attendance/submissions | — |
-| T-02 | My classes matrix: subject ↔ section ↔ semester (multi-class core) | B course_offerings | ✅ (2) |
-| T-03 | Class dashboard per offering (stats, shortcuts) | B offerings + aggregates | — |
-| T-04 | Lecture notes CRUD (draft→publish, attachments) | B lecture_notes/note_attachments, L files | ✅ |
-| T-05 | Quiz builder (questions MCQ/TF, publish) + monitor attempts | C quizzes/questions/quiz_attempts | ✅ |
-| T-06 | Syllabus: create version, units/topics, submit to HOD | B syllabus_versions/units/topics | ✅ SUBMITTED |
-| T-07 | Syllabus tracker update (mark topics completed in class) | B syllabus_topics | — |
-| T-08 | Roster: student list + roll numbers + quick profiles | B enrollments → student_profiles | ✅ (1) |
-| T-09 | Schedule: my weekly timetable + class sessions (join link) | B offering_schedule_slots/class_sessions | ✅ slots |
-| T-10 | Attendance: create session, mark, finalize, % + defaulters | B attendance_sessions/records | — |
-| T-11 | Assignments: create (rubric, due), publish, close | B assignments/rubric_criteria | ✅ |
-| T-12 | Grading: submissions queue, rubric scoring, return/flag | B submissions/rubric_scores | — |
-| T-13 | Exam grade entry (feeds exam-cell evaluations) | C evaluation_papers | — |
-| T-14 | Student performance analytics (per offering, AI insights) | B+C aggregates, K ai_interactions | — |
-| T-15 | Notifications + broadcast to my classes | K notifications/broadcasts | ✅ 1 pending ann |
-| T-16 | Profile (staff card, workload) | A staff_profiles | ✅ |
+| T-01 | Teacher dashboard (today's classes, pending grading, alerts) | B offerings/attendance/submissions | ✅ wired |
+| T-02 | My classes matrix: subject ↔ section ↔ semester (multi-class core) | B course_offerings | ✅ wired |
+| T-03 | Class dashboard per offering (stats, shortcuts) | B offerings + aggregates | ✅ wired |
+| T-04 | Lecture notes CRUD (draft→publish, attachments) | B lecture_notes/note_attachments, L files | ✅ wired |
+| T-05 | Quiz builder (questions MCQ/TF, publish) + monitor attempts | C quizzes/questions/quiz_attempts | ✅ wired |
+| T-06 | Syllabus: create version, units/topics, submit to HOD | B syllabus_versions/units/topics | ✅ wired |
+| T-07 | Syllabus tracker update (mark topics completed in class) | B syllabus_topics | ✅ wired |
+| T-08 | Roster: student list + roll numbers + quick profiles | B enrollments → student_profiles | ✅ wired |
+| T-09 | Schedule: my weekly timetable + class sessions (join link) | B offering_schedule_slots/class_sessions | ✅ wired |
+| T-10 | Attendance: create session, mark, finalize, % + defaulters | B attendance_sessions/records | ✅ wired |
+| T-11 | Assignments: create (rubric, due), publish, close | B assignments/rubric_criteria | ✅ wired |
+| T-12 | Grading: submissions queue, rubric scoring, return/flag | B submissions/rubric_scores | ✅ wired |
+| T-13 | Exam grade entry (feeds exam-cell evaluations) | C evaluation_papers | ✅ wired |
+| T-14 | Student performance analytics (per offering, AI insights) | B+C aggregates, K ai_interactions | ✅ wired |
+| T-15 | Notifications + broadcast to my classes | K notifications/broadcasts | ✅ wired |
+| T-16 | Profile (staff card, workload) | A staff_profiles | ✅ wired |
 
 ## Admin app (A) — docs/users/03 · tables: everything (oversight)
 

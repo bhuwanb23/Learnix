@@ -40,7 +40,7 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 | **Placement Cell** | **PLACEMENT** | **✅ `modules/placement`** | **✅ wired end-to-end** | **Done** |
 | **Admin** | **ADMIN** | **✅ `modules/admin`** | **✅ wired end-to-end** | **Done** |
 | Student | STUDENT | ⬜ | ⬜ | Not started |
-| Teacher | TEACHER | ⬜ | ⬜ | Not started |
+| **Teacher** | **TEACHER** | **✅ `modules/teacher`** | **✅ wired end-to-end** | **Done** |
 | Platform + Master | PLATFORM_ADMIN | ⬜ | ⬜ | Not started |
 
 **Next up:** student → teacher → admin → … (remaining modules per the one-role-at-a-time protocol)
