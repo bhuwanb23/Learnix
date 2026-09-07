@@ -9,6 +9,7 @@ async function getTeacherOfferings(teacherUserId: string) {
     include: {
       course: { select: { id: true, code: true, name: true, credits: true, semester: true } },
       section: { select: { id: true, name: true } },
+      scheduleSlots: { select: { dayOfWeek: true, startTime: true, endTime: true, room: true } },
       _count: { select: { enrollments: true, scheduleSlots: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -30,7 +31,7 @@ async function requireOffering(offeringId: string, teacherUserId: string) {
 }
 
 // ── T-01 Dashboard ─────────────────────────────────────────
-export async function getDashboard(teacherUserId: string, institutionId: string) {
+export async function getDashboard(teacherUserId: string, _institutionId: string) {
   const offerings = await getTeacherOfferings(teacherUserId);
   const offeringIds = offerings.map(o => o.id);
 
@@ -49,10 +50,7 @@ export async function getDashboard(teacherUserId: string, institutionId: string)
     where: { assignment: { offeringId: { in: offeringIds } }, status: { in: ['PENDING', 'UNDER_REVIEW'] } },
   });
 
-  // Active assignments
-  const activeAssignments = await prisma.assignment.count({
-    where: { offeringId: { in: offeringIds }, status: 'PUBLISHED' },
-  });
+
 
   // Upcoming quizzes
   const activeQuizzes = await prisma.quiz.count({
@@ -207,9 +205,9 @@ export async function listClasses(teacherUserId: string) {
   }));
 }
 
-function formatScheduleSummary(offering: { scheduleSlots: { dayOfWeek: number; startTime: string }[] }) {
+function formatScheduleSummary(offering: { scheduleSlots?: { dayOfWeek: number; startTime: string }[] }) {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const slots = offering.scheduleSlots;
+  const slots = offering.scheduleSlots || [];
   if (slots.length === 0) return 'No schedule';
   const grouped = slots.reduce((acc, s) => {
     const d = dayNames[s.dayOfWeek];
