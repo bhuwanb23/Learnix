@@ -37,10 +37,11 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 | **Library Staff** | **LIBRARY** | **✅ `modules/library`** | **✅ wired end-to-end** | **Done** |
 | **Accounts & Finance** | **ACCOUNTS** | **✅ `modules/accounts`** | **✅ wired end-to-end** | **Done** |
 | **Exam Cell** | **EXAMCELL** | **✅ `modules/examcell`** | **✅ wired end-to-end** | **Done** |
+| **Placement Cell** | **PLACEMENT** | **✅ `modules/placement`** | **✅ wired end-to-end** | **Done** |
 | Student | STUDENT | ⬜ | ⬜ | Not started |
 | Teacher | TEACHER | ⬜ | ⬜ | Not started |
 | Admin | ADMIN | ⬜ | ⬜ | Not started |
-| Placement Cell | PLACEMENT | ⬜ | ⬜ | Not started |
+
 
 
 | Platform + Master | PLATFORM_ADMIN | ⬜ | ⬜ | Not started |
