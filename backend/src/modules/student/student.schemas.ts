@@ -50,3 +50,7 @@ export const requestBookSchema = z.object({
 export const idParamSchema = z.object({
   id: z.string().min(1),
 });
+
+export const offeringIdParamSchema = z.object({
+  offeringId: z.string().min(1),
+});
