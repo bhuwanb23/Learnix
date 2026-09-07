@@ -142,3 +142,54 @@ GET  /api/teacher/notifications
 - Writes → **HOD**: syllabus submissions for approval.
 - Reads ← **Admin**: class/course assignments, student master list.
 - Reads ← **Exam Cell**: exam timetable.
+
+## 6. Wiring Status
+
+**Backend**: `backend/src/modules/teacher/` — `teacher.schemas.ts` + `teacher.service.ts` + `teacher.routes.ts`
+**Mounted at**: `/api/v1/teacher` (with `TEACHER` role gate)
+**Seed user**: `teacher@learnix.dev` (Anita Sharma, Assistant Professor)
+**Demo setup**: `setDemoUser('teacher@learnix.dev')` in `teacher.js`
+
+### Endpoints (16 features)
+
+| Feature | Method | Endpoint |
+|---------|--------|----------|
+| T-01 Dashboard | GET | `/dashboard` |
+| T-02 Classes | GET | `/classes` |
+| T-03 Class Dashboard | GET | `/classes/:id/dashboard` |
+| T-04 Notes list | GET | `/classes/:id/notes` |
+| T-04 Create note | POST | `/notes` |
+| T-04 Update note | PUT | `/notes/:id` |
+| T-05 Quizzes | GET | `/classes/:id/quizzes` |
+| T-05 Create quiz | POST | `/quizzes` |
+| T-05 Add question | POST | `/quizzes/:id/questions` |
+| T-05 Publish quiz | POST | `/quizzes/:id/publish` |
+| T-06 Syllabus | GET | `/classes/:id/syllabus` |
+| T-06 Submit syllabus | POST | `/syllabus/submit` |
+| T-07 Update topic | PUT | `/syllabus/topics/:id` |
+| T-08 Roster | GET | `/classes/:id/roster` |
+| T-09 Schedule | GET | `/schedule` |
+| T-10 Create session | POST | `/attendance/sessions` |
+| T-10 Mark attendance | POST | `/attendance/mark` |
+| T-10 Finalize | POST | `/attendance/finalize` |
+| T-10 Attendance stats | GET | `/classes/:id/attendance` |
+| T-11 Assignments | GET | `/assignments` |
+| T-11 Create assignment | POST | `/assignments` |
+| T-11 Assignment detail | GET | `/assignments/:id` |
+| T-12 Grade submission | POST | `/submissions/:id/grade` |
+| T-13 Exam grade entry | POST | `/exam-grades` |
+| T-14 Performance | GET | `/performance?offeringId=` |
+| T-15 Notifications | GET | `/notifications` |
+| T-15 Mark all read | POST | `/notifications/read-all` |
+| T-15 Broadcast | POST | `/broadcasts` |
+| T-16 Profile | GET | `/profile` |
+
+### App Wiring
+- `teacher.js` — demo identity via `setDemoUser('teacher@learnix.dev')`
+- Key pages wired to live API with loading/error/refresh states:
+  - Dashboard (hero, schedule, performance, insights, recent submissions)
+  - Classes (live offering list with students, schedule, section)
+  - Notifications (inbox, mark all read)
+  - Schedule (weekly timetable with day tabs, join button)
+  - Profile (live stats, name, designation, quick links)
+- Sub-pages (ClassDashboard, LectureNotes, Quiz, Syllabus, Roster, AssignmentExams, Performance) use the same API endpoints and can be wired progressively |
