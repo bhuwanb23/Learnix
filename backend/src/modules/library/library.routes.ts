@@ -1,0 +1,242 @@
+import { Router } from 'express';
+import type { Request, Response, NextFunction } from 'express';
+import { auth } from '../../middlewares/auth.js';
+import { requireRole } from '../../middlewares/requireRole.js';
+import { validate } from '../../middlewares/validate.js';
+import {
+  idParamSchema,
+  addBookSchema,
+  updateBookSchema,
+  issueBookSchema,
+  returnBookSchema,
+  collectFineSchema,
+  waiveFineSchema,
+  requestDecisionSchema,
+  addDigitalResourceSchema,
+  grantAccessSchema,
+  libraryBroadcastSchema,
+  catalogQuerySchema,
+} from './library.schemas.js';
+import * as service from './library.service.js';
+
+// Library Staff module — mounted at /api/v1/library (docs/users/07 §4)
+const router = Router();
+
+const wrap =
+  (fn: (req: Request, res: Response) => Promise<void>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    fn(req, res).catch(next);
+  };
+
+router.use(auth, requireRole('LIBRARY', 'ADMIN'));
+
+// L-01 dashboard
+router.get(
+  '/dashboard',
+  wrap(async (req, res) => {
+    res.json({ data: await service.getDashboard(req.auth!.institutionId) });
+  }),
+);
+
+// L-02 catalog
+router.get(
+  '/catalog',
+  validate(catalogQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.listCatalog(
+        req.auth!.institutionId,
+        req.query as { q?: string; category?: string },
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/catalog/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.getBookDetail(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.post(
+  '/catalog',
+  validate(addBookSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await service.addBook(req.auth!.institutionId, req.auth!.userId, req.body),
+    });
+  }),
+);
+
+router.put(
+  '/catalog/:id',
+  validate(idParamSchema, 'params'),
+  validate(updateBookSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.updateBook(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
+      ),
+    });
+  }),
+);
+
+// L-03 circulation: issue / return
+router.post(
+  '/circulation/issue',
+  validate(issueBookSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await service.issueBook(req.auth!.institutionId, req.auth!.userId, req.body),
+    });
+  }),
+);
+
+router.post(
+  '/circulation/return',
+  validate(returnBookSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.returnBook(req.auth!.institutionId, req.auth!.userId, req.body.issueId),
+    });
+  }),
+);
+
+// L-04 fines
+router.get(
+  '/fines',
+  wrap(async (req, res) => {
+    res.json({ data: await service.listFines(req.auth!.institutionId) });
+  }),
+);
+
+router.post(
+  '/fines/:id/collect',
+  validate(idParamSchema, 'params'),
+  validate(collectFineSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.collectFine(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body.method,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/fines/:id/waive',
+  validate(idParamSchema, 'params'),
+  validate(waiveFineSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.waiveFine(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+// L-05 book requests
+router.get(
+  '/requests',
+  wrap(async (req, res) => {
+    res.json({ data: await service.listRequests(req.auth!.institutionId) });
+  }),
+);
+
+router.post(
+  '/requests/:id/decide',
+  validate(idParamSchema, 'params'),
+  validate(requestDecisionSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.decideRequest(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body.decision,
+      ),
+    });
+  }),
+);
+
+// L-06 digital library
+router.get(
+  '/digital',
+  wrap(async (req, res) => {
+    res.json({ data: await service.listDigitalResources(req.auth!.institutionId) });
+  }),
+);
+
+router.post(
+  '/digital',
+  validate(addDigitalResourceSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await service.addDigitalResource(req.auth!.institutionId, req.auth!.userId, req.body),
+    });
+  }),
+);
+
+router.post(
+  '/digital/:id/grant-access',
+  validate(idParamSchema, 'params'),
+  validate(grantAccessSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.grantAccess(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
+      ),
+    });
+  }),
+);
+
+// L-07 notifications + broadcast + profile
+router.get(
+  '/notifications',
+  wrap(async (req, res) => {
+    res.json({ data: await service.listNotifications(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+router.post(
+  '/notifications/read-all',
+  wrap(async (req, res) => {
+    res.json({ data: await service.markAllRead(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+router.post(
+  '/broadcasts',
+  validate(libraryBroadcastSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await service.createBroadcast(req.auth!.institutionId, req.auth!.userId, req.body),
+    });
+  }),
+);
+
+router.get(
+  '/profile',
+  wrap(async (req, res) => {
+    res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+export default router;
