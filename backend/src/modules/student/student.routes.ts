@@ -6,7 +6,7 @@ import { validate } from '../../middlewares/validate.js';
 import {
   submitAssignmentSchema, startQuizAttemptSchema, submitQuizAnswerSchema,
   submitQuizAttemptSchema, requestReevaluationSchema, applyJobSchema,
-  idParamSchema, offeringIdParamSchema,
+  idParamSchema,
 } from './student.schemas.js';
 import * as service from './student.service.js';
 
@@ -32,12 +32,12 @@ router.get('/classes', wrap(async (req, res) => {
 }));
 
 // S-03 Syllabus Tracker
-router.get('/syllabus/:offeringId', validate(offeringIdParamSchema, 'params'), wrap(async (req, res) => {
+router.get('/syllabus/:offeringId', wrap(async (req, res) => {
   res.json({ data: await service.getSyllabus(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
 // S-04 Lecture Notes
-router.get('/lecture-notes/:offeringId', validate(offeringIdParamSchema, 'params'), wrap(async (req, res) => {
+router.get('/lecture-notes/:offeringId', wrap(async (req, res) => {
   res.json({ data: await service.listLectureNotes(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
@@ -46,7 +46,7 @@ router.get('/lecture-notes/note/:id', validate(idParamSchema, 'params'), wrap(as
 }));
 
 // S-05 Quizzes
-router.get('/quizzes/:offeringId', validate(offeringIdParamSchema, 'params'), wrap(async (req, res) => {
+router.get('/quizzes/:offeringId', wrap(async (req, res) => {
   res.json({ data: await service.listQuizzes(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
@@ -96,7 +96,7 @@ router.post('/results/reevaluate', validate(requestReevaluationSchema), wrap(asy
 }));
 
 // S-10 Attendance Detail
-router.get('/attendance/:offeringId', validate(offeringIdParamSchema, 'params'), wrap(async (req, res) => {
+router.get('/attendance/:offeringId', wrap(async (req, res) => {
   res.json({ data: await service.getAttendanceDetail(req.auth!.userId, req.auth!.institutionId, String(req.params.offeringId)) });
 }));
 
