@@ -265,7 +265,39 @@ export const libraryApi = {
   profile: () => api.get('/library/profile'),
 };
 
-// ── Accounts & Finance endpoints (docs/users/06 §4) ──
+// ── Teacher endpoints (docs/users/02 §4) ──
+export const teacherApi = {
+  dashboard: () => api.get('/teacher/dashboard'),
+  classes: () => api.get('/teacher/classes'),
+  classDashboard: (id) => api.get(`/teacher/classes/${id}/dashboard`),
+  notes: (offeringId) => api.get(`/teacher/classes/${offeringId}/notes`),
+  createNote: (payload) => api.post('/teacher/notes', payload),
+  updateNote: (id, payload) => api.put(`/teacher/notes/${id}`, payload),
+  quizzes: (offeringId) => api.get(`/teacher/classes/${offeringId}/quizzes`),
+  createQuiz: (payload) => api.post('/teacher/quizzes', payload),
+  addQuestion: (quizId, payload) => api.post(`/teacher/quizzes/${quizId}/questions`, payload),
+  publishQuiz: (quizId) => api.post(`/teacher/quizzes/${quizId}/publish`),
+  syllabus: (offeringId) => api.get(`/teacher/classes/${offeringId}/syllabus`),
+  submitSyllabus: (courseId) => api.post('/teacher/syllabus/submit', { courseId }),
+  updateSyllabusTopic: (topicId, payload) => api.put(`/teacher/syllabus/topics/${topicId}`, payload),
+  roster: (offeringId) => api.get(`/teacher/classes/${offeringId}/roster`),
+  schedule: () => api.get('/teacher/schedule'),
+  createAttendanceSession: (payload) => api.post('/teacher/attendance/sessions', payload),
+  markAttendance: (payload) => api.post('/teacher/attendance/mark', payload),
+  finalizeAttendance: (sessionId) => api.post('/teacher/attendance/finalize', { sessionId }),
+  attendanceStats: (offeringId) => api.get(`/teacher/classes/${offeringId}/attendance`),
+  assignments: (offeringId) => api.get(`/teacher/assignments${offeringId ? `?offeringId=${offeringId}` : ''}`),
+  createAssignment: (payload) => api.post('/teacher/assignments', payload),
+  assignmentDetail: (id) => api.get(`/teacher/assignments/${id}`),
+  gradeSubmission: (id, payload) => api.post(`/teacher/submissions/${id}/grade`, payload),
+  enterExamGrade: (payload) => api.post('/teacher/exam-grades', payload),
+  performance: (offeringId) => api.get(`/teacher/performance?offeringId=${offeringId}`),
+  notifications: () => api.get('/teacher/notifications'),
+  markAllRead: () => api.post('/teacher/notifications/read-all'),
+  broadcast: (payload) => api.post('/teacher/broadcasts', payload),
+  profile: () => api.get('/teacher/profile'),
+};
+
 // ── Exam Cell endpoints (docs/users/05 §4) ──
 export const examcellApi = {
   dashboard: () => api.get('/examcell/dashboard'),
