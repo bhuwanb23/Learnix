@@ -1,24 +1,82 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import {
-  EXAM_STATS,
-  TODAY_EXAMS,
-  PENDING_TASKS,
-  MODULES,
-  RECENT_ACTIVITY,
-} from './constants/dashboardData';
+import { examcellApi } from '../../../../services/api';
 
 import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
 
+const STAT_META = [
+  { id: 'activeExams', label: 'Active Exams', icon: 'calendar', color: '#2563eb' },
+  { id: 'pendingEvaluations', label: 'Pending Evaluations', icon: 'clipboard', color: '#d97706' },
+  { id: 'pendingResults', label: 'Results Pending', icon: 'trophy', color: '#059669' },
+  { id: 'activeCheatingCases', label: 'Cheating Cases', icon: 'warning', color: '#dc2626' },
+];
+
+const MODULES = [
+  { id: 'Timetable', label: 'Exam Timetable', desc: 'Schedule exams & allocate rooms', icon: 'calendar-outline', color: '#2563eb' },
+  { id: 'Evaluations', label: 'Evaluations', desc: 'Track grading progress', icon: 'clipboard-outline', color: '#059669' },
+  { id: 'Results', label: 'Results', desc: 'Publish & moderate results', icon: 'trophy-outline', color: '#d97706' },
+  { id: 'HallTickets', label: 'Hall Tickets', desc: 'Issue & verify admit cards', icon: 'ticket-outline', color: '#0284c7' },
+  { id: 'CheatingCases', label: 'Cheating Cases', desc: 'Review AI-detected alerts', icon: 'warning-outline', color: '#dc2626' },
+  { id: 'Notifications', label: 'Notify Students', desc: 'Broadcast exam updates', icon: 'megaphone-outline', color: '#4f46e5' },
+];
+
 export default function ExamDashboard({ navigation }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const res = await examcellApi.dashboard();
+      setData(res);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const onRefresh = () => { setRefreshing(true); fetchData(); };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={styles.loadingText}>Loading dashboard…</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color="#94a3b8" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity onPress={fetchData} style={styles.retryBtn}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const hero = data?.hero ?? {};
+  const stats = data?.stats ?? {};
+
   const handleModulePress = (moduleId) => {
     if (moduleId === 'Timetable' || moduleId === 'Evaluations' || moduleId === 'Results') {
       navigation.switchTab(moduleId);
@@ -28,7 +86,12 @@ export default function ExamDashboard({ navigation }) {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
+    >
       {/* Hero banner */}
       <View style={styles.heroCard}>
         <View style={styles.heroRow}>
@@ -36,87 +99,115 @@ export default function ExamDashboard({ navigation }) {
             <Ionicons name="calendar" size={20} color="#2563eb" />
           </View>
           <View style={styles.heroText}>
-            <Text style={styles.heroTitle}>Final Exams • Sem 4</Text>
-            <Text style={styles.heroSubtitle}>Dec 15-24 • 12 exams • 1,240 students</Text>
+            <Text style={styles.heroTitle}>Exams Overview</Text>
+            <Text style={styles.heroSubtitle}>
+              {hero.activeExams ?? 0} active · {hero.scheduledExams ?? 0} scheduled · {hero.completedExams ?? 0} completed
+            </Text>
           </View>
         </View>
-        <View style={styles.heroProgressTrack}>
-          <View style={[styles.heroProgressFill, { width: '38%' }]} />
-        </View>
-        <Text style={styles.heroNote}>38% of exam season completed (5 / 13 days)</Text>
+        {hero.totalStudents > 0 && (
+          <>
+            <View style={styles.heroProgressTrack}>
+              <View style={[styles.heroProgressFill, { width: `${Math.min(((hero.completedExams ?? 0) / Math.max((hero.activeExams ?? 0) + (hero.scheduledExams ?? 0) + (hero.completedExams ?? 0), 1)) * 100, 100)}%` }]} />
+            </View>
+            <Text style={styles.heroNote}>{hero.totalStudents} total hall tickets generated</Text>
+          </>
+        )}
       </View>
 
       {/* Stats */}
       <View style={styles.statsRow}>
-        {EXAM_STATS.map((stat) => (
+        {STAT_META.map((stat) => (
           <TouchableOpacity
             key={stat.id}
             style={styles.statCard}
             activeOpacity={0.8}
             onPress={() => {
               if (stat.id === 'activeExams') navigation.switchTab('Timetable');
-              if (stat.id === 'pendingEval') navigation.switchTab('Evaluations');
-              if (stat.id === 'results') navigation.switchTab('Results');
-              if (stat.id === 'cheating') navigation.openModule('CheatingCases');
+              if (stat.id === 'pendingEvaluations') navigation.switchTab('Evaluations');
+              if (stat.id === 'pendingResults') navigation.switchTab('Results');
+              if (stat.id === 'activeCheatingCases') navigation.openModule('CheatingCases');
             }}
           >
             <View style={[styles.statIcon, { backgroundColor: stat.color + '14' }]}>
               <Ionicons name={stat.icon} size={18} color={stat.color} />
             </View>
-            <Text style={styles.statValue}>{stat.value}</Text>
+            <Text style={styles.statValue}>{stats[stat.id] ?? 0}</Text>
             <Text style={styles.statLabel}>{stat.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Today's exams */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Today's Exams</Text>
-        <Text style={styles.sectionDate}>Dec 8, 2026</Text>
-      </View>
-      {TODAY_EXAMS.map((item) => (
-        <TouchableOpacity
-          key={item.id}
-          style={styles.examCard}
-          activeOpacity={0.8}
-          onPress={() => navigation.switchTab('Timetable')}
-        >
-          <View style={styles.timeBox}>
-            <Text style={styles.timeText}>{item.time.split(' ')[0]}</Text>
-            <Text style={styles.timeAm}>{item.time.split(' ')[1]}</Text>
+      {/* Upcoming exams */}
+      {data?.upcomingExams?.length > 0 && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Upcoming Exams</Text>
           </View>
-          <View style={[styles.examIcon, { backgroundColor: item.color + '14' }]}>
-            <Ionicons name="create-outline" size={16} color={item.color} />
-          </View>
-          <View style={styles.examInfo}>
-            <Text style={styles.examTitle}>{item.subject}</Text>
-            <Text style={styles.examMeta}>{item.code} • {item.room} • {item.students} students</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-        </TouchableOpacity>
-      ))}
+          {data.upcomingExams.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.examCard}
+              activeOpacity={0.8}
+              onPress={() => navigation.switchTab('Timetable')}
+            >
+              <View style={styles.timeBox}>
+                <Text style={styles.timeText}>{item.startTime}</Text>
+                <Text style={styles.timeAm}>{item.endTime}</Text>
+              </View>
+              <View style={[styles.examIcon, { backgroundColor: '#2563eb14' }]}>
+                <Ionicons name="create-outline" size={16} color="#2563eb" />
+              </View>
+              <View style={styles.examInfo}>
+                <Text style={styles.examTitle}>{item.subject}</Text>
+                <Text style={styles.examMeta}>{item.code} • {item.room ?? 'TBA'}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
 
-      {/* Pending tasks */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Needs Attention</Text>
-      </View>
-      {PENDING_TASKS.map((item) => (
-        <TouchableOpacity
-          key={item.id}
-          style={styles.taskCard}
-          activeOpacity={0.8}
-          onPress={() => handleModulePress(item.target)}
-        >
-          <View style={[styles.taskIcon, { backgroundColor: item.color + '14' }]}>
-            <Ionicons name={item.icon} size={16} color={item.color} />
+      {/* Alerts */}
+      {data?.alerts?.length > 0 && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Needs Attention</Text>
           </View>
-          <View style={styles.taskInfo}>
-            <Text style={styles.taskTitle}>{item.title}</Text>
-            <Text style={styles.taskDetail}>{item.detail}</Text>
+          {data.alerts.map((alert, i) => (
+            <View key={i} style={styles.alertCard}>
+              <Ionicons name="alert-circle-outline" size={16} color="#dc2626" />
+              <Text style={styles.alertText}>{alert}</Text>
+            </View>
+          ))}
+        </>
+      )}
+
+      {/* Recent cheating */}
+      {data?.recentCheating?.length > 0 && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Cheating Alerts</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-        </TouchableOpacity>
-      ))}
+          {data.recentCheating.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.taskCard}
+              activeOpacity={0.8}
+              onPress={() => navigation.openModule('CheatingCases')}
+            >
+              <View style={[styles.taskIcon, { backgroundColor: '#dc262614' }]}>
+                <Ionicons name="warning-outline" size={16} color="#dc2626" />
+              </View>
+              <View style={styles.taskInfo}>
+                <Text style={styles.taskTitle}>{item.student}</Text>
+                <Text style={styles.taskDetail}>{item.issue} • {item.subject}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
 
       {/* Module hub */}
       <View style={styles.sectionHeader}>
@@ -138,20 +229,6 @@ export default function ExamDashboard({ navigation }) {
           </TouchableOpacity>
         ))}
       </View>
-
-      {/* Recent activity */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-      </View>
-      {RECENT_ACTIVITY.map((item) => (
-        <View key={item.id} style={styles.activityRow}>
-          <View style={[styles.activityDot, { backgroundColor: item.color }]} />
-          <View style={styles.activityInfo}>
-            <Text style={styles.activityText}>{item.text}</Text>
-            <Text style={styles.activityTime}>{item.time}</Text>
-          </View>
-        </View>
-      ))}
     </ScrollView>
   );
 }
@@ -164,6 +241,37 @@ const styles = StyleSheet.create({
   content: {
     padding: 24,
     paddingBottom: 40,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#64748b',
+    fontFamily: 'Manrope-Regular',
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#dc2626',
+    fontFamily: 'Manrope-Regular',
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 12,
+    backgroundColor: '#2563eb',
+    borderRadius: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
   heroCard: {
     backgroundColor: '#2563eb',
@@ -266,11 +374,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Bold',
     letterSpacing: -0.3,
   },
-  sectionDate: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-Medium',
-  },
   examCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -286,7 +389,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   timeText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
     color: '#0f172a',
     fontFamily: 'PlusJakartaSans-Bold',
@@ -318,6 +421,23 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontFamily: 'Manrope-Regular',
     marginTop: 2,
+  },
+  alertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    padding: 14,
+    marginBottom: 10,
+    gap: 10,
+  },
+  alertText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#dc2626',
+    fontFamily: 'Manrope-Regular',
   },
   taskCard: {
     flexDirection: 'row',
@@ -386,32 +506,5 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontFamily: 'Manrope-Regular',
     lineHeight: 16,
-  },
-  activityRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 10,
-  },
-  activityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 5,
-    marginRight: 12,
-  },
-  activityInfo: {
-    flex: 1,
-  },
-  activityText: {
-    fontSize: 13,
-    color: '#334155',
-    fontFamily: 'Manrope-Regular',
-    lineHeight: 19,
-  },
-  activityTime: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 2,
   },
 });

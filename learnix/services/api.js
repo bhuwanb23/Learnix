@@ -266,6 +266,33 @@ export const libraryApi = {
 };
 
 // ── Accounts & Finance endpoints (docs/users/06 §4) ──
+// ── Exam Cell endpoints (docs/users/05 §4) ──
+export const examcellApi = {
+  dashboard: () => api.get('/examcell/dashboard'),
+  exams: () => api.get('/examcell/timetable'),
+  createExam: (payload) => api.post('/examcell/timetable', payload),
+  addSlot: (examId, payload) => api.post(`/examcell/timetable/${examId}/slots`, payload),
+  rescheduleSlot: (slotId, payload) => api.post(`/examcell/slots/${slotId}/reschedule`, payload),
+  roomAllocations: (slotId) => api.get(`/examcell/slots/${slotId}/allocations`),
+  allocateRoom: (slotId, payload) => api.post(`/examcell/slots/${slotId}/allocations`, payload),
+  hallTickets: (examId) => api.get(`/examcell/hall-tickets?examId=${examId}`),
+  generateHallTickets: (examId) => api.post('/examcell/hall-tickets/generate', { examId }),
+  evaluations: () => api.get('/examcell/evaluations'),
+  assignEvaluator: (evalId, evaluatorUserId) => api.post(`/examcell/evaluations/${evalId}/assign`, { evaluatorUserId }),
+  completeEvaluation: (evalId) => api.post(`/examcell/evaluations/${evalId}/complete`),
+  results: () => api.get('/examcell/results'),
+  enterResult: (payload) => api.post('/examcell/results', payload),
+  publishResults: (examSlotId) => api.post('/examcell/results/publish', { examSlotId }),
+  decideReevaluation: (id, decision) => api.post(`/examcell/re-evaluations/${id}/decide`, { decision }),
+  cheatingCases: () => api.get('/examcell/cheating-cases'),
+  decideCheatingCase: (id, decision) => api.post(`/examcell/cheating-cases/${id}/decide`, { decision }),
+  notifications: () => api.get('/examcell/notifications'),
+  markAllRead: () => api.post('/examcell/notifications/read-all'),
+  broadcast: (payload) => api.post('/examcell/broadcasts', payload),
+  profile: () => api.get('/examcell/profile'),
+};
+
+// ── Accounts & Finance endpoints (docs/users/06 §4) ──
 export const accountsApi = {
   dashboard: () => api.get('/accounts/dashboard'),
   collections: () => api.get('/accounts/collections'),
