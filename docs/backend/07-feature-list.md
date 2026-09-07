@@ -227,7 +227,8 @@
 | Student | 20 | Hostel | 10 |
 | Teacher | 16 | Transport | 9 |
 | Admin | 17 | Sports & Cultural | 7 |
-| Placement | 8 | HOD | 8 |
+| Accounts & Finance | 10 | Placement | 8 |
+| HOD | 8 | | |
 | Exam Cell | 9 | Alumni Relations | 8 |
 | Accounts | 10 | Library Staff | 7 |
 | Platform/shared | 10 | | |
