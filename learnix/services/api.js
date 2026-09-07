@@ -293,6 +293,33 @@ export const examcellApi = {
 };
 
 // ── Accounts & Finance endpoints (docs/users/06 §4) ──
+// ── Placement Cell endpoints (docs/users/04 §4) ──
+export const placementApi = {
+  dashboard: () => api.get('/placement/dashboard'),
+  companies: () => api.get('/placement/companies'),
+  addCompany: (payload) => api.post('/placement/companies', payload),
+  updateCompany: (id, payload) => api.put(`/placement/companies/${id}`, payload),
+  jobs: () => api.get('/placement/jobs'),
+  postJob: (payload) => api.post('/placement/jobs', payload),
+  closeJob: (id) => api.post(`/placement/jobs/${id}/close`),
+  drives: () => api.get('/placement/drives'),
+  createDrive: (payload) => api.post('/placement/drives', payload),
+  submitDrive: (id) => api.post(`/placement/drives/${id}/submit`),
+  applications: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+    return api.get(`/placement/applications${qs ? `?${qs}` : ''}`);
+  },
+  decideApplication: (id, decision) => api.post(`/placement/applications/${id}/decide`, { decision }),
+  extendOffer: (applicationId, ctcMinor) => api.post('/placement/offers/extend', { applicationId, ctcMinor }),
+  decideOffer: (id, decision) => api.post(`/placement/offers/${id}/decide`, { decision }),
+  students: () => api.get('/placement/students'),
+  notifications: () => api.get('/placement/notifications'),
+  markAllRead: () => api.post('/placement/notifications/read-all'),
+  broadcast: (payload) => api.post('/placement/broadcasts', payload),
+  profile: () => api.get('/placement/profile'),
+};
+
+// ── Accounts & Finance endpoints (docs/users/06 §4) ──
 export const accountsApi = {
   dashboard: () => api.get('/accounts/dashboard'),
   collections: () => api.get('/accounts/collections'),
