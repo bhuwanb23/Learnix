@@ -13,6 +13,7 @@ import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
 import teacherRoutes from './modules/teacher/teacher.routes.js';
+import studentRoutes from './modules/student/student.routes.js';
 
 export function createApp() {
   const app = express();
@@ -38,6 +39,7 @@ export function createApp() {
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);
   app.use('/api/v1/teacher', teacherRoutes);
+  app.use('/api/v1/student', studentRoutes);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
