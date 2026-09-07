@@ -264,3 +264,31 @@ export const libraryApi = {
   broadcast: (payload) => api.post('/library/broadcasts', payload),
   profile: () => api.get('/library/profile'),
 };
+
+// ── Accounts & Finance endpoints (docs/users/06 §4) ──
+export const accountsApi = {
+  dashboard: () => api.get('/accounts/dashboard'),
+  collections: () => api.get('/accounts/collections'),
+  recordPayment: (payload) => api.post('/accounts/collections', payload),
+  ledger: () => api.get('/accounts/ledger'),
+  feeStructure: () => api.get('/accounts/fee-structure'),
+  requestRevision: (id) => api.post(`/accounts/fee-structure/${id}/revision`),
+  dues: () => api.get('/accounts/dues'),
+  remindDue: (id) => api.post(`/accounts/dues/${id}/remind`),
+  waiveFee: (id, reason) => api.post(`/accounts/dues/${id}/waive`, { reason }),
+  payroll: () => api.get('/accounts/payroll'),
+  runPayroll: (month) => api.post('/accounts/payroll/run', { month }),
+  markPayrollPaid: (id) => api.post(`/accounts/payroll/${id}/mark-paid`),
+  expenses: () => api.get('/accounts/expenses'),
+  addExpense: (payload) => api.post('/accounts/expenses', payload),
+  approveExpense: (id) => api.post(`/accounts/expenses/${id}/approve`),
+  rejectExpense: (id) => api.post(`/accounts/expenses/${id}/reject`),
+  scholarships: () => api.get('/accounts/scholarships'),
+  approveScholarship: (id) => api.post(`/accounts/scholarships/${id}/approve`),
+  disburseScholarship: (id) => api.post(`/accounts/scholarships/${id}/disburse`),
+  reports: () => api.get('/accounts/reports'),
+  notifications: () => api.get('/accounts/notifications'),
+  markAllRead: () => api.post('/accounts/notifications/read-all'),
+  broadcast: (payload) => api.post('/accounts/broadcasts', payload),
+  profile: () => api.get('/accounts/profile'),
+};

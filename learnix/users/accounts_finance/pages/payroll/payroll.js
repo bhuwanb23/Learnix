@@ -1,239 +1,149 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-import { PAYROLL_STATS, STAFF } from './constants/payrollData';
-import PayrollDetail from './pages/payroll_detail/payroll_detail';
-
+import { accountsApi } from '../../../../services/api';
 import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
 
-const STATUS_COLORS = {
-  Processed: '#059669',
-  Processing: '#d97706',
-  Pending: '#64748b',
-};
-
 export default function PayrollModule({ navigation }) {
-  const [selectedStaff, setSelectedStaff] = useState(null);
+  const [runs, setRuns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
-  if (selectedStaff) {
-    return <PayrollDetail staff={selectedStaff} onBack={() => setSelectedStaff(null)} />;
-  }
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const result = await accountsApi.payroll();
+      setRuns(result || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  const handleRunPayroll = () => {
-    Alert.alert(
-      'Process Monthly Payroll',
-      'Process November payroll for all 142 staff? PF, ESI, and TDS will be computed and bank transfer initiated.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Process', onPress: () => Alert.alert('Payroll Initiated', 'Salaries are being processed. Staff notified on completion.') },
-      ]
-    );
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = () => { setRefreshing(true); fetchData(); };
+
+  const handleRunPayroll = async () => {
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    Alert.alert('Process Payroll', `Process payroll for ${month}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Process',
+        onPress: async () => {
+          setProcessing(true);
+          try {
+            await accountsApi.runPayroll(month);
+            fetchData();
+            Alert.alert('Payroll Initiated', `Payroll for ${month} created.`);
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          } finally {
+            setProcessing(false);
+          }
+        },
+      },
+    ]);
   };
 
+  const handleMarkPaid = async (run) => {
+    Alert.alert('Mark Paid', `Mark payroll ${run.month} as paid?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Mark Paid',
+        onPress: async () => {
+          try {
+            await accountsApi.markPayrollPaid(run.id);
+            fetchData();
+            Alert.alert('Done', `Payroll ${run.month} marked as paid.`);
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      },
+    ]);
+  };
+
+  if (loading) {
+    return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /><Text style={styles.loadingText}>Loading payroll…</Text></View>;
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Ionicons name="cloud-offline-outline" size={40} color="#dc2626" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={fetchData}><Text style={styles.retryText}>Retry</Text></TouchableOpacity>
+      </View>
+    );
+  }
+
+  const currentRun = runs.length > 0 ? runs[0] : null;
+  const totalStaff = currentRun?.entries?.length ?? 0;
+  const totalNet = currentRun?.entries?.reduce((s, e) => s + (e.netRupees || 0), 0) ?? 0;
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      {/* Stats */}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
       <View style={styles.statsRow}>
-        {PAYROLL_STATS.map((stat) => (
-          <View key={stat.id} style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: stat.color + '14' }]}>
-              <Ionicons name={stat.icon} size={18} color={stat.color} />
-            </View>
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
+        {[
+          { label: 'Staff', value: totalStaff, icon: 'people', color: '#2563eb' },
+          { label: 'Total Net', value: `₹${(totalNet / 1000).toFixed(0)}K`, icon: 'cash', color: '#059669' },
+          { label: 'Status', value: currentRun?.status ?? '—', icon: 'checkmark-circle', color: '#d97706' },
+        ].map((s, i) => (
+          <View key={i} style={styles.statCard}>
+            <View style={[styles.statIcon, { backgroundColor: s.color + '14' }]}><Ionicons name={s.icon} size={18} color={s.color} /></View>
+            <Text style={styles.statValue}>{s.value}</Text>
+            <Text style={styles.statLabel}>{s.label}</Text>
           </View>
         ))}
       </View>
 
-      {/* Run payroll */}
-      <TouchableOpacity style={styles.runBtn} onPress={handleRunPayroll} activeOpacity={0.85}>
-        <Ionicons name="flash" size={16} color="#FFFFFF" />
-        <Text style={styles.runBtnText}>Process November Payroll</Text>
+      <TouchableOpacity style={styles.runBtn} onPress={handleRunPayroll} activeOpacity={0.85} disabled={processing}>
+        {processing ? <ActivityIndicator size="small" color="#fff" /> : <><Ionicons name="flash" size={16} color="#FFFFFF" /><Text style={styles.runBtnText}>Process New Payroll</Text></>}
       </TouchableOpacity>
 
-      <Text style={styles.sectionLabel}>Staff Payroll</Text>
-      {STAFF.map((staff) => (
-        <TouchableOpacity
-          key={staff.id}
-          style={styles.staffCard}
-          activeOpacity={0.8}
-          onPress={() => setSelectedStaff(staff)}
-        >
-          <View style={[styles.avatar, { backgroundColor: staff.color + '14' }]}>
-            <Text style={[styles.initial, { color: staff.color }]}>{staff.name.replace('Dr. ', '').replace('Prof. ', '').replace('Mr. ', '').replace('Ms. ', '').charAt(0)}</Text>
+      {runs.map((run) => (
+        <View key={run.id} style={styles.runCard}>
+          <View style={styles.runHeader}>
+            <Text style={styles.runMonth}>{run.month}</Text>
+            <TouchableOpacity style={[styles.statusBadge, { backgroundColor: (run.status === 'PAID' ? '#059669' : '#d97706') + '1A' }]}
+              onPress={() => run.status !== 'PAID' && handleMarkPaid(run)}>
+              <Text style={[styles.statusText, { color: run.status === 'PAID' ? '#059669' : '#d97706' }]}>{run.status}</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.info}>
-            <Text style={styles.staffName}>{staff.name}</Text>
-            <Text style={styles.staffRole}>{staff.role}</Text>
-            <View style={styles.staffChips}>
-              <View style={[styles.typeChip, { backgroundColor: '#eff6ff' }]}>
-                <Text style={[styles.typeText, { color: '#2563eb' }]}>{staff.type}</Text>
-              </View>
-              <View style={[styles.statusChip, { backgroundColor: STATUS_COLORS[staff.status] + '1A' }]}>
-                <Text style={[styles.statusText, { color: STATUS_COLORS[staff.status] }]}>{staff.status}</Text>
-              </View>
-            </View>
-          </View>
-          <View style={styles.right}>
-            <Text style={styles.net}>{staff.net}</Text>
-            <Text style={styles.gross}>Gross {staff.gross}</Text>
-            <Ionicons name="chevron-forward" size={16} color="#cbd5e1" style={{ marginTop: 4 }} />
-          </View>
-        </TouchableOpacity>
+          <Text style={styles.runTotal}>₹{run.totalRupees.toLocaleString()} • {run.entries.length} staff</Text>
+        </View>
       ))}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#eef2f7',
-    padding: 14,
-  },
-  statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Medium',
-    marginTop: 2,
-  },
-  runBtn: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 13,
-    marginBottom: 20,
-  },
-  runBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    fontFamily: 'Manrope-Bold',
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 10,
-  },
-  staffCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#eef2f7',
-    padding: 14,
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  initial: {
-    fontSize: 16,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  info: {
-    flex: 1,
-  },
-  staffName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  staffRole: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  staffChips: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 6,
-  },
-  typeChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  typeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    fontFamily: 'Manrope-Bold',
-  },
-  statusChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '700',
-    fontFamily: 'Manrope-Bold',
-  },
-  right: {
-    alignItems: 'flex-end',
-  },
-  net: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#059669',
-    fontFamily: 'Manrope-Bold',
-  },
-  gross: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  content: { padding: 24, paddingBottom: 40 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9', padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
+  errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Medium', textAlign: 'center' },
+  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  statCard: { flex: 1, backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14 },
+  statIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  statValue: { fontSize: 16, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.5 },
+  statLabel: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
+  runBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 13, marginBottom: 20 },
+  runBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope-Bold' },
+  runCard: { backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
+  runHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  runMonth: { fontSize: 15, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusText: { fontSize: 11, fontWeight: '700', fontFamily: 'Manrope-Bold', textTransform: 'capitalize' },
+  runTotal: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 6 },
 });
