@@ -69,3 +69,31 @@ POST /api/library/broadcasts
 - Writes → **Accounts**: fine collections, procurement requests.
 - Reads ← **Admin**: student master, library stats (institution view).
 - Books/requests shared with Admin's Library module.
+
+## 6. Wiring Status — LIVE (backend + app wired end to end)
+
+Backend implemented in `backend/src/modules/library/` (routes + service + zod schemas) and mounted
+at `/api/v1/library` (role gate: `LIBRARY` or `ADMIN`).
+
+**Endpoints live:**
+- `GET /api/v1/library/dashboard` — L-01 hero stats, due returns, popular books, alerts
+- `GET /api/v1/library/catalog` — L-02 book list with search/category filter
+- `GET /api/v1/library/catalog/:id` — book detail with recent issues
+- `POST /api/v1/library/catalog` — add book (title, author, isbn, category, copies, rack)
+- `PUT /api/v1/library/catalog/:id` — update book
+- `POST /api/v1/library/circulation/issue` — issue book (rollNo, bookId, dueDays)
+- `POST /api/v1/library/circulation/return` — return book (creates fine if overdue)
+- `GET /api/v1/library/fines` — pending + collected fines with stats
+- `POST /api/v1/library/fines/:id/collect` — collect fine (write-through: Payment + Receipt + FinePayment)
+- `POST /api/v1/library/fines/:id/waive` — waive fine (audited)
+- `GET /api/v1/library/requests` — book purchase requests
+- `POST /api/v1/library/requests/:id/decide` — approve/reject (creates procurement on approve)
+- `GET /api/v1/library/digital` — digital resources with access grants
+- `POST /api/v1/library/digital` — add digital resource
+- `POST /api/v1/library/digital/:id/grant-access` — grant access to program/batch
+- `GET /api/v1/library/notifications` — inbox
+- `POST /api/v1/library/notifications/read-all` — mark all read
+- `POST /api/v1/library/broadcasts` — broadcast (ALL_STUDENTS / BORROWERS / OVERDUE_MEMBERS)
+- `GET /api/v1/library/profile` — librarian profile + library stats
+
+**App:** all 8 screens wired via `libraryApi` (`services/api.js`), demo identity `setDemoUser('library@learnix.dev')` in `library_staff.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Fines module has collect (CASH method) and waive actions; circulation has issue (rollNo + book picker) and return (auto-fine on overdue); requests has approve/reject; digital library shows resources from API; notifications has inbox + broadcast (3 audience types); profile shows live librarian data.

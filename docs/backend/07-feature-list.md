@@ -229,7 +229,8 @@
 | Admin | 17 | Sports & Cultural | 7 |
 | Placement | 8 | HOD | 8 |
 | Exam Cell | 9 | Alumni Relations | 8 |
-| Accounts | 10 | Platform/shared | 10 |
+| Accounts | 10 | Library Staff | 7 |
+| Platform/shared | 10 | | |
 
 **Total: 132 features.**
 
