@@ -28,7 +28,7 @@ import { COLORS } from '../../constants/theme';
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 
 // Demo identity for this app's API calls
-import { setDemoUser } from '../services/api';
+import { setDemoUser } from '../../services/api';
 
 setDemoUser('hod@learnix.dev');
 
