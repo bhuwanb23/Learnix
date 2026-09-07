@@ -37,12 +37,12 @@ router.get('/classes', wrap(async (req, res) => {
 
 // T-03 Class Dashboard
 router.get('/classes/:id/dashboard', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getClassDashboard(req.params.id, req.auth!.userId) });
+  res.json({ data: await service.getClassDashboard(String(req.params.id), req.auth!.userId) });
 }));
 
 // T-04 Lecture Notes
 router.get('/classes/:id/notes', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.listNotes(req.auth!.userId, req.params.id) });
+  res.json({ data: await service.listNotes(req.auth!.userId, String(req.params.id)) });
 }));
 
 router.post('/notes', validate(createNoteSchema), wrap(async (req, res) => {
@@ -50,12 +50,12 @@ router.post('/notes', validate(createNoteSchema), wrap(async (req, res) => {
 }));
 
 router.put('/notes/:id', validate(idParamSchema, 'params'), validate(updateNoteSchema), wrap(async (req, res) => {
-  res.json({ data: await service.updateNote(req.auth!.userId, req.params.id, req.body) });
+  res.json({ data: await service.updateNote(req.auth!.userId, String(req.params.id), req.body) });
 }));
 
 // T-05 Quizzes
 router.get('/classes/:id/quizzes', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.listQuizzes(req.auth!.userId, req.params.id) });
+  res.json({ data: await service.listQuizzes(req.auth!.userId, String(req.params.id)) });
 }));
 
 router.post('/quizzes', validate(createQuizSchema), wrap(async (req, res) => {
@@ -63,16 +63,16 @@ router.post('/quizzes', validate(createQuizSchema), wrap(async (req, res) => {
 }));
 
 router.post('/quizzes/:id/questions', validate(idParamSchema, 'params'), validate(addQuestionSchema), wrap(async (req, res) => {
-  res.status(201).json({ data: await service.addQuestion(req.auth!.userId, req.params.id, req.body) });
+  res.status(201).json({ data: await service.addQuestion(req.auth!.userId, String(req.params.id), req.body) });
 }));
 
 router.post('/quizzes/:id/publish', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.publishQuiz(req.auth!.userId, req.params.id) });
+  res.json({ data: await service.publishQuiz(req.auth!.userId, String(req.params.id)) });
 }));
 
 // T-06 Syllabus
 router.get('/classes/:id/syllabus', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getSyllabus(req.auth!.userId, req.params.id) });
+  res.json({ data: await service.getSyllabus(req.auth!.userId, String(req.params.id)) });
 }));
 
 router.post('/syllabus/submit', validate(submitSyllabusSchema), wrap(async (req, res) => {
@@ -81,12 +81,12 @@ router.post('/syllabus/submit', validate(submitSyllabusSchema), wrap(async (req,
 
 // T-07 Syllabus Tracker
 router.put('/syllabus/topics/:id', validate(idParamSchema, 'params'), validate(updateSyllabusTopicSchema), wrap(async (req, res) => {
-  res.json({ data: await service.updateSyllabusTopic(req.auth!.userId, req.params.id, req.body) });
+  res.json({ data: await service.updateSyllabusTopic(req.auth!.userId, String(req.params.id), req.body) });
 }));
 
 // T-08 Roster
 router.get('/classes/:id/roster', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getRoster(req.auth!.userId, req.params.id) });
+  res.json({ data: await service.getRoster(req.auth!.userId, String(req.params.id)) });
 }));
 
 // T-09 Schedule
@@ -108,7 +108,7 @@ router.post('/attendance/finalize', validate(finalizeAttendanceSchema), wrap(asy
 }));
 
 router.get('/classes/:id/attendance', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getAttendanceStats(req.auth!.userId, req.params.id) });
+  res.json({ data: await service.getAttendanceStats(req.auth!.userId, String(req.params.id)) });
 }));
 
 // T-11 Assignments
@@ -122,12 +122,12 @@ router.post('/assignments', validate(createAssignmentSchema), wrap(async (req, r
 }));
 
 router.get('/assignments/:id', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await service.getAssignmentDetail(req.auth!.userId, req.params.id) });
+  res.json({ data: await service.getAssignmentDetail(req.auth!.userId, String(req.params.id)!) });
 }));
 
 // T-12 Grading
 router.post('/submissions/:id/grade', validate(idParamSchema, 'params'), validate(gradeSubmissionSchema), wrap(async (req, res) => {
-  res.json({ data: await service.gradeSubmission(req.auth!.userId, req.params.id, req.body) });
+  res.json({ data: await service.gradeSubmission(req.auth!.userId, String(req.params.id), req.body) });
 }));
 
 // T-13 Exam Grade Entry
