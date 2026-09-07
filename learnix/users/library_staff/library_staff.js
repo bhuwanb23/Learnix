@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// Wire demo identity for this role app
+import { setDemoUser } from '../../services/api';
+setDemoUser('library@learnix.dev');
 
 // Import components
 import LibraryHeader from './components/LibraryHeader';
