@@ -235,3 +235,32 @@ export const hostelApi = {
   broadcast: (payload) => api.post('/hostel/broadcasts', payload),
   profile: () => api.get('/hostel/profile'),
 };
+
+// ── Library Staff endpoints (docs/users/07 §4) ──
+export const libraryApi = {
+  dashboard: () => api.get('/library/dashboard'),
+  catalog: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+    ).toString();
+    return api.get(`/library/catalog${qs ? `?${qs}` : ''}`);
+  },
+  bookDetail: (id) => api.get(`/library/catalog/${id}`),
+  addBook: (payload) => api.post('/library/catalog', payload),
+  updateBook: (id, payload) => api.put(`/library/catalog/${id}`, payload),
+  issueBook: (rollNo, bookId, dueDays) =>
+    api.post('/library/circulation/issue', { rollNo, bookId, dueDays }),
+  returnBook: (issueId) => api.post('/library/circulation/return', { issueId }),
+  fines: () => api.get('/library/fines'),
+  collectFine: (id, method) => api.post(`/library/fines/${id}/collect`, { method }),
+  waiveFine: (id, reason) => api.post(`/library/fines/${id}/waive`, { reason }),
+  requests: () => api.get('/library/requests'),
+  decideRequest: (id, decision) => api.post(`/library/requests/${id}/decide`, { decision }),
+  digitalResources: () => api.get('/library/digital'),
+  addDigitalResource: (payload) => api.post('/library/digital', payload),
+  grantAccess: (resourceId, payload) => api.post(`/library/digital/${resourceId}/grant-access`, payload),
+  notifications: () => api.get('/library/notifications'),
+  markAllRead: () => api.post('/library/notifications/read-all'),
+  broadcast: (payload) => api.post('/library/broadcasts', payload),
+  profile: () => api.get('/library/profile'),
+};
