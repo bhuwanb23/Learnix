@@ -121,3 +121,59 @@ GET  /api/admin/notifications
 - **Approves**: syllabus (from HOD/Teacher), announcements (from departments), placement drives (from Placement), event requests (from Sports/Alumni).
 - **Watches**: every staff app's operations (fees ↔ Accounts, placements ↔ Placement, library ↔ Library staff, exams ↔ Exam Cell, events ↔ Sports/Alumni).
 - **Writes → Student**: announcements, results (via publish), events.
+
+## 6. Wiring Status
+
+**Backend**: `backend/src/modules/admin/` — `admin.schemas.ts` + `admin.service.ts` + `admin.routes.ts`
+**Mounted at**: `/api/v1/admin` (with `ADMIN`, `PLATFORM_ADMIN` role gate)
+**Seed user**: `admin@learnix.dev` (Admin User, Admin role)
+**Demo setup**: `setDemoUser('admin@learnix.dev')` in `admin.js`
+
+### Endpoints (17 features)
+
+| Feature | Method | Endpoint |
+|---------|--------|----------|
+| A-01 Dashboard | GET | `/dashboard` |
+| A-02 Students | GET | `/students?departmentId=` |
+| A-03 Teachers | GET | `/teachers` |
+| A-03 Leave requests | GET | `/leave-requests` |
+| A-04 Academics | GET | `/academics` |
+| A-05 Timetable | GET | `/timetable` |
+| A-06 Attendance | GET | `/attendance` |
+| A-07 Assignments | GET | `/assignments` |
+| A-08 Departments | GET | `/departments` |
+| A-08 Courses | GET | `/courses` |
+| A-09 Fees | GET | `/fees` |
+| A-10 Placements | GET | `/placements` |
+| A-11 Events | GET | `/events` |
+| A-12 Library | GET | `/library` |
+| A-13 Hostel/Transport | GET | `/hostel-transport` |
+| A-14 Announcements | GET | `/announcements` |
+| A-14 Create announcement | POST | `/announcements` |
+| A-14 Decide announcement | POST | `/announcements/:id/decide` |
+| A-15 Reports | GET | `/reports` |
+| A-16 Settings | GET | `/settings` |
+| A-17 Notifications | GET | `/notifications` |
+| A-17 Mark all read | POST | `/notifications/read-all` |
+| A-17 Audit logs | GET | `/audit-logs` |
+| A-17 Broadcast | POST | `/broadcasts` |
+
+### App Wiring
+- `admin.js` — demo identity via `setDemoUser('admin@learnix.dev')`
+- All 12+ pages wired to live API with loading/error/refresh states:
+  - Dashboard (hero KPIs, module hub, recent activity, alerts)
+  - Students (list, department filter, search)
+  - Teachers (list, workload, leave requests)
+  - Courses (departments, programs, courses)
+  - Reports (KPIs, module stats, class reports)
+  - AcademicsExaminations (live stats, timetable generator, evaluation dashboard, cheating detection)
+  - Timetable (master grid, day tabs, conflict detection)
+  - Attendance (overall %, threshold alerts, low attendance students)
+  - Assignments (stats, list with submission counts)
+  - Placements (active drives, pending approvals)
+  - Events (list with status)
+  - Library (catalog stats, circulation stats)
+  - Fees (structures, collection stats, pending/overdue)
+  - Announcements (published/pending tabs, compose, approve/reject)
+  - Settings (academic years, system config, feature flags, roles & permissions)
+  - Notifications (inbox, mark all read, broadcast) |

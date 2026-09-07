@@ -62,23 +62,23 @@
 
 | ID | Feature | Tables | Seed |
 |----|---------|--------|------|
-| A-01 | Institution dashboard (KPIs across all modules) | aggregates | — |
-| A-02 | Students CRUD + approvals (rollNo, program, section) | A users/student_profiles | ✅ |
-| A-03 | Teachers/staff CRUD (employee, dept, workload) | A users/staff_profiles | ✅ |
-| A-04 | Academics & Examinations (AI timetable generator + conflicts, cheating detection view) | C exams/exam_slots/exam_conflicts/cheating_cases | ✅ 1 case |
-| A-05 | Timetable master grid + lock slots | B timetable_slots | — |
-| A-06 | Attendance institution view + threshold alerts | B attendance_*, L system_config | — |
-| A-07 | Assignments oversight (all offerings) | B assignments | ✅ |
-| A-08 | Courses & Departments master CRUD | B departments/programs/courses | ✅ |
-| A-09 | Fees: structures, revision approvals, dues oversight | E fee_structures/fee_dues | ✅ |
-| A-10 | Placements oversight: approve drives, view pipeline | D placement_drives/job_applications | ✅ |
-| A-11 | Events: create/approve/publish (the approval queue) | I events, event_registrations | ✅ |
-| A-12 | Library oversight (catalog, circulation stats) | F books/book_issues | ✅ |
-| A-13 | Hostel/Transport oversight reads | G/H tables | ✅ |
-| A-14 | Announcements: author, approve queue, publish | K announcements | ✅ PUBLISHED+PENDING |
-| A-15 | Reports & exports (CSV per module) | various | — |
-| A-16 | Settings: academic years, config knobs, RBAC roles/permissions, feature flags | A academic_years, L system_config/feature_flags, A3 permission tables | ✅ 6+3 |
-| A-17 | Notifications + audit log viewer | K notifications, L audit_logs | ✅ 1 entry |
+| A-01 | Institution dashboard (KPIs across all modules) | aggregates | ✅ wired |
+| A-02 | Students CRUD + approvals (rollNo, program, section) | A users/student_profiles | ✅ wired |
+| A-03 | Teachers/staff CRUD (employee, dept, workload) | A users/staff_profiles | ✅ wired |
+| A-04 | Academics & Examinations (AI timetable generator + conflicts, cheating detection view) | C exams/exam_slots/exam_conflicts/cheating_cases | ✅ wired |
+| A-05 | Timetable master grid + lock slots | B timetable_slots | ✅ wired |
+| A-06 | Attendance institution view + threshold alerts | B attendance_*, L system_config | ✅ wired |
+| A-07 | Assignments oversight (all offerings) | B assignments | ✅ wired |
+| A-08 | Courses & Departments master CRUD | B departments/programs/courses | ✅ wired |
+| A-09 | Fees: structures, revision approvals, dues oversight | E fee_structures/fee_dues | ✅ wired |
+| A-10 | Placements oversight: approve drives, view pipeline | D placement_drives/job_applications | ✅ wired |
+| A-11 | Events: create/approve/publish (the approval queue) | I events, event_registrations | ✅ wired |
+| A-12 | Library oversight (catalog, circulation stats) | F books/book_issues | ✅ wired |
+| A-13 | Hostel/Transport oversight reads | G/H tables | ✅ wired |
+| A-14 | Announcements: author, approve queue, publish | K announcements | ✅ wired |
+| A-15 | Reports & exports (CSV per module) | various | ✅ wired |
+| A-16 | Settings: academic years, config knobs, RBAC roles/permissions, feature flags | A academic_years, L system_config/feature_flags, A3 permission tables | ✅ wired |
+| A-17 | Notifications + audit log viewer | K notifications, L audit_logs | ✅ wired |
 
 ## Placement Cell (P) — docs/users/04 · tables: D
 
@@ -231,7 +231,7 @@
 | HOD | 8 | | |
 | Exam Cell | 9 | Alumni Relations | 8 |
 | Accounts | 10 | Library Staff | 7 |
-| Platform/shared | 10 | | |
+| **Admin** | **17 ✅ wired** | Platform/shared | 10 |
 
 **Total: 132 features.**
 
