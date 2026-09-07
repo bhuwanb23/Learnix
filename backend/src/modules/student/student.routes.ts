@@ -6,7 +6,7 @@ import { validate } from '../../middlewares/validate.js';
 import {
   submitAssignmentSchema, startQuizAttemptSchema, submitQuizAnswerSchema,
   submitQuizAttemptSchema, requestReevaluationSchema, applyJobSchema,
-  registerEventSchema, idParamSchema,
+  idParamSchema,
 } from './student.schemas.js';
 import * as service from './student.service.js';
 
