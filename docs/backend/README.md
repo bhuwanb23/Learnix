@@ -35,6 +35,7 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 | Transport | TRANSPORT | ✅ `modules/transport` | ✅ wired end-to-end | Done |
 | Hostel | HOSTEL | ✅ `modules/hostel` | ✅ wired end-to-end | Done |
 | **Library Staff** | **LIBRARY** | **✅ `modules/library`** | **✅ wired end-to-end** | **Done** |
+| **Accounts & Finance** | **ACCOUNTS** | **✅ `modules/accounts`** | **✅ wired end-to-end** | **Done** |
 | Student | STUDENT | ⬜ | ⬜ | Not started |
 | Teacher | TEACHER | ⬜ | ⬜ | Not started |
 | Admin | ADMIN | ⬜ | ⬜ | Not started |

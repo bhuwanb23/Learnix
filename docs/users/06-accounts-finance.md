@@ -80,3 +80,36 @@ POST /api/accounts/broadcasts
 - Reads ← **Admin**: student master, fee structure.
 - Receives → **Alumni**: donation records (Alumni Relations records → Accounts receipt).
 - Receives → **Hostel**: rent collections, mess fees.
+
+## 6. Wiring Status — LIVE (backend + app wired end to end)
+
+Backend implemented in `backend/src/modules/accounts/` (routes + service + zod schemas) and mounted
+at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
+
+**Endpoints live:**
+- `GET /api/v1/accounts/dashboard` — F-01 hero stats, collections, defaulters, budget, alerts
+- `GET /api/v1/accounts/collections` — F-02 payment list with student/receipt info
+- `POST /api/v1/accounts/collections` — F-02 record payment (any category, receipt auto-generated)
+- `GET /api/v1/accounts/ledger` — F-05 unified ledger (all payments by category)
+- `GET /api/v1/accounts/fee-structure` — F-03 fee structures per program
+- `POST /api/v1/accounts/fee-structure/:id/revision` — F-03 request revision
+- `GET /api/v1/accounts/dues` — F-04 fee dues with student info and overdue days
+- `POST /api/v1/accounts/dues/:id/remind` — F-04 send reminder notification
+- `POST /api/v1/accounts/dues/:id/waive` — F-04 waive fee (audited)
+- `GET /api/v1/accounts/payroll` — F-06 payroll runs with entries
+- `POST /api/v1/accounts/payroll/run` — F-06 create payroll run for month
+- `POST /api/v1/accounts/payroll/:id/mark-paid` — F-06 mark payroll as paid
+- `GET /api/v1/accounts/expenses` — F-07 expenses + budgets
+- `POST /api/v1/accounts/expenses` — F-07 add expense
+- `POST /api/v1/accounts/expenses/:id/approve` — F-07 approve (updates budget spentMinor)
+- `POST /api/v1/accounts/expenses/:id/reject` — F-07 reject
+- `GET /api/v1/accounts/scholarships` — F-08 scholarships with awards
+- `POST /api/v1/accounts/scholarships/:id/approve` — F-08 approve award
+- `POST /api/v1/accounts/scholarships/:id/disburse` — F-08 disburse (creates payment write-through)
+- `GET /api/v1/accounts/reports` — F-09 summary by category, dues by status, expenses by category
+- `GET /api/v1/accounts/notifications` — F-10 inbox
+- `POST /api/v1/accounts/notifications/read-all` — F-10 mark all read
+- `POST /api/v1/accounts/broadcasts` — F-10 broadcast (ALL_STUDENTS / DEFAULTERS / ALL_STAFF)
+- `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
+
+**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections has record payment (category + method picker); dues has remind + waive; payroll has run + mark paid; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
