@@ -1,437 +1,123 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { FEE_STATS, RECENT_COLLECTIONS, FEE_DUES, FEE_STRUCTURE } from './constants/feesData';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { api } from '../../../../services/api';
 
-import StatCard from '../../components/ui/StatCard';
-import SectionHeader from '../../components/ui/SectionHeader';
+export default function FeesScreen({ navigation }) {
+  const [data, setData] = useState({ structures: [], dues: [], collectionStats: {} });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
+  const fetchData = useCallback(async () => {
+    try {
+      const d = await api.adminApi.fees();
+      setData({ structures: d.structures || [], dues: d.dues || [], collectionStats: d.collectionStats || {} });
+    } catch (e) {
+      console.warn('Failed to load fees:', e);
+    }
+  }, []);
 
-const TABS = [
-  { id: 'collections', label: 'Collections' },
-  { id: 'dues', label: 'Dues' },
-  { id: 'structure', label: 'Structure' },
-];
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
-export default function FeesModule({ navigation }) {
-  const [tab, setTab] = useState('collections');
-
-  const handleReminder = (student) => {
-    Alert.alert(
-      'Send Reminder',
-      `Send fee reminder to ${student.student} (${student.due} due for ${student.daysOverdue} days)?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Send', onPress: () => Alert.alert('Sent', 'Reminder sent via SMS, email, and app notification.') },
-      ]
-    );
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
   };
 
-  const handleRecordPayment = () => {
-    Alert.alert('Record Payment', 'Manually record an offline payment (cash/cheque).');
-  };
+  if (loading) {
+    return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  }
 
-  const handleEditStructure = () => {
-    Alert.alert('Edit Structure', 'Update tuition or other fees for a program.');
-  };
+  const cs = data.collectionStats;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      {/* Stats */}
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+    >
+      {/* Hero stats */}
+      <View style={styles.heroCard}>
+        <Text style={styles.heroLabel}>Total Collected</Text>
+        <Text style={styles.heroValue}>₹{((cs.totalCollected || 0) / 100).toLocaleString('en-IN')}</Text>
+        <Text style={styles.heroSub}>Target: ₹{((cs.totalTarget || 0) / 100).toLocaleString('en-IN')}</Text>
+      </View>
+
       <View style={styles.statsRow}>
-        {FEE_STATS.map((stat) => (
-          <StatCard key={stat.id} icon={stat.icon} value={stat.value} label={stat.label} color={stat.color} />
-        ))}
-      </View>
-
-      {/* Progress */}
-      <View style={styles.progressCard}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>Collection Progress</Text>
-          <Text style={styles.progressPct}>82%</Text>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: '#dc2626' }]}>{cs.pendingCount || 0}</Text>
+          <Text style={styles.statLabel}>Pending Dues</Text>
         </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: '82%' }]} />
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: '#d97706' }]}>{cs.overdueCount || 0}</Text>
+          <Text style={styles.statLabel}>Overdue</Text>
         </View>
-        <Text style={styles.progressNote}>₹4.2 Cr collected of ₹5.1 Cr annual target</Text>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {TABS.map((t) => (
-          <TouchableOpacity
-            key={t.id}
-            style={[styles.tab, tab === t.id && styles.activeTab]}
-            onPress={() => setTab(t.id)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Fee structures */}
+      <Text style={styles.sectionTitle}>Fee Structures</Text>
+      {data.structures.map((f, i) => (
+        <View key={f.id || i} style={styles.card}>
+          <View style={[styles.iconWrap, { backgroundColor: '#eff6ff' }]}>
+            <Ionicons name="school" size={18} color="#2563eb" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{f.program?.name || f.programName || 'Program'}</Text>
+            <Text style={styles.cardDesc}>AY: {f.academicYear?.label || f.ayLabel || '—'}</Text>
+            <Text style={styles.cardMeta}>Amount: ₹{((f.amountMinor || f.amount || 0) / 100).toLocaleString('en-IN')}</Text>
+          </View>
+          <View style={[styles.badge, { backgroundColor: f.status === 'APPROVED' ? '#dcfce7' : '#fef3c7' }]}>
+            <Text style={[styles.badgeText, { color: f.status === 'APPROVED' ? '#059669' : '#d97706' }]}>
+              {f.status || 'DRAFT'}
+            </Text>
+          </View>
+        </View>
+      ))}
 
-      {tab === 'collections' ? (
-        <>
-          <SectionHeader title="Recent Collections" actionLabel="Record Payment" actionIcon="add" onAction={handleRecordPayment} />
-          {RECENT_COLLECTIONS.map((col) => (
-            <TouchableOpacity
-              key={col.id}
-              style={styles.collectionCard}
-              activeOpacity={0.8}
-              onPress={() => Alert.alert(col.student, `${col.program}\n${col.amount} via ${col.method} • ${col.date}`)}
-            >
-              <View style={[styles.colAvatar, { backgroundColor: col.color + '14' }]}>
-                <Text style={[styles.colInitial, { color: col.color }]}>{col.student.charAt(0)}</Text>
-              </View>
-              <View style={styles.colInfo}>
-                <Text style={styles.colName}>{col.student}</Text>
-                <Text style={styles.colMeta}>{col.program} • {col.method} • {col.date}</Text>
-              </View>
-              <View style={styles.colRight}>
-                <Text style={styles.colAmount}>{col.amount}</Text>
-                <View style={[styles.colStatus, { backgroundColor: col.status === 'Cleared' ? '#0596691A' : '#d977061A' }]}>
-                  <Text style={[styles.colStatusText, { color: col.status === 'Cleared' ? '#059669' : '#d97706' }]}>
-                    {col.status}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </>
-      ) : null}
+      {data.structures.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="receipt-outline" size={40} color="#cbd5e1" />
+          <Text style={styles.emptyText}>No fee structures defined</Text>
+        </View>
+      )}
 
-      {tab === 'dues' ? (
-        <>
-          <SectionHeader title="Fee Defaulters" actionLabel="Remind All" actionIcon="megaphone" onAction={() => Alert.alert('Reminders Sent', 'Dues reminders sent to all 86 defaulters.')} />
-          {FEE_DUES.map((due) => (
-            <View key={due.id} style={styles.dueCard}>
-              <View style={[styles.dueAvatar, { backgroundColor: due.color + '14' }]}>
-                <Text style={[styles.dueInitial, { color: due.color }]}>{due.student.charAt(0)}</Text>
-              </View>
-              <View style={styles.dueInfo}>
-                <Text style={styles.dueName}>{due.student}</Text>
-                <Text style={styles.dueMeta}>{due.rollNo} • {due.program} • {due.semester}</Text>
-                <Text style={[styles.dueDays, { color: due.daysOverdue >= 15 ? '#dc2626' : '#d97706' }]}>
-                  {due.daysOverdue} days overdue
-                </Text>
-              </View>
-              <View style={styles.dueRight}>
-                <Text style={styles.dueAmount}>{due.due}</Text>
-                <TouchableOpacity
-                  style={styles.remindBtn}
-                  onPress={() => handleReminder(due)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="megaphone-outline" size={14} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </>
-      ) : null}
-
-      {tab === 'structure' ? (
-        <>
-          <SectionHeader title="Fee Structure (Annual)" actionLabel="Edit" actionIcon="create" onAction={handleEditStructure} />
-          {FEE_STRUCTURE.map((fee) => (
-            <TouchableOpacity
-              key={fee.id}
-              style={styles.structureCard}
-              activeOpacity={0.8}
-              onPress={() => Alert.alert(fee.program, `Tuition: ${fee.tuition}\nOther fees: ${fee.other}\nTotal: ${fee.total}`)}
-            >
-              <View style={[styles.structureIcon, { backgroundColor: fee.color + '14' }]}>
-                <Ionicons name="school" size={18} color={fee.color} />
-              </View>
-              <View style={styles.structureInfo}>
-                <Text style={styles.structureProgram}>{fee.program}</Text>
-                <Text style={styles.structureMeta}>Tuition {fee.tuition} + Other {fee.other}</Text>
-              </View>
-              <Text style={styles.structureTotal}>{fee.total}</Text>
-            </TouchableOpacity>
-          ))}
-        </>
-      ) : null}
+      <View style={{ height: 32 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-  },
-  progressCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.sm,
-  },
-  progressTitle: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  progressPct: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#059669',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  progressTrack: {
-    height: 8,
-    backgroundColor: '#eef1f3',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#059669',
-    borderRadius: 4,
-  },
-  progressNote: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 4,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.15)',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
-  },
-  activeTab: {
-    backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-SemiBold',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
-  collectionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  colAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  colInitial: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  colInfo: {
-    flex: 1,
-  },
-  colName: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  colMeta: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  colRight: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  colAmount: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  colStatus: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  colStatusText: {
-    fontSize: 9,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
-  },
-  dueCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  dueAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  dueInitial: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  dueInfo: {
-    flex: 1,
-  },
-  dueName: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  dueMeta: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  dueDays: {
-    fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
-    fontFamily: 'Manrope-Medium',
-    marginTop: 1,
-  },
-  dueRight: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  dueAmount: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#dc2626',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  remindBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#2563eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  structureCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  structureIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  structureInfo: {
-    flex: 1,
-  },
-  structureProgram: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  structureMeta: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  structureTotal: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#2563eb',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' },
+  heroCard: { backgroundColor: '#059669', margin: 16, borderRadius: 20, padding: 20, alignItems: 'center' },
+  heroLabel: { fontSize: 12, color: '#a7f3d0', fontFamily: 'Manrope-Medium' },
+  heroValue: { fontSize: 32, color: '#fff', fontFamily: 'PlusJakartaSans-Bold', marginTop: 4 },
+  heroSub: { fontSize: 11, color: '#a7f3d0', fontFamily: 'Manrope-Regular', marginTop: 4 },
+  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 12 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 14, alignItems: 'center' },
+  statValue: { fontSize: 20, fontFamily: 'PlusJakartaSans-Bold' },
+  statLabel: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
+  sectionTitle: { fontSize: 14, fontFamily: 'Manrope-SemiBold', color: '#0f172a', paddingHorizontal: 16, marginTop: 16, marginBottom: 8 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 8, borderRadius: 14, padding: 14 },
+  iconWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  cardTitle: { fontSize: 13, fontFamily: 'Manrope-SemiBold', color: '#0f172a' },
+  cardDesc: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  cardMeta: { fontSize: 11, color: '#475569', fontFamily: 'Manrope-Medium', marginTop: 2 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { fontSize: 10, fontFamily: 'Manrope-SemiBold' },
+  emptyContainer: { alignItems: 'center', paddingTop: 40 },
+  emptyText: { fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope-Medium', marginTop: 10 },
 });

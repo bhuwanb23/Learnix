@@ -293,6 +293,34 @@ export const examcellApi = {
 };
 
 // ── Accounts & Finance endpoints (docs/users/06 §4) ──
+// ── Admin endpoints (docs/users/03 §4) ──
+export const adminApi = {
+  dashboard: () => api.get('/admin/dashboard'),
+  students: (departmentId) => api.get(`/admin/students${departmentId ? `?departmentId=${departmentId}` : ''}`),
+  teachers: () => api.get('/admin/teachers'),
+  leaveRequests: () => api.get('/admin/leave-requests'),
+  academics: () => api.get('/admin/academics'),
+  timetable: () => api.get('/admin/timetable'),
+  attendance: () => api.get('/admin/attendance'),
+  assignments: () => api.get('/admin/assignments'),
+  departments: () => api.get('/admin/departments'),
+  courses: () => api.get('/admin/courses'),
+  fees: () => api.get('/admin/fees'),
+  placements: () => api.get('/admin/placements'),
+  events: () => api.get('/admin/events'),
+  library: () => api.get('/admin/library'),
+  hostelTransport: () => api.get('/admin/hostel-transport'),
+  announcements: () => api.get('/admin/announcements'),
+  createAnnouncement: (payload) => api.post('/admin/announcements', payload),
+  decideAnnouncement: (id, decision) => api.post(`/admin/announcements/${id}/decide`, { decision }),
+  reports: () => api.get('/admin/reports'),
+  settings: () => api.get('/admin/settings'),
+  notifications: () => api.get('/admin/notifications'),
+  markAllRead: () => api.post('/admin/notifications/read-all'),
+  auditLogs: () => api.get('/admin/audit-logs'),
+  broadcast: (payload) => api.post('/admin/broadcasts', payload),
+};
+
 // ── Placement Cell endpoints (docs/users/04 §4) ──
 export const placementApi = {
   dashboard: () => api.get('/placement/dashboard'),

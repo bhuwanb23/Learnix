@@ -1,347 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { ASSIGNMENT_STATS, RECENT_SUBMISSIONS, PLAGIARISM_CASES } from './constants/assignmentsData';
+import { TYPOGRAPHY, SPACING } from '../../../../constants/theme';
+import { api } from '../../../../services/api';
 
-import StatCard from '../../components/ui/StatCard';
-import SectionHeader from '../../components/ui/SectionHeader';
-import FilterChips from '../../components/ui/FilterChips';
+export default function AssignmentsScreen({ navigation }) {
+  const [data, setData] = useState({ assignments: [], stats: {} });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
+  const fetchData = useCallback(async () => {
+    try {
+      const d = await api.adminApi.assignments();
+      setData({ assignments: d.assignments || [], stats: d.stats || {} });
+    } catch (e) {
+      console.warn('Failed to load assignments:', e);
+    }
+  }, []);
 
-const STATUS_FILTERS = [
-  { label: 'All', value: 'all' },
-  { label: 'Graded', value: 'Graded' },
-  { label: 'Pending', value: 'Pending' },
-  { label: 'Flagged', value: 'Flagged' },
-];
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
-export default function AssignmentsModule({ navigation }) {
-  const [tab, setTab] = useState('submissions');
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const filteredSubmissions = RECENT_SUBMISSIONS.filter(
-    (s) => statusFilter === 'all' || s.status === statusFilter
-  );
-
-  const handleGrade = (submission) => {
-    Alert.alert('Grade Submission', `Open ${submission.student}'s submission for grading (${submission.assignment}).`);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
   };
 
-  const handlePlagiarismAction = (caseItem, action) => {
-    Alert.alert(
-      action === 'dismiss' ? 'Dismiss Flag' : 'View Case',
-      action === 'dismiss'
-        ? `Dismiss plagiarism flag for ${caseItem.student} (${caseItem.similarity}% similarity)?`
-        : `Full similarity report for ${caseItem.student}: ${caseItem.similarity}% match with ${caseItem.source}.`,
-      action === 'dismiss'
-        ? [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Dismiss', onPress: () => Alert.alert('Dismissed', 'Flag cleared and submission marked for manual review.') },
-          ]
-        : [{ text: 'OK' }]
-    );
-  };
+  if (loading) {
+    return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      {/* Stats */}
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+    >
       <View style={styles.statsRow}>
-        {ASSIGNMENT_STATS.map((stat) => (
-          <StatCard key={stat.id} icon={stat.icon} value={stat.value} label={stat.label} color={stat.color} />
-        ))}
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{data.stats.totalAssignments || 0}</Text>
+          <Text style={styles.statLabel}>Total</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: '#2563eb' }]}>{data.stats.activeAssignments || 0}</Text>
+          <Text style={styles.statLabel}>Active</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statValue, { color: '#059669' }]}>{data.stats.submitted || 0}</Text>
+          <Text style={styles.statLabel}>Submitted</Text>
+        </View>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {['submissions', 'plagiarism'].map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.tab, tab === t && styles.activeTab]}
-            onPress={() => setTab(t)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.tabText, tab === t && styles.activeTabText]}>
-              {t === 'submissions' ? 'Submissions' : 'Plagiarism Cases'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <Text style={styles.sectionTitle}>All Assignments</Text>
+      {data.assignments.map((a, i) => (
+        <View key={a.id || i} style={styles.card}>
+          <View style={[styles.iconWrap, { backgroundColor: '#eff6ff' }]}>
+            <Ionicons name="document-text" size={18} color="#2563eb" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{a.title}</Text>
+            <Text style={styles.cardDesc}>{a.courseName || a.offering?.course?.name || ''} • Due: {a.dueDate ? new Date(a.dueDate).toLocaleDateString() : '—'}</Text>
+            <Text style={styles.cardMeta}>{a.submissionCount || 0} submissions</Text>
+          </View>
+        </View>
+      ))}
 
-      {tab === 'submissions' ? (
-        <>
-          <FilterChips options={STATUS_FILTERS} selected={statusFilter} onSelect={setStatusFilter} />
-          <SectionHeader
-            title={`Recent Submissions (${filteredSubmissions.length})`}
-            actionLabel="View All"
-            actionIcon="eye"
-            onAction={() => Alert.alert('All Submissions', 'Showing the complete submission log across all classes.')}
-          />
-          {filteredSubmissions.map((submission) => (
-            <TouchableOpacity
-              key={submission.id}
-              style={styles.submissionCard}
-              onPress={() => handleGrade(submission)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.avatar, { backgroundColor: submission.color + '14' }]}>
-                <Text style={[styles.avatarText, { color: submission.color }]}>{submission.student.charAt(0)}</Text>
-              </View>
-              <View style={styles.submissionInfo}>
-                <Text style={styles.studentName}>{submission.student}</Text>
-                <Text style={styles.assignmentName} numberOfLines={1}>{submission.assignment}</Text>
-                <Text style={styles.submissionMeta}>{submission.submittedAt} • {submission.rollNo}</Text>
-              </View>
-              <View style={styles.submissionRight}>
-                <View style={[styles.statusBadge, {
-                  backgroundColor: submission.status === 'Graded' ? '#0596691A' : submission.status === 'Pending' ? '#d977061A' : '#dc26261A',
-                }]}>
-                  <Text style={[styles.statusText, {
-                    color: submission.status === 'Graded' ? '#059669' : submission.status === 'Pending' ? '#d97706' : '#dc2626',
-                  }]}>
-                    {submission.status}
-                  </Text>
-                </View>
-                {submission.score !== null ? (
-                  <Text style={styles.scoreText}>{submission.score}/100</Text>
-                ) : null}
-              </View>
-            </TouchableOpacity>
-          ))}
-        </>
-      ) : null}
+      {data.assignments.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="document-text-outline" size={40} color="#cbd5e1" />
+          <Text style={styles.emptyText}>No assignments found</Text>
+        </View>
+      )}
 
-      {tab === 'plagiarism' ? (
-        <>
-          <SectionHeader title="Plagiarism Detection" actionLabel="Run Scan" actionIcon="scan" onAction={() => Alert.alert('Scan Started', 'Scanning all pending submissions for similarity...')} />
-          {PLAGIARISM_CASES.map((caseItem) => (
-            <View key={caseItem.id} style={styles.plagiarismCard}>
-              <View style={[styles.similarityCircle, { borderColor: caseItem.similarity >= 75 ? '#dc2626' : '#d97706' }]}>
-                <Text style={[styles.similarityText, { color: caseItem.similarity >= 75 ? '#dc2626' : '#d97706' }]}>
-                  {caseItem.similarity}%
-                </Text>
-              </View>
-              <View style={styles.plagiarismInfo}>
-                <Text style={styles.plagiarismName}>{caseItem.student}</Text>
-                <Text style={styles.plagiarismMeta} numberOfLines={1}>{caseItem.assignment}</Text>
-                <Text style={styles.plagiarismSource}>Source: {caseItem.source}</Text>
-              </View>
-              <View style={styles.plagiarismActions}>
-                <TouchableOpacity
-                  style={[styles.actionBtn, styles.viewBtn]}
-                  onPress={() => handlePlagiarismAction(caseItem, 'view')}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="eye-outline" size={14} color="#2563eb" />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionBtn, styles.dismissBtn]}
-                  onPress={() => handlePlagiarismAction(caseItem, 'dismiss')}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="checkmark" size={14} color="#059669" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-        </>
-      ) : null}
+      <View style={{ height: 32 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.15)',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
-  },
-  activeTab: {
-    backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-SemiBold',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
-  submissionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  avatarText: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  submissionInfo: {
-    flex: 1,
-    marginRight: SPACING.sm,
-  },
-  studentName: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  assignmentName: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  submissionMeta: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  submissionRight: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  statusText: {
-    fontSize: 9,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
-  },
-  scoreText: {
-    fontSize: 11,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  plagiarismCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  similarityCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  similarityText: {
-    fontSize: 12,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  plagiarismInfo: {
-    flex: 1,
-  },
-  plagiarismName: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  plagiarismMeta: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  plagiarismSource: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  plagiarismActions: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginLeft: SPACING.sm,
-  },
-  actionBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  viewBtn: {
-    backgroundColor: '#2563eb1A',
-  },
-  dismissBtn: {
-    backgroundColor: '#0596691A',
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' },
+  statsRow: { flexDirection: 'row', gap: 10, padding: 16 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 14, alignItems: 'center' },
+  statValue: { fontSize: 20, fontFamily: 'PlusJakartaSans-Bold', color: '#0f172a' },
+  statLabel: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
+  sectionTitle: { fontSize: 14, fontFamily: 'Manrope-SemiBold', color: '#0f172a', paddingHorizontal: 16, marginBottom: 8 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 8, borderRadius: 14, padding: 14 },
+  iconWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  cardTitle: { fontSize: 13, fontFamily: 'Manrope-SemiBold', color: '#0f172a' },
+  cardDesc: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  cardMeta: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  emptyContainer: { alignItems: 'center', paddingTop: 40 },
+  emptyText: { fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope-Medium', marginTop: 10 },
 });

@@ -1,411 +1,93 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-import { REPORT_STATS, CLASS_REPORTS, EXPORT_OPTIONS } from './constants/reportsData';
-
-import StatCard from '../../components/ui/StatCard';
-import SectionHeader from '../../components/ui/SectionHeader';
-
-import ClassReport from './pages/class_report/class_report';
-
-const TABS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'classes', label: 'Class Reports' },
-  { id: 'export', label: 'Export Center' },
-];
+import { adminApi } from '../../../../services/api';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
 
 export default function ReportsModule({ navigation }) {
-  const [tab, setTab] = useState('overview');
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (selectedClass) {
-    return <ClassReport classReport={selectedClass} onBack={() => setSelectedClass(null)} />;
-  }
+  const fetchData = useCallback(async () => {
+    try { setError(null); setData(await adminApi.reports()); }
+    catch (e) { setError(e.message); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
 
-  const handleExport = (option) => {
-    Alert.alert('Export', `${option.label} will be generated and downloaded as Excel/PDF.`);
-  };
+  useEffect(() => { fetchData(); }, [fetchData]);
+  const onRefresh = () => { setRefreshing(true); fetchData(); };
+
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /><Text style={styles.loadingText}>Loading reports…</Text></View>;
+  if (error) return <View style={styles.center}><Ionicons name="cloud-offline-outline" size={40} color="#94a3b8" /><Text style={styles.errorText}>{error}</Text><TouchableOpacity onPress={fetchData} style={styles.retryBtn}><Text style={styles.retryText}>Retry</Text></TouchableOpacity></View>;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {TABS.map((t) => (
-          <TouchableOpacity
-            key={t.id}
-            style={[styles.tab, tab === t.id && styles.activeTab]}
-            onPress={() => setTab(t.id)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}>
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}><Text style={styles.statValue}>{data?.totalStudents ?? 0}</Text><Text style={styles.statLabel}>Students</Text></View>
+        <View style={styles.statCard}><Text style={styles.statValue}>{data?.passRate ?? 0}%</Text><Text style={styles.statLabel}>Pass Rate</Text></View>
+        <View style={styles.statCard}><Text style={styles.statValue}>{data?.totalResults ?? 0}</Text><Text style={styles.statLabel}>Results</Text></View>
+      </View>
+
+      <View style={styles.block}>
+        <Text style={styles.sectionTitle}>Key Insights</Text>
+        <View style={styles.insightsGrid}>
+          {(data?.insights || []).map((insight, i) => (
+            <View key={i} style={styles.insightCard}>
+              <Text style={styles.insightValue}>{insight.value}</Text>
+              <Text style={styles.insightLabel}>{insight.label}</Text>
+              {insight.trend && <Text style={styles.insightTrend}>{insight.trend}</Text>}
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.block}>
+        <Text style={styles.sectionTitle}>Export Center</Text>
+        {[
+          { id: 'students', label: 'Student Master', desc: 'All student records', icon: 'people-outline', color: '#2563eb' },
+          { id: 'attendance', label: 'Attendance Report', desc: 'Monthly attendance data', icon: 'checkmark-done-outline', color: '#059669' },
+          { id: 'marks', label: 'Marks Report', desc: 'Exam results & grades', icon: 'trophy-outline', color: '#d97706' },
+          { id: 'fees', label: 'Fee Report', desc: 'Collections & dues', icon: 'cash-outline', color: '#0284c7' },
+        ].map((option) => (
+          <TouchableOpacity key={option.id} style={styles.exportCard} activeOpacity={0.85}>
+            <View style={[styles.exportIcon, { backgroundColor: option.color + '14' }]}><Ionicons name={option.icon} size={20} color={option.color} /></View>
+            <View style={styles.exportInfo}>
+              <Text style={styles.exportTitle}>{option.label}</Text>
+              <Text style={styles.exportDesc}>{option.desc}</Text>
+            </View>
+            <Ionicons name="download-outline" size={20} color="#2563eb" />
           </TouchableOpacity>
         ))}
       </View>
-
-      {tab === 'overview' ? (
-        <>
-          <View style={styles.statsRow}>
-            {REPORT_STATS.map((stat) => (
-              <StatCard
-                key={stat.id}
-                icon={stat.icon}
-                value={stat.value}
-                label={stat.label}
-                subtitle={stat.trend}
-                color={stat.color}
-              />
-            ))}
-          </View>
-
-          <View style={styles.block}>
-            <SectionHeader title="Institution Performance" subtitle="Pass rate by department • 2025-26" />
-            <View style={styles.chartCard}>
-              {[
-                { name: 'Computer Science', pct: 92, color: '#2563eb' },
-                { name: 'Electronics', pct: 88, color: '#059669' },
-                { name: 'Mechanical', pct: 84, color: '#d97706' },
-                { name: 'Management', pct: 91, color: '#dc2626' },
-                { name: 'Civil', pct: 86, color: '#0891b2' },
-              ].map((dept) => (
-                <View key={dept.name} style={styles.deptRow}>
-                  <Text style={styles.deptName}>{dept.name}</Text>
-                  <View style={styles.deptTrack}>
-                    <View style={[styles.deptFill, { width: `${dept.pct}%`, backgroundColor: dept.color }]} />
-                  </View>
-                  <Text style={styles.deptPct}>{dept.pct}%</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          <View style={styles.block}>
-            <SectionHeader title="Quick Insights" subtitle="Key metrics at a glance" />
-            <View style={styles.insightsGrid}>
-              <View style={styles.insightCard}>
-                <View style={[styles.insightIcon, { backgroundColor: '#05966914' }]}>
-                  <Ionicons name="trending-up" size={18} color="#059669" />
-                </View>
-                <Text style={styles.insightValue}>+2.1%</Text>
-                <Text style={styles.insightLabel}>Pass rate improved</Text>
-              </View>
-              <View style={styles.insightCard}>
-                <View style={[styles.insightIcon, { backgroundColor: '#dc262614' }]}>
-                  <Ionicons name="warning" size={18} color="#dc2626" />
-                </View>
-                <Text style={styles.insightValue}>14</Text>
-                <Text style={styles.insightLabel}>Students at risk</Text>
-              </View>
-              <View style={styles.insightCard}>
-                <View style={[styles.insightIcon, { backgroundColor: '#d9770614' }]}>
-                  <Ionicons name="flash" size={18} color="#d97706" />
-                </View>
-                <Text style={styles.insightValue}>3</Text>
-                <Text style={styles.insightLabel}>Underperforming classes</Text>
-              </View>
-              <View style={styles.insightCard}>
-                <View style={[styles.insightIcon, { backgroundColor: '#2563eb14' }]}>
-                  <Ionicons name="ribbon" size={18} color="#2563eb" />
-                </View>
-                <Text style={styles.insightValue}>38</Text>
-                <Text style={styles.insightLabel}>Toppers (9+ CGPA)</Text>
-              </View>
-            </View>
-          </View>
-        </>
-      ) : null}
-
-      {tab === 'classes' ? (
-        <View style={styles.block}>
-          <SectionHeader title="Class Reports" subtitle="Academic reports for every class" actionLabel="Generate All" actionIcon="download" onAction={() => Alert.alert('Export', 'All class reports will be exported as PDF bundle.')} />
-          {CLASS_REPORTS.map((cls) => (
-            <TouchableOpacity
-              key={cls.id}
-              style={styles.classCard}
-              onPress={() => setSelectedClass(cls)}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.classIcon, { backgroundColor: cls.color + '14' }]}>
-                <Ionicons name="people" size={20} color={cls.color} />
-              </View>
-              <View style={styles.classInfo}>
-                <Text style={styles.className}>{cls.name}</Text>
-                <Text style={styles.classMeta}>{cls.students} students • {cls.teacher}</Text>
-                <View style={styles.classChips}>
-                  <View style={styles.chip}>
-                    <Text style={styles.chipText}>Att {cls.attendance}%</Text>
-                  </View>
-                  <View style={[styles.chip, { backgroundColor: '#05966914' }]}>
-                    <Text style={[styles.chipText, { color: '#059669' }]}>Pass {cls.passRate}%</Text>
-                  </View>
-                  <View style={[styles.chip, { backgroundColor: '#2563eb14' }]}>
-                    <Text style={[styles.chipText, { color: '#2563eb' }]}>CGPA {cls.avgCgpa}</Text>
-                  </View>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
-            </TouchableOpacity>
-          ))}
-        </View>
-      ) : null}
-
-      {tab === 'export' ? (
-        <View style={styles.block}>
-          <SectionHeader title="Export Center" subtitle="Generate institution reports in Excel or PDF" />
-          {EXPORT_OPTIONS.map((option) => (
-            <TouchableOpacity
-              key={option.id}
-              style={styles.exportCard}
-              onPress={() => handleExport(option)}
-              activeOpacity={0.85}
-            >
-              <View style={[styles.exportIcon, { backgroundColor: option.color + '14' }]}>
-                <Ionicons name={option.icon} size={20} color={option.color} />
-              </View>
-              <View style={styles.exportInfo}>
-                <Text style={styles.exportTitle}>{option.label}</Text>
-                <Text style={styles.exportDesc} numberOfLines={1}>{option.desc}</Text>
-              </View>
-              <Ionicons name="download-outline" size={20} color="#0050d4" />
-            </TouchableOpacity>
-          ))}
-        </View>
-      ) : null}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.15)',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  activeTab: {
-    backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-SemiBold',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  block: {
-    marginTop: 24,
-  },
-  chartCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.04,
-    shadowRadius: 20,
-    elevation: 2,
-  },
-  deptRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  deptName: {
-    width: 120,
-    fontSize: 11,
-    color: '#475569',
-    fontFamily: 'Manrope-Medium',
-    fontWeight: '500',
-  },
-  deptTrack: {
-    flex: 1,
-    height: 8,
-    backgroundColor: '#eef1f3',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginHorizontal: 10,
-  },
-  deptFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  deptPct: {
-    width: 40,
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#1e293b',
-    fontFamily: 'Manrope-Bold',
-    textAlign: 'right',
-  },
-  insightsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  insightCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  insightIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  insightValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1e293b',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  insightLabel: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  classCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  classIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  classInfo: {
-    flex: 1,
-  },
-  className: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1e293b',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  classMeta: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  classChips: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 5,
-  },
-  chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 9999,
-    backgroundColor: '#eef1f3',
-  },
-  chipText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#475569',
-    fontFamily: 'Manrope-Bold',
-  },
-  exportCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  exportIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  exportInfo: {
-    flex: 1,
-  },
-  exportTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1e293b',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  exportDesc: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' }, content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Regular' },
+  errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Regular', textAlign: 'center' },
+  retryBtn: { marginTop: 12, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
+  retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
+  statCard: { flex: 1, backgroundColor: '#ffffff', borderRadius: 16, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(171,173,175,0.12)', elevation: 2 },
+  statValue: { fontSize: 24, fontWeight: '800', color: '#1e293b', fontFamily: 'PlusJakartaSans-Bold' },
+  statLabel: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
+  block: { marginTop: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', fontFamily: 'PlusJakartaSans-Bold', marginBottom: 14 },
+  insightsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  insightCard: { width: '48%', backgroundColor: '#ffffff', borderRadius: 16, padding: 20, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(171,173,175,0.12)', elevation: 1 },
+  insightValue: { fontSize: 20, fontWeight: '800', color: '#1e293b', fontFamily: 'PlusJakartaSans-Bold' },
+  insightLabel: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
+  insightTrend: { fontSize: 10, color: '#059669', fontFamily: 'Manrope-Bold', marginTop: 4 },
+  exportCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(171,173,175,0.12)', elevation: 1 },
+  exportIcon: { width: 42, height: 42, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  exportInfo: { flex: 1 }, exportTitle: { fontSize: 15, fontWeight: '700', color: '#1e293b', fontFamily: 'PlusJakartaSans-Bold' },
+  exportDesc: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
 });

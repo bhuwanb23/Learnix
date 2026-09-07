@@ -1,462 +1,140 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { WEEK_DAYS, TIMETABLE, TEACHER_ALLOCATION, CONFLICTS } from './constants/timetableData';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { api } from '../../../../services/api';
 
-import StatCard from '../../components/ui/StatCard';
-import SectionHeader from '../../components/ui/SectionHeader';
-import ActionButton from '../../components/ui/ActionButton';
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // 8am to 7pm
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
+export default function TimetableScreen({ navigation }) {
+  const [data, setData] = useState({ slots: [], conflicts: [] });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedDay, setSelectedDay] = useState('Mon');
 
-const TABS = [
-  { id: 'weekly', label: 'Weekly View' },
-  { id: 'allocation', label: 'Allocation' },
-  { id: 'conflicts', label: 'Conflicts' },
-];
+  const fetchData = useCallback(async () => {
+    try {
+      const d = await api.adminApi.timetable();
+      setData({ slots: d.slots || [], conflicts: d.conflicts || [] });
+    } catch (e) {
+      console.warn('Failed to load timetable:', e);
+    }
+  }, []);
 
-export default function TimetableModule({ navigation }) {
-  const [tab, setTab] = useState('weekly');
-  const [selectedDay, setSelectedDay] = useState('mon');
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
-  const handleAddPeriod = () => {
-    Alert.alert('Add Period', 'Schedule a new class period for this slot.');
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
   };
 
-  const handleAutoGenerate = () => {
-    Alert.alert(
-      'Auto Generate',
-      'Generate an optimized timetable for the selected semester?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Generate', onPress: () => Alert.alert('Done', 'Timetable generated with 0 conflicts.') },
-      ]
+  const daySlots = data.slots.filter(s => s.day === selectedDay);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2563eb" />
+      </View>
     );
-  };
-
-  const handleResolveConflict = (conflict) => {
-    Alert.alert(
-      'Resolve Conflict',
-      conflict.description,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Auto-Fix', onPress: () => Alert.alert('Fixed', 'Conflict resolved — slot reassigned automatically.') },
-      ]
-    );
-  };
+  }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        <StatCard icon="calendar" value="96" label="Periods / Week" color="#2563eb" />
-        <StatCard icon="people" value="89" label="Teachers" color="#059669" />
-        <StatCard icon="business" value="28" label="Rooms Used" color="#d97706" />
-        <StatCard icon="warning" value={CONFLICTS.length} label="Conflicts" color="#dc2626" />
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {TABS.map((t) => (
+    <View style={styles.container}>
+      {/* Day tabs */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayTabs}>
+        {DAYS.map(d => (
           <TouchableOpacity
-            key={t.id}
-            style={[styles.tab, tab === t.id && styles.activeTab]}
-            onPress={() => setTab(t.id)}
-            activeOpacity={0.8}
+            key={d}
+            style={[styles.dayTab, selectedDay === d && styles.dayTabActive]}
+            onPress={() => setSelectedDay(d)}
           >
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
+            <Text style={[styles.dayTabText, selectedDay === d && styles.dayTabTextActive]}>{d}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
-      {tab === 'weekly' ? (
-        <>
-          <SectionHeader title="Weekly Timetable" actionLabel="Auto Generate" actionIcon="sparkles" onAction={handleAutoGenerate} />
+      {data.conflicts.length > 0 && (
+        <View style={styles.conflictBanner}>
+          <Ionicons name="warning" size={14} color="#dc2626" />
+          <Text style={styles.conflictText}>{data.conflicts.length} scheduling conflict(s) detected</Text>
+        </View>
+      )}
 
-          {/* Day selector */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayScroll} contentContainerStyle={styles.dayContent}>
-            {WEEK_DAYS.map((day) => (
-              <TouchableOpacity
-                key={day.id}
-                style={[styles.dayChip, selectedDay === day.id && styles.dayChipActive]}
-                onPress={() => setSelectedDay(day.id)}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.dayText, selectedDay === day.id && styles.dayTextActive]}>
-                  {day.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          <Text style={styles.dayFull}>{WEEK_DAYS.find((d) => d.id === selectedDay).full}</Text>
-
-          {(TIMETABLE[selectedDay] || []).map((period) => (
-            <TouchableOpacity
-              key={period.id}
-              style={styles.periodCard}
-              activeOpacity={0.8}
-              onPress={() => Alert.alert(period.subject, `${period.class}\n${period.teacher}\nRoom ${period.room} • ${period.time}`)}
-            >
-              <View style={styles.timeBox}>
-                <Text style={styles.timeText}>{period.time.split(' - ')[0]}</Text>
-                <Text style={styles.timeSub}>{period.time.split(' - ')[1]}</Text>
+      <ScrollView
+        style={styles.grid}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+      >
+        {HOURS.map(hour => {
+          const slot = daySlots.find(s => {
+            const startH = new Date(`2000-01-01T${s.startTime}`).getHours();
+            return startH === hour;
+          });
+          return (
+            <View key={hour} style={styles.timeRow}>
+              <View style={styles.timeLabel}>
+                <Text style={styles.timeLabelText}>{`${hour}:00`}</Text>
               </View>
-              <View style={styles.periodInfo}>
-                <Text style={styles.periodSubject}>{period.subject}</Text>
-                <Text style={styles.periodClass}>{period.class}</Text>
-                <Text style={styles.periodTeacher}>{period.teacher}</Text>
-              </View>
-              <View style={styles.roomBox}>
-                <Ionicons name="business" size={14} color="#2563eb" />
-                <Text style={styles.roomText}>{period.room}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-
-          <ActionButton label="Add Period" icon="add" variant="secondary" onPress={handleAddPeriod} />
-        </>
-      ) : null}
-
-      {tab === 'allocation' ? (
-        <>
-          <SectionHeader title="Teacher Allocation" actionLabel="Balance Load" actionIcon="git-compare" onAction={() => Alert.alert('Balanced', 'Workload redistributed across faculty.')} />
-          {TEACHER_ALLOCATION.map((alloc) => (
-            <View key={alloc.id} style={styles.allocCard}>
-              <View style={styles.allocHeader}>
-                <View style={[styles.allocAvatar, { backgroundColor: alloc.color + '14' }]}>
-                  <Text style={[styles.allocInitial, { color: alloc.color }]}>{alloc.teacher.charAt(0)}</Text>
-                </View>
-                <View style={styles.allocInfo}>
-                  <Text style={styles.allocName}>{alloc.teacher}</Text>
-                  <Text style={styles.allocMeta}>{alloc.department} • {alloc.classes} classes</Text>
-                </View>
-                <Text style={[styles.allocHours, { color: alloc.utilization >= 90 ? '#dc2626' : alloc.utilization >= 75 ? '#d97706' : '#059669' }]}>
-                  {alloc.hours}/{alloc.maxHours}h
-                </Text>
-              </View>
-              <View style={styles.allocTrack}>
-                <View style={[styles.allocFill, { width: `${alloc.utilization}%`, backgroundColor: alloc.utilization >= 90 ? '#dc2626' : alloc.utilization >= 75 ? '#d97706' : '#059669' }]} />
-              </View>
-              <Text style={styles.allocNote}>{alloc.utilization}% utilization</Text>
-            </View>
-          ))}
-        </>
-      ) : null}
-
-      {tab === 'conflicts' ? (
-        <>
-          <SectionHeader title="Conflict Detection" actionLabel="Resolve All" actionIcon="checkmark-done" onAction={() => Alert.alert('Resolved', 'All conflicts auto-resolved.')} />
-          {CONFLICTS.map((conflict) => (
-            <View key={conflict.id} style={styles.conflictCard}>
-              <View style={[styles.conflictIcon, { backgroundColor: conflict.color + '14' }]}>
-                <Ionicons name="warning" size={18} color={conflict.color} />
-              </View>
-              <View style={styles.conflictInfo}>
-                <View style={styles.conflictHeaderRow}>
-                  <Text style={styles.conflictType}>{conflict.type}</Text>
-                  <View style={[styles.severityBadge, { backgroundColor: conflict.color + '14' }]}>
-                    <Text style={[styles.severityText, { color: conflict.color }]}>{conflict.severity}</Text>
+              <View style={styles.timeSlot}>
+                {slot ? (
+                  <View style={[styles.slotCard, { backgroundColor: slot.color || '#dbeafe' }]}>
+                    <Text style={styles.slotCourse}>{slot.courseName || slot.offering?.course?.name || 'Course'}</Text>
+                    <Text style={styles.slotTeacher}>{slot.teacherName || slot.offering?.teacher?.name || ''}</Text>
+                    <Text style={styles.slotRoom}>{slot.room || slot.roomNumber || ''}</Text>
                   </View>
-                </View>
-                <Text style={styles.conflictDesc}>{conflict.description}</Text>
+                ) : (
+                  <View style={styles.emptySlot} />
+                )}
               </View>
-              <TouchableOpacity
-                style={styles.fixBtn}
-                onPress={() => handleResolveConflict(conflict)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="build-outline" size={16} color="#ffffff" />
-              </TouchableOpacity>
             </View>
-          ))}
-        </>
-      ) : null}
-    </ScrollView>
+          );
+        })}
+
+        {daySlots.length === 0 && (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={40} color="#cbd5e1" />
+            <Text style={styles.emptyText}>No classes scheduled for {selectedDay}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.15)',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
-  },
-  activeTab: {
-    backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-SemiBold',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
-  dayScroll: {
-    flexGrow: 0,
-    marginBottom: SPACING.sm,
-  },
-  dayContent: {
-    paddingRight: SPACING.md,
-  },
-  dayChip: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: '#eef1f3',
-    marginRight: SPACING.sm,
-  },
-  dayChipActive: {
-    backgroundColor: '#2563eb',
-  },
-  dayText: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: '#475569',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  dayTextActive: {
-    color: '#ffffff',
-  },
-  dayFull: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#2563eb',
-    fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: SPACING.sm,
-  },
-  periodCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  timeBox: {
-    width: 64,
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  timeText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#2563eb',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  timeSub: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-  },
-  periodInfo: {
-    flex: 1,
-  },
-  periodSubject: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  periodClass: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  periodTeacher: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  roomBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#2563eb1A',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  roomText: {
-    fontSize: 11,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#2563eb',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  allocCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  allocHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  allocAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  allocInitial: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  allocInfo: {
-    flex: 1,
-  },
-  allocName: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  allocMeta: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-  },
-  allocHours: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  allocTrack: {
-    height: 8,
-    backgroundColor: '#eef1f3',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  allocFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  allocNote: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 4,
-  },
-  conflictCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  conflictIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  conflictInfo: {
-    flex: 1,
-  },
-  conflictHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  conflictType: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  severityBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
-    borderRadius: BORDER_RADIUS.full,
-  },
-  severityText: {
-    fontSize: 9,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    fontFamily: 'Manrope-SemiBold',
-  },
-  conflictDesc: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 2,
-  },
-  fixBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#2563eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: SPACING.sm,
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' },
+  dayTabs: { flexDirection: 'row', padding: 12, gap: 8 },
+  dayTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0' },
+  dayTabActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  dayTabText: { fontSize: 13, color: '#64748b', fontFamily: 'Manrope-SemiBold' },
+  dayTabTextActive: { color: '#fff' },
+  conflictBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fef2f2', marginHorizontal: 12, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginBottom: 8 },
+  conflictText: { fontSize: 12, color: '#dc2626', fontFamily: 'Manrope-SemiBold' },
+  grid: { flex: 1, paddingHorizontal: 12 },
+  timeRow: { flexDirection: 'row', marginBottom: 6 },
+  timeLabel: { width: 50, justifyContent: 'flex-start', paddingTop: 4 },
+  timeLabelText: { fontSize: 11, color: '#94a3b8', fontFamily: 'Manrope-Medium' },
+  timeSlot: { flex: 1 },
+  slotCard: { borderRadius: 12, padding: 10, marginLeft: 8 },
+  slotCourse: { fontSize: 12, fontFamily: 'Manrope-SemiBold', color: '#0f172a' },
+  slotTeacher: { fontSize: 10, color: '#475569', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  slotRoom: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
+  emptySlot: { height: 36, marginLeft: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  emptyContainer: { alignItems: 'center', paddingTop: 60 },
+  emptyText: { fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope-Medium', marginTop: 10 },
 });

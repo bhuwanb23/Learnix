@@ -1,414 +1,135 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { ATTENDANCE_STATS, CLASS_ATTENDANCE, RECENT_ABSENT } from './constants/attendanceData';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { api } from '../../../../services/api';
 
-import StatCard from '../../components/ui/StatCard';
-import SectionHeader from '../../components/ui/SectionHeader';
-import ActionButton from '../../components/ui/ActionButton';
+export default function AttendanceScreen({ navigation }) {
+  const [data, setData] = useState({ overview: {}, lowAttendance: [], thresholdAlerts: [] });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
+  const fetchData = useCallback(async () => {
+    try {
+      const d = await api.adminApi.attendance();
+      setData({ overview: d.overview || {}, lowAttendance: d.lowAttendance || [], thresholdAlerts: d.thresholdAlerts || [] });
+    } catch (e) {
+      console.warn('Failed to load attendance:', e);
+    }
+  }, []);
 
-const TABS = [
-  { id: 'today', label: 'Today' },
-  { id: 'classes', label: 'Classes' },
-  { id: 'absent', label: 'Absentees' },
-];
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
-export default function AttendanceModule({ navigation }) {
-  const [tab, setTab] = useState('today');
-
-  const handleMarkAttendance = () => {
-    Alert.alert('Mark Attendance', 'Bulk-mark attendance for all classes of today.');
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
   };
 
-  const handleSendNotice = (student) => {
-    Alert.alert(
-      'Send Attendance Notice',
-      `Send a warning notice to ${student.name} (${student.daysAbsent} days absent)?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Send', onPress: () => Alert.alert('Sent', 'Notice sent to student and guardian via SMS & email.') },
-      ]
-    );
-  };
+  if (loading) {
+    return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  }
 
-  const handleExport = () => {
-    Alert.alert('Export', 'Monthly attendance report downloaded as Excel.');
-  };
+  const ov = data.overview;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      {/* Stats */}
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+    >
+      {/* Hero stat */}
+      <View style={styles.heroCard}>
+        <Text style={styles.heroLabel}>Overall Attendance</Text>
+        <Text style={styles.heroValue}>{ov.overallPercentage ?? '—'}%</Text>
+        <Text style={styles.heroSub}>{ov.totalSessions ?? 0} sessions across all classes</Text>
+      </View>
+
+      {/* Stats row */}
       <View style={styles.statsRow}>
-        {ATTENDANCE_STATS.map((stat) => (
-          <StatCard key={stat.id} icon={stat.icon} value={stat.value} label={stat.label} subtitle={stat.trend} color={stat.color} />
-        ))}
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{ov.presentToday ?? '—'}</Text>
+          <Text style={styles.statLabel}>Present Today</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{ov.absentToday ?? '—'}</Text>
+          <Text style={styles.statLabel}>Absent Today</Text>
+        </View>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {TABS.map((t) => (
-          <TouchableOpacity
-            key={t.id}
-            style={[styles.tab, tab === t.id && styles.activeTab]}
-            onPress={() => setTab(t.id)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {tab === 'today' ? (
+      {/* Threshold alerts */}
+      {data.thresholdAlerts.length > 0 && (
         <>
-          <SectionHeader title="Today's Summary" actionLabel="Mark Attendance" actionIcon="checkmark-done" onAction={handleMarkAttendance} />
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryIcon}>
-                <Ionicons name="checkmark-done" size={18} color="#059669" />
+          <Text style={styles.sectionTitle}>Threshold Alerts</Text>
+          {data.thresholdAlerts.map((alert, i) => (
+            <View key={i} style={styles.alertCard}>
+              <Ionicons name="warning" size={16} color="#dc2626" />
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={styles.alertName}>{alert.studentName || alert.name}</Text>
+                <Text style={styles.alertDetail}>{alert.courseName || alert.detail} — {alert.percentage ?? alert.attendance}%</Text>
               </View>
-              <Text style={styles.summaryLabel}>Present</Text>
-              <Text style={[styles.summaryValue, { color: '#059669' }]}>1,162</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryIcon}>
-                <Ionicons name="time" size={18} color="#d97706" />
-              </View>
-              <Text style={styles.summaryLabel}>Late</Text>
-              <Text style={[styles.summaryValue, { color: '#d97706' }]}>18</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryIcon}>
-                <Ionicons name="person-remove" size={18} color="#dc2626" />
-              </View>
-              <Text style={styles.summaryLabel}>Absent</Text>
-              <Text style={[styles.summaryValue, { color: '#dc2626' }]}>72</Text>
-            </View>
-          </View>
-
-          <SectionHeader title="Weekly Trend" />
-          <View style={styles.trendCard}>
-            {[
-              { day: 'Mon', pct: 96 },
-              { day: 'Tue', pct: 94 },
-              { day: 'Wed', pct: 97 },
-              { day: 'Thu', pct: 93 },
-              { day: 'Fri', pct: 95 },
-              { day: 'Sat', pct: 90 },
-            ].map((d) => (
-              <View key={d.day} style={styles.barColumn}>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { height: `${d.pct}%`, backgroundColor: d.pct >= 90 ? '#059669' : '#d97706' }]} />
-                </View>
-                <Text style={styles.barLabel}>{d.day}</Text>
-              </View>
-            ))}
-          </View>
-          <ActionButton label="Export Monthly Report" icon="download-outline" variant="secondary" onPress={handleExport} />
-        </>
-      ) : null}
-
-      {tab === 'classes' ? (
-        <>
-          <SectionHeader title="Class-wise Attendance" />
-          {CLASS_ATTENDANCE.map((cls) => (
-            <TouchableOpacity
-              key={cls.id}
-              style={styles.classCard}
-              activeOpacity={0.8}
-              onPress={() => Alert.alert(cls.name, `${cls.present}/${cls.students} present today`)}
-            >
-              <View style={[styles.classIcon, { backgroundColor: cls.color + '14' }]}>
-                <Ionicons name="people" size={18} color={cls.color} />
-              </View>
-              <View style={styles.classInfo}>
-                <Text style={styles.className}>{cls.name}</Text>
-                <Text style={styles.classMeta}>{cls.present}/{cls.students} present</Text>
-                <View style={styles.classTrack}>
-                  <View style={[styles.classFill, { width: `${cls.pct}%`, backgroundColor: cls.color }]} />
-                </View>
-              </View>
-              <Text style={[styles.classPct, { color: cls.pct >= 90 ? '#059669' : '#d97706' }]}>{cls.pct}%</Text>
-            </TouchableOpacity>
-          ))}
-        </>
-      ) : null}
-
-      {tab === 'absent' ? (
-        <>
-          <SectionHeader title="Frequent Absentees" actionLabel="Send All Notices" actionIcon="megaphone" onAction={() => Alert.alert('Notices Sent', 'Warning notices sent to all frequent absentees.')} />
-          {RECENT_ABSENT.map((student) => (
-            <View key={student.id} style={styles.absentCard}>
-              <View style={[styles.absentAvatar, { backgroundColor: student.color + '14' }]}>
-                <Text style={[styles.absentInitial, { color: student.color }]}>{student.name.charAt(0)}</Text>
-              </View>
-              <View style={styles.absentInfo}>
-                <Text style={styles.absentName}>{student.name}</Text>
-                <Text style={styles.absentMeta}>{student.rollNo} • {student.class}</Text>
-                <Text style={[styles.absentDays, { color: student.daysAbsent >= 5 ? '#dc2626' : '#d97706' }]}>
-                  {student.daysAbsent} days absent this month
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.noticeBtn}
-                onPress={() => handleSendNotice(student)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="megaphone-outline" size={16} color="#ffffff" />
-              </TouchableOpacity>
             </View>
           ))}
         </>
-      ) : null}
+      )}
+
+      {/* Low attendance */}
+      {data.lowAttendance.length > 0 && (
+        <>
+          <Text style={styles.sectionTitle}>Low Attendance Students</Text>
+          {data.lowAttendance.map((s, i) => (
+            <View key={i} style={styles.studentRow}>
+              <View style={styles.avatarSmall}>
+                <Text style={styles.avatarText}>{(s.name || 'S')[0]}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.studentName}>{s.name}</Text>
+                <Text style={styles.studentDetail}>{s.courseName || ''} • {s.rollNo || ''}</Text>
+              </View>
+              <View style={[styles.badge, { backgroundColor: '#fef2f2' }]}>
+                <Text style={[styles.badgeText, { color: '#dc2626' }]}>{s.percentage ?? s.attendance}%</Text>
+              </View>
+            </View>
+          ))}
+        </>
+      )}
+
+      <View style={{ height: 32 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.15)',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
-  },
-  activeTab: {
-    backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-SemiBold',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
-  summaryCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  summaryIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#eef1f3',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  summaryLabel: {
-    flex: 1,
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: '#475569',
-    fontFamily: 'Manrope-Medium',
-  },
-  summaryValue: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  trendCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 160,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  barColumn: {
-    alignItems: 'center',
-    flex: 1,
-    height: '100%',
-    justifyContent: 'flex-end',
-  },
-  barTrack: {
-    width: 18,
-    height: 100,
-    backgroundColor: '#eef1f3',
-    borderRadius: BORDER_RADIUS.sm,
-    justifyContent: 'flex-end',
-    overflow: 'hidden',
-  },
-  barFill: {
-    width: '100%',
-    borderRadius: BORDER_RADIUS.sm,
-  },
-  barLabel: {
-    fontSize: 9,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 4,
-  },
-  classCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  classIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  classInfo: {
-    flex: 1,
-  },
-  className: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  classMeta: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginBottom: 4,
-  },
-  classTrack: {
-    height: 6,
-    backgroundColor: '#eef1f3',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  classFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  classPct: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-    marginLeft: SPACING.md,
-  },
-  absentCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  absentAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  absentInitial: {
-    fontSize: TYPOGRAPHY.fontSize.base,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  absentInfo: {
-    flex: 1,
-  },
-  absentName: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  absentMeta: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-  },
-  absentDays: {
-    fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
-    fontFamily: 'Manrope-Medium',
-    marginTop: 2,
-  },
-  noticeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#2563eb',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: SPACING.sm,
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' },
+  heroCard: { backgroundColor: '#2563eb', margin: 16, borderRadius: 20, padding: 20, alignItems: 'center' },
+  heroLabel: { fontSize: 12, color: '#bfdbfe', fontFamily: 'Manrope-Medium' },
+  heroValue: { fontSize: 36, color: '#fff', fontFamily: 'PlusJakartaSans-Bold', marginTop: 4 },
+  heroSub: { fontSize: 11, color: '#bfdbfe', fontFamily: 'Manrope-Regular', marginTop: 4 },
+  statsRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 12 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 14, padding: 14, alignItems: 'center' },
+  statValue: { fontSize: 20, fontFamily: 'PlusJakartaSans-Bold', color: '#0f172a' },
+  statLabel: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
+  sectionTitle: { fontSize: 14, fontFamily: 'Manrope-SemiBold', color: '#0f172a', paddingHorizontal: 16, marginTop: 16, marginBottom: 8 },
+  alertCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fef2f2', marginHorizontal: 16, marginBottom: 6, borderRadius: 12, padding: 12 },
+  alertName: { fontSize: 13, fontFamily: 'Manrope-SemiBold', color: '#0f172a' },
+  alertDetail: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  studentRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 6, borderRadius: 12, padding: 12 },
+  avatarSmall: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#dbeafe', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  avatarText: { fontSize: 13, fontFamily: 'Manrope-SemiBold', color: '#2563eb' },
+  studentName: { fontSize: 13, fontFamily: 'Manrope-SemiBold', color: '#0f172a' },
+  studentDetail: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { fontSize: 11, fontFamily: 'Manrope-SemiBold' },
 });

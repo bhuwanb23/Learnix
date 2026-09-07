@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
+import { api } from '../../../../services/api';
 
 export const useAcademicsExaminations = (navigation) => {
   const [selectedSemester, setSelectedSemester] = useState('semester-1');
@@ -7,8 +8,39 @@ export const useAcademicsExaminations = (navigation) => {
   const [isGeneratingTimetable, setIsGeneratingTimetable] = useState(false);
   const [evaluationProgress, setEvaluationProgress] = useState(77);
   const [cheatingAlerts, setCheatingAlerts] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [timetableGenerated, setTimetableGenerated] = useState(false);
+  const [academicsData, setAcademicsData] = useState({
+    exams: { active: 0, scheduled: 0, completed: 0 },
+    evaluations: { total: 0, completed: 0 },
+    conflicts: [],
+    cheatingCases: [],
+  });
+
+  const fetchAcademics = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await api.adminApi.academics();
+      setAcademicsData({
+        exams: data.exams || { active: 0, scheduled: 0, completed: 0 },
+        evaluations: data.evaluations || { total: 0, completed: 0 },
+        conflicts: data.conflicts || [],
+        cheatingCases: data.cheatingCases || [],
+      });
+      if (data.evaluations?.total > 0) {
+        setEvaluationProgress(Math.round((data.evaluations.completed / data.evaluations.total) * 100));
+      }
+      setCheatingAlerts((data.cheatingCases || []).filter(c => c.status === 'UNDER_REVIEW'));
+    } catch (error) {
+      console.warn('Failed to load academics data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAcademics();
+  }, [fetchAcademics]);
 
   const handleSemesterChange = useCallback((semester) => {
     setSelectedSemester(semester);
@@ -23,14 +55,13 @@ export const useAcademicsExaminations = (navigation) => {
     setIsLoading(true);
 
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       setTimetableGenerated(true);
       if (navigation && navigation.navigate) {
         navigation.navigate('examTimetable');
       }
     } catch (error) {
-      // Swallow error — mock flow
+      // Swallow error
     } finally {
       setIsGeneratingTimetable(false);
       setIsLoading(false);
@@ -44,33 +75,21 @@ export const useAcademicsExaminations = (navigation) => {
   }, [navigation]);
 
   const handleCheatingAlertAction = useCallback((alertId, action) => {
-    // Update alert status locally
     setCheatingAlerts(prev =>
       prev.map(alert =>
-        alert.id === alertId
-          ? { ...alert, status: action }
-          : alert
+        alert.id === alertId ? { ...alert, status: action } : alert
       )
     );
     if (action === 'investigate') {
-      Alert.alert(
-        'Investigate Alert',
-        'Opening case file with flagged answer patterns, session logs, and AI evidence...'
-      );
+      Alert.alert('Investigate Alert', 'Opening case file with flagged answer patterns, session logs, and AI evidence...');
     } else {
       Alert.alert('Alert Dismissed', 'This alert has been marked as a false positive.');
     }
   }, []);
 
   const handleRefreshData = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setEvaluationProgress(prev => Math.min(100, prev + Math.random() * 5));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    await fetchAcademics();
+  }, [fetchAcademics]);
 
   const handleExportData = useCallback((dataType) => {
     if (navigation && navigation.navigate) {
@@ -99,7 +118,6 @@ export const useAcademicsExaminations = (navigation) => {
   }, [navigation]);
 
   return {
-    // State
     selectedSemester,
     selectedExamType,
     isGeneratingTimetable,
@@ -107,8 +125,7 @@ export const useAcademicsExaminations = (navigation) => {
     cheatingAlerts,
     isLoading,
     timetableGenerated,
-
-    // Actions
+    academicsData,
     handleSemesterChange,
     handleExamTypeChange,
     handleGenerateTimetable,
@@ -119,4 +136,4 @@ export const useAcademicsExaminations = (navigation) => {
     handleViewDetailedReport,
     handleViewAllAlerts,
   };
-};
+};

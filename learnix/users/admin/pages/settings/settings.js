@@ -1,522 +1,131 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Switch,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { ROLES, ACADEMIC_YEAR, SYSTEM_CONFIG, PERMISSION_GROUPS } from './constants/settingsData';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { api } from '../../../../services/api';
 
-import SectionHeader from '../../components/ui/SectionHeader';
+export default function SettingsScreen({ navigation }) {
+  const [data, setData] = useState({ academicYears: [], systemConfigs: [], featureFlags: [], roles: [] });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
+  const fetchData = useCallback(async () => {
+    try {
+      const d = await api.adminApi.settings();
+      setData({
+        academicYears: d.academicYears || [],
+        systemConfigs: d.systemConfigs || [],
+        featureFlags: d.featureFlags || [],
+        roles: d.roles || [],
+      });
+    } catch (e) {
+      console.warn('Failed to load settings:', e);
+    }
+  }, []);
 
-const TABS = [
-  { id: 'roles', label: 'Roles & Permissions' },
-  { id: 'year', label: 'Academic Year' },
-  { id: 'config', label: 'System Config' },
-];
+  useEffect(() => {
+    fetchData().finally(() => setLoading(false));
+  }, [fetchData]);
 
-export default function SettingsModule({ navigation }) {
-  const [tab, setTab] = useState('roles');
-  const [toggles, setToggles] = useState({
-    notifications: true,
-    autoBackup: true,
-    maintenance: false,
-  });
-
-  const handleRolePress = (role) => {
-    Alert.alert(
-      role.name,
-      `${role.desc}\n${role.users} users with this role\n${role.permissions} permissions`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Edit Permissions', onPress: () => Alert.alert('Edit Permissions', `Customize access for ${role.name} role.`) },
-      ]
-    );
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
   };
 
-  const handleNewRole = () => {
-    Alert.alert('Create Role', 'Create a custom role with selected permissions.');
-  };
-
-  const handleYearChange = () => {
-    Alert.alert(
-      'Change Academic Year',
-      'Roll over to the next academic year? This will archive current data and create new batches.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Roll Over', onPress: () => Alert.alert('Rolled Over', 'New academic year 2027-28 created.') },
-      ]
-    );
-  };
+  if (loading) {
+    return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#2563eb" /></View>;
+  }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      {/* Tabs */}
-      <View style={styles.tabsRow}>
-        {TABS.map((t) => (
-          <TouchableOpacity
-            key={t.id}
-            style={[styles.tab, tab === t.id && styles.activeTab]}
-            onPress={() => setTab(t.id)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>
-              {t.id === 'roles' ? 'Roles' : t.id === 'year' ? 'Year' : 'Config'}
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+    >
+      {/* Academic Years */}
+      <Text style={styles.sectionTitle}>Academic Years</Text>
+      {data.academicYears.map((ay, i) => (
+        <View key={ay.id || i} style={styles.card}>
+          <View style={[styles.iconWrap, { backgroundColor: '#eff6ff' }]}>
+            <Ionicons name="calendar" size={18} color="#2563eb" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{ay.label}</Text>
+            <Text style={styles.cardDesc}>{ay.startDate} — {ay.endDate}</Text>
+          </View>
+          {ay.isCurrent && <View style={[styles.badge, { backgroundColor: '#dcfce7' }]}><Text style={[styles.badgeText, { color: '#059669' }]}>Current</Text></View>}
+        </View>
+      ))}
+
+      {/* System Configs */}
+      <Text style={styles.sectionTitle}>System Configuration</Text>
+      {data.systemConfigs.map((cfg, i) => (
+        <View key={cfg.id || i} style={styles.card}>
+          <View style={[styles.iconWrap, { backgroundColor: '#f0fdf4' }]}>
+            <Ionicons name="settings" size={18} color="#059669" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{cfg.key}</Text>
+            <Text style={styles.cardDesc} numberOfLines={1}>{cfg.value}</Text>
+          </View>
+        </View>
+      ))}
+
+      {/* Feature Flags */}
+      <Text style={styles.sectionTitle}>Feature Flags</Text>
+      {data.featureFlags.map((flag, i) => (
+        <View key={flag.id || i} style={styles.card}>
+          <View style={[styles.iconWrap, { backgroundColor: flag.enabled ? '#dcfce7' : '#fef2f2' }]}>
+            <Ionicons name={flag.enabled ? 'flag' : 'flag-outline'} size={18} color={flag.enabled ? '#059669' : '#dc2626'} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{flag.key}</Text>
+            <Text style={styles.cardDesc}>{flag.description || 'No description'}</Text>
+          </View>
+          <View style={[styles.badge, { backgroundColor: flag.enabled ? '#dcfce7' : '#fef2f2' }]}>
+            <Text style={[styles.badgeText, { color: flag.enabled ? '#059669' : '#dc2626' }]}>
+              {flag.enabled ? 'ON' : 'OFF'}
             </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {tab === 'roles' ? (
-        <>
-          <SectionHeader title="User Roles" actionLabel="New Role" actionIcon="add" onAction={handleNewRole} />
-          <Text style={styles.hint}>Roles define what each user type can access — the foundation for non-admin staff (placement, exam cell, accounts).</Text>
-          {ROLES.map((role) => (
-            <TouchableOpacity
-              key={role.id}
-              style={styles.roleCard}
-              onPress={() => handleRolePress(role)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.roleIcon, { backgroundColor: role.color + '14' }]}>
-                <Ionicons name="shield-checkmark" size={18} color={role.color} />
-              </View>
-              <View style={styles.roleInfo}>
-                <Text style={styles.roleName}>{role.name}</Text>
-                <Text style={styles.roleDesc} numberOfLines={1}>{role.desc}</Text>
-              </View>
-              <View style={styles.roleRight}>
-                <Text style={styles.roleUsers}>{role.users}</Text>
-                <Text style={styles.roleUsersLabel}>users</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-
-          <SectionHeader title="Permission Groups" />
-          {PERMISSION_GROUPS.map((group) => (
-            <View key={group.id} style={styles.permissionCard}>
-              <Text style={styles.permissionName}>{group.name}</Text>
-              <View style={styles.permissionChips}>
-                {group.permissions.map((p) => (
-                  <View key={p} style={styles.permissionChip}>
-                    <Text style={styles.permissionChipText}>{p}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ))}
-        </>
-      ) : null}
-
-      {tab === 'year' ? (
-        <>
-          <SectionHeader title="Academic Year" />
-          <View style={styles.yearCard}>
-            <View style={styles.yearHeader}>
-              <View style={styles.yearIcon}>
-                <Ionicons name="calendar" size={22} color="#2563eb" />
-              </View>
-              <View>
-                <Text style={styles.yearCurrent}>Current: {ACADEMIC_YEAR.current}</Text>
-                <Text style={styles.yearRange}>{ACADEMIC_YEAR.startDate} — {ACADEMIC_YEAR.endDate}</Text>
-              </View>
-            </View>
-            <View style={styles.yearDivider} />
-            {[
-              { label: 'Semesters', value: ACADEMIC_YEAR.semesters.join(' • ') },
-              { label: 'Exam Weeks', value: ACADEMIC_YEAR.examWeeks },
-            ].map((row) => (
-              <View key={row.label} style={styles.yearRow}>
-                <Text style={styles.yearLabel}>{row.label}</Text>
-                <Text style={styles.yearValue}>{row.value}</Text>
-              </View>
-            ))}
-            <TouchableOpacity
-              style={styles.rolloverBtn}
-              onPress={handleYearChange}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="arrow-forward" size={16} color="#ffffff" />
-              <Text style={styles.rolloverText}>Roll Over to 2027-28</Text>
-            </TouchableOpacity>
           </View>
+        </View>
+      ))}
 
-          <SectionHeader title="Previous Years" />
-          {ACADEMIC_YEAR.previousYears.map((year) => (
-            <TouchableOpacity
-              key={year}
-              style={styles.prevYearCard}
-              activeOpacity={0.8}
-              onPress={() => Alert.alert(year, 'Archived academic data for this year.')}
-            >
-              <Ionicons name="archive-outline" size={18} color="#64748b" />
-              <Text style={styles.prevYearText}>{year}</Text>
-              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-            </TouchableOpacity>
-          ))}
-        </>
-      ) : null}
-
-      {tab === 'config' ? (
-        <>
-          <SectionHeader title="System Configuration" actionLabel="Edit" actionIcon="create" onAction={() => Alert.alert('Edit Config', 'Update system-wide configuration values.')} />
-          {SYSTEM_CONFIG.map((item) => (
-            <View key={item.id} style={styles.configCard}>
-              <View style={styles.configIcon}>
-                <Ionicons name={item.icon} size={16} color="#2563eb" />
-              </View>
-              <View style={styles.configInfo}>
-                <Text style={styles.configLabel}>{item.label}</Text>
-                <Text style={styles.configValue}>{item.value}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-            </View>
-          ))}
-
-          <SectionHeader title="Preferences" />
-          <View style={styles.toggleCard}>
-            {[
-              { id: 'notifications', label: 'Push Notifications', desc: 'Send app notifications for approvals & alerts' },
-              { id: 'autoBackup', label: 'Auto Backup', desc: 'Daily database backup at 2:00 AM' },
-              { id: 'maintenance', label: 'Maintenance Mode', desc: 'Temporarily disable student/teacher login' },
-            ].map((item) => (
-              <View key={item.id} style={styles.toggleRow}>
-                <View style={styles.toggleInfo}>
-                  <Text style={styles.toggleLabel}>{item.label}</Text>
-                  <Text style={styles.toggleDesc}>{item.desc}</Text>
-                </View>
-                <Switch
-                  value={toggles[item.id]}
-                  onValueChange={(val) => {
-                    setToggles((prev) => ({ ...prev, [item.id]: val }));
-                    if (item.id === 'maintenance' && val) {
-                      Alert.alert('Maintenance Mode', 'Student and teacher logins will be temporarily disabled.');
-                    }
-                  }}
-                  trackColor={{ false: '#e2e8f0', true: '#2563eb' }}
-                  thumbColor="#ffffff"
-                />
-              </View>
-            ))}
+      {/* Roles */}
+      <Text style={styles.sectionTitle}>Roles & Permissions</Text>
+      {data.roles.map((role, i) => (
+        <View key={role.id || i} style={styles.card}>
+          <View style={[styles.iconWrap, { backgroundColor: '#faf5ff' }]}>
+            <Ionicons name="shield-checkmark" size={18} color="#7c3aed" />
           </View>
-        </>
-      ) : null}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{role.name}</Text>
+            <Text style={styles.cardDesc}>{role.permissionCount || role.permissions?.length || 0} permissions</Text>
+          </View>
+        </View>
+      ))}
+
+      <View style={{ height: 32 }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.15)',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: SPACING.sm,
-    alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
-  },
-  activeTab: {
-    backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  tabText: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-SemiBold',
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#ffffff',
-  },
-  hint: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginBottom: SPACING.md,
-    lineHeight: 16,
-  },
-  roleCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  roleIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  roleInfo: {
-    flex: 1,
-  },
-  roleName: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  roleDesc: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  roleRight: {
-    alignItems: 'flex-end',
-  },
-  roleUsers: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  roleUsersLabel: {
-    fontSize: 9,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-  },
-  permissionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  permissionName: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-    marginBottom: SPACING.sm,
-  },
-  permissionChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-  },
-  permissionChip: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: '#2563eb1A',
-  },
-  permissionChipText: {
-    fontSize: 10,
-    fontWeight: TYPOGRAPHY.fontWeight.medium,
-    color: '#2563eb',
-    fontFamily: 'Manrope-Medium',
-  },
-  yearCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  yearHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-  },
-  yearIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#2563eb1A',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  yearCurrent: {
-    fontSize: TYPOGRAPHY.fontSize.lg,
-    fontWeight: TYPOGRAPHY.fontWeight.bold,
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  yearRange: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-  },
-  yearDivider: {
-    height: 1,
-    backgroundColor: '#eef1f3',
-    marginVertical: SPACING.md,
-  },
-  yearRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: SPACING.sm,
-  },
-  yearLabel: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-  },
-  yearValue: {
-    fontSize: TYPOGRAPHY.fontSize.xs,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  rolloverBtn: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    backgroundColor: '#2563eb',
-    borderRadius: 16,
-    paddingVertical: 12,
-    marginTop: SPACING.md,
-  },
-  rolloverText: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: '#ffffff',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  prevYearCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    gap: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  prevYearText: {
-    flex: 1,
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    color: '#475569',
-    fontFamily: 'Manrope-Medium',
-  },
-  configCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  configIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#2563eb1A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: SPACING.md,
-  },
-  configInfo: {
-    flex: 1,
-  },
-  configLabel: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  configValue: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
-  toggleCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: 'rgba(171, 173, 175, 0.12)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.03,
-    shadowRadius: 16,
-    elevation: 1,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f8fafc',
-  },
-  toggleInfo: {
-    flex: 1,
-    marginRight: SPACING.md,
-  },
-  toggleLabel: {
-    fontSize: TYPOGRAPHY.fontSize.sm,
-    fontWeight: TYPOGRAPHY.fontWeight.semibold,
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  toggleDesc: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 1,
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9' },
+  sectionTitle: { fontSize: 14, fontFamily: 'Manrope-SemiBold', color: '#0f172a', paddingHorizontal: 16, marginTop: 16, marginBottom: 8 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 8, borderRadius: 14, padding: 14 },
+  iconWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  cardTitle: { fontSize: 13, fontFamily: 'Manrope-SemiBold', color: '#0f172a' },
+  cardDesc: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  badgeText: { fontSize: 10, fontFamily: 'Manrope-SemiBold' },
 });

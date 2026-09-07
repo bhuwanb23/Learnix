@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -31,6 +31,7 @@ import NotificationsScreen from './pages/notifications/notifications';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
+import { setDemoUser } from '../../services/api';
 
 // Import hooks
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
@@ -59,6 +60,7 @@ const TAB_TITLES = {
 };
 
 export default function AdminScreen({ navigation }) {
+  useEffect(() => { setDemoUser('admin@learnix.dev'); }, []);
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();
