@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,56 +7,91 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { examcellApi } from '../../../../services/api';
+
 import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
 
-const INITIAL_NOTIFICATIONS = [
-  { id: 'N1', title: 'Semester 3 results ready for review', desc: '6 subjects awaiting final moderation', time: '20 min ago', type: 'trophy', color: '#2563eb', unread: true },
-  { id: 'N2', title: 'Software Engineering grading overdue', desc: 'Dr. Sharma — 120 papers pending (2 days)', time: '1 hr ago', type: 'warning', color: '#dc2626', unread: true },
-  { id: 'N3', title: '2 revaluation requests approved', desc: 'DBMS & Computer Networks — papers sent for re-evaluation', time: '3 hrs ago', type: 'refresh', color: '#059669', unread: true },
-  { id: 'N4', title: 'Hall tickets generated', desc: '1,240 tickets pushed to student apps', time: '5 hrs ago', type: 'ticket', color: '#0284c7', unread: false },
-  { id: 'N5', title: 'New cheating alert — DBMS final', desc: 'Copy-paste pattern detected, high risk', time: 'Yesterday', type: 'warning', color: '#ef4444', unread: false },
-];
-
-const AUDIENCES = ['All Students', 'Sem 3 Students', 'Final Year', 'Revaluation Applicants', 'Teachers'];
+const AUDIENCES = ['ALL_STUDENTS', 'SEM_STUDENTS', 'FINAL_YEAR'];
+const AUDIENCE_LABELS = { ALL_STUDENTS: 'All Students', SEM_STUDENTS: 'Sem Students', FINAL_YEAR: 'Final Year' };
 
 export default function NotificationsScreen({ navigation }) {
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState('inbox');
-  const [form, setForm] = useState({ title: '', content: '', audience: 'All Students' });
+  const [form, setForm] = useState({ title: '', body: '', audience: 'ALL_STUDENTS' });
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await examcellApi.notifications();
+      setNotifications(res.notifications ?? []);
+      setUnreadCount(res.unread ?? 0);
+    } catch (e) {
+      // silent
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-  const handleMarkRead = (id) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const onRefresh = () => { setRefreshing(true); fetchData(); };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await examcellApi.markAllRead();
+      setUnreadCount(0);
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch (e) {
+      // silent
+    }
   };
 
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-  };
-
-  const handleSend = () => {
-    if (!form.title.trim() || !form.content.trim()) {
+  const handleSend = async () => {
+    if (!form.title.trim() || !form.body.trim()) {
       Alert.alert('Missing Fields', 'Please enter both a subject and message.');
       return;
     }
-    Alert.alert(
-      'Send Broadcast',
-      `Send "${form.title}" to ${form.audience}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send',
-          onPress: () => {
-            setForm({ title: '', content: '', audience: 'All Students' });
-            setTab('inbox');
-            Alert.alert('Broadcast Sent', `Notification delivered to ${form.audience} via app + SMS.`);
-          },
-        },
-      ]
+    try {
+      await examcellApi.broadcast({ audience: form.audience, title: form.title, body: form.body });
+      setForm({ title: '', body: '', audience: 'ALL_STUDENTS' });
+      setTab('inbox');
+      Alert.alert('Broadcast Sent', 'Notification delivered to students.');
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={styles.loadingText}>Loading notifications…</Text>
+      </View>
     );
+  }
+
+  const getIcon = (type) => {
+    if (type?.includes('EXAM')) return 'calendar';
+    if (type?.includes('RESULT')) return 'trophy';
+    if (type?.includes('TICKET')) return 'ticket';
+    if (type?.includes('CHEATING')) return 'warning';
+    return 'notifications';
+  };
+
+  const getColor = (type) => {
+    if (type?.includes('EXAM')) return '#2563eb';
+    if (type?.includes('RESULT')) return '#059669';
+    if (type?.includes('TICKET')) return '#0284c7';
+    if (type?.includes('CHEATING')) return '#dc2626';
+    return '#4f46e5';
   };
 
   return (
@@ -66,42 +101,37 @@ export default function NotificationsScreen({ navigation }) {
           { id: 'inbox', label: `Inbox${unreadCount ? ` (${unreadCount})` : ''}` },
           { id: 'broadcast', label: 'Broadcast' },
         ].map((t) => (
-          <TouchableOpacity
-            key={t.id}
-            style={[styles.tab, tab === t.id && styles.activeTab]}
-            onPress={() => setTab(t.id)}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity key={t.id} style={[styles.tab, tab === t.id && styles.activeTab]} onPress={() => setTab(t.id)} activeOpacity={0.8}>
             <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
       {tab === 'inbox' ? (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {unreadCount > 0 ? (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
+        >
+          {unreadCount > 0 && (
             <TouchableOpacity style={styles.markAllRow} onPress={handleMarkAllRead} activeOpacity={0.7}>
               <Text style={styles.markAllText}>Mark all read</Text>
             </TouchableOpacity>
-          ) : null}
+          )}
           {notifications.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={[styles.card, item.unread && styles.unreadCard]}
-              onPress={() => handleMarkRead(item.id)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.iconContainer, { backgroundColor: item.color + '14' }]}>
-                <Ionicons name={item.type} size={18} color={item.color} />
+            <View key={item.id} style={[styles.card, !item.read && styles.unreadCard]}>
+              <View style={[styles.iconContainer, { backgroundColor: (getColor(item.type) || '#4f46e5') + '14' }]}>
+                <Ionicons name={getIcon(item.type)} size={18} color={getColor(item.type) || '#4f46e5'} />
               </View>
               <View style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardDesc} numberOfLines={2}>{item.desc}</Text>
-                <Text style={styles.cardTime}>{item.time}</Text>
+                <Text style={styles.cardDesc} numberOfLines={2}>{item.body}</Text>
+                <Text style={styles.cardTime}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''}</Text>
               </View>
-              {item.unread ? <View style={styles.unreadDot} /> : null}
-            </TouchableOpacity>
+              {!item.read && <View style={styles.unreadDot} />}
+            </View>
           ))}
+          {notifications.length === 0 && <Text style={styles.emptyText}>No notifications yet.</Text>}
         </ScrollView>
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -109,37 +139,19 @@ export default function NotificationsScreen({ navigation }) {
 
           <Text style={styles.fieldLabel}>Subject</Text>
           <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              value={form.title}
-              onChangeText={(v) => setForm((p) => ({ ...p, title: v }))}
-              placeholder="e.g. Exam Schedule Released"
-              placeholderTextColor="#cbd5e1"
-            />
+            <TextInput style={styles.input} value={form.title} onChangeText={(v) => setForm((p) => ({ ...p, title: v }))} placeholder="e.g. Exam Schedule Released" placeholderTextColor="#cbd5e1" />
           </View>
 
           <Text style={styles.fieldLabel}>Message</Text>
           <View style={[styles.inputContainer, styles.textAreaContainer]}>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={form.content}
-              onChangeText={(v) => setForm((p) => ({ ...p, content: v }))}
-              placeholder="Write your message to students..."
-              placeholderTextColor="#cbd5e1"
-              multiline
-            />
+            <TextInput style={[styles.input, styles.textArea]} value={form.body} onChangeText={(v) => setForm((p) => ({ ...p, body: v }))} placeholder="Write your message to students..." placeholderTextColor="#cbd5e1" multiline />
           </View>
 
           <Text style={styles.fieldLabel}>Audience</Text>
           <View style={styles.audienceGrid}>
             {AUDIENCES.map((aud) => (
-              <TouchableOpacity
-                key={aud}
-                style={[styles.audienceChip, form.audience === aud && styles.audienceChipActive]}
-                onPress={() => setForm((p) => ({ ...p, audience: aud }))}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.audienceText, form.audience === aud && styles.audienceTextActive]}>{aud}</Text>
+              <TouchableOpacity key={aud} style={[styles.audienceChip, form.audience === aud && styles.audienceChipActive]} onPress={() => setForm((p) => ({ ...p, audience: aud }))} activeOpacity={0.8}>
+                <Text style={[styles.audienceText, form.audience === aud && styles.audienceTextActive]}>{AUDIENCE_LABELS[aud]}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -155,181 +167,37 @@ export default function NotificationsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  tabsRow: {
-    flexDirection: 'row',
-    backgroundColor: '#eef2f7',
-    borderRadius: 12,
-    padding: 4,
-    margin: 24,
-    marginBottom: 0,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 9,
-    alignItems: 'center',
-  },
-  activeTab: {
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748b',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  activeTabText: {
-    color: '#2563eb',
-  },
-  scrollContent: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  markAllRow: {
-    alignSelf: 'flex-end',
-    marginBottom: 12,
-  },
-  markAllText: {
-    fontSize: 12,
-    color: '#2563eb',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#eef2f7',
-    padding: 14,
-    marginBottom: 10,
-  },
-  unreadCard: {
-    borderColor: '#bfdbfe',
-    backgroundColor: '#f8faff',
-  },
-  iconContainer: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-    marginBottom: 2,
-  },
-  cardDesc: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    lineHeight: 17,
-  },
-  cardTime: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 4,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#2563eb',
-    marginLeft: 8,
-    marginTop: 4,
-  },
-  formHint: {
-    fontSize: 12,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    lineHeight: 18,
-    marginBottom: 16,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#334155',
-    fontFamily: 'Manrope-Bold',
-    marginBottom: 6,
-    marginTop: 4,
-  },
-  inputContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingHorizontal: 14,
-    marginBottom: 12,
-  },
-  input: {
-    height: 44,
-    fontSize: 14,
-    color: '#0f172a',
-    fontFamily: 'Manrope-Regular',
-  },
-  textAreaContainer: {
-    paddingVertical: 8,
-  },
-  textArea: {
-    height: 96,
-    textAlignVertical: 'top',
-  },
-  audienceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  audienceChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  audienceChipActive: {
-    backgroundColor: '#2563eb',
-    borderColor: '#2563eb',
-  },
-  audienceText: {
-    fontSize: 12,
-    color: '#475569',
-    fontFamily: 'Manrope-Medium',
-  },
-  audienceTextActive: {
-    color: '#FFFFFF',
-  },
-  sendBtn: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 14,
-  },
-  sendBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    fontFamily: 'Manrope-Bold',
-  },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Regular' },
+  emptyText: { fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope-Regular', textAlign: 'center', marginTop: 20 },
+  tabsRow: { flexDirection: 'row', backgroundColor: '#eef2f7', borderRadius: 12, padding: 4, margin: 24, marginBottom: 0 },
+  tab: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
+  activeTab: { backgroundColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#64748b', fontFamily: 'Manrope-SemiBold' },
+  activeTabText: { color: '#2563eb' },
+  scrollContent: { padding: 24, paddingBottom: 40 },
+  markAllRow: { alignSelf: 'flex-end', marginBottom: 12 },
+  markAllText: { fontSize: 12, color: '#2563eb', fontFamily: 'Manrope-SemiBold' },
+  card: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
+  unreadCard: { borderColor: '#bfdbfe', backgroundColor: '#f8faff' },
+  iconContainer: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  cardContent: { flex: 1 },
+  cardTitle: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold', marginBottom: 2 },
+  cardDesc: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 17 },
+  cardTime: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Regular', marginTop: 4 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2563eb', marginLeft: 8, marginTop: 4 },
+  formHint: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 18, marginBottom: 16 },
+  fieldLabel: { fontSize: 12, fontWeight: '700', color: '#334155', fontFamily: 'Manrope-Bold', marginBottom: 6, marginTop: 4 },
+  inputContainer: { backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 14, marginBottom: 12 },
+  input: { height: 44, fontSize: 14, color: '#0f172a', fontFamily: 'Manrope-Regular' },
+  textAreaContainer: { paddingVertical: 8 },
+  textArea: { height: 96, textAlignVertical: 'top' },
+  audienceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  audienceChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0' },
+  audienceChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
+  audienceText: { fontSize: 12, color: '#475569', fontFamily: 'Manrope-Medium' },
+  audienceTextActive: { color: '#FFFFFF' },
+  sendBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14 },
+  sendBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope-Bold' },
 });
