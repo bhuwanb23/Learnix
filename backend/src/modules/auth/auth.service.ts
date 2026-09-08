@@ -1,19 +1,16 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { prisma } from '../../db/prisma.js';
 import { env } from '../../config/env.js';
 import { unauthenticated, forbidden, badRequest } from '../../lib/errors.js';
+import { sha256 } from '../../lib/hash.js';
 import type { Role } from '../../lib/enums.js';
 
 interface AccessTokenPayload {
   sub: string;
   institutionId: string;
   roles: Role[];
-}
-
-function sha256(input: string): string {
-  return createHash('sha256').update(input).digest('hex');
 }
 
 function signAccessToken(payload: AccessTokenPayload): string {
