@@ -30,12 +30,13 @@ export function createApp() {
   app.disable('x-powered-by');
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-  // CORS: exact allowlist match (no wildcard when credentials are in play)
+  // CORS: exact allowlist match (no wildcard when credentials are in play).
+  // Non-allowlisted origins get no ACAO header — browsers block the read.
   app.use(
     cors({
       origin(origin, cb) {
         if (!origin || env.corsOrigins.includes(origin)) return cb(null, true);
-        cb(new Error(`Origin ${origin} not allowed by CORS`));
+        cb(null, false);
       },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
