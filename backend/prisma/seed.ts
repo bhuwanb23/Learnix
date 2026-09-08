@@ -1945,6 +1945,80 @@ async function seedDomainL(institutionId: string): Promise<void> {
     create: { userId: platformUser.id, level: 'SUPER' },
   });
 
+  // ── RBAC (X-10): permission groups + role→permission map ──
+  const permissionGroups: { key: string; name: string; category: string }[] = [
+    { key: 'students.read', name: 'View students', category: 'STUDENTS' },
+    { key: 'students.write', name: 'Create/edit students', category: 'STUDENTS' },
+    { key: 'staff.read', name: 'View staff', category: 'STUDENTS' },
+    { key: 'staff.write', name: 'Create/edit staff', category: 'STUDENTS' },
+    { key: 'academics.read', name: 'View academics', category: 'ACADEMICS' },
+    { key: 'academics.write', name: 'Manage courses/offerings', category: 'ACADEMICS' },
+    { key: 'attendance.read', name: 'View attendance', category: 'ACADEMICS' },
+    { key: 'attendance.write', name: 'Mark attendance', category: 'ACADEMICS' },
+    { key: 'assignments.grade', name: 'Grade submissions', category: 'ACADEMICS' },
+    { key: 'exams.read', name: 'View exams', category: 'EXAMS' },
+    { key: 'exams.write', name: 'Manage exams', category: 'EXAMS' },
+    { key: 'exams.publish_results', name: 'Publish results', category: 'EXAMS' },
+    { key: 'fees.read', name: 'View fees', category: 'FINANCE' },
+    { key: 'fees.collect', name: 'Record payments', category: 'FINANCE' },
+    { key: 'fees.waive', name: 'Waive dues (audited)', category: 'FINANCE' },
+    { key: 'payroll.run', name: 'Run payroll', category: 'FINANCE' },
+    { key: 'library.circulate', name: 'Issue/return books', category: 'LIBRARY' },
+    { key: 'library.manage', name: 'Manage catalog', category: 'LIBRARY' },
+    { key: 'hostel.manage', name: 'Manage hostel', category: 'HOSTEL' },
+    { key: 'transport.manage', name: 'Manage transport', category: 'TRANSPORT' },
+    { key: 'placement.manage', name: 'Manage placements', category: 'PLACEMENT' },
+    { key: 'sports.manage', name: 'Manage sports', category: 'SPORTS' },
+    { key: 'alumni.manage', name: 'Manage alumni relations', category: 'ALUMNI' },
+    { key: 'announcements.publish', name: 'Publish announcements', category: 'SYSTEM' },
+    { key: 'settings.manage', name: 'Manage settings/RBAC', category: 'SYSTEM' },
+    { key: 'audit.read', name: 'View audit logs', category: 'SYSTEM' },
+  ];
+
+  for (const g of permissionGroups) {
+    await db.permissionGroup.upsert({
+      where: { key: g.key },
+      update: { name: g.name, category: g.category },
+      create: g,
+    });
+  }
+
+  // Role → permission map (sensible defaults per role scope)
+  const rolePermissionMap: Record<string, string[]> = {
+    ADMIN: permissionGroups.map((g) => g.key), // college super user: everything
+    HOD: [
+      'students.read', 'staff.read', 'academics.read', 'academics.write',
+      'attendance.read', 'exams.read', 'announcements.publish', 'audit.read',
+    ],
+    TEACHER: [
+      'students.read', 'academics.read', 'attendance.read', 'attendance.write',
+      'assignments.grade', 'exams.read',
+    ],
+    EXAMCELL: ['students.read', 'exams.read', 'exams.write', 'exams.publish_results', 'academics.read'],
+    ACCOUNTS: [
+      'students.read', 'staff.read', 'fees.read', 'fees.collect', 'fees.waive',
+      'payroll.run', 'audit.read',
+    ],
+    LIBRARY: ['students.read', 'library.circulate', 'library.manage'],
+    HOSTEL: ['students.read', 'hostel.manage', 'fees.read'],
+    TRANSPORT: ['students.read', 'transport.manage', 'fees.read'],
+    PLACEMENT: ['students.read', 'placement.manage'],
+    SPORTS: ['students.read', 'sports.manage'],
+    ALUMNI: ['alumni.manage', 'announcements.publish'],
+  };
+
+  let rbacCount = 0;
+  for (const [role, keys] of Object.entries(rolePermissionMap)) {
+    for (const key of keys) {
+      await db.rolePermission.upsert({
+        where: { role_permissionKey: { role, permissionKey: key } },
+        update: {},
+        create: { role, permissionKey: key },
+      });
+      rbacCount += 1;
+    }
+  }
+
   // System config knobs (admin Settings 03 §3.15)
   const configs = [
     { key: 'attendanceThreshold', valueJson: '75' },
@@ -2010,5 +2084,5 @@ async function seedDomainL(institutionId: string): Promise<void> {
     });
   }
 
-  console.log('  ✓ platform admin SUPER, 6 system_config knobs, 3 feature flags, avatar file linked, audit entry written');
+  console.log(`  ✓ platform admin SUPER, 26 permission groups + ${rbacCount} role-permission rows, 6 system_config knobs, 3 feature flags, avatar file linked, audit entry written`);
 }
