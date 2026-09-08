@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { createHash, randomUUID } from 'node:crypto';
 import { prisma } from '../../db/prisma.js';
 import { env } from '../../config/env.js';
-import { unauthenticated, forbidden } from '../../lib/errors.js';
+import { unauthenticated, forbidden, badRequest } from '../../lib/errors.js';
 import type { Role } from '../../lib/enums.js';
 
 interface AccessTokenPayload {
@@ -139,6 +139,67 @@ export async function logout(rawToken: string): Promise<void> {
     where: { tokenHash, revokedAt: null },
     data: { revokedAt: new Date() },
   });
+}
+
+// ── X-02 — password reset (email delivery stubbed in v1 per ADR-07) ──
+
+export async function forgotPassword(email: string) {
+  const user = await prisma.user.findFirst({
+    where: { email: email.toLowerCase(), deletedAt: null, status: 'ACTIVE' },
+  });
+
+  // Always return ok — never leak whether the email exists.
+  if (!user) return { ok: true };
+
+  const raw = randomUUID() + '.' + randomUUID();
+  await prisma.passwordReset.create({
+    data: {
+      userId: user.id,
+      tokenHash: sha256(raw),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1h
+    },
+  });
+
+  // v1: no mailer wired — token is returned only in non-production so the
+  // flow is testable. In production this is where an email job goes.
+  if (env.nodeEnv !== 'production') return { ok: true, devToken: raw };
+  return { ok: true };
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  const record = await prisma.passwordReset.findUnique({ where: { tokenHash: sha256(token) } });
+  if (!record || record.usedAt || record.expiresAt < new Date()) {
+    throw badRequest('Invalid or expired reset token');
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, env.bcryptRounds);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: record.userId }, data: { passwordHash } }),
+    prisma.passwordReset.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+    // Revoke every session — password change invalidates existing logins
+    prisma.refreshToken.updateMany({
+      where: { userId: record.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    }),
+  ]);
+
+  return { ok: true };
+}
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw unauthenticated('User unavailable');
+
+  const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!ok) throw unauthenticated('Current password is incorrect');
+
+  const passwordHash = await bcrypt.hash(newPassword, env.bcryptRounds);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+  return { ok: true };
 }
 
 export { signAccessToken, sha256 };
