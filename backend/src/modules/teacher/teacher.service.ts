@@ -1057,6 +1057,67 @@ export async function createBroadcast(
 }
 
 // ── T-16 Profile ───────────────────────────────────────────
+// ── Leaves (HD-04 counterpart: teacher submits, HOD decides) ──
+export async function applyLeave(userId: string, institutionId: string, body: {
+  type: 'MEDICAL' | 'CASUAL' | 'EARNED';
+  fromDate: string;
+  toDate: string;
+  reason: string;
+  substituteUserId?: string;
+}) {
+  const from = new Date(body.fromDate);
+  const to = new Date(body.toDate);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+    throw unprocessable('Invalid dates');
+  }
+  if (to < from) throw unprocessable('toDate must be on or after fromDate');
+
+  const days = Math.floor((to.getTime() - from.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+
+  const existing = await prisma.leaveRequest.findFirst({
+    where: {
+      staffUserId: userId,
+      status: 'PENDING',
+      fromDate: { lte: to },
+      toDate: { gte: from },
+    },
+  });
+  if (existing) throw conflict('You already have a pending leave overlapping these dates');
+
+  const leave = await prisma.leaveRequest.create({
+    data: {
+      institutionId,
+      staffUserId: userId,
+      type: body.type,
+      fromDate: from,
+      toDate: to,
+      days,
+      reason: body.reason,
+      substituteUserId: body.substituteUserId,
+      status: 'PENDING',
+    },
+  });
+
+  await writeAudit({
+    actorUserId: userId,
+    institutionId,
+    action: 'leave.apply',
+    entityType: 'LeaveRequest',
+    entityId: leave.id,
+    after: { type: body.type, days, fromDate: body.fromDate, toDate: body.toDate },
+  });
+
+  return leave;
+}
+
+export async function listMyLeaves(userId: string) {
+  const leaves = await prisma.leaveRequest.findMany({
+    where: { staffUserId: userId },
+    orderBy: { createdAt: 'desc' },
+  });
+  return { leaves };
+}
+
 export async function getProfile(userId: string, institutionId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, institutionId },

@@ -108,6 +108,15 @@ export const teacherBroadcastSchema = z.object({
   body: z.string().min(1),
 });
 
+// ── Leaves (feeds HOD-04) ─────────────────────────────────
+export const applyLeaveSchema = z.object({
+  type: z.enum(['MEDICAL', 'CASUAL', 'EARNED']),
+  fromDate: z.string(), // ISO date
+  toDate: z.string(), // ISO date
+  reason: z.string().min(5).max(500),
+  substituteUserId: z.string().optional(),
+});
+
 // ── ID param ───────────────────────────────────────────────
 export const idParamSchema = z.object({
   id: z.string().min(1),

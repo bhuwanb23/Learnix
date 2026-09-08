@@ -10,7 +10,7 @@ import {
   createAttendanceSessionSchema, markAttendanceSchema, finalizeAttendanceSchema,
   createAssignmentSchema, gradeSubmissionSchema,
   enterExamGradeSchema, performanceQuerySchema,
-  teacherBroadcastSchema, idParamSchema,
+  teacherBroadcastSchema, idParamSchema, applyLeaveSchema,
 } from './teacher.schemas.js';
 import * as service from './teacher.service.js';
 
@@ -161,6 +161,17 @@ router.post('/broadcasts', validate(teacherBroadcastSchema), wrap(async (req, re
 // T-16 Profile
 router.get('/profile', wrap(async (req, res) => {
   res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
+}));
+
+// Leaves — teacher applies, HOD decides (HD-04 flow)
+router.post('/leaves', validate(applyLeaveSchema), wrap(async (req, res) => {
+  res.status(201).json({
+    data: await service.applyLeave(req.auth!.userId, req.auth!.institutionId, req.body),
+  });
+}));
+
+router.get('/leaves', wrap(async (req, res) => {
+  res.json({ data: await service.listMyLeaves(req.auth!.userId) });
 }));
 
 export default router;
