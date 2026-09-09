@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { transportApi } from '../../../../services/api';
+import { AnimatedCard, SearchBar, StatusChip, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const DUTY_CYCLE = { ON_DUTY: 'OFF_DUTY', OFF_DUTY: 'ON_DUTY', ON_LEAVE: 'ON_DUTY' };
 
@@ -19,6 +20,13 @@ export default function DriversModule({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!query) return drivers;
+    const q = query.toLowerCase();
+    return drivers.filter((d) => d.name.toLowerCase().includes(q) || (d.route || '').toLowerCase().includes(q));
+  }, [drivers, query]);
 
   const load = useCallback(async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
@@ -51,21 +59,18 @@ export default function DriversModule({ navigation }) {
 
   if (loading && drivers.length === 0) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 }}>
+        <SkeletonStatRow count={3} style={{ marginTop: 16 }} />
+        <SkeletonCard style={{ marginTop: 14 }} />
+        <SkeletonCard />
+        <SkeletonCard />
       </View>
     );
   }
 
   if (error && drivers.length === 0) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <EmptyState icon="cloud-offline-outline" title="Couldn't load drivers" subtitle={error} />
     );
   }
 
@@ -92,38 +97,39 @@ export default function DriversModule({ navigation }) {
         </View>
       </View>
 
+      <SearchBar placeholder="Search drivers..." onSearch={setQuery} style={{ marginTop: 16 }} />
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Driver Roster</Text>
+        <Text style={styles.resultCount}>{filtered.length} driver{filtered.length !== 1 ? 's' : ''}</Text>
       </View>
 
-      {drivers.length === 0 && <Text style={styles.empty}>No drivers registered.</Text>}
-      {drivers.map((d) => {
+      {filtered.length === 0 && (
+        <EmptyState
+          icon={query ? 'search-outline' : 'people-outline'}
+          title={query ? `No results for "${query}"` : 'No drivers registered'}
+          subtitle={query ? 'Try a different search term' : 'Drivers will appear here once added.'}
+        />
+      )}
+      {filtered.map((d, idx) => {
         const st = DUTY_STYLE[d.dutyStatus] || DUTY_STYLE.OFF_DUTY;
         const licSoon = d.licenseDaysLeft <= 90;
         return (
-          <View key={d.id} style={styles.card}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{d.name.charAt(0)}</Text>
+          <AnimatedCard key={d.id} delay={idx * 50} style={styles.card}>
+            <View style={styles.cardInner}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{d.name.charAt(0)}</Text>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={styles.name}>{d.name}</Text>
+                <Text style={styles.meta}>{d.experienceYears} yrs exp · {d.route || 'unassigned'}</Text>
+                <Text style={[styles.license, licSoon && { color: '#dc2626' }]}>Lic {d.licenseNo.slice(-6)} · exp {fmtDate(d.licenseExpiry)}{licSoon ? ' ⚠' : ''}</Text>
+              </View>
+              <TouchableOpacity style={[styles.dutyChip, { backgroundColor: st.bg }]} onPress={() => toggleDuty(d)}>
+                <Text style={[styles.dutyText, { color: st.color }]}>{d.dutyStatus.replace('_', ' ')}</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.name}>{d.name}</Text>
-              <Text style={styles.meta}>
-                {d.experienceYears} yrs exp · {d.route || 'unassigned'}
-              </Text>
-              <Text style={[styles.license, licSoon && { color: '#dc2626' }]}>
-                Lic {d.licenseNo.slice(-6)} · exp {fmtDate(d.licenseExpiry)}
-                {licSoon ? ' ⚠' : ''}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.dutyChip, { backgroundColor: st.bg }]}
-              onPress={() => toggleDuty(d)}
-            >
-              <Text style={[styles.dutyText, { color: st.color }]}>
-                {d.dutyStatus.replace('_', ' ')}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </AnimatedCard>
         );
       })}
     </ScrollView>
