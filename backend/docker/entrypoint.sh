@@ -3,18 +3,13 @@ set -e
 
 echo "Learnix backend starting..."
 
-# Run Prisma migrations in production
-if [ "$NODE_ENV" = "production" ]; then
-  echo "Running Prisma migrate deploy..."
-  npx prisma migrate deploy --schema prisma/schema
-else
-  echo "Running Prisma db push (dev mode)..."
-  npx prisma db push --schema prisma/schema --skip-generate
-fi
+# SQLite schema sync (idempotent, safe on every boot)
+echo "Syncing database schema (prisma db push)..."
+npx prisma db push --schema prisma/schema --skip-generate
 
-# Run seed if DATABASE_SEED=true
+# Run seed if DATABASE_SEED=true (seeds are idempotent)
 if [ "$DATABASE_SEED" = "true" ]; then
-  echo "Seeding database..."
+  echo "Seeding database (existing data is preserved)..."
   npx tsx prisma/seed.ts || true
   npx tsx prisma/seed-realistic.ts || true
 fi

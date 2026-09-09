@@ -6,7 +6,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)
 ![Node](https://img.shields.io/badge/Node.js-22-green.svg)
 ![React Native](https://img.shields.io/badge/React%20Native-Expo-black.svg)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)
+![SQLite](https://img.shields.io/badge/SQLite-3-blue.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)
 
 A full-stack, multi-tenant college management system with **14 role-specific apps**, **286+ API endpoints**, and **132 wired features** — built to production standards.
@@ -276,9 +276,9 @@ A full-stack, multi-tenant college management system with **14 role-specific app
 | Layer | Technology |
 |-------|-----------|
 | **Backend** | Express 5 · TypeScript · Zod validation · JWT auth (access + refresh rotation) |
-| **Database** | PostgreSQL 16 · Prisma ORM (127 models, 40 schema files) · Multi-tenant (`institutionId` scope) |
+| **Database** | SQLite (PostgreSQL-ready via Prisma) · 127 models, 40 schema files · Multi-tenant (`institutionId` scope) |
 | **Frontend** | Expo / React Native · Role-specific apps · 752 page files |
-| **Infrastructure** | Docker Compose (backend + postgres + nginx) · GitHub Actions CI/CD |
+| **Infrastructure** | Docker Compose (backend + nginx web) · GitHub Actions CI/CD |
 
 ---
 
@@ -368,7 +368,7 @@ The GitHub Actions workflow runs on every push:
 | Job | What it does |
 |-----|-------------|
 | **Typecheck** | `tsc --noEmit` across the backend |
-| **Smoke** | Spins up Postgres, seeds data, boots server, runs 19 endpoint tests |
+| **Smoke** | Seeds database, boots server, runs 19 endpoint tests |
 | **Web Build** | `expo export --platform web` (1105 modules, 0 errors) |
 | **Docker** | Builds and caches the backend Docker image |
 

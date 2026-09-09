@@ -75,10 +75,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - name: Build backend image
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           push: false
           tags: learnix-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./learnix
+          push: false
+          tags: learnix-web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
