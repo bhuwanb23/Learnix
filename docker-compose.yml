@@ -1,25 +1,5 @@
-version: "3.9"
-
 services:
-  # ── PostgreSQL ──────────────────────────────────────────
-  postgres:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: learnix
-      POSTGRES_PASSWORD: learnix_secret
-      POSTGRES_DB: learnix
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U learnix"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # ── Backend API ─────────────────────────────────────────
+  # ── Backend API (SQLite stored in a named volume) ────────
   backend:
     build:
       context: ./backend
@@ -28,22 +8,29 @@ services:
     ports:
       - "4000:4000"
     environment:
-      DATABASE_URL: postgresql://learnix:learnix_secret@postgres:5432/learnix
+      # SQLite file lives on the mounted volume
+      DATABASE_URL: file:/app/data/learnix.db
       PORT: 4000
       NODE_ENV: production
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-change-me-access-secret}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-refresh-secret}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET in .env}
       ACCESS_TOKEN_TTL: 15m
       REFRESH_TOKEN_TTL: 30d
       BCRYPT_ROUNDS: 12
-      CORS_ORIGIN: "http://localhost:80,http://localhost:3000"
+      CORS_ORIGIN: "http://localhost,http://localhost:8081,http://localhost:19006"
       TRUST_PROXY: "true"
-      DATABASE_SEED: "false"
-    depends_on:
-      postgres:
-        condition: service_healthy
+      # Set DATABASE_SEED=true on first boot to load demo data
+      DATABASE_SEED: ${DATABASE_SEED:-false}
+    volumes:
+      - backend-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
 
-  # ── Web (Expo web on nginx) ─────────────────────────────
+  # ── Web (Expo web export on nginx, /api/ proxied) ────────
   web:
     build:
       context: ./learnix
@@ -52,7 +39,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
-  pgdata:
+  backend-data:

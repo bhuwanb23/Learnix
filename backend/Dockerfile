@@ -1,8 +1,8 @@
-# ── stage 1: install ──────────────────────────────────────
+# ── stage 1: production deps (+ prisma CLI & tsx for entrypoint) ──
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && npm install --omit=dev --no-save prisma@6 tsx@4
 
 # ── stage 2: build ────────────────────────────────────────
 FROM node:22-alpine AS build
@@ -21,7 +21,7 @@ WORKDIR /app
 
 RUN addgroup -S learnix && adduser -S learnix -G learnix
 
-# Pruned production deps
+# Pruned production deps (includes prisma CLI + tsx for the entrypoint)
 COPY --from=deps /app/node_modules ./node_modules
 
 # Prisma runtime files (query engine, wasm)
@@ -31,7 +31,7 @@ COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 # Compiled JS
 COPY --from=build /app/dist ./dist
 
-# Schema (needed by entrypoint for db push / migrate deploy)
+# Schema (needed by entrypoint for db push)
 COPY --from=build /app/prisma ./prisma
 
 # Seed files (optional at runtime)
@@ -41,6 +41,10 @@ COPY prisma/seed-realistic.ts ./prisma/
 # Entrypoint
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
 RUN chmod +x docker/entrypoint.sh
+
+# SQLite database lives here — mount a volume on this path
+RUN mkdir -p /app/data && chown -R learnix:learnix /app/data
+VOLUME ["/app/data"]
 
 USER learnix
 EXPOSE 4000
