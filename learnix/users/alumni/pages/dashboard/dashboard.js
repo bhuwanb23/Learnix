@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, StatusChip, SkeletonStatRow, SkeletonCard } from '../../../../components/ui';
 
 const fmt = (n) => {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
@@ -48,8 +49,16 @@ export default function AlumniDashboard({ navigation }) {
 
   if (loading && !data) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View style={styles.skeletonContainer}>
+        <View style={styles.skeletonHero}>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: 120, height: 10, borderRadius: 4 }} />
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', width: 180, height: 22, borderRadius: 4, marginTop: 8 }} />
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: '100%', height: 6, borderRadius: 3, marginTop: 14 }} />
+        </View>
+        <SkeletonStatRow count={2} style={{ marginTop: 14, paddingHorizontal: 16 }} />
+        <SkeletonStatRow count={2} style={{ marginTop: 0, paddingHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 14 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
       </View>
     );
   }
@@ -125,27 +134,24 @@ export default function AlumniDashboard({ navigation }) {
             <Text style={styles.seeAll}>View all</Text>
           </TouchableOpacity>
         </View>
-        {events.map((e) => {
+        {events.map((e, idx) => {
           const pct = e.capacity > 0 ? Math.min(Math.round((e.rsvps / e.capacity) * 100), 100) : 0;
           return (
-            <View key={e.id} style={styles.listCard}>
-              <View style={[styles.typeIcon, { backgroundColor: '#0891b21a' }]}>
-                <Ionicons name="calendar-outline" size={16} color="#0891b2" />
-              </View>
-              <View style={styles.listBody}>
-                <Text style={styles.listTitle} numberOfLines={1}>{e.title}</Text>
-                <Text style={styles.listSub}>
-                  {new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  {e.venue ? ` · ${e.venue}` : ''}
-                </Text>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: '#0891b2' }]} />
+            <AnimatedCard key={e.id} delay={idx * 60} style={styles.listCard}>
+              <View style={styles.listRow}>
+                <View style={[styles.typeIcon, { backgroundColor: '#0891b21a' }]}>
+                  <Ionicons name="calendar-outline" size={16} color="#0891b2" />
                 </View>
-                <Text style={[styles.rsvpText, { color: '#0891b2' }]}>
-                  {e.rsvps}/{e.capacity} RSVPs
-                </Text>
+                <View style={styles.listBody}>
+                  <Text style={styles.listTitle} numberOfLines={1}>{e.title}</Text>
+                  <Text style={styles.listSub}>{new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}{e.venue ? ` · ${e.venue}` : ''}</Text>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: '#0891b2' }]} />
+                  </View>
+                  <Text style={[styles.rsvpText, { color: '#0891b2' }]}>{e.rsvps}/{e.capacity} RSVPs</Text>
+                </View>
               </View>
-            </View>
+            </AnimatedCard>
           );
         })}
         {events.length === 0 && <Text style={styles.emptyText}>No upcoming events scheduled.</Text>}
@@ -193,17 +199,13 @@ export default function AlumniDashboard({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
         <View style={styles.moduleGrid}>
-          {modules.map((m) => (
-            <TouchableOpacity
-              key={m.id}
-              style={styles.moduleCard}
-              onPress={() => navigation.openModule(m.id)}
-            >
+          {modules.map((m, idx) => (
+            <AnimatedCard key={m.id} delay={idx * 60} onPress={() => navigation.openModule(m.id)} style={styles.moduleCard}>
               <View style={[styles.moduleIcon, { backgroundColor: m.color + '1a' }]}>
                 <Ionicons name={m.icon} size={20} color={m.color} />
               </View>
               <Text style={styles.moduleTitle}>{m.title}</Text>
-            </TouchableOpacity>
+            </AnimatedCard>
           ))}
         </View>
       </View>
@@ -214,6 +216,9 @@ export default function AlumniDashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  skeletonContainer: { flex: 1, backgroundColor: theme.colors.background },
+  skeletonHero: { marginHorizontal: 16, marginTop: 16, borderRadius: 20, padding: 18, backgroundColor: '#7c3aed' },
+  listRow: { flexDirection: 'row', alignItems: 'center' },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
   retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },

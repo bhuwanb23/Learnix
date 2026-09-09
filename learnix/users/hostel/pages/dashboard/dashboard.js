@@ -1,16 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { hostelApi } from '../../../../services/api';
+import { AnimatedCard, StatusChip, SkeletonStatRow, SkeletonCard } from '../../../../components/ui';
 
 const modules = [
   { id: 'GatePasses', title: 'Gate Passes', icon: 'exit-outline', color: '#2563eb' },
@@ -47,8 +41,16 @@ export default function HostelDashboard({ navigation }) {
 
   if (loading && !data) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.muted}>Loading dashboard…</Text>
+      <View style={styles.skeletonContainer}>
+        <View style={styles.skeletonHero}>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: 100, height: 10, borderRadius: 4 }} />
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', width: 140, height: 22, borderRadius: 4, marginTop: 8 }} />
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: '100%', height: 6, borderRadius: 3, marginTop: 14 }} />
+        </View>
+        <SkeletonStatRow count={2} style={{ marginTop: 14, paddingHorizontal: 16 }} />
+        <SkeletonStatRow count={2} style={{ marginTop: 0, paddingHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 14 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
       </View>
     );
   }
@@ -152,49 +154,17 @@ export default function HostelDashboard({ navigation }) {
             <Text style={styles.muted}>No gate passes for today.</Text>
           </View>
         )}
-        {data.todayPasses.map((p) => (
-          <View key={p.id} style={styles.listCard}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{p.student.charAt(0)}</Text>
+        {data.todayPasses.map((p, idx) => (
+          <AnimatedCard key={p.id} delay={idx * 60} style={styles.listCard}>
+            <View style={styles.listRow}>
+              <View style={styles.avatar}><Text style={styles.avatarText}>{p.student.charAt(0)}</Text></View>
+              <View style={styles.listBody}>
+                <Text style={styles.listTitle}>{p.student} · {p.room}</Text>
+                <Text style={styles.listSub}>{p.reason} · out {fmtTime(p.outAt)}</Text>
+              </View>
+              <StatusChip status={p.status} />
             </View>
-            <View style={styles.listBody}>
-              <Text style={styles.listTitle}>
-                {p.student} · {p.room}
-              </Text>
-              <Text style={styles.listSub}>
-                {p.reason} · out {fmtTime(p.outAt)}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.statusChip,
-                {
-                  backgroundColor:
-                    p.status === 'APPROVED'
-                      ? '#dcfce7'
-                      : p.status === 'REJECTED'
-                        ? '#fee2e2'
-                        : '#fef3c7',
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusText,
-                  {
-                    color:
-                      p.status === 'APPROVED'
-                        ? '#059669'
-                        : p.status === 'REJECTED'
-                          ? '#dc2626'
-                          : '#d97706',
-                  },
-                ]}
-              >
-                {p.status.charAt(0) + p.status.slice(1).toLowerCase()}
-              </Text>
-            </View>
-          </View>
+          </AnimatedCard>
         ))}
       </View>
 
@@ -210,40 +180,32 @@ export default function HostelDashboard({ navigation }) {
             <Text style={styles.muted}>No open complaints — all clear.</Text>
           </View>
         )}
-        {data.openComplaints.map((c) => (
-          <View key={c.id} style={styles.listCard}>
-            <View style={[styles.complaintIcon, { backgroundColor: sevColor(c.severity) + '1a' }]}>
-              <Ionicons name="construct-outline" size={16} color={sevColor(c.severity)} />
+        {data.openComplaints.map((c, idx) => (
+          <AnimatedCard key={c.id} delay={idx * 60} style={styles.listCard}>
+            <View style={styles.listRow}>
+              <View style={[styles.complaintIcon, { backgroundColor: sevColor(c.severity) + '1a' }]}>
+                <Ionicons name="construct-outline" size={16} color={sevColor(c.severity)} />
+              </View>
+              <View style={styles.listBody}>
+                <Text style={styles.listTitle} numberOfLines={1}>{c.description}</Text>
+                <Text style={styles.listSub}>{c.category} · by {c.by}</Text>
+              </View>
+              <StatusChip status={c.severity} />
             </View>
-            <View style={styles.listBody}>
-              <Text style={styles.listTitle} numberOfLines={1}>
-                {c.description}
-              </Text>
-              <Text style={styles.listSub}>
-                {c.category} · by {c.by}
-              </Text>
-            </View>
-            <View style={[styles.statusChip, { backgroundColor: sevColor(c.severity) + '1a' }]}>
-              <Text style={[styles.statusText, { color: sevColor(c.severity) }]}>{c.severity}</Text>
-            </View>
-          </View>
+          </AnimatedCard>
         ))}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
         <View style={styles.moduleGrid}>
-          {modules.map((m) => (
-            <TouchableOpacity
-              key={m.id}
-              style={styles.moduleCard}
-              onPress={() => navigation.openModule(m.id)}
-            >
+          {modules.map((m, idx) => (
+            <AnimatedCard key={m.id} delay={idx * 60} onPress={() => navigation.openModule(m.id)} style={styles.moduleCard}>
               <View style={[styles.moduleIcon, { backgroundColor: m.color + '1a' }]}>
                 <Ionicons name={m.icon} size={20} color={m.color} />
               </View>
               <Text style={styles.moduleTitle}>{m.title}</Text>
-            </TouchableOpacity>
+            </AnimatedCard>
           ))}
         </View>
       </View>
@@ -284,6 +246,9 @@ export default function HostelDashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
   center: { alignItems: 'center', justifyContent: 'center' },
+  skeletonContainer: { flex: 1, backgroundColor: theme.colors.background },
+  skeletonHero: { marginHorizontal: 16, marginTop: 16, borderRadius: 20, padding: 18, backgroundColor: '#0891b2' },
+  listRow: { flexDirection: 'row', alignItems: 'center' },
   muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
   retryBtn: {
     marginTop: 12,
