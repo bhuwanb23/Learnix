@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Segoe UI, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="header3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <filter id="shadow3">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/>
+    </filter>
+    <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1" opacity="0.6"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="url(#bg3)"/>
+
+  <!-- Title -->
+  <rect x="0" y="0" width="1200" height="55" fill="url(#header3)"/>
+  <text x="600" y="35" text-anchor="middle" fill="white" font-size="20" font-weight="700">Learnix — Data Domain Flow (12 Domains, A–L)</text>
+
+  <!-- Domain A: Identity/Tenancy (center) -->
+  <rect x="480" y="80" width="240" height="80" rx="12" fill="#312e81" stroke="#6366f1" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="600" y="108" text-anchor="middle" fill="#c7d2fe" font-size="14" font-weight="700">A — Identity &amp; Tenancy</text>
+  <text x="600" y="128" text-anchor="middle" fill="#a5b4fc" font-size="10">users · roles · profiles · institutions</text>
+  <text x="600" y="145" text-anchor="middle" fill="#818cf8" font-size="9">5 tables</text>
+
+  <!-- Domain B: Academics (left) -->
+  <rect x="80" y="220" width="220" height="80" rx="12" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="190" y="248" text-anchor="middle" fill="#93c5fd" font-size="14" font-weight="700">B — Academics</text>
+  <text x="190" y="268" text-anchor="middle" fill="#60a5fa" font-size="10">courses · offerings · attendance</text>
+  <text x="190" y="285" text-anchor="middle" fill="#3b82f6" font-size="9">18 tables</text>
+
+  <!-- Domain C: Examinations (right) -->
+  <rect x="900" y="220" width="220" height="80" rx="12" fill="#2e1065" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="1010" y="248" text-anchor="middle" fill="#ddd6fe" font-size="14" font-weight="700">C — Examinations</text>
+  <text x="1010" y="268" text-anchor="middle" fill="#a78bfa" font-size="10">exams · results · evaluations</text>
+  <text x="1010" y="285" text-anchor="middle" fill="#8b5cf6" font-size="9">14 tables</text>
+
+  <!-- Domain D: Placements (far right) -->
+  <rect x="900" y="370" width="220" height="80" rx="12" fill="#052e16" stroke="#10b981" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="1010" y="398" text-anchor="middle" fill="#a7f3d0" font-size="14" font-weight="700">D — Placements</text>
+  <text x="1010" y="418" text-anchor="middle" fill="#34d399" font-size="10">companies · jobs · drives</text>
+  <text x="1010" y="435" text-anchor="middle" fill="#10b981" font-size="9">8 tables</text>
+
+  <!-- Domain E: Finance (bottom center) -->
+  <rect x="480" y="500" width="240" height="80" rx="12" fill="#083344" stroke="#06b6d4" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="600" y="528" text-anchor="middle" fill="#a5f3fc" font-size="14" font-weight="700">E — Finance</text>
+  <text x="600" y="548" text-anchor="middle" fill="#22d3ee" font-size="10">fees · payments · payroll</text>
+  <text x="600" y="565" text-anchor="middle" fill="#06b6d4" font-size="9">15 tables</text>
+
+  <!-- Domain F: Library (left) -->
+  <rect x="80" y="370" width="220" height="80" rx="12" fill="#431407" stroke="#f97316" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="190" y="398" text-anchor="middle" fill="#fed7aa" font-size="14" font-weight="700">F — Library</text>
+  <text x="190" y="418" text-anchor="middle" fill="#fb923c" font-size="10">books · issues · fines</text>
+  <text x="190" y="435" text-anchor="middle" fill="#f97316" font-size="9">10 tables</text>
+
+  <!-- Domain G: Hostel (far left bottom) -->
+  <rect x="80" y="520" width="220" height="80" rx="12" fill="#500724" stroke="#ec4899" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="190" y="548" text-anchor="middle" fill="#fbcfe8" font-size="14" font-weight="700">G — Hostel</text>
+  <text x="190" y="568" text-anchor="middle" fill="#f472b6" font-size="10">blocks · rooms · mess</text>
+  <text x="190" y="585" text-anchor="middle" fill="#ec4899" font-size="9">12 tables</text>
+
+  <!-- Domain H: Transport (left bottom) -->
+  <rect x="80" y="660" width="220" height="80" rx="12" fill="#042f2e" stroke="#14b8a6" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="190" y="688" text-anchor="middle" fill="#99f6e4" font-size="14" font-weight="700">H — Transport</text>
+  <text x="190" y="708" text-anchor="middle" fill="#2dd4bf" font-size="10">routes · vehicles · drivers</text>
+  <text x="190" y="725" text-anchor="middle" fill="#14b8a6" font-size="9">9 tables</text>
+
+  <!-- Domain I: Events/Sports (right bottom) -->
+  <rect x="900" y="520" width="220" height="80" rx="12" fill="#1a2e05" stroke="#84cc16" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="1010" y="548" text-anchor="middle" fill="#d9f99d" font-size="14" font-weight="700">I — Events &amp; Sports</text>
+  <text x="1010" y="568" text-anchor="middle" fill="#a3e635" font-size="10">events · teams · tournaments</text>
+  <text x="1010" y="585" text-anchor="middle" fill="#84cc16" font-size="9">14 tables</text>
+
+  <!-- Domain J: Alumni (far right bottom) -->
+  <rect x="900" y="660" width="220" height="80" rx="12" fill="#3b0764" stroke="#a855f7" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="1010" y="688" text-anchor="middle" fill="#e9d5ff" font-size="14" font-weight="700">J — Alumni</text>
+  <text x="1010" y="708" text-anchor="middle" fill="#c084fc" font-size="10">mentorship · donations</text>
+  <text x="1010" y="725" text-anchor="middle" fill="#a855f7" font-size="9">7 tables</text>
+
+  <!-- Domain K: Messaging (center) -->
+  <rect x="380" y="370" width="200" height="70" rx="12" fill="#7f1d1d" stroke="#f87171" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="480" y="395" text-anchor="middle" fill="#fecaca" font-size="13" font-weight="700">K — Messaging</text>
+  <text x="480" y="415" text-anchor="middle" fill="#fca5a5" font-size="10">notifications · broadcasts</text>
+  <text x="480" y="430" text-anchor="middle" fill="#f87171" font-size="9">5 tables</text>
+
+  <!-- Domain L: System (center right) -->
+  <rect x="620" y="370" width="200" height="70" rx="12" fill="#1e293b" stroke="#94a3b8" stroke-width="2" filter="url(#shadow3)"/>
+  <text x="720" y="395" text-anchor="middle" fill="#e2e8f0" font-size="13" font-weight="700">L — System</text>
+  <text x="720" y="415" text-anchor="middle" fill="#cbd5e1" font-size="10">audit · files · config</text>
+  <text x="720" y="430" text-anchor="middle" fill="#94a3b8" font-size="9">8 tables</text>
+
+  <!-- Flow arrows -->
+  <!-- A → B (users → academics) -->
+  <path d="M 520 160 Q 350 180 290 220" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow3)"/>
+
+  <!-- A → C (users → exams) -->
+  <path d="M 680 160 Q 850 180 900 220" fill="none" stroke="#6366f1" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow3)"/>
+
+  <!-- B → C (offerings → exams) -->
+  <line x1="300" y1="260" x2="900" y2="260" stroke="#3b82f6" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- B → E (enrollments → fees) -->
+  <path d="M 190 300 Q 300 400 480 500" fill="none" stroke="#3b82f6" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- E → K (payments → notifications) -->
+  <line x1="480" y1="530" x2="480" y2="440" stroke="#06b6d4" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- E → L (payments → audit) -->
+  <line x1="620" y1="530" x2="720" y2="440" stroke="#06b6d4" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- G → E (hostel rent → finance) -->
+  <path d="M 300 560 Q 390 560 480 540" fill="none" stroke="#ec4899" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- H → E (transport fees → finance) -->
+  <path d="M 300 700 Q 390 650 480 560" fill="none" stroke="#14b8a6" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- F → E (fines → finance) -->
+  <path d="M 300 410 Q 390 450 480 510" fill="none" stroke="#f97316" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- J → E (donations → finance) -->
+  <path d="M 900 700 Q 790 650 720 580" fill="none" stroke="#a855f7" stroke-width="1" opacity="0.3" marker-end="url(#arrow3)"/>
+
+  <!-- I → K (events → notifications) -->
+  <line x1="900" y1="540" x2="580" y2="400" stroke="#84cc16" stroke-width="1" opacity="0.2" marker-end="url(#arrow3)"/>
+
+  <!-- D → K (placements → notifications) -->
+  <line x1="900" y1="400" x2="580" y2="395" stroke="#10b981" stroke-width="1" opacity="0.2" marker-end="url(#arrow3)"/>
+
+  <!-- Summary bar -->
+  <rect x="30" y="760" width="1140" height="35" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="783" text-anchor="middle" fill="#94a3b8" font-size="12">
+    127 models across 12 domains · All domains share Domain A (identity) and Domain L (audit/files) · Finance (E) is the payment hub
+  </text>
+</svg>

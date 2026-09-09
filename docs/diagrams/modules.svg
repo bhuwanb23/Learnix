@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="Segoe UI, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="header2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <filter id="glow2">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow2">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="900" fill="url(#bg2)"/>
+
+  <!-- Title -->
+  <rect x="0" y="0" width="1200" height="55" fill="url(#header2)"/>
+  <text x="600" y="35" text-anchor="middle" fill="white" font-size="20" font-weight="700">Learnix — Module Relationship Map</text>
+
+  <!-- Central: Platform/Auth -->
+  <circle cx="600" cy="400" r="70" fill="#312e81" stroke="#6366f1" stroke-width="3" filter="url(#shadow2)"/>
+  <text x="600" y="390" text-anchor="middle" fill="#c7d2fe" font-size="13" font-weight="700">Platform</text>
+  <text x="600" y="410" text-anchor="middle" fill="#a5b4fc" font-size="11">Auth · RBAC</text>
+  <text x="600" y="425" text-anchor="middle" fill="#818cf8" font-size="9">10 features</text>
+
+  <!-- Student (top center) -->
+  <circle cx="600" cy="180" r="55" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="600" y="175" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="700">Student</text>
+  <text x="600" y="192" text-anchor="middle" fill="#60a5fa" font-size="9">20 features</text>
+
+  <!-- Teacher (top left) -->
+  <circle cx="380" cy="200" r="50" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="380" y="195" text-anchor="middle" fill="#93c5fd" font-size="12" font-weight="700">Teacher</text>
+  <text x="380" y="212" text-anchor="middle" fill="#60a5fa" font-size="9">16 features</text>
+
+  <!-- HOD (top right) -->
+  <circle cx="820" cy="200" r="50" fill="#422006" stroke="#f59e0b" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="820" y="195" text-anchor="middle" fill="#fde68a" font-size="12" font-weight="700">HOD</text>
+  <text x="820" y="212" text-anchor="middle" fill="#fbbf24" font-size="9">8 features</text>
+
+  <!-- Admin (left) -->
+  <circle cx="200" cy="400" r="55" fill="#450a0a" stroke="#ef4444" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="200" y="395" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="700">Admin</text>
+  <text x="200" y="412" text-anchor="middle" fill="#f87171" font-size="9">17 features</text>
+
+  <!-- Exam Cell (right) -->
+  <circle cx="1000" cy="400" r="50" fill="#2e1065" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="1000" y="395" text-anchor="middle" fill="#ddd6fe" font-size="12" font-weight="700">Exam Cell</text>
+  <text x="1000" y="412" text-anchor="middle" fill="#a78bfa" font-size="9">9 features</text>
+
+  <!-- Accounts (bottom left) -->
+  <circle cx="300" cy="620" r="50" fill="#083344" stroke="#06b6d4" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="300" y="615" text-anchor="middle" fill="#a5f3fc" font-size="12" font-weight="700">Accounts</text>
+  <text x="300" y="632" text-anchor="middle" fill="#22d3ee" font-size="9">10 features</text>
+
+  <!-- Placement (bottom right) -->
+  <circle cx="900" cy="620" r="50" fill="#052e16" stroke="#10b981" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="900" y="615" text-anchor="middle" fill="#a7f3d0" font-size="12" font-weight="700">Placement</text>
+  <text x="900" y="632" text-anchor="middle" fill="#34d399" font-size="9">8 features</text>
+
+  <!-- Library (left bottom) -->
+  <circle cx="150" cy="620" r="45" fill="#431407" stroke="#f97316" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="150" y="615" text-anchor="middle" fill="#fed7aa" font-size="12" font-weight="700">Library</text>
+  <text x="150" y="632" text-anchor="middle" fill="#fb923c" font-size="9">7 features</text>
+
+  <!-- Hostel (far left bottom) -->
+  <circle cx="150" cy="780" r="45" fill="#500724" stroke="#ec4899" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="150" y="775" text-anchor="middle" fill="#fbcfe8" font-size="12" font-weight="700">Hostel</text>
+  <text x="150" y="792" text-anchor="middle" fill="#f472b6" font-size="9">10 features</text>
+
+  <!-- Transport (center left bottom) -->
+  <circle cx="380" cy="780" r="45" fill="#042f2e" stroke="#14b8a6" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="380" y="775" text-anchor="middle" fill="#99f6e4" font-size="12" font-weight="700">Transport</text>
+  <text x="380" y="792" text-anchor="middle" fill="#2dd4bf" font-size="9">9 features</text>
+
+  <!-- Sports (center right bottom) -->
+  <circle cx="820" cy="780" r="45" fill="#1a2e05" stroke="#84cc16" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="820" y="775" text-anchor="middle" fill="#d9f99d" font-size="12" font-weight="700">Sports</text>
+  <text x="820" y="792" text-anchor="middle" fill="#a3e635" font-size="9">7 features</text>
+
+  <!-- Alumni (far right bottom) -->
+  <circle cx="1050" cy="780" r="45" fill="#3b0764" stroke="#a855f7" stroke-width="2" filter="url(#shadow2)"/>
+  <text x="1050" y="775" text-anchor="middle" fill="#e9d5ff" font-size="12" font-weight="700">Alumni</text>
+  <text x="1050" y="792" text-anchor="middle" fill="#c084fc" font-size="9">8 features</text>
+
+  <!-- Connection lines (data dependencies) -->
+  <!-- Student connects to everything -->
+  <line x1="600" y1="235" x2="600" y2="330" stroke="#3b82f6" stroke-width="1.5" opacity="0.4"/>
+  <line x1="550" y1="210" x2="420" y2="230" stroke="#3b82f6" stroke-width="1" opacity="0.3"/>
+  <line x1="650" y1="210" x2="780" y2="230" stroke="#f59e0b" stroke-width="1" opacity="0.3"/>
+
+  <!-- Teacher to HOD -->
+  <line x1="430" y1="200" x2="770" y2="200" stroke="#f59e0b" stroke-width="1" opacity="0.3" stroke-dasharray="5,5"/>
+
+  <!-- Admin to all -->
+  <line x1="255" y1="400" x2="530" y2="400" stroke="#ef4444" stroke-width="1.5" opacity="0.4"/>
+  <line x1="220" y1="350" x2="360" y2="240" stroke="#ef4444" stroke-width="1" opacity="0.2"/>
+  <line x1="200" y1="455" x2="200" y2="575" stroke="#f97316" stroke-width="1" opacity="0.2"/>
+  <line x1="230" y1="450" x2="300" y2="570" stroke="#06b6d4" stroke-width="1" opacity="0.2"/>
+
+  <!-- Exam Cell to Student -->
+  <line x1="955" y1="380" x2="655" y2="210" stroke="#8b5cf6" stroke-width="1" opacity="0.3"/>
+
+  <!-- Accounts connects to payments -->
+  <line x1="300" y1="570" x2="300" y2="460" stroke="#06b6d4" stroke-width="1" opacity="0.3"/>
+  <line x1="345" y1="620" x2="530" y2="400" stroke="#06b6d4" stroke-width="1" opacity="0.2"/>
+  <line x1="255" y1="640" x2="175" y2="640" stroke="#f97316" stroke-width="1" opacity="0.2"/>
+
+  <!-- Hostel/Transport connect to Accounts for fees -->
+  <line x1="195" y1="780" x2="255" y2="640" stroke="#ec4899" stroke-width="1" opacity="0.2"/>
+  <line x1="335" y1="780" x2="300" y2="665" stroke="#14b8a6" stroke-width="1" opacity="0.2"/>
+
+  <!-- Placement to Student -->
+  <line x1="900" y1="570" x2="650" y2="220" stroke="#10b981" stroke-width="1" opacity="0.2"/>
+
+  <!-- Sports to Student -->
+  <line x1="820" y1="735" x2="650" y2="235" stroke="#84cc16" stroke-width="1" opacity="0.15"/>
+
+  <!-- Alumni to Student -->
+  <line x1="1050" y1="735" x2="650" y2="235" stroke="#a855f7" stroke-width="1" opacity="0.15"/>
+
+  <!-- Legend -->
+  <rect x="30" y="840" width="1140" height="50" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="60" y="868" fill="#64748b" font-size="11">LEGEND:</text>
+  <line x1="140" y1="865" x2="180" y2="865" stroke="#3b82f6" stroke-width="1.5" opacity="0.5"/>
+  <text x="190" y="870" fill="#94a3b8" font-size="10">Direct dependency</text>
+  <line x1="320" y1="865" x2="360" y2="865" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="370" y="870" fill="#94a3b8" font-size="10">Cross-module flow</text>
+  <circle cx="500" cy="865" r="6" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
+  <text x="515" y="870" fill="#94a3b8" font-size="10">Core/shared</text>
+  <circle cx="620" cy="865" r="6" fill="#1e3a5f" stroke="#3b82f6" stroke-width="1"/>
+  <text x="635" y="870" fill="#94a3b8" font-size="10">Domain module</text>
+  <text x="850" y="870" fill="#6366f1" font-size="11" font-weight="600">132 features · 14 modules · 286+ endpoints</text>
+</svg>

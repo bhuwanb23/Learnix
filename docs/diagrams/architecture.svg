@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Segoe UI, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="header" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="800" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <rect x="0" y="0" width="1200" height="60" fill="url(#header)"/>
+  <text x="600" y="38" text-anchor="middle" fill="white" font-size="22" font-weight="700">Learnix — System Architecture</text>
+
+  <!-- Client Layer -->
+  <rect x="30" y="80" width="1140" height="160" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="60" y="105" fill="#94a3b8" font-size="13" font-weight="600">CLIENT LAYER</text>
+
+  <!-- Role apps -->
+  <g transform="translate(50, 115)">
+    <rect width="100" height="50" rx="8" fill="#3b82f6" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Student</text>
+    <text x="50" y="38" text-anchor="middle" fill="#bfdbfe" font-size="9">20 features</text>
+  </g>
+  <g transform="translate(165, 115)">
+    <rect width="100" height="50" rx="8" fill="#3b82f6" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Teacher</text>
+    <text x="50" y="38" text-anchor="middle" fill="#bfdbfe" font-size="9">16 features</text>
+  </g>
+  <g transform="translate(280, 115)">
+    <rect width="100" height="50" rx="8" fill="#ef4444" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Admin</text>
+    <text x="50" y="38" text-anchor="middle" fill="#fecaca" font-size="9">17 features</text>
+  </g>
+  <g transform="translate(395, 115)">
+    <rect width="100" height="50" rx="8" fill="#f59e0b" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">HOD</text>
+    <text x="50" y="38" text-anchor="middle" fill="#fde68a" font-size="9">8 features</text>
+  </g>
+  <g transform="translate(510, 115)">
+    <rect width="100" height="50" rx="8" fill="#8b5cf6" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Exam Cell</text>
+    <text x="50" y="38" text-anchor="middle" fill="#ddd6fe" font-size="9">9 features</text>
+  </g>
+  <g transform="translate(625, 115)">
+    <rect width="100" height="50" rx="8" fill="#10b981" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Placement</text>
+    <text x="50" y="38" text-anchor="middle" fill="#a7f3d0" font-size="9">8 features</text>
+  </g>
+  <g transform="translate(740, 115)">
+    <rect width="100" height="50" rx="8" fill="#06b6d4" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Accounts</text>
+    <text x="50" y="38" text-anchor="middle" fill="#a5f3fc" font-size="9">10 features</text>
+  </g>
+  <g transform="translate(855, 115)">
+    <rect width="100" height="50" rx="8" fill="#f97316" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Library</text>
+    <text x="50" y="38" text-anchor="middle" fill="#fed7aa" font-size="9">7 features</text>
+  </g>
+  <g transform="translate(970, 115)">
+    <rect width="100" height="50" rx="8" fill="#ec4899" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Hostel</text>
+    <text x="50" y="38" text-anchor="middle" fill="#fbcfe8" font-size="9">10 features</text>
+  </g>
+
+  <g transform="translate(50, 175)">
+    <rect width="100" height="50" rx="8" fill="#14b8a6" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Transport</text>
+    <text x="50" y="38" text-anchor="middle" fill="#99f6e4" font-size="9">9 features</text>
+  </g>
+  <g transform="translate(165, 175)">
+    <rect width="100" height="50" rx="8" fill="#84cc16" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Sports</text>
+    <text x="50" y="38" text-anchor="middle" fill="#d9f99d" font-size="9">7 features</text>
+  </g>
+  <g transform="translate(280, 175)">
+    <rect width="100" height="50" rx="8" fill="#a855f7" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Alumni</text>
+    <text x="50" y="38" text-anchor="middle" fill="#e9d5ff" font-size="9">8 features</text>
+  </g>
+  <g transform="translate(395, 175)">
+    <rect width="100" height="50" rx="8" fill="#64748b" filter="url(#shadow)"/>
+    <text x="50" y="22" text-anchor="middle" fill="white" font-size="11" font-weight="600">Platform</text>
+    <text x="50" y="38" text-anchor="middle" fill="#cbd5e1" font-size="9">10 features</text>
+  </g>
+
+  <!-- Tech labels -->
+  <text x="560" y="200" text-anchor="middle" fill="#64748b" font-size="11">Expo / React Native · 752 page files · 12 role-specific apps</text>
+
+  <!-- Arrow down -->
+  <line x1="600" y1="240" x2="600" y2="270" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/></marker></defs>
+
+  <!-- API Layer -->
+  <rect x="30" y="270" width="1140" height="120" rx="12" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+  <text x="60" y="295" fill="#94a3b8" font-size="13" font-weight="600">API LAYER — Express 5 + TypeScript</text>
+
+  <g transform="translate(50, 310)">
+    <rect width="140" height="55" rx="8" fill="#312e81" filter="url(#shadow)"/>
+    <text x="70" y="22" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600">Auth + RBAC</text>
+    <text x="70" y="40" text-anchor="middle" fill="#a5b4fc" font-size="9">JWT · bcrypt · roles</text>
+  </g>
+  <g transform="translate(210, 310)">
+    <rect width="140" height="55" rx="8" fill="#312e81" filter="url(#shadow)"/>
+    <text x="70" y="22" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600">Zod Validation</text>
+    <text x="70" y="40" text-anchor="middle" fill="#a5b4fc" font-size="9">Input schemas per route</text>
+  </g>
+  <g transform="translate(370, 310)">
+    <rect width="140" height="55" rx="8" fill="#312e81" filter="url(#shadow)"/>
+    <text x="70" y="22" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600">14 Module Routers</text>
+    <text x="70" y="40" text-anchor="middle" fill="#a5b4fc" font-size="9">286+ endpoints</text>
+  </g>
+  <g transform="translate(530, 310)">
+    <rect width="140" height="55" rx="8" fill="#312e81" filter="url(#shadow)"/>
+    <text x="70" y="22" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600">Middleware</text>
+    <text x="70" y="40" text-anchor="middle" fill="#a5b4fc" font-size="9">Helmet · CORS · Rate Limit</text>
+  </g>
+  <g transform="translate(690, 310)">
+    <rect width="140" height="55" rx="8" fill="#312e81" filter="url(#shadow)"/>
+    <text x="70" y="22" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600">Tenant Scope</text>
+    <text x="70" y="40" text-anchor="middle" fill="#a5b4fc" font-size="9">institutionId filter</text>
+  </g>
+  <g transform="translate(850, 310)">
+    <rect width="140" height="55" rx="8" fill="#312e81" filter="url(#shadow)"/>
+    <text x="70" y="22" text-anchor="middle" fill="#c7d2fe" font-size="11" font-weight="600">Audit + Logging</text>
+    <text x="70" y="40" text-anchor="middle" fill="#a5b4fc" font-size="9">Every mutation logged</text>
+  </g>
+
+  <!-- Arrow down -->
+  <line x1="600" y1="390" x2="600" y2="420" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Data Layer -->
+  <rect x="30" y="420" width="1140" height="120" rx="12" fill="#1e293b" stroke="#10b981" stroke-width="2"/>
+  <text x="60" y="445" fill="#94a3b8" font-size="13" font-weight="600">DATA LAYER — Prisma ORM + PostgreSQL</text>
+
+  <g transform="translate(50, 460)">
+    <rect width="130" height="55" rx="8" fill="#064e3b" filter="url(#shadow)"/>
+    <text x="65" y="22" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="600">127 Models</text>
+    <text x="65" y="40" text-anchor="middle" fill="#6ee7b7" font-size="9">40 schema files</text>
+  </g>
+  <g transform="translate(200, 460)">
+    <rect width="130" height="55" rx="8" fill="#064e3b" filter="url(#shadow)"/>
+    <text x="65" y="22" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="600">12 Domains</text>
+    <text x="65" y="40" text-anchor="middle" fill="#6ee7b7" font-size="9">A through L</text>
+  </g>
+  <g transform="translate(350, 460)">
+    <rect width="130" height="55" rx="8" fill="#064e3b" filter="url(#shadow)"/>
+    <text x="65" y="22" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="600">Multi-Tenant</text>
+    <text x="65" y="40" text-anchor="middle" fill="#6ee7b7" font-size="9">institutionId scope</text>
+  </g>
+  <g transform="translate(500, 460)">
+    <rect width="130" height="55" rx="8" fill="#064e3b" filter="url(#shadow)"/>
+    <text x="65" y="22" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="600">State Machines</text>
+    <text x="65" y="40" text-anchor="middle" fill="#6ee7b7" font-size="9">20+ status flows</text>
+  </g>
+  <g transform="translate(650, 460)">
+    <rect width="130" height="55" rx="8" fill="#064e3b" filter="url(#shadow)"/>
+    <text x="65" y="22" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="600">Cross-Module</text>
+    <text x="65" y="40" text-anchor="middle" fill="#6ee7b7" font-size="9">Write-throughs</text>
+  </g>
+  <g transform="translate(800, 460)">
+    <rect width="130" height="55" rx="8" fill="#064e3b" filter="url(#shadow)"/>
+    <text x="65" y="22" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="600">Realistic Seed</text>
+    <text x="65" y="40" text-anchor="middle" fill="#6ee7b7" font-size="9">32 students, 12 faculty</text>
+  </g>
+  <g transform="translate(950, 460)">
+    <rect width="130" height="55" rx="8" fill="#064e3b" filter="url(#shadow)"/>
+    <text x="65" y="22" text-anchor="middle" fill="#a7f3d0" font-size="11" font-weight="600">UUID PKs</text>
+    <text x="65" y="40" text-anchor="middle" fill="#6ee7b7" font-size="9">CUID2 generated</text>
+  </g>
+
+  <!-- Arrow down -->
+  <line x1="600" y1="540" x2="600" y2="570" stroke="#10b981" stroke-width="2" marker-end="url(#arrow2)"/>
+  <defs><marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#10b981"/></marker></defs>
+
+  <!-- Infrastructure Layer -->
+  <rect x="30" y="570" width="1140" height="100" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+  <text x="60" y="595" fill="#94a3b8" font-size="13" font-weight="600">INFRASTRUCTURE</text>
+
+  <g transform="translate(50, 610)">
+    <rect width="160" height="45" rx="8" fill="#78350f" filter="url(#shadow)"/>
+    <text x="80" y="20" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Docker Compose</text>
+    <text x="80" y="36" text-anchor="middle" fill="#fcd34d" font-size="9">backend + postgres + nginx</text>
+  </g>
+  <g transform="translate(230, 610)">
+    <rect width="160" height="45" rx="8" fill="#78350f" filter="url(#shadow)"/>
+    <text x="80" y="20" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">GitHub Actions</text>
+    <text x="80" y="36" text-anchor="middle" fill="#fcd34d" font-size="9">CI/CD pipeline</text>
+  </g>
+  <g transform="translate(410, 610)">
+    <rect width="160" height="45" rx="8" fill="#78350f" filter="url(#shadow)"/>
+    <text x="80" y="20" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Multi-Stage Build</text>
+    <text x="80" y="36" text-anchor="middle" fill="#fcd34d" font-size="9">deps → build → production</text>
+  </g>
+  <g transform="translate(590, 610)">
+    <rect width="160" height="45" rx="8" fill="#78350f" filter="url(#shadow)"/>
+    <text x="80" y="20" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Health Checks</text>
+    <text x="80" y="36" text-anchor="middle" fill="#fcd34d" font-size="9">/health endpoint + Docker</text>
+  </g>
+  <g transform="translate(770, 610)">
+    <rect width="160" height="45" rx="8" fill="#78350f" filter="url(#shadow)"/>
+    <text x="80" y="20" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Smoke Tests</text>
+    <text x="80" y="36" text-anchor="middle" fill="#fcd34d" font-size="9">19 endpoint tests</text>
+  </g>
+  <g transform="translate(950, 610)">
+    <rect width="160" height="45" rx="8" fill="#78350f" filter="url(#shadow)"/>
+    <text x="80" y="20" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Env Validation</text>
+    <text x="80" y="36" text-anchor="middle" fill="#fcd34d" font-size="9">strict in production</text>
+  </g>
+
+  <!-- Footer stats -->
+  <rect x="30" y="690" width="1140" height="90" rx="12" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="715" text-anchor="middle" fill="#64748b" font-size="12" font-weight="600">BY THE NUMBERS</text>
+  <text x="150" y="750" text-anchor="middle" fill="#6366f1" font-size="28" font-weight="700">132</text>
+  <text x="150" y="770" text-anchor="middle" fill="#94a3b8" font-size="11">Features</text>
+  <text x="350" y="750" text-anchor="middle" fill="#10b981" font-size="28" font-weight="700">286+</text>
+  <text x="350" y="770" text-anchor="middle" fill="#94a3b8" font-size="11">API Endpoints</text>
+  <text x="550" y="750" text-anchor="middle" fill="#f59e0b" font-size="28" font-weight="700">127</text>
+  <text x="550" y="770" text-anchor="middle" fill="#94a3b8" font-size="11">DB Models</text>
+  <text x="750" y="750" text-anchor="middle" fill="#ec4899" font-size="28" font-weight="700">14</text>
+  <text x="750" y="770" text-anchor="middle" fill="#94a3b8" font-size="11">Role Apps</text>
+  <text x="950" y="750" text-anchor="middle" fill="#8b5cf6" font-size="28" font-weight="700">13,569</text>
+  <text x="950" y="770" text-anchor="middle" fill="#94a3b8" font-size="11">Lines of Code</text>
+</svg>
