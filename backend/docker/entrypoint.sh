@@ -15,4 +15,5 @@ if [ "$DATABASE_SEED" = "true" ]; then
 fi
 
 echo "Starting server on port ${PORT:-4000}..."
-exec node dist/server.js
+# tsc emits to dist/src (rootDir is the project root)
+exec node dist/src/server.js
