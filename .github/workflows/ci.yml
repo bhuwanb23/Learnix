@@ -44,13 +44,17 @@ jobs:
       - run: cd backend && npx tsx prisma/seed-realistic.ts
         env:
           DATABASE_URL: file:./test.db
-      - run: cd backend && npx tsx src/server.ts &
+      - name: Start server and run smoke test
+        working-directory: backend
         env:
           DATABASE_URL: file:./test.db
           PORT: 4000
           JWT_ACCESS_SECRET: ci-test-access
           JWT_REFRESH_SECRET: ci-test-refresh
-      - run: sleep 5 && cd backend && npx tsx scripts/smoke.ts
+        run: |
+          npx tsx src/server.ts &
+          sleep 4
+          npx tsx scripts/smoke.ts
 
   # ── Web build ──────────────────────────────────────────
   web-build:
