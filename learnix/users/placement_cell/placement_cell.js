@@ -43,9 +43,8 @@ const TAB_TITLES = {
   Profile: 'My Profile',
 };
 
-setDemoUser('placement@learnix.dev');
-
 export default function PlacementScreen({ navigation }) {
+  setDemoUser('placement@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();

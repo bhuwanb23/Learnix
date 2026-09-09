@@ -31,8 +31,6 @@ import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 // Demo identity — the Hostel app logs in as the Chief Warden
 import { setDemoUser } from '../../services/api';
 
-setDemoUser('hostel@learnix.dev');
-
 // Feature module registry: key -> { title, component }
 const FEATURE_MODULES = {
   GatePasses: { title: 'Gate Passes', component: GatePassesModule },
@@ -50,6 +48,7 @@ const TAB_TITLES = {
 };
 
 export default function HostelScreen({ navigation }) {
+  setDemoUser('hostel@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();

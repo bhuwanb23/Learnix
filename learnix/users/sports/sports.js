@@ -29,7 +29,6 @@ import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 
 // Demo identity for the sports office (matches backend seed)
 import { setDemoUser } from '../../services/api';
-setDemoUser('sports@learnix.dev');
 
 // Feature module registry: key -> { title, component }
 const FEATURE_MODULES = {
@@ -47,6 +46,7 @@ const TAB_TITLES = {
 };
 
 export default function SportsScreen({ navigation }) {
+  setDemoUser('sports@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();

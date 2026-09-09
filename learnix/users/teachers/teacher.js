@@ -16,10 +16,8 @@ import NotificationsPage from './pages/notifications/notifications';
 import SchedulePage from './pages/schedule/schedule';
 import { setDemoUser } from '../../services/api';
 
-// Set demo identity for teacher app
-setDemoUser('teacher@learnix.dev');
-
 export default function TeacherScreen() {
+  setDemoUser('teacher@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const [selectedClass, setSelectedClass] = useState(null);

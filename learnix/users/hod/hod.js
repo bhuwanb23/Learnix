@@ -30,8 +30,6 @@ import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 // Demo identity for this app's API calls
 import { setDemoUser } from '../../services/api';
 
-setDemoUser('hod@learnix.dev');
-
 // Feature module registry: key -> { title, component }
 const FEATURE_MODULES = {
   Syllabus: { title: 'Syllabus Approvals', component: SyllabusModule },
@@ -48,6 +46,7 @@ const TAB_TITLES = {
 };
 
 export default function HODScreen({ navigation }) {
+  setDemoUser('hod@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();

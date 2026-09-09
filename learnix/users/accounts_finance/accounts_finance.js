@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Wire demo identity for this role app
 import { setDemoUser } from '../../services/api';
-setDemoUser('accounts@learnix.dev');
 
 // Import components
 import AccountsHeader from './components/AccountsHeader';
@@ -51,6 +50,7 @@ const TAB_TITLES = {
 };
 
 export default function AccountsScreen({ navigation }) {
+  setDemoUser('accounts@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();

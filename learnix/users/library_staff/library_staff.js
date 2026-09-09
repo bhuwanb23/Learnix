@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Wire demo identity for this role app
 import { setDemoUser } from '../../services/api';
-setDemoUser('library@learnix.dev');
 
 // Import components
 import LibraryHeader from './components/LibraryHeader';
@@ -47,6 +46,7 @@ const TAB_TITLES = {
 };
 
 export default function LibraryStaffScreen({ navigation }) {
+  setDemoUser('library@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();
