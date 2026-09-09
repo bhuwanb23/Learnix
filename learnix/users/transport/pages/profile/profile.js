@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
 import { transportApi } from '../../../../services/api';
+import { AnimatedCard, SkeletonCard, SkeletonCircle, SkeletonLine } from '../../../../components/ui';
 
 const menuItems = [
   { icon: 'map-outline', label: 'Route Master', color: '#2563eb' },
@@ -51,8 +52,14 @@ export default function Profile({ navigation }) {
 
   if (loading && !profile) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <View style={styles.skeletonHeader}>
+          <SkeletonCircle size={84} />
+          <SkeletonLine width={120} height={20} style={{ marginTop: 12 }} />
+          <SkeletonLine width={80} height={14} style={{ marginTop: 6 }} />
+        </View>
+        <SkeletonCard style={{ margin: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
       </View>
     );
   }
@@ -145,21 +152,20 @@ export default function Profile({ navigation }) {
           <Text style={styles.sectionLabel}>Account</Text>
           <View style={styles.card}>
             {menuItems.map((item, idx) => (
-              <View key={item.label}>
-                <TouchableOpacity
-                  style={styles.rowItem}
-                  onPress={() => Alert.alert(item.label, 'Coming soon')}
-                >
-                  <View style={[styles.iconWrap, { backgroundColor: item.color + '1a' }]}>
-                    <Ionicons name={item.icon} size={18} color={item.color} />
+              <React.Fragment key={item.label}>
+                <AnimatedCard delay={idx * 60} onPress={() => Alert.alert(item.label, 'Coming soon')} style={{ borderWidth: 0, paddingHorizontal: 0 }}>
+                  <View style={styles.rowItem}>
+                    <View style={[styles.iconWrap, { backgroundColor: item.color + '1a' }]}>
+                      <Ionicons name={item.icon} size={18} color={item.color} />
+                    </View>
+                    <View style={styles.rowBody}>
+                      <Text style={styles.rowLabel}>{item.label}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
                   </View>
-                  <View style={styles.rowBody}>
-                    <Text style={styles.rowLabel}>{item.label}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-                </TouchableOpacity>
+                </AnimatedCard>
                 {idx < menuItems.length - 1 && <View style={styles.divider} />}
-              </View>
+              </React.Fragment>
             ))}
           </View>
         </View>
@@ -177,6 +183,7 @@ export default function Profile({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background },
+  skeletonHeader: { alignItems: 'center', paddingTop: 40, paddingBottom: 24, backgroundColor: '#2563eb', borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
   content: { paddingBottom: 40 },
   header: {
     paddingTop: theme.spacing.xl + 10,

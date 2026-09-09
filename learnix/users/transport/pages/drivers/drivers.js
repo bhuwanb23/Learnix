@@ -181,16 +181,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
+  resultCount: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
   },
+  card: { padding: 12, marginBottom: 8 },
+  cardInner: { flexDirection: 'row', alignItems: 'center' },
   avatar: {
     width: 44,
     height: 44,
