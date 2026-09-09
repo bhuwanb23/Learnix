@@ -59,21 +59,18 @@ export default function RoutesModule({ navigation }) {
 
   if (loading && routes.length === 0) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 }}>
+        <SkeletonStatRow count={3} style={{ marginTop: 16 }} />
+        <SkeletonCard style={{ marginTop: 14 }} />
+        <SkeletonCard />
+        <SkeletonCard />
       </View>
     );
   }
 
   if (error && routes.length === 0) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <EmptyState icon="cloud-offline-outline" title="Couldn't load routes" subtitle={error} />
     );
   }
 
@@ -104,40 +101,38 @@ export default function RoutesModule({ navigation }) {
         </View>
       </View>
 
+      <SearchBar placeholder="Search routes..." onSearch={setQuery} style={{ marginTop: 16 }} />
+
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>All Routes</Text>
+        <Text style={styles.resultCount}>{filtered.length} route{filtered.length !== 1 ? 's' : ''}</Text>
       </View>
 
-      {routes.length === 0 && <Text style={styles.empty}>No routes yet.</Text>}
-      {routes.map((r) => {
-        const st = statusStyle(r.status);
-        return (
-          <TouchableOpacity
-            key={r.id}
-            style={styles.card}
-            onPress={() => setSelectedRouteId(r.id)}
-          >
-            <View style={[styles.routeIcon, { backgroundColor: st.bg }]}>
-              <Ionicons name="bus-outline" size={18} color={st.color} />
+      {filtered.length === 0 && (
+        <EmptyState
+          icon={query ? 'search-outline' : 'map-outline'}
+          title={query ? `No results for "${query}"` : 'No routes yet'}
+          subtitle={query ? 'Try a different search term' : 'Routes will appear here once configured.'}
+        />
+      )}
+      {filtered.map((r, idx) => (
+        <AnimatedCard key={r.id} delay={idx * 50} onPress={() => setSelectedRouteId(r.id)} style={styles.card}>
+          <View style={styles.cardInner}>
+            <View style={[styles.routeIcon, { backgroundColor: (statusStyle(r.status).bg) }]}>
+              <Ionicons name="bus-outline" size={18} color={statusStyle(r.status).color} />
             </View>
             <View style={styles.cardBody}>
               <Text style={styles.name}>{r.name}</Text>
-              <Text style={styles.meta}>
-                {r.stops} stops · {r.students} students · {r.distanceKm} km
-              </Text>
+              <Text style={styles.meta}>{r.stops} stops · {r.students} students · {r.distanceKm} km</Text>
               <View style={styles.timeRow}>
                 <Ionicons name="time-outline" size={11} color={theme.colors.textMuted} />
-                <Text style={styles.timeText}>
-                  {r.firstPickup || '—'} → {r.lastDrop || '—'} · {r.bus || 'no bus'}
-                </Text>
+                <Text style={styles.timeText}>{r.firstPickup || '—'} → {r.lastDrop || '—'} · {r.bus || 'no bus'}</Text>
               </View>
             </View>
-            <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-              <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
-            </View>
-          </TouchableOpacity>
-        );
-      })}
+            <StatusChip status={r.status || 'IDLE'} />
+          </View>
+        </AnimatedCard>
+      ))}
     </ScrollView>
   );
 }
@@ -187,16 +182,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
+  resultCount: {
+    fontSize: 12,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
   },
+  card: { padding: 12, marginBottom: 8 },
+  cardInner: { flexDirection: 'row', alignItems: 'center' },
   routeIcon: {
     width: 42,
     height: 42,

@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { transportApi } from '../../../../services/api';
 import VehicleDetail from './pages/vehicle_detail/vehicle_detail';
+import { AnimatedCard, SearchBar, StatusChip, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const STATUS_STYLE = {
   ON_ROAD: { bg: '#dcfce7', color: '#059669', label: 'On Road' },
@@ -17,6 +18,13 @@ export default function FleetModule({ navigation }) {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  const [query, setQuery] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!query) return vehicles;
+    const q = query.toLowerCase();
+    return vehicles.filter((v) => v.regNo.toLowerCase().includes(q) || v.model.toLowerCase().includes(q) || (v.route || '').toLowerCase().includes(q));
+  }, [vehicles, query]);
 
   const load = useCallback(async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
@@ -50,21 +58,18 @@ export default function FleetModule({ navigation }) {
 
   if (loading && vehicles.length === 0) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={{ flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 }}>
+        <SkeletonStatRow count={3} style={{ marginTop: 16 }} />
+        <SkeletonCard style={{ marginTop: 14 }} />
+        <SkeletonCard />
+        <SkeletonCard />
       </View>
     );
   }
 
   if (error && vehicles.length === 0) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={36} color={theme.colors.textMuted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
+      <EmptyState icon="cloud-offline-outline" title="Couldn't load fleet" subtitle={error} />
     );
   }
 
