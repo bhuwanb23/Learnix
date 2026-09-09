@@ -21,9 +21,6 @@ import JobApplyDonePage from './pages/placement/pages/job_apply_done/job_apply_d
 import NotificationsPage from './pages/notifications/notifications';
 import { setDemoUser } from '../../services/api';
 
-// Set demo identity for student app
-setDemoUser('student@learnix.dev');
-
 // Import components
 import StudentHeader from './components/StudentHeader';
 import StudentBottomNavbar from './components/StudentBottomNavbar';
@@ -32,6 +29,7 @@ import StudentBottomNavbar from './components/StudentBottomNavbar';
 import { COLORS } from '../../constants/theme';
 
 export default function StudentsScreen() {
+  setDemoUser('student@learnix.dev');
   const [activeTab, setActiveTab] = useState('Home');
   const [currentScreen, setCurrentScreen] = useState('Main');
   const [screenParams, setScreenParams] = useState({});
