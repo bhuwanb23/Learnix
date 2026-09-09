@@ -43,8 +43,9 @@ const TAB_TITLES = {
   Profile: 'My Profile',
 };
 
+setDemoUser('examcell@learnix.dev');
+
 export default function ExamCellScreen({ navigation }) {
-  useEffect(() => { setDemoUser('examcell@learnix.dev'); }, []);
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();

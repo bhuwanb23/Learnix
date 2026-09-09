@@ -59,8 +59,9 @@ const TAB_TITLES = {
   Reports: 'Reports & Analytics',
 };
 
+setDemoUser('admin@learnix.dev');
+
 export default function AdminScreen({ navigation }) {
-  useEffect(() => { setDemoUser('admin@learnix.dev'); }, []);
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
   const insets = useSafeAreaInsetsWithPadding();
