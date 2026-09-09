@@ -38,9 +38,9 @@ COPY --from=build /app/prisma ./prisma
 COPY prisma/seed.ts ./prisma/
 COPY prisma/seed-realistic.ts ./prisma/
 
-# Entrypoint
+# Entrypoint (normalize CRLF → LF: Windows checkouts can poison the shebang)
 COPY docker/entrypoint.sh ./docker/entrypoint.sh
-RUN chmod +x docker/entrypoint.sh
+RUN sed -i 's/\r$//' docker/entrypoint.sh && chmod +x docker/entrypoint.sh
 
 # SQLite database lives here — mount a volume on this path
 RUN mkdir -p /app/data && chown -R learnix:learnix /app/data

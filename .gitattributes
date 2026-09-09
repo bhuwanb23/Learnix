@@ -1,0 +1,4 @@
+# Normalize line endings for shell scripts — CRLF breaks Docker entrypoints
+* text=auto
+*.sh text eol=lf
+*.conf text eol=lf
