@@ -39,12 +39,11 @@ SQLite→Postgres via Prisma · TypeScript strict · Express 5 (router per role)
 | **Exam Cell** | **EXAMCELL** | **✅ `modules/examcell`** | **✅ wired end-to-end** | **Done** |
 | **Placement Cell** | **PLACEMENT** | **✅ `modules/placement`** | **✅ wired end-to-end** | **Done** |
 | **Admin** | **ADMIN** | **✅ `modules/admin`** | **✅ wired end-to-end** | **Done** |
-| Student | STUDENT | ⬜ | ⬜ | Not started |
 | **Teacher** | **TEACHER** | **✅ `modules/teacher`** | **✅ wired end-to-end** | **Done** |
 | **Student** | **STUDENT** | **✅ `modules/student`** | **✅ wired end-to-end** | **Done** |
-| Platform + Master | PLATFORM_ADMIN | ⬜ | ⬜ | Not started |
+| **Platform** | **PLATFORM_ADMIN** | **✅ `modules/platform`** | **✅ login/reset/RBAC** | **Done** |
 
-**Next up:** student → teacher → admin → … (remaining modules per the one-role-at-a-time protocol)
+**All 14 modules wired.** Backend is production-ready with Docker + CI/CD.
 
 ## 🔁 How to work on the backend (any future session)
 

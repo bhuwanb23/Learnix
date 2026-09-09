@@ -228,10 +228,11 @@
 | Teacher | 16 | Transport | 9 |
 | Admin | 17 | Sports & Cultural | 7 |
 | Accounts & Finance | 10 | Placement | 8 |
-| HOD | 8 | | |
-| Exam Cell | 9 | Alumni Relations | 8 |
-| Accounts | 10 | Library Staff | 7 |
-| **Admin** | **17 ✅ wired** | Platform/shared | 10 |
+| HOD | 8 | Alumni Relations | 8 |
+| Exam Cell | 9 | Library Staff | 7 |
+| Platform/shared | 10 | | |
+
+**Total: 132 features. All wired.**
 
 **Total: 132 features.**
 
