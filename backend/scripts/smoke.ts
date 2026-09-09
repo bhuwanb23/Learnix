@@ -1,7 +1,6 @@
 // End-to-end smoke test — runs against a live server.
 // Usage: BASE_URL=http://localhost:4000 npx tsx scripts/smoke.ts
 // Exits 1 on any failure. Designed for CI: fast, read-mostly, self-contained.
-import { sha256 } from '../src/lib/hash.js';
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:4000';
 const PASSWORD = process.env.SMOKE_PASSWORD ?? 'Passw0rd!';

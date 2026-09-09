@@ -18,25 +18,12 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: cd backend && npm ci
+      - run: cd backend && npx prisma generate --schema prisma/schema
       - run: cd backend && npx tsc --noEmit
 
   # ── Seed + Smoke test ──────────────────────────────────
   smoke:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: learnix
-          POSTGRES_PASSWORD: learnix_secret
-          POSTGRES_DB: learnix_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U learnix"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,18 +32,21 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: cd backend && npm ci
+      - run: cd backend && npx prisma generate --schema prisma/schema
+        env:
+          DATABASE_URL: file:./test.db
       - run: cd backend && npx prisma db push --schema prisma/schema --skip-generate
         env:
-          DATABASE_URL: postgresql://learnix:learnix_secret@localhost:5432/learnix_test
+          DATABASE_URL: file:./test.db
       - run: cd backend && npx tsx prisma/seed.ts
         env:
-          DATABASE_URL: postgresql://learnix:learnix_secret@localhost:5432/learnix_test
+          DATABASE_URL: file:./test.db
       - run: cd backend && npx tsx prisma/seed-realistic.ts
         env:
-          DATABASE_URL: postgresql://learnix:learnix_secret@localhost:5432/learnix_test
+          DATABASE_URL: file:./test.db
       - run: cd backend && npx tsx src/server.ts &
         env:
-          DATABASE_URL: postgresql://learnix:learnix_secret@localhost:5432/learnix_test
+          DATABASE_URL: file:./test.db
           PORT: 4000
           JWT_ACCESS_SECRET: ci-test-access
           JWT_REFRESH_SECRET: ci-test-refresh
