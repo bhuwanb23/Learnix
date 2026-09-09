@@ -3,8 +3,11 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL =
+// API base URL: override with EXPO_PUBLIC_API_URL. In Docker the nginx proxy
+// serves /api/v1 on the same host, so a relative path works there.
+const DEFAULT_BASE_URL =
   Platform.OS === 'android' ? 'http://10.0.2.2:4000/api/v1' : 'http://localhost:4000/api/v1';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_BASE_URL;
 
 // Demo credentials — replaced by the real login flow once auth screens wire up.
 // Each user app sets its demo identity at startup via setDemoUser().
