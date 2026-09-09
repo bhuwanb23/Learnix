@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { transportApi } from '../../../../services/api';
 import RouteDetail from './pages/route_detail/route_detail';
+import { AnimatedCard, SearchBar, StatusChip, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 export default function RoutesModule({ navigation }) {
   const [routes, setRoutes] = useState([]);
@@ -11,6 +12,13 @@ export default function RoutesModule({ navigation }) {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRouteId, setSelectedRouteId] = useState(null);
+  const [query, setQuery] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!query) return routes;
+    const q = query.toLowerCase();
+    return routes.filter((r) => r.name.toLowerCase().includes(q) || (r.bus || '').toLowerCase().includes(q));
+  }, [routes, query]);
 
   const load = useCallback(async (showSpinner = true) => {
     if (showSpinner) setLoading(true);

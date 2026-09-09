@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { transportApi } from '../../../../services/api';
+import { AnimatedCard, StatusChip, SkeletonStatRow, SkeletonCard } from '../../../../components/ui';
 
 const modules = [
   { id: 'Tracking', title: 'Live Tracking', icon: 'navigate-outline', color: '#2563eb' },
@@ -50,8 +51,18 @@ export default function TransportDashboard({ navigation }) {
 
   if (loading && !data) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={styles.skeletonContainer}>
+        <View style={styles.skeletonHero}>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: 80, height: 10, borderRadius: 4 }} />
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', width: 160, height: 22, borderRadius: 4, marginTop: 8 }} />
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: '100%', height: 6, borderRadius: 3, marginTop: 14 }} />
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: 100, height: 28, borderRadius: 4, marginTop: 14 }} />
+        </View>
+        <SkeletonStatRow count={2} style={{ marginTop: 14, paddingHorizontal: 16 }} />
+        <SkeletonStatRow count={2} style={{ marginTop: 0, paddingHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 14 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
       </View>
     );
   }
@@ -127,39 +138,19 @@ export default function TransportDashboard({ navigation }) {
             <Text style={styles.listSub}>No routes configured yet.</Text>
           </View>
         )}
-        {todayRoutes.map((r) => (
-          <View key={r.id} style={styles.listCard}>
-            <View style={styles.routeIcon}>
-              <Ionicons name="bus-outline" size={17} color="#2563eb" />
-            </View>
-            <View style={styles.listBody}>
-              <Text style={styles.listTitle}>{r.name}</Text>
-              <Text style={styles.listSub}>
-                {r.students} students · {r.bus || 'no bus'}
-              </Text>
-            </View>
-            {r.status ? (
-              <View
-                style={[
-                  styles.statusChip,
-                  { backgroundColor: r.status === 'ON_TIME' ? '#dcfce7' : '#fee2e2' },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: r.status === 'ON_TIME' ? '#059669' : '#dc2626' },
-                  ]}
-                >
-                  {r.status === 'ON_TIME' ? 'On Time' : 'Delayed'}
-                </Text>
+        {todayRoutes.map((r, idx) => (
+          <AnimatedCard key={r.id} delay={idx * 60} style={styles.routeCard}>
+            <View style={styles.routeRow}>
+              <View style={styles.routeIcon}>
+                <Ionicons name="bus-outline" size={17} color="#2563eb" />
               </View>
-            ) : (
-              <View style={[styles.statusChip, { backgroundColor: '#f1f5f9' }]}>
-                <Text style={[styles.statusText, { color: theme.colors.textMuted }]}>Idle</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.listTitle}>{r.name}</Text>
+                <Text style={styles.listSub}>{r.students} students · {r.bus || 'no bus'}</Text>
               </View>
-            )}
-          </View>
+              <StatusChip status={r.status || 'IDLE'} />
+            </View>
+          </AnimatedCard>
         ))}
       </View>
 
@@ -176,41 +167,30 @@ export default function TransportDashboard({ navigation }) {
           </View>
         )}
         {data.alerts.map((a, idx) => (
-          <View key={idx} style={styles.alertCard}>
-            <View
-              style={[
-                styles.alertIcon,
-                { backgroundColor: a.type === 'FUEL' ? '#fef3c7' : '#fee2e2' },
-              ]}
-            >
-              <Ionicons
-                name={a.type === 'FUEL' ? 'flame-outline' : 'construct-outline'}
-                size={16}
-                color={a.type === 'FUEL' ? '#d97706' : '#dc2626'}
-              />
+          <AnimatedCard key={idx} delay={idx * 60} style={styles.alertCard}>
+            <View style={styles.alertRow}>
+              <View style={[styles.alertIcon, { backgroundColor: a.type === 'FUEL' ? '#fef3c7' : '#fee2e2' }]}>
+                <Ionicons name={a.type === 'FUEL' ? 'flame-outline' : 'construct-outline'} size={16} color={a.type === 'FUEL' ? '#d97706' : '#dc2626'} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.listTitle}>{a.severity === 'HIGH' ? '⚠️ High priority' : '🔧 Due soon'}</Text>
+                <Text style={styles.listSub}>{a.message}</Text>
+              </View>
             </View>
-            <View style={styles.listBody}>
-              <Text style={styles.listTitle}>{a.severity === 'HIGH' ? 'High priority' : 'Due soon'}</Text>
-              <Text style={styles.listSub}>{a.message}</Text>
-            </View>
-          </View>
+          </AnimatedCard>
         ))}
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
         <View style={styles.moduleGrid}>
-          {modules.map((m) => (
-            <TouchableOpacity
-              key={m.id}
-              style={styles.moduleCard}
-              onPress={() => navigation.openModule(m.id)}
-            >
+          {modules.map((m, idx) => (
+            <AnimatedCard key={m.id} delay={idx * 60} onPress={() => navigation.openModule(m.id)} style={styles.moduleCard}>
               <View style={[styles.moduleIcon, { backgroundColor: m.color + '1a' }]}>
                 <Ionicons name={m.icon} size={20} color={m.color} />
               </View>
               <Text style={styles.moduleTitle}>{m.title}</Text>
-            </TouchableOpacity>
+            </AnimatedCard>
           ))}
         </View>
       </View>
@@ -237,6 +217,8 @@ export default function TransportDashboard({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background, padding: 24 },
+  skeletonContainer: { flex: 1, backgroundColor: theme.colors.background },
+  skeletonHero: { marginHorizontal: 16, marginTop: 16, borderRadius: 20, padding: 18, backgroundColor: '#2563eb' },
   errorText: { fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 10, textAlign: 'center' },
   retryBtn: { marginTop: 14, backgroundColor: theme.colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 9 },
   retryText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
@@ -358,16 +340,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-SemiBold',
     color: theme.colors.primary,
   },
-  listCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
-  },
+
   routeIcon: {
     width: 40,
     height: 40,
@@ -398,16 +371,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Manrope-Bold',
   },
-  alertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
-  },
+  routeCard: { padding: 12, marginBottom: 8 },
+  routeRow: { flexDirection: 'row', alignItems: 'center' },
+  alertCard: { padding: 12, marginBottom: 8 },
+  alertRow: { flexDirection: 'row', alignItems: 'center' },
   alertIcon: {
     width: 38,
     height: 38,
