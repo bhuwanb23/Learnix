@@ -97,46 +97,45 @@ export default function FleetModule({ navigation }) {
         </View>
       </View>
 
-      <View style={styles.sectionHeader}>
+      <SearchBar placeholder="Search vehicles..." onSearch={setQuery} style={{ marginTop: 16 }} />
+n      <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Vehicles</Text>
+        <Text style={styles.resultCount}>{filtered.length} vehicle{filtered.length !== 1 ? 's' : ''}</Text>
       </View>
 
-      {vehicles.length === 0 && <Text style={styles.empty}>No vehicles registered.</Text>}
-      {vehicles.map((v) => {
-        const st = STATUS_STYLE[v.status] || STATUS_STYLE.IDLE;
+      {filtered.length === 0 && (
+        <EmptyState
+          icon={query ? 'search-outline' : 'bus-outline'}
+          title={query ? `No results for "${query}"` : 'No vehicles registered'}
+          subtitle={query ? 'Try a different search term' : 'Vehicles will appear here once added.'}
+        />
+      )}
+      {filtered.map((v, idx) => {
         const fuelColor = v.fuelPct < 30 ? '#dc2626' : v.fuelPct < 50 ? '#d97706' : '#059669';
         return (
-          <TouchableOpacity
-            key={v.id}
-            style={styles.card}
-            onPress={() => setSelectedVehicleId(v.id)}
-          >
-            <View style={styles.vehicleIcon}>
-              <Ionicons name="bus-outline" size={19} color="#2563eb" />
-            </View>
-            <View style={styles.cardBody}>
-              <View style={styles.nameRow}>
-                <Text style={styles.name}>{v.regNo}</Text>
-                {v.docsExpiring.length > 0 && (
-                  <View style={styles.docDot}>
-                    <Text style={styles.docDotText}>{v.docsExpiring.length} doc</Text>
-                  </View>
-                )}
+          <AnimatedCard key={v.id} delay={idx * 50} onPress={() => setSelectedVehicleId(v.id)} style={styles.card}>
+            <View style={styles.cardInner}>
+              <View style={styles.vehicleIcon}>
+                <Ionicons name="bus-outline" size={19} color="#2563eb" />
               </View>
-              <Text style={styles.meta}>
-                {v.model} · {v.odometerKm.toLocaleString()} km · {v.route || 'unassigned'}
-              </Text>
-              <View style={styles.fuelRow}>
-                <View style={styles.fuelTrack}>
-                  <View style={[styles.fuelFill, { width: `${v.fuelPct}%`, backgroundColor: fuelColor }]} />
+              <View style={styles.cardBody}>
+                <View style={styles.nameRow}>
+                  <Text style={styles.name}>{v.regNo}</Text>
+                  {v.docsExpiring.length > 0 && (
+                    <View style={styles.docDot}><Text style={styles.docDotText}>{v.docsExpiring.length} doc</Text></View>
+                  )}
                 </View>
-                <Text style={[styles.fuelText, { color: fuelColor }]}>{v.fuelPct}%</Text>
+                <Text style={styles.meta}>{v.model} · {v.odometerKm.toLocaleString()} km · {v.route || 'unassigned'}</Text>
+                <View style={styles.fuelRow}>
+                  <View style={styles.fuelTrack}>
+                    <View style={[styles.fuelFill, { width: `${v.fuelPct}%`, backgroundColor: fuelColor }]} />
+                  </View>
+                  <Text style={[styles.fuelText, { color: fuelColor }]}>{v.fuelPct}%</Text>
+                </View>
               </View>
+              <StatusChip status={v.status || 'IDLE'} />
             </View>
-            <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
-              <Text style={[styles.statusText, { color: st.color }]}>{st.label}</Text>
-            </View>
-          </TouchableOpacity>
+          </AnimatedCard>
         );
       })}
     </ScrollView>
