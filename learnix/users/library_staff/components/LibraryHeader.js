@@ -5,43 +5,45 @@ import { Ionicons } from '@expo/vector-icons';
 export default function LibraryHeader({ title, subtitle, onNotificationsPress, showBack, onBackPress, icon }) {
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return { text: 'Good Morning', emoji: '☀️' };
+    if (hour < 17) return { text: 'Good Afternoon', emoji: '🌤️' };
+    return { text: 'Good Evening', emoji: '🌙' };
   };
+
+  const greeting = getGreeting();
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#2563eb" />
+      <StatusBar barStyle="light-content" backgroundColor="#b45309" />
       <View style={styles.topSection}>
         {showBack ? (
           <View style={styles.backSection}>
             <TouchableOpacity style={styles.backButton} onPress={onBackPress} activeOpacity={0.7}>
-              <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+              <View style={styles.backBtnBg}>
+                <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+              </View>
             </TouchableOpacity>
             <View style={styles.titleSection}>
-              <Ionicons name={icon || 'book-outline'} size={18} color="rgba(255,255,255,0.9)" />
+              <View style={styles.iconBadge}>
+                <Ionicons name={icon || 'book-outline'} size={16} color="#FFFFFF" />
+              </View>
               <Text style={styles.screenTitle} numberOfLines={1}>{title}</Text>
             </View>
           </View>
         ) : (
           <View style={styles.greetingContainer}>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.greeting}>{greeting.emoji} {greeting.text}</Text>
             <Text style={styles.cellName}>Library Staff</Text>
           </View>
         )}
-        <View style={styles.headerActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={onNotificationsPress}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>4</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.notificationBtn}
+          onPress={onNotificationsPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="notifications-outline" size={22} color="#FFFFFF" />
+          <View style={styles.notificationDot} />
+        </TouchableOpacity>
       </View>
       {subtitle && !showBack ? (
         <Text style={styles.subtitle}>{subtitle}</Text>
@@ -52,8 +54,9 @@ export default function LibraryHeader({ title, subtitle, onNotificationsPress, s
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#2563eb',
+    backgroundColor: '#b45309',
     paddingHorizontal: 24,
+    paddingTop: 8,
     paddingBottom: 16,
   },
   topSection: {
@@ -61,15 +64,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  greetingContainer: {
-    flex: 1,
-  },
+  greetingContainer: { flex: 1 },
   greeting: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 4,
-    letterSpacing: 0.5,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.9)',
     fontFamily: 'Manrope-Medium',
+    letterSpacing: 0.3,
   },
   cellName: {
     fontSize: 24,
@@ -77,51 +77,53 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: -0.3,
     fontFamily: 'PlusJakartaSans-Bold',
+    marginTop: 4,
   },
   subtitle: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255,255,255,0.85)',
     marginTop: 8,
     fontFamily: 'Manrope-Regular',
     lineHeight: 19,
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionButton: {
+  notificationBtn: {
     position: 'relative',
-    padding: 8,
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#EF4444',
-    borderRadius: 9999,
-    minWidth: 18,
-    height: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
+  notificationDot: {
+    position: 'absolute',
+    top: 8,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#b45309',
   },
-  backSection: {
-    flex: 1,
-    flexDirection: 'row',
+  backSection: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  backButton: { marginRight: 12 },
+  backBtnBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  backButton: {
-    padding: 4,
-    marginRight: 12,
-  },
-  titleSection: {
-    flexDirection: 'row',
+  titleSection: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
   screenTitle: {
     fontSize: 20,
