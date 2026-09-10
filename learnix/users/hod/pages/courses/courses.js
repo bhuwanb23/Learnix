@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 import CourseDetail from './pages/course_detail/course_detail';
 
 const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
@@ -51,7 +52,12 @@ export default function CoursesModule({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <SkeletonStatRow style={{ marginTop: 16 }} />
+        <View style={{ marginTop: 14 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -107,10 +113,11 @@ export default function CoursesModule({ navigation }) {
         const color = COLORS[idx % COLORS.length];
         const st = syllabusStyle(c.syllabusStatus);
         return (
-          <TouchableOpacity
+          <AnimatedCard
             key={c.id}
-            style={styles.card}
             onPress={() => setSelectedId(c.id)}
+            delay={idx * 40}
+            style={styles.card}
           >
             <View style={[styles.courseIcon, { backgroundColor: color + '1a' }]}>
               <Text style={[styles.courseCode, { color }]}>{c.code}</Text>
@@ -127,11 +134,11 @@ export default function CoursesModule({ navigation }) {
             <View style={[styles.syllabusChip, { backgroundColor: st.bg }]}>
               <Text style={[styles.syllabusText, { color: st.color }]}>{st.label}</Text>
             </View>
-          </TouchableOpacity>
+          </AnimatedCard>
         );
       })}
       {courses.length === 0 && (
-        <Text style={styles.emptyText}>No courses in your department yet.</Text>
+        <EmptyState icon="book-outline" title="No courses yet" subtitle="Courses will appear here once added to your department" color="#4f46e5" />
       )}
     </ScrollView>
   );
@@ -141,7 +148,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   statsRow: {
@@ -199,10 +206,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

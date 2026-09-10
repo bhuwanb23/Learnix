@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const COLORS = ['#059669', '#2563eb', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
 
@@ -39,7 +40,12 @@ export default function StudentsModule({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <SkeletonStatRow style={{ marginTop: 16 }} />
+        <View style={{ marginTop: 14 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -127,7 +133,7 @@ export default function StudentsModule({ navigation }) {
           );
         })}
         {stats.bySemester.length === 0 && (
-          <Text style={styles.emptyText}>No students enrolled yet.</Text>
+          <EmptyState icon="school-outline" title="No students enrolled" subtitle="Students will appear here once enrolled" color="#4f46e5" />
         )}
       </View>
 
@@ -136,7 +142,7 @@ export default function StudentsModule({ navigation }) {
         {students.map((s, idx) => {
           const color = COLORS[idx % COLORS.length];
           return (
-            <View key={s.id} style={styles.card}>
+            <AnimatedCard key={s.id} delay={idx * 30} style={styles.card}>
               <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
                 <Text style={[styles.avatarText, { color }]}>{s.name.charAt(0)}</Text>
               </View>
@@ -163,11 +169,11 @@ export default function StudentsModule({ navigation }) {
                   {s.status}
                 </Text>
               </View>
-            </View>
+            </AnimatedCard>
           );
         })}
         {students.length === 0 && (
-          <Text style={styles.emptyText}>No students match this filter.</Text>
+          <EmptyState icon="people-outline" title="No students found" subtitle="Try a different semester filter" color="#4f46e5" />
         )}
       </View>
     </ScrollView>
@@ -178,7 +184,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 16 },
   statsRow: {
@@ -230,10 +236,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   yearCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
@@ -280,10 +282,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

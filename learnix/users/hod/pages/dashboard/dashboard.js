@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
+import { AnimatedCard, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const modules = [
   { id: 'Syllabus', title: 'Syllabus Approvals', icon: 'document-text-outline', color: '#2563eb' },
@@ -43,7 +44,11 @@ export default function HodDashboard({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <View style={{ backgroundColor: '#4f46e5', height: 140, marginHorizontal: 16, marginTop: 16, borderRadius: 20 }} />
+        <SkeletonStatRow count={2} style={{ marginTop: 14, paddingHorizontal: 16 }} />
+        <SkeletonStatRow count={2} style={{ marginTop: 0, paddingHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 14 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
       </View>
     );
   }
@@ -66,7 +71,7 @@ export default function HodDashboard({ navigation }) {
   const approvals = data.pendingApprovals ?? { syllabus: 0, leaves: 0 };
 
   const statCards = [
-    { label: 'Faculty', value: String(stats.faculty ?? 0), sub: 'in department', color: '#2563eb', icon: 'people-outline' },
+    { label: 'Faculty', value: String(stats.faculty ?? 0), sub: 'in department', color: '#4f46e5', icon: 'people-outline' },
     { label: 'Students', value: String(stats.students ?? 0), sub: 'enrolled', color: '#059669', icon: 'school-outline' },
     { label: 'Courses', value: String(stats.courses ?? 0), sub: 'department', color: '#d97706', icon: 'book-outline' },
     { label: 'Pending', value: String(approvals.syllabus + approvals.leaves), sub: 'approvals', color: '#0891b2', icon: 'hourglass-outline' },
@@ -87,7 +92,7 @@ export default function HodDashboard({ navigation }) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
+      <LinearGradient colors={['#4f46e5', '#3730a3']} style={styles.hero}>
         <Text style={styles.heroLabel}>{dept.name.toUpperCase()}</Text>
         <Text style={styles.heroTitle}>Department Overview</Text>
         <View style={styles.heroProgress}>
@@ -128,11 +133,12 @@ export default function HodDashboard({ navigation }) {
               <Text style={styles.seeAll}>Review</Text>
             </TouchableOpacity>
           </View>
-          {approvalRows.map((p) => (
-            <TouchableOpacity
+          {approvalRows.map((p, idx) => (
+            <AnimatedCard
               key={p.id}
-              style={styles.listCard}
               onPress={() => navigation.openModule(p.module)}
+              delay={idx * 60}
+              style={styles.listCard}
             >
               <View
                 style={[
@@ -153,7 +159,7 @@ export default function HodDashboard({ navigation }) {
               <View style={styles.pendingChip}>
                 <Text style={styles.pendingText}>Pending</Text>
               </View>
-            </TouchableOpacity>
+            </AnimatedCard>
           ))}
         </View>
       )}
@@ -187,17 +193,18 @@ export default function HodDashboard({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
         <View style={styles.moduleGrid}>
-          {modules.map((m) => (
-            <TouchableOpacity
+          {modules.map((m, idx) => (
+            <AnimatedCard
               key={m.id}
-              style={styles.moduleCard}
               onPress={() => navigation.openModule(m.id)}
+              delay={idx * 60}
+              style={styles.moduleCard}
             >
               <View style={[styles.moduleIcon, { backgroundColor: m.color + '1a' }]}>
                 <Ionicons name={m.icon} size={20} color={m.color} />
               </View>
               <Text style={styles.moduleTitle}>{m.title}</Text>
-            </TouchableOpacity>
+            </AnimatedCard>
           ))}
         </View>
       </View>
@@ -209,7 +216,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   hero: {
     marginHorizontal: 16,
@@ -332,10 +339,6 @@ const styles = StyleSheet.create({
   listCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
@@ -381,10 +384,6 @@ const styles = StyleSheet.create({
   alertCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
@@ -395,10 +394,6 @@ const styles = StyleSheet.create({
   },
   moduleCard: {
     width: '48.5%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 16,
     marginBottom: 10,
   },
