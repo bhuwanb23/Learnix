@@ -1,14 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const modules = [
   { id: 'Tournaments', title: 'Tournaments', icon: 'trophy-outline', color: '#d97706' },
-  { id: 'Venues', title: 'Venues', icon: 'location-outline', color: '#0891b2' },
-  { id: 'Notifications', title: 'Notify', icon: 'megaphone-outline', color: '#2563eb' },
+  { id: 'Venues', title: 'Venues', icon: 'location-outline', color: '#0891b2' },    { id: 'Notifications', title: 'Notify', icon: 'megaphone-outline', color: '#d97706' },
 ];
 
 const fmtDate = (iso) => {
@@ -64,7 +64,11 @@ export default function SportsDashboard({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <View style={{ backgroundColor: '#d97706', height: 140, marginHorizontal: 16, marginTop: 16, borderRadius: 20 }} />
+        <SkeletonStatRow count={2} style={{ marginTop: 14, paddingHorizontal: 16 }} />
+        <SkeletonStatRow count={2} style={{ marginTop: 0, paddingHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 14 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
       </View>
     );
   }
@@ -85,7 +89,7 @@ export default function SportsDashboard({ navigation }) {
   const seasonPct = Math.min(100, stats.eventsUpcoming * 10 + stats.activeTeams * 5);
 
   const statCards = [
-    { label: 'Upcoming Events', value: String(stats.eventsUpcoming), sub: `${stats.eventsThisWeek} this week`, color: '#2563eb', icon: 'calendar-outline' },
+    { label: 'Upcoming Events', value: String(stats.eventsUpcoming), sub: `${stats.eventsThisWeek} this week`, color: '#d97706', icon: 'calendar-outline' },
     { label: 'Active Teams', value: String(stats.activeTeams), sub: 'all sports', color: '#059669', icon: 'people-outline' },
     { label: 'Pending Regs', value: String(stats.pendingRegistrations), sub: 'need review', color: '#d97706', icon: 'person-add-outline' },
     { label: 'Equipment Out', value: String(stats.equipmentOut), sub: `${stats.equipmentOverdue} overdue`, color: '#dc2626', icon: 'basketball-outline' },
@@ -97,7 +101,7 @@ export default function SportsDashboard({ navigation }) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
+      <LinearGradient colors={['#d97706', '#b45309']} style={styles.hero}>
         <Text style={styles.heroLabel}>SPORTS & CULTURAL SEASON 2026-27</Text>
         <Text style={styles.heroTitle}>Events Overview</Text>
         <View style={styles.heroProgress}>
@@ -151,7 +155,7 @@ export default function SportsDashboard({ navigation }) {
               <Ionicons
                 name={e.kind === 'FIXTURE' ? 'football-outline' : 'calendar-outline'}
                 size={16}
-                color={e.kind === 'FIXTURE' ? '#059669' : '#2563eb'}
+                color={e.kind === 'FIXTURE' ? '#059669' : '#d97706'}
               />
             </View>
             <View style={styles.listBody}>
@@ -177,8 +181,8 @@ export default function SportsDashboard({ navigation }) {
         )}
         {pendingApprovals.map((p) => (
           <View key={p.id} style={styles.listCard}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{p.student.charAt(0)}</Text>
+            <View style={[styles.avatar, { backgroundColor: '#fef3c7' }]}>
+              <Text style={[styles.avatarText, { color: '#d97706' }]}>{p.student.charAt(0)}</Text>
             </View>
             <View style={styles.listBody}>
               <Text style={styles.listTitle}>{p.student}</Text>
@@ -194,17 +198,18 @@ export default function SportsDashboard({ navigation }) {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Tools</Text>
         <View style={styles.moduleGrid}>
-          {modules.map((m) => (
-            <TouchableOpacity
+          {modules.map((m, idx) => (
+            <AnimatedCard
               key={m.id}
-              style={styles.moduleCard}
               onPress={() => navigation.openModule(m.id)}
+              delay={idx * 60}
+              style={styles.moduleCard}
             >
               <View style={[styles.moduleIcon, { backgroundColor: m.color + '1a' }]}>
                 <Ionicons name={m.icon} size={20} color={m.color} />
               </View>
               <Text style={styles.moduleTitle}>{m.title}</Text>
-            </TouchableOpacity>
+            </AnimatedCard>
           ))}
         </View>
       </View>
@@ -419,10 +424,6 @@ const styles = StyleSheet.create({
   },
   moduleCard: {
     width: '48.5%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 16,
     marginBottom: 10,
   },

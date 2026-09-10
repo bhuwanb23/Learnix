@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const CONDITION_STYLE = {
   GOOD: { bg: '#dbeafe', color: '#2563eb' },
@@ -87,7 +88,12 @@ export default function EquipmentModule({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <SkeletonStatRow style={{ marginTop: 16 }} />
+        <View style={{ marginTop: 14 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -169,16 +175,16 @@ export default function EquipmentModule({ navigation }) {
 
       {tab === 'Inventory' ? (
         inventory.length === 0 ? (
-          <Text style={styles.empty}>Inventory is empty — add the first item.</Text>
+          <EmptyState icon="basketball-outline" title="Inventory empty" subtitle="Add the first item to get started" color="#d97706" />
         ) : (
-          inventory.map((item) => {
+          inventory.map((item, idx) => {
             const st = CONDITION_STYLE[item.condition] || CONDITION_STYLE.GOOD;
             const pct = item.total > 0 ? Math.round((item.available / item.total) * 100) : 0;
             const color = pct > 50 ? '#059669' : pct > 20 ? '#d97706' : '#dc2626';
             return (
-              <View key={item.id} style={styles.card}>
+              <AnimatedCard key={item.id} delay={idx * 40} style={styles.card}>
                 <View style={styles.itemIcon}>
-                  <Ionicons name="basketball-outline" size={18} color="#2563eb" />
+                  <Ionicons name="basketball-outline" size={18} color="#d97706" />
                 </View>
                 <View style={styles.cardBody}>
                   <Text style={styles.itemName}>{item.name}</Text>
@@ -201,7 +207,7 @@ export default function EquipmentModule({ navigation }) {
                 <View style={[styles.condChip, { backgroundColor: st.bg }]}>
                   <Text style={[styles.condText, { color: st.color }]}>{item.condition.replace('_', ' ')}</Text>
                 </View>
-              </View>
+              </AnimatedCard>
             );
           })
         )
@@ -231,9 +237,9 @@ export default function EquipmentModule({ navigation }) {
               </TouchableOpacity>
             </View>
           )}
-          {issued.length === 0 && <Text style={styles.empty}>Nothing is issued out right now.</Text>}
-          {issued.map((i) => (
-            <View key={i.id} style={styles.card}>
+          {issued.length === 0 && <EmptyState icon="archive-outline" title="Nothing issued" subtitle="All equipment is in inventory" color="#059669" />}
+          {issued.map((i, idx) => (
+            <AnimatedCard key={i.id} delay={idx * 40} style={styles.card}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{i.student.charAt(0)}</Text>
               </View>
@@ -376,10 +382,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginTop: 8,
   },
@@ -387,7 +389,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 11,
-    backgroundColor: '#2563eb1a',
+    backgroundColor: '#d977061a',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -423,7 +425,7 @@ const styles = StyleSheet.create({
   },
   issueSmallBtn: {
     borderRadius: 9,
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#fef3c7',
     paddingHorizontal: 10,
     paddingVertical: 7,
     marginRight: 6,
@@ -431,13 +433,13 @@ const styles = StyleSheet.create({
   issueSmallText: {
     fontSize: 11,
     fontFamily: 'Manrope-Bold',
-    color: '#2563eb',
+    color: '#d97706',
   },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#fef3c7',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -445,7 +447,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 14,
     fontFamily: 'Manrope-Bold',
-    color: '#2563eb',
+    color: '#d97706',
   },
   dueText: {
     fontSize: 11,
