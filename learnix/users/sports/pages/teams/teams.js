@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 import TeamDetail from './pages/team_detail/team_detail';
 
 const SPORT_ICONS = {
@@ -65,7 +66,12 @@ export default function TeamsModule({ navigation }) {
   if (loading && teams.length === 0) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <SkeletonStatRow style={{ marginTop: 16 }} />
+        <View style={{ marginTop: 14 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -108,16 +114,22 @@ export default function TeamsModule({ navigation }) {
       </View>
 
       {teams.length === 0 && (
-        <Text style={styles.empty}>No teams yet.</Text>
+        <EmptyState
+          icon="people-outline"
+          title="No teams yet"
+          subtitle="Create your first team to get started"
+          color="#d97706"
+        />
       )}
-      {teams.map((t) => {
-        const color = SPORT_COLORS[t.sport] || '#2563eb';
+      {teams.map((t, idx) => {
+        const color = SPORT_COLORS[t.sport] || '#d97706';
         const icon = SPORT_ICONS[t.sport] || 'people-outline';
         return (
-          <TouchableOpacity
+          <AnimatedCard
             key={t.id}
-            style={styles.card}
             onPress={() => setSelectedTeamId(t.id)}
+            delay={idx * 50}
+            style={styles.card}
           >
             <View style={[styles.teamIcon, { backgroundColor: color + '1a' }]}>
               <Ionicons name={icon} size={19} color={color} />
@@ -130,7 +142,7 @@ export default function TeamsModule({ navigation }) {
               {t.tournament && <Text style={styles.nextMatch}>{t.tournament}</Text>}
             </View>
             <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-          </TouchableOpacity>
+          </AnimatedCard>
         );
       })}
     </ScrollView>
@@ -185,10 +197,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

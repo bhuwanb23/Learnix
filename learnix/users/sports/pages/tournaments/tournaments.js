@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 
 const fmtDate = (iso) =>
   new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -89,7 +90,8 @@ export default function TournamentsModule({ navigation }) {
   if (loading && tournaments.length === 0) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <SkeletonCard style={{ marginTop: 16 }} />
+        <SkeletonCard style={{ marginTop: 10 }} />
       </View>
     );
   }
@@ -141,9 +143,9 @@ export default function TournamentsModule({ navigation }) {
       >
         {tab === 'Fixtures' ? (
           <>
-            {allFixtures.length === 0 && <Text style={styles.empty}>No fixtures yet.</Text>}
-            {allFixtures.map((f) => (
-              <View key={f.id} style={styles.card}>
+            {allFixtures.length === 0 && <EmptyState icon="football-outline" title="No fixtures yet" subtitle="Schedule a fixture to get started" color="#d97706" />}
+            {allFixtures.map((f, idx) => (
+              <AnimatedCard key={f.id} delay={idx * 40} style={styles.card}>
                 <View style={styles.tournamentRow}>
                   <View style={styles.trophyIcon}>
                     <Ionicons name="trophy-outline" size={14} color="#d97706" />
@@ -167,12 +169,12 @@ export default function TournamentsModule({ navigation }) {
                     <Text style={styles.resultBtnText}>Enter Result</Text>
                   </TouchableOpacity>
                 )}
-              </View>
+              </AnimatedCard>
             ))}
           </>
         ) : (
           <>
-            {allStandings.length === 0 && <Text style={styles.empty}>No standings yet — record results to build the table.</Text>}
+            {allStandings.length === 0 && <EmptyState icon="trophy-outline" title="No standings yet" subtitle="Record results to build the table" color="#d97706" />}
             <View style={styles.standingsCard}>
               <View style={styles.standingsHeader}>
                 <Text style={[styles.headerCell, styles.posCol]}>#</Text>
@@ -334,10 +336,6 @@ const styles = StyleSheet.create({
   },
   list: { paddingTop: 12, paddingBottom: 24 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
@@ -405,10 +403,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   standingsCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
   },
   standingsHeader: {

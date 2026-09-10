@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 import EventDetail from './pages/event_detail/event_detail';
 
 const CATEGORY_MAP = {
@@ -76,7 +77,9 @@ export default function EventsModule({ navigation }) {
   if (loading && events.length === 0) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
       </View>
     );
   }
@@ -112,17 +115,23 @@ export default function EventsModule({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
       >
         {filtered.length === 0 && (
-          <Text style={styles.empty}>No events in this category yet.</Text>
+          <EmptyState
+            icon="calendar-outline"
+            title="No events found"
+            subtitle="No events in this category yet"
+            color="#d97706"
+          />
         )}
-        {filtered.map((e) => {
+        {filtered.map((e, idx) => {
           const meta = CATEGORY_MAP[e.category] || CATEGORY_MAP.OTHER;
           const st = STATUS_STYLE[e.status] || STATUS_STYLE.DRAFT;
           const pct = e.capacity > 0 ? Math.round((e.registrations / e.capacity) * 100) : 0;
           return (
-            <TouchableOpacity
+            <AnimatedCard
               key={e.id}
-              style={styles.card}
               onPress={() => setSelectedEventId(e.id)}
+              delay={idx * 40}
+              style={styles.card}
             >
               <View style={[styles.eventIcon, { backgroundColor: meta.color + '1a' }]}>
                 <Ionicons name={meta.icon} size={19} color={meta.color} />
@@ -146,7 +155,7 @@ export default function EventsModule({ navigation }) {
               <View style={[styles.statusChip, { backgroundColor: st.bg }]}>
                 <Text style={[styles.statusText, { color: st.color }]}>{e.status.replace('_', ' ')}</Text>
               </View>
-            </TouchableOpacity>
+            </AnimatedCard>
           );
         })}
       </ScrollView>
@@ -180,10 +189,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

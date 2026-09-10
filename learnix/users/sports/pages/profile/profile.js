@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, SkeletonCard } from '../../../../components/ui';
 
 const menuItems = [
   { icon: 'people-outline', label: 'Coaches & Staff', color: '#2563eb' },
@@ -53,7 +54,9 @@ export default function Profile({ navigation }) {
   if (loading && !profile) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <View style={{ backgroundColor: '#d97706', height: 200, margin: 16, borderRadius: 20 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
       </View>
     );
   }
@@ -69,7 +72,7 @@ export default function Profile({ navigation }) {
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+        <LinearGradient colors={['#d97706', '#b45309']} style={styles.header}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatar}>
               <Text style={styles.avatarInitial}>{fullName.charAt(0)}</Text>
@@ -89,6 +92,7 @@ export default function Profile({ navigation }) {
           </View>
         </LinearGradient>
 
+        <AnimatedCard delay={200}>
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Preferences</Text>
           <View style={styles.card}>
@@ -141,7 +145,9 @@ export default function Profile({ navigation }) {
             </View>
           </View>
         </View>
+        </AnimatedCard>
 
+        <AnimatedCard delay={300}>
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Account</Text>
           <View style={styles.card}>
@@ -164,6 +170,7 @@ export default function Profile({ navigation }) {
             ))}
           </View>
         </View>
+        </AnimatedCard>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color="#dc2626" />
