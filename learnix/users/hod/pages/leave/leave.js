@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 
 const typeStyle = (t) => {
   if (t === 'MEDICAL') return { bg: '#fee2e2', color: '#dc2626', label: 'Medical' };
@@ -92,7 +93,8 @@ export default function LeaveModule({ navigation }) {
   if (loading && !leaves) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <SkeletonCard style={{ marginTop: 16 }} />
+        <SkeletonCard style={{ marginTop: 10 }} />
       </View>
     );
   }
@@ -135,10 +137,10 @@ export default function LeaveModule({ navigation }) {
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {visible.map((l) => {
+        {visible.map((l, idx) => {
           const st = typeStyle(l.type);
           return (
-            <View key={l.id} style={styles.card}>
+            <AnimatedCard key={l.id} delay={idx * 40} style={styles.card}>
               <View style={[styles.avatar, { backgroundColor: st.bg }]}>
                 <Text style={[styles.avatarText, { color: st.color }]}>{l.teacher.charAt(0)}</Text>
               </View>
@@ -202,12 +204,12 @@ export default function LeaveModule({ navigation }) {
           );
         })}
         {visible.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Ionicons name="calendar-clear-outline" size={30} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>
-              {tab === 'Pending' ? 'No pending leave requests.' : 'No processed leaves yet.'}
-            </Text>
-          </View>
+          <EmptyState
+            icon="calendar-clear-outline"
+            title={tab === 'Pending' ? 'No pending requests' : 'No processed leaves'}
+            subtitle={tab === 'Pending' ? 'Leave requests will appear here' : 'Processed leaves will appear here'}
+            color="#4f46e5"
+          />
         )}
       </ScrollView>
     </View>
@@ -218,7 +220,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   tabsRow: {
     flexDirection: 'row',
@@ -242,10 +244,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
