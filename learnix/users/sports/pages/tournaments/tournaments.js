@@ -175,7 +175,7 @@ export default function TournamentsModule({ navigation }) {
         ) : (
           <>
             {allStandings.length === 0 && <EmptyState icon="trophy-outline" title="No standings yet" subtitle="Record results to build the table" color="#d97706" />}
-            <View style={styles.standingsCard}>
+            <AnimatedCard delay={0} style={styles.standingsCard}>
               <View style={styles.standingsHeader}>
                 <Text style={[styles.headerCell, styles.posCol]}>#</Text>
                 <Text style={[styles.headerCell, styles.teamCol]}>Team</Text>
@@ -195,7 +195,7 @@ export default function TournamentsModule({ navigation }) {
                   <Text style={[styles.numText, styles.ptsText]}>{s.points}</Text>
                 </View>
               ))}
-            </View>
+            </AnimatedCard>
             <View style={styles.infoCard}>
               <Ionicons name="information-circle-outline" size={16} color={theme.colors.primary} />
               <Text style={styles.infoText}>

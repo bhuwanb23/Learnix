@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 
 const audiences = [
   { key: 'ALL_STUDENTS', label: 'All Students' },
@@ -104,14 +105,16 @@ export default function Notifications({ navigation }) {
   if (loading && data.notifications.length === 0 && !error) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+      <LinearGradient colors={['#d97706', '#b45309']} style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
@@ -146,10 +149,10 @@ export default function Notifications({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
         >
           {data.notifications.length === 0 && (
-            <Text style={styles.emptyInbox}>Your inbox is empty.</Text>
+            <EmptyState icon="inbox-outline" title="Inbox empty" subtitle="Notifications will appear here" color="#d97706" />
           )}
-          {data.notifications.map((n) => (
-            <View key={n.id} style={[styles.card, !n.read && styles.cardUnread]}>
+          {data.notifications.map((n, idx) => (
+            <AnimatedCard key={n.id} delay={idx * 40} style={[styles.card, !n.read && styles.cardUnread]}>
               <View style={styles.iconWrap}>
                 <View
                   style={[
@@ -172,7 +175,7 @@ export default function Notifications({ navigation }) {
                   <Text style={styles.audienceText}>{n.type}</Text>
                 </View>
               </View>
-            </View>
+            </AnimatedCard>
           ))}
         </ScrollView>
       ) : (
@@ -307,10 +310,6 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
     marginTop: 12,
   },
@@ -330,7 +329,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#2563eb',
+    backgroundColor: '#d97706',
     borderWidth: 2,
     borderColor: '#fff',
   },

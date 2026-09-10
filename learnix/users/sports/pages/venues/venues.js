@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { sportsApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const fmtDate = (iso) => new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
@@ -78,7 +79,12 @@ export default function VenuesModule({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <SkeletonStatRow style={{ marginTop: 16 }} />
+        <View style={{ marginTop: 14 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -122,10 +128,10 @@ export default function VenuesModule({ navigation }) {
         <Text style={styles.sectionTitle}>Booking Requests</Text>
       </View>
       {bookings.length === 0 && (
-        <Text style={styles.empty}>No pending booking requests.</Text>
+        <EmptyState icon="calendar-outline" title="No pending requests" subtitle="Booking requests will appear here" color="#d97706" />
       )}
-      {bookings.map((r) => (
-        <View key={r.id} style={styles.requestCard}>
+      {bookings.map((r, idx) => (
+        <AnimatedCard key={r.id} delay={idx * 40} style={styles.requestCard}>
           <View style={styles.requestTop}>
             <View style={styles.requestIcon}>
               <Ionicons name="calendar-outline" size={16} color="#d97706" />
@@ -152,7 +158,7 @@ export default function VenuesModule({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </AnimatedCard>
       ))}
 
       <View style={styles.sectionHeader}>
@@ -163,8 +169,8 @@ export default function VenuesModule({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {venues.map((v) => (
-        <View key={v.id} style={styles.card}>
+      {venues.map((v, idx) => (
+        <AnimatedCard key={v.id} delay={idx * 40} style={styles.card}>
           <View style={[styles.venueIcon, { backgroundColor: v.status === 'AVAILABLE' ? '#dcfce7' : '#fee2e2' }]}>
             <Ionicons name="location-outline" size={17} color={v.status === 'AVAILABLE' ? '#059669' : '#dc2626'} />
           </View>
@@ -185,7 +191,7 @@ export default function VenuesModule({ navigation }) {
           >
             <Text style={styles.availText}>{v.status}</Text>
           </View>
-        </View>
+        </AnimatedCard>
       ))}
 
       {/* Book venue modal */}
@@ -297,10 +303,6 @@ const styles = StyleSheet.create({
     marginLeft: 3,
   },
   requestCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
@@ -352,10 +354,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

@@ -260,7 +260,7 @@ export default function EquipmentModule({ navigation }) {
                   Return
                 </Text>
               </TouchableOpacity>
-            </View>
+            </AnimatedCard>
           ))}
         </>
       )}
