@@ -200,7 +200,7 @@ export default function LeaveModule({ navigation }) {
                   </Text>
                 </View>
               )}
-            </View>
+            </AnimatedCard>
           );
         })}
         {visible.length === 0 && (

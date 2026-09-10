@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 
 const TYPE_META = {
   SYLLABUS: { color: '#2563eb', icon: 'document-text-outline' },
@@ -85,7 +86,7 @@ export default function Notifications({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+      <LinearGradient colors={['#4f46e5', '#3730a3']} style={styles.header}>
         <View style={styles.headerTop}>
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
@@ -118,7 +119,8 @@ export default function Notifications({ navigation }) {
 
       {loading && !data ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#2563eb" />
+          <SkeletonCard style={{ marginHorizontal: 16, marginTop: 16 }} />
+          <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
         </View>
       ) : error && !data ? (
         <View style={styles.center}>
@@ -130,10 +132,10 @@ export default function Notifications({ navigation }) {
         </View>
       ) : activeTab === 'Inbox' ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notifications.map((n) => {
+          {notifications.map((n, idx) => {
             const meta = TYPE_META[n.type] ?? TYPE_META.SYSTEM;
             return (
-              <View key={n.id} style={styles.card}>
+              <AnimatedCard key={n.id} delay={idx * 40} style={styles.card}>
                 <View style={styles.iconWrap}>
                   <View style={[styles.iconCircle, { backgroundColor: meta.color + '1a' }]}>
                     <Ionicons name={meta.icon} size={18} color={meta.color} />
@@ -153,11 +155,11 @@ export default function Notifications({ navigation }) {
                     <Text style={styles.audienceText}>{n.type}</Text>
                   </View>
                 </View>
-              </View>
+              </AnimatedCard>
             );
           })}
           {notifications.length === 0 && (
-            <Text style={styles.emptyText}>Inbox is empty.</Text>
+            <EmptyState icon="inbox-outline" title="Inbox empty" subtitle="Notifications will appear here" color="#4f46e5" />
           )}
         </ScrollView>
       ) : (
@@ -226,7 +228,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
   header: {
@@ -293,10 +295,6 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: theme.spacing.lg },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
     marginTop: 12,
   },
@@ -315,7 +313,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#2563eb',
+    backgroundColor: '#4f46e5',
     borderWidth: 2,
     borderColor: '#fff',
   },
