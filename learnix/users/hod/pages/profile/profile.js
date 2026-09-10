@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
+import { AnimatedCard, SkeletonCard } from '../../../../components/ui';
 
 const menuItems = [
   { icon: 'people-outline', label: 'Department Committees', color: '#2563eb' },
@@ -63,7 +64,10 @@ export default function Profile({ navigation }) {
   if (loading && !profile) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <View style={{ backgroundColor: '#4f46e5', height: 200, margin: 16, borderRadius: 20 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
       </View>
     );
   }
@@ -89,7 +93,7 @@ export default function Profile({ navigation }) {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+        <LinearGradient colors={['#4f46e5', '#3730a3']} style={styles.header}>
           <View style={styles.avatarWrap}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{initials}</Text>
@@ -130,6 +134,7 @@ export default function Profile({ navigation }) {
           </View>
         </View>
 
+        <AnimatedCard delay={200}>
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Preferences</Text>
           <View style={styles.card}>
@@ -182,7 +187,9 @@ export default function Profile({ navigation }) {
             </View>
           </View>
         </View>
+        </AnimatedCard>
 
+        <AnimatedCard delay={300}>
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Account</Text>
           <View style={styles.card}>
@@ -205,6 +212,7 @@ export default function Profile({ navigation }) {
             ))}
           </View>
         </View>
+        </AnimatedCard>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color="#dc2626" />
@@ -220,7 +228,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   content: { paddingBottom: 40 },
   header: {

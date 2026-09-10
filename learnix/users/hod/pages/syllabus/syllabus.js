@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 
 const COLORS = ['#059669', '#d97706', '#2563eb', '#0891b2', '#7c3aed', '#dc2626'];
 
@@ -83,7 +84,8 @@ export default function SyllabusModule({ navigation }) {
   if (loading && !versions) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <SkeletonCard style={{ marginTop: 16 }} />
+        <SkeletonCard style={{ marginTop: 10 }} />
       </View>
     );
   }
@@ -130,7 +132,7 @@ export default function SyllabusModule({ navigation }) {
           const color = COLORS[idx % COLORS.length];
           const isPending = v.status === 'SUBMITTED';
           return (
-            <View key={v.id} style={styles.card}>
+            <AnimatedCard key={v.id} delay={idx * 40} style={styles.card}>
               <View style={[styles.syllabusIcon, { backgroundColor: color + '1a' }]}>
                 <Ionicons name="document-text-outline" size={19} color={color} />
               </View>
@@ -197,18 +199,16 @@ export default function SyllabusModule({ navigation }) {
               >
                 <Ionicons name="eye-outline" size={14} color={theme.colors.textMuted} />
               </TouchableOpacity>
-            </View>
+            </AnimatedCard>
           );
         })}
         {visible.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Ionicons name="checkmark-done-outline" size={30} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>
-              {tab === 'Pending'
-                ? 'No pending syllabus approvals — all caught up!'
-                : 'No decided syllabus versions yet.'}
-            </Text>
-          </View>
+          <EmptyState
+            icon="checkmark-done-outline"
+            title={tab === 'Pending' ? 'All caught up!' : 'No decided versions'}
+            subtitle={tab === 'Pending' ? 'No pending syllabus approvals' : 'Decided versions will appear here'}
+            color="#4f46e5"
+          />
         )}
       </ScrollView>
     </View>
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
   tabsRow: {
     flexDirection: 'row',
@@ -243,10 +243,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
