@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } f
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
+import { AnimatedCard } from '../../../../components/ui';
 
 const stats = [
   { label: 'Residents', value: '1,248' },
@@ -53,6 +54,7 @@ export default function Profile({ navigation }) {
           </View>
         </LinearGradient>
 
+        <AnimatedCard delay={200}>
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Preferences</Text>
           <View style={styles.card}>
@@ -105,7 +107,9 @@ export default function Profile({ navigation }) {
             </View>
           </View>
         </View>
+        </AnimatedCard>
 
+        <AnimatedCard delay={300}>
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Account</Text>
           <View style={styles.card}>
@@ -128,6 +132,7 @@ export default function Profile({ navigation }) {
             ))}
           </View>
         </View>
+        </AnimatedCard>
 
         <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={18} color="#dc2626" />

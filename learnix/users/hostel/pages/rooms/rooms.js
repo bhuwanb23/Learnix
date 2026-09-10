@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hostelApi } from '../../../../services/api';
+import { AnimatedCard, SearchBar, EmptyState, SkeletonStatRow, SkeletonCard } from '../../../../components/ui';
 import RoomDetail from './pages/room_detail/room_detail';
 
 const BLOCK_COLORS = ['#2563eb', '#0891b2', '#059669', '#d97706', '#7c3aed'];
@@ -13,6 +14,7 @@ export default function RoomsModule({ navigation }) {
   const [error, setError] = useState(null);
   const [selectedBlockIdx, setSelectedBlockIdx] = useState(0);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -31,8 +33,21 @@ export default function RoomsModule({ navigation }) {
     load();
   }, [load]);
 
-  // keep the selected index valid after refresh
   const blockIdx = Math.min(selectedBlockIdx, (data?.blocks?.length ?? 1) - 1);
+
+  // Filter rooms by search
+  const filteredRooms = useMemo(() => {
+    if (!data) return [];
+    const block = data.blocks[blockIdx];
+    if (!block) return [];
+    if (!search) return block.roomList;
+    const q = search.toLowerCase();
+    return block.roomList.filter(
+      (r) =>
+        r.number.toLowerCase().includes(q) ||
+        r.status.toLowerCase().includes(q),
+    );
+  }, [data, blockIdx, search]);
 
   if (selectedRoom) {
     return (
@@ -40,16 +55,22 @@ export default function RoomsModule({ navigation }) {
         roomNumber={selectedRoom.number}
         onBack={() => {
           setSelectedRoom(null);
-          load(); // refresh occupancy after allocate/vacate
+          load();
         }}
       />
     );
   }
 
+  // Skeleton loading state
   if (loading && !data) {
     return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.muted}>Loading rooms…</Text>
+      <View style={styles.container}>
+        <SkeletonStatRow style={{ marginTop: 16 }} />
+        <View style={{ marginTop: 16 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -91,27 +112,31 @@ export default function RoomsModule({ navigation }) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
     >
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{totalOccupied}</Text>
-          <Text style={styles.statLabel}>Occupied Beds</Text>
+      {/* Stats Row */}
+      <AnimatedCard delay={0} style={styles.statsRowWrap}>
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{totalOccupied}</Text>
+            <Text style={styles.statLabel}>Occupied Beds</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{vacantBeds}</Text>
+            <Text style={styles.statLabel}>Vacant Beds</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{fullRooms}</Text>
+            <Text style={styles.statLabel}>Full Rooms</Text>
+          </View>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{vacantBeds}</Text>
-          <Text style={styles.statLabel}>Vacant Beds</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{fullRooms}</Text>
-          <Text style={styles.statLabel}>Full Rooms</Text>
-        </View>
-      </View>
+      </AnimatedCard>
 
+      {/* Block Tabs */}
       <View style={styles.blockTabs}>
         {blocks.map((b, i) => (
           <TouchableOpacity
             key={b.id}
             style={[styles.blockTab, blockIdx === i && styles.blockTabActive]}
-            onPress={() => setSelectedBlockIdx(i)}
+            onPress={() => { setSelectedBlockIdx(i); setSearch(''); }}
           >
             <Text style={[styles.blockTabText, blockIdx === i && styles.blockTabTextActive]}>
               {b.name}
@@ -120,62 +145,83 @@ export default function RoomsModule({ navigation }) {
         ))}
       </View>
 
-      <View style={styles.blockCard}>
-        <View style={styles.blockHeader}>
-          <View>
-            <Text style={styles.blockName}>{block.name}</Text>
-            <Text style={styles.blockSub}>
-              {block.occupied} of {block.capacity} beds · {block.rooms} rooms
-            </Text>
+      {/* Block Summary Card */}
+      <AnimatedCard delay={60}>
+        <View style={styles.blockCard}>
+          <View style={styles.blockHeader}>
+            <View>
+              <Text style={styles.blockName}>{block.name}</Text>
+              <Text style={styles.blockSub}>
+                {block.occupied} of {block.capacity} beds · {block.rooms} rooms
+              </Text>
+            </View>
+            <View style={[styles.pctChip, { backgroundColor: color + '1a' }]}>
+              <Text style={[styles.pctText, { color }]}>{block.occupancyPct}%</Text>
+            </View>
           </View>
-          <View style={[styles.pctChip, { backgroundColor: color + '1a' }]}>
-            <Text style={[styles.pctText, { color }]}>{block.occupancyPct}%</Text>
+          <View style={styles.progressTrack}>
+            <View
+              style={[styles.progressFill, { width: `${block.occupancyPct}%`, backgroundColor: color }]}
+            />
           </View>
         </View>
-        <View style={styles.progressTrack}>
-          <View
-            style={[styles.progressFill, { width: `${block.occupancyPct}%`, backgroundColor: color }]}
-          />
-        </View>
+      </AnimatedCard>
+
+      {/* Search */}
+      <View style={{ marginTop: 14 }}>
+        <SearchBar placeholder="Search room number or status…" onSearch={setSearch} />
       </View>
 
+      {/* Room count */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Rooms — {block.name}</Text>
+        <Text style={styles.resultCount}>{filteredRooms.length} rooms</Text>
       </View>
 
-      <View style={styles.roomGrid}>
-        {block.roomList.map((room) => {
-          const st = getStatusStyle(room.status);
-          return (
-            <TouchableOpacity
-              key={room.id}
-              style={styles.roomCard}
-              onPress={() => setSelectedRoom({ number: room.number })}
-            >
-              <View style={styles.roomTop}>
-                <Text style={styles.roomId}>{room.number}</Text>
-                <View style={[styles.roomStatus, { backgroundColor: st.bg }]}>
-                  <Text style={[styles.roomStatusText, { color: st.color }]}>{room.status}</Text>
+      {/* Room Grid */}
+      {filteredRooms.length === 0 ? (
+        <EmptyState
+          icon="bed-outline"
+          title="No rooms match"
+          subtitle={`Try a different search in ${block.name}`}
+          color={color}
+        />
+      ) : (
+        <View style={styles.roomGrid}>
+          {filteredRooms.map((room, idx) => {
+            const st = getStatusStyle(room.status);
+            return (
+              <AnimatedCard
+                key={room.id}
+                onPress={() => setSelectedRoom({ number: room.number })}
+                delay={idx * 30}
+                style={styles.roomCardInner}
+              >
+                <View style={styles.roomTop}>
+                  <Text style={styles.roomId}>{room.number}</Text>
+                  <View style={[styles.roomStatus, { backgroundColor: st.bg }]}>
+                    <Text style={[styles.roomStatusText, { color: st.color }]}>{room.status}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={styles.bedRow}>
-                {Array.from({ length: room.capacity }).map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.bed,
-                      i < room.occupied ? { backgroundColor: color } : styles.bedEmpty,
-                    ]}
-                  />
-                ))}
-              </View>
-              <Text style={styles.roomMeta}>
-                {room.occupied}/{room.capacity} beds
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+                <View style={styles.bedRow}>
+                  {Array.from({ length: room.capacity }).map((_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.bed,
+                        i < room.occupied ? { backgroundColor: color } : styles.bedEmpty,
+                      ]}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.roomMeta}>
+                  {room.occupied}/{room.capacity} beds
+                </Text>
+              </AnimatedCard>
+            );
+          })}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -192,10 +238,10 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   retryText: { fontSize: 12, fontFamily: 'Manrope-Bold', color: '#fff' },
+  statsRowWrap: { marginTop: 16, padding: 0 },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
   },
   statCard: {
     flex: 1,
@@ -220,7 +266,7 @@ const styles = StyleSheet.create({
   },
   blockTabs: {
     flexDirection: 'row',
-    marginTop: 16,
+    marginTop: 14,
   },
   blockTab: {
     flex: 1,
@@ -290,18 +336,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
     color: theme.colors.text,
   },
+  resultCount: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+  },
   roomGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingBottom: 24,
   },
-  roomCard: {
+  roomCardInner: {
     width: '31.5%',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 10,
     marginBottom: 10,
   },

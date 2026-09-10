@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { AnimatedCard, SearchBar, EmptyState } from '../../../../components/ui';
 
 const initialPasses = [
   { id: '1', name: 'Sneha Reddy', room: 'A-101', roll: '21CS118', reason: 'Weekend home visit', out: 'Fri 5:00 PM', in: 'Sun 8:00 PM', status: 'Approved', time: '10 min ago' },
@@ -17,8 +18,22 @@ const tabs = ['All', 'Pending', 'Approved', 'Rejected'];
 export default function GatePassesModule({ navigation }) {
   const [passes, setPasses] = useState(initialPasses);
   const [activeTab, setActiveTab] = useState('All');
+  const [search, setSearch] = useState('');
 
-  const filtered = activeTab === 'All' ? passes : passes.filter((p) => p.status === activeTab);
+  const filtered = useMemo(() => {
+    let list = activeTab === 'All' ? passes : passes.filter((p) => p.status === activeTab);
+    if (search) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.room.toLowerCase().includes(q) ||
+          p.roll.toLowerCase().includes(q) ||
+          p.reason.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [passes, activeTab, search]);
   const pendingCount = passes.filter((p) => p.status === 'Pending').length;
 
   const handleAction = (id, action) => {
@@ -40,6 +55,8 @@ export default function GatePassesModule({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Stats */}
+      <AnimatedCard delay={0}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{pendingCount}</Text>
@@ -54,7 +71,9 @@ export default function GatePassesModule({ navigation }) {
           <Text style={styles.statLabel}>Overnight</Text>
         </View>
       </View>
+      </AnimatedCard>
 
+      {/* Tabs */}
       <View style={styles.tabsRow}>
         {tabs.map((t) => (
           <TouchableOpacity
@@ -67,11 +86,25 @@ export default function GatePassesModule({ navigation }) {
         ))}
       </View>
 
+      {/* Search */}
+      <View style={{ marginTop: 12 }}>
+        <SearchBar placeholder="Search by name, room, roll number…" onSearch={setSearch} />
+      </View>
+
+      {/* Pass List */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-        {filtered.map((p) => {
-          const st = getStatusStyle(p.status);
-          return (
-            <View key={p.id} style={styles.card}>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon="exit-outline"
+            title="No passes found"
+            subtitle={search ? 'Try a different search term' : `No ${activeTab.toLowerCase()} passes`}
+            color="#0891b2"
+          />
+        ) : (
+          filtered.map((p, idx) => {
+            const st = getStatusStyle(p.status);
+            return (
+              <AnimatedCard key={p.id} delay={idx * 50} style={styles.card}>
               <View style={styles.cardTop}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>{p.name.charAt(0)}</Text>
@@ -119,9 +152,10 @@ export default function GatePassesModule({ navigation }) {
                   </TouchableOpacity>
                 </View>
               )}
-            </View>
+            </AnimatedCard>
           );
-        })}
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -175,10 +209,6 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#fff' },
   list: { paddingTop: 12, paddingBottom: 24 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

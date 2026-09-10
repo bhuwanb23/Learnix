@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { AnimatedCard, SearchBar, EmptyState } from '../../../../components/ui';
 
 const initialComplaints = [
   { id: '1', title: 'Water leakage in bathroom', room: 'B-210', by: 'Arjun Mehta', type: 'Plumbing', severity: 'High', status: 'Open', age: '2 days', desc: 'Ceiling pipe leaking since Monday, floor constantly wet.' },
@@ -30,15 +31,22 @@ export default function ComplaintsModule({ navigation }) {
   const [complaints, setComplaints] = useState(initialComplaints);
   const [category, setCategory] = useState('All');
   const [tab, setTab] = useState('All');
+  const [search, setSearch] = useState('');
 
-  const filtered = complaints.filter((c) => {
-    const matchesCat = category === 'All' || c.type === category;
-    const matchesTab =
-      tab === 'All' ||
-      (tab === 'Open' && c.status !== 'Resolved') ||
-      (tab === 'Resolved' && c.status === 'Resolved');
-    return matchesCat && matchesTab;
-  });
+  const filtered = useMemo(() => {
+    return complaints.filter((c) => {
+      const matchesCat = category === 'All' || c.type === category;
+      const matchesTab =
+        tab === 'All' ||
+        (tab === 'Open' && c.status !== 'Resolved') ||
+        (tab === 'Resolved' && c.status === 'Resolved');
+      const matchesSearch = !search ||
+        c.title.toLowerCase().includes(search.toLowerCase()) ||
+        c.room.toLowerCase().includes(search.toLowerCase()) ||
+        c.by.toLowerCase().includes(search.toLowerCase());
+      return matchesCat && matchesTab && matchesSearch;
+    });
+  }, [complaints, category, tab, search]);
 
   const openCount = complaints.filter((c) => c.status !== 'Resolved').length;
 
@@ -62,6 +70,8 @@ export default function ComplaintsModule({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Stats */}
+      <AnimatedCard delay={0}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>{openCount}</Text>
@@ -76,7 +86,9 @@ export default function ComplaintsModule({ navigation }) {
           <Text style={styles.statLabel}>Avg. Resolution</Text>
         </View>
       </View>
+      </AnimatedCard>
 
+      {/* Tabs */}
       <View style={styles.tabsRow}>
         {['All', 'Open', 'Resolved'].map((t) => (
           <TouchableOpacity
@@ -105,12 +117,25 @@ export default function ComplaintsModule({ navigation }) {
         ))}
       </ScrollView>
 
+      {/* Search */}
+      <View style={{ marginTop: 12 }}>
+        <SearchBar placeholder="Search by title, room, person…" onSearch={setSearch} />
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-        {filtered.map((c) => {
-          const sev = severityStyle(c.severity);
-          const st = statusStyle(c.status);
-          return (
-            <View key={c.id} style={styles.card}>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon="alert-circle-outline"
+            title="No complaints found"
+            subtitle={search ? 'Try a different search' : 'No complaints match filters'}
+            color="#d97706"
+          />
+        ) : (
+          filtered.map((c) => {
+              const sev = severityStyle(c.severity);
+              const st = statusStyle(c.status);
+              return (
+                <AnimatedCard key={c.id} delay={0} style={styles.card}>
               <View style={styles.cardTop}>
                 <View style={styles.typeIcon}>
                   <Ionicons
@@ -168,9 +193,10 @@ export default function ComplaintsModule({ navigation }) {
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
+            </AnimatedCard>
           );
-        })}
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -254,10 +280,6 @@ const styles = StyleSheet.create({
   chipTextActive: { color: '#fff' },
   list: { paddingTop: 12, paddingBottom: 24 },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

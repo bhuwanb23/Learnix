@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hostelApi } from '../../../../services/api';
+import { AnimatedCard, SearchBar, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 import ResidentDetail from './pages/resident_detail/resident_detail';
 
 const BLOCK_COLORS = { 'Block A': '#2563eb', 'Block B': '#0891b2', 'Block C': '#059669' };
@@ -42,7 +43,7 @@ export default function ResidentsModule({ navigation }) {
         studentProfileId={selectedResident.studentProfileId}
         onBack={() => {
           setSelectedResident(null);
-          load(); // refresh dues after rent collection
+          load();
         }}
       />
     );
@@ -59,17 +60,24 @@ export default function ResidentsModule({ navigation }) {
     return matchesSearch && matchesBlock;
   });
 
+  // Skeleton loading
+  if (loading && !data) {
+    return (
+      <View style={styles.container}>
+        <SkeletonStatRow style={{ marginTop: 16 }} />
+        <View style={{ marginTop: 16 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.searchWrap}>
-        <Ionicons name="search-outline" size={16} color={theme.colors.textMuted} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search name, room or bed…"
-          placeholderTextColor="#9ca3af"
-          value={search}
-          onChangeText={setSearch}
-        />
+      <View style={{ marginTop: 14 }}>
+        <SearchBar placeholder="Search name, room or bed…" onSearch={setSearch} />
       </View>
       <View style={styles.filterRow}>
         {blockNames.map((b) => (
@@ -90,20 +98,22 @@ export default function ResidentsModule({ navigation }) {
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
       >
         {error && !data && <Text style={styles.errorText}>{error}</Text>}
-        {loading && !data && <Text style={styles.muted}>Loading residents…</Text>}
         {data && filtered.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Ionicons name="people-outline" size={28} color={theme.colors.textMuted} />
-            <Text style={styles.muted}>No residents match your search.</Text>
-          </View>
+          <EmptyState
+            icon="people-outline"
+            title="No residents match"
+            subtitle="Try a different search or block filter"
+            color="#0891b2"
+          />
         )}
-        {filtered.map((r) => {
+        {filtered.map((r, idx) => {
           const color = BLOCK_COLORS[r.block] ?? '#2563eb';
           return (
-            <TouchableOpacity
+            <AnimatedCard
               key={r.allocationId}
-              style={styles.card}
               onPress={() => setSelectedResident(r)}
+              delay={idx * 40}
+              style={styles.card}
             >
               <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
                 <Text style={[styles.avatarText, { color }]}>{r.name.charAt(0)}</Text>
@@ -129,7 +139,7 @@ export default function ResidentsModule({ navigation }) {
                 </View>
               )}
               <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-            </TouchableOpacity>
+            </AnimatedCard>
           );
         })}
       </ScrollView>
@@ -139,24 +149,6 @@ export default function ResidentsModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 12,
-    marginTop: 16,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 11,
-    paddingHorizontal: 8,
-    fontSize: 13,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.text,
-  },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
   filterChip: {
     paddingHorizontal: 12,
@@ -176,21 +168,9 @@ const styles = StyleSheet.create({
   list: { paddingBottom: 24, paddingTop: 12 },
   muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
   errorText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: '#dc2626' },
-  emptyCard: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 24,
-  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

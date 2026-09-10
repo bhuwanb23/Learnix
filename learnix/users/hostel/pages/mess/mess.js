@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { AnimatedCard } from '../../../../components/ui';
 
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -37,6 +38,8 @@ export default function MessModule({ navigation }) {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Stats */}
+      <AnimatedCard delay={0}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statValue}>1,248</Text>
@@ -51,8 +54,10 @@ export default function MessModule({ navigation }) {
           <Text style={styles.statLabel}>Monthly Budget</Text>
         </View>
       </View>
+      </AnimatedCard>
 
-      <View style={styles.section}>
+      {/* Weekly Menu */}
+      <AnimatedCard delay={80} style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Weekly Menu</Text>
           <TouchableOpacity
@@ -92,9 +97,10 @@ export default function MessModule({ navigation }) {
             </View>
           ))}
         </View>
-      </View>
+      </AnimatedCard>
 
-      <View style={styles.section}>
+      {/* Meal Plans */}
+      <AnimatedCard delay={160} style={styles.section}>
         <Text style={styles.sectionTitle}>Meal Plans</Text>
         <View style={styles.planRow}>
           {plans.map((p) => (
@@ -112,9 +118,10 @@ export default function MessModule({ navigation }) {
             </View>
           ))}
         </View>
-      </View>
+      </AnimatedCard>
 
-      <View style={styles.section}>
+      {/* Attendance */}
+      <AnimatedCard delay={240} style={styles.section}>
         <Text style={styles.sectionTitle}>Today's Attendance</Text>
         <View style={styles.attendanceCard}>
           {attendance.map((a) => (
@@ -132,9 +139,10 @@ export default function MessModule({ navigation }) {
             </View>
           ))}
         </View>
-      </View>
+      </AnimatedCard>
 
-      <View style={styles.section}>
+      {/* Feedback */}
+      <AnimatedCard delay={320} style={styles.section}>
         <Text style={styles.sectionTitle}>Resident Feedback</Text>
         {feedback.map((f) => (
           <View key={f.meal + f.date} style={styles.feedbackCard}>
@@ -157,7 +165,7 @@ export default function MessModule({ navigation }) {
           <Ionicons name="pulse-outline" size={16} color="#fff" />
           <Text style={styles.surveyText}>Send Rating Survey</Text>
         </TouchableOpacity>
-      </View>
+      </AnimatedCard>
     </ScrollView>
   );
 }

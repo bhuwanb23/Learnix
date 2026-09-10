@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
+import { AnimatedCard, SearchBar, EmptyState } from '../../../../components/ui';
 
 const initialVisitors = [
   { id: '1', name: 'Rajesh Reddy', visiting: 'Sneha Reddy', room: 'A-101', relation: 'Father', in: '4:10 PM', out: null, phone: '98450 12345' },
@@ -16,8 +17,18 @@ export default function VisitorsModule({ navigation }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', visiting: '', room: '', relation: '', phone: '' });
 
+  const [search, setSearch] = useState('');
+
   const active = visitors.filter((v) => !v.out);
   const today = visitors.filter((v) => !String(v.in).startsWith('Yesterday'));
+
+  const filteredActive = useMemo(() => {
+    if (!search) return active;
+    const q = search.toLowerCase();
+    return active.filter(
+      (v) => v.name.toLowerCase().includes(q) || v.visiting.toLowerCase().includes(q) || v.room.toLowerCase().includes(q),
+    );
+  }, [active, search]);
 
   const handleCheckIn = () => {
     if (!form.name.trim() || !form.visiting.trim() || !form.room.trim()) {
@@ -118,38 +129,46 @@ export default function VisitorsModule({ navigation }) {
         </View>
       </View>
 
+      {/* Search */}
+      <View style={{ marginTop: 14 }}>
+        <SearchBar placeholder="Search visitor or resident…" onSearch={setSearch} />
+      </View>
+
       <Text style={styles.sectionTitle}>Active Visitors</Text>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
-        {active.map((v) => (
-          <View key={v.id} style={styles.card}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{v.name.charAt(0)}</Text>
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.visitorName}>{v.name} · {v.relation}</Text>
-              <Text style={styles.visitorMeta}>
-                Visiting {v.visiting} ({v.room}) · In: {v.in}
-              </Text>
-              <Text style={styles.visitorPhone}>{v.phone}</Text>
-            </View>
-            <TouchableOpacity style={styles.outBtn} onPress={() => handleCheckOut(v.id)}>
-              <Ionicons name="log-out-outline" size={14} color="#fff" />
-              <Text style={styles.outText}>Check Out</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-        {active.length === 0 && (
-          <View style={styles.emptyCard}>
-            <Ionicons name="people-outline" size={28} color={theme.colors.textMuted} />
-            <Text style={styles.emptyText}>No visitors in campus right now.</Text>
-          </View>
+        {filteredActive.length === 0 ? (
+          <EmptyState
+            icon="people-outline"
+            title="No active visitors"
+            subtitle={search ? 'Try a different search' : 'No visitors in campus right now'}
+            color="#0891b2"
+          />
+        ) : (
+          filteredActive.map((v, idx) => (
+            <AnimatedCard key={v.id} delay={idx * 50} style={styles.card}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{v.name.charAt(0)}</Text>
+              </View>
+              <View style={styles.cardBody}>
+                <Text style={styles.visitorName}>{v.name} · {v.relation}</Text>
+                <Text style={styles.visitorMeta}>
+                  Visiting {v.visiting} ({v.room}) · In: {v.in}
+                </Text>
+                <Text style={styles.visitorPhone}>{v.phone}</Text>
+              </View>
+              <TouchableOpacity style={styles.outBtn} onPress={() => handleCheckOut(v.id)}>
+                <Ionicons name="log-out-outline" size={14} color="#fff" />
+                <Text style={styles.outText}>Check Out</Text>
+              </TouchableOpacity>
+            </AnimatedCard>
+          ))
         )}
 
         <Text style={[styles.sectionTitle, styles.historyTitle]}>Today's Log</Text>
         {today
           .filter((v) => v.out)
-          .map((v) => (
-            <View key={v.id} style={styles.logCard}>
+          .map((v, idx) => (
+            <AnimatedCard key={v.id} delay={idx * 40} style={styles.logCard}>
               <View style={styles.logIcon}>
                 <Ionicons name="checkmark-done-outline" size={14} color="#059669" />
               </View>
@@ -159,7 +178,7 @@ export default function VisitorsModule({ navigation }) {
                   In {v.in} · Out {v.out}
                 </Text>
               </View>
-            </View>
+            </AnimatedCard>
           ))}
       </ScrollView>
     </View>
@@ -283,10 +302,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },
@@ -353,10 +368,6 @@ const styles = StyleSheet.create({
   logCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginBottom: 8,
   },

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
+import { AnimatedCard } from '../../../../components/ui';
 
 const initialNotifications = [
   {
@@ -143,8 +144,8 @@ export default function Notifications({ navigation }) {
 
       {activeTab === 'Inbox' ? (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notifications.map((n) => (
-            <TouchableOpacity key={n.id} style={styles.card} onPress={() => markRead(n.id)}>
+          {notifications.map((n, idx) => (
+            <AnimatedCard key={n.id} delay={idx * 40} onPress={() => markRead(n.id)} style={styles.card}>
               <View style={styles.iconWrap}>
                 <View
                   style={[
@@ -167,7 +168,7 @@ export default function Notifications({ navigation }) {
                   <Text style={styles.audienceText}>{n.audience}</Text>
                 </View>
               </View>
-            </TouchableOpacity>
+            </AnimatedCard>
           ))}
         </ScrollView>
       ) : (
@@ -294,10 +295,6 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: theme.spacing.lg },
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
     marginTop: 12,
   },
