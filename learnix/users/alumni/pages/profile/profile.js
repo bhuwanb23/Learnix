@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, SkeletonCard } from '../../../../components/ui';
 
 const toggles = [
   { id: 'T1', label: 'Event invites & RSVP alerts', icon: 'calendar-outline', color: '#2563eb', default: true },
@@ -73,7 +74,10 @@ export default function AlumniProfile({ navigation }) {
   if (loading && !profile) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <View style={{ backgroundColor: '#2563eb', height: 200, margin: 16, borderRadius: 20 }} />
+        <SkeletonCard style={{ marginHorizontal: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
       </View>
     );
   }
@@ -142,6 +146,7 @@ export default function AlumniProfile({ navigation }) {
         </View>
       </View>
 
+      <AnimatedCard delay={200}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Preferences</Text>
         <View style={styles.prefCard}>
@@ -164,7 +169,9 @@ export default function AlumniProfile({ navigation }) {
           ))}
         </View>
       </View>
+      </AnimatedCard>
 
+      <AnimatedCard delay={300}>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.menuCard}>
@@ -182,6 +189,7 @@ export default function AlumniProfile({ navigation }) {
           ))}
         </View>
       </View>
+      </AnimatedCard>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
         <Ionicons name="log-out-outline" size={16} color="#dc2626" />

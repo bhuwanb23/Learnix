@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 
 const fmt = (n) => {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
@@ -64,7 +65,9 @@ export default function DonationsModule({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#059669" />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
       </View>
     );
   }
@@ -107,7 +110,7 @@ export default function DonationsModule({ navigation }) {
           const color = CAMPAIGN_COLORS[idx % CAMPAIGN_COLORS.length];
           const icon = CAMPAIGN_ICONS[idx % CAMPAIGN_ICONS.length];
           return (
-            <View key={c.id} style={styles.campaignCard}>
+            <AnimatedCard key={c.id} delay={idx * 60} style={styles.campaignCard}>
               <View style={styles.campaignHeader}>
                 <View style={[styles.campaignIcon, { backgroundColor: color + '1a' }]}>
                   <Ionicons name={icon} size={16} color={color} />
@@ -137,10 +140,10 @@ export default function DonationsModule({ navigation }) {
                 <Ionicons name="share-social-outline" size={13} color={color} />
                 <Text style={[styles.shareText, { color }]}>Share Campaign</Text>
               </TouchableOpacity>
-            </View>
+            </AnimatedCard>
           );
         })}
-        {campaigns.length === 0 && <Text style={styles.emptyText}>No active campaigns.</Text>}
+        {campaigns.length === 0 && <EmptyState icon="gift-outline" title="No active campaigns" subtitle="Start a new fundraising campaign" color="#059669" />}
       </View>
 
       <View style={styles.section}>
@@ -149,7 +152,7 @@ export default function DonationsModule({ navigation }) {
           const color = DONOR_COLORS[idx % DONOR_COLORS.length];
           const dateStr = new Date(d.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
           return (
-            <View key={d.id} style={styles.donationCard}>
+            <AnimatedCard key={d.id} delay={idx * 40} style={styles.donationCard}>
               <View style={[styles.donorAvatar, { backgroundColor: color + '1a' }]}>
                 <Text style={[styles.donorInitials, { color }]}>
                   {d.donor.split(' ').map((n) => n[0]).join('')}
@@ -179,10 +182,10 @@ export default function DonationsModule({ navigation }) {
                   </TouchableOpacity>
                 )}
               </View>
-            </View>
+            </AnimatedCard>
           );
         })}
-        {donationsList.length === 0 && <Text style={styles.emptyText}>No donations yet.</Text>}
+        {donationsList.length === 0 && <EmptyState icon="wallet-outline" title="No donations yet" subtitle="Donations will appear here once recorded" color="#d97706" />}
       </View>
     </ScrollView>
   );
@@ -203,7 +206,7 @@ const styles = StyleSheet.create({
   heroNoteText: { fontSize: 10, fontFamily: 'Manrope-Medium', color: 'rgba(255,255,255,0.9)', marginLeft: 5 },
   section: { paddingHorizontal: 16, marginTop: 20 },
   sectionTitle: { fontSize: 14, fontFamily: 'Manrope-Bold', color: theme.colors.text, marginBottom: 12 },
-  campaignCard: { backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border, padding: 14, marginBottom: 10 },
+  campaignCard: { padding: 14, marginBottom: 10 },
   campaignHeader: { flexDirection: 'row', alignItems: 'center' },
   campaignIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   campaignHeaderBody: { flex: 1, marginLeft: 10 },
@@ -218,7 +221,7 @@ const styles = StyleSheet.create({
   campaignTarget: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginLeft: 4 },
   shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 9, paddingVertical: 7, marginTop: 12 },
   shareText: { fontSize: 11, fontFamily: 'Manrope-Bold', marginLeft: 5 },
-  donationCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, padding: 12, marginBottom: 8 },
+  donationCard: { flexDirection: 'row', alignItems: 'center', padding: 12, marginBottom: 8 },
   donorAvatar: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   donorInitials: { fontSize: 12, fontFamily: 'Manrope-Bold' },
   donationBody: { flex: 1, marginLeft: 10 },

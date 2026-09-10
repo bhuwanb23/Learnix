@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 import EventDetail from './pages/event_detail/event_detail';
 
 const COLORS = ['#0891b2', '#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed'];
@@ -54,7 +55,12 @@ export default function EventsModule({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <SkeletonStatRow count={3} style={{ paddingHorizontal: 16 }} />
+        <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -116,11 +122,11 @@ export default function EventsModule({ navigation }) {
         const dateStr = new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
         const timeStr = new Date(e.startDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
         return (
-          <TouchableOpacity
+          <AnimatedCard
             key={e.id}
-            style={styles.card}
             onPress={() => setSelectedId(e.id)}
-            activeOpacity={0.8}
+            delay={idx * 50}
+            style={styles.card}
           >
             <View style={styles.cardHeader}>
               <View style={[styles.dateBadge, { backgroundColor: color + '1a' }]}>
@@ -143,11 +149,16 @@ export default function EventsModule({ navigation }) {
             <Text style={styles.rsvpCount}>
               {e.rsvps} of {e.capacity} RSVPs · {e.status}
             </Text>
-          </TouchableOpacity>
+          </AnimatedCard>
         );
       })}
       {filtered.length === 0 && (
-        <Text style={styles.emptyText}>No {activeTab.toLowerCase()} events.</Text>
+        <EmptyState
+          icon="calendar-outline"
+          title={`No ${activeTab.toLowerCase()} events`}
+          subtitle="Check back later for new events"
+          color="#0891b2"
+        />
       )}
     </ScrollView>
   );
@@ -215,10 +226,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
     marginHorizontal: 16,
     marginTop: 10,

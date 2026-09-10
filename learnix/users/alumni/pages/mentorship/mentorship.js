@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#7c3aed', '#dc2626'];
 const tabs = ['Active Pairs', 'Requests'];
@@ -54,7 +55,12 @@ export default function MentorshipModule({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <SkeletonStatRow count={3} style={{ paddingHorizontal: 16 }} />
+        <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -117,7 +123,7 @@ export default function MentorshipModule({ navigation }) {
           {pairs.map((p, idx) => {
             const color = COLORS[idx % COLORS.length];
             return (
-              <View key={p.id} style={styles.pairCard}>
+              <AnimatedCard key={p.id} delay={idx * 50} style={styles.pairCard}>
                 <View style={styles.pairRow}>
                   <View style={[styles.mentorAvatar, { backgroundColor: color + '1a' }]}>
                     <Text style={[styles.initials, { color }]}>
@@ -155,15 +161,16 @@ export default function MentorshipModule({ navigation }) {
                   )}
                   <Text style={styles.remindText}>Send Reminder</Text>
                 </TouchableOpacity>
-              </View>
+              </AnimatedCard>
             );
           })}
           {pairs.length === 0 && (
-            <View style={styles.emptyCard}>
-              <Ionicons name="hand-left-outline" size={28} color="#2563eb" />
-              <Text style={styles.emptyTitle}>No active pairs yet</Text>
-              <Text style={styles.emptySub}>Approve requests or add mentors from the directory.</Text>
-            </View>
+            <EmptyState
+              icon="hand-left-outline"
+              title="No active pairs yet"
+              subtitle="Approve requests or add mentors from the directory"
+              color="#2563eb"
+            />
           )}
 
           {sessions.length > 0 && (
@@ -192,16 +199,17 @@ export default function MentorshipModule({ navigation }) {
       {activeTab === 'Requests' && (
         <>
           {pairs.length === 0 && (
-            <View style={styles.emptyCard}>
-              <Ionicons name="checkmark-done-outline" size={28} color="#059669" />
-              <Text style={styles.emptyTitle}>All caught up!</Text>
-              <Text style={styles.emptySub}>No pending mentorship requests.</Text>
-            </View>
+            <EmptyState
+              icon="checkmark-done-outline"
+              title="All caught up!"
+              subtitle="No pending mentorship requests"
+              color="#059669"
+            />
           )}
           {pairs.map((r, idx) => {
             const color = COLORS[idx % COLORS.length];
             return (
-              <View key={r.id} style={styles.requestCard}>
+              <AnimatedCard key={r.id} delay={idx * 50} style={styles.requestCard}>
                 <View style={[styles.mentorAvatar, { backgroundColor: color + '1a' }]}>
                   <Text style={[styles.initials, { color }]}>
                     {r.mentor.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
@@ -237,7 +245,7 @@ export default function MentorshipModule({ navigation }) {
                     </TouchableOpacity>
                   </View>
                 </View>
-              </View>
+              </AnimatedCard>
             );
           })}
         </>

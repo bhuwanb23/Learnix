@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, SearchBar, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 
 const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
 
@@ -39,7 +40,12 @@ export default function ChaptersModule({ navigation }) {
   if (loading && !chapters) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#059669" />
+        <SkeletonStatRow count={3} style={{ paddingHorizontal: 16 }} />
+        <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -82,21 +88,14 @@ export default function ChaptersModule({ navigation }) {
         ))}
       </View>
 
-      <View style={styles.searchWrap}>
-        <Ionicons name="search-outline" size={16} color={theme.colors.textMuted} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search chapter city..."
-          placeholderTextColor={theme.colors.textMuted}
-          value={query}
-          onChangeText={setQuery}
-        />
+      <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
+        <SearchBar placeholder="Search chapter city…" onSearch={setQuery} />
       </View>
 
       {filtered.map((c, idx) => {
         const color = COLORS[idx % COLORS.length];
         return (
-          <View key={c.id} style={styles.chapterCard}>
+          <AnimatedCard key={c.id} delay={idx * 50} style={styles.chapterCard}>
             <View style={[styles.cityIcon, { backgroundColor: color + '1a' }]}>
               <Ionicons name="location" size={18} color={color} />
             </View>
@@ -121,11 +120,16 @@ export default function ChaptersModule({ navigation }) {
             >
               <Ionicons name="chatbubble-ellipses-outline" size={16} color="#2563eb" />
             </TouchableOpacity>
-          </View>
+          </AnimatedCard>
         );
       })}
       {filtered.length === 0 && (
-        <Text style={styles.emptyText}>No chapters match your search.</Text>
+        <EmptyState
+          icon="location-outline"
+          title="No chapters found"
+          subtitle="Try a different city search"
+          color="#059669"
+        />
       )}
     </ScrollView>
   );
@@ -187,10 +191,6 @@ const styles = StyleSheet.create({
   chapterCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
     marginHorizontal: 16,
     marginTop: 10,

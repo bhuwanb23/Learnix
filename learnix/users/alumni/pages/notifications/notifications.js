@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
 
 const TYPE_META = {
   EVENT: { label: 'Event', color: '#2563eb', icon: 'calendar-outline' },
@@ -107,7 +108,9 @@ export default function NotificationsScreen({ navigation }) {
   if (loading && !data) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 16 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
+        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
       </View>
     );
   }
@@ -165,10 +168,10 @@ export default function NotificationsScreen({ navigation }) {
               </TouchableOpacity>
             )}
           </View>
-          {inbox.map((n) => {
+          {inbox.map((n, idx) => {
             const meta = TYPE_META[n.type] ?? TYPE_META.SYSTEM;
             return (
-              <View key={n.id} style={[styles.notifCard, !n.read && styles.notifCardUnread]}>
+              <AnimatedCard key={n.id} delay={idx * 40} style={[styles.notifCard, !n.read && styles.notifCardUnread]}>
                 <View style={[styles.notifIcon, { backgroundColor: meta.color + '1a' }]}>
                   <Ionicons name={meta.icon} size={16} color={meta.color} />
                 </View>
@@ -181,12 +184,11 @@ export default function NotificationsScreen({ navigation }) {
                   <Text style={styles.notifBodyText} numberOfLines={2}>{n.body}</Text>
                   <Text style={styles.notifTime}>
                     {new Date(n.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                </View>
-              </View>
-            );
+                  </Text>              </View>
+            </AnimatedCard>
+          );
           })}
-          {inbox.length === 0 && <Text style={styles.emptyText}>Inbox is empty.</Text>}
+          {inbox.length === 0 && <EmptyState icon="inbox-outline" title="Inbox is empty" subtitle="Notifications will appear here" color="#7c3aed" />}
         </>
       )}
 
@@ -342,10 +344,6 @@ const styles = StyleSheet.create({
   },
   notifCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginHorizontal: 16,
     marginBottom: 8,

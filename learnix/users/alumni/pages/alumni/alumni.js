@@ -4,14 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  TextInput,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
+import { AnimatedCard, SearchBar, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 import AlumniDetail from './pages/alumni_detail/alumni_detail';
 
 const COLORS = ['#2563eb', '#059669', '#d97706', '#0891b2', '#dc2626', '#7c3aed', '#0d9488', '#64748b'];
@@ -80,8 +78,13 @@ export default function AlumniDirectory({ navigation }) {
 
   if (loading && !data) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View style={styles.flex}>
+        <SkeletonStatRow count={3} style={{ marginTop: 16, paddingHorizontal: 16 }} />
+        <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
+          ))}
+        </View>
       </View>
     );
   }
@@ -103,30 +106,20 @@ export default function AlumniDirectory({ navigation }) {
           keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <View style={styles.statsRow}>
-            {statCards.map((s) => (
-              <View key={s.label} style={styles.statCard}>
-                <Ionicons name={s.icon} size={14} color={s.color} />
-                <Text style={styles.statValue}>{s.value}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
-              </View>
-            ))}
-          </View>
+          <AnimatedCard delay={0} style={styles.statsRowWrap}>
+            <View style={styles.statsRow}>
+              {statCards.map((s) => (
+                <View key={s.label} style={styles.statCard}>
+                  <Ionicons name={s.icon} size={14} color={s.color} />
+                  <Text style={styles.statValue}>{s.value}</Text>
+                  <Text style={styles.statLabel}>{s.label}</Text>
+                </View>
+              ))}
+            </View>
+          </AnimatedCard>
 
-          <View style={styles.searchWrap}>
-            <Ionicons name="search-outline" size={16} color={theme.colors.textMuted} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search alumni, role, city..."
-              placeholderTextColor={theme.colors.textMuted}
-              value={query}
-              onChangeText={setQuery}
-            />
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery('')}>
-                <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
-              </TouchableOpacity>
-            )}
+          <View style={{ paddingHorizontal: 16, marginTop: 10 }}>
+            <SearchBar placeholder="Search alumni, role, city…" onSearch={setQuery} />
           </View>
 
           {batches.length > 0 && (
@@ -156,11 +149,11 @@ export default function AlumniDirectory({ navigation }) {
             const color = COLORS[idx % COLORS.length];
             const active = a.engagementStatus === 'ACTIVE';
             return (
-              <TouchableOpacity
+              <AnimatedCard
                 key={a.id}
-                style={styles.card}
                 onPress={() => setSelected(a.id)}
-                activeOpacity={0.8}
+                delay={idx * 40}
+                style={styles.card}
               >
                 <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
                   <Text style={[styles.avatarText, { color }]}>
@@ -185,11 +178,16 @@ export default function AlumniDirectory({ navigation }) {
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-              </TouchableOpacity>
-            );
+            </AnimatedCard>
+          );
           })}
           {!loading && alumni.length === 0 && (
-            <Text style={styles.emptyText}>No alumni match your search.</Text>
+            <EmptyState
+              icon="people-outline"
+              title="No alumni found"
+              subtitle="Try a different search or batch filter"
+              color="#7c3aed"
+            />
           )}
         </ScrollView>
       )}
@@ -287,13 +285,13 @@ const styles = StyleSheet.create({
     marginTop: 14,
     marginBottom: 8,
   },
+  statsRowWrap: {
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 12,
     marginHorizontal: 16,
     marginBottom: 8,
