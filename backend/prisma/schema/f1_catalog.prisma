@@ -80,17 +80,28 @@ model DigitalAccessGrant {
   @@map("digital_access_grants")
 }
 
+// A purchase raised once a student request is approved. Advancing it to RECEIVED
+// creates the catalog `Book` and stores its id in `bookId`, which is what closes
+// the loop: request → purchase → shelf, all traceable.
 model BookProcurement {
   id            String   @id @default(cuid())
   requestId     String? // scalar → book_requests.id (same domain)
   institutionId String
   title         String
+  author        String?
   copies        Int      @default(1)
-  costMinor     Int      @default(0)
-  status        String   @default("REQUESTED") // REQUESTED | APPROVED | ORDERED | RECEIVED
+  costMinor     Int      @default(0) // integer paise (ADR-04); 0 until a cost is recorded
+  status        String   @default("REQUESTED") // REQUESTED | ORDERED | RECEIVED | CANCELLED
+  category      String? // shelf category, decided at receipt
+  rackLocation  String? // where it was shelved, decided at receipt
+  orderedAt     DateTime?
+  receivedAt    DateTime?
+  bookId        String? // scalar → books.id, set when RECEIVED creates the catalog entry
+  note          String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([institutionId])
+  @@index([status])
   @@map("book_procurements")
 }

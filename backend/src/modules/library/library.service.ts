@@ -1,7 +1,7 @@
 // Library Staff module service (docs/users/07 §4, tables: Domain F + E write-throughs)
 // Money: integer paise. Fine rate: ₹5/day (500 paise). Tenant-scoped by institutionId.
 import { prisma } from '../../db/prisma.js';
-import { notFound, conflict, unprocessable } from '../../lib/errors.js';
+import { notFound, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { syncOverdueStatus } from './circulation.service.js';
 import { loadPolicy } from './settings.service.js';
@@ -302,96 +302,4 @@ export async function updateBook(
     totalCopies: updated.totalCopies,
     availableCopies: updated.availableCopies,
   };
-}
-
-// ── L-05 Book requests: approve / reject ────────────────────
-export async function listRequests(institutionId: string) {
-  const requests = await prisma.bookRequest.findMany({
-    where: {
-      studentProfile: { user: { institutionId } },
-    },
-    include: {
-      studentProfile: { include: { user: { select: { fullName: true } } } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const pending = requests.filter((r) => r.status === 'PENDING').length;
-  const approved = requests.filter((r) => r.status === 'APPROVED').length;
-
-  return {
-    stats: { pending, approved, total: requests.length },
-    requests: requests.map((r) => ({
-      id: r.id,
-      student: r.studentProfile.user.fullName,
-      rollNo: r.studentProfile.rollNo,
-      title: r.title,
-      author: r.author,
-      reason: r.reason,
-      status: r.status,
-      createdAt: r.createdAt,
-    })),
-  };
-}
-
-export async function decideRequest(
-  institutionId: string,
-  actorUserId: string,
-  requestId: string,
-  decision: 'APPROVED' | 'REJECTED',
-) {
-  const request = await prisma.bookRequest.findFirst({
-    where: { id: requestId, studentProfile: { user: { institutionId } } },
-    include: {
-      studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
-    },
-  });
-  if (!request) throw notFound('Book request not found');
-  if (request.status !== 'PENDING') throw conflict(`Request is already ${request.status}`);
-
-  const newStatus = decision;
-  await prisma.bookRequest.update({
-    where: { id: request.id },
-    data: { status: newStatus },
-  });
-
-  // If approved, create a procurement record
-  if (decision === 'APPROVED') {
-    await prisma.bookProcurement.create({
-      data: {
-        requestId: request.id,
-        institutionId,
-        title: request.title,
-        copies: 1,
-        status: 'REQUESTED',
-      },
-    });
-  }
-
-  // Notify student
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: request.studentProfile.userId,
-      type: 'BOOK_REQUEST',
-      title: decision === 'APPROVED' ? `Book request approved: ${request.title}` : `Book request rejected: ${request.title}`,
-      body:
-        decision === 'APPROVED'
-          ? `Your request for "${request.title}" has been approved. It will be procured and added to the catalog.`
-          : `Your request for "${request.title}" has been rejected.`,
-      sourceModule: 'library',
-    },
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: `request.${decision.toLowerCase()}`,
-    entityType: 'BookRequest',
-    entityId: requestId,
-    before: { status: 'PENDING' },
-    after: { status: newStatus },
-  });
-
-  return { id: request.id, status: newStatus, title: request.title };
 }

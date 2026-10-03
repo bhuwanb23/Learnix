@@ -102,6 +102,19 @@ export const fineQuerySchema = z.object({
 // L-05 Book requests — approve / reject
 export const requestDecisionSchema = z.object({
   decision: z.enum(['APPROVED', 'REJECTED']),
+  // A bare decision with no explanation is not a desk decision — the student is
+  // shown this text, so it must be real.
+  note: z.string().trim().min(5).max(500),
+});
+
+// L-05 procurement — walk a purchase forward, or cancel it.
+export const advanceProcurementSchema = z.object({
+  status: z.enum(['ORDERED', 'RECEIVED', 'CANCELLED']),
+  costRupees: z.number().min(0).max(1000000).optional(),
+  copies: z.number().int().min(1).max(500).optional(),
+  category: z.string().trim().max(60).optional(),
+  rackLocation: z.string().trim().max(40).optional(),
+  note: z.string().trim().max(500).optional(),
 });
 
 // L-06 Digital library — add resource / grant access

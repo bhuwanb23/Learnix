@@ -19,6 +19,7 @@ import {
   bulkSettleSchema,
   fineQuerySchema,
   requestDecisionSchema,
+  advanceProcurementSchema,
   addDigitalResourceSchema,
   updateDigitalResourceSchema,
   grantAccessSchema,
@@ -35,6 +36,7 @@ import * as fines from './fines.service.js';
 import * as notifications from './notifications.service.js';
 import * as settings from './settings.service.js';
 import * as profile from './profile.service.js';
+import * as requests from './requests.service.js';
 
 // Library Staff module — mounted at /api/v1/library (docs/users/07 §4)
 const router = Router();
@@ -301,11 +303,27 @@ router.post(
   }),
 );
 
-// L-05 book requests
+// L-05 book requests + procurement
 router.get(
   '/requests',
   wrap(async (req, res) => {
-    res.json({ data: await service.listRequests(req.auth!.institutionId) });
+    res.json({
+      data: await requests.listRequests(req.auth!.institutionId, {
+        q: req.query.q ? String(req.query.q) : undefined,
+        status: req.query.status as never,
+        sort: req.query.sort as never,
+      }),
+    });
+  }),
+);
+
+router.get(
+  '/requests/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await requests.getRequestDetail(req.auth!.institutionId, String(req.params.id)),
+    });
   }),
 );
 
@@ -315,11 +333,48 @@ router.post(
   validate(requestDecisionSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.decideRequest(
+      data: await requests.decideRequest(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
-        req.body.decision,
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/procurements',
+  wrap(async (req, res) => {
+    res.json({
+      data: await requests.listProcurements(req.auth!.institutionId, {
+        status: req.query.status as never,
+      }),
+    });
+  }),
+);
+
+router.get(
+  '/procurements/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await requests.getProcurement(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.post(
+  '/procurements/:id/advance',
+  validate(idParamSchema, 'params'),
+  validate(advanceProcurementSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await requests.advanceProcurement(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
       ),
     });
   }),

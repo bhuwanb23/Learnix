@@ -56,6 +56,13 @@ model BookRequest {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  // Decision stamp. `decisionNote` is NOT optional in the service: a librarian
+  // rejecting a student's request owes them a reason, and it is shown to them.
+  decidedByUserId  String?
+  decidedAt        DateTime?
+  decisionNote     String?
+  procurementId    String? // scalar → book_procurements.id once a purchase is raised
+
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
 
   @@index([studentProfileId])

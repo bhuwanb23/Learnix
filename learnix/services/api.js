@@ -284,8 +284,23 @@ export const libraryApi = {
   extendFine: (id, days) => api.post(`/library/fines/${id}/extend`, { days }),
   bulkSettleFines: (payload) => api.post('/library/fines/settle', payload),
   studentFines: (studentId) => api.get(`/library/fines/students/${studentId}`),
-  requests: () => api.get('/library/requests'),
-  decideRequest: (id, decision) => api.post(`/library/requests/${id}/decide`, { decision }),
+  requests: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'ALL'),
+    ).toString();
+    return api.get(`/library/requests${qs ? `?${qs}` : ''}`);
+  },
+  request: (id) => api.get(`/library/requests/${id}`),
+  decideRequest: (id, decision, note) =>
+    api.post(`/library/requests/${id}/decide`, { decision, note }),
+  procurements: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'ALL'),
+    ).toString();
+    return api.get(`/library/procurements${qs ? `?${qs}` : ''}`);
+  },
+  procurement: (id) => api.get(`/library/procurements/${id}`),
+  advanceProcurement: (id, payload) => api.post(`/library/procurements/${id}/advance`, payload),
   digitalResources: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),

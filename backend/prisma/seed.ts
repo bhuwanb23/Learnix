@@ -993,11 +993,82 @@ async function seedDomainF(institutionId: string): Promise<void> {
     await db.book.update({ where: { id: book2.id }, data: { availableCopies: { decrement: 1 } } });
   }
 
-  // Book request PENDING
+  // Book requests — one PENDING, one APPROVED (with a raised purchase), one
+  // REJECTED. Gives the requests hub real filters and a live procurement
+  // pipeline instead of a single lonely row (docs §3.5).
+  const librarian = await db.user.findFirst({ where: { email: 'library@learnix.dev', institutionId } });
+  const otherStudent = await db.studentProfile.findFirst({
+    where: { user: { institutionId, deletedAt: null }, id: { not: studentProfile.id } },
+  });
+
   const request = await db.bookRequest.findFirst({ where: { studentProfileId: studentProfile.id, title: 'Designing Data-Intensive Applications' } });
   if (!request) {
     await db.bookRequest.create({
       data: { studentProfileId: studentProfile.id, title: 'Designing Data-Intensive Applications', author: 'Martin Kleppmann', reason: 'Needed for DBMS project', status: 'PENDING' },
+    });
+  }
+
+  let approvedRequest = await db.bookRequest.findFirst({ where: { title: 'The Pragmatic Programmer' } });
+  if (!approvedRequest) {
+    const ordered = await db.bookProcurement.create({
+      data: {
+        institutionId,
+        title: 'The Pragmatic Programmer',
+        author: 'Andrew Hunt & David Thomas',
+        copies: 2,
+        costMinor: 189900,
+        status: 'ORDERED',
+        orderedAt: new Date('2026-09-28'),
+        note: 'Ordered from campus store, ETA one week',
+      },
+    });
+    approvedRequest = await db.bookRequest.create({
+      data: {
+        studentProfileId: studentProfile.id,
+        title: 'The Pragmatic Programmer',
+        author: 'Andrew Hunt & David Thomas',
+        reason: 'Recommended for the software engineering seminar',
+        status: 'APPROVED',
+        decidedByUserId: librarian!.id,
+        decidedAt: new Date('2026-09-25'),
+        decisionNote: 'Two copies approved — three students asked for this title.',
+        procurementId: ordered.id,
+      },
+    });
+  }
+
+  // A second student asking for the same pending title — this is what makes the
+  // "sameTitleRequests / inCatalog" demand signal on the hub meaningful.
+  if (otherStudent) {
+    const dupe = await db.bookRequest.findFirst({
+      where: { studentProfileId: otherStudent.id, title: 'Designing Data-Intensive Applications' },
+    });
+    if (!dupe) {
+      await db.bookRequest.create({
+        data: {
+          studentProfileId: otherStudent.id,
+          title: 'Designing Data-Intensive Applications',
+          author: 'Martin Kleppmann',
+          reason: 'Course reference for the distributed systems elective',
+          status: 'PENDING',
+        },
+      });
+    }
+  }
+
+  let rejectedRequest = await db.bookRequest.findFirst({ where: { title: 'The Complete Idiot Guide to Quantum Physics' } });
+  if (!rejectedRequest && otherStudent) {
+    rejectedRequest = await db.bookRequest.create({
+      data: {
+        studentProfileId: otherStudent.id,
+        title: 'The Complete Idiot Guide to Quantum Physics',
+        author: 'Stacy Mittelstaedt',
+        reason: 'Self-study for an interest group',
+        status: 'REJECTED',
+        decidedByUserId: librarian!.id,
+        decidedAt: new Date('2026-09-10'),
+        decisionNote: 'Below the syllabus scope we buy for. The physics department keeps a shelf copy you can request through them.',
+      },
     });
   }
 
@@ -1135,7 +1206,7 @@ async function seedDomainF(institutionId: string): Promise<void> {
     });
   }
 
-  console.log(`  ✓ 2 books, 1 OVERDUE issue + fine ₹50 PAID, request PENDING, ${digitalCount} new digital resources (+${grantCount} grants)`);
+  console.log(`  ✓ 2 books, 1 OVERDUE issue + fine ₹50 PAID, 4 book requests (2 PENDING / 1 APPROVED w/ ORDERED purchase / 1 REJECTED), ${digitalCount} new digital resources (+${grantCount} grants)`);
   console.log(`  ✓ library settings: ${librarySettings.loanPeriodDays}d loans, ${librarySettings.maxActiveLoans} books/student, ${librarySettings.maxRenewalsPerLoan} renewals, fine ${librarySettings.finePerDayPaise}p/day, ${librarySettings.openTime}–${librarySettings.closeTime}`);
 }
 
