@@ -31,6 +31,7 @@ import * as service from './library.service.js';
 import * as circulation from './circulation.service.js';
 import * as digital from './digital.service.js';
 import * as fines from './fines.service.js';
+import * as notifications from './notifications.service.js';
 
 // Library Staff module — mounted at /api/v1/library (docs/users/07 §4)
 const router = Router();
@@ -450,16 +451,58 @@ router.post(
 
 // L-07 notifications + broadcast + profile
 router.get(
-  '/notifications',
+  '/notifications/activity',
   wrap(async (req, res) => {
-    res.json({ data: await service.listNotifications(req.auth!.userId, req.auth!.institutionId) });
+    res.json({
+      data: await notifications.getActivityFeed(
+        req.auth!.institutionId,
+        req.query.limit ? Number(req.query.limit) : undefined,
+      ),
+    });
   }),
 );
 
-router.post(
-  '/notifications/read-all',
+router.get(
+  '/notifications/insights',
   wrap(async (req, res) => {
-    res.json({ data: await service.markAllRead(req.auth!.userId, req.auth!.institutionId) });
+    res.json({ data: await notifications.getAudienceInsights(req.auth!.institutionId) });
+  }),
+);
+
+router.get(
+  '/notifications/reminders',
+  wrap(async (req, res) => {
+    res.json({ data: await notifications.getReminderSchedule(req.auth!.institutionId) });
+  }),
+);
+
+router.get(
+  '/broadcasts',
+  wrap(async (req, res) => {
+    res.json({
+      data: await notifications.listBroadcasts(
+        req.auth!.institutionId,
+        req.query.limit ? Number(req.query.limit) : undefined,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/broadcasts/audiences',
+  wrap(async (req, res) => {
+    const insights = await notifications.getAudienceInsights(req.auth!.institutionId);
+    res.json({ data: { audiences: insights.audiences } });
+  }),
+);
+
+router.get(
+  '/broadcasts/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await notifications.getBroadcastDetail(req.auth!.institutionId, String(req.params.id)),
+    });
   }),
 );
 
@@ -468,7 +511,7 @@ router.post(
   validate(libraryBroadcastSchema),
   wrap(async (req, res) => {
     res.status(201).json({
-      data: await service.createBroadcast(req.auth!.institutionId, req.auth!.userId, req.body),
+      data: await notifications.createBroadcast(req.auth!.institutionId, req.auth!.userId, req.body),
     });
   }),
 );
