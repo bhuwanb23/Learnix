@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "preferences": {
+    "destination": {
+      "value": "youtube",
+      "confirmed_in": [
+        "learnix-promo"
+      ],
+      "updated_at": "2026-10-03T03:20:44.140Z"
+    },
+    "aspect": {
+      "value": "1920x1080",
+      "confirmed_in": [
+        "learnix-promo"
+      ],
+      "updated_at": "2026-10-03T03:20:44.180Z"
+    },
+    "language": {
+      "value": "en",
+      "confirmed_in": [
+        "learnix-promo"
+      ],
+      "updated_at": "2026-10-03T03:20:44.220Z"
+    },
+    "flow": {
+      "value": "automation",
+      "confirmed_in": [
+        "learnix-promo"
+      ],
+      "updated_at": "2026-10-03T03:20:44.261Z"
+    },
+    "storyboard": {
+      "value": "yes",
+      "confirmed_in": [
+        "learnix-promo"
+      ],
+      "updated_at": "2026-10-03T03:20:44.302Z"
+    }
+  },
+  "sightings": {}
+}
