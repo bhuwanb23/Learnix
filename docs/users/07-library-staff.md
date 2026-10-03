@@ -68,8 +68,28 @@ Library staff are **not** notification recipients — nobody sends them an inbox
 
 **Entity `broadcast`**: id, senderUserId (bare scalar, name resolved manually), audienceJson, title, body, channels, sentAt. Delivery writes one `notification` row per resolved recipient.
 
-### 3.8 Profile
-Librarian profile, library stats, preference toggles, account menu.
+### 3.8 Profile, Settings & Staff (module)
+The librarian's real staff record (name, employee no, designation, joining date, last sign-in, institution) plus library-wide counters read live from circulation: titles, copies on shelf vs issued, active/overdue loans, pending fines, book requests, and issues/returns today. A "contribution" line reports this librarian's own loans issued and broadcasts sent.
+
+**Circulation policy is data, not code.** The borrowing rules used to be hardcoded constants. They now live in `library_settings`, one row per institution, created on first read with the old values as defaults — and `circulation.service.ts` / `fines.service.ts` **read** them on every issue, renew and return. Editing a rule in Settings genuinely moves the limit.
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `loanPeriodDays` | 14 | Default loan length when the desk issues without picking one |
+| `maxActiveLoans` | 4 | Books a student may hold; issuing stops at this count |
+| `maxRenewalsPerLoan` | 2 | Renewals before a loan is final |
+| `finePerDayPaise` | 500 | ₹5/day charged on an overdue return (integer paise, ADR-04) |
+| `maxOutstandingFinePaise` | 20000 | ₹200 — unpaid fines above this block new issues |
+| `dueRemindersEnabled` | true | Whether the reminder schedule counts due/overdue students |
+| `autoFineEnabled` | true | Whether returning a late book creates a `Fine` row automatically |
+| `announceNewArrivals` | false | Whether adding a book broadcasts to `ALL_STUDENTS` |
+| `openTime` / `closeTime` / `closedDays` | 08:00 / 19:00 / SUNDAY | Library timings, surfaced in Help and on the profile |
+
+Money crosses the wire as rupees for editing and is stored as paise; the route converts. `autoFineEnabled` off means the return still records lateness but no fine is raised — the librarian raises it. `dueRemindersEnabled` off zeroes the reminder stages and the endpoint's `note` says why rather than reporting coverage for a policy that is switched off.
+
+**Sub-pages**: *Library Settings* (rules with steppers, timings, closed-day chips, automation switches, save/discard bar), *Library Staff* (every account holding the LIBRARY role, with per-person loans-issued and broadcasts-sent counts plus a detail view of their recent desk activity), *Access & Permissions* (read-only, from `role_permissions` ⋈ `permission_groups`, with ungranted categories named), *Change Password* (real `POST /auth/change-password` with a strength meter), *Help & Support* (FAQ whose answers quote the **live** policy, plus task shortcuts).
+
+**Entity `library_settings`**: institutionId (unique), the five circulation columns, three boolean policies, three timing columns, updatedAt/updatedByUserId. Settings edits are audited via `writeAudit`.
 
 ## 4. Backend API Surface
 ```
@@ -86,6 +106,10 @@ GET  /api/library/notifications/reminders
 GET  /api/library/broadcasts              POST /api/library/broadcasts
 GET  /api/library/broadcasts/audiences    (registered before /:id)
 GET  /api/library/broadcasts/{id}
+GET  /api/library/profile
+GET/PUT /api/library/settings            (rupees in, paise stored)
+GET  /api/library/staff                  GET /api/library/staff/{id}
+GET  /api/library/permissions
 ```
 
 ## 5. Cross-App Dependencies

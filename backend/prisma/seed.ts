@@ -930,7 +930,14 @@ async function seedDomainF(institutionId: string): Promise<void> {
   }
 
   // Issue 1: OVERDUE with a PAID fine (payment + receipt chain)
-  let overdueIssue = await db.bookIssue.findFirst({ where: { bookId: book1.id, studentProfileId: studentProfile.id, status: 'OVERDUE' } });
+  //
+  // Guard on book+student+returnDate, NOT on status: `status` is DERIVED from
+  // dueDate by circulation.syncOverdueStatus(), so a seeded ISSUED loan becomes
+  // OVERDUE the first time any screen loads. A status-based guard stops matching
+  // and the seed duplicates the loan (and double-decrements availableCopies).
+  let overdueIssue = await db.bookIssue.findFirst({
+    where: { bookId: book1.id, studentProfileId: studentProfile.id, returnDate: null },
+  });
   if (!overdueIssue) {
     overdueIssue = await db.bookIssue.create({
       data: {
@@ -968,8 +975,10 @@ async function seedDomainF(institutionId: string): Promise<void> {
     await db.fine.update({ where: { id: fineRow.id }, data: { status: 'PAID', paidPaymentId: finePayment.id } });
   }
 
-  // Issue 2: active ISSUED book
-  const activeIssue = await db.bookIssue.findFirst({ where: { bookId: book2.id, studentProfileId: studentProfile.id, status: 'ISSUED' } });
+  // Issue 2: active ISSUED book — same status-agnostic guard as issue 1.
+  const activeIssue = await db.bookIssue.findFirst({
+    where: { bookId: book2.id, studentProfileId: studentProfile.id, returnDate: null },
+  });
   if (!activeIssue) {
     await db.bookIssue.create({
       data: {
@@ -1117,7 +1126,17 @@ async function seedDomainF(institutionId: string): Promise<void> {
     }
   }
 
+  // Library settings row — the borrowing policy the desk enforces (docs §3.8).
+  // Seeded explicitly so the documented policy is visible rather than implied.
+  let librarySettings = await db.librarySettings.findFirst({ where: { institutionId } });
+  if (!librarySettings) {
+    librarySettings = await db.librarySettings.create({
+      data: { institutionId },
+    });
+  }
+
   console.log(`  ✓ 2 books, 1 OVERDUE issue + fine ₹50 PAID, request PENDING, ${digitalCount} new digital resources (+${grantCount} grants)`);
+  console.log(`  ✓ library settings: ${librarySettings.loanPeriodDays}d loans, ${librarySettings.maxActiveLoans} books/student, ${librarySettings.maxRenewalsPerLoan} renewals, fine ${librarySettings.finePerDayPaise}p/day, ${librarySettings.openTime}–${librarySettings.closeTime}`);
 }
 
 // ─────────────────────────────────────────────────────────────

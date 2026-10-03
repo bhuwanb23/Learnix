@@ -30,6 +30,13 @@ import DigitalAccessGrants from './pages/digital_library/access_grants/access_gr
 import DigitalUsageReport from './pages/digital_library/digital_usage/digital_usage';
 import NotificationsScreen from './pages/notifications/notifications';
 
+// Profile sub-pages (pages/profile/*)
+import LibrarySettingsScreen from './pages/profile/library_settings/library_settings';
+import StaffDirectory from './pages/profile/staff_directory/staff_directory';
+import MyPermissions from './pages/profile/my_permissions/my_permissions';
+import ChangePassword from './pages/profile/change_password/change_password';
+import HelpSupport from './pages/profile/help_support/help_support';
+
 // Notifications sub-pages (pages/notifications/*)
 import ComposeBroadcast from './pages/notifications/compose_broadcast/compose_broadcast';
 import BroadcastHistory from './pages/notifications/broadcast_history/broadcast_history';
@@ -70,6 +77,13 @@ const FEATURE_MODULES = {
   BroadcastHistory: { title: 'Broadcast History', icon: 'paper-plane-outline', component: BroadcastHistory },
   AudienceInsights: { title: 'Audiences', icon: 'people-outline', component: AudienceInsights },
   ReminderSchedule: { title: 'Reminder Schedule', icon: 'alarm-outline', component: ReminderSchedule },
+
+  // Profile sub-pages
+  LibrarySettings: { title: 'Library Settings', icon: 'settings-outline', component: LibrarySettingsScreen },
+  StaffDirectory: { title: 'Library Staff', icon: 'people-outline', component: StaffDirectory },
+  MyPermissions: { title: 'Access & Permissions', icon: 'shield-checkmark-outline', component: MyPermissions },
+  ChangePassword: { title: 'Change Password', icon: 'lock-closed-outline', component: ChangePassword },
+  HelpSupport: { title: 'Help & Support', icon: 'help-circle-outline', component: HelpSupport },
 
   // Circulation sub-pages
   LoanDetail: { title: 'Loan Detail', icon: 'document-text-outline', component: LoanDetail },
@@ -194,7 +208,16 @@ export default function LibraryStaffScreen({ navigation }) {
           />
         );
       case 'Profile':
-        return <LibraryProfile navigation={{ goBack: handleBackPress }} />;
+        return (
+          <LibraryProfile
+            navigation={{
+              navigate: (screen) => setCurrentScreen(screen),
+              goBack: handleBackPress,
+              openModule,
+              switchTab: handleTabChange,
+            }}
+          />
+        );
       case 'Dashboard':
       default:
         return (
