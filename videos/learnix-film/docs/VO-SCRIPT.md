@@ -2,7 +2,7 @@
 
 Derived from `MASTER-SCRIPT.md` (approved).
 
-**Option C was applied.** 36 of 53 cues are the approved copy **verbatim**. 17 cues are trimmed because the approved copy does not fit the shot at a readable pace. No cue was rewritten for style, tone, or preference — every trim is a cut of words from the approved line.
+**Option C was applied.** Of the 54 spoken cues, **37 are the approved copy verbatim** and **17 are trimmed** because the approved copy does not fit the shot at a readable pace. No cue was rewritten for style, tone, or preference — every trim is a cut of words from the approved line.
 
 Where a cue is trimmed, the approved original is shown underneath so you can see exactly what was removed and put it back if you disagree.
 
@@ -16,19 +16,24 @@ Where a cue is trimmed, the approved original is shown underneath so you can see
 | Narrator | Single voice, unhurried, institutional but human. Not a trailer. Not an ad-read. |
 | Read rate | **140 wpm**. Deliberate. This narrator states facts; it does not sell. |
 | Budget per second | **2.33 words** |
-| Approved copy retained | **37 of 54 cues, verbatim** |
+| Approved copy retained | **37 of 54 spoken cues, verbatim** |
 | Trimmed | **17 cues** |
-| Words removed | **99** |
-| Approved word count | 818 |
-| Draft word count | **719** |
-| Spoken time | **308s of 420s — 73% of the film carries narration** (approved copy would have been 351s / 83%) |
-| Silent scenes | 12 |
+| Words removed | **98** |
+| Approved word count | 810 |
+| Draft word count | **712** |
+| Spoken time | **305s of 420s — 73% of the film carries narration** (approved copy would have been 347s / 83%) |
+| Silent scenes | 7 in the table + S41's quoted line = **8 scenes without narration** |
 | Bridges | **1** (S07 → S08) |
 | Cues running hot | **1** (S20, at 144 wpm — see Act 3) |
 
+> Every figure on this page is produced by `node tools/verify-vo.mjs`, which parses this
+> document and `MASTER-SCRIPT.md` and **fails** if a changed cue is not flagged TRIM, if a
+> TRIM-flagged cue actually matches the approved copy, if a scene is missing, or if any cue
+> exceeds its scene budget. Run it before trusting any number here.
+
 ### Why any trim happened at all
 
-The approved VO is 818 words. At 140 wpm that is **351 seconds of speech in a 420-second film** — 83% of the runtime under narration, with no room for the twelve scripted silences and no room to breathe between acts.
+The approved VO is 810 words. At 140 wpm that is **347 seconds of speech in a 420-second film** — 83% of the runtime under narration, with no room for the scripted silences and no room to breathe between acts.
 
 Seventeen cues needed 1–12 words removed. The other 37 fit as written and were left completely alone.
 
@@ -51,7 +56,7 @@ If a cue is not marked **TRIM**, it is your approved copy, word for word. Do not
 | S03 | 5s | 12 | **TRIM** *A timetable that changed. A fee reminder that disagrees with the receipt.* |
 | S04 | 5s | 12 | *A faculty member's day is a negotiation between teaching and administration.* |
 | S05 | 4s | 9 | *And an administrator holds the institution together by hand.* |
-| S06 | 3s | — | *(silent)* |
+| S06 | 3s | — | (silent) |
 | S07 | 2s | 5 | *From the outside, a college looks completely under control.* **BRIDGE +1s →** |
 
 **S02 approved:** *"A student carries their entire college in a pocket. Attendance in one place. Assignments in another. Exams through a group chat."*
@@ -75,7 +80,7 @@ If a cue is not marked **TRIM**, it is your approved copy, word for word. Do not
 | S14 | 6s | 14 | **TRIM** *A schedule changes. Five people are to tell everyone. Nobody knows who was told.* |
 | S15 | 6s | 14 | *The principal receives the institution as reports.* |
 | S16 | 5s | 12 | *Every part of a modern college runs on its own system.* |
-| S17 | 6s | — | *(silent)* |
+| S17 | 6s | — | (silent) |
 
 **S08 approved:** *"Attendance here. The assignment there. The exam date in a group chat that forty people are guessing in."*
 → dropped "that forty people are guessing in". S11 already owns that image: *"Marks in one system…"* and the group's forty people recur there.
@@ -109,7 +114,7 @@ Act 2 needed the least work. Its problems are structural, and the approved copy 
 **S20 approved:** *"Every hand-off is a place to lose something. And every lost thing is someone's manual work tomorrow."*
 → dropped the conjunction and "is someone's". First sentence verbatim.
 
-> **S20 runs 1 word hot.** "Hand-off" reads as two beats, so the cue is effectively 15 words in 6 seconds (144 wpm). It is the only cue in the film above budget and it is close enough that I would rather extend the scene by 1 second than cut *"is a place to lose something"* — that phrase is the one doing the work.
+> **S20 runs marginally hot.** The cue is 14 words in a 6-second scene, inside the 14-word budget — but "hand-off" reads as two beats, so it lands nearer **144 wpm** in the booth. It is the only cue in the film that feels tight, and it is close enough that I would rather extend the scene by 1 second than cut *"is a place to lose something"* — that phrase is the one doing the work.
 
 **S21 approved:** *"The problem is not the lack of data."* — *(beat - 2 full seconds)* — *"The problem is that the data does not work together."*
 → "not the lack of data" → "not data"; "the data does not" → "it doesn't". **The anaphora is preserved** — this is the only cue in the film where repeating the phrase twice is the whole point, so it had to survive.
@@ -125,7 +130,7 @@ Act 2 needed the least work. Its problems are structural, and the approved copy 
 | S23 | 5s | 12 | *One student record.* |
 | S24 | 6s | 14 | **TRIM** *One attendance mark. One fee record. One result — each connected to the same person.* |
 | S25 | 6s | 14 | *Not another system alongside the others. The one they all run on.* |
-| S26 | 3s | — | *(silent — the resolve tone carries)* |
+| S26 | 3s | — | (silent — the resolve tone carries) |
 
 **S24 approved:** *"One attendance mark. One fee record. One assignment, one result, one decision — each one connected to the same person."*
 → dropped "one assignment" and "one decision" from the five-item list, keeping three. **The payoff clause — "each one connected to the same person" — is preserved word for word**, because that clause is the thesis of the scene.
@@ -207,7 +212,7 @@ S42 and S45 are the shortest cues in the longest scenes. That is correct — the
 | S51 | 8s | 19 | *One student belongs to a class. A class belongs to a department. A department belongs to a college.* |
 | S52 | 8s | 19 | **TRIM** *Every part of the institution — teaching, finance, people, examinations, admissions, careers, hostel, transport — one structure, not beside it.* |
 | S53 | 11s | 26 | *A college already runs as one institution. Now its technology does too.* |
-| S54 | 8s | — | *(silent)* |
+| S54 | 8s | — | (silent) |
 
 **S52 approved:** *"And every part of the institution — teaching, finance, people, examinations, admissions, careers, library, hostel, transport — inside the same structure, not beside it."*
 → dropped "library", cut "inside the same structure, not beside it" to *"one structure, not beside it"*. **The "not beside it" contrast is preserved** — it is the distinction the whole scene exists to draw.
@@ -225,7 +230,15 @@ S42 and S45 are the shortest cues in the longest scenes. That is correct — the
 
 ## Final `6:45–7:00`
 
-S59, S60, S61 all silent by design. The closing card holds and the score resolves. **No CTA, no URL** (§21).
+All three scenes silent by design. The closing card holds and the score resolves. **No CTA, no URL** (§21).
+
+| Scene | Dur | Budget | Cue |
+|---|---|---|---|
+| S59 | 7s | — | (silent — on-screen card carries) |
+| S60 | 5s | — | (silent — logo resolve) |
+| S61 | 3s | — | (silent — hold, cut to black) |
+
+These three are listed so that all 61 scenes appear in this document. `tools/verify-vo.mjs` fails if any scene is missing.
 
 ---
 
@@ -244,13 +257,14 @@ S59, S60, S61 all silent by design. The closing card holds and the score resolve
 
 | | |
 |---|---|
-| Approved spoken copy | 818 words (350.6s at 140 wpm — 83% of runtime) |
-| This draft | **719 words (308.2s — 73% of runtime)** |
-| Cues verbatim | **37 of 54** |
-| Cues trimmed | **17 of 54** |
-| Words removed | **99** |
-| Largest cuts | S19 (−12), S47 (−11), S03 (−10), S18 (−9), S02 (−9) |
+| Approved spoken copy | 810 words (347.2s at 140 wpm — 83% of runtime) |
+| This draft | **712 words (305.2s — 73% of runtime)** |
+| Spoken cues | 54 |
+| Cues verbatim | **37** |
+| Cues trimmed | **17** |
+| Words removed | **98** |
+| Largest cuts | S19 (−12), S47 (−11), S03 (−10), S02 (−9), S18 (−9) |
 | Cut to review | **S33** — lost *"the buildings you can walk into"* |
-| Cue running hot | **S20** — 15 words in 6s (144 wpm) because "hand-off" reads as two beats. Fix with a 1s extension, not another cut. |
+| Cue running hot | **S20** — 14 words in 6s, but "hand-off" reads as two beats, so it lands at ~144 wpm. Fix with a 1s extension, not another cut. |
 | Bridges introduced | 1 (S07 → S08, +1s) |
 | Structural change | S21's 2s beat relocated to the S21/S22 gap |

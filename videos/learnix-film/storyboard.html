@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Learnix Master Film — Storyboard</title>
+<style>
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:100 900;font-display:swap;
+    src:url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');}
+  @font-face{font-family:'Manrope';font-style:normal;font-weight:100 900;font-display:swap;
+    src:url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');}
+
+  :root{
+    --primary:#2563eb; --primaryDark:#1d4ed8; --primaryLight:#eff6ff;
+    --background:#f5f7f9; --surface:#ffffff; --surfaceMuted:#f1f5f9;
+    --border:#e2e8f0; --text:#0f172a; --muted:#64748b;
+    --success:#059669; --warning:#d97706; --error:#dc2626;
+    --r:14px; --pill:100px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#eef1f4;color:var(--text);
+    font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;}
+
+  header{padding:44px 48px 28px;border-bottom:1px solid #dce3ea;background:var(--surface)}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--primary);margin:0 0 10px}
+  h1{margin:0;font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:700;letter-spacing:-.025em}
+  .dek{margin:10px 0 0;font-size:14px;color:var(--muted);max-width:80ch;line-height:1.6}
+  .stats{display:flex;gap:26px;flex-wrap:wrap;margin-top:22px}
+  .stat{background:var(--surfaceMuted);border:1px solid var(--border);border-radius:12px;
+    padding:12px 16px;min-width:132px}
+  .stat b{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:700;
+    letter-spacing:-.02em;color:var(--primaryDark)}
+  .stat span{display:block;font-size:11px;color:var(--muted);margin-top:3px;
+    letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+
+  .legend{display:flex;gap:8px;flex-wrap:wrap;padding:20px 48px 0}
+  .bd{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:5px 10px;border-radius:var(--pill);border:1px solid var(--border);
+    background:var(--surfaceMuted);color:var(--muted);white-space:nowrap}
+  .bd-track-live{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+  .bd-track-build{background:var(--primaryLight);border-color:#bfdbfe;color:var(--primaryDark)}
+  .bd-rhyme{background:#f5f3ff;border-color:#ddd6fe;color:#6d28d9}
+  .bd-trim{background:#fffbeb;border-color:#fde68a;color:#92400e}
+  .bd-block{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+  .bd-silent{background:#f1f5f9;color:#94a3b8}
+  .bd-diag{background:#ecfdf5;border-color:#a7f3d0;color:#047857}
+  .bd-ui{background:#f0f9ff;border-color:#bae6fd;color:#0369a1}
+
+  .act{padding:30px 48px 6px}
+  .act h2{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;letter-spacing:-.02em;
+    margin:0 0 4px;padding-bottom:10px;border-bottom:2px solid var(--primary)}
+  .act-time{font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;color:var(--muted)}
+  .act-dur{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;
+    background:var(--surfaceMuted);border:1px solid var(--border);border-radius:var(--pill);padding:4px 10px}
+
+  .grid{padding:18px 0 8px;display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  @media (max-width:1400px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+  .cell{background:var(--surface);border:1px solid #dce3ea;border-radius:var(--r);overflow:hidden;
+    display:flex;flex-direction:column;scroll-margin-top:20px}
+  .cell:target{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.16)}
+  .frame{aspect-ratio:16/9;position:relative;border-bottom:1px solid #e4e9ee;
+    display:flex;flex-direction:column;justify-content:space-between;padding:14px}
+  .frame-live{background:linear-gradient(160deg,#fdf6ec,#f3e6d2)}
+  .frame-build{background:linear-gradient(160deg,#0b1220,#111c2e)}
+  .frame-id{font-family:'Plus Jakarta Sans',sans-serif;font-size:34px;font-weight:700;letter-spacing:-.03em}
+  .frame-live .frame-id{color:#7c2d12}
+  .frame-build .frame-id{color:#f1f5f9}
+  .frame-world{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    position:absolute;top:16px;right:16px}
+  .frame-live .frame-world{color:#b45309}
+  .frame-build .frame-world{color:#94a3b8}
+  .frame-asp{font-size:11px;font-weight:600;opacity:.6}
+  .frame-live .frame-asp{color:#7c2d12}
+  .frame-build .frame-asp{color:#94a3b8}
+
+  .meta{padding:13px 15px 15px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .lbl{display:flex;justify-content:space-between;align-items:baseline}
+  .tc{font-family:'Manrope',sans-serif;font-size:13px;font-weight:700;color:var(--primaryDark)}
+  .dur{font-size:11px;color:var(--muted);font-weight:600}
+  .badges{display:flex;gap:5px;flex-wrap:wrap}
+  .loc{margin:0;font-size:12px;color:var(--muted);font-weight:600}
+  .vo{margin:0;font-size:14px;line-height:1.5;color:var(--text);
+    border-left:3px solid var(--border);padding-left:11px}
+  .vo-trim{border-left-color:var(--warning);position:relative}
+  .cut{display:block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--warning);font-weight:700;margin-top:3px}
+  .vo-silent{color:#94a3b8;font-style:italic;border-left-color:#e2e8f0}
+  .ost{margin:0;font-size:12.5px;line-height:1.45;color:var(--text)}
+  .note{margin:0;font-size:11.5px;line-height:1.45;color:var(--muted)}
+  .note b{color:var(--primary);font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;font-size:9.5px;margin-right:5px}
+  .note.dim{color:#94a3b8}
+  .intent{margin:2px 0 0;font-size:12px;line-height:1.45;color:var(--text);
+    font-style:italic;opacity:.75}
+  .wordbar{margin-top:auto;padding-top:9px;border-top:1px solid var(--border);
+    display:flex;align-items:center;gap:9px}
+  .wordbar span{font-size:10px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+  .wordbar i{display:block;height:4px;border-radius:2px;background:var(--success);width:var(--w);max-width:60%}
+  .wordbar.over i{background:var(--error)}
+  .wordbar.over span{color:var(--error)}
+
+  footer{padding:26px 48px 46px;color:var(--muted);font-size:11.5px;line-height:1.7}
+  footer b{color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Learnix · Master Film · 7:00</p>
+  <h1>Storyboard</h1>
+  <p class="dek">All 61 scenes across 11 movements. Generated from <code>docs/MASTER-SCRIPT.md</code>
+    and <code>docs/VO-SCRIPT.md</code> by <code>tools/build-storyboard.mjs</code> — regenerate rather
+    than edit by hand. Narration figures are live against a 2.333 word/second budget.</p>
+  <div class="stats">
+    <div class="stat"><b>61</b><span>scenes</span></div>
+    <div class="stat"><b>420s</b><span>runtime</span></div>
+    <div class="stat"><b>29</b><span>live plates</span></div>
+    <div class="stat"><b>32</b><span>build</span></div>
+    <div class="stat"><b>24</b><span>diagram scenes</span></div>
+    <div class="stat"><b>6</b><span>need comps</span></div>
+    <div class="stat"><b>712w</b><span>narration</span></div>
+    <div class="stat"><b>305s</b><span>spoken</span></div>
+    <div class="stat"><b>17</b><span>vo trims</span></div>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="bd bd-track-live">live plate</span>
+  <span class="bd bd-track-build">build</span>
+  <span class="bd bd-rhyme">rhyme shot</span>
+  <span class="bd bd-trim">vo trim</span>
+  <span class="bd bd-block">needs comp</span>
+  <span class="bd bd-silent">silent</span>
+  <span class="bd bd-diag">diagram</span>
+  <span class="bd bd-ui">ui</span>
+</div>
+
+
+    <section class="act">
+      <h2>ACT 1 — THE COLLEGE
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">7 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S01">
+      <div class="frame frame-live">
+        <div class="frame-id">S01</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:00 – 0:06</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-rhyme">rhyme</span></div>
+        <p class="loc">College campus, exterior, dawn</p>
+        <p class="vo">A college is a large machine that most people only see from the outside.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Aerial establishing → slow descending crane. 35mm. Wide, locked horizon.</p>
+        <p class="note dim"><b>music</b> M1 — single piano note, room air, no percussion.</p>
+        <p class="intent">Calm, and slightly too quiet. We want the viewer to feel this is a place that works — so that Act 2 can take it away.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S02">
+      <div class="frame frame-live">
+        <div class="frame-id">S02</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:06 – 0:11</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-trim">vo trim</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Student hostel room, interior, early morning</p>
+        <p class="vo vo-trim">A student carries their college in a pocket. Attendance here, assignments there.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Phone lock screen only — three unread notifications from three different apps, deliberately unlabelled in this act.</p>
+        
+        <p class="note"><b>camera</b> Static wide. Then a slow push to medium as he stands.</p>
+        <p class="note dim"><b>music</b> M1 continues, second piano note.</p>
+        <p class="intent">Recognisable. Every student has had this morning.</p>
+        <div class="wordbar ">
+          <span>12w / 12w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S03">
+      <div class="frame frame-live">
+        <div class="frame-id">S03</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:11 – 0:16</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-trim">vo trim</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Campus path to academic block</p>
+        <p class="vo vo-trim">A timetable that changed. A fee reminder that disagrees with the receipt.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Over-shoulder phone insert — two apps side by side, both showing a number, numbers disagreeing. Legible for 12 frames only.</p>
+        
+        <p class="note"><b>camera</b> Tracking shot, shoulder-height, walking pace. Then a short over-the-shoulder insert.</p>
+        <p class="note dim"><b>music</b> M1, third note. Rhythm not yet present.</p>
+        <p class="intent">Small friction. Nothing dramatic yet — the audience should recognise it before we name it.</p>
+        <div class="wordbar ">
+          <span>12w / 12w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S04">
+      <div class="frame frame-live">
+        <div class="frame-id">S04</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:16 – 0:21</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span></div>
+        <p class="loc">Academic corridor, first floor</p>
+        <p class="vo">A faculty member's day is a negotiation between teaching and administration.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Tracking alongside her, then hold as she stops at a door.</p>
+        <p class="note dim"><b>music</b> M1 — the piano phrase now repeats, becoming a pattern.</p>
+        <p class="intent">Warmth first. The problem arrives in Act 2.</p>
+        <div class="wordbar ">
+          <span>11w / 12w</span>
+          <i style="--w:91.66666666666666%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S05">
+      <div class="frame frame-live">
+        <div class="frame-id">S05</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 4s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:21 – 0:25</span>
+          <span class="dur">4s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span></div>
+        <p class="loc">Administrative office, records room</p>
+        <p class="vo">And an administrator holds the institution together by hand.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Over-the-shoulder on the folders, then a slow arc around to reveal the volume of paper.</p>
+        <p class="note dim"><b>music</b> M1, piano thinning out.</p>
+        <p class="intent">Competence under invisible load. She is good at her job — that is what makes the failure tragic rather than villainous.</p>
+        <div class="wordbar ">
+          <span>9w / 9w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S06">
+      <div class="frame frame-live">
+        <div class="frame-id">S06</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 3s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:25 – 0:28</span>
+          <span class="dur">3s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-silent">silent</span></div>
+        <p class="loc">Principal's office, window overlooking campus</p>
+        <p class="vo vo-silent">silent</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Slow dolly in from wide behind. Three seconds of stillness.</p>
+        <p class="note dim"><b>music</b> M1 resolves, unresolved.</p>
+        <p class="intent">Authority without access. He can see the college. He cannot see the college.</p>
+        <div class="wordbar ">
+          <span>0w / 7w</span>
+          <i style="--w:0%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S07">
+      <div class="frame frame-live">
+        <div class="frame-id">S07</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 2s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:28 – 0:30</span>
+          <span class="dur">2s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-rhyme">rhyme</span></div>
+        <p class="loc">Campus, exterior — same angle as S01</p>
+        <p class="vo">From the outside, a college looks completely under control.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Static. Identical framing to S01 — this is the shot we return to in S58.</p>
+        <p class="note dim"><b>music</b> M1 final note, held past the cut.</p>
+        <p class="intent">Set the trap. The audience believes Act 1 for exactly three more seconds.</p>
+        <div class="wordbar over">
+          <span>9w / 5w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 2 — THE CHAOS
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">10 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S08">
+      <div class="frame frame-live">
+        <div class="frame-id">S08</div>
+        <div class="frame-world">REAL → DIGITAL</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:30 – 0:35</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-trim">vo trim</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Lecture hall, interior — Arjun seated</p>
+        <p class="vo vo-trim">Attendance here. The assignment there. The exam date in a group chat.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Three distinct app surfaces, each visually distinct from the others — different type, different chrome, different colour. The mismatch *is* the point.</p>
+        
+        <p class="note"><b>camera</b> Macro on phone screen, rack focus to Arjun's face, then back. Slight handheld.</p>
+        <p class="note dim"><b>music</b> M2 enters — low pulse, first time.</p>
+        <p class="intent">Recognition, then irritation. He is not behind — the information is scattered.</p>
+        <div class="wordbar ">
+          <span>12w / 12w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S09">
+      <div class="frame frame-live">
+        <div class="frame-id">S09</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:35 – 0:40</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-trim">vo trim</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">College corridor, midday</p>
+        <p class="vo vo-trim">A receipt here, a ledger there, and a reminder that arrives anyway.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Two documents, side by side, two different amounts, same student.</p>
+        
+        <p class="note"><b>camera</b> Over-the-shoulder, then a tight two-shot of phone screens held side by side.</p>
+        <p class="note dim"><b>music</b> M2 — pulse continues, a second percussive layer enters.</p>
+        <p class="intent">The small humiliation of being told you are wrong by two systems at once.</p>
+        <div class="wordbar ">
+          <span>12w / 12w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S10">
+      <div class="frame frame-live">
+        <div class="frame-id">S10</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:40 – 0:47</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Faculty office / cabin</p>
+        <p class="vo">A register, a portal, a spreadsheet and a phone call — to record who was present.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Spreadsheet window and portal window, visually unrelated. Roll-number mismatch visible.</p>
+        
+        <p class="note"><b>camera</b> Locked-off medium that slowly widens — the desk revealing more surfaces than one person can hold. Minimal camera movement; the *desk* does the acting.</p>
+        <p class="note dim"><b>music</b> M2 builds — third rhythmic layer.</p>
+        <p class="intent">This is the film's most important problem beat. Not incompetence — a competent person losing her afternoon to reconciliation. The audience should feel the loss of time, not the loss of competence.</p>
+        <div class="wordbar ">
+          <span>15w / 16w</span>
+          <i style="--w:93.75%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S11">
+      <div class="frame frame-live">
+        <div class="frame-id">S11</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:47 – 0:54</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Faculty office, later — same space</p>
+        <p class="vo">Marks in one system. Announcements in another. Reports for a third.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Two windows with visibly different roster counts.</p>
+        
+        <p class="note"><b>camera</b> Same locked position as S10 — the repetition *is* the point.</p>
+        <p class="note dim"><b>music</b> M2 — layered rhythm now dense.</p>
+        <p class="intent">Exhaustion without melodrama. Her hands slow down.</p>
+        <div class="wordbar ">
+          <span>11w / 16w</span>
+          <i style="--w:68.75%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S12">
+      <div class="frame frame-live">
+        <div class="frame-id">S12</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">0:54 – 1:01</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Administrative office, Priya's desk</p>
+        <p class="vo">A single question. Four sources. And the answer is a number someone has to assemble.</p>
+        <p class="ost"><b>on screen</b> On-screen, for one second only, as four separate counters each showing a different number: 41 / 38 / 44 / 39.</p>
+        <p class="note"><b>ui</b> Register (paper texture, digitised), dashboard, spreadsheet, a chat thread.</p>
+        
+        <p class="note"><b>camera</b> Handheld, following her standing movement — the only handheld in the film so far, signalling escalation.</p>
+        <p class="note dim"><b>music</b> M2 — peak density begins.</p>
+        <p class="intent">Dread. She has done this a thousand times. It still takes fifteen minutes.</p>
+        <div class="wordbar ">
+          <span>15w / 16w</span>
+          <i style="--w:93.75%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S13">
+      <div class="frame frame-live">
+        <div class="frame-id">S13</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:01 – 1:07</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Finance office</p>
+        <p class="vo">Payments clear in one place, pend in another, and go missing in a third.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Three document surfaces, three states for one transaction.</p>
+        
+        <p class="note"><b>camera</b> Tight macro on three documents. Hands only.</p>
+        <p class="note dim"><b>music</b> M2 continues.</p>
+        <p class="intent">Financial confusion is institutional — nobody is cheating, and it still doesn't add up.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S14">
+      <div class="frame frame-live">
+        <div class="frame-id">S14</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:07 – 1:13</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-trim">vo trim</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Examination cell</p>
+        <p class="vo vo-trim">A schedule changes. Five people are to tell everyone. Nobody knows who was told.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Email compose, notice editor, portal admin — three unrelated interfaces.</p>
+        
+        <p class="note"><b>camera</b> Wide of the small table, then a slow push as the question hangs unanswered.</p>
+        <p class="note dim"><b>music</b> M2 — tension held, not released.</p>
+        <p class="intent">The unanswered question is the horror. It doesn't resolve.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S15">
+      <div class="frame frame-live">
+        <div class="frame-id">S15</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:13 – 1:19</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Principal's office</p>
+        <p class="vo">The principal receives the institution as reports.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> A PDF, a spreadsheet, an email thread with attachments. All dated differently.</p>
+        
+        <p class="note"><b>camera</b> Two-shot, static. The folders between them like a low wall.</p>
+        <p class="note dim"><b>music</b> M2 — all layers present.</p>
+        <p class="intent">Loneliness at the top. The decision-maker is the least informed person in the building.</p>
+        <div class="wordbar ">
+          <span>7w / 14w</span>
+          <i style="--w:50%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S16">
+      <div class="frame frame-build">
+        <div class="frame-id">S16</div>
+        <div class="frame-world">DIGITAL → SYSTEM</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:19 – 1:24</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo">Every part of a modern college runs on its own system.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Nine to twelve distinct, deliberately-mismatched interfaces.</p>
+        
+        <p class="note"><b>camera</b> Virtual. Slow drift across the grid.</p>
+        <p class="note dim"><b>music</b> M2 — rhythm becomes a texture, then thins.</p>
+        <p class="intent">The individual problems are now revealed as one systemic problem.</p>
+        <div class="wordbar ">
+          <span>11w / 12w</span>
+          <i style="--w:91.66666666666666%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S17">
+      <div class="frame frame-build">
+        <div class="frame-id">S17</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:24 – 1:30</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-silent">silent</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-silent">silent</p>
+        <p class="ost"><b>on screen</b> *(frozen, tiny, centre)* attendance_2026.xlsx · portal_grades_v3 · WhatsApp Group (84) · FINAL_FINAL_receipt.pdf · NoticeBoard_Oct</p>
+        
+        
+        <p class="note"><b>camera</b> Fast push, then absolute stillness. The stillness must feel like a dropped object.</p>
+        <p class="note dim"><b>music</b> M2 collapses. Complete silence from the freeze to the end of S22.</p>
+        <p class="intent">Overwhelm, then a hard vacuum. The viewer should want the noise back.</p>
+        <div class="wordbar ">
+          <span>0w / 14w</span>
+          <i style="--w:0%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 3 — THE REAL PROBLEM
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">5 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S18">
+      <div class="frame frame-build">
+        <div class="frame-id">S18</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:30 – 1:36</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract dark</p>
+        <p class="vo vo-trim">A college is not one department. It is many — each with its own truth.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        <p class="note"><b>diagram</b> Diagram 1 — Fragmented college systems.</p>
+        <p class="note"><b>camera</b> Locked, orthographic, no rotation. Respectful of the diagram's own geometry.</p>
+        <p class="note dim"><b>music</b> Silence. Sub-bass only, felt not heard.</p>
+        <p class="intent">Clarity after noise. The viewer is now being *told* rather than *shown* — briefly, and it works.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S19">
+      <div class="frame frame-build">
+        <div class="frame-id">S19</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:36 – 1:42</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-trim">The same record, entered four times. The same number, stale. The same request, lost.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> DUPLICATE · OUT OF DATE · NOT DELIVERED — each appearing beside its instance, small, neutral, not alarmed.</p>
+        
+        <p class="note"><b>diagram</b> Diagram 1 — continuation.</p>
+        <p class="note"><b>camera</b> Locked. Diagram animates internally.</p>
+        <p class="note dim"><b>music</b> Silence.</p>
+        <p class="intent">These are the film's three villains. Naming them is what makes the solution legible later.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S20">
+      <div class="frame frame-build">
+        <div class="frame-id">S20</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:42 – 1:48</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-trim">Every hand-off is a place to lose something. Every loss is manual work tomorrow.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        <p class="note"><b>diagram</b> Diagram 10 — Data flow.</p>
+        <p class="note"><b>camera</b> Locked, orthographic.</p>
+        <p class="note dim"><b>music</b> Silence. First faint tone returns at 1:47.</p>
+        <p class="intent">Exhaustion. The system isn't broken — it's *leaky*.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S21">
+      <div class="frame frame-build">
+        <div class="frame-id">S21</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:48 – 1:54</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-trim">The problem is not data. The problem is that it doesn't work together.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> The two lines appear as on-screen type, exactly as spoken, weight 500, #0F172A on #F5F7F9.</p>
+        
+        
+        <p class="note"><b>camera</b> Locked. Nothing moves but the type.</p>
+        <p class="note dim"><b>music</b> Silence. One sustained low tone begins at 1:53.</p>
+        <p class="intent">Recognition. Every administrator in the audience has waited for that line.</p>
+        <div class="wordbar ">
+          <span>13w / 14w</span>
+          <i style="--w:92.85714285714286%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S22">
+      <div class="frame frame-build">
+        <div class="frame-id">S22</div>
+        <div class="frame-world">SYSTEM → title</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">1:54 – 2:00</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo">“A college is not one department.” “So why is its technology?”</p>
+        <p class="ost"><b>on screen</b> Both lines, set large, centred, appearing with no motion beyond a 12-frame fade.</p>
+        
+        
+        <p class="note"><b>camera</b> Locked, absolute.</p>
+        <p class="note dim"><b>music</b> Silence until 1:59. At 1:59, M4's first tone enters — a single sustained note. The silence was the point.</p>
+        <p class="intent">This is the hinge of the entire film. Everything before is problem; everything after is answer. Play it completely straight.</p>
+        <div class="wordbar ">
+          <span>11w / 14w</span>
+          <i style="--w:78.57142857142857%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 4 — THE SHIFT
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">4 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S23">
+      <div class="frame frame-build">
+        <div class="frame-id">S23</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:00 – 2:05</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo">One student record.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Locked.</p>
+        <p class="note dim"><b>music</b> M4 — sustained tone; a single piano note answers it.</p>
+        <p class="intent">Relief begins. Scale down to one thing, after the noise of S17.</p>
+        <div class="wordbar ">
+          <span>3w / 12w</span>
+          <i style="--w:25%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S24">
+      <div class="frame frame-build">
+        <div class="frame-id">S24</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:05 – 2:11</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-trim">One attendance mark. One fee record. One result — each connected to the same person.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> Labels resolve on the nodes: STUDENT · ATTENDANCE · FEES · FACULTY · EXAMS · DEPARTMENT</p>
+        
+        
+        <p class="note"><b>camera</b> Slow pull-back as the constellation grows.</p>
+        <p class="note dim"><b>music</b> M4 — pad enters, warm.</p>
+        <p class="intent">Recognition returning. This is what it should feel like.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S25">
+      <div class="frame frame-build">
+        <div class="frame-id">S25</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:11 – 2:17</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo">Not another system alongside the others. The one they all run on.</p>
+        <p class="ost"><b>on screen</b> LEARNIX — COLLEGE ERP CORE</p>
+        
+        <p class="note"><b>diagram</b> Diagram 2 — first appearance (core only, no modules yet).</p>
+        <p class="note"><b>camera</b> Locked push-in. The core holds frame centre.</p>
+        <p class="note dim"><b>music</b> M4 resolves — the first genuinely uplifting moment.</p>
+        <p class="intent">Arrival. The first moment the audience should feel the film has turned.</p>
+        <div class="wordbar ">
+          <span>12w / 14w</span>
+          <i style="--w:85.71428571428571%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S26">
+      <div class="frame frame-build">
+        <div class="frame-id">S26</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 3s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:17 – 2:20</span>
+          <span class="dur">3s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-silent">silent</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-silent">silent</p>
+        <p class="ost"><b>on screen</b> One institution. One connected platform. One source of truth. Then, beneath: Learnix</p>
+        
+        
+        <p class="note"><b>camera</b> Locked.</p>
+        <p class="note dim"><b>music</b> M4 resolves into M5.</p>
+        <p class="intent">The claim is now made. The next 3.5 minutes must earn it.</p>
+        <div class="wordbar ">
+          <span>0w / 7w</span>
+          <i style="--w:0%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 5 — THE PLATFORM
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">9 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S27">
+      <div class="frame frame-build">
+        <div class="frame-id">S27</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 11s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:20 – 2:31</span>
+          <span class="dur">11s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo">One core. Academic. Student life. Admissions and administration. Finance. People and payroll. Campus operations. Careers. And intelligence over all of it.</p>
+        <p class="ost"><b>on screen</b> Module names only. Capability chips must be legible but small — the point is the shape of the ring, not the inventory.</p>
+        
+        <p class="note"><b>diagram</b> Diagram 2 - Centralised ERP architecture (§28), the full eight-module ring. Second appearance of this diagram: core only at S25, complete here, revisited at S35.</p>
+        <p class="note"><b>camera</b> Very slow continuous orbit around the ring — 15° over 11 seconds. Never fast. The diagram must remain readable.</p>
+        <p class="note dim"><b>music</b> M5 — arpeggiated electronic enters, precise and unhurried.</p>
+        <p class="intent">Scale and competence — but controlled. This is infrastructure, not spectacle.</p>
+        <div class="wordbar ">
+          <span>21w / 26w</span>
+          <i style="--w:80.76923076923077%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S28">
+      <div class="frame frame-build">
+        <div class="frame-id">S28</div>
+        <div class="frame-world">SYSTEM → DIGITAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:31 – 2:37</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Abstract into interface</p>
+        <p class="vo">Attendance taken once, in one place, and it is everywhere at the same time.</p>
+        <p class="ost"><b>on screen</b> ATTENDANCE · SINGLE SOURCE</p>
+        <p class="note"><b>ui</b> Real Learnix teacher attendance interface.</p>
+        <p class="note"><b>diagram</b> Diagram 6 — Attendance workflow (brief).</p>
+        <p class="note"><b>camera</b> Push-through from diagram into interface — the film's signature transition, first full use.</p>
+        <p class="note dim"><b>music</b> M5 continues.</p>
+        <p class="intent">Oh — it already works. This is the credibility beat.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S29">
+      <div class="frame frame-build">
+        <div class="frame-id">S29</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:37 – 2:43</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface</p>
+        <p class="vo">One student record. Not four. Not one per department.</p>
+        <p class="ost"><b>on screen</b> ONE RECORD · MANY VIEWS</p>
+        <p class="note"><b>ui</b> Real Learnix student profile.</p>
+        <p class="note"><b>diagram</b> Diagram 3 — Student workflow (brief).</p>
+        <p class="note"><b>camera</b> Locked, frontal, screen-space.</p>
+        <p class="note dim"><b>music</b> M5.</p>
+        <p class="intent">This is the §16 idea introduced early — planted here, paid in Act 9.</p>
+        <div class="wordbar ">
+          <span>9w / 14w</span>
+          <i style="--w:64.28571428571429%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S30">
+      <div class="frame frame-build">
+        <div class="frame-id">S30</div>
+        <div class="frame-world">SYSTEM → DIGITAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:43 – 2:49</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Abstract into interface</p>
+        <p class="vo vo-trim">Admissions, approvals, departmental workflow — recorded once, visible to everyone who needs it, nobody else.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> REQUESTED → PENDING → APPROVED → RECORDED</p>
+        <p class="note"><b>ui</b> Learnix approval interface.</p>
+        <p class="note"><b>diagram</b> Diagram 5 — Admission workflow + Diagram 9 — Approval workflow (brief).</p>
+        <p class="note"><b>camera</b> Locked. Diagram animates internally.</p>
+        <p class="note dim"><b>music</b> M5.</p>
+        <p class="intent">Governance made visible. This is what convinces a principal.</p>
+        <div class="wordbar ">
+          <span>14w / 14w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S31">
+      <div class="frame frame-build">
+        <div class="frame-id">S31</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:49 – 2:55</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface</p>
+        <p class="vo vo-trim">Fees, payments, expenses, scholarships — reconciled once, because there is one record to reconcile.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> DUE → PAID → RECEIPT → LEDGER</p>
+        <p class="note"><b>ui</b> Real Learnix accounts/fees interface.</p>
+        <p class="note"><b>diagram</b> Diagram 8 — Fee workflow (brief).</p>
+        <p class="note"><b>camera</b> Over-shoulder, real-world framing inside a digital scene — a hybrid moment.</p>
+        <p class="note dim"><b>music</b> M5.</p>
+        <p class="intent">Closure on S13. The viewer remembers Meera counting.</p>
+        <div class="wordbar ">
+          <span>13w / 14w</span>
+          <i style="--w:92.85714285714286%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S32">
+      <div class="frame frame-build">
+        <div class="frame-id">S32</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">2:55 – 3:01</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-trim">Faculty records, payroll, leave, recruitment — the people side, on the same spine.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> LEAVE REQUESTED → APPROVED → RECORDED</p>
+        <p class="note"><b>ui</b> Learnix leave-management interface.</p>
+        <p class="note"><b>diagram</b> Diagram 9 — Approval workflow (extended).</p>
+        <p class="note"><b>camera</b> Locked.</p>
+        <p class="note dim"><b>music</b> M5.</p>
+        <p class="intent">Completeness. The audience should feel the net closing.</p>
+        <div class="wordbar ">
+          <span>12w / 14w</span>
+          <i style="--w:85.71428571428571%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S33">
+      <div class="frame frame-build">
+        <div class="frame-id">S33</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">3:01 – 3:06</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interfaces</p>
+        <p class="vo vo-trim">Hostel, transport, library — on the same record as the people in them.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> HOSTEL TRANSPORT LIBRARY INFRASTRUCTURE</p>
+        <p class="note"><b>ui</b> Real Learnix hostel, transport, library interfaces.</p>
+        
+        <p class="note"><b>camera</b> Lateral slide across the four surfaces.</p>
+        <p class="note dim"><b>music</b> M5.</p>
+        <p class="intent">The film becomes tangible. This is the college as a physical thing, connected.</p>
+        <div class="wordbar ">
+          <span>12w / 12w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S34">
+      <div class="frame frame-build">
+        <div class="frame-id">S34</div>
+        <div class="frame-world">DIGITAL → SYSTEM</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">3:06 – 3:11</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface into abstract</p>
+        <p class="vo vo-trim">Placement, training, internships — the outcome written back to the same record.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> PROFILE → SHORTLIST → OFFER → RECORD</p>
+        <p class="note"><b>ui</b> Real Learnix placement interface.</p>
+        
+        <p class="note"><b>camera</b> Push-through from interface back to the ring.</p>
+        <p class="note dim"><b>music</b> M5.</p>
+        <p class="intent">The career module closes the institutional loop — placement is where the institution's investment becomes visible.</p>
+        <div class="wordbar ">
+          <span>11w / 12w</span>
+          <i style="--w:91.66666666666666%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S35">
+      <div class="frame frame-build">
+        <div class="frame-id">S35</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 19s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">3:11 – 3:30</span>
+          <span class="dur">19s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo">And over all of it, an intelligence layer that watches — not to replace judgement, but to show a principal the moment something needs it. One core. Every module. Every person. One record.</p>
+        <p class="ost"><b>on screen</b> Module names on collapse only. Final frame: ONE CORE</p>
+        
+        <p class="note"><b>diagram</b> Diagram 2 — Centralised ERP architecture (complete).</p>
+        <p class="note"><b>camera</b> Slow continuous pull-back as the modules collapse — 19 seconds is deliberate. This shot must feel unhurried; it is the film's biggest payoff so far and rushing it wastes it.</p>
+        <p class="note dim"><b>music</b> M5 resolves fully. The most musically satisfying moment of Act 5.</p>
+        <p class="intent">Arrival. Then, immediately, intimacy — because Act 6 is about a person, not a platform.</p>
+        <div class="wordbar ">
+          <span>32w / 44w</span>
+          <i style="--w:72.72727272727273%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 6 — MOBILE EXPERIENCE
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">6 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S36">
+      <div class="frame frame-live">
+        <div class="frame-id">S36</div>
+        <div class="frame-world">REAL → DIGITAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">3:30 – 3:38</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Hostel room, morning — identical framing to S02</p>
+        <p class="vo">One morning. One screen. Everything the day needs.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Learnix student app dashboard. Must be a real, buildable interface — this is the film's hero screen.</p>
+        
+        <p class="note"><b>camera</b> Identical framing and lens to S02, then a slow push into the phone screen — the world-transition push.</p>
+        <p class="note dim"><b>music</b> M6 — warmth enters. This is the emotional turn of the second half.</p>
+        <p class="intent">Relief, immediately and unmistakably. The audience remembers S02 and feels this.</p>
+        <div class="wordbar ">
+          <span>8w / 19w</span>
+          <i style="--w:42.10526315789473%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S37">
+      <div class="frame frame-live">
+        <div class="frame-id">S37</div>
+        <div class="frame-world">DIGITAL → SYSTEM → DIGITAL → REAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">3:38 – 3:46</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Lecture hall — into the system — back</p>
+        <p class="vo">One mark. The student sees it. The department sees it. Nobody re-enters anything.</p>
+        <p class="ost"><b>on screen</b> ONE ACTION · THREE UPDATES · ZERO RE-ENTRY</p>
+        <p class="note"><b>ui</b> Real teacher attendance, student app, management dashboard.</p>
+        <p class="note"><b>diagram</b> Diagram 6 — Attendance workflow (full), Diagram 10 — Data flow (one record branching).</p>
+        <p class="note"><b>camera</b> Real → push-through → locked system → two quick interface cuts → pull back out to real. The full §27 grammar in one shot.</p>
+        <p class="note dim"><b>music</b> M6 continues — the single clearest &quot;product works&quot; moment.</p>
+        <p class="intent">This is the film's thesis in one 8-second shot. It must feel effortless. Effortlessness is the product.</p>
+        <div class="wordbar ">
+          <span>13w / 19w</span>
+          <i style="--w:68.42105263157895%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S38">
+      <div class="frame frame-build">
+        <div class="frame-id">S38</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">3:46 – 3:54</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interfaces</p>
+        <p class="vo">Set once. Delivered to everyone. Collected in one place, marked in one place, returned with feedback.</p>
+        <p class="ost"><b>on screen</b> CREATED → NOTIFIED → SUBMITTED → MARKED &amp; RETURNED</p>
+        <p class="note"><b>ui</b> Real Learnix teacher assignment and student submission interfaces.</p>
+        <p class="note"><b>diagram</b> Diagram 3 — Student workflow (full lifecycle).</p>
+        <p class="note"><b>camera</b> Screen-space. Each surface enters by scale-swap from the previous.</p>
+        <p class="note dim"><b>music</b> M6.</p>
+        <p class="intent">Relief for both characters simultaneously. Faculty and student both win.</p>
+        <div class="wordbar ">
+          <span>16w / 19w</span>
+          <i style="--w:84.21052631578947%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S39">
+      <div class="frame frame-build">
+        <div class="frame-id">S39</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">3:54 – 4:02</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interfaces</p>
+        <p class="vo">One exam. Four people who need it. Each sees their own part of the same truth.</p>
+        <p class="ost"><b>on screen</b> SCHEDULED → ONGOING → COMPLETED → RESULTS PUBLISHED</p>
+        <p class="note"><b>ui</b> Real Learnix exam cell and student exam interfaces.</p>
+        <p class="note"><b>diagram</b> Diagram 7 — Examination workflow.</p>
+        <p class="note"><b>camera</b> Four quick cuts, same underlying record visible in each — the audience should *spot* the continuity.</p>
+        <p class="note dim"><b>music</b> M6.</p>
+        <p class="intent">This is what §10 asked for: one workflow, different experiences. Made literal.</p>
+        <div class="wordbar ">
+          <span>16w / 19w</span>
+          <i style="--w:84.21052631578947%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S40">
+      <div class="frame frame-live">
+        <div class="frame-id">S40</div>
+        <div class="frame-world">REAL → DIGITAL</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">4:02 – 4:09</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Faculty office — the same desk as S10/S11, now at the same hour as S10</p>
+        <p class="vo">Attendance. Assignments. Announcements. Marks. Leave. Reports — in one place, on the way in.</p>
+        <p class="ost"><b>on screen</b> Task chips striking through one by one: ATTENDANCE ASSIGNMENT ANNOUNCEMENT MARKS LEAVE REPORT</p>
+        <p class="note"><b>ui</b> Real Learnix faculty app.</p>
+        <p class="note"><b>diagram</b> Diagram 4 — Faculty workflow.</p>
+        <p class="note"><b>camera</b> Identical framing to S10, but handheld-steady and slowly *rising* — she stands up mid-scene. The camera rises with her. This is the visual argument.</p>
+        <p class="note dim"><b>music</b> M6 lifts slightly.</p>
+        <p class="intent">The strongest positive beat in the film. She gets to leave on time.</p>
+        <div class="wordbar ">
+          <span>13w / 16w</span>
+          <i style="--w:81.25%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S41">
+      <div class="frame frame-live">
+        <div class="frame-id">S41</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 6s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">4:09 – 4:15</span>
+          <span class="dur">6s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span></div>
+        <p class="loc">Corridor, identical to S04</p>
+        <p class="vo">“Less administration. More teaching.”</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Identical framing and movement to S04. The repetition is the payoff — the corridor is identical; she is not.</p>
+        <p class="note dim"><b>music</b> M6 resolves.</p>
+        <p class="intent">Relief. The audience has been waiting 5 minutes for someone to look unharried.</p>
+        <div class="wordbar ">
+          <span>4w / 14w</span>
+          <i style="--w:28.57142857142857%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 7 — MANAGEMENT PLATFORM
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">4 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S42">
+      <div class="frame frame-live">
+        <div class="frame-id">S42</div>
+        <div class="frame-world">REAL → DIGITAL</div>
+        <div class="frame-asp">16:9 · 11s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">4:15 – 4:26</span>
+          <span class="dur">11s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Principal's office — the same desk as S15, same hour as S15</p>
+        <p class="vo">The institution, in one view, current to this morning.</p>
+        <p class="ost"><b>on screen</b> COLLEGE · LIVE</p>
+        <p class="note"><b>ui</b> Real Learnix admin / management dashboard. This is the second hero screen of the film and must be exceptional.</p>
+        <p class="note"><b>diagram</b> Diagram 12 — Management analytics.</p>
+        <p class="note"><b>camera</b> Identical framing to S15, then a slow push through the screen plane into the interface.</p>
+        <p class="note dim"><b>music</b> M6 → M7 begins. Authority.</p>
+        <p class="intent">Authority restored. The same man, the same room, total command.</p>
+        <div class="wordbar ">
+          <span>9w / 26w</span>
+          <i style="--w:34.61538461538461%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S43">
+      <div class="frame frame-build">
+        <div class="frame-id">S43</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 11s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">4:26 – 4:37</span>
+          <span class="dur">11s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-block">needs comp</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface</p>
+        <p class="vo">College to department. Course to class. Class to student — the same question, asked at any level, answered from the same record.</p>
+        <p class="ost"><b>on screen</b> COLLEGE → DEPARTMENT → COURSE → CLASS → STUDENT</p>
+        <p class="note"><b>ui</b> Real Learnix admin drill-down.</p>
+        <p class="note"><b>diagram</b> Diagram 12 — Management analytics (hierarchical).</p>
+        <p class="note"><b>camera</b> Locked, screen-space, one continuous move. The diagram breathes; the camera does not.</p>
+        <p class="note dim"><b>music</b> M7 — restrained, forward.</p>
+        <p class="intent">Power through simplicity. This is the shot that makes a principal lean forward.</p>
+        <div class="wordbar ">
+          <span>21w / 26w</span>
+          <i style="--w:80.76923076923077%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S44">
+      <div class="frame frame-build">
+        <div class="frame-id">S44</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 11s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">4:37 – 4:48</span>
+          <span class="dur">11s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-block">needs comp</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface</p>
+        <p class="vo">Everyone sees what their role allows. And what they don't see, they cannot act on. Every action is recorded.</p>
+        <p class="ost"><b>on screen</b> ROLE-BASED ACCESS · SCOPED BY ROLE AND DEPARTMENT · AUDIT LOGGED</p>
+        <p class="note"><b>ui</b> Real Learnix RBAC / role-permission surfaces.</p>
+        <p class="note"><b>diagram</b> Diagram 13 — Role-based access.</p>
+        <p class="note"><b>camera</b> Static per view; hard cut between them. The *cut* is the point — same data, different permissions.</p>
+        <p class="note dim"><b>music</b> M7.</p>
+        <p class="intent">Reassurance without hype. Never say &quot;secure&quot; — show boundaries.</p>
+        <div class="wordbar ">
+          <span>19w / 26w</span>
+          <i style="--w:73.07692307692307%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S45">
+      <div class="frame frame-build">
+        <div class="frame-id">S45</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 12s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">4:48 – 5:00</span>
+          <span class="dur">12s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface</p>
+        <p class="vo">He doesn't collect the report. He reads the answer.</p>
+        <p class="ost"><b>on screen</b> 2 ATTENDANCE ALERTS · N FEES PENDING · N ADMISSIONS IN FLIGHT</p>
+        <p class="note"><b>ui</b> Real Learnix alerts and analytics.</p>
+        
+        <p class="note"><b>camera</b> Two-shot over the screen — real framing, digital content. A hybrid beat. Hold on his face for the last three seconds.</p>
+        <p class="note dim"><b>music</b> M7 — resolves.</p>
+        <p class="intent">The film's central promise delivered. Priya not needing to answer is the payoff of everything Act 2 spent.</p>
+        <div class="wordbar ">
+          <span>9w / 28w</span>
+          <i style="--w:32.142857142857146%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 8 — INTELLIGENCE
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">5 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S46">
+      <div class="frame frame-build">
+        <div class="frame-id">S46</div>
+        <div class="frame-world">DIGITAL → SYSTEM</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:00 – 5:08</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-block">needs comp</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface into abstract</p>
+        <p class="vo">The system doesn't wait to be asked. A trend crosses a threshold, and the threshold speaks up.</p>
+        <p class="ost"><b>on screen</b> TREND DETECTED · THRESHOLD CROSSED</p>
+        <p class="note"><b>ui</b> Real Learnix analytics.</p>
+        
+        <p class="note"><b>camera</b> Push into the chart, then follow the annotation as it pulls back to reveal the institution it belongs to.</p>
+        <p class="note dim"><b>music</b> M7 — subtly more active.</p>
+        <p class="intent">Quiet power. The most valuable thing software can do is notice what you would have missed.</p>
+        <div class="wordbar ">
+          <span>17w / 19w</span>
+          <i style="--w:89.47368421052632%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S47">
+      <div class="frame frame-build">
+        <div class="frame-id">S47</div>
+        <div class="frame-world">SYSTEM → DIGITAL</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:08 – 5:15</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Abstract into interfaces</p>
+        <p class="vo vo-trim">It finds who it affects. Applies the agreed policy. Tells who can act — and records it.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> DETECTED → IDENTIFIED → POLICY APPLIED → LOGGED</p>
+        <p class="note"><b>ui</b> Real Learnix notifications and policy interface.</p>
+        <p class="note"><b>diagram</b> Diagram 9 — Approval workflow (policy variant).</p>
+        <p class="note"><b>camera</b> Follow the branch as it splits. Locked at each destination.</p>
+        <p class="note dim"><b>music</b> M7.</p>
+        <p class="intent">Trust. The system acts within agreed limits and shows its work.</p>
+        <div class="wordbar ">
+          <span>16w / 16w</span>
+          <i style="--w:100%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S48">
+      <div class="frame frame-build">
+        <div class="frame-id">S48</div>
+        <div class="frame-world">DIGITAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:15 – 5:23</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-block">needs comp</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Interface</p>
+        <p class="vo">Ask the institution a question in plain language. Get an answer, with the records behind it.</p>
+        <p class="ost"><b>on screen</b> The typed question, verbatim · ANSWERED FROM INSTITUTIONAL RECORDS</p>
+        <p class="note"><b>ui</b> Learnix AI assistant — the interface must show sourcing. A chatbot with no visible source would undercut the entire film.</p>
+        <p class="note"><b>diagram</b> Diagram 11 — AI intelligence layer.</p>
+        <p class="note"><b>camera</b> Over-shoulder, tight on the field, then a slow push to the sourced answer.</p>
+        <p class="note dim"><b>music</b> M7 — future-facing but restrained. No &quot;magical&quot; rise.</p>
+        <p class="intent">Competence. The AI is an interface to the college's data, not a personality. Keep it boring and trustworthy.</p>
+        <div class="wordbar ">
+          <span>16w / 19w</span>
+          <i style="--w:84.21052631578947%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S49">
+      <div class="frame frame-live">
+        <div class="frame-id">S49</div>
+        <div class="frame-world">DIGITAL → REAL</div>
+        <div class="frame-asp">16:9 · 9s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:23 – 5:32</span>
+          <span class="dur">9s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-block">needs comp</span><span class="bd bd-diag">diagram</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Faculty office → corridor</p>
+        <p class="vo">The same assistant, scoped to her classes, answering the question she would have spent an hour building.</p>
+        <p class="ost"><b>on screen</b> SCOPED TO YOUR SECTIONS</p>
+        <p class="note"><b>ui</b> Learnix AI assistant (faculty scope).</p>
+        <p class="note"><b>diagram</b> Diagram 11 (second appearance).</p>
+        <p class="note"><b>camera</b> Over-shoulder in real framing, then a slow push as she looks up from the phone.</p>
+        <p class="note dim"><b>music</b> M7 resolves toward M6 — the human returns.</p>
+        <p class="intent">The AI hands the work back to the human. It is a tool, and the teacher is the agent.</p>
+        <div class="wordbar ">
+          <span>17w / 21w</span>
+          <i style="--w:80.95238095238095%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S50">
+      <div class="frame frame-live">
+        <div class="frame-id">S50</div>
+        <div class="frame-world">DIGITAL → REAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:32 – 5:40</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-block">needs comp</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Corridor → lecture hall</p>
+        <p class="vo">Students and faculty and principals — the same intelligence, answering each within their own view of the institution.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> Learnix student app assistant.</p>
+        
+        <p class="note"><b>camera</b> Real framing, phone held low, walking pace. Ends on his face, unremarkable — which is the point.</p>
+        <p class="note dim"><b>music</b> M7 resolves into M8 preparation.</p>
+        <p class="intent">Normalisation. It is just how the college works now. Not a feature — infrastructure.</p>
+        <div class="wordbar ">
+          <span>17w / 19w</span>
+          <i style="--w:89.47368421052632%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 9 — CONNECTED CAMPUS
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">4 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S51">
+      <div class="frame frame-build">
+        <div class="frame-id">S51</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:40 – 5:48</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo">One student belongs to a class. A class belongs to a department. A department belongs to a college.</p>
+        <p class="ost"><b>on screen</b> STUDENT → CLASS → DEPARTMENT → COLLEGE</p>
+        
+        <p class="note"><b>diagram</b> Diagram 14 — Connected-campus ecosystem (beginning).</p>
+        <p class="note"><b>camera</b> Locked, orthographic. The expansion does all the work.</p>
+        <p class="note dim"><b>music</b> M7 → M8 building.</p>
+        <p class="intent">Understanding arriving through geometry. The viewer *sees* the institution as a structure.</p>
+        <div class="wordbar ">
+          <span>18w / 19w</span>
+          <i style="--w:94.73684210526315%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S52">
+      <div class="frame frame-build">
+        <div class="frame-id">S52</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:48 – 5:56</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-trim">vo trim</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract</p>
+        <p class="vo vo-trim">Every part of the institution — teaching, finance, people, examinations, admissions, careers, hostel, transport — one structure, not beside it.<span class="cut">trimmed</span></p>
+        <p class="ost"><b>on screen</b> Domain names appear at their attachment points.</p>
+        
+        <p class="note"><b>diagram</b> Diagram 14 (assembling).</p>
+        <p class="note"><b>camera</b> Very slow pull-back as the structure fills.</p>
+        <p class="note dim"><b>music</b> M8 building — the emotional lift begins.</p>
+        <p class="intent">Completion. Compare deliberately to S16's unmatched grid.</p>
+        <div class="wordbar ">
+          <span>18w / 19w</span>
+          <i style="--w:94.73684210526315%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S53">
+      <div class="frame frame-live">
+        <div class="frame-id">S53</div>
+        <div class="frame-world">SYSTEM → REAL</div>
+        <div class="frame-asp">16:9 · 11s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">5:56 – 6:07</span>
+          <span class="dur">11s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-diag">diagram</span></div>
+        <p class="loc">Abstract, then over the campus</p>
+        <p class="vo">A college already runs as one institution. Now its technology does too.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        <p class="note"><b>diagram</b> Diagram 14 — Connected-campus ecosystem (complete).</p>
+        <p class="note"><b>camera</b> Aerial pull-out over the campus, holding the superimposed structure. This is the most beautiful shot in the film and must be allowed to breathe — 11 seconds, no rushing.</p>
+        <p class="note dim"><b>music</b> M8 — full. The emotional high point.</p>
+        <p class="intent">The thesis, stated visually without a single word of explanation. This shot should be the one people remember.</p>
+        <div class="wordbar ">
+          <span>12w / 26w</span>
+          <i style="--w:46.15384615384615%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S54">
+      <div class="frame frame-live">
+        <div class="frame-id">S54</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:07 – 6:15</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-silent">silent</span></div>
+        <p class="loc">Campus, exterior</p>
+        <p class="vo vo-silent">silent</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Wide, static. Same angle family as S01/S07, later in the day.</p>
+        <p class="note dim"><b>music</b> M8 continues.</p>
+        <p class="intent">Calm. The noise of Act 2 is simply gone.</p>
+        <div class="wordbar ">
+          <span>0w / 19w</span>
+          <i style="--w:0%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>ACT 10 — VISION
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">4 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S55">
+      <div class="frame frame-live">
+        <div class="frame-id">S55</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:15 – 6:23</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-ui">ui</span></div>
+        <p class="loc">Hostel room — identical to S02 and S36</p>
+        <p class="vo">He knows exactly what is happening, and what he is expected to do.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        <p class="note"><b>ui</b> — (the phone is *not* shown — this is the point)</p>
+        
+        <p class="note"><b>camera</b> Identical to S02. Held slightly longer.</p>
+        <p class="note dim"><b>music</b> M8.</p>
+        <p class="intent">The phone has become irrelevant to his morning. Nothing has been added — something has been removed.</p>
+        <div class="wordbar ">
+          <span>13w / 19w</span>
+          <i style="--w:68.42105263157895%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S56">
+      <div class="frame frame-live">
+        <div class="frame-id">S56</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:23 – 6:30</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span></div>
+        <p class="loc">Faculty office — identical to S10 and S40</p>
+        <p class="vo">And she has the afternoon back.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Identical to S10, same direction of light.</p>
+        <p class="note dim"><b>music</b> M8.</p>
+        <p class="intent">The line from S41, now shown rather than stated.</p>
+        <div class="wordbar ">
+          <span>6w / 16w</span>
+          <i style="--w:37.5%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S57">
+      <div class="frame frame-live">
+        <div class="frame-id">S57</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:30 – 6:37</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span></div>
+        <p class="loc">Administrative office, then Principal's office</p>
+        <p class="vo">The institution can finally be seen, by the people responsible for it.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Static split. Both halves locked.</p>
+        <p class="note dim"><b>music</b> M8.</p>
+        <p class="intent">Competence restored to both.</p>
+        <div class="wordbar ">
+          <span>12w / 16w</span>
+          <i style="--w:75%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S58">
+      <div class="frame frame-live">
+        <div class="frame-id">S58</div>
+        <div class="frame-world">REAL</div>
+        <div class="frame-asp">16:9 · 8s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:37 – 6:45</span>
+          <span class="dur">8s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-rhyme">rhyme</span></div>
+        <p class="loc">Campus — identical framing to S01 and S07</p>
+        <p class="vo">Nothing about the college changed. Everything about how it runs did.</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Byte-identical framing to S01. The audience will feel it before they notice it.</p>
+        <p class="note dim"><b>music</b> M8 — full, warm, moving toward resolution.</p>
+        <p class="intent">Completion. Same image, opposite meaning.</p>
+        <div class="wordbar ">
+          <span>11w / 19w</span>
+          <i style="--w:57.89473684210527%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+    <section class="act">
+      <h2>FINAL
+        <span class="act-time">0:00 – 0:00</span>
+        <span class="act-dur">3 scenes · 0s</span>
+      </h2>
+      <div class="grid">
+    <article class="cell" id="S59">
+      <div class="frame frame-live">
+        <div class="frame-id">S59</div>
+        <div class="frame-world">REAL → SYSTEM</div>
+        <div class="frame-asp">16:9 · 7s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:45 – 6:52</span>
+          <span class="dur">7s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-live">LIVE</span><span class="bd bd-rhyme">rhyme</span><span class="bd bd-silent">silent</span></div>
+        <p class="loc">Campus at dusk</p>
+        <p class="vo vo-silent">silent</p>
+        <p class="ost"><b>on screen</b> Run the institution. Not the paperwork. Set centred, generous leading, no motion beyond a slow 20-frame fade.</p>
+        
+        
+        <p class="note"><b>camera</b> Slow aerial pull-out, rising.</p>
+        <p class="note dim"><b>music</b> M8 — the phrase lands on the score's resolution.</p>
+        <p class="intent">The thesis, in the audience's own words before they hear it.</p>
+        <div class="wordbar ">
+          <span>0w / 16w</span>
+          <i style="--w:0%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S60">
+      <div class="frame frame-build">
+        <div class="frame-id">S60</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 5s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:52 – 6:57</span>
+          <span class="dur">5s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-silent">silent</span></div>
+        <p class="loc">Title</p>
+        <p class="vo vo-silent">silent</p>
+        <p class="ost"><b>on screen</b> Learnix · then, beneath: *The digital operating system for modern colleges.*</p>
+        
+        
+        <p class="note"><b>camera</b> Locked.</p>
+        <p class="note dim"><b>music</b> M8 resolves. Final chord.</p>
+        <p class="intent">Arrival, not conclusion. The film should feel like a beginning.</p>
+        <div class="wordbar ">
+          <span>0w / 12w</span>
+          <i style="--w:0%"></i>
+        </div>
+      </div>
+    </article>
+    <article class="cell" id="S61">
+      <div class="frame frame-build">
+        <div class="frame-id">S61</div>
+        <div class="frame-world">SYSTEM</div>
+        <div class="frame-asp">16:9 · 3s</div>
+      </div>
+      <div class="meta">
+        <div class="lbl">
+          <span class="tc">6:57 – 7:00</span>
+          <span class="dur">3s</span>
+        </div>
+        <div class="badges"><span class="bd bd-track-build">BUILD</span><span class="bd bd-silent">silent</span></div>
+        <p class="loc">Title</p>
+        <p class="vo vo-silent">silent</p>
+        <p class="ost"><b>on screen</b> —</p>
+        
+        
+        <p class="note"><b>camera</b> Locked.</p>
+        <p class="note dim"><b>music</b> Final sustain, then silence.</p>
+        <p class="intent">Do not add a URL or a download line. The audience should leave wanting to ask, not told what to do.</p>
+        <div class="wordbar ">
+          <span>0w / 7w</span>
+          <i style="--w:0%"></i>
+        </div>
+      </div>
+    </article></div>
+    </section>
+
+<footer>
+  <p><b>Rhyme shots</b> — S01, S07, S58 and S59 are the same camera position.
+    S01 and S58 must be pixel-identical. If the rhyme breaks, the film has no structure.</p>
+  <p><b>Needs comps</b> — AI assistant (S48–S50), trend detection (S46), scoped dashboards (S44),
+    drill-down (S43). No buildable backing today; build them in this design system and mark
+    <code>_compc</code>.</p>
+  <p>Generated 2026-10-03 · validation passed ·
+    all 61 scenes contiguous 0:00–7:00 · every narration cue inside its scene budget.</p>
+</footer>
+
+</body>
+</html>

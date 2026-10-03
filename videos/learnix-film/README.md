@@ -13,14 +13,36 @@ This is a **new project**, separate from the completed 75-second promo in `../le
 | Item | State |
 |---|---|
 | Master screenplay | ✅ approved, 61 scenes, 11 movements, validated |
-| VO script | ✅ written and timed, 567 words @ 140 wpm |
+| VO script | ✅ **37 of 54 cues verbatim, 17 trimmed**, 712 words @ 140 wpm |
 | Asset manifest | ✅ written, 29 LIVE / 32 BUILD scenes classified |
 | Design system | ✅ tokens defined, `assets/tokens.css` is normative |
 | Music brief | ✅ written, M1–M8 |
+| Storyboard board | ✅ generated, 61 cells, 11 acts |
 | Act 1 composition | ✅ timing gate built, `npm run check` passes |
 | Acts 2–11 | ⬜ placeholder blocks at correct durations |
 | Live plates | ⬜ not shot |
 | Audio | ⬜ not recorded |
+
+---
+
+## Verification
+
+Three checks guard the documents. Run all three before trusting any figure in `docs/`.
+
+```bash
+node tools/verify-vo.mjs       # VO doc vs approved screenplay
+node tools/build-storyboard.mjs # regenerate storyboard.html (fails if the script drifts)
+node tools/qa-storyboard.mjs   # structural QA on the generated board
+npm run check                  # framework lint + layout + motion + contrast
+```
+
+`verify-vo.mjs` exits non-zero if a changed cue is not flagged `TRIM`, if a `TRIM`-flagged cue
+actually matches the approved copy, if any of the 61 scenes is missing, or if a cue exceeds its
+scene's word budget. `build-storyboard.mjs` exits non-zero if the 61 scenes are not contiguous
+0:00–7:00 or a scene has no usable emotional intent.
+
+Useful flags: `node tools/verify-vo.mjs --show S19 S22` prints approved vs draft text for specific
+scenes.
 
 ---
 
@@ -94,3 +116,4 @@ npx hyperframes preview --stop
 - Each composition registers exactly one paused root timeline on `window.__timelines`, keyed to its `data-composition-id`.
 - Diagram assets with multiple states share a base name and stable node IDs (`d02_erp_arch_core` / `_full` / `_consolidated`). Stable node IDs are what let S27 animate into S35.
 - Assets are never overwritten once a scene references them. Revisions increment `v1` → `v2`.
+- **Word counts are counted one way only.** Parentheticals are stage direction, never narration, and contractions are single words. Both conventions are enforced in `tools/` — do not recount by hand.
