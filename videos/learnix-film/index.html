@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Learnix Master Film — root</title>
+<link rel="stylesheet" href="assets/tokens.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: var(--void); }
+</style>
+</head>
+<body>
+
+<!--
+  Learnix Master Film — root timeline
+  7:00 · 1920x1080 · 30fps
+  data-start / data-duration are in SECONDS.
+
+  Act structure from docs/MASTER-SCRIPT.md §4. Act 1 is the only act with a
+  built composition so far — it is the timing gate (ASSET-MANIFEST.md, build
+  order item 10). If Act 1 does not land, nothing after it matters.
+
+  Acts 2-11 are declared as placeholders at their real durations so the root
+  timeline is already correct at 420s. Each is swapped for a
+  data-composition-src as it is built.
+-->
+
+<div id="root" data-composition-id="learnix-film" data-start="0" data-duration="420" data-width="1920" data-height="1080">
+
+  <!-- ACT 1 · THE COLLEGE · 0:00-0:30 · S01-S07 -->
+  <div id="act-1" class="clip"
+       data-composition-id="act-01"
+       data-composition-src="compositions/acts/act-01.html"
+       data-start="0" data-duration="30" data-track-index="0"></div>
+
+  <!-- ACT 2 · THE CHAOS · 0:30-1:30 · S08-S17 -->
+  <div id="act-2" class="clip" data-start="30" data-duration="60" data-track-index="1"></div>
+
+  <!-- ACT 3 · THE REAL PROBLEM · 1:30-2:00 · S18-S22 -->
+  <div id="act-3" class="clip" data-start="90" data-duration="30" data-track-index="0"></div>
+
+  <!-- ACT 4 · THE SHIFT · 2:00-2:20 · S23-S26 -->
+  <div id="act-4" class="clip" data-start="120" data-duration="20" data-track-index="1"></div>
+
+  <!-- ACT 5 · THE PLATFORM · 2:20-3:30 · S27-S35 -->
+  <div id="act-5" class="clip" data-start="140" data-duration="70" data-track-index="0"></div>
+
+  <!-- ACT 6 · MOBILE EXPERIENCE · 3:30-4:15 · S36-S41 -->
+  <div id="act-6" class="clip" data-start="210" data-duration="45" data-track-index="1"></div>
+
+  <!-- ACT 7 · MANAGEMENT PLATFORM · 4:15-5:00 · S42-S45 -->
+  <div id="act-7" class="clip" data-start="255" data-duration="45" data-track-index="0"></div>
+
+  <!-- ACT 8 · INTELLIGENCE · 5:00-5:40 · S46-S50 -->
+  <div id="act-8" class="clip" data-start="300" data-duration="40" data-track-index="1"></div>
+
+  <!-- ACT 9 · CONNECTED CAMPUS · 5:40-6:15 · S51-S54 -->
+  <div id="act-9" class="clip" data-start="340" data-duration="35" data-track-index="0"></div>
+
+  <!-- ACT 10 · VISION · 6:15-6:45 · S55-S58 -->
+  <div id="act-10" class="clip" data-start="375" data-duration="30" data-track-index="1"></div>
+
+  <!-- FINAL · 6:45-7:00 · S59-S61 -->
+  <div id="final" class="clip" data-start="405" data-duration="15" data-track-index="0"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  // One paused root timeline for this composition. Never add children as
+  // paused — a paused child does not advance when the root is seeked.
+  window.__timelines["learnix-film"] = gsap.timeline({ paused: true });
+</script>
+</body>
+</html>

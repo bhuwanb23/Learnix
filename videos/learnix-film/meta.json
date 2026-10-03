@@ -1,0 +1,10 @@
+{
+  "id": "learnix-film",
+  "name": "learnix-film",
+  "createdAt": "2026-10-03T10:40:00.000Z",
+  "description": "Learnix master film — 7:00 institutional brand film. See docs/MASTER-SCRIPT.md.",
+  "fps": 30,
+  "width": 1920,
+  "height": 1080,
+  "durationFrames": 12600
+}
