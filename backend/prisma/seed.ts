@@ -1036,6 +1036,14 @@ async function seedDomainF(institutionId: string): Promise<void> {
       },
     });
   }
+  // Keep the link BOTH ways: the purchase must point back at the request, or the
+  // procurement desk cannot show who asked for the title.
+  if (approvedRequest?.procurementId) {
+    await db.bookProcurement.updateMany({
+      where: { id: approvedRequest.procurementId, requestId: null },
+      data: { requestId: approvedRequest.id },
+    });
+  }
 
   // A second student asking for the same pending title — this is what makes the
   // "sameTitleRequests / inCatalog" demand signal on the hub meaningful.

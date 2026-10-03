@@ -43,8 +43,19 @@ Fine rate is **₹5/day**, charged at return. The rate breakdown (days × rate) 
 
 **Entity `fine`**: id, issueId, amount, status (Pending/Paid/Waived).
 
-### 3.5 Requests (module)
-Book purchase requests from students (student, book, reason, status). Actions: **Approve** (creates procurement), **Reject**, notify requester.
+### 3.5 Book Requests + Procurement (module)
+Student requests for titles the library may not stock, as a **procurement decision** rather than a status flag.
+
+**Deciding.** `decideRequest` **requires a note** (min 5 chars) on both approve and decline — the student reads it in their notification, so a bare click is refused. The decision is stamped with `decidedByUserId` + `decidedAt`. Approving raises a `BookProcurement`; declining does not.
+
+**Demand is visible.** The list reports, per request, how many students asked for the same title and whether the library already stocks it — "12 students want *Clean Code* and we own 5 copies" is a different decision from one obscure title. A "Most requested" card aggregates the top titles. The detail screen adds the requesting student's standing (books held, overdue, fines due) and every catalog title matching the request, with free/total copies.
+
+**Procurement pipeline.** Approving is not the end of the line. A purchase moves `REQUESTED → ORDERED → RECEIVED` (or `CANCELLED`), and only forward — jumping a stage is refused:
+- **ORDERED** records the cost (integer paise) and copies ordered.
+- **RECEIVED** *creates the catalog `Book`* with the copies that actually arrived plus category and rack location, links it via `bookId`, marks the originating request `PROCURED` (a state previously unreachable), and notifies the student. If `announceNewArrivals` is on in Settings, it also broadcasts to all students.
+- **CANCELLED** declines the linked request with the recorded reason, so an approved request never sits forever with no purchase behind it.
+
+**Entity `book_request`**: studentProfileId, title, author, reason, status, decidedByUserId, decidedAt, decisionNote, procurementId. **Entity `book_procurement`**: requestId, title, author, copies, costMinor, status, category, rackLocation, orderedAt, receivedAt, bookId, note. The two link **both ways** — a one-way link left the procurement desk unable to show who asked.
 
 **Entity `book_request`**: id, studentId, book, reason, status (Pending/Approved/Rejected/Procured).
 
@@ -98,7 +109,12 @@ GET/POST /api/library/catalog             (+ /{id}, add/edit)
 POST /api/library/circulation/issue       { studentId, bookId }
 POST /api/library/circulation/return      { issueId }
 GET  /api/library/fines                   (POST /{id}/collect, /{id}/extend, /{id}/waive)
-GET/POST /api/library/requests            (+ /{id}/approve|reject)
+GET  /api/library/requests                ?q= &status= &sort=
+GET  /api/library/requests/{id}
+POST /api/library/requests/{id}/decide    { decision, note }   ← note required
+GET  /api/library/procurements            ?status=
+GET  /api/library/procurements/{id}
+POST /api/library/procurements/{id}/advance  { status, costRupees?, copies?, category?, rackLocation?, note? }
 GET/POST /api/library/digital             (+ /{id}, grant access)
 GET  /api/library/notifications/activity  ?limit=
 GET  /api/library/notifications/insights
@@ -152,8 +168,12 @@ at `/api/v1/library` (role gate: `LIBRARY` or `ADMIN`).
 - `POST /api/v1/library/fines/:id/waive` — waive fine (reason required, audited)
 - `POST /api/v1/library/fines/:id/extend` — extend due date on an outstanding overdue loan
 - `POST /api/v1/library/fines/settle` — bulk collect or waive every pending fine for a student
-- `GET /api/v1/library/requests` — book purchase requests
-- `POST /api/v1/library/requests/:id/decide` — approve/reject (creates procurement on approve)
+- `GET /api/v1/library/requests` — book purchase requests (q/status/sort)
+- `GET /api/v1/library/requests/:id` — request detail: student standing, catalog matches, same-title demand, linked purchase
+- `POST /api/v1/library/requests/:id/decide` — approve/decline; `note` is required
+- `GET /api/v1/library/procurements` — purchase pipeline with spend totals
+- `GET /api/v1/library/procurements/:id` — purchase detail
+- `POST /api/v1/library/procurements/:id/advance` — ORDERED / RECEIVED (creates the catalog book) / CANCELLED
 - `GET /api/v1/library/digital` — digital resources with search + `type` / `status` / `audience` filters and `sort`
 - `GET /api/v1/library/digital/:id` — resource detail with resolved audiences and usage stats
 - `POST /api/v1/library/digital` — add digital resource
@@ -170,4 +190,4 @@ at `/api/v1/library` (role gate: `LIBRARY` or `ADMIN`).
 - `POST /api/v1/library/broadcasts` — broadcast (ALL_STUDENTS / BORROWERS / OVERDUE_MEMBERS)
 - `GET /api/v1/library/profile` — librarian profile + library stats
 
-**App:** all 8 screens wired via `libraryApi` (`services/api.js`), demo identity `setDemoUser('library@learnix.dev')` in `library_staff.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Fines module has collect (CASH method) and waive actions; circulation has issue (rollNo + book picker) and return (auto-fine on overdue); requests has approve/reject; digital library shows resources from API; notifications has inbox + broadcast (3 audience types); profile shows live librarian data.
+**App:** every screen is wired to a real endpoint via `libraryApi` (`services/api.js`), with demo identity `setDemoUser('library@learnix.dev')` in `library_staff.js`. No static arrays remain and no action is a stub. Circulation issues, renews and returns with live policy limits; fines collects, waives, extends and bulk-settles; digital library does CRUD, grants, revocation and usage; notifications runs an activity feed, broadcast compose/history, audience insights and a reminder schedule; profile reads real stats, edits the live circulation policy, and lists the staff directory and RBAC permissions; book requests decide with a mandatory reason and walk purchases through to the catalog.

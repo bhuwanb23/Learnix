@@ -37,6 +37,11 @@ import MyPermissions from './pages/profile/my_permissions/my_permissions';
 import ChangePassword from './pages/profile/change_password/change_password';
 import HelpSupport from './pages/profile/help_support/help_support';
 
+// Requests sub-pages (pages/requests/*)
+import RequestDetail from './pages/requests/request_detail/request_detail';
+import ProcurementDesk from './pages/requests/procurement_desk/procurement_desk';
+import ProcurementDetail from './pages/requests/procurement_detail/procurement_detail';
+
 // Notifications sub-pages (pages/notifications/*)
 import ComposeBroadcast from './pages/notifications/compose_broadcast/compose_broadcast';
 import BroadcastHistory from './pages/notifications/broadcast_history/broadcast_history';
@@ -84,6 +89,11 @@ const FEATURE_MODULES = {
   MyPermissions: { title: 'Access & Permissions', icon: 'shield-checkmark-outline', component: MyPermissions },
   ChangePassword: { title: 'Change Password', icon: 'lock-closed-outline', component: ChangePassword },
   HelpSupport: { title: 'Help & Support', icon: 'help-circle-outline', component: HelpSupport },
+
+  // Requests sub-pages
+  RequestDetail: { title: 'Request Detail', icon: 'cart-outline', component: RequestDetail },
+  ProcurementDesk: { title: 'Procurement', icon: 'cube-outline', component: ProcurementDesk },
+  ProcurementDetail: { title: 'Purchase Detail', icon: 'cube-outline', component: ProcurementDetail },
 
   // Circulation sub-pages
   LoanDetail: { title: 'Loan Detail', icon: 'document-text-outline', component: LoanDetail },
