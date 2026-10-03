@@ -210,8 +210,15 @@ export async function listDues(institutionId: string, filter: DueFilter = {}) {
 
   // Aging summary — always filter-independent so the officer can see where the
   // whole book sits regardless of what they have narrowed to.
+  //
+  // Built from `open`, NOT from `overdue`. A bill that is not yet due is still
+  // money this institution is owed and still carries a NOT_DUE bucket on its own
+  // row, so dropping it here made the five cards sum to LESS than the
+  // "Outstanding" headline printed directly above them — two numbers on one
+  // screen that could not both be true. The buckets already classify
+  // daysOverdue <= 0 as NOT_DUE.
   const aging = AGING_BUCKETS.map((b) => {
-    const inBucket = overdue.filter((d) => d.bucketId === b.id);
+    const inBucket = open.filter((d) => d.bucketId === b.id);
     return {
       id: b.id,
       label: b.label,

@@ -88,6 +88,9 @@ export const api = {
   get: (path) => request('GET', path),
   post: (path, body) => request('POST', path, body),
   put: (path, body) => request('PUT', path, body),
+  // PATCH carries a PARTIAL update — the body is only the fields that changed,
+  // never the whole record. Used by payroll loss-of-pay adjustments.
+  patch: (path, body) => request('PATCH', path, body),
   delete: (path) => request('DELETE', path),
 };
 
@@ -540,8 +543,15 @@ export const accountsApi = {
   waiveFee: (id, reason) => api.post(`/accounts/dues/${id}/waive`, { reason }),
   reinstateDue: (id, reason) => api.post(`/accounts/dues/${id}/reinstate`, { reason }),
   payroll: () => api.get('/accounts/payroll'),
-  runPayroll: (month) => api.post('/accounts/payroll/run', { month }),
-  markPayrollPaid: (id) => api.post(`/accounts/payroll/${id}/mark-paid`),
+  payrollRun: (id) => api.get(`/accounts/payroll/${id}`),
+  payslip: (entryId) => api.get(`/accounts/payroll/entries/${entryId}`),
+  runPayroll: (month, note) => api.post('/accounts/payroll/run', note ? { month, note } : { month }),
+  approvePayrollRun: (id) => api.post(`/accounts/payroll/${id}/approve`),
+  payPayrollEntry: (entryId, paymentRef) =>
+    api.post(`/accounts/payroll/entries/${entryId}/pay`, paymentRef ? { paymentRef } : {}),
+  payAllPayroll: (id, paymentRefPrefix) =>
+    api.post(`/accounts/payroll/${id}/pay-all`, paymentRefPrefix ? { paymentRefPrefix } : {}),
+  adjustPayrollEntry: (entryId, payload) => api.patch(`/accounts/payroll/entries/${entryId}`, payload),
   expenses: () => api.get('/accounts/expenses'),
   addExpense: (payload) => api.post('/accounts/expenses', payload),
   approveExpense: (id) => api.post(`/accounts/expenses/${id}/approve`),
