@@ -1,0 +1,167 @@
+{
+    "title":  "Learnix — 90 second cut",
+    "duration":  90,
+    "fps":  30,
+    "note":  "Every scene shows real Learnix product. No empty plates. Cut from the 7-minute master once it proved that 44% of runtime carried no content.",
+    "scenes":  [
+                   {
+                       "id":  "F01",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-student-dashboard.png"
+                                  ],
+                       "layout":  "hero",
+                       "caption":  "The student",
+                       "kicker":  "one screen, every morning",
+                       "vo":  "Every part of a college, already in one place."
+                   },
+                   {
+                       "id":  "F02",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-student-classes.png",
+                                      "assets/ui/real/screen-student-progress.png"
+                                  ],
+                       "layout":  "duo",
+                       "caption":  "Classes and progress",
+                       "kicker":  "the same record",
+                       "vo":  "The student sees classes, attendance and results. One record."
+                   },
+                   {
+                       "id":  "F03",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-teacher-dashboard.png"
+                                  ],
+                       "layout":  "hero",
+                       "caption":  "The teacher",
+                       "kicker":  "one place to work",
+                       "vo":  "The teacher marks once. Every section, every subject."
+                   },
+                   {
+                       "id":  "F04",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-teacher-class-dashboard.png"
+                                  ],
+                       "layout":  "hero",
+                       "caption":  "One class, one view",
+                       "kicker":  "no register, no phone call",
+                       "vo":  "A register, a sheet and a phone call, replaced by one view."
+                   },
+                   {
+                       "id":  "F05",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-teacher-grading.png"
+                                  ],
+                       "layout":  "hero",
+                       "caption":  "Marking",
+                       "kicker":  "writes straight back",
+                       "vo":  "Grading that writes straight back to the student."
+                   },
+                   {
+                       "id":  "F06",
+                       "dur":  7,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-teacher-performance.png"
+                                  ],
+                       "layout":  "hero",
+                       "caption":  "Performance",
+                       "kicker":  "per section, per subject",
+                       "vo":  "Performance per section, per subject, per student."
+                   },
+                   {
+                       "id":  "F07",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-result.png",
+                                      "assets/ui/real/screen-weak-topics.png"
+                                  ],
+                       "layout":  "duo",
+                       "caption":  "Results and weak topics",
+                       "kicker":  "where they\u0027re needed",
+                       "vo":  "Results and weak topics, in the place they are needed."
+                   },
+                   {
+                       "id":  "F08",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-quiz-result.png",
+                                      "assets/ui/real/screen-under-review.png"
+                                  ],
+                       "layout":  "duo",
+                       "caption":  "Reviewed and returned",
+                       "kicker":  "feedback attached",
+                       "vo":  "Reviewed, returned, with the feedback attached."
+                   },
+                   {
+                       "id":  "F09",
+                       "dur":  6.5,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-teacher-quiz.png",
+                                      "assets/ui/real/screen-teacher-profile.png"
+                                  ],
+                       "layout":  "duo",
+                       "caption":  "Quizzes and profiles",
+                       "kicker":  "same system",
+                       "vo":  "Quizzes and profiles. The same system underneath."
+                   },
+                   {
+                       "id":  "F10",
+                       "dur":  8.5,
+                       "kind":  "diagram",
+                       "assets":  [
+                                      "assets/diagrams/diagram-architecture.svg"
+                                  ],
+                       "layout":  "full",
+                       "caption":  "One architecture",
+                       "kicker":  "14 modules · 286+ endpoints",
+                       "vo":  "One architecture. Fourteen modules. Two hundred and eighty-six endpoints."
+                   },
+                   {
+                       "id":  "F11",
+                       "dur":  8.5,
+                       "kind":  "diagram",
+                       "assets":  [
+                                      "assets/diagrams/diagram-modules.svg"
+                                  ],
+                       "layout":  "full",
+                       "caption":  "One record",
+                       "kicker":  "every module reads and writes it",
+                       "vo":  "And every module reading and writing the same record."
+                   },
+                   {
+                       "id":  "F12",
+                       "dur":  8,
+                       "kind":  "screen",
+                       "assets":  [
+                                      "assets/ui/real/screen-student-dashboard.png",
+                                      "assets/ui/real/screen-teacher-dashboard.png",
+                                      "assets/ui/real/screen-result.png"
+                                  ],
+                       "layout":  "trio",
+                       "caption":  "Student. Teacher. Office.",
+                       "kicker":  "one system",
+                       "vo":  "Student, teacher, office. One system."
+                   },
+                   {
+                       "id":  "F13",
+                       "dur":  6,
+                       "kind":  "endcard",
+                       "layout":  "endcard",
+                       "caption":  "Learnix",
+                       "kicker":  "The digital operating system for modern colleges.",
+                       "vo":  ""
+                   }
+               ]
+}
