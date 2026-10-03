@@ -992,16 +992,132 @@ async function seedDomainF(institutionId: string): Promise<void> {
     });
   }
 
-  // Digital resource + grant to BT-CSE
-  const resource = await db.digitalResource.findFirst({ where: { institutionId, title: 'IEEE Xplore — CS Collection' } });
-  if (!resource) {
-    const res = await db.digitalResource.create({
-      data: { institutionId, title: 'IEEE Xplore — CS Collection', type: 'JOURNAL', subject: 'Computer Science', license: 'Campus-wide 2026', accessCount: 0 },
+  // Digital library — a realistic e-resource catalog with program + batch grants
+  const cseBatch = await db.batch.findFirst({ where: { programId: program.id } });
+  const otherProgram = await db.program.findFirst({ where: { NOT: { id: program.id } } });
+
+  const digitalCatalog = [
+    {
+      title: 'IEEE Xplore — CS Collection', type: 'JOURNAL', subject: 'Computer Science',
+      license: 'Campus-wide 2026', publisher: 'IEEE',
+      externalUrl: 'https://ieeexplore.ieee.org', description: 'Full-text access to peer-reviewed journals and conference proceedings across computer science.',
+      grantProgramId: program.id,
+    },
+    {
+      title: 'ACM Digital Library', type: 'JOURNAL', subject: 'Computer Science',
+      license: 'ACM Member', publisher: 'Association for Computing Machinery',
+      externalUrl: 'https://dl.acm.org', description: 'ACM journals, proceedings and the ACM Books collection.',
+      grantProgramId: program.id,
+    },
+    {
+      title: 'O’Reilly Online Library', type: 'EBOOK', subject: 'Computer Science',
+      license: 'Named-user licence', publisher: 'O’Reilly Media',
+      externalUrl: 'https://learning.oreilly.com', description: 'Technical e-books and video courses across software engineering, data and systems.',
+      grantProgramId: program.id,
+    },
+    {
+      title: 'MIT OpenCourseWare — Algorithms', type: 'PDF', subject: 'Computer Science',
+      license: 'CC BY-NC-SA', publisher: 'MIT',
+      externalUrl: 'https://ocw.mit.edu', description: 'Lecture notes, problem sets and exams for 6.006 Introduction to Algorithms.',
+      grantBatchId: cseBatch?.id,
+    },
+    {
+      title: 'SpringerLink — Engineering Collection', type: 'JOURNAL', subject: 'Mechanical Engineering',
+      license: 'Campus-wide 2026', publisher: 'Springer Nature',
+      externalUrl: 'https://link.springer.com', description: 'Journals and reference works for mechanical, production and thermal engineering.',
+      grantProgramId: otherProgram?.id ?? null,
+    },
+    {
+      title: 'NPTEL — Thermodynamics Video Lectures', type: 'PDF', subject: 'Mechanical Engineering',
+      license: 'Free for educational use', publisher: 'IIT / NPTEL',
+      externalUrl: 'https://nptel.ac.in', description: 'Full video lecture series with transcripts for ME thermodynamics.',
+      grantBatchId: cseBatch?.id ?? null,
+    },
+    {
+      title: 'The Economist — Education Subscription', type: 'JOURNAL', subject: 'General',
+      license: 'Single-institution licence', publisher: 'The Economist Group',
+      externalUrl: 'https://economist.com/education', description: 'Weekly edition and archive for current-affairs reading.',
+      grantProgramId: null,
+    },
+  ];
+
+  let digitalCount = 0;
+  let grantCount = 0;
+  for (const entry of digitalCatalog) {
+    const existing = await db.digitalResource.findFirst({
+      where: { institutionId, title: entry.title },
     });
-    await db.digitalAccessGrant.create({ data: { resourceId: res.id, programId: program.id } });
+    const res = existing ?? await db.digitalResource.create({
+      data: {
+        institutionId,
+        title: entry.title,
+        type: entry.type,
+        subject: entry.subject,
+        license: entry.license,
+        publisher: entry.publisher,
+        externalUrl: entry.externalUrl,
+        description: entry.description,
+        accessCount: 0,
+      },
+    });
+    if (!existing) digitalCount++;
+
+    const programId = entry.grantProgramId ?? null;
+    const batchId = entry.grantBatchId ?? null;
+    if (programId || batchId) {
+      const grant = await db.digitalAccessGrant.findFirst({
+        where: { resourceId: res.id, programId, batchId },
+      });
+      if (!grant) {
+        await db.digitalAccessGrant.create({ data: { resourceId: res.id, programId, batchId } });
+        grantCount++;
+      }
+    }
   }
 
-  console.log('  ✓ 2 books, 1 OVERDUE issue + fine ₹50 PAID (PAY-2026-0002 + receipt), 1 ISSUED, request PENDING, IEEE grant');
+  // Backfill an access history so usage stats are demonstrable rather than all zero.
+  const students = await db.studentProfile.findMany({ where: { institutionId } });
+  const resources = await db.digitalResource.findMany({ where: { institutionId } });
+  if (students.length && resources.length) {
+    const existingLogs = await db.digitalResourceAccess.count();
+    if (existingLogs === 0) {
+      const logRows: {
+        resourceId: string; studentProfileId: string; accessType: string; createdAt: Date;
+      }[] = [];
+      resources.forEach((res, ri) => {
+        const opens = 6 - ri * 2;
+        for (let i = 0; i < Math.max(opens, 0); i++) {
+          const student = students[(i + ri) % students.length];
+          const createdAt = new Date();
+          createdAt.setDate(createdAt.getDate() - (i * 2 + ri));
+          createdAt.setHours(9 + ((i + ri) % 8), 15, 0, 0);
+          logRows.push({
+            resourceId: res.id,
+            studentProfileId: student.id,
+            accessType: i % 3 === 0 ? 'DOWNLOAD' : 'OPEN',
+            createdAt,
+          });
+        }
+      });
+      await db.digitalResourceAccess.createMany({ data: logRows });
+
+      // accessCount is the denormalized sum of the log rows.
+      const counts = await Promise.all(
+        resources.map(async (res) => ({
+          id: res.id,
+          count: await db.digitalResourceAccess.count({ where: { resourceId: res.id } }),
+        })),
+      );
+      await db.$transaction(
+        counts.map((c) =>
+          db.digitalResource.update({ where: { id: c.id }, data: { accessCount: c.count } }),
+        ),
+      );
+      console.log(`  ✓ ${logRows.length} digital access log rows`);
+    }
+  }
+
+  console.log(`  ✓ 2 books, 1 OVERDUE issue + fine ₹50 PAID, request PENDING, ${digitalCount} new digital resources (+${grantCount} grants)`);
 }
 
 // ─────────────────────────────────────────────────────────────
