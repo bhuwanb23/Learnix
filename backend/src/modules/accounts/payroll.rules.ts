@@ -43,8 +43,19 @@ export function currentMonth(now: Date = new Date()): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+/** Round a paise amount to a whole rupee — salaries and payslips are quoted in ₹. */
+const wholeRupee = (paise: number) => Math.round(paise / 100) * 100;
+
 /**
  * Split a monthly gross into payslip lines, optionally charging loss of pay.
+ *
+ * Every line is a whole rupee, which is what makes the payslip FOOT: the
+ * earnings lines sum to gross and the deduction lines sum to deductions, in
+ * paise, so the numbers a reader adds up on the printed slip are the numbers
+ * that were paid. A per-day loss-of-pay rate was the one thing that used to
+ * leak paise into the display (₹45,000 ÷ 31 = ₹1,451.61), so the rate is
+ * rounded to a rupee too — and the gross must therefore be a whole rupee,
+ * because a half-rupee salary would put the residue back in.
  *
  * Loss of pay is capped so deductions can never exceed the gross: a fully absent
  * month still owes PF and professional tax, and letting LOP run to a negative
@@ -57,9 +68,14 @@ export function computeSalary(grossMinor: number, month: string, lopDays = 0): C
   if (!Number.isInteger(grossMinor) || grossMinor <= 0) {
     throw unprocessable('Salary must be a positive whole amount');
   }
+  if (grossMinor % 100 !== 0) {
+    throw unprocessable('Salary must be in whole rupees');
+  }
   const dim = daysInMonth(month);
-  const basic = Math.round((grossMinor * SALARY_RULES.basicPercentOfGross) / 100);
-  const hra = Math.round((basic * SALARY_RULES.hraPercentOfBasic) / 100);
+  const basic = wholeRupee((grossMinor * SALARY_RULES.basicPercentOfGross) / 100);
+  const hra = wholeRupee((basic * SALARY_RULES.hraPercentOfBasic) / 100);
+  // Special allowance absorbs the rounding, so the earnings lines sum to gross
+  // exactly rather than to "gross, near enough".
   const special = grossMinor - basic - hra;
 
   const earnings: SalaryLine[] = [
@@ -68,17 +84,17 @@ export function computeSalary(grossMinor: number, month: string, lopDays = 0): C
     { label: 'Special Allowance', amountMinor: special },
   ];
 
-  const pf = Math.round((basic * SALARY_RULES.pfPercentOfBasic) / 100);
+  const pf = wholeRupee((basic * SALARY_RULES.pfPercentOfBasic) / 100);
   const professionalTax = SALARY_RULES.professionalTaxMinor;
   const deductions: SalaryLine[] = [
     { label: 'Provident Fund', amountMinor: pf },
     { label: 'Professional Tax', amountMinor: professionalTax },
   ];
 
-  const perDayMinor = Math.floor(grossMinor / dim);
+  const perDayMinor = Math.max(100, wholeRupee(grossMinor / dim));
   const wanted = Math.max(0, Math.min(Math.floor(lopDays || 0), dim));
   // Leave room for PF + professional tax so net never goes negative.
-  const affordable = Math.max(0, Math.floor((grossMinor - pf - professionalTax) / Math.max(perDayMinor, 1)));
+  const affordable = Math.max(0, Math.floor((grossMinor - pf - professionalTax) / perDayMinor));
   const applied = Math.min(wanted, affordable);
   if (applied > 0) {
     deductions.push({

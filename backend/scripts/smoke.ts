@@ -300,6 +300,67 @@ async function main() {
         body: JSON.stringify({}),
       });
       check('waive validates before it looks the due up', noReason.status === 400);
+
+      // Payroll: the hub, one run, one payslip. Every payslip must FOOT —
+      // earnings lines to gross, deduction lines to deductions, net the
+      // difference — because a payslip that does not add up is worse than none.
+      const payroll = await api('/api/v1/accounts/payroll', t);
+      check('accounts payroll', payroll.status === 200);
+      const p = payroll.json?.data;
+      check('payroll hub carries stats, trend, runs and a roster',
+        !!p?.stats && Array.isArray(p?.trend) && Array.isArray(p?.runs) && Array.isArray(p?.roster));
+      check('no payroll run contradicts its own money',
+        p?.runs?.every((r: any) => r.grossRupees - r.deductionsRupees === r.netRupees
+          && r.entryCount === r.paidCount + r.pendingCount));
+      check('a closed run has nothing pending',
+        p?.runs?.filter((r: any) => r.status === 'PAID').every((r: any) => r.pendingCount === 0));
+      check('the roster is everyone with a salary',
+        p?.roster?.every((s: any) => s.monthlyGrossRupees > 0));
+
+      const anyRun = p?.runs?.[0];
+      if (anyRun) {
+        const prun = await api(`/api/v1/accounts/payroll/${anyRun.id}`, t);
+        check('payroll run detail', prun.status === 200);
+        check('payroll run detail returns the requested id',
+          prun.json?.data?.run?.id === anyRun.id);
+        check('every payslip in the run foots',
+          prun.json?.data?.entries?.every((e: any) =>
+            e.grossRupees - e.deductionsRupees === e.netRupees
+            && e.earnings.reduce((s: number, l: any) => s + l.amountMinor, 0) / 100 === e.grossRupees
+            && e.deductions.reduce((s: number, l: any) => s + l.amountMinor, 0) / 100 === e.deductionsRupees));
+        check('payroll run detail gates its actions server-side',
+          typeof prun.json?.data?.run?.canApprove === 'boolean'
+          && typeof prun.json?.data?.run?.canPay === 'boolean'
+          && typeof prun.json?.data?.run?.canAdjust === 'boolean');
+
+        const anyEntry = prun.json?.data?.entries?.[0];
+        if (anyEntry) {
+          // Route order: `/payroll/entries/:id` must not be swallowed by
+          // `/payroll/:id`, which would 404 on a perfectly valid GET.
+          const slip = await api(`/api/v1/accounts/payroll/entries/${anyEntry.id}`, t);
+          check('payslip detail', slip.status === 200);
+          check('payslip detail returns the requested entry',
+            slip.json?.data?.entry?.id === anyEntry.id);
+          check('payslip carries this person’s own history',
+            Array.isArray(slip.json?.data?.history)
+            && slip.json.data.history.some((h: any) => h.id === anyEntry.id));
+        }
+      }
+      check('unknown payroll run returns 404',
+        (await api('/api/v1/accounts/payroll/does-not-exist', t)).status === 404);
+      check('unknown payslip returns 404',
+        (await api('/api/v1/accounts/payroll/entries/does-not-exist', t)).status === 404);
+      const badMonth = await api('/api/v1/accounts/payroll/run', t, {
+        method: 'POST',
+        body: JSON.stringify({ month: '2026-13' }),
+      });
+      check('payroll rejects an impossible month with 400', badMonth.status === 400);
+      const dupMonth = await api('/api/v1/accounts/payroll/run', t, {
+        method: 'POST',
+        body: JSON.stringify({ month: p?.runs?.[0]?.month ?? '2026-01' }),
+      });
+      check('a payroll month can only be run once', dupMonth.status === 409,
+        `got ${dupMonth.status}`);
     }
   }
   {

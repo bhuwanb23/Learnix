@@ -5,6 +5,10 @@
  */
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+// The payroll seed raises historic months with the SAME salary arithmetic the
+// API uses (payroll.rules.ts is prisma-free for exactly this reason), so a
+// seeded payslip foots exactly like a live one.
+import { computeSalary } from '../src/modules/accounts/payroll.rules.js';
 
 const db = new PrismaClient();
 
@@ -849,27 +853,175 @@ async function seedDomainE(institutionId: string): Promise<void> {
     });
   }
 
-  // Payroll run DRAFT for 2026-08 with the teacher's entry
-  const payrollRun = await db.payrollRun.upsert({
-    where: { institutionId_month: { institutionId, month: '2026-08' } },
-    update: {},
-    create: { institutionId, month: '2026-08', status: 'DRAFT', runByUserId: admin.id, totalMinor: 0 },
+// ── F-06 Payroll ──────────────────────────────────────────────────────
+  // Salary lives on StaffProfile.monthlyGrossMinor now, so a run is a real
+  // computation over 20 different people rather than ₹60,000 written twenty
+  // times. The scale below is the published one for this institution; anyone
+  // not on it falls back to the entry-level default and is still paid — the
+  // desk reports the count rather than silently dropping them.
+  const SALARY_SCALE: Record<string, number> = {
+    Registrar: 16000000, // ₹1,60,000
+    'Professor & Head': 15500000, // ₹1,55,000
+    'Chief Accounts Officer': 12500000, // ₹1,25,000
+    'Associate Professor': 11000000, // ₹1,10,000
+    'Controller of Examinations': 9500000, // ₹95,000
+    'Assistant Professor': 8500000, // ₹85,000
+    'Director · Sports & Cultural Affairs': 8000000, // ₹80,000
+    'Chief Librarian': 7800000, // ₹78,000
+    'Placement Officer': 6500000, // ₹65,000
+    'Chief Warden': 6000000, // ₹60,000
+    'Transport Officer': 4500000, // ₹45,000
+  };
+  const DEFAULT_SALARY_MINOR = 5000000; // ₹50,000
+
+  // StaffProfile holds a bare departmentId scalar — no relation to include.
+  const allDepts = await db.department.findMany({ where: { institutionId }, select: { id: true, name: true } });
+  const deptName = new Map(allDepts.map((d) => [d.id, d.name]));
+  const allStaff = await db.staffProfile.findMany({
+    where: { institutionId },
+    include: { user: { select: { id: true } } },
   });
-  const payrollEntry = await db.payrollEntry.findFirst({ where: { payrollRunId: payrollRun.id, staffUserId: teacher.id } });
-  if (!payrollEntry) {
-    await db.payrollEntry.create({
-      data: {
-        payrollRunId: payrollRun.id,
-        staffUserId: teacher.id,
-        grossMinor: 6500000, // ₹65,000
-        deductionsMinor: 500000, // ₹5,000
-        netMinor: 6000000, // ₹60,000
-        status: 'PENDING',
-      },
-    });
-    await db.payrollRun.update({ where: { id: payrollRun.id }, data: { totalMinor: 6000000 } });
+  for (const s of allStaff) {
+    const gross = SALARY_SCALE[s.designation ?? ''] ?? DEFAULT_SALARY_MINOR;
+    // Only fill blanks: re-seeding must never rewrite a salary someone has since
+    // been promoted or revised.
+    if (s.monthlyGrossMinor === 0) {
+      await db.staffProfile.update({
+        where: { id: s.id },
+        data: {
+          monthlyGrossMinor: gross,
+          salaryEffectiveFrom: s.joiningDate ?? new Date('2024-07-01'),
+          bankAccountLast4: s.bankAccountLast4 ?? s.employeeNo.slice(-4).padStart(4, '0'),
+        },
+      });
+    }
   }
 
+  const payable = allStaff.filter((s) => (s.monthlyGrossMinor > 0 ? s.monthlyGrossMinor : (SALARY_SCALE[s.designation ?? ''] ?? DEFAULT_SALARY_MINOR) > 0));
+  const deptByStaff = new Map(allStaff.map((s) => [s.user.id, deptName.get(s.departmentId ?? '') ?? null]));
+
+  /**
+   * Raise (or top up) one month of payroll. Idempotent: amounts are always
+   * refreshed from the salary rules, but a paid entry stays paid — re-seeding is
+   * not a way to un-pay salaries.
+   */
+  async function syncPayrollRun(
+    month: string,
+    status: 'DRAFT' | 'APPROVED' | 'PAID',
+    opts: { payCount?: number; lopForLowest?: number } = {},
+  ): Promise<void> {
+    const computed = payable.map((s) => {
+      const gross = s.monthlyGrossMinor || (SALARY_SCALE[s.designation ?? ''] ?? DEFAULT_SALARY_MINOR);
+      return { s, gross };
+    });
+    // Highest-paid first, so "pay the top N" is the shape of a partial run.
+    computed.sort((a, b) => b.gross - a.gross);
+    const payCount = opts.payCount ?? computed.length;
+    const lopTarget = opts.lopForLowest
+      ? computed[computed.length - 1]?.s.user.id
+      : null;
+
+    const run = await db.payrollRun.upsert({
+      where: { institutionId_month: { institutionId, month } },
+      update: {
+        status,
+        approvedByUserId: status !== 'DRAFT' ? admin.id : null,
+        approvedAt: status !== 'DRAFT' ? new Date(`${month}-28T10:00:00Z`) : null,
+        paidByUserId: status === 'PAID' ? admin.id : null,
+        paidAt: status === 'PAID' ? new Date(`${month}-28T16:30:00Z`) : null,
+      },
+      create: {
+        institutionId,
+        month,
+        status,
+        runByUserId: admin.id,
+        approvedByUserId: status !== 'DRAFT' ? admin.id : null,
+        approvedAt: status !== 'DRAFT' ? new Date(`${month}-28T10:00:00Z`) : null,
+        paidByUserId: status === 'PAID' ? admin.id : null,
+        paidAt: status === 'PAID' ? new Date(`${month}-28T16:30:00Z`) : null,
+      },
+    });
+
+    let grossMinor = 0;
+    let deductionsMinor = 0;
+    for (let i = 0; i < computed.length; i++) {
+      const { s, gross } = computed[i];
+      const lop = s.user.id === lopTarget ? (opts.lopForLowest as number) : 0;
+      const c = computeSalary(gross, month, lop);
+      grossMinor += c.grossMinor;
+      deductionsMinor += c.deductionsMinor;
+
+      const shouldBePaid = i < payCount && status !== 'DRAFT';
+      const existing = await db.payrollEntry.findUnique({
+        where: { payrollRunId_staffUserId: { payrollRunId: run.id, staffUserId: s.user.id } },
+      });
+      if (existing) {
+        await db.payrollEntry.update({
+          where: { id: existing.id },
+          data: {
+            employeeNo: s.employeeNo,
+            designation: s.designation,
+            departmentName: deptByStaff.get(s.user.id) ?? null,
+            bankAccountLast4: s.bankAccountLast4,
+            grossMinor: c.grossMinor,
+            deductionsMinor: c.deductionsMinor,
+            netMinor: c.netMinor,
+            lopDays: c.lopDays,
+            earningsJson: JSON.stringify(c.earnings),
+            deductionsJson: JSON.stringify(c.deductions),
+          },
+        });
+      } else {
+        await db.payrollEntry.create({
+          data: {
+            payrollRunId: run.id,
+            staffUserId: s.user.id,
+            employeeNo: s.employeeNo,
+            designation: s.designation,
+            departmentName: deptByStaff.get(s.user.id) ?? null,
+            bankAccountLast4: s.bankAccountLast4,
+            grossMinor: c.grossMinor,
+            deductionsMinor: c.deductionsMinor,
+            netMinor: c.netMinor,
+            lopDays: c.lopDays,
+            earningsJson: JSON.stringify(c.earnings),
+            deductionsJson: JSON.stringify(c.deductions),
+            status: shouldBePaid ? 'PAID' : 'PENDING',
+            paidAt: shouldBePaid ? new Date(`${month}-28T15:00:00Z`) : null,
+            paidByUserId: shouldBePaid ? admin.id : null,
+            paymentRef: shouldBePaid ? `UTR${month.replace('-', '')}${String(i + 1).padStart(4, '0')}` : null,
+          },
+        });
+      }
+    }
+
+    // A run's status and its entries must never disagree: the API only closes a
+    // run when nothing is left PENDING, so a seeded PAID run with a stray unpaid
+    // entry would be a state the desk itself considers impossible.
+    if (status === 'PAID') {
+      await db.payrollEntry.updateMany({
+        where: { payrollRunId: run.id, status: { not: 'PAID' } },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(`${month}-28T15:00:00Z`),
+          paidByUserId: admin.id,
+          paymentRef: `UTR${month.replace('-', '')}BACKFILL`,
+        },
+      });
+    }
+
+    await db.payrollRun.update({
+      where: { id: run.id },
+      data: { grossMinor, deductionsMinor, totalMinor: grossMinor - deductionsMinor },
+    });
+  }
+
+  // Three historic months, in the state a real desk is actually in: two closed,
+  // and the most recent one approved with the bottom of the sheet still unpaid —
+  // so "pay everyone left" and "pay this one person" both have something to do.
+  await syncPayrollRun('2026-07', 'PAID');
+  await syncPayrollRun('2026-08', 'PAID');
+  await syncPayrollRun('2026-09', 'APPROVED', { payCount: Math.max(1, payable.length - 5), lopForLowest: 2 });
   // Budget + expense (LABS)
   const budget = await db.budget.findFirst({ where: { institutionId, fiscalYear: '2025-26', category: 'LABS' } });
   let labBudget = budget;
@@ -907,7 +1059,8 @@ async function seedDomainE(institutionId: string): Promise<void> {
   });
 
   console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
-  console.log('  ✓ payroll DRAFT 2026-08 (₹60,000 net), LABS budget+expense PENDING, merit scholarship APPROVED');
+  console.log(`  ✓ salary scale on ${allStaff.length} staff · payroll 2026-07 PAID, 2026-08 PAID, 2026-09 APPROVED (part-paid)`);
+  console.log('  ✓ LABS budget+expense PENDING, merit scholarship APPROVED');
 }
 
 // ─────────────────────────────────────────────────────────────
