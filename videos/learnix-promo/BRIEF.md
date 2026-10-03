@@ -62,8 +62,14 @@ models · 43 schema files · 132 features · 14 backend modules.
   institutional reliability and a showy wipe would undercut it.
 - **Captured screens staged onto the timeline** as real frames, not rebuilt as HTML
   mockups. The screens are the evidence; recreating them would waste the strongest asset.
-- **No voiceover.** Music bed plus on-screen type. The concept depends on a held moment of
-  silence around the waiting beat, and narration would fill it. Reversible if wanted later.
+- **No voiceover, and no music.** Confirmed at the intent layer and reaffirmed at the storyboard
+  gate. The concept depends on held silence around the waiting beat, and narration would fill it.
+  The user chose silence over supplying an API key after it became clear that neither the music
+  library (needs `HEYGEN_API_KEY`) nor generated BGM (needs `GOOGLE_API_KEY` / `GEMINI_API_KEY`)
+  is reachable here, and there is no local music provider. The storyboard therefore carries
+  `music: none` and no `SCRIPT.md` — the canonical silent marker. Do not author a `SCRIPT.md`
+  later: adding one silently flips the project out of silent mode and starts a TTS step that has
+  no credential.
 - **Design spec source is Learnix's own tokens**, not a generic preset —
   `learnix/constants/theme.js` and `docs/ui/transport-design.md`. These are brand truth and
   outrank the remembered `blue-professional` preset per the documented resolution order.

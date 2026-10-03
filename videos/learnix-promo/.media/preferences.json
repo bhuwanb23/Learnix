@@ -35,6 +35,13 @@
         "learnix-promo"
       ],
       "updated_at": "2026-10-03T03:20:44.302Z"
+    },
+    "style_preset.product-launch-video": {
+      "value": "blue-professional",
+      "confirmed_in": [
+        "learnix-promo"
+      ],
+      "updated_at": "2026-10-03T03:33:10.364Z"
     }
   },
   "sightings": {}
