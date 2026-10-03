@@ -343,7 +343,8 @@ export async function getLedger(institutionId: string) {
 
   const byCategory = new Map<string, number>();
   for (const p of payments) {
-    if (p.status === 'CLEARED') {
+    // A reversed payment keeps its ledger row but is not money in the bank.
+    if (p.status === 'CLEARED' && !p.reversedAt) {
       byCategory.set(p.category, (byCategory.get(p.category) ?? 0) + p.amountMinor);
     }
   }
@@ -359,6 +360,8 @@ export async function getLedger(institutionId: string) {
       amountRupees: toRupees(p.amountMinor),
       method: p.method,
       status: p.status,
+      isReversed: !!p.reversedAt,
+      reversalReason: p.reversalReason,
       receiptNo: p.receipt?.receiptNo ?? null,
       paidAt: p.paidAt,
       createdAt: p.createdAt,

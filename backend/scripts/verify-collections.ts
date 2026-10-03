@@ -98,17 +98,21 @@ async function runCleanup() {
     await prisma.payment.deleteMany({ where: { id: { in: created.payments } } });
   }
   for (const s of dueSnaps) {
-    await prisma.feeDue.update({
-      where: { id: s.id },
-      data: {
-        amountMinor: s.amountMinor,
-        paidMinor: s.paidMinor,
-        status: s.status,
-        daysOverdue: s.daysOverdue,
-        lastPaymentAt: s.lastPaymentAt,
-        waivedReason: s.waivedReason,
-      },
-    });
+    // Some of the snapshotted dues are throwaway rows this run created and
+    // already deleted — skip them rather than failing the cleanup.
+    await prisma.feeDue
+      .update({
+        where: { id: s.id },
+        data: {
+          amountMinor: s.amountMinor,
+          paidMinor: s.paidMinor,
+          status: s.status,
+          daysOverdue: s.daysOverdue,
+          lastPaymentAt: s.lastPaymentAt,
+          waivedReason: s.waivedReason,
+        },
+      })
+      .catch(() => {});
   }
   if (created.notifications.length) {
     await prisma.notification.deleteMany({ where: { id: { in: created.notifications } } });
@@ -138,16 +142,16 @@ async function trackNewPayments(before: Set<string>) {
   }
   const notifs = await prisma.notification.findMany({
     where: { type: 'PAYMENT' },
-    select: { id: true, createdAt: true },
+    select: { id: true },
     orderBy: { createdAt: 'desc' },
-    take: now.length,
+    take: now.length * 2,
   });
   for (const n of notifs) created.notifications.push(n.id);
   const audits = await prisma.auditLog.findMany({
     where: { action: { in: ['collection.record', 'collection.reverse'] } },
     select: { id: true },
     orderBy: { createdAt: 'desc' },
-    take: now.length * 2,
+    take: now.length * 3,
   });
   for (const a of audits) created.audits.push(a.id);
 }
@@ -305,18 +309,34 @@ async function main(): Promise<void> {
   // A student with NO open dues: everything they hand over is an advance.
   // (Reusing `student` here would be wrong — they have other open dues, and
   // oldest-first auto-allocation would correctly spend the money on those.)
-  const cleanStudent = await prisma.studentProfile.create({
-    data: { userId: student.user.id, rollNo: `CLEAN-${Date.now()}`, institutionId: instId },
-  });
+  // A `StudentProfile` is 1:1 with its user, so these need their own throwaway
+  // users (not the seeded student). Tracked for deletion in the finally block.
+  const stamp = Date.now();
+  const makeStudent = async (tag: string) => {
+    const u = await prisma.user.create({
+      data: {
+        institutionId: instId,
+        email: `verify.${tag}.${stamp}@test.local`,
+        fullName: `Verify ${tag} Student`,
+        passwordHash: 'x',
+        roles: { create: { role: 'STUDENT' } },
+      },
+    });
+    const p = await prisma.studentProfile.create({
+      data: { userId: u.id, rollNo: `VER-${tag}-${stamp}`, institutionId: instId },
+    });
+    return { userId: u.id, profileId: p.id };
+  };
+  const cleanStudent = await makeStudent('CLEAN');
   let advanceId = '';
   let advanceRefNo = '';
-  let multiStudent: { id: string } | null = null;
+  let multiStudent: { userId: string; profileId: string } | null = null;
   try {
     const ids3 = new Set(
       (await prisma.payment.findMany({ where: { institutionId: instId }, select: { id: true } })).map((p) => p.id),
     );
     const advance = await recordCollection(instId, actorUserId, {
-      studentProfileId: cleanStudent.id,
+      studentProfileId: cleanStudent.profileId,
       category: 'MISC',
       amountMinor: 50000,
       method: 'CARD',
@@ -330,19 +350,16 @@ async function main(): Promise<void> {
     const advAlloc = await prisma.paymentAllocation.count({ where: { paymentId: advance.id } });
     eq('a student with no dues gets zero allocations', advAlloc, 0);
 
-    const advSt = await getStudentStatement(instId, { studentProfileId: cleanStudent.id });
+    const advSt = await getStudentStatement(instId, { studentProfileId: cleanStudent.profileId });
     eq('statement shows the advance, not a shortfall', advSt.position.outstandingRupees, 0);
     ok('and reports the money as unallocated', advSt.position.unallocatedRupees > 0, `(${advSt.position.unallocatedRupees})`);
 
     // Auto-allocation must genuinely go oldest-first when dues DO exist.
-    multiStudent = await prisma.studentProfile.create({
-      data: { userId: student.user.id, rollNo: `MULTI-${Date.now()}`, institutionId: instId },
-    });
+    multiStudent = await makeStudent('MULTI');
     const mk = async (title: string, amountMinor: number, dueDate: Date) => {
       const d = await prisma.feeDue.create({
-        data: { studentProfileId: multiStudent!.id, title, amountMinor, status: 'UNPAID', dueDate, daysOverdue: 0 },
+        data: { studentProfileId: multiStudent!.profileId, title, amountMinor, status: 'UNPAID', dueDate, daysOverdue: 0 },
       });
-      dueSnaps.push({ id: d.id, amountMinor: d.amountMinor, paidMinor: 0, status: 'UNPAID', daysOverdue: 0, lastPaymentAt: null, waivedReason: null });
       return d;
     };
     const now = Date.now();
@@ -352,7 +369,7 @@ async function main(): Promise<void> {
       (await prisma.payment.findMany({ where: { institutionId: instId }, select: { id: true } })).map((p) => p.id),
     );
     const spread = await recordCollection(instId, actorUserId, {
-      studentProfileId: multiStudent!.id, category: 'TUITION', amountMinor: 700000, method: 'CASH',
+      studentProfileId: multiStudent!.profileId, category: 'TUITION', amountMinor: 700000, method: 'CASH',
     });
     await trackNewPayments(ids4);
     const olderAfter = await prisma.feeDue.findUnique({ where: { id: older.id } });
@@ -362,11 +379,15 @@ async function main(): Promise<void> {
     eq('nothing is left unallocated when dues absorb it all', spread.unallocatedRupees, 0);
     await reverseCollection(instId, actorUserId, spread.id, 'Testing the spread rollback');
   } finally {
-    if (multiStudent) {
-      await prisma.feeDue.deleteMany({ where: { studentProfileId: multiStudent!.id } });
-      await prisma.studentProfile.delete({ where: { id: multiStudent.id } }).catch(() => {});
+    for (const s of [cleanStudent, multiStudent].filter(Boolean) as { userId: string; profileId: string }[]) {
+      // Reversal keeps its allocation rows (that is the point), and those rows
+      // are FK-bound to the dues — so unlink them before deleting anything.
+      await prisma.paymentAllocation.deleteMany({ where: { due: { studentProfileId: s.profileId } } });
+      await prisma.feeDue.deleteMany({ where: { studentProfileId: s.profileId } });
+      await prisma.studentProfile.delete({ where: { id: s.profileId } }).catch(() => {});
+      await prisma.userRole.deleteMany({ where: { userId: s.userId } });
+      await prisma.user.delete({ where: { id: s.userId } }).catch(() => {});
     }
-    await prisma.studentProfile.delete({ where: { id: cleanStudent.id } }).catch(() => {});
   }
 
   // ── 6. Reversal un-applies and reopens ────────────────────
@@ -547,8 +568,8 @@ async function main(): Promise<void> {
   ok('listDues returns the target due', !!listedDue);
   ok(
     'listDues balance = amount - paid, not the raw billed amount',
-    listedDue?.balanceRupees === rupees(listedDue!.amountRupees - listedDue!.paidRupees),
-    `(${listedDue?.balanceRupees} vs ₹${listedDue?.amountRupees} - ₹${listedDue?.paidRupees})`,
+    listedDue?.balanceRupees === listedDue!.amountRupees - listedDue!.paidRupees,
+    `(balance ${listedDue?.balanceRupees} vs amount ${listedDue?.amountRupees} - paid ${listedDue?.paidRupees})`,
   );
   eq('and the unwound due is UNPAID again', listedDue?.status, dueSnapshot.status);
 
@@ -589,18 +610,27 @@ async function main(): Promise<void> {
 
   // ── 13. Notification + audit ──────────────────────────────
   section('13. Notification and audit trail');
+  // Match on the specific payment, not just "the newest PAYMENT notification" —
+  // by now several collections and two reversals have gone out to this student.
   const notif = await prisma.notification.findFirst({
-    where: { recipientUserId: student.user.id, type: 'PAYMENT', title: { contains: 'Payment received' } },
-    orderBy: { createdAt: 'desc' },
+    where: {
+      recipientUserId: student.user.id,
+      type: 'PAYMENT',
+      title: { contains: 'Payment received' },
+      body: { contains: rec.receiptNo },
+    },
   });
   ok('the payer was notified of the collection', !!notif);
-  ok('the collection notification quotes the receipt number', !!notif?.body.includes(rec.receiptNo), notif?.body ?? '');
+  ok('the collection notification quotes the receipt number', !!notif, 'no notification naming this receipt');
   const revNotif = await prisma.notification.findFirst({
-    where: { recipientUserId: student.user.id, type: 'PAYMENT', title: { contains: 'reversed' } },
-    orderBy: { createdAt: 'desc' },
+    where: {
+      recipientUserId: student.user.id,
+      type: 'PAYMENT',
+      title: { contains: 'reversed' },
+      body: { contains: 'Cheque bounced at the bank' },
+    },
   });
-  ok('the payer was told about the reversal', !!revNotif);
-  ok('the reversal notification explains why', !!revNotif?.body.includes('Cheque bounced at the bank'), revNotif?.body ?? '');
+  ok('the payer was told about the reversal, and why', !!revNotif, 'no reversal notification with this reason');
   const audit = await prisma.auditLog.findFirst({
     where: { entityId: rec.id, action: 'collection.record' },
   });
@@ -662,3 +692,12 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+
+// Piping this script into `head` sends SIGPIPE, which kills the process
+// mid-run and strands half-written rows in the dev DB. Refuse to be piped.
+process.stdout.on('error', (e: NodeJS.ErrnoException) => {
+  if (e.code === 'EPIPE') {
+    console.error('\nverify-collections: stdout closed early (piped to head?). The DB was NOT cleaned up — re-run without piping.');
+    process.exit(2);
+  }
+});
