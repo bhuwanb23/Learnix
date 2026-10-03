@@ -1,0 +1,39 @@
+// Domain F3 — Library settings: per-institution circulation policy + timings.
+// Docs: 07-library-staff.md §3.8
+//
+// Why this exists: the rules the desk enforces (loan length, book cap, renewal
+// cap, fine rate, fine ceiling) were previously hardcoded constants in
+// circulation.service.ts. A "Circulation Rules" screen that edits nothing is a
+// lie, so the policy now lives in the database and the services read it.
+//
+// One row per institution, created on first read with defaults. Every column has
+// a schema default matching the old constant, so a fresh install behaves exactly
+// as before while remaining editable.
+
+model LibrarySettings {
+  id            String   @id @default(cuid())
+  institutionId String   @unique
+
+  // ── Circulation policy ────────────────────────────────
+  loanPeriodDays        Int @default(14) // default loan length issued at the desk
+  maxActiveLoans        Int @default(4) // books a student may hold at once
+  maxRenewalsPerLoan    Int @default(2) // renewals before a loan is final
+  finePerDayPaise       Int @default(500) // ₹5/day — integer paise, never float
+  maxOutstandingFinePaise Int @default(20000) // ₹200 — blocks issuing until cleared
+
+  // ── Notifications policy ─────────────────────────────
+  dueRemindersEnabled Boolean @default(true) // count due/overdue students on the reminder screen
+  autoFineEnabled     Boolean @default(true) // raise a fine automatically on an overdue return
+  announceNewArrivals Boolean @default(false) // broadcast to all students when a book is added
+
+  // ── Timings ───────────────────────────────────────────
+  openTime     String @default("08:00") // 24h HH:mm, local campus time
+  closeTime    String @default("19:00")
+  closedDays   String @default("SUNDAY") // comma-separated, e.g. "SUNDAY" or "SUNDAY,SATURDAY"
+
+  updatedAt      DateTime @updatedAt
+  updatedByUserId String? // scalar → users.id, last editor
+  createdAt      DateTime @default(now())
+
+  @@map("library_settings")
+}

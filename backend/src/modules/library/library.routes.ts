@@ -25,6 +25,7 @@ import {
   recordAccessSchema,
   digitalQuerySchema,
   libraryBroadcastSchema,
+  updateSettingsSchema,
   catalogQuerySchema,
 } from './library.schemas.js';
 import * as service from './library.service.js';
@@ -32,6 +33,8 @@ import * as circulation from './circulation.service.js';
 import * as digital from './digital.service.js';
 import * as fines from './fines.service.js';
 import * as notifications from './notifications.service.js';
+import * as settings from './settings.service.js';
+import * as profile from './profile.service.js';
 
 // Library Staff module — mounted at /api/v1/library (docs/users/07 §4)
 const router = Router();
@@ -519,7 +522,66 @@ router.post(
 router.get(
   '/profile',
   wrap(async (req, res) => {
-    res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
+    res.json({
+      data: await profile.getProfile(req.auth!.userId, req.auth!.institutionId),
+    });
+  }),
+);
+
+// ── L-08 Settings, staff directory, permissions ──────────────
+// Literal paths (/settings, /staff) are registered before /staff/:id.
+router.get(
+  '/settings',
+  wrap(async (req, res) => {
+    res.json({ data: await settings.getSettings(req.auth!.institutionId) });
+  }),
+);
+
+router.put(
+  '/settings',
+  validate(updateSettingsSchema),
+  wrap(async (req, res) => {
+    // The client speaks rupees; the service and the DB speak paise (ADR-04).
+    const { finePerDayRupees, maxOutstandingFineRupees, ...rest } = req.body;
+    const patch: Record<string, unknown> = { ...rest };
+    if (finePerDayRupees !== undefined) patch.finePerDayPaise = finePerDayRupees * 100;
+    if (maxOutstandingFineRupees !== undefined) {
+      patch.maxOutstandingFinePaise = maxOutstandingFineRupees * 100;
+    }
+
+    res.json({
+      data: await settings.updateSettings(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        patch,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/staff',
+  wrap(async (req, res) => {
+    res.json({ data: await profile.listLibraryStaff(req.auth!.institutionId) });
+  }),
+);
+
+router.get(
+  '/staff/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await profile.getStaffMember(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.get(
+  '/permissions',
+  wrap(async (req, res) => {
+    res.json({
+      data: await profile.getLibraryPermissions(req.auth!.userId, req.auth!.institutionId),
+    });
   }),
 );
 

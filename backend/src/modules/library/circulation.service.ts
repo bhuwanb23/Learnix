@@ -6,17 +6,26 @@
 // before every read that filters on status. Without it, overdue counts and the
 // OVERDUE_MEMBERS broadcast audience would always read zero.
 //
-// Money: integer paise. Fine rate ₹5/day (500 paise). Tenant-scoped by institutionId.
+// Money: integer paise. Tenant-scoped by institutionId.
+//
+// Policy: the borrowing rules live in `LibrarySettings` (settings.service.ts) and
+// are read through `loadPolicy` — NOT hardcoded here. The exported constants below
+// are the DEFAULTS used when an institution has never opened Settings, so nothing
+// changes for a fresh install, but editing the policy genuinely moves the limits.
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable, badRequest } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { loadPolicy, DEFAULT_POLICY, type LibraryPolicy } from './settings.service.js';
 
-const FINE_PER_DAY_PAISE = 500; // ₹5/day
 const toRupees = (paise: number) => Math.round(paise / 100);
 
-export const MAX_RENEWALS = 2; // per loan
-export const MAX_ACTIVE_LOANS = 4; // per student
-export const MAX_TOTAL_FINE_PAISE = 20000; // ₹200 — blocks issuing until cleared/waived
+/** Fallback constants — identical to DEFAULT_POLICY, kept for import compatibility. */
+export const MAX_RENEWALS = DEFAULT_POLICY.maxRenewalsPerLoan;
+export const MAX_ACTIVE_LOANS = DEFAULT_POLICY.maxActiveLoans;
+export const MAX_TOTAL_FINE_PAISE = DEFAULT_POLICY.maxOutstandingFinePaise;
+
+/** Policy resolved for one request; threaded through instead of a module global. */
+export type Policy = Awaited<ReturnType<typeof loadPolicy>>;
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 
@@ -64,11 +73,15 @@ type IssueWithRefs = {
 };
 
 /** Shape one issue row for the client, with derived loan health. */
-function shapeLoan(issue: IssueWithRefs, now = new Date()) {
+function shapeLoan(
+  issue: IssueWithRefs,
+  now = new Date(),
+  policy: LibraryPolicy = DEFAULT_POLICY,
+) {
   const overdue = issue.status === 'OVERDUE' || (!issue.returnDate && issue.dueDate < now);
   const daysOverdue = overdue ? daysBetween(issue.dueDate, now) : 0;
   const daysLeft = issue.returnDate ? null : daysBetween(now, issue.dueDate);
-  const renewalsLeft = Math.max(0, MAX_RENEWALS - issue.renewCount);
+  const renewalsLeft = Math.max(0, policy.maxRenewalsPerLoan - issue.renewCount);
 
   return {
     id: issue.id,
@@ -119,6 +132,7 @@ export type LoanFilter = {
 };
 
 export async function listLoans(institutionId: string, filter: LoanFilter) {
+  const policy = await loadPolicy(institutionId);
   await syncOverdueStatus(institutionId);
   const now = new Date();
 
@@ -160,7 +174,7 @@ export async function listLoans(institutionId: string, filter: LoanFilter) {
     where: { book: { institutionId }, returnDate: null, status: { in: ['ISSUED', 'OVERDUE'] } },
     include: loanInclude,
   });
-  const shapedAll = allActive.map((i) => shapeLoan(i, now));
+  const shapedAll = allActive.map((i) => shapeLoan(i, now, policy));
 
   const issued = shapedAll.filter((l) => !l.isOverdue).length;
   const overdue = shapedAll.filter((l) => l.isOverdue);
@@ -176,12 +190,13 @@ export async function listLoans(institutionId: string, filter: LoanFilter) {
       dueToday: dueToday.length,
       renewalsLeft: shapedAll.reduce((s, l) => s + l.renewalsLeft, 0),
     },
-    loans: issues.map((i) => shapeLoan(i, now)),
+    loans: issues.map((i) => shapeLoan(i, now, policy)),
     total: issues.length,
   };
 }
 
 export async function getLoanDetail(institutionId: string, issueId: string) {
+  const policy = await loadPolicy(institutionId);
   await syncOverdueStatus(institutionId);
   const issue = await prisma.bookIssue.findFirst({
     where: { id: issueId, book: { institutionId } },
@@ -193,7 +208,7 @@ export async function getLoanDetail(institutionId: string, issueId: string) {
   });
   if (!issue) throw notFound('Loan record not found');
 
-  const loan = shapeLoan(issue as unknown as IssueWithRefs);
+  const loan = shapeLoan(issue as unknown as IssueWithRefs, new Date(), policy);
   const now = new Date();
 
   // Timeline entries make the loan auditable at a glance for the desk.
@@ -213,7 +228,7 @@ export async function getLoanDetail(institutionId: string, issueId: string) {
 
   // Projected fine if returned right now — lets staff warn the student upfront.
   const projectedFineRupees = !issue.returnDate && loan.isOverdue
-    ? toRupees(Math.max(0, loan.daysOverdue) * FINE_PER_DAY_PAISE)
+    ? toRupees(Math.max(0, loan.daysOverdue) * policy.finePerDayPaise)
     : 0;
 
   return {
@@ -222,13 +237,13 @@ export async function getLoanDetail(institutionId: string, issueId: string) {
     canRenew:
       !issue.returnDate &&
       !loan.isOverdue &&
-      issue.renewCount < MAX_RENEWALS,
+      issue.renewCount < policy.maxRenewalsPerLoan,
     renewBlockReason: issue.returnDate
       ? 'Loan is already returned'
       : loan.isOverdue
         ? 'Overdue loans cannot be renewed'
-        : issue.renewCount >= MAX_RENEWALS
-          ? `Maximum ${MAX_RENEWALS} renewals reached`
+        : issue.renewCount >= policy.maxRenewalsPerLoan
+          ? `Maximum ${policy.maxRenewalsPerLoan} renewals reached`
           : null,
     timeline: timeline.sort((a, b) => a.at.getTime() - b.at.getTime()),
     finePayments: (issue.finePayments ?? []).map((p) => ({
@@ -248,6 +263,7 @@ export async function getStudentBorrowingProfile(
   institutionId: string,
   studentProfileId: string,
 ) {
+  const policy = await loadPolicy(institutionId);
   await syncOverdueStatus(institutionId);
   const now = new Date();
 
@@ -280,7 +296,7 @@ export async function getStudentBorrowingProfile(
     }),
   ]);
 
-  const active = activeIssues.map((i) => shapeLoan(i, now));
+  const active = activeIssues.map((i) => shapeLoan(i, now, policy));
   const pendingFines = fines.filter((f) => f.status === 'PENDING');
   const pendingMinor = pendingFines.reduce((s, f) => s + f.amountMinor, 0);
 
@@ -289,16 +305,16 @@ export async function getStudentBorrowingProfile(
   if (student.status !== 'ACTIVE') {
     blockers.push({ code: 'INACTIVE', message: `Profile status is ${student.status}` });
   }
-  if (active.length >= MAX_ACTIVE_LOANS) {
+  if (active.length >= policy.maxActiveLoans) {
     blockers.push({
       code: 'LOAN_LIMIT',
-      message: `Already holds ${active.length} of ${MAX_ACTIVE_LOANS} allowed books`,
+      message: `Already holds ${active.length} of ${policy.maxActiveLoans} allowed books`,
     });
   }
-  if (pendingMinor > MAX_TOTAL_FINE_PAISE) {
+  if (pendingMinor > policy.maxOutstandingFinePaise) {
     blockers.push({
       code: 'FINE_BLOCK',
-      message: `Unpaid fines of ₹${toRupees(pendingMinor)} exceed the ₹${toRupees(MAX_TOTAL_FINE_PAISE)} limit`,
+      message: `Unpaid fines of ₹${toRupees(pendingMinor)} exceed the ₹${toRupees(policy.maxOutstandingFinePaise)} limit`,
     });
   }
   if (active.some((l) => l.isOverdue)) {
@@ -321,9 +337,10 @@ export async function getStudentBorrowingProfile(
       status: student.status,
     },
     limits: {
-      maxActiveLoans: MAX_ACTIVE_LOANS,
-      maxTotalFineRupees: toRupees(MAX_TOTAL_FINE_PAISE),
-      maxRenewalsPerLoan: MAX_RENEWALS,
+      maxActiveLoans: policy.maxActiveLoans,
+      maxTotalFineRupees: toRupees(policy.maxOutstandingFinePaise),
+      maxRenewalsPerLoan: policy.maxRenewalsPerLoan,
+      loanPeriodDays: policy.loanPeriodDays,
     },
     stats: {
       activeLoans: active.length,
@@ -456,8 +473,9 @@ export async function listLoanHistory(
 export async function issueBook(
   institutionId: string,
   actorUserId: string,
-  input: { rollNo: string; bookId: string; dueDays: number },
+  input: { rollNo: string; bookId: string; dueDays?: number },
 ) {
+  const policy = await loadPolicy(institutionId);
   await syncOverdueStatus(institutionId);
 
   const studentProfile = await prisma.studentProfile.findFirst({
@@ -486,9 +504,9 @@ export async function issueBook(
   const activeCount = await prisma.bookIssue.count({
     where: { studentProfileId: studentProfile.id, returnDate: null, status: { in: ['ISSUED', 'OVERDUE'] } },
   });
-  if (activeCount >= MAX_ACTIVE_LOANS) {
+  if (activeCount >= policy.maxActiveLoans) {
     throw unprocessable(
-      `${studentProfile.user.fullName} already holds ${activeCount} books (limit ${MAX_ACTIVE_LOANS}). Return one first.`,
+      `${studentProfile.user.fullName} already holds ${activeCount} books (limit ${policy.maxActiveLoans}). Return one first.`,
     );
   }
 
@@ -497,14 +515,16 @@ export async function issueBook(
     _sum: { amountMinor: true },
   });
   const pendingMinor = pendingFine._sum.amountMinor ?? 0;
-  if (pendingMinor > MAX_TOTAL_FINE_PAISE) {
+  if (pendingMinor > policy.maxOutstandingFinePaise) {
     throw unprocessable(
-      `${studentProfile.user.fullName} has unpaid fines of ₹${toRupees(pendingMinor)} (limit ₹${toRupees(MAX_TOTAL_FINE_PAISE)}). Collect or waive before issuing.`,
+      `${studentProfile.user.fullName} has unpaid fines of ₹${toRupees(pendingMinor)} (limit ₹${toRupees(policy.maxOutstandingFinePaise)}). Collect or waive before issuing.`,
     );
   }
 
+  // No explicit period from the desk → the library's configured loan length.
+  const dueDays = input.dueDays ?? policy.loanPeriodDays;
   const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + input.dueDays);
+  dueDate.setDate(dueDate.getDate() + dueDays);
 
   const issue = await prisma.bookIssue.create({
     data: {
@@ -555,7 +575,8 @@ export async function issueBook(
     dueDate: issue.dueDate,
     status: issue.status,
     renewCount: 0,
-    renewalsLeft: MAX_RENEWALS,
+    renewalsLeft: policy.maxRenewalsPerLoan,
+    dueDays,
     copiesRemaining: book.availableCopies - 1,
   };
 }
@@ -567,8 +588,9 @@ export async function renewLoan(
   issueId: string,
   input: { days?: number },
 ) {
+  const policy = await loadPolicy(institutionId);
   await syncOverdueStatus(institutionId);
-  const days = input.days ?? 14;
+  const days = input.days ?? policy.loanPeriodDays;
   if (days < 1 || days > 60) throw badRequest('Renewal period must be between 1 and 60 days');
 
   const issue = await prisma.bookIssue.findFirst({
@@ -583,8 +605,8 @@ export async function renewLoan(
   if (issue.status === 'OVERDUE' || issue.dueDate < new Date()) {
     throw unprocessable('Overdue loans cannot be renewed. Collect the book instead.');
   }
-  if (issue.renewCount >= MAX_RENEWALS) {
-    throw unprocessable(`Maximum ${MAX_RENEWALS} renewals reached for this loan`);
+  if (issue.renewCount >= policy.maxRenewalsPerLoan) {
+    throw unprocessable(`Maximum ${policy.maxRenewalsPerLoan} renewals reached for this loan`);
   }
 
   // Extend from the current due date, never from today, so renewals add up predictably.
@@ -628,7 +650,7 @@ export async function renewLoan(
     dueDate: updated.dueDate,
     previousDueDate: issue.dueDate,
     renewCount: updated.renewCount,
-    renewalsLeft: Math.max(0, MAX_RENEWALS - updated.renewCount),
+    renewalsLeft: Math.max(0, policy.maxRenewalsPerLoan - updated.renewCount),
   };
 }
 
@@ -638,6 +660,7 @@ export async function returnBook(
   actorUserId: string,
   issueId: string,
 ) {
+  const policy = await loadPolicy(institutionId);
   await syncOverdueStatus(institutionId);
   const issue = await prisma.bookIssue.findFirst({
     where: { id: issueId, book: { institutionId } },
@@ -662,25 +685,32 @@ export async function returnBook(
     data: { availableCopies: { increment: 1 } },
   });
 
+  // autoFineEnabled off means the desk raises overdue fines by hand — the return
+  // still records lateness, it just does not create a Fine row behind their back.
   let fine = null;
+  let fineSkipped = false;
   if (isOverdue) {
-    const daysOverdue = daysBetween(issue.dueDate, now);
-    const amountMinor = daysOverdue * FINE_PER_DAY_PAISE;
+    if (!policy.autoFineEnabled) {
+      fineSkipped = true;
+    } else {
+      const daysOverdue = daysBetween(issue.dueDate, now);
+      const amountMinor = daysOverdue * policy.finePerDayPaise;
 
-    fine = await prisma.fine.create({
-      data: { bookIssueId: issue.id, amountMinor, daysOverdue, status: 'PENDING' },
-    });
+      fine = await prisma.fine.create({
+        data: { bookIssueId: issue.id, amountMinor, daysOverdue, status: 'PENDING' },
+      });
 
-    await prisma.notification.create({
-      data: {
-        institutionId,
-        recipientUserId: issue.studentProfile.userId,
-        type: 'FINE',
-        title: `Overdue fine: ${issue.book.title}`,
-        body: `You returned "${issue.book.title}" ${daysOverdue} day(s) overdue. Fine: ₹${toRupees(amountMinor)}.`,
-        sourceModule: 'library',
-      },
-    });
+      await prisma.notification.create({
+        data: {
+          institutionId,
+          recipientUserId: issue.studentProfile.userId,
+          type: 'FINE',
+          title: `Overdue fine: ${issue.book.title}`,
+          body: `You returned "${issue.book.title}" ${daysOverdue} day(s) overdue. Fine: ₹${toRupees(amountMinor)}.`,
+          sourceModule: 'library',
+        },
+      });
+    }
   }
 
   await writeAudit({
@@ -703,8 +733,11 @@ export async function returnBook(
     student: issue.studentProfile.user.fullName,
     returnDate: now,
     wasOverdue: isOverdue,
+    daysOverdue: isOverdue ? daysBetween(issue.dueDate, now) : 0,
     daysKept: daysBetween(issue.issueDate, now),
     copiesAvailable: updatedBook.availableCopies,
+    autoFineEnabled: policy.autoFineEnabled,
+    fineSkipped,
     fine: fine
       ? { id: fine.id, amountRupees: toRupees(fine.amountMinor), daysOverdue: fine.daysOverdue }
       : null,

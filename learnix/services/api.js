@@ -313,6 +313,33 @@ export const libraryApi = {
   broadcastAudiences: () => api.get('/library/broadcasts/audiences'),
   sendBroadcast: (payload) => api.post('/library/broadcasts', payload),
   profile: () => api.get('/library/profile'),
+  librarySettings: () => api.get('/library/settings'),
+  saveLibrarySettings: (payload) => api.put('/library/settings', payload),
+  libraryStaff: () => api.get('/library/staff'),
+  libraryStaffMember: (id) => api.get(`/library/staff/${id}`),
+  libraryPermissions: () => api.get('/library/permissions'),
+};
+
+// ── Auth endpoints shared by every role app (docs/users/03-admin §3.15) ──
+export const authApi = {
+  me: () => api.get('/auth/me'),
+  changePassword: (currentPassword, newPassword) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }),
+  logout: async () => {
+    // Revoke the refresh token server-side so it cannot be replayed, then drop
+    // local credentials. A failure here must still clear the device.
+    const refreshToken = await AsyncStorage.getItem('learnix.refreshToken');
+    if (refreshToken) {
+      try {
+        await api.post('/auth/logout', { refreshToken });
+      } catch {
+        // Token may already be expired — local sign-out proceeds regardless.
+      }
+    }
+    await AsyncStorage.removeItem('learnix.refreshToken');
+    accessToken = null;
+    return { ok: true };
+  },
 };
 
 // ── Student endpoints (docs/users/01 §4) ──

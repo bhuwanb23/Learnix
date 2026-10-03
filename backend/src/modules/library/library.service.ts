@@ -4,6 +4,8 @@ import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { syncOverdueStatus } from './circulation.service.js';
+import { loadPolicy } from './settings.service.js';
+import { createBroadcast } from './notifications.service.js';
 
 
 // ── L-01 Dashboard ──────────────────────────────────────────
@@ -232,12 +234,28 @@ export async function addBook(
     after: { title: book.title, totalCopies: book.totalCopies },
   });
 
+  // announceNewArrivals is a real policy: when on, adding a title sends the
+  // whole student body an in-app notice. Off by default — a librarian adding a
+  // replacement copy should not spam 200 students.
+  const policy = await loadPolicy(institutionId);
+  let announcement: { id: string; recipients: number } | null = null;
+  if (policy.announceNewArrivals) {
+    const where = book.author ? `"${book.title}" by ${book.author}` : `"${book.title}"`;
+    const sent = await createBroadcast(institutionId, actorUserId, {
+      audience: 'ALL_STUDENTS',
+      title: `New arrival: ${book.title}`,
+      body: `${where} is now on the shelves (${book.totalCopies} cop${book.totalCopies === 1 ? 'y' : 'ies'}). Browse the Catalog to find it.`,
+    });
+    announcement = { id: sent.id, recipients: sent.recipients };
+  }
+
   return {
     id: book.id,
     title: book.title,
     author: book.author,
     totalCopies: book.totalCopies,
     availableCopies: book.availableCopies,
+    announcement,
   };
 }
 
@@ -376,35 +394,4 @@ export async function decideRequest(
   });
 
   return { id: request.id, status: newStatus, title: request.title };
-}
-
-export async function getProfile(userId: string, institutionId: string) {
-  const user = await prisma.user.findFirst({
-    where: { id: userId, institutionId },
-    include: {
-      roles: true,
-      staffProfile: { select: { designation: true, employeeNo: true } },
-    },
-  });
-  if (!user) throw notFound('User not found');
-
-  const [totalBooks, issuedBooks, activeMembers] = await Promise.all([
-    prisma.book.aggregate({ where: { institutionId }, _sum: { totalCopies: true } }),
-    prisma.bookIssue.count({ where: { book: { institutionId }, status: { in: ['ISSUED', 'OVERDUE'] } } }),
-    prisma.studentProfile.count({ where: { user: { institutionId, deletedAt: null } } }),
-  ]);
-
-  return {
-    id: user.id,
-    fullName: user.fullName,
-    email: user.email,
-    roles: user.roles.map((r) => r.role),
-    designation: user.staffProfile?.designation ?? null,
-    employeeNo: user.staffProfile?.employeeNo ?? null,
-    stats: {
-      totalBooks: totalBooks._sum.totalCopies ?? 0,
-      issuedBooks,
-      activeMembers,
-    },
-  };
 }

@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 // Library Staff module request schemas (docs/users/07 §4)
 
+const DAYS = [
+  'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY',
+  'FRIDAY', 'SATURDAY', 'SUNDAY',
+] as const;
+
 export const idParamSchema = z.object({
   id: z.string().min(1).max(64),
 });
@@ -29,7 +34,9 @@ export const updateBookSchema = z.object({
 export const issueBookSchema = z.object({
   rollNo: z.string().trim().min(2).max(40),
   bookId: z.string().min(1).max(64),
-  dueDays: z.number().int().min(1).max(90).default(14),
+  // Optional: when omitted the institution's configured loanPeriodDays applies,
+  // so changing the policy in Settings actually moves the default loan length.
+  dueDays: z.number().int().min(1).max(90).optional(),
 });
 
 export const returnBookSchema = z.object({
@@ -37,7 +44,8 @@ export const returnBookSchema = z.object({
 });
 
 export const renewLoanSchema = z.object({
-  days: z.number().int().min(1).max(60).default(14),
+  // Optional for the same reason as issueBookSchema.dueDays.
+  days: z.number().int().min(1).max(60).optional(),
 });
 
 // L-03 Circulation — loan queries
@@ -143,6 +151,24 @@ export const libraryBroadcastSchema = z.object({
   title: z.string().trim().min(2).max(120),
   body: z.string().trim().min(2).max(2000),
 });
+
+// L-08 Library settings — circulation policy, timings, notification preferences.
+// Every field optional: the screen sends a full form, but a partial PATCH is fine.
+export const updateSettingsSchema = z
+  .object({
+    loanPeriodDays: z.number().int().min(1).max(90).optional(),
+    maxActiveLoans: z.number().int().min(1).max(20).optional(),
+    maxRenewalsPerLoan: z.number().int().min(0).max(50).optional(),
+    finePerDayRupees: z.number().int().min(0).max(500).optional(),
+    maxOutstandingFineRupees: z.number().int().min(0).max(100000).optional(),
+    dueRemindersEnabled: z.boolean().optional(),
+    autoFineEnabled: z.boolean().optional(),
+    announceNewArrivals: z.boolean().optional(),
+    openTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Use HH:MM in 24-hour form').optional(),
+    closeTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Use HH:MM in 24-hour form').optional(),
+    closedDays: z.array(z.enum(DAYS)).max(7).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'No settings supplied' });
 
 // Catalog query
 export const catalogQuerySchema = z.object({

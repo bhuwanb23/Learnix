@@ -14,6 +14,7 @@ import { prisma } from '../../db/prisma.js';
 import { notFound, badRequest, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { syncOverdueStatus } from './circulation.service.js';
+import { loadPolicy } from './settings.service.js';
 
 export const AUDIENCES = ['ALL_STUDENTS', 'BORROWERS', 'OVERDUE_MEMBERS'] as const;
 export type Audience = (typeof AUDIENCES)[number];
@@ -519,7 +520,10 @@ export async function createBroadcast(
  * endpoint makes the policy visible so the librarian can see coverage.
  */
 export async function getReminderSchedule(institutionId: string) {
-  const insights = await getAudienceInsights(institutionId);
+  const [insights, policy] = await Promise.all([
+    getAudienceInsights(institutionId),
+    loadPolicy(institutionId),
+  ]);
   const now = new Date();
 
   const map: Record<string, number> = {
@@ -542,11 +546,20 @@ export async function getReminderSchedule(institutionId: string) {
 
   return {
     automationEnabled: false,
-    stages,
-    totalReachable: stages.reduce((sum, s) => sum + s.matchedNow, 0),
+    // The librarian can switch reminder counting off in Settings; say so here
+    // rather than silently reporting coverage for a policy that is switched off.
+    remindersEnabled: policy.dueRemindersEnabled,
+    stages: policy.dueRemindersEnabled
+      ? stages
+      : stages.map((s) => ({ ...s, matchedNow: 0 })),
+    totalReachable: policy.dueRemindersEnabled
+      ? stages.reduce((sum, s) => sum + s.matchedNow, 0)
+      : 0,
     lastRunAt: null,
     nextRunAt: null,
     checkedAt: now,
-    note: 'Reminder delivery runs on a schedule worker. Until that is enabled, broadcast manually to reach these students.',
+    note: policy.dueRemindersEnabled
+      ? 'Reminder delivery runs on a schedule worker. Until that is enabled, broadcast manually to reach these students.'
+      : 'Due reminders are switched off in Library Settings, so no stage is counted. Turn them back on in Settings.',
   };
 }

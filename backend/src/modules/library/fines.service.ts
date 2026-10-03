@@ -13,8 +13,7 @@ import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable, badRequest } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { syncOverdueStatus } from './circulation.service.js';
-
-const FINE_PER_DAY_PAISE = 500;
+import { loadPolicy } from './settings.service.js';
 const toRupees = (paise: number) => Math.round(paise / 100);
 
 export const COLLECTION_METHODS = ['UPI', 'NET_BANKING', 'CARD', 'CASH'] as const;
@@ -203,12 +202,17 @@ export async function getFineDetail(institutionId: string, fineId: string) {
     .filter((s) => s.id !== fine.id)
     .map(shapeFine);
 
-  // Rate breakdown so the amount is auditable on screen.
+  // Rate breakdown so the amount is auditable on screen. `computedRupees` uses
+  // TODAY's configured rate; if the librarian changed it after the return, the
+  // charged amount stands and `rateChangedSinceCharge` says so out loud.
+  const policy = await loadPolicy(institutionId);
+  const computedRupees = toRupees(fine.daysOverdue * policy.finePerDayPaise);
   const breakdown = {
-    ratePerDayRupees: toRupees(FINE_PER_DAY_PAISE),
+    ratePerDayRupees: toRupees(policy.finePerDayPaise),
     daysOverdue: fine.daysOverdue,
-    computedRupees: toRupees(fine.daysOverdue * FINE_PER_DAY_PAISE),
+    computedRupees,
     chargedRupees: shaped.amountRupees,
+    rateChangedSinceCharge: computedRupees !== shaped.amountRupees,
   };
 
   return {
