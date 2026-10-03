@@ -41,9 +41,11 @@ Book purchase requests from students (student, book, reason, status). Actions: *
 **Entity `book_request`**: id, studentId, book, reason, status (Pending/Approved/Rejected/Procured).
 
 ### 3.6 Digital Library (module)
-E-resources catalog (title, type PDF/E-book/Journal, subject, license, access count). Actions: **Add Resource**, **Grant Access** (per program), usage stats.
+E-resources catalog (title, type PDF/E-book/Journal, subject, publisher, license, external link, access count). Actions: **Add Resource**, **Edit**, **Grant Access** (per program *or* batch), **Revoke**, **Archive**, usage stats.
 
-**Entity `digital_resource`**: id, title, type, subject, license, accesses.
+**Entity `digital_resource`**: id, title, type, subject, publisher, license, externalUrl, description, status (ACTIVE | ARCHIVED), accesses. `digital_resource_accesses` is the per-open log; `accessCount` is the denormalized sum, re-aggregated inside `recordAccess()` so the two cannot drift.
+
+> A resource with **no grants is open access** (every student may read it). Grants narrow that to specific programs or batches. `deleteDigitalResource` archives rather than deletes so access history survives.
 
 ### 3.7 Notifications
 Inbox (due/overdue/request/resource types) + Broadcast tab (audience: All Students / Borrowers / Overdue Members → due-date reminders, new arrivals, extended hours).
@@ -102,8 +104,16 @@ at `/api/v1/library` (role gate: `LIBRARY` or `ADMIN`).
 - `POST /api/v1/library/fines/:id/waive` — waive fine (audited)
 - `GET /api/v1/library/requests` — book purchase requests
 - `POST /api/v1/library/requests/:id/decide` — approve/reject (creates procurement on approve)
-- `GET /api/v1/library/digital` — digital resources with access grants
+- `GET /api/v1/library/digital` — digital resources with search + `type` / `status` / `audience` filters and `sort`
+- `GET /api/v1/library/digital/:id` — resource detail with resolved audiences and usage stats
 - `POST /api/v1/library/digital` — add digital resource
+- `PUT /api/v1/library/digital/:id` — update resource (including archive/restore)
+- `DELETE /api/v1/library/digital/:id` — archive a resource (history preserved)
+- `POST /api/v1/library/digital/:id/grant-access` — grant to a program **or** batch
+- `DELETE /api/v1/library/digital/:id/grants/:grantId` — revoke a grant
+- `GET /api/v1/library/digital/audiences` — programs and batches for the grant picker
+- `POST /api/v1/library/digital/:id/access` — record an access (increments `accessCount`)
+- `GET /api/v1/library/digital/usage` — usage rollup by type, subject and top resources
 - `POST /api/v1/library/digital/:id/grant-access` — grant access to program/batch
 - `GET /api/v1/library/notifications` — inbox
 - `POST /api/v1/library/notifications/read-all` — mark all read

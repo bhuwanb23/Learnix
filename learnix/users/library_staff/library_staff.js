@@ -22,6 +22,12 @@ import LibraryProfile from './pages/profile/profile';
 // Import feature modules (opened from dashboard hub)
 import RequestsModule from './pages/requests/requests';
 import DigitalLibraryModule from './pages/digital_library/digital_library';
+
+// Digital library sub-pages (pages/digital_library/*)
+import DigitalResourceDetail from './pages/digital_library/resource_detail/resource_detail';
+import DigitalResourceForm from './pages/digital_library/resource_form/resource_form';
+import DigitalAccessGrants from './pages/digital_library/access_grants/access_grants';
+import DigitalUsageReport from './pages/digital_library/digital_usage/digital_usage';
 import NotificationsScreen from './pages/notifications/notifications';
 
 // Circulation sub-pages (pages/circulation/*)
@@ -40,6 +46,12 @@ import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 const FEATURE_MODULES = {
   Requests: { title: 'Book Requests', icon: 'cart-outline', component: RequestsModule },
   DigitalLibrary: { title: 'Digital Library', icon: 'cloud-outline', component: DigitalLibraryModule },
+
+  // Digital library sub-pages
+  ResourceDetail: { title: 'Resource Detail', icon: 'document-text-outline', component: DigitalResourceDetail },
+  ResourceForm: { title: 'Add Resource', icon: 'add-circle-outline', component: DigitalResourceForm },
+  AccessGrants: { title: 'Access Grants', icon: 'key-outline', component: DigitalAccessGrants },
+  DigitalUsage: { title: 'Usage Report', icon: 'stats-chart-outline', component: DigitalUsageReport },
   Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsScreen },
 
   // Circulation sub-pages
@@ -84,6 +96,10 @@ export default function LibraryStaffScreen({ navigation }) {
 
   const getHeaderTitle = () => {
     if (currentScreen === 'main') return TAB_TITLES[activeTab];
+    // The resource form doubles as add and edit — title follows its mode.
+    if (currentScreen === 'ResourceForm') {
+      return routeParams?.resourceId ? 'Edit Resource' : 'Add Resource';
+    }
     const mod = FEATURE_MODULES[currentScreen];
     return mod ? mod.title : 'Library Staff';
   };

@@ -87,6 +87,8 @@ async function request(method, path, body) {
 export const api = {
   get: (path) => request('GET', path),
   post: (path, body) => request('POST', path, body),
+  put: (path, body) => request('PUT', path, body),
+  delete: (path) => request('DELETE', path),
 };
 
 // ── Alumni Relations endpoints (docs/users/12 §4) ──
@@ -275,9 +277,23 @@ export const libraryApi = {
   waiveFine: (id, reason) => api.post(`/library/fines/${id}/waive`, { reason }),
   requests: () => api.get('/library/requests'),
   decideRequest: (id, decision) => api.post(`/library/requests/${id}/decide`, { decision }),
-  digitalResources: () => api.get('/library/digital'),
+  digitalResources: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+    ).toString();
+    return api.get(`/library/digital${qs ? `?${qs}` : ''}`);
+  },
+  digitalResource: (id) => api.get(`/library/digital/${id}`),
   addDigitalResource: (payload) => api.post('/library/digital', payload),
+  updateDigitalResource: (id, payload) => api.put(`/library/digital/${id}`, payload),
+  deleteDigitalResource: (id) => api.delete(`/library/digital/${id}`),
   grantAccess: (resourceId, payload) => api.post(`/library/digital/${resourceId}/grant-access`, payload),
+  revokeAccess: (resourceId, grantId) =>
+    api.delete(`/library/digital/${resourceId}/grants/${grantId}`),
+  recordAccess: (resourceId, payload = {}) =>
+    api.post(`/library/digital/${resourceId}/access`, payload),
+  digitalAudiences: () => api.get('/library/digital/audiences'),
+  digitalUsage: () => api.get('/library/digital/usage'),
   notifications: () => api.get('/library/notifications'),
   markAllRead: () => api.post('/library/notifications/read-all'),
   broadcast: (payload) => api.post('/library/broadcasts', payload),
