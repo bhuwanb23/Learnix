@@ -62,13 +62,33 @@ export const studentSearchQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).optional(),
 });
 
-// L-04 Fines — collect / waive
+// L-04 Fines — collect / waive / extend
 export const collectFineSchema = z.object({
   method: z.enum(['UPI', 'NET_BANKING', 'CARD', 'CASH']).default('CASH'),
 });
 
 export const waiveFineSchema = z.object({
   reason: z.string().trim().min(3).max(200),
+});
+
+export const extendFineSchema = z.object({
+  days: z.number().int().min(1).max(60).default(7),
+});
+
+export const bulkSettleSchema = z.object({
+  studentId: z.string().min(1).max(64),
+  action: z.enum(['COLLECT', 'WAIVE']),
+  method: z.enum(['UPI', 'NET_BANKING', 'CARD', 'CASH']).optional(),
+  reason: z.string().trim().min(3).max(200).optional(),
+  fineIds: z.array(z.string().min(1).max(64)).max(100).optional(),
+});
+
+export const fineQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  status: z.enum(['ALL', 'PENDING', 'PAID', 'WAIVED']).default('ALL'),
+  minAmount: z.coerce.number().int().min(0).optional(),
+  sort: z.enum(['NEWEST', 'AMOUNT', 'DAYS']).default('NEWEST'),
+  limit: z.coerce.number().int().min(1).max(500).optional(),
 });
 
 // L-05 Book requests — approve / reject

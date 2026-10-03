@@ -15,6 +15,9 @@ import {
   studentSearchQuerySchema,
   collectFineSchema,
   waiveFineSchema,
+  extendFineSchema,
+  bulkSettleSchema,
+  fineQuerySchema,
   requestDecisionSchema,
   addDigitalResourceSchema,
   updateDigitalResourceSchema,
@@ -27,6 +30,7 @@ import {
 import * as service from './library.service.js';
 import * as circulation from './circulation.service.js';
 import * as digital from './digital.service.js';
+import * as fines from './fines.service.js';
 
 // Library Staff module — mounted at /api/v1/library (docs/users/07 §4)
 const router = Router();
@@ -203,8 +207,45 @@ router.post(
 // L-04 fines
 router.get(
   '/fines',
+  validate(fineQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listFines(req.auth!.institutionId) });
+    res.json({
+      data: await fines.listFines(
+        req.auth!.institutionId,
+        req.query as {
+          q?: string; status?: 'ALL' | 'PENDING' | 'PAID' | 'WAIVED';
+          minAmount?: number; sort?: 'NEWEST' | 'AMOUNT' | 'DAYS'; limit?: number;
+        },
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/fines/settle',
+  validate(bulkSettleSchema),
+  wrap(async (req, res) => {
+    res.json({ data: await fines.settleStudentFines(req.auth!.institutionId, req.auth!.userId, req.body) });
+  }),
+);
+
+router.get(
+  '/fines/students/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await fines.getStudentFines(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.get(
+  '/fines/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await fines.getFineDetail(req.auth!.institutionId, String(req.params.id)),
+    });
   }),
 );
 
@@ -214,7 +255,7 @@ router.post(
   validate(collectFineSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.collectFine(
+      data: await fines.collectFine(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
@@ -230,11 +271,27 @@ router.post(
   validate(waiveFineSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.waiveFine(
+      data: await fines.waiveFine(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
         req.body.reason,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/fines/:id/extend',
+  validate(idParamSchema, 'params'),
+  validate(extendFineSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await fines.extendDueDate(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body.days,
       ),
     });
   }),
