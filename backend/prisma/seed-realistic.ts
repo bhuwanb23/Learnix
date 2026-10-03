@@ -724,7 +724,7 @@ async function main() {
     });
 
     if (!existingTuition) {
-      await db.feeDue.create({
+      const due = await db.feeDue.create({
         data: {
           studentProfileId: sp.profileId,
           feeStructureId: (await db.feeStructure.findFirst({
@@ -734,6 +734,12 @@ async function main() {
           amountMinor: fs.total,
           dueDate: new Date('2025-08-15'),
           status: tuitionStatus,
+          // A due's status is DERIVED from its balance (ADR + §3.2). Seeding
+          // status without paidMinor produced 21 "settled" bills that the desk
+          // would render as ₹0 paid against ₹1.35L — so the money is recorded
+          // on the due here, and the allocation below is what explains it.
+          paidMinor: tuitionStatus === 'CLEARED' ? fs.total : 0,
+          lastPaymentAt: tuitionStatus === 'CLEARED' ? new Date('2025-08-10') : null,
         },
       });
 
@@ -755,6 +761,10 @@ async function main() {
         await db.receipt.create({
           data: { paymentId: payment.id, receiptNo: `RCP-2025-${sp.data.rollNo}` },
         });
+        // The link the collections desk needs in order to reverse this later.
+        await db.paymentAllocation.create({
+          data: { paymentId: payment.id, dueId: due.id, amountMinor: fs.total },
+        });
       }
       feeCount++;
     }
@@ -771,6 +781,7 @@ async function main() {
           amountMinor: 150000, // ₹1,500
           dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
           status: 'UNPAID',
+          paidMinor: 0,
         },
       });
       feeCount++;

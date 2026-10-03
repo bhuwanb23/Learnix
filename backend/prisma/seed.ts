@@ -795,6 +795,10 @@ async function seedDomainE(institutionId: string): Promise<void> {
         amountMinor: 13500000,
         dueDate: new Date('2025-08-15'),
         status: 'CLEARED',
+        // A due's status is derived from its balance (docs §3.2) — seeding
+        // CLEARED without paidMinor made this bill render as ₹0 paid.
+        paidMinor: 13500000,
+        lastPaymentAt: new Date('2025-08-10'),
       },
     });
   }
@@ -820,6 +824,11 @@ async function seedDomainE(institutionId: string): Promise<void> {
     await db.receipt.create({
       data: { paymentId: tuitionPayment.id, receiptNo: 'RCP-2025-26-0001' },
     });
+    // The allocation is what ties this payment to this bill — without it the
+    // collections desk cannot tell which due the money settled, or reverse it.
+    await db.paymentAllocation.create({
+      data: { paymentId: tuitionPayment.id, dueId: tuition.id, amountMinor: 13500000 },
+    });
   }
 
   // Due 2: exam fee — UNPAID
@@ -835,6 +844,7 @@ async function seedDomainE(institutionId: string): Promise<void> {
         amountMinor: 150000, // ₹1,500
         dueDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         status: 'UNPAID',
+        paidMinor: 0,
       },
     });
   }
