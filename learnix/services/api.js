@@ -254,6 +254,22 @@ export const libraryApi = {
   issueBook: (rollNo, bookId, dueDays) =>
     api.post('/library/circulation/issue', { rollNo, bookId, dueDays }),
   returnBook: (issueId) => api.post('/library/circulation/return', { issueId }),
+  loans: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+    ).toString();
+    return api.get(`/library/circulation/loans${qs ? `?${qs}` : ''}`);
+  },
+  loanDetail: (id) => api.get(`/library/circulation/loans/${id}`),
+  renewLoan: (id, days) => api.post(`/library/circulation/loans/${id}/renew`, { days }),
+  loanHistory: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+    ).toString();
+    return api.get(`/library/circulation/history${qs ? `?${qs}` : ''}`);
+  },
+  searchStudents: (q) => api.get(`/library/circulation/students?q=${encodeURIComponent(q)}`),
+  studentBorrowingProfile: (id) => api.get(`/library/circulation/students/${id}`),
   fines: () => api.get('/library/fines'),
   collectFine: (id, method) => api.post(`/library/fines/${id}/collect`, { method }),
   waiveFine: (id, reason) => api.post(`/library/fines/${id}/waive`, { reason }),

@@ -24,6 +24,12 @@ import RequestsModule from './pages/requests/requests';
 import DigitalLibraryModule from './pages/digital_library/digital_library';
 import NotificationsScreen from './pages/notifications/notifications';
 
+// Circulation sub-pages (pages/circulation/*)
+import LoanDetail from './pages/circulation/loan_detail/loan_detail';
+import IssueBookDesk from './pages/circulation/issue_book/issue_book';
+import LoanHistoryScreen from './pages/circulation/loan_history/loan_history';
+import StudentBorrowingProfile from './pages/circulation/student_profile/student_profile';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 
@@ -35,6 +41,13 @@ const FEATURE_MODULES = {
   Requests: { title: 'Book Requests', icon: 'cart-outline', component: RequestsModule },
   DigitalLibrary: { title: 'Digital Library', icon: 'cloud-outline', component: DigitalLibraryModule },
   Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsScreen },
+
+  // Circulation sub-pages
+  LoanDetail: { title: 'Loan Detail', icon: 'document-text-outline', component: LoanDetail },
+  IssueBook: { title: 'Issue Book', icon: 'arrow-forward-circle-outline', component: IssueBookDesk },
+  LoanHistory: { title: 'Loan History', icon: 'time-outline', component: LoanHistoryScreen },
+  StudentLookup: { title: 'Student Standing', icon: 'people-outline', component: StudentBorrowingProfile },
+  StudentProfile: { title: 'Student Standing', icon: 'people-outline', component: StudentBorrowingProfile },
 };
 
 const TAB_TITLES = {
@@ -49,15 +62,24 @@ export default function LibraryStaffScreen({ navigation }) {
   setDemoUser('library@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
+  const [routeParams, setRouteParams] = useState({});
   const insets = useSafeAreaInsetsWithPadding();
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setCurrentScreen('main');
+    setRouteParams({});
   };
 
   const handleBackPress = () => {
     setCurrentScreen('main');
+    setRouteParams({});
+  };
+
+  // openModule(key, params) — params are handed to sub-screens via `route.params`.
+  const openModule = (key, params) => {
+    setCurrentScreen(key);
+    setRouteParams(params || {});
   };
 
   const getHeaderTitle = () => {
@@ -88,11 +110,12 @@ export default function LibraryStaffScreen({ navigation }) {
         const ModuleComponent = mod.component;
         return (
           <ModuleComponent
+            route={{ params: routeParams }}
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
               goBack: handleBackPress,
-              openModule: (key) => setCurrentScreen(key),
-              switchTab: (tabId) => handleTabChange(tabId),
+              openModule,
+              switchTab: handleTabChange,
             }}
           />
         );
@@ -106,8 +129,8 @@ export default function LibraryStaffScreen({ navigation }) {
           <CatalogModule
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              goBack: handleBackPress,
+              openModule,
             }}
           />
         );
@@ -116,8 +139,9 @@ export default function LibraryStaffScreen({ navigation }) {
           <CirculationModule
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              goBack: handleBackPress,
+              openModule,
+              switchTab: handleTabChange,
             }}
           />
         );
@@ -126,8 +150,8 @@ export default function LibraryStaffScreen({ navigation }) {
           <FinesModule
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              goBack: handleBackPress,
+              openModule,
             }}
           />
         );
@@ -139,9 +163,9 @@ export default function LibraryStaffScreen({ navigation }) {
           <LibraryDashboard
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
-              switchTab: (tabId) => handleTabChange(tabId),
+              goBack: handleBackPress,
+              openModule,
+              switchTab: handleTabChange,
             }}
           />
         );
