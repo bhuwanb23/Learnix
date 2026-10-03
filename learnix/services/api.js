@@ -272,9 +272,18 @@ export const libraryApi = {
   },
   searchStudents: (q) => api.get(`/library/circulation/students?q=${encodeURIComponent(q)}`),
   studentBorrowingProfile: (id) => api.get(`/library/circulation/students/${id}`),
-  fines: () => api.get('/library/fines'),
+  fines: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+    ).toString();
+    return api.get(`/library/fines${qs ? `?${qs}` : ''}`);
+  },
+  fineDetail: (id) => api.get(`/library/fines/${id}`),
   collectFine: (id, method) => api.post(`/library/fines/${id}/collect`, { method }),
   waiveFine: (id, reason) => api.post(`/library/fines/${id}/waive`, { reason }),
+  extendFine: (id, days) => api.post(`/library/fines/${id}/extend`, { days }),
+  bulkSettleFines: (payload) => api.post('/library/fines/settle', payload),
+  studentFines: (studentId) => api.get(`/library/fines/students/${studentId}`),
   requests: () => api.get('/library/requests'),
   decideRequest: (id, decision) => api.post(`/library/requests/${id}/decide`, { decision }),
   digitalResources: (params = {}) => {
