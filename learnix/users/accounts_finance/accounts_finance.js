@@ -19,6 +19,11 @@ import DuesModule from './pages/dues/dues';
 import PayrollModule from './pages/payroll/payroll';
 import AccountsProfile from './pages/profile/profile';
 
+// Collections sub-pages (pages/collections/*)
+import CollectPayment from './pages/collections/collect_payment/collect_payment';
+import CollectionDetail from './pages/collections/collection_detail/collection_detail';
+import StudentStatement from './pages/collections/student_statement/student_statement';
+
 // Import feature modules (opened from dashboard hub)
 import FeeStructureModule from './pages/fee_structure/fee_structure';
 import ExpensesModule from './pages/expenses/expenses';
@@ -34,11 +39,16 @@ import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 
 // Feature module registry: key -> { title, component }
 const FEATURE_MODULES = {
-  FeeStructure: { title: 'Fee Structure', component: FeeStructureModule },
-  Expenses: { title: 'Expenses', component: ExpensesModule },
-  Scholarships: { title: 'Scholarships', component: ScholarshipsModule },
-  Reports: { title: 'Reports & Analytics', component: ReportsModule },
-  Notifications: { title: 'Notifications', component: NotificationsScreen },
+  FeeStructure: { title: 'Fee Structure', icon: 'pricetag-outline', component: FeeStructureModule },
+  Expenses: { title: 'Expenses', icon: 'receipt-outline', component: ExpensesModule },
+  Scholarships: { title: 'Scholarships', icon: 'ribbon-outline', component: ScholarshipsModule },
+  Reports: { title: 'Reports & Analytics', icon: 'stats-chart-outline', component: ReportsModule },
+  Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsScreen },
+
+  // Collections sub-pages
+  CollectPayment: { title: 'Collect Payment', icon: 'add-circle-outline', component: CollectPayment },
+  CollectionDetail: { title: 'Collection Detail', icon: 'receipt-outline', component: CollectionDetail },
+  StudentStatement: { title: 'Student Statement', icon: 'document-text-outline', component: StudentStatement },
 };
 
 const TAB_TITLES = {
@@ -53,15 +63,25 @@ export default function AccountsScreen({ navigation }) {
   setDemoUser('accounts@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
+  // Sub-pages need to know WHICH record they are showing. Without carrying
+  // params, opening a collection detail would render an empty screen.
+  const [routeParams, setRouteParams] = useState({});
   const insets = useSafeAreaInsetsWithPadding();
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setCurrentScreen('main');
+    setRouteParams({});
   };
 
   const handleBackPress = () => {
     setCurrentScreen('main');
+    setRouteParams({});
+  };
+
+  const openModule = (key, params) => {
+    setCurrentScreen(key);
+    setRouteParams(params || {});
   };
 
   const getHeaderTitle = () => {
@@ -92,11 +112,12 @@ export default function AccountsScreen({ navigation }) {
         const ModuleComponent = mod.component;
         return (
           <ModuleComponent
+            route={{ params: routeParams }}
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
               goBack: handleBackPress,
-              openModule: (key) => setCurrentScreen(key),
-              switchTab: (tabId) => handleTabChange(tabId),
+              openModule,
+              switchTab: handleTabChange,
             }}
           />
         );
@@ -108,10 +129,12 @@ export default function AccountsScreen({ navigation }) {
       case 'Collections':
         return (
           <CollectionsModule
+            route={{ params: routeParams }}
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              goBack: handleBackPress,
+              openModule,
+              switchTab: handleTabChange,
             }}
           />
         );
@@ -120,8 +143,8 @@ export default function AccountsScreen({ navigation }) {
           <DuesModule
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              goBack: handleBackPress,
+              openModule,
             }}
           />
         );
@@ -130,22 +153,22 @@ export default function AccountsScreen({ navigation }) {
           <PayrollModule
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              goBack: handleBackPress,
+              openModule,
             }}
           />
         );
       case 'Profile':
-        return <AccountsProfile navigation={{ goBack: handleBackPress }} />;
+        return <AccountsProfile navigation={{ goBack: handleBackPress, openModule }} />;
       case 'Dashboard':
       default:
         return (
           <AccountsDashboard
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
-              switchTab: (tabId) => handleTabChange(tabId),
+              goBack: handleBackPress,
+              openModule,
+              switchTab: handleTabChange,
             }}
           />
         );

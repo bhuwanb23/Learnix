@@ -1,30 +1,40 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, RefreshControl,
-} from 'react-native';
+// F-02 Collections — the money-IN desk hub (docs/users/06 §3.2).
+//
+// The old screen was a two-tab list/record form whose stats came from a
+// different endpoint shape and whose "record" tab wrote a payment that never
+// touched a single fee due. Both problems are gone: recording money now lives
+// in CollectPayment (which allocates it onto balances), and everything below
+// reads the same honest numbers the backend derived.
+//
+// Every figure here comes from the server. The headline cards deliberately
+// ignore the active filter so the summary does not jump around as the officer
+// narrows the list; the filter's own total is reported in the list header.
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../services/api';
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
-const METHODS = [
-  { id: 'UPI', label: 'UPI', icon: 'phone-portrait-outline' },
-  { id: 'NET_BANKING', label: 'Net Banking', icon: 'globe-outline' },
-  { id: 'CARD', label: 'Card', icon: 'card-outline' },
-  { id: 'CASH', label: 'Cash', icon: 'cash-outline' },
-];
+import {
+  AnimatedCard, EmptyState, SearchBar, SkeletonStatRow, SkeletonCard,
+} from '../../../../components/ui';
+import {
+  THEME, RANGE_FILTERS, SORTS, statusMeta, rupees, compactRupees, relativeTime,
+  categoryMeta, methodMeta,
+} from './collectionMeta';
 
 export default function CollectionsModule({ navigation }) {
-  const [tab, setTab] = useState('list');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [form, setForm] = useState({ rollNo: '', category: 'TUITION', amount: '', method: 'CASH' });
+  const [range, setRange] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('NEWEST');
+  const [sortOpen, setSortOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      const result = await accountsApi.collections();
+      const result = await accountsApi.collections({ range, q: search, sort, take: 50 });
       setData(result);
     } catch (err) {
       setError(err.message);
@@ -32,34 +42,30 @@ export default function CollectionsModule({ navigation }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [range, search, sort]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   const onRefresh = () => { setRefreshing(true); fetchData(); };
 
-  const handleRecord = async () => {
-    if (!form.amount.trim()) {
-      Alert.alert('Missing Fields', 'Please enter the amount.');
-      return;
-    }
-    try {
-      await accountsApi.recordPayment({
-        rollNo: form.rollNo.trim() || undefined,
-        category: form.category,
-        amountMinor: parseInt(form.amount) * 100,
-        method: form.method,
-      });
-      setForm({ rollNo: '', category: 'TUITION', amount: '', method: 'CASH' });
-      setTab('list');
-      fetchData();
-      Alert.alert('Payment Recorded', 'Receipt issued and ledger updated.');
-    } catch (err) {
-      Alert.alert('Error', err.message);
-    }
-  };
+  const stats = data?.stats || {};
+  const collections = data?.collections || [];
+
+  // Reversals are money that came in and then went back out. Showing them as
+  // green income is how a books desk ends up overstating a month, so the
+  // headline is net and the reversed figure is called out on its own.
+  const filterActive = range !== 'ALL' || search.trim().length > 0;
+
+  const activeSort = useMemo(() => SORTS.find((s) => s.id === sort) ?? SORTS[0], [sort]);
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /><Text style={styles.loadingText}>Loading collections…</Text></View>;
+    return (
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <SkeletonStatRow />
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </ScrollView>
+    );
   }
 
   if (error) {
@@ -67,142 +73,307 @@ export default function CollectionsModule({ navigation }) {
       <View style={styles.center}>
         <Ionicons name="cloud-offline-outline" size={40} color="#dc2626" />
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={fetchData}><Text style={styles.retryText}>Retry</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.retryBtn} onPress={fetchData} activeOpacity={0.85}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
-  const stats = data?.stats || {};
-  const collections = data?.collections || [];
+  return (
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[THEME]} />}
+      >
+        {/* Headline — these totals ignore the filters on purpose. */}
+        <AnimatedCard delay={0} style={styles.heroCard}>
+          <View style={styles.heroTop}>
+            <View>
+              <Text style={styles.heroLabel}>Collected today</Text>
+              <Text style={styles.heroValue}>{rupees(stats.todayRupees ?? 0)}</Text>
+              <Text style={styles.heroSub}>{stats.todayCount ?? 0} receipt{stats.todayCount === 1 ? '' : 's'} issued today</Text>
+            </View>
+            <View style={styles.heroIcon}>
+              <Ionicons name="wallet-outline" size={22} color={THEME} />
+            </View>
+          </View>
+          <View style={styles.heroDivider} />
+          <View style={styles.heroRow}>
+            <View style={styles.heroCell}>
+              <Text style={styles.heroCellLabel}>Last 30 days</Text>
+              <Text style={styles.heroCellValue}>{compactRupees(stats.monthRupees ?? 0)}</Text>
+            </View>
+            <View style={styles.heroCellDivider} />
+            <View style={styles.heroCell}>
+              <Text style={styles.heroCellLabel}>All time</Text>
+              <Text style={styles.heroCellValue}>{compactRupees(stats.allTimeRupees ?? 0)}</Text>
+            </View>
+          </View>
+        </AnimatedCard>
+
+        {/* Reversals — only when they exist, and never folded into the total. */}
+        {stats.reversedCount > 0 && (
+          <AnimatedCard delay={50} style={[styles.block, styles.reverseBanner]}>
+            <View style={styles.reverseRow}>
+              <Ionicons name="arrow-undo" size={16} color="#dc2626" />
+              <Text style={styles.reverseText}>
+                {stats.reversedCount} reversed payment{stats.reversedCount === 1 ? '' : 's'} worth{' '}
+                <Text style={styles.reverseAmount}>{rupees(stats.reversedRupees)}</Text> excluded from collections.
+              </Text>
+            </View>
+          </AnimatedCard>
+        )}
+
+        {/* Collect */}
+        <AnimatedCard delay={100} style={[styles.block, styles.collectCard]}>
+          <View style={styles.collectBody}>
+            <View style={styles.collectIcon}>
+              <Ionicons name="add-circle" size={20} color="#fff" />
+            </View>
+            <View style={styles.collectText}>
+              <Text style={styles.collectTitle}>Collect a payment</Text>
+              <Text style={styles.collectSub}>Allocate the money to the student&apos;s open dues</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#fff" />
+          </View>
+        </AnimatedCard>
+
+        {/* Search — SearchBar holds its own text and debounces into onSearch. */}
+        <View style={styles.searchWrap}>
+          <SearchBar
+            placeholder="Search reference, receipt, roll no or name"
+            onSearch={setSearch}
+          />
+        </View>
+
+        {/* Range chips + sort */}
+        <View style={styles.controlRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chipRow}
+          >
+            {RANGE_FILTERS.map((r) => (
+              <TouchableOpacity
+                key={r.id}
+                style={[styles.chip, range === r.id && styles.chipActive]}
+                onPress={() => setRange(r.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.chipText, range === r.id && styles.chipTextActive]}>{r.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <TouchableOpacity
+            style={styles.sortBtn}
+            onPress={() => setSortOpen((v) => !v)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name={activeSort.icon} size={14} color={THEME} />
+            <Ionicons name={sortOpen ? 'chevron-up' : 'chevron-down'} size={12} color={THEME} />
+          </TouchableOpacity>
+        </View>
+
+        {sortOpen && (
+          <View style={styles.sortPanel}>
+            {SORTS.map((s) => (
+              <TouchableOpacity
+                key={s.id}
+                style={[styles.sortOption, sort === s.id && styles.sortOptionActive]}
+                onPress={() => { setSort(s.id); setSortOpen(false); }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name={s.icon} size={14} color={sort === s.id ? THEME : '#94a3b8'} />
+                <Text style={[styles.sortOptionText, sort === s.id && styles.sortOptionTextActive]}>{s.label}</Text>
+                {sort === s.id && <Ionicons name="checkmark" size={14} color={THEME} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* List header — says what the filter is showing, so the cards above
+            never get mistaken for the filtered figure. */}
+        <View style={styles.listHeader}>
+          <Text style={styles.sectionLabel}>
+            {filterActive ? 'Matching collections' : 'Recent collections'}
+          </Text>
+          <Text style={styles.listHeaderMeta}>
+            {stats.filteredCount ?? collections.length} shown · {rupees(stats.filteredRupees ?? 0)}
+          </Text>
+        </View>
+
+        {collections.length === 0 ? (
+          <>
+            <EmptyState
+              icon="receipt-outline"
+              title={filterActive ? 'Nothing matches' : 'No collections yet'}
+              subtitle={
+                filterActive
+                  ? 'Try a different reference number, or widen the date range.'
+                  : 'Money received at this desk will appear here.'
+              }
+            />
+            {/* EmptyState's own action button is not pressable, so a real
+                "clear filters" control has to be rendered out here. */}
+            {filterActive && (
+              <TouchableOpacity
+                style={styles.clearBtn}
+                onPress={() => { setRange('ALL'); setSearch(''); }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="refresh" size={15} color={THEME} />
+                <Text style={styles.clearBtnText}>Clear filters</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        ) : (
+          collections.map((c, i) => (
+            <CollectionRow key={c.id} item={c} index={i} onPress={() => navigation.openModule('CollectionDetail', { paymentId: c.id })} />
+          ))
+        )}
+
+        {(data?.total ?? 0) > collections.length && (
+          <Text style={styles.moreNote}>
+            Showing the first {collections.length} of {data.total}. Narrow the filter to see more.
+          </Text>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+function CollectionRow({ item, index, onPress }) {
+  const meta = statusMeta(item);
+  const cat = categoryMeta(item.category);
+  const method = methodMeta(item.method);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
-      <View style={styles.statsRow}>
-        {[
-          { label: 'Total', value: stats.totalPayments ?? 0, icon: 'cash', color: '#2563eb' },
-          { label: 'Cleared', value: `₹${((stats.clearedRupees ?? 0) / 1000).toFixed(0)}K`, icon: 'checkmark-circle', color: '#059669' },
-          { label: 'Partial', value: stats.partialCount ?? 0, icon: 'time', color: '#d97706' },
-        ].map((s, i) => (
-          <View key={i} style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: s.color + '14' }]}><Ionicons name={s.icon} size={18} color={s.color} /></View>
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-          </View>
-        ))}
-      </View>
+    <AnimatedCard delay={140 + index * 35} onPress={onPress} style={styles.row}>
+      <View style={styles.rowMain}>
+        <View style={[styles.rowIcon, { backgroundColor: meta.bg }]}>
+          <Ionicons name={cat.icon} size={18} color={meta.color} />
+        </View>
 
-      <View style={styles.tabsRow}>
-        {[{ id: 'list', label: 'Collections' }, { id: 'record', label: 'Record Payment' }].map((t) => (
-          <TouchableOpacity key={t.id} style={[styles.tab, tab === t.id && styles.activeTab]} onPress={() => setTab(t.id)} activeOpacity={0.8}>
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.rowBody}>
+          <View style={styles.rowTop}>
+            <Text style={styles.rowTitle} numberOfLines={1}>
+              {item.student || 'Donation / misc'}
+            </Text>
+            <Text
+              style={[styles.rowAmount, item.isReversed && styles.rowAmountStruck]}
+              numberOfLines={1}
+            >
+              {rupees(item.amountRupees)}
+            </Text>
+          </View>
 
-      {tab === 'list' ? (
-        <>
-          <Text style={styles.sectionLabel}>Recent Collections</Text>
-          {collections.length === 0 ? (
-            <View style={styles.emptyState}><Text style={styles.emptyText}>No collections yet</Text></View>
-          ) : (
-            collections.slice(0, 20).map((item) => (
-              <View key={item.id} style={styles.collectionCard}>
-                <View style={[styles.avatar, { backgroundColor: (item.status === 'CLEARED' ? '#059669' : '#d97706') + '14' }]}>
-                  <Text style={[styles.initial, { color: item.status === 'CLEARED' ? '#059669' : '#d97706' }]}>{(item.student ?? 'D').charAt(0)}</Text>
-                </View>
-                <View style={styles.collectionInfo}>
-                  <Text style={styles.studentName}>{item.student ?? 'Donor'}</Text>
-                  <Text style={styles.collectionMeta}>{item.category} • {item.method} • {item.receiptNo ?? '—'}</Text>
-                  <View style={styles.chips}>
-                    <View style={[styles.statusChip, { backgroundColor: (item.status === 'CLEARED' ? '#059669' : '#d97706') + '1A' }]}>
-                      <Text style={[styles.statusText, { color: item.status === 'CLEARED' ? '#059669' : '#d97706' }]}>{item.status}</Text>
-                    </View>
-                  </View>
-                </View>
-                <Text style={styles.amount}>₹{item.amountRupees.toLocaleString()}</Text>
-              </View>
-            ))
-          )}
-        </>
-      ) : (
-        <>
-          <Text style={styles.formHint}>Record an offline or manual payment. The ledger and student fee account update automatically.</Text>
-          <Text style={styles.fieldLabel}>Student Roll Number (optional)</Text>
-          <View style={styles.inputContainer}><TextInput style={styles.input} value={form.rollNo} onChangeText={(v) => setForm((p) => ({ ...p, rollNo: v }))} placeholder="e.g. CSE-23-014" placeholderTextColor="#cbd5e1" /></View>
-          <Text style={styles.fieldLabel}>Category</Text>
-          <View style={styles.methodGrid}>
-            {['TUITION', 'HOSTEL_RENT', 'MESS', 'TRANSPORT', 'FINE', 'DONATION', 'MISC'].map((c) => (
-              <TouchableOpacity key={c} style={[styles.catChip, form.category === c && styles.catChipActive]} onPress={() => setForm((p) => ({ ...p, category: c }))} activeOpacity={0.8}>
-                <Text style={[styles.catText, form.category === c && styles.catTextActive]}>{c.replace('_', ' ')}</Text>
-              </TouchableOpacity>
-            ))}
+          <Text style={styles.rowSub} numberOfLines={1}>
+            {item.rollNo ? `${item.rollNo} · ` : ''}{cat.label} · {method.label} · {relativeTime(item.createdAt)}
+          </Text>
+
+          <View style={styles.rowChips}>
+            <View style={[styles.pill, { backgroundColor: meta.bg }]}>
+              <Ionicons name={meta.icon} size={10} color={meta.color} />
+              <Text style={[styles.pillText, { color: meta.color }]}>{meta.label}</Text>
+            </View>
+            {item.receiptNo && (
+              <Text style={styles.receiptNo}>{item.receiptNo}</Text>
+            )}
+            {item.allocatedCount > 0 && (
+              <Text style={styles.allocNote} numberOfLines={1}>
+                settled {item.allocatedCount} due{item.allocatedCount === 1 ? '' : 's'}
+              </Text>
+            )}
+            {item.allocatedCount === 0 && !item.isReversed && (
+              <Text style={styles.advanceNote}>advance</Text>
+            )}
           </View>
-          <Text style={styles.fieldLabel}>Amount (₹)</Text>
-          <View style={styles.inputContainer}><TextInput style={styles.input} value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} placeholder="e.g. 42000" placeholderTextColor="#cbd5e1" keyboardType="numeric" /></View>
-          <Text style={styles.fieldLabel}>Payment Method</Text>
-          <View style={styles.methodGrid}>
-            {METHODS.map((m) => (
-              <TouchableOpacity key={m.id} style={[styles.methodChip, form.method === m.id && styles.methodChipActive]} onPress={() => setForm((p) => ({ ...p, method: m.id }))} activeOpacity={0.8}>
-                <Ionicons name={m.icon} size={14} color={form.method === m.id ? '#FFFFFF' : '#475569'} />
-                <Text style={[styles.methodLabel, form.method === m.id && styles.methodLabelActive]}>{m.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TouchableOpacity style={styles.recordBtn} onPress={handleRecord} activeOpacity={0.85}>
-            <Ionicons name="checkmark-circle" size={16} color="#FFFFFF" />
-            <Text style={styles.recordBtnText}>Record Payment</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </ScrollView>
+        </View>
+      </View>
+    </AnimatedCard>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f7f9' },
+  scroll: { flex: 1 },
   content: { padding: 24, paddingBottom: 40 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
   errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Medium', textAlign: 'center' },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: THEME, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
   retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  statCard: { flex: 1, backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14 },
-  statIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  statValue: { fontSize: 16, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
-  tabsRow: { flexDirection: 'row', backgroundColor: '#eef2f7', borderRadius: 12, padding: 4, marginBottom: 16 },
-  tab: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
-  activeTab: { backgroundColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#64748b', fontFamily: 'Manrope-SemiBold' },
-  activeTabText: { color: '#2563eb' },
-  sectionLabel: { fontSize: 15, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginBottom: 10 },
-  collectionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
-  avatar: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  initial: { fontSize: 16, fontWeight: '800', fontFamily: 'PlusJakartaSans-Bold' },
-  collectionInfo: { flex: 1 },
-  studentName: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  collectionMeta: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
-  chips: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusText: { fontSize: 10, fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  amount: { fontSize: 14, fontWeight: '700', color: '#059669', fontFamily: 'Manrope-Bold', marginLeft: 10 },
-  formHint: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 18, marginBottom: 16 },
-  fieldLabel: { fontSize: 12, fontWeight: '700', color: '#334155', fontFamily: 'Manrope-Bold', marginBottom: 6, marginTop: 4 },
-  inputContainer: { backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 14, marginBottom: 12 },
-  input: { height: 44, fontSize: 14, color: '#0f172a', fontFamily: 'Manrope-Regular' },
-  methodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  methodChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0' },
-  methodChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  methodLabel: { fontSize: 12, color: '#475569', fontFamily: 'Manrope-Medium' },
-  methodLabelActive: { color: '#FFFFFF' },
-  catChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0' },
-  catChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  catText: { fontSize: 11, color: '#475569', fontFamily: 'Manrope-Medium' },
-  catTextActive: { color: '#FFFFFF' },
-  recordBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14 },
-  recordBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope-Bold' },
-});
+  block: { marginBottom: 10 },
+
+  // Hero
+  heroCard: { marginBottom: 12 },
+  heroTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  heroLabel: { fontSize: 11, fontWeight: '700', color: '#94a3b8', fontFamily: 'Manrope-Bold', textTransform: 'uppercase', letterSpacing: 0.6 },
+  heroValue: { fontSize: 28, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginTop: 4, letterSpacing: -1 },
+  heroSub: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  heroIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: THEME + '12', justifyContent: 'center', alignItems: 'center' },
+  heroDivider: { height: 1, backgroundColor: '#eef2f7', marginVertical: 14 },
+  heroRow: { flexDirection: 'row', alignItems: 'center' },
+  heroCell: { flex: 1 },
+  heroCellDivider: { width: 1, height: 28, backgroundColor: '#eef2f7' },
+  heroCellLabel: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Medium' },
+  heroCellValue: { fontSize: 15, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginTop: 2 },
+
+  // Reversal banner
+  reverseBanner: { backgroundColor: '#fef2f2', borderWidth: 1, borderColor: '#fecaca' },
+  reverseRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, padding: 13 },
+  reverseText: { flex: 1, fontSize: 11, color: '#991b1b', fontFamily: 'Manrope-Medium', lineHeight: 17 },
+  reverseAmount: { fontWeight: '800' },
+
+  // Collect CTA
+  collectCard: { backgroundColor: THEME, borderWidth: 0 },
+  collectBody: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15 },
+  collectIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center' },
+  collectText: { flex: 1 },
+  collectTitle: { fontSize: 15, fontWeight: '700', color: '#fff', fontFamily: 'Manrope-Bold' },
+  collectSub: { fontSize: 11, color: '#dbeafe', fontFamily: 'Manrope-Regular', marginTop: 1 },
+
+  // Search / filters
+  searchWrap: { marginTop: 16, marginBottom: 12 },
+  controlRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  chipRow: { gap: 8, paddingRight: 8 },
+  chip: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0' },
+  chipActive: { backgroundColor: THEME, borderColor: THEME },
+  chipText: { fontSize: 12, fontWeight: '600', color: '#475569', fontFamily: 'Manrope-SemiBold' },
+  chipTextActive: { color: '#fff', fontWeight: '700' },
+  sortBtn: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: THEME + '10', borderWidth: 1, borderColor: THEME + '33' },
+  sortPanel: { backgroundColor: '#fff', borderRadius: 13, borderWidth: 1, borderColor: '#e2e8f0', padding: 6, marginBottom: 14 },
+  sortOption: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 10, borderRadius: 9 },
+  sortOptionActive: { backgroundColor: THEME + '0d' },
+  sortOptionText: { flex: 1, fontSize: 12, fontWeight: '600', color: '#475569', fontFamily: 'Manrope-SemiBold' },
+  sortOptionTextActive: { color: THEME, fontWeight: '700' },
+
+  // List header
+  listHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 },
+  sectionLabel: { fontSize: 15, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold' },
+  listHeaderMeta: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Medium' },
+
+  // Row
+  row: { marginBottom: 9 },
+  rowMain: { flexDirection: 'row', alignItems: 'flex-start', padding: 13 },
+  rowIcon: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 11 },
+  rowBody: { flex: 1 },
+  rowTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
+  rowTitle: { flex: 1, fontSize: 14, fontWeight: '700', color: '#0f172a', fontFamily: 'Manrope-Bold' },
+  rowAmount: { fontSize: 15, fontWeight: '800', color: '#059669', fontFamily: 'PlusJakartaSans-Bold' },
+  rowAmountStruck: { color: '#94a3b8', textDecorationLine: 'line-through' },
+  rowSub: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 2 },
+  rowChips: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 7, flexWrap: 'wrap' },
+  pill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
+  pillText: { fontSize: 10, fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  receiptNo: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Medium' },
+  allocNote: { fontSize: 10, color: '#059669', fontFamily: 'Manrope-Medium' },
+  advanceNote: { fontSize: 10, color: '#d97706', fontFamily: 'Manrope-Medium', fontStyle: 'italic' },
+
+  moreNote: { fontSize: 11, color: '#94a3b8', fontFamily: 'Manrope-Regular', textAlign: 'center', marginTop: 12 },
+  clearBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: -16, paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, backgroundColor: THEME + '10', borderWidth: 1, borderColor: THEME + '33' },
+  clearBtnText: { fontSize: 13, fontWeight: '700', color: THEME, fontFamily: 'Manrope-Bold' },
+});

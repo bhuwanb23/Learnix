@@ -509,8 +509,23 @@ export const placementApi = {
 // ── Accounts & Finance endpoints (docs/users/06 §4) ──
 export const accountsApi = {
   dashboard: () => api.get('/accounts/dashboard'),
-  collections: () => api.get('/accounts/collections'),
-  recordPayment: (payload) => api.post('/accounts/collections', payload),
+  collections: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/collections${qs ? `?${qs}` : ''}`);
+  },
+  collectPayment: (payload) => api.post('/accounts/collections', payload),
+  collectionDetail: (id) => api.get(`/accounts/collections/${id}`),
+  reverseCollection: (id, reason) => api.post(`/accounts/collections/${id}/reverse`, { reason }),
+  searchPayableStudents: (q, limit = 10) =>
+    api.get(`/accounts/collections/students/search?q=${encodeURIComponent(q)}&limit=${limit}`),
+  studentStatement: (selector) => {
+    const qs = new URLSearchParams(
+      Object.entries(selector).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/collections/statement?${qs}`);
+  },
   ledger: () => api.get('/accounts/ledger'),
   feeStructure: () => api.get('/accounts/fee-structure'),
   requestRevision: (id) => api.post(`/accounts/fee-structure/${id}/revision`),
