@@ -1,0 +1,455 @@
+<template>
+  <style>
+    @font-face{
+      font-family: 'Manrope';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Manrope';
+      font-style: normal;
+      font-weight: 500;
+      font-display: swap;
+      src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Manrope';
+      font-style: normal;
+      font-weight: 600;
+      font-display: swap;
+      src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Manrope';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 500;
+      font-display: swap;
+      src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 600;
+      font-display: swap;
+      src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Plus Jakarta Sans';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face{
+      font-family: 'Material Symbols Outlined';
+      font-style: normal;
+      font-weight: 100 700;
+      font-display: swap;
+      src: url("assets/fonts/captured-kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1USv9ls.woff2") format('woff2');
+    }
+
+    #root {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #F5F7F9;
+      font-family: 'Manrope', sans-serif;
+      color: #0F172A;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .h05-ground {
+      position: absolute;
+      inset: 0;
+      background: #F5F7F9;
+    }
+
+    .h05-stage {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* — header: assignment title held constant from frame 01 — */
+    .h05-title {
+      position: absolute;
+      left: 96px;
+      top: 60px;
+      width: 1180px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 36.5px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #0F172A;
+      white-space: nowrap;
+    }
+    .h05-chip {
+      position: absolute;
+      left: 1480px;
+      top: 66px;
+      padding: 9px 20px;
+      border-radius: 100px;
+      background: rgba(37, 99, 235, 0.08);
+      font-family: 'Manrope', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: #2461E5;
+      white-space: nowrap;
+    }
+
+    /* — hero: clipped app window holding the real teacher capture — */
+    .h05-window {
+      position: absolute;
+      left: 96px;
+      top: 148px;
+      width: 620px;
+      height: 592px;
+      padding: 14px;
+      box-sizing: border-box;
+      border: 1.5px solid rgba(37, 99, 235, 0.2);
+      border-radius: 14px;
+      background: rgba(37, 99, 235, 0.04);
+      overflow: hidden;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .h05-shot {
+      width: 592px;
+      height: 564px;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #FFFFFF;
+    }
+    .h05-shot img {
+      display: block;
+      width: 592px;
+      height: 564px;
+      object-fit: contain;
+    }
+
+    /* — side headline slot (state A / state B) — */
+    .h05-slot {
+      position: absolute;
+      left: 768px;
+      top: 236px;
+      width: 516px;
+      height: 250px;
+    }
+    .h05-copy {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 516px;
+    }
+    .h05-eyebrow {
+      font-family: 'Manrope', sans-serif;
+      font-size: 15.4px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #2461E5;
+      margin-bottom: 14px;
+    }
+    .h05-h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 50px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: #0F172A;
+      margin: 0 0 12px 0;
+    }
+    .h05-body {
+      font-family: 'Manrope', sans-serif;
+      font-size: 16.3px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: #606F86;
+    }
+
+    /* — supporting teacher-performance capture, undimmed — */
+    .h05-side {
+      position: absolute;
+      left: 1336px;
+      top: 373px;
+      width: 488px;
+      height: 367px;
+      padding: 14px;
+      box-sizing: border-box;
+      border: 1.5px solid rgba(37, 99, 235, 0.2);
+      border-radius: 14px;
+      background: rgba(37, 99, 235, 0.04);
+      overflow: hidden;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .h05-side-shot {
+      width: 460px;
+      height: 339px;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #FFFFFF;
+    }
+    .h05-side-shot img {
+      display: block;
+      width: 460px;
+      height: 339px;
+      object-fit: contain;
+    }
+
+    /* — rubric rows — */
+    .h05-rubric {
+      position: absolute;
+      left: 96px;
+      top: 776px;
+      width: 1728px;
+      height: 108px;
+      display: flex;
+      gap: 24px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .h05-cell {
+      width: 560px;
+      height: 108px;
+      box-sizing: border-box;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1.5px solid rgba(37, 99, 235, 0.2);
+      border-radius: 14px;
+      background: rgba(37, 99, 235, 0.04);
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .h05-cell-name {
+      display: flex;
+      align-items: center;
+    }
+    .h05-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(37, 99, 235, 0.2);
+      background: transparent;
+      margin-right: 16px;
+      flex: none;
+    }
+    .h05-crit {
+      font-family: 'Manrope', sans-serif;
+      font-size: 16.3px;
+      font-weight: 500;
+      line-height: 1.3;
+      color: #606F86;
+      white-space: nowrap;
+    }
+    .h05-val {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 29px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      color: #606F86;
+      white-space: nowrap;
+    }
+  </style>
+
+  <div data-hf-id="hf-zcrw" id="root" data-composition-id="05-the-handoff" data-width="1920" data-height="1080" data-duration="13.5">
+    <div data-hf-id="hf-ueqo" class="clip h05-ground" data-start="0" data-duration="13.5" data-track-index="0"></div>
+
+    <div data-hf-id="hf-0ip8" class="clip h05-stage" data-start="0" data-duration="13.5" data-track-index="1">
+
+      <div data-hf-id="hf-e33a" class="h05-title">Advanced Macroeconomics: The Global Market Analysis</div>
+      <div data-hf-id="hf-fe2v" class="h05-chip">Teacher view</div>
+
+      <div data-hf-id="hf-hzry" class="h05-window">
+        <div data-hf-id="hf-9cfr" class="h05-shot" data-layout-allow-overflow="">
+          <img data-hf-id="hf-9l4o" src="assets/screen-teacher-grading.png" alt="Teacher grading surface">
+        </div>
+      </div>
+
+      <div data-hf-id="hf-csqu" class="h05-slot">
+        <div data-hf-id="hf-663m" class="h05-copy h05-copy-a" data-layout-allow-overlap="">
+          <div data-hf-id="hf-7som" class="h05-eyebrow">Step 1 · The Handoff</div>
+          <div data-hf-id="hf-id6t" class="h05-h2">Same file.<br data-hf-id="hf-x5px">New desk.</div>
+          <div data-hf-id="hf-0kbe" class="h05-body">One rubric. Three criteria. One decision.</div>
+        </div>
+        <div data-hf-id="hf-ieqb" class="h05-copy h05-copy-b" data-layout-allow-overlap="">
+          <div data-hf-id="hf-683d" class="h05-h2">One submission.<br data-hf-id="hf-rsrt">Two screens.</div>
+        </div>
+      </div>
+
+      <div data-hf-id="hf-bazj" class="h05-side">
+        <div data-hf-id="hf-ljox" class="h05-side-shot" data-layout-allow-overflow="">
+          <img data-hf-id="hf-i1cp" src="assets/screen-teacher-performance.png" alt="Teacher performance analytics">
+        </div>
+      </div>
+
+      <div data-hf-id="hf-4az9" class="h05-rubric">
+        <div data-hf-id="hf-1yn6" class="h05-cell">
+          <div data-hf-id="hf-ukby" class="h05-cell-name">
+            <div data-hf-id="hf-m9wn" class="h05-dot"></div>
+            <div data-hf-id="hf-xecu" class="h05-crit">Prompt coverage</div>
+          </div>
+          <div data-hf-id="hf-cxb5" class="h05-val">—</div>
+        </div>
+        <div data-hf-id="hf-ykft" class="h05-cell h05-cell-b">
+          <div data-hf-id="hf-i7w2" class="h05-cell-name">
+            <div data-hf-id="hf-cppt" class="h05-dot h05-dot-b"></div>
+            <div data-hf-id="hf-x5od" class="h05-crit h05-crit-b">Data &amp; sources</div>
+          </div>
+          <div data-hf-id="hf-2tob" class="h05-val h05-val-b">—</div>
+        </div>
+        <div data-hf-id="hf-svba" class="h05-cell">
+          <div data-hf-id="hf-im73" class="h05-cell-name">
+            <div data-hf-id="hf-9j5z" class="h05-dot"></div>
+            <div data-hf-id="hf-zc9p" class="h05-crit">Conclusion drawn</div>
+          </div>
+          <div data-hf-id="hf-929h" class="h05-val">—</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-composition-id="05-the-handoff"]');
+      if (!root) { return; }
+      var q = function (sel) { return root.querySelector(sel); };
+
+      var title = q('.h05-title');
+      var chip = q('.h05-chip');
+      var win = q('.h05-window');
+      var side = q('.h05-side');
+      var rubric = q('.h05-rubric');
+      var cells = [q('.h05-cell:not(.h05-cell-b)'), q('.h05-cell-b'), q('.h05-cell:last-child')];
+      var copyA = q('.h05-copy-a');
+      var copyB = q('.h05-copy-b');
+      var lineEyebrow = q('.h05-eyebrow');
+      var lineH2A1 = q('.h05-copy-a .h05-h2');
+      var lineBody = q('.h05-body');
+      var cellB = q('.h05-cell-b');
+      var dotB = q('.h05-dot-b');
+      var critB = q('.h05-crit-b');
+      var valB = q('.h05-val-b');
+
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines["05-the-handoff"] = tl;
+
+      var POS = '#059669';
+
+      /* Scene 1 (0.0-1.8) — the surface establishes from the left edge and settles. */
+      tl.fromTo(title, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0);
+      tl.fromTo(win,
+        { x: -300, opacity: 0, scale: 0.96 },
+        { x: 0, opacity: 1, scale: 1, duration: 1.0, ease: 'power3.out' },
+        0.05);
+      tl.fromTo(chip,
+        { scale: 0.86, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.5, ease: 'power3.out' },
+        0.75);
+
+      /* Scene 2 (1.8-5.4) — scale-swap: the window shrinks out to open the lower third,
+         the rubric panel pops in as the incoming half of the pair. */
+      tl.to(win, { scale: 0.76, duration: 0.42, ease: 'power2.in' }, 1.85);
+      tl.fromTo(rubric,
+        { scale: 0.9, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.55, ease: 'power3.out' },
+        2.11);
+      tl.fromTo(cells[0],
+        { scale: 0.9, opacity: 0, y: 18 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 2.30);
+      tl.fromTo(cells[1],
+        { scale: 0.9, opacity: 0, y: 18 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 2.70);
+      tl.fromTo(cells[2],
+        { scale: 0.9, opacity: 0, y: 18 },
+        { scale: 1, opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' }, 3.10);
+
+      /* Side headline reveals by staggered fade + slide-up. */
+      tl.fromTo(lineEyebrow,
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 3.35);
+      tl.fromTo(lineH2A1,
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 3.50);
+      tl.fromTo(lineBody,
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 3.80);
+      tl.fromTo(side,
+        { opacity: 0, y: 26, scale: 0.97 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: 'power3.out' }, 4.00);
+
+      /* Scene 3 (5.4-9.2) — only the SECOND criterion resolves; the other two stay empty.
+         The state swap is discrete (instant), driven by a threshold on the timeline. */
+      var STATES = [{ t: 0.0, scored: false }, { t: 6.0, scored: true }];
+      function scoredAt(t) {
+        for (var i = STATES.length - 1; i >= 0; i--) {
+          if (t >= STATES[i].t) { return STATES[i].scored; }
+        }
+        return false;
+      }
+      var applied = null;
+      function applyScored(on) {
+        if (applied === on) { return; }
+        applied = on;
+        dotB.style.backgroundColor = on ? POS : 'transparent';
+        dotB.style.borderColor = on ? POS : 'rgba(37, 99, 235, 0.2)';
+        critB.style.color = on ? POS : '#606F86';
+        valB.textContent = on ? 'Scored' : '—';
+        valB.style.color = on ? POS : '#606F86';
+        cellB.style.borderColor = on ? 'rgba(5, 150, 105, 0.35)' : 'rgba(37, 99, 235, 0.2)';
+      }
+      var driver = { t: 0 };
+      tl.to(driver, {
+        t: 13,
+        duration: 13,
+        ease: 'none',
+        onUpdate: function () { applyScored(scoredAt(driver.t)); }
+      }, 0);
+
+      /* The one sanctioned soft pop: the resolved row answers the commit. */
+      tl.fromTo(cellB,
+        { scale: 0.94 },
+        { scale: 1, duration: 0.6, ease: 'back.out(1.2)' },
+        6.0);
+
+      /* Scene 4 (9.2-13.0) — side headline swaps out-up / in-up, then holds to the end. */
+      tl.to(copyA, { opacity: 0, y: -26, duration: 0.42, ease: 'power2.in' }, 9.45);
+      tl.fromTo(copyB,
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out' },
+        9.72);
+    })();
+  </script>
+</template>

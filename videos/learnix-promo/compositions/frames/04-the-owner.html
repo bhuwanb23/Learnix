@@ -1,0 +1,309 @@
+<template>
+  <style>
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+
+  /* Frame root: frame-sized box + the container the cqw display values resolve against.
+     The ground is painted on a dedicated clip layer, never here. */
+  #root {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    container-type: size;
+    overflow: hidden;
+    font-family: 'Manrope';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .f04-layer {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ── ground ───────────────────────────────────────────────── */
+  .f04-ground {
+    position: absolute;
+    inset: 0;
+    background: #F5F7F9;
+  }
+
+  /* ── Scene 1 — concentric guide rings, centred on the mark ── */
+  .f04-ring {
+    position: absolute;
+    left: 960px;
+    top: 485px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(37, 99, 235, 0.34);
+    will-change: transform, opacity;
+  }
+
+  /* ── centred lockup stack (mark dominant, line subordinate) ── */
+  .f04-stack {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3cqw;
+    padding: 6cqw;
+    text-align: center;
+  }
+
+  .f04-markwrap {
+    position: relative;
+    width: 11cqw;
+    height: 11cqw;
+  }
+
+  /* glow layer: behind the tile, never a box-shadow on it */
+  .f04-glow {
+    position: absolute;
+    left: 960px;
+    top: 485px;
+    width: 1120px;
+    height: 1120px;
+    margin: -560px 0 0 -560px;
+    border-radius: 50%;
+    opacity: 0;
+    z-index: 1;
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(37, 99, 235, 0.85) 0%,
+      rgba(37, 99, 235, 0.34) 30%,
+      rgba(37, 99, 235, 0.12) 52%,
+      rgba(37, 99, 235, 0) 74%
+    );
+  }
+
+  .f04-mark {
+    position: absolute;
+    left: 960px;
+    top: 485px;
+    width: 211.2px;
+    height: 211.2px;
+    margin: -105.6px 0 0 -105.6px;
+    display: block;
+    z-index: 2;
+  }
+
+  .f04-line {
+    position: relative;
+    z-index: 3;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.3em;
+    margin: 0;
+    font-family: 'Plus Jakarta Sans';
+    font-size: 2.5cqw;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: #0F172A;
+  }
+
+  .f04-word {
+    display: inline-block;
+    will-change: transform, opacity;
+  }
+  </style>
+
+  <div data-hf-id="hf-4m28" id="root" data-composition-id="04-the-owner" data-width="1920" data-height="1080" data-duration="8.5">
+    <div data-hf-id="hf-o483" class="clip f04-layer" data-start="0" data-duration="8.5" data-track-index="0">
+      <div data-hf-id="hf-b4wm" class="f04-ground"></div>
+    </div>
+
+    <div data-hf-id="hf-hyia" class="clip f04-layer" data-start="0" data-duration="8.5" data-track-index="1">
+      <div data-hf-id="hf-uso2" class="f04-ring" id="f04-ring-130" style="width:260px;height:260px;margin:-130px 0 0 -130px"></div>
+      <div data-hf-id="hf-233y" class="f04-ring" id="f04-ring-196" style="width:392px;height:392px;margin:-196px 0 0 -196px"></div>
+      <div data-hf-id="hf-r62k" class="f04-ring" id="f04-ring-266" style="width:532px;height:532px;margin:-266px 0 0 -266px"></div>
+      <div data-hf-id="hf-fbx7" class="f04-ring" id="f04-ring-340" style="width:680px;height:680px;margin:-340px 0 0 -340px"></div>
+      <div data-hf-id="hf-oxto" class="f04-ring" id="f04-ring-408" style="width:816px;height:816px;margin:-408px 0 0 -408px"></div>
+    </div>
+
+    <div data-hf-id="hf-e0e9" class="clip f04-layer" data-start="0" data-duration="8.5" data-track-index="2">
+      <div data-hf-id="hf-iv61" class="f04-stack">
+        <div data-hf-id="hf-u31k" class="f04-markwrap"></div>
+        <p data-hf-id="hf-z5ra" class="f04-line">
+          <span data-hf-id="hf-ydqb" class="f04-word" id="f04-word-0">The</span>
+          <span data-hf-id="hf-ugzg" class="f04-word" id="f04-word-1">wait</span>
+          <span data-hf-id="hf-rbne" class="f04-word" id="f04-word-2">has</span>
+          <span data-hf-id="hf-azc8" class="f04-word" id="f04-word-3">an</span>
+          <span data-hf-id="hf-c10v" class="f04-word" id="f04-word-4">owner.</span>
+        </p>
+      </div>
+      <div data-hf-id="hf-i03j" class="f04-glow" id="f04-glow" data-layout-allow-overflow=""></div>
+      <img data-hf-id="hf-20x2" class="f04-mark" id="f04-mark" src="assets/mark-tile-primary.png" alt="Learnix">
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var DURATION = 8;
+      var RING_CENTER = { x: 960, y: 485 };
+
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["04-the-owner"] = tl;
+
+      // ── Scene 1 (0.0–1.4s): guide rings pulse and expand from centre, stroke by stroke ──
+      var RINGS = [
+        { r: 130, o: 0.9, at: 0.06 },
+        { r: 196, o: 0.72, at: 0.145 },
+        { r: 266, o: 0.56, at: 0.23 },
+        { r: 340, o: 0.42, at: 0.315 },
+        { r: 408, o: 0.3, at: 0.4 }
+      ];
+
+      RINGS.forEach(function (ring) {
+        var el = document.getElementById("f04-ring-" + ring.r);
+        tl.fromTo(
+          el,
+          { opacity: 0, scale: 0.58 },
+          { opacity: ring.o, scale: 1, duration: 1.15, ease: "power3.out" },
+          ring.at
+        );
+        // Scene 2 (1.4–3.2s): the rings settle outward while the glow ignites.
+        tl.to(
+          el,
+          { scale: 1.045, opacity: ring.o * 0.78, duration: 1.7, ease: "power3.out" },
+          1.62
+        );
+      });
+
+      // ── Scene 2 (1.4–3.2s): the mark's glow ignites — a light switching on, not a bounce ──
+      var glow = document.getElementById("f04-glow");
+      var GLOW_PEAK = 0.28;
+      var BLOOM_START = 1.45;
+      var BLOOM_DUR = 1.45;
+
+      tl.fromTo(
+        glow,
+        { opacity: 0, scale: 0.82 },
+        { opacity: GLOW_PEAK, scale: 1, duration: BLOOM_DUR, ease: "power3.out" },
+        BLOOM_START
+      );
+
+      // bounded idle breathe — a finite phase proxy, never a yoyo loop
+      var phase = { p: 0 };
+      tl.to(
+        phase,
+        {
+          p: Math.PI * 2 * 1.5,
+          duration: 5.0,
+          ease: "none",
+          onUpdate: function () {
+            var s = Math.sin(phase.p);
+            glow.style.opacity = String(GLOW_PEAK + s * 0.02);
+            glow.style.transform = "scale(" + (1 + s * 0.012) + ")";
+          }
+        },
+        BLOOM_START + BLOOM_DUR
+      );
+
+      // ── Scene 3 (3.2–5.6s): the line reveals per-word, content-paced, on a long-tail settle ──
+      var WORDS = ["The", "wait", "has", "an", "owner."];
+      var LINE_START = 3.2;
+      var BASE_DURATION = 0.4;
+      var SEC_PER_CHAR = 0.022;
+      var REVEAL_DUR = 0.68;
+
+      var cursor = 0;
+      WORDS.forEach(function (word, i) {
+        var el = document.getElementById("f04-word-" + i);
+        var window_ = BASE_DURATION + word.length * SEC_PER_CHAR;
+        tl.fromTo(
+          el,
+          { opacity: 0, y: 16 },
+          { opacity: 1, y: 0, duration: REVEAL_DUR, ease: "power3.out" },
+          LINE_START + cursor
+        );
+        cursor += window_;
+      });
+
+      // ── Scene 4 (5.6–8.0s): hold — mark and line still, no wordmark (saved for frame 08) ──
+      tl.to({}, { duration: 0.001 }, DURATION);
+    })();
+  </script>
+</template>

@@ -1,0 +1,426 @@
+<template>
+<style>
+@font-face{
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+#root {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  container-type: size;
+}
+#root #f01-ground {
+  position: absolute;
+  inset: 0;
+  background: #F5F7F9;
+}
+#root #f01-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+#root #f01-world {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+#root #f01-pagewrap {
+  position: absolute;
+  left: 36.823cqw;
+  top: 6.25cqw;
+  width: 59.01cqw;
+  height: 36.823cqw;
+  box-sizing: border-box;
+  border: 1.5px solid rgba(37, 99, 235, 0.2);
+  border-radius: 14px;
+  overflow: hidden;
+  will-change: opacity, filter;
+}
+#root #f01-page {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#root #f01-title {
+  position: absolute;
+  left: 5cqw;
+  top: 4.375cqw;
+  width: 29.375cqw;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.4cqw;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #0F172A;
+  will-change: transform, opacity, filter;
+}
+#root #f01-eyebrow {
+  position: absolute;
+  left: 5cqw;
+  top: 9.896cqw;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.75cqw;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2563EB;
+  white-space: nowrap;
+  will-change: transform, opacity, filter;
+}
+#root #f01-card {
+  position: absolute;
+  left: 5cqw;
+  top: 16.979cqw;
+  width: 29.375cqw;
+  box-sizing: border-box;
+  padding: 1.5625cqw 1.667cqw;
+  display: flex;
+  align-items: center;
+  gap: 1.5625cqw;
+  background: rgba(37, 99, 235, 0.04);
+  border: 1.5px solid rgba(37, 99, 235, 0.2);
+  border-radius: 14px;
+}
+#root #f01-dot {
+  display: block;
+  width: 1.5625cqw;
+  height: 1.5625cqw;
+  flex: 0 0 auto;
+}
+#root .f01-cardlabel {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.65cqw;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+#root #f01-cardlabel-main {
+  font-weight: 600;
+  color: #0F172A;
+}
+#root #f01-cardlabel-sub {
+  font-weight: 500;
+  color: #64748B;
+  margin-left: 0.42cqw;
+}
+#root #f01-body {
+  position: absolute;
+  left: 5cqw;
+  top: 28.385cqw;
+  width: 29.375cqw;
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.5cqw;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #64748B;
+  will-change: transform, opacity, filter;
+}
+#root #f01-lock {
+  position: absolute;
+  left: 5cqw;
+  top: 32.8125cqw;
+  width: 29.375cqw;
+  box-sizing: border-box;
+  padding: 1.4cqw 1.5cqw;
+  background: #FFFFFF;
+  border: 1.5px solid rgba(37, 99, 235, 0.2);
+  border-radius: 14px;
+  will-change: transform, opacity, filter;
+}
+#root #f01-lockrow {
+  display: flex;
+  gap: 0.6cqw;
+  margin-bottom: 0.75cqw;
+}
+#root .f01-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 2.1cqw;
+  padding: 0 1.05cqw;
+  border-radius: 100px;
+  background: rgba(180, 83, 9, 0.1);
+  color: #B45309;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.72cqw;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+#root #f01-lockname {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.4cqw;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: #0F172A;
+}
+#root #f01-lockdesc {
+  margin-top: 0.35cqw;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.9cqw;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #64748B;
+}
+</style>
+
+<div data-hf-id="hf-z5oy" id="root" data-composition-id="01-the-wait" data-start="0" data-duration="11.6" data-width="1920" data-height="1080">
+  <div data-hf-id="hf-pvqz" id="f01-ground" class="clip" data-start="0" data-duration="11.6" data-track-index="0"></div>
+
+  <div data-hf-id="hf-br6x" id="f01-scene" class="clip" data-start="0" data-duration="11.6" data-track-index="1">
+    <!-- The camera pulls this world out from ~3.6x to 1x, so it legitimately
+         exceeds the canvas mid-reveal. Intentional, not a layout bug. -->
+    <div data-hf-id="hf-13is" id="f01-world" data-layout-allow-overflow="">
+      <div data-hf-id="hf-niqg" id="f01-pagewrap">
+        <img data-hf-id="hf-qdde" id="f01-page" src="assets/screen-under-review.png" alt="Assignment details screen with the submission status">
+      </div>
+
+      <div data-hf-id="hf-2099" id="f01-title">Advanced Macroeconomics: The Global Market Analysis</div>
+
+      <div data-hf-id="hf-8vfb" id="f01-eyebrow">Current status</div>
+
+      <div data-hf-id="hf-dsib" id="f01-card">
+        <svg data-hf-id="hf-2bv1" id="f01-dot" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle data-hf-id="hf-45hm" id="f01-dot-ring" cx="15" cy="15" r="9" fill="none" stroke="#B45309" stroke-width="2.5" opacity="0.5" />
+          <circle data-hf-id="hf-h232" id="f01-dot-core" cx="15" cy="15" r="5" fill="#B45309" />
+        </svg>
+        <span data-hf-id="hf-au7g" id="f01-cardlabel-main" class="f01-cardlabel">Submitted</span>
+        <span data-hf-id="hf-vvrh" id="f01-cardlabel-sub" class="f01-cardlabel">(Pending Grade)</span>
+      </div>
+
+      <div data-hf-id="hf-o4wo" id="f01-body">You submitted it.</div>
+
+      <div data-hf-id="hf-4oso" id="f01-lock">
+        <div data-hf-id="hf-wxmc" id="f01-lockrow">
+          <span data-hf-id="hf-dlq8" id="f01-pill-pending" class="f01-pill">Pending</span>
+          <span data-hf-id="hf-vs7o" id="f01-pill-locked" class="f01-pill">Locked</span>
+        </div>
+        <div data-hf-id="hf-q2up" id="f01-lockname">The Analytical Thinker</div>
+        <div data-hf-id="hf-2h4o" id="f01-lockdesc">Unlocks at a grade of 90% or above.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script>
+(function () {
+  const world = document.getElementById("f01-world");
+  const pagewrap = document.getElementById("f01-pagewrap");
+  const title = "#f01-title";
+  const eyebrow = "#f01-eyebrow";
+  const body = "#f01-body";
+  const lock = "#f01-lock";
+  const pills = ["#f01-pill-pending", "#f01-pill-locked"];
+  const dotCore = document.getElementById("f01-dot-core");
+  const dotRing = document.getElementById("f01-dot-ring");
+
+  // --- Camera -------------------------------------------------------------
+  // One .world wrapper carries the whole camera. Single source of truth (cam.t),
+  // single writer (applyCamera). The counter-translate is T = -offset * S,
+  // expressed generally: the focus point eases from the status-card centre to
+  // the world centre, so the detail drifts out of frame-centre into its home
+  // slot as the wide takes over.
+  const CENTER_X = 960;
+  const CENTER_Y = 540;
+  const START_SCALE = 3.6;      // 564px status card -> 2029px, edge to edge
+  const FOCUS_X = 370;          // measured status-card centre, neutral camera
+  const FOCUS_Y = 376.5;
+
+  const cam = { t: 0 };
+  function applyCamera() {
+    const s = START_SCALE + (1 - START_SCALE) * cam.t;
+    const m = Math.pow(cam.t, 2.2);
+    const fx = FOCUS_X + (CENTER_X - FOCUS_X) * m;
+    const fy = FOCUS_Y + (CENTER_Y - FOCUS_Y) * m;
+    // Counter-translate is T = -offset x S, i.e. s * (CENTER - focus): with
+    // transform-origin at the world centre, screen = O + T + s*(p - O), so
+    // mapping the focus point onto the canvas centre requires T = s*(O - f).
+    // The un-multiplied form only coincides at s = 1, which is why the locked
+    // wide was correct while the whole pull-back was framed on empty space.
+    world.style.transform =
+      "translate(" + (s * (CENTER_X - fx)).toFixed(3) + "px," + (s * (CENTER_Y - fy)).toFixed(3) + "px) scale(" + s.toFixed(5) + ")";
+  }
+  applyCamera();
+
+  // The ONE continuous outward pull. Custom ease: a long close-up dwell
+  // (Scene 1), a faster middle travel (Scene 2), then heavy exponential-style
+  // deceleration into the lock (Scene 3). Outward only, no push-in, no phase 2.
+  const PULL_KEYS = [
+    [0.0, 0.0],
+    [0.3, 0.085],
+    [0.5, 0.3],
+    [0.625, 0.55],
+    [0.78, 0.86],
+    [0.9, 0.965],
+    [1.0, 1.0],
+  ];
+  function pullEase(p) {
+    for (let i = 0; i < PULL_KEYS.length - 1; i++) {
+      const a = PULL_KEYS[i];
+      const b = PULL_KEYS[i + 1];
+      if (p <= b[0]) {
+        const u = (p - a[0]) / (b[0] - a[0]);
+        return a[1] + (b[1] - a[1]) * (u * u * (3 - 2 * u));
+      }
+    }
+    return 1;
+  }
+
+  const tl = gsap.timeline({ paused: true });
+
+  // --- Scene 1 (0.0-2.5s) -------------------------------------------------
+  // The single camera move, already running under the macro. Nothing else in
+  // the world is on screen: no chrome, no page.
+  tl.fromTo(
+    cam,
+    { t: 0 },
+    { t: 1, duration: 8.0, ease: pullEase, onUpdate: applyCamera },
+    0
+  );
+
+  // Status-dot pulse - FINITE tween, never repeat/yoyo (this timeline is seeked).
+  const pulse = { p: 0 };
+  tl.to(
+    pulse,
+    {
+      p: Math.PI * 2 * 3,
+      duration: 4.4,
+      ease: "none",
+      onUpdate: function () {
+        const sCore = 1 + Math.sin(pulse.p) * 0.12;
+        const sRing = 1 + Math.sin(pulse.p + Math.PI / 2) * 0.07;
+        dotCore.setAttribute("transform", "translate(15 15) scale(" + sCore.toFixed(4) + ") translate(-15 -15)");
+        dotRing.setAttribute("transform", "translate(15 15) scale(" + sRing.toFixed(4) + ") translate(-15 -15)");
+        dotRing.style.opacity = (0.5 + Math.sin(pulse.p) * 0.3).toFixed(3);
+      },
+    },
+    0.2
+  );
+
+  // --- Scene 2 (2.5-5.0s) -------------------------------------------------
+  // Intermediate nesting level: the assignment title and the instructor's
+  // "5-7 business days" note resolve around the pill as partial letterforms
+  // still filling frame. Text is static in world space - the camera's pull
+  // produces the descent.
+  tl.fromTo(
+    title,
+    { opacity: 0, y: 26, filter: "blur(10px)" },
+    { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.0, ease: "power3.out" },
+    2.7
+  );
+  tl.fromTo(
+    eyebrow,
+    { opacity: 0, y: 14, filter: "blur(8px)" },
+    { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power3.out" },
+    3.35
+  );
+  tl.fromTo(
+    body,
+    { opacity: 0, y: 18, filter: "blur(9px)" },
+    { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.85, ease: "power3.out" },
+    4.05
+  );
+
+  // The real capture resolves beneath the DOM world - one-way alpha + focus
+  // settle, at 1:1-or-smaller only, never magnified.
+  tl.fromTo(
+    pagewrap,
+    { opacity: 0, filter: "blur(7px)" },
+    { opacity: 0.78, filter: "blur(0px)", duration: 3.8, ease: "power2.out" },
+    2.6
+  );
+
+  // --- Scene 3 (5.0-8.0s) -------------------------------------------------
+  // The pull completes with strong exponential deceleration and the frame
+  // LOCKS at 8.0s. After this instant there is no camera tween at all.
+
+  // --- Scene 4 (8.0-11.0s) ------------------------------------------------
+  // Element-level payoff on the locked wide. The locked-badge row resolves
+  // last as a one-way alpha settle; the screen already holds at reduced
+  // contrast so the eye lands on the badge. Nothing else moves.
+  tl.fromTo(
+    lock,
+    { opacity: 0, y: 18, filter: "blur(8px)" },
+    { opacity: 1, y: 0, filter: "blur(0px)", duration: 1.0, ease: "power3.out" },
+    8.1
+  );
+  tl.fromTo(
+    pills,
+    { scale: 0.86 },
+    { scale: 1, duration: 0.7, ease: "expo.out", stagger: 0.09 },
+    8.4
+  );
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines["01-the-wait"] = tl;
+})();
+</script>
+</template>

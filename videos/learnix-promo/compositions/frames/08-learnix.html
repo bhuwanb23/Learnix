@@ -1,0 +1,705 @@
+<template>
+  <style>
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggSxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggixSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggmxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggSxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggixSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggmxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggSxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggixSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggmxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggSxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggixSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggmxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggqxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggOxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggSxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggixSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggmxSvfedN62Zw.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Manrope';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko70yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko50yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yygg_vbd-E.woff2") format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+  @font-face{
+    font-family: 'Plus Jakarta Sans';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face{
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: swap;
+    src: url("assets/fonts/captured-kJEPBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzBwG-RpA6RzaxHMPdY40KH8nGzv3fzfVJO1USv9ls.woff2") format('woff2');
+  }
+
+  /* Frame root: frame-sized box + the container the cqw display values resolve against.
+     The ground is painted on a dedicated clip layer, never here. */
+  #root {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    container-type: size;
+    overflow: hidden;
+    font-family: 'Manrope';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .f08-layer {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ── ground — cream, full bleed, on its own clip layer ── */
+  .f08-ground {
+    position: absolute;
+    inset: 0;
+    background: #F5F7F9;
+  }
+
+  /* ── Scene 1 — the three count figures from frame 06, as drifting satellites ── */
+  .f08-sat {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0.18;
+    will-change: transform, opacity;
+  }
+
+  .f08-sat-num {
+    font-family: 'Plus Jakarta Sans';
+    font-weight: 700;
+    font-size: 5.4cqw;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #2563EB;
+  }
+
+  .f08-sat-svg {
+    display: block;
+    flex: none;
+  }
+
+  /* ── the settled lockup: mark, wordmark, closing line ── */
+  .f08-stack {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2.4cqw;
+    padding: 6cqw;
+    text-align: center;
+  }
+
+  .f08-mark {
+    width: 9.5cqw;
+    height: 9.5cqw;
+    display: block;
+    border-radius: 2.3cqw;
+  }
+
+  .f08-word {
+    display: block;
+    margin: 0;
+    font-family: 'Plus Jakarta Sans';
+    font-size: 3.1cqw;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    color: #0F172A;
+  }
+
+  /* letters are split for the staggered settle; the negative margin reproduces
+     the tracking across the inline-block gaps */
+  .f08-word span {
+    display: inline-block;
+    margin-right: -0.03em;
+    will-change: transform, opacity;
+  }
+
+  .f08-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.6em;
+    margin: 0;
+    font-family: 'Manrope';
+    font-size: 1.4cqw;
+    font-weight: 400;
+    line-height: 1.55;
+    color: #64748B;
+  }
+
+  .f08-line span {
+    display: inline-block;
+    will-change: opacity, color;
+  }
+  </style>
+
+  <div data-hf-id="hf-m6j5" id="root" data-composition-id="08-learnix" data-width="1920" data-height="1080">
+    <!-- ground -->
+    <div data-hf-id="hf-8ds1" class="clip f08-layer" data-start="0" data-duration="5" data-track-index="0">
+      <div data-hf-id="hf-hpnu" class="f08-ground"></div>
+    </div>
+
+    <!-- satellites — the inverted clear: the figures leave, the mark stays -->
+    <div data-hf-id="hf-7m48" class="clip f08-layer" data-start="0" data-duration="5" data-track-index="1">
+      <div data-hf-id="hf-85cs" class="f08-sat" id="f08-sat-0" style="left:196px;top:262px">
+        <span data-hf-id="hf-h78q" class="f08-sat-num">12</span>
+        <svg data-hf-id="hf-rby8" class="f08-sat-svg" viewBox="0 0 54 54" width="54" height="54" aria-hidden="true">
+          <circle data-hf-id="hf-9gq1" class="f08-sat-ring" id="f08-ring-0" cx="27" cy="27" r="20" fill="none" stroke="rgba(37, 99, 235, 0.26)" stroke-width="2" />
+          <circle data-hf-id="hf-kzuo" class="f08-sat-dot" id="f08-dot-0" cx="27" cy="7" r="4.5" fill="#2563EB" />
+        </svg>
+      </div>
+      <div data-hf-id="hf-brvd" class="f08-sat" id="f08-sat-1" style="left:1420px;top:300px">
+        <span data-hf-id="hf-ghiu" class="f08-sat-num">296</span>
+        <svg data-hf-id="hf-72uw" class="f08-sat-svg" viewBox="0 0 54 54" width="54" height="54" aria-hidden="true">
+          <circle data-hf-id="hf-88tu" class="f08-sat-ring" id="f08-ring-1" cx="27" cy="27" r="20" fill="none" stroke="rgba(37, 99, 235, 0.26)" stroke-width="2" />
+          <circle data-hf-id="hf-21i1" class="f08-sat-dot" id="f08-dot-1" cx="27" cy="7" r="4.5" fill="#2563EB" />
+        </svg>
+      </div>
+      <div data-hf-id="hf-6ena" class="f08-sat" id="f08-sat-2" style="left:268px;top:688px">
+        <span data-hf-id="hf-3j9w" class="f08-sat-num">126</span>
+        <svg data-hf-id="hf-5vxt" class="f08-sat-svg" viewBox="0 0 54 54" width="54" height="54" aria-hidden="true">
+          <circle data-hf-id="hf-gf0z" class="f08-sat-ring" id="f08-ring-2" cx="27" cy="27" r="20" fill="none" stroke="rgba(37, 99, 235, 0.26)" stroke-width="2" />
+          <circle data-hf-id="hf-nox2" class="f08-sat-dot" id="f08-dot-2" cx="27" cy="7" r="4.5" fill="#2563EB" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- the lockup — centred and already settled at t=0, nothing builds in -->
+    <div data-hf-id="hf-ga03" class="clip f08-layer" data-start="0" data-duration="5" data-track-index="2">
+      <div data-hf-id="hf-90v9" class="f08-stack">
+        <img data-hf-id="hf-j9vi" class="f08-mark" id="f08-mark" src="assets/mark-tile-primary.png" alt="Learnix">
+        <p data-hf-id="hf-q68p" class="f08-word" id="f08-word"><span data-hf-id="hf-ott1" id="f08-w-0">L</span><span data-hf-id="hf-svkd" id="f08-w-1">e</span><span data-hf-id="hf-drco" id="f08-w-2">a</span><span data-hf-id="hf-1mk6" id="f08-w-3">r</span><span data-hf-id="hf-573n" id="f08-w-4">n</span><span data-hf-id="hf-t9p1" id="f08-w-5">i</span><span data-hf-id="hf-7nf3" id="f08-w-6">x</span></p>
+        <p data-hf-id="hf-qxvp" class="f08-line" id="f08-line"><span data-hf-id="hf-jm4z" id="f08-l-0">12</span> <span data-hf-id="hf-n7yd" id="f08-l-1">role</span> <span data-hf-id="hf-2kda" id="f08-l-2">apps</span> <span data-hf-id="hf-u1es" id="f08-l-3">·</span> <span data-hf-id="hf-pr6t" id="f08-l-4">296</span> <span data-hf-id="hf-cv0l" id="f08-l-5">endpoints</span> <span data-hf-id="hf-kt0b" id="f08-l-6">·</span> <span data-hf-id="hf-6a5p" id="f08-l-7">one</span> <span data-hf-id="hf-x70p" id="f08-l-8">system</span></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var DURATION = 5;
+      var SAT_OPACITY = 0.18;
+      var MUTED = [0x64, 0x74, 0x8b];
+      var FAINT = [0x94, 0xa3, 0xb8];
+
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["08-learnix"] = tl;
+
+      function clamp01(v) {
+        return v < 0 ? 0 : v > 1 ? 1 : v;
+      }
+      // smoothstep — the per-item reveal curve, so a linear driver still reads as a settle
+      function smooth(k) {
+        return k * k * (3 - 2 * k);
+      }
+      function mixHex(a, b, k) {
+        var r = Math.round(a[0] + (b[0] - a[0]) * k);
+        var g = Math.round(a[1] + (b[1] - a[1]) * k);
+        var bl = Math.round(a[2] + (b[2] - a[2]) * k);
+        return "rgb(" + r + "," + g + "," + bl + ")";
+      }
+
+      // ── Scene 1 (0.0–1.4s): the count figures drift slowly outward — the INVERTED clear.
+      //    Finite single tweens (no loop): the numbers leave so the mark stays.
+      var SATS = [
+        { id: 0, dx: -190, dy: -120, rot: -4, revs: 0.75, phase: 0.0, at: 0.08 },
+        { id: 1, dx: 200, dy: -70, rot: 5, revs: 0.52, phase: 1.05, at: 0.22 },
+        { id: 2, dx: -180, dy: 70, rot: -6, revs: 0.88, phase: 2.2, at: 0.36 }
+      ];
+      var SAT_DRIFT = 2.0;
+
+      SATS.forEach(function (s) {
+        tl.fromTo(
+          document.getElementById("f08-sat-" + s.id),
+          { opacity: SAT_OPACITY, x: 0, y: 0, scale: 1, rotation: 0 },
+          { opacity: 0, x: s.dx, y: s.dy, scale: 1.07, rotation: s.rot, duration: SAT_DRIFT, ease: "sine.inOut" },
+          s.at
+        );
+
+        // svg-icon-enrichment — the satellite's ring + dot breathe, phase-offset per
+        // figure, driven by a bounded phase proxy (never a yoyo / repeat loop)
+        var dot = document.getElementById("f08-dot-" + s.id);
+        var ring = document.getElementById("f08-ring-" + s.id);
+        var state = { p: 0 };
+        tl.to(
+          state,
+          {
+            p: Math.PI * 2 * s.revs,
+            duration: 3.0,
+            ease: "none",
+            onUpdate: function () {
+              var deg = state.p * 57.29578;
+              var dotScale = 1 + Math.sin(state.p + s.phase) * 0.1;
+              var ringScale = 1 + Math.sin(state.p + s.phase + Math.PI / 2) * 0.07;
+              dot.setAttribute(
+                "transform",
+                "rotate(" + deg.toFixed(2) + " 27 27) translate(27 27) scale(" + dotScale.toFixed(4) + ") translate(-27 -27)"
+              );
+              ring.setAttribute(
+                "transform",
+                "translate(27 27) scale(" + ringScale.toFixed(4) + ") translate(-27 -27)"
+              );
+              ring.style.opacity = (0.6 + Math.sin(state.p + s.phase) * 0.3).toFixed(3);
+            }
+          },
+          0
+        );
+      });
+
+      // ── Scene 2 (1.4–3.0s): the wordmark completes — per-unit staggered settle.
+      //    Present and legible from t=0 (nothing builds in); the letters finish
+      //    resolving on a long-tail power3 settle. Mark fixed, no bloom, no overshoot.
+      var LETTERS = "Learnix".split("");
+      var WORD_START = 1.4;
+      var LETTER_BASE = 0.62;
+      var LETTER_OVERLAP = 0.5;
+      var LETTER_REST = 0.72;
+
+      var cursor = 0;
+      LETTERS.forEach(function (letter, i) {
+        var window_ = LETTER_BASE + letter.length * 0.02;
+        tl.fromTo(
+          document.getElementById("f08-w-" + i),
+          { opacity: LETTER_REST, y: 10 },
+          { opacity: 1, y: 0, duration: window_, ease: "power3.out" },
+          WORD_START + cursor
+        );
+        cursor += Math.max(0, window_ - LETTER_OVERLAP);
+      });
+
+      // ── closing line — dynamic-content-sequencing.
+      //    Absolute windows are pre-computed once from content length + config; one
+      //    linear driver reverse-walks them and writes only on a changed step.
+      var WORDS = ["12", "role", "apps", "·", "296", "endpoints", "·", "one", "system"];
+      var LINE_START = 1.95;
+      var BASE_DURATION = 0.24;
+      var SEC_PER_CHAR = 0.005;
+      var OVERLAP = 0.18;
+
+      var cumulative = 0;
+      var SEQ = WORDS.map(function (w) {
+        var dur = BASE_DURATION + w.length * SEC_PER_CHAR;
+        var start = cumulative;
+        cumulative += dur - OVERLAP;
+        return { w: w, start: start, end: start + dur };
+      });
+      var SEQ_SPAN = SEQ[SEQ.length - 1].end;
+      var wordEls = SEQ.map(function (e, i) {
+        return document.getElementById("f08-l-" + i);
+      });
+      tl.set(wordEls, { opacity: 0 }, 0);
+
+      var driver = { t: 0 };
+      var lastStep = new Array(SEQ.length);
+      for (var s0 = 0; s0 < lastStep.length; s0++) lastStep[s0] = -1;
+
+      tl.to(
+        driver,
+        {
+          t: SEQ_SPAN,
+          duration: SEQ_SPAN,
+          ease: "none",
+          onUpdate: function () {
+            for (var i = 0; i < SEQ.length; i++) {
+              var e = SEQ[i];
+              var k = clamp01((driver.t - e.start) / (e.end - e.start));
+              var step = Math.round(smooth(k) * 40) / 40;
+              if (step === lastStep[i]) continue;
+              lastStep[i] = step;
+              wordEls[i].style.opacity = String(step);
+              wordEls[i].style.color = mixHex(FAINT, MUTED, step);
+            }
+          }
+        },
+        LINE_START
+      );
+
+      // ── Scene 3 (3.0–5.0s): a deliberate two-second held read. Camera locked, nothing
+      //    moves, no exit move — the last frame the viewer sees ends by holding.
+      tl.to({}, { duration: 0.001 }, DURATION - 0.01);
+    })();
+  </script>
+</template>

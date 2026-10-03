@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Learnix — The Handoff · Storyboard v1</title>
+<style>
+  @font-face{font-family:'Manrope';font-style:normal;font-weight:100 900;font-display:swap;
+    src:url("assets/fonts/captured-xn7gYHE41ni1AdIRggexSvfedN4.woff2") format('woff2');
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+  @font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:100 900;font-display:swap;
+    src:url("assets/fonts/captured-LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yygg_vb.woff2") format('woff2');
+    unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+
+  :root{
+    --bg:#F5F7F9; --surface:#FFFFFF; --primary:#2563EB; --primaryDark:#1D4ED8;
+    --text:#0F172A; --muted:#64748B; --light:#94A3B8; --border:rgba(37,99,235,.20);
+    --tint:rgba(37,99,235,.04); --tintMid:rgba(37,99,235,.08);
+    --pos:#059669; --neg:#DC2626; --amber:#B45309;
+    --r-lg:14px; --r-md:12px; --r-sm:10px; --pill:100px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#EEF1F4;color:var(--text);
+    font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;}
+
+  header{padding:40px 44px 26px;border-bottom:1px solid #DCE3EA;background:var(--surface)}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--primary);margin:0 0 10px}
+  h1{margin:0;font-family:'Plus Jakarta Sans',sans-serif;font-size:34px;font-weight:700;letter-spacing:-.02em}
+  .dek{margin:9px 0 0;font-size:14px;color:var(--muted);max-width:74ch;line-height:1.55}
+  .tag{margin-top:18px;display:inline-flex;gap:8px;flex-wrap:wrap}
+  .tag span{font-size:11px;font-weight:600;letter-spacing:.05em;padding:6px 12px;border-radius:var(--pill);
+    background:var(--tintMid);color:var(--primaryDark);border:1px solid var(--border)}
+
+  .acts{padding:22px 44px 0;display:flex;gap:10px;flex-wrap:wrap}
+  .act{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    padding:7px 14px;border-radius:var(--pill);border:1px solid #DCE3EA;background:var(--surface)}
+  .act b{color:var(--primary)}
+
+  .grid{padding:26px 44px 10px;display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+  .cell{background:var(--surface);border:1px solid #DCE3EA;border-radius:16px;overflow:hidden;
+    display:flex;flex-direction:column}
+  .frame{container-type:inline-size;aspect-ratio:16/9;position:relative;background:var(--bg);
+    border-bottom:1px solid #E4E9EE;overflow:hidden}
+
+  .lbl{display:flex;justify-content:space-between;align-items:center;padding:11px 14px 0;
+    font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text)}
+  .lbl .id{color:var(--light);font-weight:600;letter-spacing:.05em}
+  .note{padding:7px 14px 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
+  .note b{color:var(--text);font-weight:700}
+  .seam{display:inline-block;margin:10px 14px 14px;font-size:10px;font-weight:700;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--primary);background:var(--tintMid);
+    border:1px solid var(--border);border-radius:var(--pill);padding:4px 10px}
+
+  /* ---------- sketch primitives (stand-ins for unbuilt media) ---------- */
+  .ph{background:repeating-linear-gradient(45deg,#E8EDF2 0 8px,#EFF3F7 8px 16px);
+    border:1px dashed #C3CFDA;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
+    font-size:9.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#7C8B9A;text-align:center;padding:6px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+  .pill{display:inline-flex;align-items:center;gap:5px;border-radius:var(--pill);padding:4px 11px;
+    font-size:10px;font-weight:700;letter-spacing:.03em}
+  .h{font-family:'Plus Jakarta Sans',sans-serif;color:var(--text);letter-spacing:-.02em;line-height:1.08}
+  .b{font-family:'Manrope',sans-serif;color:var(--muted);line-height:1.55}
+  .lbl-in{font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--primary)}
+
+  /* seam map + tokens */
+  .wide{grid-column:1 / -1}
+  .seamstrip{display:flex;align-items:center;gap:0;padding:20px 22px;flex-wrap:wrap}
+  .seamstrip .s{font-size:10px;font-weight:700;letter-spacing:.05em;padding:7px 12px;border-radius:var(--pill);
+    background:var(--tintMid);color:var(--primaryDark);border:1px solid var(--border);white-space:nowrap}
+  .seamstrip .ar{color:var(--light);font-size:13px;padding:0 9px}
+  .tok{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;padding:20px 22px 24px}
+  .sw{display:flex;align-items:center;gap:9px;font-size:11px;color:var(--muted)}
+  .sw i{width:26px;height:26px;border-radius:7px;border:1px solid rgba(15,23,42,.10);flex:0 0 auto}
+  .tok h4{margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--text)}
+  .tok .bans{grid-column:1/-1;font-size:11.5px;line-height:1.6;color:var(--muted)}
+  .tok .bans b{color:var(--neg)}
+  footer{padding:18px 44px 40px;font-size:11.5px;color:var(--light);line-height:1.6}
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Storyboard · v1 · sketch pass — layout &amp; copy locked, no motion yet</p>
+  <h1>Learnix — “The Handoff”</h1>
+  <p class="dek">This video tells college administrators and department heads that one student’s twenty
+  seconds of waiting is owned by a system. Arc <b>BAB</b> — before → after tease → bridge → step 1 → step 2 → wow → close.
+  No voiceover: on-screen type carries it. Every screen shown is a real capture from the repository; every
+  status string is a real enum from <code>backend/src/lib/enums.ts</code>.</p>
+  <div class="tag"><span>1920 × 1080 · 16:9</span><span>75s target</span><span>8 frames</span><span>VO: none</span><span>Music: pending key</span></div>
+</header>
+
+<div class="acts">
+  <div class="act"><b>Act I — Before</b> · 01–03 · 27s</div>
+  <div class="act"><b>Act II — The bridge</b> · 04–06 · 34s</div>
+  <div class="act"><b>Act III — After</b> · 07–08 · 14s</div>
+</div>
+
+<div class="grid">
+
+  <!-- 01 -->
+  <div class="cell" id="frame-01">
+    <div class="frame">
+      <div style="position:absolute;inset:0;padding:5cqw;display:flex;flex-direction:column;gap:2.4cqw">
+        <div class="lbl-in">Current status</div>
+        <div class="card" style="padding:2.6cqw;display:flex;align-items:center;gap:1.6cqw">
+          <span style="width:1.5cqw;height:1.5cqw;border-radius:50%;background:var(--amber);flex:0 0 auto"></span>
+          <span class="h" style="font-size:2.5cqw;font-weight:600">Submitted <span style="color:var(--muted);font-weight:500">(Pending Grade)</span></span>
+        </div>
+        <div class="b" style="font-size:1.5cqw">You submitted it.</div>
+        <div style="flex:1"></div>
+        <div class="ph" style="height:5cqw">hold crop · status card centred</div>
+      </div>
+    </div>
+    <div class="lbl"><span>01 · The Wait</span><span class="id">frame-01 · 0:00–0:11</span></div>
+    <div class="note"><b>Moves first:</b> continuous pull-back from the status pill to the full screen.
+    <b>Seam out:</b> blur-crossfade.</div>
+    <div class="seam">blur-crossfade →</div>
+  </div>
+
+  <!-- 02 -->
+  <div class="cell" id="frame-02">
+    <div class="frame">
+      <div style="position:absolute;inset:0;padding:7cqw;display:flex;flex-direction:column;justify-content:center;gap:3cqw">
+        <div class="h" style="font-size:2.15cqw;font-weight:500;color:var(--text)">“Our instructors will review your analysis and provide feedback soon.”</div>
+        <div class="h" style="font-size:2.15cqw;font-weight:500;color:var(--text)">“Grade typically released within <span style="color:var(--primary)">5–7 business days</span> after submission deadline.”</div>
+        <div class="b" style="font-size:1.25cqw">quoted from the captured instructor note · last line holds alone 2s</div>
+      </div>
+    </div>
+    <div class="lbl"><span>02 · Five to Seven</span><span class="id">frame-02 · 0:11–0:20</span></div>
+    <div class="note"><b>Moves first:</b> first policy line types in, then the second replaces the field.
+    <b>Seam out:</b> squeeze.</div>
+    <div class="seam">squeeze →</div>
+  </div>
+
+  <!-- 03 -->
+  <div class="cell" id="frame-03">
+    <div class="frame">
+      <div style="position:absolute;inset:0;padding:5cqw;display:flex;flex-direction:column;gap:2cqw">
+        <div class="ph" style="flex:1">result screen · flash ~1s · cut before readable</div>
+        <div style="display:flex;gap:1cqw;align-items:center">
+          <span class="pill" style="background:rgba(5,150,105,.10);color:var(--pos)">Grade released</span>
+          <span class="pill" style="background:var(--tintMid);color:var(--primary)">Feedback attached</span>
+          <span class="b" style="font-size:1.1cqw">withheld — do not read</span>
+        </div>
+      </div>
+    </div>
+    <div class="lbl"><span>03 · The Tease</span><span class="id">frame-03 · 0:20–0:27</span></div>
+    <div class="note"><b>Moves first:</b> the flash, then a hard cut. <b>Seam out:</b> zoom-through.
+    Deliberately unsatisfied.</div>
+    <div class="seam">zoom-through →</div>
+  </div>
+
+  <!-- 04 -->
+  <div class="cell" id="frame-04">
+    <div class="frame">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqw;padding:6cqw;text-align:center">
+        <img src="assets/mark-tile-primary.png" alt="Learnix mark" style="width:11cqw;height:11cqw;display:block;border-radius:2.6cqw" />
+        <div class="h" style="font-size:2.5cqw;font-weight:600">The wait has an owner.</div>
+        <div class="b" style="font-size:1.35cqw;max-width:52ch">Every pending state in Learnix belongs to a named department.</div>
+      </div>
+    </div>
+    <div class="lbl"><span>04 · The Owner</span><span class="id">frame-04 · 0:27–0:35</span></div>
+    <div class="note"><b>Moves first:</b> mark assembles from the ring outward, then the line sets.
+    Mark only — <b>no wordmark yet</b>, it is saved for 08.</div>
+    <div class="seam">push-slide LEFT →</div>
+  </div>
+
+  <!-- 05 -->
+  <div class="cell" id="frame-05">
+    <div class="frame">
+      <div style="position:absolute;inset:0;padding:4.4cqw;display:flex;flex-direction:column;gap:1.8cqw">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span class="h" style="font-size:1.9cqw;font-weight:600">Advanced Macroeconomics: The Global Market Analysis</span>
+          <span class="pill" style="background:rgba(37,99,235,.10);color:var(--primary)">Teacher view</span>
+        </div>
+        <div class="ph" style="flex:1">teacher grading surface · scale, not crop</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.1cqw">
+          <div class="card" style="padding:1.3cqw"><div class="b" style="font-size:.95cqw">Criterion 1</div><div class="h" style="font-size:1.5cqw">—</div></div>
+          <div class="card" style="padding:1.3cqw;border-color:rgba(5,150,105,.35)"><div class="b" style="font-size:.95cvw;color:var(--pos)">Criterion 2</div><div class="h" style="font-size:1.5cqw;color:var(--pos)">scored</div></div>
+          <div class="card" style="padding:1.3cqw"><div class="b" style="font-size:.95cqw">Criterion 3</div><div class="h" style="font-size:1.5cqw">—</div></div>
+        </div>
+        <div class="b" style="font-size:1.1cqw">same assignment title held from frame 01 — the match must be unmistakable</div>
+      </div>
+    </div>
+    <div class="lbl"><span>05 · The Handoff</span><span class="id">frame-05 · 0:35–0:48</span></div>
+    <div class="note"><b>Moves first:</b> teacher surface arrives, rubric rows settle, one resolves to a decision.
+    Longest beat — the thesis, not an interstitial.</div>
+    <div class="seam">crossfade →</div>
+  </div>
+
+  <!-- 06 -->
+  <div class="cell" id="frame-06">
+    <div class="frame">
+      <div style="position:absolute;inset:0;padding:5cqw;display:flex;flex-direction:column;gap:2cqw">
+        <div class="lbl-in">Submission status · real enum</div>
+        <div style="display:flex;align-items:center;gap:1.1cqw">
+          <span class="pill" style="background:rgba(217,119,6,.12);color:var(--amber)">PENDING</span>
+          <span style="color:var(--light);font-size:1.5cqw">→</span>
+          <span class="pill" style="background:rgba(37,99,235,.12);color:var(--primary)">UNDER_REVIEW</span>
+          <span style="color:var(--light);font-size:1.5cqw">→</span>
+          <span class="pill" style="background:rgba(5,150,105,.12);color:var(--pos)">GRADED</span>
+        </div>
+        <div class="ph" style="flex:1;min-height:0">diagram-modules.svg · 12 domains, backing only</div>
+        <div style="display:flex;gap:2.4cqw">
+          <div><div class="h" style="font-size:2.2cqw;color:var(--primary);font-weight:700">12</div><div class="b" style="font-size:1cqw">role apps</div></div>
+          <div><div class="h" style="font-size:2.2cqw;color:var(--primary);font-weight:700">296</div><div class="b" style="font-size:1cqw">endpoints</div></div>
+          <div><div class="h" style="font-size:2.2cqw;color:var(--primary);font-weight:700">126</div><div class="b" style="font-size:1cqw">models</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="lbl"><span>06 · The Chain</span><span class="id">frame-06 · 0:48–1:01</span></div>
+    <div class="note"><b>Moves first:</b> states light in sequence left to right, then counts settle behind.
+    Numbers are backing, <b>not</b> the subject.</div>
+    <div class="seam">push-slide LEFT →</div>
+  </div>
+
+  <!-- 07 -->
+  <div class="cell" id="frame-07">
+    <div class="frame">
+      <div style="position:absolute;inset:0;padding:5cqw;display:flex;flex-direction:column;gap:2cqw">
+        <div class="card" style="padding:2.2cqw;display:flex;align-items:center;gap:1.4cqw">
+          <span style="width:1.4cqw;height:1.4cqw;border-radius:50%;background:var(--pos);flex:0 0 auto"></span>
+          <span class="h" style="font-size:2.2cqw;font-weight:600">Graded <span style="color:var(--muted);font-weight:500">· feedback returned</span></span>
+        </div>
+        <div class="ph" style="flex:1;min-height:0">same screen as 01 · opposite state · 4s quiet, no type over it</div>
+        <div style="display:flex;align-items:center;gap:1.2cqw;padding:1.4cqw;border-radius:var(--r-md);background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.28)">
+          <span class="pill" style="background:var(--pos);color:#fff">Unlocked</span>
+          <span class="b" style="font-size:1.15cqw;color:var(--text)">The Analytical Thinker — grade above 90%</span>
+        </div>
+        <div class="b" style="font-size:1.05cqw">callback: the badge locked in 01 is the payoff here</div>
+      </div>
+    </div>
+    <div class="lbl"><span>07 · Resolve</span><span class="id">frame-07 · 1:01–1:10</span></div>
+    <div class="note"><b>Moves first:</b> status pill flips colour, badge row resolves last.
+    <b>Seam out:</b> blur-crossfade.</div>
+    <div class="seam">blur-crossfade →</div>
+  </div>
+
+  <!-- 08 -->
+  <div class="cell" id="frame-08">
+    <div class="frame">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.4cqw;padding:6cqw;text-align:center">
+        <img src="assets/mark-tile-primary.png" alt="Learnix mark" style="width:9.5cqw;height:9.5cqw;display:block;border-radius:2.3cqw" />
+        <div class="h" style="font-size:3.1cqw;font-weight:700;letter-spacing:-.03em">Learnix</div>
+        <div class="b" style="font-size:1.35cqw">12 role apps · 296 endpoints · one system</div>
+      </div>
+    </div>
+    <div class="lbl"><span>08 · Learnix</span><span class="id">frame-08 · 1:10–1:15</span></div>
+    <div class="note"><b>Moves first:</b> mark resolves, wordmark completes. Hold 2s after everything settles.
+    No CTA, no URL, no trial button.</div>
+    <div class="seam">end card</div>
+  </div>
+
+  <!-- seam map -->
+  <div class="cell wide">
+    <div class="lbl"><span>Seam map</span><span class="id">one direction rule · leftward default</span></div>
+    <div class="seamstrip">
+      <span class="s">01 cut</span><span class="ar">→</span>
+      <span class="s">02 blur-crossfade</span><span class="ar">→</span>
+      <span class="s">03 squeeze</span><span class="ar">→</span>
+      <span class="s">04 zoom-through</span><span class="ar">→</span>
+      <span class="s">05 push-slide LEFT</span><span class="ar">→</span>
+      <span class="s">06 crossfade</span><span class="ar">→</span>
+      <span class="s">07 push-slide LEFT</span><span class="ar">→</span>
+      <span class="s">08 blur-crossfade</span>
+    </div>
+  </div>
+
+  <!-- tokens -->
+  <div class="cell wide">
+    <div class="lbl"><span>Tokens &amp; bans</span><span class="id">from Learnix's own theme.js + transport-design.md</span></div>
+    <div class="tok">
+      <div>
+        <h4>Palette</h4>
+        <div class="sw"><i style="background:#F5F7F9"></i>bg #F5F7F9</div>
+        <div class="sw" style="margin-top:7px"><i style="background:#FFFFFF"></i>surface #FFFFFF</div>
+        <div class="sw" style="margin-top:7px"><i style="background:#0F172A"></i>ink #0F172A</div>
+        <div class="sw" style="margin-top:7px"><i style="background:#2563EB"></i>primary #2563EB</div>
+        <div class="sw" style="margin-top:7px"><i style="background:#64748B"></i>muted #64748B</div>
+        <div class="sw" style="margin-top:7px"><i style="background:#B45309"></i>role amber #B45309</div>
+      </div>
+      <div>
+        <h4>Type roles</h4>
+        <div class="b" style="font-size:11px;line-height:1.7">
+          Display · Plus Jakarta Sans 700<br>
+          Numerals · Plus Jakarta Sans 700<br>
+          Body · Manrope 400<br>
+          Chrome · Manrope 600 / .12em caps
+        </div>
+      </div>
+      <div>
+        <h4>Shape</h4>
+        <div class="b" style="font-size:11px;line-height:1.7">
+          Radii 10 / 12 / 14 · pill 100<br>
+          Border 1px rgba(37,99,235,.20)<br>
+          Card fill rgba(37,99,235,.04)<br>
+          <b>No shadows anywhere</b><br>
+          Canvas 1920 × 1080
+        </div>
+      </div>
+      <div>
+        <h4>Hero prop</h4>
+        <div class="b" style="font-size:11px;line-height:1.7">
+          The <b>locked badge</b> — planted 01,<br>
+          paid 07. The assignment title is<br>
+          held constant 01 → 05 so the<br>
+          handoff reads as one object moving.
+        </div>
+      </div>
+      <div class="bans">
+        <b>Bans —</b> no isometric 3D campus · no floating-UI-on-gradient · no stock footage of students ·
+        no checkmarked feature list · no glow · no side-by-side explainer layout · no fake product UI ·
+        no static endcard · no trial CTA. <b>Motion failures to avoid —</b> the slideshow (every beat a fresh
+        card) and the screensaver (motion that says nothing). <b>Held frame —</b> 07 gives four seconds of
+        nothing moving so the resolved state lands.
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Sketches only — layout, copy and brand treatment are locked here; motion arrives in the build pass.
+  Screens are real captures from <code>prototype/new/**</code>; the hatched blocks are stand-ins for media
+  the build will place. Truthfulness: every status string shown is a live enum from
+  <code>backend/src/lib/enums.ts</code>; all counts are the repository's real totals; prototype screen copy
+  is fictional sample data and is never presented as institutional data.
+</footer>
+</body>
+</html>
