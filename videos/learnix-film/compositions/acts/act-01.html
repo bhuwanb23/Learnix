@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Learnix Master Film — Act 1 · The College</title>
+<link rel="stylesheet" href="assets/tokens.css" />
+<style>
+  /* The root is styled by id, not by a class — sub-composition rules get
+     scoped to [data-composition-id] <selector>, so a root class would become
+     a descendant selector that cannot match the root itself. */
+  #root {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    container-type: size;
+  }
+
+  /* Placeholder plate. Real plates replace these one at a time
+     (ASSET-MANIFEST.md Track A). The plate label is NOT part of the film —
+     it is a build-time marker and must be removed before any render that
+     goes near a client. */
+  #root .plate {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px;
+  }
+  #root .plate-id {
+    font-family: var(--font-display); font-size: var(--t-display);
+    font-weight: 700; letter-spacing: -0.02em; color: var(--on-void-muted);
+    opacity: 0.5;
+  }
+  #root .plate-world {
+    font-family: var(--font-body); font-size: var(--t-label);
+    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--on-void-muted); opacity: 0.35;
+  }
+  #root .plate-warm { background: #2a2317; }
+  #root .plate-cool { background: var(--void-2); }
+  #root .plate-neut { background: var(--void); }
+
+  /* Act 1 lives in the chaos register: no Learnix blue, no brand UI.
+     DESIGN-SYSTEM.md §1. */
+  #root .phone-insert {
+    width: 420px; height: 860px; border-radius: 44px;
+    background: #14100c; border: 2px solid #3a3128;
+    display: flex; flex-direction: column; padding: 54px 32px; gap: 22px;
+  }
+  #root .notif {
+    background: #1e1912; border-left: 3px solid var(--warning);
+    border-radius: 6px; padding: 16px 18px; height: 76px;
+  }
+</style>
+</head>
+<body>
+
+<div id="root" data-composition-id="act-01" data-start="0" data-duration="30" data-width="1920" data-height="1080">
+
+  <!-- S01 · 0:00-0:06 · LIVE · campus golden hour, crane low.
+       This plate and S07 are the film's structural rhyme — see note on S07. -->
+  <div id="s01-campus-open" class="clip plate plate-warm" data-start="0" data-duration="6" data-track-index="0">
+    <div class="plate-id">S01</div>
+    <div class="plate-world">LIVE · campus · golden hour</div>
+  </div>
+
+  <!-- S02 · 0:06-0:11 · LIVE · phone lock screen, three unlabelled notifications.
+       VO BRIDGES +0.9s into S08 — do not cut the plate on the line. -->
+  <div id="s02-phone-notifs" class="clip plate plate-cool" data-start="6" data-duration="5" data-track-index="1">
+    <div class="phone-insert">
+      <div class="notif"></div>
+      <div class="notif"></div>
+      <div class="notif"></div>
+    </div>
+    <div class="plate-id">S02</div>
+    <div class="plate-world">LIVE · phone · shallow DOF</div>
+  </div>
+
+  <!-- S03 · 0:11-0:16 · LIVE · over-shoulder, two apps, disagreeing numbers.
+       Numbers legible 12 frames only — shoot 4K, crop in Resolve. -->
+  <div id="s03-two-apps" class="clip plate plate-cool" data-start="11" data-duration="5" data-track-index="0">
+    <div class="plate-id">S03</div>
+    <div class="plate-world">LIVE · over-shoulder · two apps</div>
+  </div>
+
+  <!-- S04 · 0:16-0:21 · LIVE · the face, not the screen -->
+  <div id="s04-face" class="clip plate plate-cool" data-start="16" data-duration="5" data-track-index="1">
+    <div class="plate-id">S04</div>
+    <div class="plate-world">LIVE · face · concern not confusion</div>
+  </div>
+
+  <!-- S05 · 0:21-0:25 · LIVE · register, paper, two desks -->
+  <div id="s05-two-desks" class="clip plate plate-neut" data-start="21" data-duration="4" data-track-index="0">
+    <div class="plate-id">S05</div>
+    <div class="plate-world">LIVE · register · two desks</div>
+  </div>
+
+  <!-- S06 · 0:25-0:28 · LIVE · silent -->
+  <div id="s06-silent" class="clip plate plate-neut" data-start="25" data-duration="3" data-track-index="1">
+    <div class="plate-id">S06</div>
+    <div class="plate-world">LIVE · silent</div>
+  </div>
+
+  <!-- S07 · 0:28-0:30 · LIVE · the rhyme.
+       BYTE-IDENTICAL framing to S01. If these two do not match, the film's
+       central device is broken and the closing rhyme at S58 has nothing to
+       rhyme with. Verify by overlaying the plates in Resolve on the day. -->
+  <div id="s07-campus-rhyme" class="clip plate plate-warm" data-start="28" data-duration="2" data-track-index="0">
+    <div class="plate-id">S07</div>
+    <div class="plate-world">LIVE · matches S01 exactly</div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  // Paused root of this composition. Must match data-composition-id above.
+  window.__timelines["act-01"] = gsap.timeline({ paused: true });
+</script>
+</body>
+</html>
