@@ -31,7 +31,15 @@ Issue/return desk: issued books (student, book, due date, status Issued/Overdue)
 **Entity `book_issue`**: id, studentId, bookId, issueDate, dueDate, returnDate?, status (Issued/Returned/Overdue), fineAmount.
 
 ### 3.4 Fines & Overdues
-Overdue list with days overdue + fine amount. Actions: **Collect Fine** (marks paid, receipt → Accounts), **Extend Due Date** (renewal), **Waive Fine** (reason).
+Overdue list with days overdue + fine amount, searchable by student / roll number / book and sortable by amount or days. Actions: **Collect Fine** (marks paid, receipt → Accounts), **Extend Due Date** (renewal), **Waive Fine** (reason required), plus **bulk settle** for every fine a student owes.
+
+Fine rate is **₹5/day**, charged at return. The rate breakdown (days × rate) is shown on the fine detail so the amount is auditable on screen.
+
+> **Waiver reasons are mandatory.** A waiver is an audited accounting decision, so the librarian must enter a real reason — it is stored on the record and surfaced in the audit log. Presets are suggestions, not a substitute.
+>
+> **Extend Due Date** applies to a book that is still out. It moves the due date, clears the overdue flag, and writes off the pending fine — the fine is only raised at return, so an extended loan that comes back on time is charged nothing.
+>
+> **Receipt numbering is FINE-scoped.** Collections are numbered `PAY-FINE-<year>-<seq>` / `RCP-FINE-<year>-<seq>` from the count of FINE payments only, so they can never collide with the tuition (`PAY-TUI-*`) or transport (`PAY-TF-*`) sequences. Bulk settlement issues one payment **and** one receipt per fine — `Payment ↔ Receipt` is strictly 1:1.
 
 **Entity `fine`**: id, issueId, amount, status (Pending/Paid/Waived).
 
@@ -99,9 +107,13 @@ at `/api/v1/library` (role gate: `LIBRARY` or `ADMIN`).
 > **Borrowing rules** (`circulation.service.ts`): max 4 active loans per student,
 > max 2 renewals per loan, issuing blocked when the student is inactive, over the
 > loan limit, holds an overdue book, or owes more than ₹200 in unpaid fines.
-- `GET /api/v1/library/fines` — pending + collected fines with stats
+- `GET /api/v1/library/fines` — fines with search + `status` filter and `sort`, plus debtor aggregation
+- `GET /api/v1/library/fines/:id` — fine detail with rate breakdown, student totals and sibling fines
+- `GET /api/v1/library/fines/students/:id` — all fines for one student (pending + settled)
 - `POST /api/v1/library/fines/:id/collect` — collect fine (write-through: Payment + Receipt + FinePayment)
-- `POST /api/v1/library/fines/:id/waive` — waive fine (audited)
+- `POST /api/v1/library/fines/:id/waive` — waive fine (reason required, audited)
+- `POST /api/v1/library/fines/:id/extend` — extend due date on an outstanding overdue loan
+- `POST /api/v1/library/fines/settle` — bulk collect or waive every pending fine for a student
 - `GET /api/v1/library/requests` — book purchase requests
 - `POST /api/v1/library/requests/:id/decide` — approve/reject (creates procurement on approve)
 - `GET /api/v1/library/digital` — digital resources with search + `type` / `status` / `audience` filters and `sort`

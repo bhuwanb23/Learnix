@@ -36,6 +36,11 @@ import IssueBookDesk from './pages/circulation/issue_book/issue_book';
 import LoanHistoryScreen from './pages/circulation/loan_history/loan_history';
 import StudentBorrowingProfile from './pages/circulation/student_profile/student_profile';
 
+// Fines sub-pages (pages/fines/*)
+import FineDetail from './pages/fines/fine_detail/fine_detail';
+import SettleFine from './pages/fines/settle_fine/settle_fine';
+import StudentFines from './pages/fines/student_fines/student_fines';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 
@@ -60,6 +65,11 @@ const FEATURE_MODULES = {
   LoanHistory: { title: 'Loan History', icon: 'time-outline', component: LoanHistoryScreen },
   StudentLookup: { title: 'Student Standing', icon: 'people-outline', component: StudentBorrowingProfile },
   StudentProfile: { title: 'Student Standing', icon: 'people-outline', component: StudentBorrowingProfile },
+
+  // Fines sub-pages
+  FineDetail: { title: 'Fine Detail', icon: 'cash-outline', component: FineDetail },
+  SettleFine: { title: 'Settle Fine', icon: 'checkmark-circle-outline', component: SettleFine },
+  StudentFines: { title: 'Student Fines', icon: 'people-outline', component: StudentFines },
 };
 
 const TAB_TITLES = {
