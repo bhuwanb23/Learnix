@@ -39,6 +39,14 @@ model FeeDue {
   // balance = amountMinor - paidMinor, and status is derived from that.
   paidMinor        Int       @default(0)
   lastPaymentAt    DateTime?
+  // Recovery tracking. The old desk sent a reminder and immediately forgot
+  // about it, so nobody could tell a family that had never been chased from
+  // one that had been asked six times.
+  lastRemindedAt   DateTime?
+  reminderCount    Int       @default(0)
+  // Who waived it, when, and why. A waiver with no actor is an unauditable one.
+  waivedAt         DateTime?
+  waivedByUserId   String?   // scalar → users.id
   daysOverdue      Int       @default(0) // denorm, job-recomputed
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

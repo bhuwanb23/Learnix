@@ -3,7 +3,6 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
-import { syncDueOverdue } from './collections.service.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
 
@@ -192,142 +191,10 @@ export async function requestRevision(
   return { id: fs.id, status: 'REVISION_REQUESTED' };
 }
 
-// ── F-04 Fee dues ───────────────────────────────────────────
-export async function listDues(institutionId: string) {
-  // `FeeDue` carries no institutionId — it reaches its tenant through the
-  // student. Without this where-clause the desk listed every school's bills.
-  // (The old signature took the tenant and threw it away.)
-  await syncDueOverdue(institutionId);
-
-  const dues = await prisma.feeDue.findMany({
-    where: { studentProfile: { user: { institutionId, deletedAt: null } } },
-    include: {
-      studentProfile: { include: { user: { select: { fullName: true } } } },
-      feeStructure: { include: { program: { select: { name: true } } } },
-    },
-    orderBy: { daysOverdue: 'desc' },
-  });
-
-  const open = dues.filter((d) => d.status === 'UNPAID' || d.status === 'PARTIAL');
-  const waived = dues.filter((d) => d.status === 'WAIVED');
-  const cleared = dues.filter((d) => d.status === 'CLEARED');
-  const balance = (d: { amountMinor: number; paidMinor: number }) =>
-    Math.max(0, d.amountMinor - d.paidMinor);
-  // Outstanding is the BALANCE, not the billed amount — once collections can
-  // half-settle a due, quoting amountMinor overstates what is still owed.
-  const totalUnpaid = open.reduce((s, d) => s + balance(d), 0);
-
-  return {
-    stats: {
-      unpaidCount: open.length,
-      unpaidRupees: toRupees(totalUnpaid),
-      partialCount: open.filter((d) => d.status === 'PARTIAL').length,
-      overdueRupees: toRupees(
-        open.filter((d) => d.daysOverdue > 0).reduce((s, d) => s + balance(d), 0),
-      ),
-      clearedCount: cleared.length,
-      waivedCount: waived.length,
-    },
-    dues: dues.map((d) => ({
-      id: d.id,
-      student: d.studentProfile.user.fullName,
-      rollNo: d.studentProfile.rollNo,
-      title: d.title,
-      program: d.feeStructure?.program?.name ?? null,
-      amountRupees: toRupees(d.amountMinor),
-      paidRupees: toRupees(d.paidMinor),
-      balanceRupees: toRupees(balance(d)),
-      dueDate: d.dueDate,
-      daysOverdue: d.daysOverdue,
-      status: d.status,
-      waivedReason: d.waivedReason,
-    })),
-  };
-}
-
-export async function remindDue(
-  institutionId: string,
-  actorUserId: string,
-  dueId: string,
-) {
-  const due = await prisma.feeDue.findFirst({
-    where: { id: dueId, studentProfile: { user: { institutionId, deletedAt: null } } },
-    include: {
-      studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
-    },
-  });
-  if (!due) throw notFound('Fee due not found');
-  if (due.status === 'CLEARED') throw conflict('Fee already cleared');
-  if (due.status === 'WAIVED') throw conflict('Fee already waived');
-
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: due.studentProfile.userId,
-      type: 'FEE_DUE',
-      title: `Fee reminder: ${due.title}`,
-      body: `Your fee "${due.title}" of ₹${toRupees(due.amountMinor)} is ${due.daysOverdue > 0 ? `${due.daysOverdue} day(s) overdue` : 'due soon'}. Please clear it at the earliest.`,
-      sourceModule: 'accounts',
-    },
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'fee.remind',
-    entityType: 'FeeDue',
-    entityId: dueId,
-    after: { student: due.studentProfile.user.fullName },
-  });
-
-  return { id: due.id, reminded: true };
-}
-
-export async function waiveFee(
-  institutionId: string,
-  actorUserId: string,
-  dueId: string,
-  reason: string,
-) {
-  const due = await prisma.feeDue.findFirst({
-    where: { id: dueId, studentProfile: { user: { institutionId, deletedAt: null } } },
-    include: {
-      studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
-    },
-  });
-  if (!due) throw notFound('Fee due not found');
-  if (due.status !== 'UNPAID' && due.status !== 'PARTIAL') {
-    throw conflict(`Fee is already ${due.status}`);
-  }
-
-  await prisma.feeDue.update({
-    where: { id: due.id },
-    data: { status: 'WAIVED', waivedReason: reason },
-  });
-
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: due.studentProfile.userId,
-      type: 'FEE_DUE',
-      title: `Fee waived: ${due.title}`,
-      body: `Your fee "${due.title}" of ₹${toRupees(due.amountMinor)} has been waived. Reason: ${reason}.`,
-      sourceModule: 'accounts',
-    },
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'fee.waive',
-    entityType: 'FeeDue',
-    entityId: dueId,
-    before: { status: due.status },
-    after: { status: 'WAIVED', reason },
-  });
-
-  return { id: due.id, status: 'WAIVED', amountRupees: toRupees(due.amountMinor) };
-}
+// F-04 Dues & Recovery (list / detail / remind / waive / reinstate) now lives in
+// dues.service.ts. It has to derive status from `paidMinor`, age the book into
+// buckets and read the audit trail for reminder history — none of which this
+// file's fee-structure helpers know about.
 
 // ── F-05 Unified ledger ─────────────────────────────────────
 export async function getLedger(institutionId: string) {

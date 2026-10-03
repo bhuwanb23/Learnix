@@ -72,8 +72,33 @@ export const studentSearchQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(30).default(10),
 });
 
+// F-04 Fee dues — list filters. `bucket` is the receivables aging bucket; the
+// derived status (never the stale column) is what `status` filters on.
+export const duesQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  status: z.enum(['ALL', 'OPEN', 'UNPAID', 'PARTIAL', 'CLEARED', 'WAIVED']).default('ALL'),
+  bucket: z.enum(['ALL', 'NOT_DUE', 'D1_7', 'D8_15', 'D16_30', 'D30_PLUS', 'CLEARED']).default('ALL'),
+  sort: z
+    .enum(['SEVERITY', 'OVERDUE_DESC', 'AMOUNT_DESC', 'AMOUNT_ASC', 'DUE_DATE_ASC', 'RECENTLY_REMINDED'])
+    .default('SEVERITY'),
+  take: z.coerce.number().int().min(1).max(200).optional(),
+  skip: z.coerce.number().int().min(0).optional(),
+});
+
+// F-04 Fee dues — send a reminder. The note is appended to the notification the
+// student receives, so an officer can add context ("we agreed a 7-day grace").
+export const remindDueSchema = z.object({
+  note: z.string().trim().max(300).optional(),
+});
+
 // F-04 Fee dues — waive
 export const waiveFeeSchema = z.object({
+  reason: z.string().trim().min(3).max(200),
+});
+
+// F-04 Fee dues — reverse a mistaken waiver. A write-off you cannot undo is a
+// permanent one, so the reason is audited exactly like the waiver's own.
+export const reinstateDueSchema = z.object({
   reason: z.string().trim().min(3).max(200),
 });
 

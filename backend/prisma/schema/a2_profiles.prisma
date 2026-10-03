@@ -64,6 +64,11 @@ model StaffProfile {
   joiningDate      DateTime?
   maxWorkloadHours Int       @default(18)
   status           String    @default("ACTIVE")
+  // Payroll inputs (F-06). monthlyGrossMinor is the MONTHLY gross in paise —
+  // 0 means "not on payroll", and runPayroll excludes rather than guesses.
+  monthlyGrossMinor Int      @default(0)
+  bankAccountLast4  String?
+  salaryEffectiveFrom DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

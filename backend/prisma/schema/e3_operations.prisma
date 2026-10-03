@@ -3,13 +3,24 @@
 // runByUserId / requestedByUserId / approvedByUserId are scalar actor-stamps.
 // payslipFileId scalar (files → Domain L). month format "2026-08".
 
+// A month of payroll. status DRAFT → APPROVED → PAID.
+// The run carries denormalised gross/deductions/net totals (recomputed whenever
+// an entry changes) so the hub never has to sum a page of entries to draw a
+// headline. `totalMinor` is the NET total actually owed to staff.
 model PayrollRun {
   id           String   @id @default(cuid())
   institutionId String
   month        String // "2026-08"
-  status       String   @default("DRAFT") // DRAFT | RUN | PAID
+  status       String   @default("DRAFT") // DRAFT | APPROVED | PAID
   runByUserId  String // scalar → users.id
-  totalMinor   Int      @default(0)
+  approvedByUserId String? // scalar → users.id — locks the numbers
+  approvedAt   DateTime?
+  paidByUserId String? // scalar → users.id — set when the last entry is paid
+  paidAt       DateTime?
+  notes        String?
+  grossMinor      Int   @default(0)
+  deductionsMinor Int   @default(0)
+  totalMinor      Int   @default(0) // net owed across all entries
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -17,18 +28,35 @@ model PayrollRun {
 
   @@unique([institutionId, month])
   @@index([institutionId])
+  @@index([institutionId, status])
   @@map("payroll_runs")
 }
 
+// One staff member's month. The staff identity (employeeNo / designation /
+// departmentName / bankAccountLast4) is SNAPSHOT onto the entry: a payslip is a
+// historical document and must keep saying what was true when it was raised.
+// earningsJson / deductionsJson are [{ label, amountMinor }] in paise — the
+// payslip lines. gross/deductions/net are their sums, kept denormalised so no
+// reader has to parse JSON to add a column up.
 model PayrollEntry {
   id            String    @id @default(cuid())
   payrollRunId  String
   staffUserId   String // scalar → users.id
+  employeeNo    String? // snapshot
+  designation   String? // snapshot
+  departmentName String? // snapshot
+  bankAccountLast4 String? // snapshot — only ever the last 4
   grossMinor    Int
   deductionsMinor Int     @default(0)
   netMinor      Int
+  lopDays       Int       @default(0) // loss-of-pay days applied this month
+  earningsJson  String    @default("[]") // [{ label, amountMinor }]
+  deductionsJson String   @default("[]") // [{ label, amountMinor }]
+  note          String?
   status        String    @default("PENDING") // PENDING | PAID
   paidAt        DateTime?
+  paidByUserId  String? // scalar → users.id
+  paymentRef    String? // UTR / cheque / transfer reference
   payslipFileId String? // scalar → files.id (Domain L)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -37,6 +65,7 @@ model PayrollEntry {
 
   @@unique([payrollRunId, staffUserId])
   @@index([payrollRunId])
+  @@index([staffUserId])
   @@map("payroll_entries")
 }
 

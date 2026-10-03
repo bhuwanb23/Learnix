@@ -252,13 +252,54 @@ async function main() {
     }
   }
   {
-    // Accounts: collections, ledger
+    // Accounts: collections, ledger, dues & recovery
     const t = tokens['Accounts']?.accessToken;
     if (t) {
       const collections = await api('/api/v1/accounts/collections', t);
       check('accounts collections', collections.status === 200);
       const ledger = await api('/api/v1/accounts/ledger', t);
       check('accounts ledger', ledger.status === 200);
+
+      // Dues: the list, its filters, and the per-due detail screen.
+      const dues = await api('/api/v1/accounts/dues', t);
+      check('accounts dues', dues.status === 200);
+      const d = dues.json?.data;
+      check('dues carry stats and aging buckets',
+        !!d?.stats?.outstandingRupees && Array.isArray(d?.aging) && d.aging.length === 5);
+      check('no due row contradicts its own money',
+        d?.dues?.every((x: any) => x.balanceRupees <= x.amountRupees && x.paidRupees <= x.amountRupees));
+      check('outstanding never goes negative', (d?.stats?.outstandingRupees ?? -1) >= 0);
+
+      const filtered = await api('/api/v1/accounts/dues?status=OPEN&sort=SEVERITY&take=10', t);
+      check('dues filters + sort accepted', filtered.status === 200);
+      check('status=OPEN returns only collectible rows',
+        filtered.json?.data?.dues?.every((x: any) => x.collectible === true));
+
+      const badSort = await api('/api/v1/accounts/dues?sort=NONSENSE', t);
+      check('dues rejects an invalid sort with 400', badSort.status === 400);
+
+      const anyDue = d?.dues?.[0];
+      if (anyDue) {
+        const detail = await api(`/api/v1/accounts/dues/${anyDue.id}`, t);
+        check('dues detail', detail.status === 200);
+        check('dues detail returns the requested id',
+          detail.json?.data?.due?.id === anyDue.id);
+        check('dues detail exposes the permitted actions',
+          typeof detail.json?.data?.due?.canCollect === 'boolean'
+          && typeof detail.json?.data?.due?.canReinstate === 'boolean');
+        check('dues detail names the student',
+          typeof detail.json?.data?.student?.name === 'string');
+      }
+      const missing = await api('/api/v1/accounts/dues/does-not-exist', t);
+      check('unknown due returns 404', missing.status === 404);
+
+      // A WRITE must refuse without touching anything — the smoke suite is
+      // read-only, so this only proves the guard rails are wired.
+      const noReason = await api('/api/v1/accounts/dues/does-not-exist/waive', t, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      });
+      check('waive validates before it looks the due up', noReason.status === 400);
     }
   }
   {

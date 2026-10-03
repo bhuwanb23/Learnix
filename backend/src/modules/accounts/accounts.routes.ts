@@ -11,12 +11,16 @@ import {
   statementQuerySchema,
   studentSearchQuerySchema,
   waiveFeeSchema,
+  reinstateDueSchema,
+  duesQuerySchema,
+  remindDueSchema,
   runPayrollSchema,
   addExpenseSchema,
   accountsBroadcastSchema,
 } from './accounts.schemas.js';
 import * as service from './accounts.service.js';
 import * as collections from './collections.service.js';
+import * as dues from './dues.service.js';
 
 // Accounts & Finance module — mounted at /api/v1/accounts (docs/users/06 §4)
 const router = Router();
@@ -160,20 +164,42 @@ router.post(
 // F-04 dues
 router.get(
   '/dues',
+  validate(duesQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listDues(req.auth!.institutionId) });
+    res.json({
+      data: await dues.listDues(req.auth!.institutionId, {
+        q: req.query.q ? String(req.query.q) : undefined,
+        status: req.query.status as never,
+        bucket: req.query.bucket as never,
+        sort: req.query.sort as never,
+        take: req.query.take ? Number(req.query.take) : undefined,
+        skip: req.query.skip ? Number(req.query.skip) : undefined,
+      }),
+    });
+  }),
+);
+
+router.get(
+  '/dues/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.getDueDetail(req.auth!.institutionId, String(req.params.id)),
+    });
   }),
 );
 
 router.post(
   '/dues/:id/remind',
   validate(idParamSchema, 'params'),
+  validate(remindDueSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.remindDue(
+      data: await dues.remindDue(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
+        req.body.note,
       ),
     });
   }),
@@ -185,7 +211,23 @@ router.post(
   validate(waiveFeeSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.waiveFee(
+      data: await dues.waiveFee(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/dues/:id/reinstate',
+  validate(idParamSchema, 'params'),
+  validate(reinstateDueSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.reinstateDue(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
