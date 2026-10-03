@@ -17,12 +17,16 @@ import {
   waiveFineSchema,
   requestDecisionSchema,
   addDigitalResourceSchema,
+  updateDigitalResourceSchema,
   grantAccessSchema,
+  recordAccessSchema,
+  digitalQuerySchema,
   libraryBroadcastSchema,
   catalogQuerySchema,
 } from './library.schemas.js';
 import * as service from './library.service.js';
 import * as circulation from './circulation.service.js';
+import * as digital from './digital.service.js';
 
 // Library Staff module — mounted at /api/v1/library (docs/users/07 §4)
 const router = Router();
@@ -263,8 +267,41 @@ router.post(
 // L-06 digital library
 router.get(
   '/digital',
+  validate(digitalQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listDigitalResources(req.auth!.institutionId) });
+    res.json({
+      data: await digital.listDigitalResources(
+        req.auth!.institutionId,
+        req.query as {
+          q?: string; type?: string; status?: 'ALL' | 'ACTIVE' | 'ARCHIVED';
+          audience?: 'ALL' | 'GRANTED' | 'PUBLIC'; sort?: 'TITLE' | 'NEWEST' | 'POPULAR';
+        },
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/digital/audiences',
+  wrap(async (req, res) => {
+    res.json({ data: await digital.listAudiences(req.auth!.institutionId) });
+  }),
+);
+
+router.get(
+  '/digital/usage',
+  wrap(async (req, res) => {
+    res.json({ data: await digital.getUsageReport(req.auth!.institutionId) });
+  }),
+);
+
+router.get(
+  '/digital/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await digital.getDigitalResourceDetail(req.auth!.institutionId, String(req.params.id)),
+    });
   }),
 );
 
@@ -273,7 +310,41 @@ router.post(
   validate(addDigitalResourceSchema),
   wrap(async (req, res) => {
     res.status(201).json({
-      data: await service.addDigitalResource(req.auth!.institutionId, req.auth!.userId, req.body),
+      data: await digital.createDigitalResource(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.put(
+  '/digital/:id',
+  validate(idParamSchema, 'params'),
+  validate(updateDigitalResourceSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await digital.updateDigitalResource(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.delete(
+  '/digital/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await digital.deleteDigitalResource(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+      ),
     });
   }),
 );
@@ -284,12 +355,38 @@ router.post(
   validate(grantAccessSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.grantAccess(
+      data: await digital.grantAccess(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
         req.body,
       ),
+    });
+  }),
+);
+
+router.delete(
+  '/digital/:id/grants/:grantId',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await digital.revokeAccess(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        String(req.params.grantId),
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/digital/:id/access',
+  validate(idParamSchema, 'params'),
+  validate(recordAccessSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await digital.recordAccess(req.auth!.institutionId, String(req.params.id), req.body),
     });
   }),
 );

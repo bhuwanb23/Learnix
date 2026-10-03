@@ -82,11 +82,39 @@ export const addDigitalResourceSchema = z.object({
   type: z.enum(['PDF', 'EBOOK', 'JOURNAL']),
   subject: z.string().trim().max(100).optional(),
   license: z.string().trim().max(200).optional(),
+  externalUrl: z.string().trim().max(500).optional(),
+  description: z.string().trim().max(1000).optional(),
+  publisher: z.string().trim().max(200).optional(),
+});
+
+export const updateDigitalResourceSchema = z.object({
+  title: z.string().trim().min(2).max(200).optional(),
+  type: z.enum(['PDF', 'EBOOK', 'JOURNAL']).optional(),
+  subject: z.string().trim().max(100).nullable().optional(),
+  license: z.string().trim().max(200).nullable().optional(),
+  externalUrl: z.string().trim().max(500).nullable().optional(),
+  description: z.string().trim().max(1000).nullable().optional(),
+  publisher: z.string().trim().max(200).nullable().optional(),
+  status: z.enum(['ACTIVE', 'ARCHIVED']).optional(),
 });
 
 export const grantAccessSchema = z.object({
   programId: z.string().min(1).max(64).optional(),
   batchId: z.string().min(1).max(64).optional(),
+});
+
+export const recordAccessSchema = z.object({
+  studentProfileId: z.string().min(1).max(64).optional(),
+  accessType: z.enum(['OPEN', 'DOWNLOAD', 'VIEW']).default('OPEN'),
+});
+
+// L-06 Digital library — query filters
+export const digitalQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  type: z.enum(['ALL', 'PDF', 'EBOOK', 'JOURNAL']).default('ALL'),
+  status: z.enum(['ALL', 'ACTIVE', 'ARCHIVED']).default('ACTIVE'),
+  audience: z.enum(['ALL', 'GRANTED', 'PUBLIC']).default('ALL'),
+  sort: z.enum(['TITLE', 'NEWEST', 'POPULAR']).default('TITLE'),
 });
 
 // L-07 Notifications + broadcast

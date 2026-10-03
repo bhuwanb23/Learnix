@@ -32,14 +32,36 @@ model DigitalResource {
   type          String // PDF | EBOOK | JOURNAL
   subject       String?
   license       String?
+  externalUrl   String?
+  description   String?
+  publisher     String?
+  status        String   @default("ACTIVE") // ACTIVE | ARCHIVED
   accessCount   Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   grants DigitalAccessGrant[]
+  accessLogs DigitalResourceAccess[]
 
   @@index([institutionId])
+  @@index([type])
   @@map("digital_resources")
+}
+
+// Per-open access log — the aggregate `accessCount` on DigitalResource is the
+// denormalized sum of these rows, kept in sync by the service layer.
+model DigitalResourceAccess {
+  id                String   @id @default(cuid())
+  resourceId        String
+  studentProfileId  String?
+  accessType        String   @default("OPEN") // OPEN | DOWNLOAD | VIEW
+  createdAt         DateTime @default(now())
+
+  resource DigitalResource @relation(fields: [resourceId], references: [id])
+
+  @@index([resourceId])
+  @@index([createdAt])
+  @@map("digital_resource_accesses")
 }
 
 model DigitalAccessGrant {

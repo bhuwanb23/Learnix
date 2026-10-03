@@ -20,5 +20,15 @@ Thumbs.db
 dist/
 build/
 
+# HyperFrames video projects (videos/<project>/)
+videos/*/node_modules/
+videos/*/renders/
+videos/*/snapshots/
+videos/*/.hyperframes/
+videos/*/capture/
+videos/*/assets/
+videos/*/audio_meta.json
+videos/*/caption_groups.json
+
 #database
 database.sqlite
