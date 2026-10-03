@@ -56,7 +56,17 @@ E-resources catalog (title, type PDF/E-book/Journal, subject, publisher, license
 > A resource with **no grants is open access** (every student may read it). Grants narrow that to specific programs or batches. `deleteDigitalResource` archives rather than deletes so access history survives.
 
 ### 3.7 Notifications
-Inbox (due/overdue/request/resource types) + Broadcast tab (audience: All Students / Borrowers / Overdue Members → due-date reminders, new arrivals, extended hours).
+Library staff are **not** notification recipients — nobody sends them an inbox — so this module is an **outbound desk**, not a mailbox. It is built entirely from the circulation domain tables rather than the `notifications` table.
+
+**Activity Feed** — issues, returns, renewals, fines, book requests and digital opens merged newest-first with per-kind counts and deep links into the loan / fine / resource sub-pages. Overdue status is synced before the feed is built, so a loan that crossed its due date reads as overdue the moment the screen opens.
+
+**Broadcasts** — compose to a live-resolved audience (All Students / Borrowers / Overdue Members), with recipient counts shown *before* sending, four starter templates (holiday hours, extended hours, new arrivals, fine reminder), and a subject/message character budget. History lists every broadcast this module sent plus foreign broadcasts from other modules, and each row opens to the full message, sender, and recipient list. A broadcast with an audience the library does not own (e.g. another module's `{"role":"STUDENT"}`) degrades to an `UNKNOWN` audience with `currentAudienceSize: -1` instead of failing the whole list.
+
+**Audiences** — per-audience recipient counts with coverage percentage against the student body, resolved live from circulation data.
+
+**Reminder Schedule** — the four due-date stages the reminder worker would use: `DUE_3_DAYS`, `DUE_1_DAY`, `DUE_TODAY`, `OVERDUE_FINAL` (+7 days). Each stage shows how many open loans match it *right now*, plus the total reachable. `automationEnabled` is returned as an explicit `false` and the UI says so plainly, pointing the librarian at Compose Broadcast instead of pretending a nightly job exists.
+
+**Entity `broadcast`**: id, senderUserId (bare scalar, name resolved manually), audienceJson, title, body, channels, sentAt. Delivery writes one `notification` row per resolved recipient.
 
 ### 3.8 Profile
 Librarian profile, library stats, preference toggles, account menu.
@@ -70,8 +80,12 @@ POST /api/library/circulation/return      { issueId }
 GET  /api/library/fines                   (POST /{id}/collect, /{id}/extend, /{id}/waive)
 GET/POST /api/library/requests            (+ /{id}/approve|reject)
 GET/POST /api/library/digital             (+ /{id}, grant access)
-GET  /api/library/notifications
-POST /api/library/broadcasts
+GET  /api/library/notifications/activity  ?limit=
+GET  /api/library/notifications/insights
+GET  /api/library/notifications/reminders
+GET  /api/library/broadcasts              POST /api/library/broadcasts
+GET  /api/library/broadcasts/audiences    (registered before /:id)
+GET  /api/library/broadcasts/{id}
 ```
 
 ## 5. Cross-App Dependencies

@@ -303,9 +303,15 @@ export const libraryApi = {
     api.post(`/library/digital/${resourceId}/access`, payload),
   digitalAudiences: () => api.get('/library/digital/audiences'),
   digitalUsage: () => api.get('/library/digital/usage'),
-  notifications: () => api.get('/library/notifications'),
-  markAllRead: () => api.post('/library/notifications/read-all'),
-  broadcast: (payload) => api.post('/library/broadcasts', payload),
+  notifications: () => api.get('/library/notifications/activity'),
+  notificationActivity: (limit) =>
+    api.get(`/library/notifications/activity${limit ? `?limit=${limit}` : ''}`),
+  notificationInsights: () => api.get('/library/notifications/insights'),
+  reminderSchedule: () => api.get('/library/notifications/reminders'),
+  broadcasts: () => api.get('/library/broadcasts'),
+  broadcast: (id) => api.get(`/library/broadcasts/${id}`),
+  broadcastAudiences: () => api.get('/library/broadcasts/audiences'),
+  sendBroadcast: (payload) => api.post('/library/broadcasts', payload),
   profile: () => api.get('/library/profile'),
 };
 

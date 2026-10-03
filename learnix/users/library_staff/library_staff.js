@@ -30,6 +30,12 @@ import DigitalAccessGrants from './pages/digital_library/access_grants/access_gr
 import DigitalUsageReport from './pages/digital_library/digital_usage/digital_usage';
 import NotificationsScreen from './pages/notifications/notifications';
 
+// Notifications sub-pages (pages/notifications/*)
+import ComposeBroadcast from './pages/notifications/compose_broadcast/compose_broadcast';
+import BroadcastHistory from './pages/notifications/broadcast_history/broadcast_history';
+import AudienceInsights from './pages/notifications/audience_insights/audience_insights';
+import ReminderSchedule from './pages/notifications/reminder_schedule/reminder_schedule';
+
 // Circulation sub-pages (pages/circulation/*)
 import LoanDetail from './pages/circulation/loan_detail/loan_detail';
 import IssueBookDesk from './pages/circulation/issue_book/issue_book';
@@ -58,6 +64,12 @@ const FEATURE_MODULES = {
   AccessGrants: { title: 'Access Grants', icon: 'key-outline', component: DigitalAccessGrants },
   DigitalUsage: { title: 'Usage Report', icon: 'stats-chart-outline', component: DigitalUsageReport },
   Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsScreen },
+
+  // Notifications sub-pages
+  ComposeBroadcast: { title: 'New Broadcast', icon: 'megaphone-outline', component: ComposeBroadcast },
+  BroadcastHistory: { title: 'Broadcast History', icon: 'paper-plane-outline', component: BroadcastHistory },
+  AudienceInsights: { title: 'Audiences', icon: 'people-outline', component: AudienceInsights },
+  ReminderSchedule: { title: 'Reminder Schedule', icon: 'alarm-outline', component: ReminderSchedule },
 
   // Circulation sub-pages
   LoanDetail: { title: 'Loan Detail', icon: 'document-text-outline', component: LoanDetail },
