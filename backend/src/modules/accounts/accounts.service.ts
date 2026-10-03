@@ -1,7 +1,7 @@
 // Accounts & Finance module service (docs/users/06 §4, tables: Domain E)
 // Money: integer paise. All amounts converted to rupees at API edge. Tenant-scoped.
 import { prisma } from '../../db/prisma.js';
-import { notFound, conflict, unprocessable } from '../../lib/errors.js';
+import { notFound, conflict } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
@@ -237,133 +237,11 @@ export async function getLedger(institutionId: string) {
 }
 
 // ── F-06 Payroll ────────────────────────────────────────────
-export async function listPayroll(institutionId: string) {
-  const runs = await prisma.payrollRun.findMany({
-    where: { institutionId },
-    include: {
-      entries: { orderBy: { createdAt: 'asc' } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  // Resolve staff names (PayrollEntry has scalar staffUserId, no FK relation)
-  const allStaffIds = [...new Set(runs.flatMap((r) => r.entries.map((e) => e.staffUserId)))];
-  const staffUsers = allStaffIds.length
-    ? await prisma.user.findMany({ where: { id: { in: allStaffIds } }, select: { id: true, fullName: true } })
-    : [];
-  const staffMap = new Map(staffUsers.map((u) => [u.id, u.fullName]));
-
-  return runs.map((r) => ({
-    id: r.id,
-    month: r.month,
-    status: r.status,
-    totalRupees: toRupees(r.totalMinor),
-    entries: r.entries.map((e) => ({
-      id: e.id,
-      staffUserId: e.staffUserId,
-      staffName: staffMap.get(e.staffUserId) ?? 'Unknown',
-      grossRupees: toRupees(e.grossMinor),
-      deductionsRupees: toRupees(e.deductionsMinor),
-      netRupees: toRupees(e.netMinor),
-      status: e.status,
-      paidAt: e.paidAt,
-    })),
-    createdAt: r.createdAt,
-  }));
-}
-
-export async function runPayroll(
-  institutionId: string,
-  actorUserId: string,
-  month: string,
-) {
-  // Check if run already exists
-  const existing = await prisma.payrollRun.findUnique({
-    where: { institutionId_month: { institutionId, month } },
-  });
-  if (existing) throw conflict(`Payroll for ${month} already exists (${existing.status})`);
-
-  // Get all staff
-  const staff = await prisma.staffProfile.findMany({
-    where: { institutionId, user: { deletedAt: null } },
-    include: { user: { select: { id: true, fullName: true } } },
-  });
-  if (staff.length === 0) throw unprocessable('No staff found for payroll');
-
-  // Create run with entries
-  const run = await prisma.payrollRun.create({
-    data: {
-      institutionId,
-      month,
-      status: 'DRAFT',
-      runByUserId: actorUserId,
-      totalMinor: 0,
-      entries: {
-        create: staff.map((s) => ({
-          staffUserId: s.user.id,
-          grossMinor: 6000000, // ₹60,000 default
-          deductionsMinor: 600000, // ₹6,000 default
-          netMinor: 5400000, // ₹54,000 default
-          status: 'PENDING',
-        })),
-      },
-    },
-    include: { _count: { select: { entries: true } } },
-  });
-
-  // Update total
-  const totalNet = staff.reduce((s) => s + 5400000, 0);
-  await prisma.payrollRun.update({
-    where: { id: run.id },
-    data: { totalMinor: totalNet },
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'payroll.run',
-    entityType: 'PayrollRun',
-    entityId: run.id,
-    after: { month, entries: staff.length },
-  });
-
-  return { id: run.id, month, status: 'DRAFT', entries: staff.length };
-}
-
-export async function markPayrollPaid(
-  institutionId: string,
-  actorUserId: string,
-  runId: string,
-) {
-  const run = await prisma.payrollRun.findFirst({
-    where: { id: runId, institutionId },
-  });
-  if (!run) throw notFound('Payroll run not found');
-  if (run.status === 'PAID') throw conflict('Payroll already paid');
-
-  await prisma.$transaction(async (tx) => {
-    await tx.payrollEntry.updateMany({
-      where: { payrollRunId: run.id, status: 'PENDING' },
-      data: { status: 'PAID', paidAt: new Date() },
-    });
-    await tx.payrollRun.update({
-      where: { id: run.id },
-      data: { status: 'PAID' },
-    });
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'payroll.mark_paid',
-    entityType: 'PayrollRun',
-    entityId: runId,
-    before: { status: run.status },
-    after: { status: 'PAID' },
-  });
-
-  return { id: run.id, status: 'PAID' };
-}
+// Moved to payroll.service.ts: the run lifecycle (DRAFT → APPROVED → PAID),
+// per-entry payment, loss-of-pay adjustments and the payslip all live there.
+// The hard-coded ₹60,000 gross / ₹6,000 deduction this desk used to write for
+// every employee regardless of who they were is gone — gross now comes from
+// StaffProfile.monthlyGrossMinor.
 
 // ── F-07 Expenses ───────────────────────────────────────────
 export async function listExpenses(institutionId: string) {

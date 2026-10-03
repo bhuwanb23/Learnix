@@ -102,9 +102,37 @@ export const reinstateDueSchema = z.object({
   reason: z.string().trim().min(3).max(200),
 });
 
-// F-06 Payroll — run payroll
+// F-06 Payroll ───────────────────────────────────────────────────────────
+// month is YYYY-MM with a real month number. The service range-checks it too
+// (no payroll for 2099-01), but a schema that accepts 2026-13 has already
+// failed at the edge.
 export const runPayrollSchema = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/, 'Month must be YYYY-MM format'),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM'),
+  note: z.string().trim().max(300).optional(),
+});
+
+// Paying ONE person. The reference is the UTR / cheque number the bank gave;
+// an optional prefix lets a bulk transfer be reconstructed staff by staff.
+export const payPayrollEntrySchema = z.object({
+  paymentRef: z.string().trim().max(64).optional(),
+});
+
+// "Pay everyone left on this run".
+export const payPayrollRunSchema = z.object({
+  paymentRefPrefix: z.string().trim().max(32).optional(),
+});
+
+// Loss of pay / an adjustment note. Only meaningful while the run is a DRAFT,
+// so the service refuses it after approval — an approved payslip must not move.
+export const adjustPayrollEntrySchema = z.object({
+  lopDays: z.number().int().min(0).max(31).optional(),
+  note: z.string().trim().max(300).optional(),
+});
+
+// A single payslip is addressed by its entry id, not the run id — one transfer
+// per person, one payslip per person.
+export const payrollEntryParamSchema = z.object({
+  entryId: z.string().min(1).max(64),
 });
 
 // F-07 Expenses — add expense

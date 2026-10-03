@@ -15,12 +15,17 @@ import {
   duesQuerySchema,
   remindDueSchema,
   runPayrollSchema,
+  payPayrollEntrySchema,
+  payPayrollRunSchema,
+  adjustPayrollEntrySchema,
+  payrollEntryParamSchema,
   addExpenseSchema,
   accountsBroadcastSchema,
 } from './accounts.schemas.js';
 import * as service from './accounts.service.js';
 import * as collections from './collections.service.js';
 import * as dues from './dues.service.js';
+import * as payroll from './payroll.service.js';
 
 // Accounts & Finance module — mounted at /api/v1/accounts (docs/users/06 §4)
 const router = Router();
@@ -237,11 +242,14 @@ router.post(
   }),
 );
 
-// F-06 payroll
+// F-06 payroll — the hub, one run, one payslip.
+// Route order matters: the literal sub-paths (`/payroll/run`, `/payroll/entries/…`)
+// are registered before `/payroll/:id`, or Express would read "run" and "entries"
+// as a run id and 404 a perfectly good request.
 router.get(
   '/payroll',
   wrap(async (req, res) => {
-    res.json({ data: await service.listPayroll(req.auth!.institutionId) });
+    res.json({ data: await payroll.listPayroll(req.auth!.institutionId) });
   }),
 );
 
@@ -250,20 +258,91 @@ router.post(
   validate(runPayrollSchema),
   wrap(async (req, res) => {
     res.status(201).json({
-      data: await service.runPayroll(req.auth!.institutionId, req.auth!.userId, req.body.month),
+      data: await payroll.runPayroll(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body.month,
+        req.body.note,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/payroll/entries/:entryId',
+  validate(payrollEntryParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await payroll.getPayslip(req.auth!.institutionId, String(req.params.entryId)),
     });
   }),
 );
 
 router.post(
-  '/payroll/:id/mark-paid',
+  '/payroll/entries/:entryId/pay',
+  validate(payrollEntryParamSchema, 'params'),
+  validate(payPayrollEntrySchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await payroll.payPayrollEntry(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.entryId),
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.patch(
+  '/payroll/entries/:entryId',
+  validate(payrollEntryParamSchema, 'params'),
+  validate(adjustPayrollEntrySchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await payroll.adjustPayrollEntry(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.entryId),
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/payroll/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({ data: await payroll.getPayrollRun(req.auth!.institutionId, String(req.params.id)) });
+  }),
+);
+
+router.post(
+  '/payroll/:id/approve',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
     res.json({
-      data: await service.markPayrollPaid(
+      data: await payroll.approvePayrollRun(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/payroll/:id/pay-all',
+  validate(idParamSchema, 'params'),
+  validate(payPayrollRunSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await payroll.payAllPayrollEntries(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
       ),
     });
   }),
