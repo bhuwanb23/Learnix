@@ -1,0 +1,92 @@
+{
+  "acts": [
+    {
+      "compId": "act-01",
+      "file": "compositions/acts/act-01.html",
+      "act": "ACT 1 — THE COLLEGE",
+      "start": 0,
+      "dur": 30,
+      "scenes": 7
+    },
+    {
+      "compId": "act-02",
+      "file": "compositions/acts/act-02.html",
+      "act": "ACT 2 — THE CHAOS",
+      "start": 30,
+      "dur": 60,
+      "scenes": 10
+    },
+    {
+      "compId": "act-03",
+      "file": "compositions/acts/act-03.html",
+      "act": "ACT 3 — THE REAL PROBLEM",
+      "start": 90,
+      "dur": 30,
+      "scenes": 5
+    },
+    {
+      "compId": "act-04",
+      "file": "compositions/acts/act-04.html",
+      "act": "ACT 4 — THE SHIFT",
+      "start": 120,
+      "dur": 20,
+      "scenes": 4
+    },
+    {
+      "compId": "act-05",
+      "file": "compositions/acts/act-05.html",
+      "act": "ACT 5 — THE PLATFORM",
+      "start": 140,
+      "dur": 70,
+      "scenes": 9
+    },
+    {
+      "compId": "act-06",
+      "file": "compositions/acts/act-06.html",
+      "act": "ACT 6 — MOBILE EXPERIENCE",
+      "start": 210,
+      "dur": 45,
+      "scenes": 6
+    },
+    {
+      "compId": "act-07",
+      "file": "compositions/acts/act-07.html",
+      "act": "ACT 7 — MANAGEMENT PLATFORM",
+      "start": 255,
+      "dur": 45,
+      "scenes": 4
+    },
+    {
+      "compId": "act-08",
+      "file": "compositions/acts/act-08.html",
+      "act": "ACT 8 — INTELLIGENCE",
+      "start": 300,
+      "dur": 40,
+      "scenes": 5
+    },
+    {
+      "compId": "act-09",
+      "file": "compositions/acts/act-09.html",
+      "act": "ACT 9 — CONNECTED CAMPUS",
+      "start": 340,
+      "dur": 35,
+      "scenes": 4
+    },
+    {
+      "compId": "act-10",
+      "file": "compositions/acts/act-10.html",
+      "act": "ACT 10 — VISION",
+      "start": 375,
+      "dur": 30,
+      "scenes": 4
+    },
+    {
+      "compId": "act-11",
+      "file": "compositions/acts/act-11.html",
+      "act": "FINAL",
+      "start": 405,
+      "dur": 15,
+      "scenes": 3
+    }
+  ]
+}

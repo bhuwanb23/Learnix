@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Learnix Master Film — ACT 4 — THE SHIFT</title>
+<link rel="stylesheet" href="assets/tokens.css" />
+<link rel="stylesheet" href="assets/film.css" />
+<style>
+  /* Sub-composition roots are styled by id: rules get scoped to
+     [data-composition-id], so a root class would become a descendant selector
+     that cannot match the root itself. */
+  #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; container-type: size; }
+  #root .clip { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="act-04" data-start="0" data-duration="20.000" data-width="1920" data-height="1080">
+    <div id="s23" class="clip scene-clip" data-start="0" data-duration="5" data-track-index="0">
+      <div class="ground ground-void"></div>
+      <div class="abs-field">
+    <div class="abs-glow" style="width:760px;height:760px;left:280px;top:120px;background:#1d4ed8;opacity:.16"></div>
+    <div class="abs-glow" style="width:520px;height:520px;left:1120px;top:520px;background:#0ea5e9;opacity:.11"></div>
+    <div class="abs-rule" style="top:360px"></div>
+    <div class="abs-rule" style="top:720px"></div>
+    <div class="abs-node is-lit" style="left:110px;top:130px"></div><div class="abs-node" style="left:381px;top:549px"></div><div class="abs-node" style="left:652px;top:148px"></div><div class="abs-node is-lit" style="left:923px;top:567px"></div><div class="abs-node" style="left:1194px;top:166px"></div>
+  </div>
+    </div>
+    <div id="s24" class="clip scene-clip" data-start="5" data-duration="6" data-track-index="0">
+      <div class="ground ground-void"></div>
+      <div class="abs-field">
+    <div class="abs-glow" style="width:760px;height:760px;left:280px;top:120px;background:#1d4ed8;opacity:.16"></div>
+    <div class="abs-glow" style="width:520px;height:520px;left:1120px;top:520px;background:#0ea5e9;opacity:.11"></div>
+    <div class="abs-rule" style="top:360px"></div>
+    <div class="abs-rule" style="top:720px"></div>
+    <div class="abs-node is-lit" style="left:110px;top:130px"></div><div class="abs-node" style="left:381px;top:549px"></div><div class="abs-node" style="left:652px;top:148px"></div><div class="abs-node is-lit" style="left:923px;top:567px"></div><div class="abs-node" style="left:1194px;top:166px"></div><div class="abs-node" style="left:1465px;top:585px"></div>
+  </div>
+    </div>
+    <div id="s25" class="clip scene-clip" data-start="11" data-duration="6" data-track-index="0">
+      <div class="ground ground-void"></div>
+      <div class="dia-wrap">
+      <div class="dia-title">One core</div>
+      <div class="dia-stage" style="width:900px;height:900px">
+        <div style="position:absolute;left:330px;top:330px"><div class="dia-core" data-node="core">ONE<br/>RECORD</div></div>
+      </div>
+    </div>
+    </div>
+    <div id="s26" class="clip scene-clip" data-start="17" data-duration="3" data-track-index="0">
+      <div class="ground ground-void"></div>
+      <div class="abs-field">
+    <div class="abs-glow" style="width:760px;height:760px;left:280px;top:120px;background:#1d4ed8;opacity:.16"></div>
+    <div class="abs-glow" style="width:520px;height:520px;left:1120px;top:520px;background:#0ea5e9;opacity:.11"></div>
+    <div class="abs-rule" style="top:360px"></div>
+    <div class="abs-rule" style="top:720px"></div>
+    <div class="abs-node is-lit" style="left:110px;top:130px"></div><div class="abs-node" style="left:381px;top:549px"></div><div class="abs-node" style="left:652px;top:148px"></div>
+  </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  var tl = gsap.timeline({ paused: true });
+  tl.fromTo("#s23 .ui-card, #s23 .dia-wrap, #s23 .quote-stage, #s23 .card-close, #s23 .chaos-grid, #s23 .abs-field", {opacity: 0}, {opacity: 1, duration: 0.6, ease: "power2.out"}, 0);
+  tl.to("#s23 .abs-glow", {scale: 1.14, opacity: 0.62, transformOrigin: "50% 50%", duration: 2.75, ease: "sine.inOut"}, 0);
+  tl.fromTo("#s24 .ui-card, #s24 .dia-wrap, #s24 .quote-stage, #s24 .card-close, #s24 .chaos-grid, #s24 .abs-field", {opacity: 0}, {opacity: 1, duration: 0.6, ease: "power2.out"}, 5);
+  tl.to("#s24 .abs-glow", {scale: 1.14, opacity: 0.62, transformOrigin: "50% 50%", duration: 3.30, ease: "sine.inOut"}, 5);
+  tl.fromTo("#s25 .ui-card, #s25 .dia-wrap, #s25 .quote-stage, #s25 .card-close, #s25 .chaos-grid, #s25 .abs-field", {opacity: 0}, {opacity: 1, duration: 0.6, ease: "power2.out"}, 11);
+  tl.to("#s25 .abs-glow", {scale: 1.14, opacity: 0.62, transformOrigin: "50% 50%", duration: 3.30, ease: "sine.inOut"}, 11);
+  tl.fromTo("#s26 .ui-card, #s26 .dia-wrap, #s26 .quote-stage, #s26 .card-close, #s26 .chaos-grid, #s26 .abs-field", {opacity: 0}, {opacity: 1, duration: 0.6, ease: "power2.out"}, 17);
+  tl.to("#s26 .abs-glow", {scale: 1.14, opacity: 0.62, transformOrigin: "50% 50%", duration: 2.00, ease: "sine.inOut"}, 17);
+  window.__timelines["act-04"] = tl;
+</script>
+</body>
+</html>
