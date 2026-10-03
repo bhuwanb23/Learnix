@@ -5,13 +5,18 @@ import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   idParamSchema,
-  recordPaymentSchema,
+  recordCollectionSchema,
+  reverseCollectionSchema,
+  collectionQuerySchema,
+  statementQuerySchema,
+  studentSearchQuerySchema,
   waiveFeeSchema,
   runPayrollSchema,
   addExpenseSchema,
   accountsBroadcastSchema,
 } from './accounts.schemas.js';
 import * as service from './accounts.service.js';
+import * as collections from './collections.service.js';
 
 // Accounts & Finance module — mounted at /api/v1/accounts (docs/users/06 §4)
 const router = Router();
@@ -35,17 +40,89 @@ router.get(
 // F-02 collections
 router.get(
   '/collections',
+  validate(collectionQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listCollections(req.auth!.institutionId) });
+    res.json({
+      data: await collections.listCollections(req.auth!.institutionId, {
+        q: req.query.q ? String(req.query.q) : undefined,
+        category: req.query.category as never,
+        method: req.query.method as never,
+        status: req.query.status as never,
+        range: req.query.range as never,
+        sort: req.query.sort as never,
+        take: req.query.take ? Number(req.query.take) : undefined,
+        skip: req.query.skip ? Number(req.query.skip) : undefined,
+      }),
+    });
   }),
 );
 
 router.post(
   '/collections',
-  validate(recordPaymentSchema),
+  validate(recordCollectionSchema),
   wrap(async (req, res) => {
     res.status(201).json({
-      data: await service.recordPayment(req.auth!.institutionId, req.auth!.userId, req.body),
+      data: await collections.recordCollection(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+// The two literal sub-paths MUST be declared before `/collections/:id` —
+// Express matches in order, and a static segment loses to a param otherwise,
+// so `/collections/statement` would be read as a payment id.
+router.get(
+  '/collections/students/search',
+  validate(studentSearchQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await collections.searchPayableStudents(
+        req.auth!.institutionId,
+        String(req.query.q),
+        req.query.limit ? Number(req.query.limit) : 10,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/collections/statement',
+  validate(statementQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await collections.getStudentStatement(req.auth!.institutionId, {
+        rollNo: req.query.rollNo ? String(req.query.rollNo) : undefined,
+        studentProfileId: req.query.studentProfileId ? String(req.query.studentProfileId) : undefined,
+      }),
+    });
+  }),
+);
+
+router.get(
+  '/collections/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await collections.getCollectionDetail(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.post(
+  '/collections/:id/reverse',
+  validate(idParamSchema, 'params'),
+  validate(reverseCollectionSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await collections.reverseCollection(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body.reason,
+      ),
     });
   }),
 );

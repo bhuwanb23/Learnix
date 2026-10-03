@@ -18,6 +18,10 @@ model Payment {
   paidAt           DateTime?
   recordedByUserId String? // scalar → users.id (staff who recorded cash/cheque)
   gatewayRef       String?
+  // Reversal stamp. A reversed payment keeps its row (the ledger must not lose
+  // history) but stops counting toward collections and is excluded from dues.
+  reversedAt      DateTime?
+  reversalReason  String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -27,6 +31,7 @@ model Payment {
   transportDue   TransportFeeDue?
   hostelRentDue  HostelRentDue?
   fineLink       FinePayment?
+  allocations    PaymentAllocation[]
 
   @@unique([institutionId, referenceNo])
   @@index([institutionId])
@@ -40,6 +45,10 @@ model Receipt {
   paymentId String   @unique
   receiptNo String // unique per institution — service-layer format RCP-2026-0001
   issuedAt  DateTime @default(now())
+  // Set when the payment is reversed: the receipt existed, but it no longer
+  // stands as proof of a live collection.
+  voidedAt  DateTime?
+  voidReason String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -115,4 +124,24 @@ model FinePayment {
 
   @@index([paymentId])
   @@map("fine_payments")
+}
+
+// ALLOCATION link — which fee_dues rows a payment settled, and how much went to
+// each. One payment can clear several dues (a student paying a semester's bill
+// in one go), which is exactly why the due cannot hold a single paymentId.
+// This is what lets a reversal put the money back where it came from.
+model PaymentAllocation {
+  id        String   @id @default(cuid())
+  paymentId String
+  dueId     String
+  amountMinor Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+  due     FeeDue @relation(fields: [dueId], references: [id])
+
+  @@unique([paymentId, dueId])
+  @@index([dueId])
+  @@map("payment_allocations")
 }

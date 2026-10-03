@@ -34,12 +34,18 @@ model FeeDue {
   dueDate          DateTime
   status           String    @default("UNPAID") // UNPAID | PARTIAL | CLEARED | WAIVED
   waivedReason     String?
+  // What has actually been paid against this due. `status` alone could not say:
+  // a payment that covers half a due looks identical to one that covers none.
+  // balance = amountMinor - paidMinor, and status is derived from that.
+  paidMinor        Int       @default(0)
+  lastPaymentAt    DateTime?
   daysOverdue      Int       @default(0) // denorm, job-recomputed
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
   feeStructure   FeeStructure?  @relation(fields: [feeStructureId], references: [id])
+  allocations    PaymentAllocation[]
 
   @@index([studentProfileId])
   @@index([status])

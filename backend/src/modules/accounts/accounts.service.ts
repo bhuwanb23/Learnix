@@ -3,15 +3,20 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { syncDueOverdue } from './collections.service.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
 
 // ── F-01 Dashboard ──────────────────────────────────────────
 export async function getDashboard(institutionId: string) {
+  // `FeeDue` has no institutionId — it inherits its tenant from the student.
+  // The dashboard used to aggregate every institution's dues into this one.
+  const dueTenant = { studentProfile: { user: { institutionId, deletedAt: null } } };
+
   const [totalCollected, totalDues, unpaidDues, payrollRun, budgets, scholarships] =
     await Promise.all([
       prisma.payment.aggregate({
-        where: { institutionId, status: 'CLEARED' },
+        where: { institutionId, status: 'CLEARED', reversedAt: null },
         _sum: { amountMinor: true },
         _count: { id: true },
       }),
@@ -19,10 +24,9 @@ export async function getDashboard(institutionId: string) {
         where: { institutionId, status: 'ACTIVE' },
         _sum: { totalMinor: true },
       }),
-      prisma.feeDue.aggregate({
-        where: { status: { in: ['UNPAID', 'PARTIAL'] } },
-        _sum: { amountMinor: true },
-        _count: { id: true },
+      prisma.feeDue.findMany({
+        where: { status: { in: ['UNPAID', 'PARTIAL'] }, ...dueTenant },
+        select: { amountMinor: true, paidMinor: true },
       }),
       prisma.payrollRun.findFirst({
         where: { institutionId },
@@ -41,9 +45,10 @@ export async function getDashboard(institutionId: string) {
 
   const collectedPaise = totalCollected._sum.amountMinor ?? 0;
   const targetPaise = totalDues._sum.totalMinor ?? 0;
-  const unpaidPaise = unpaidDues._sum.amountMinor ?? 0;
+  // Outstanding is the balance still owed, not the amount originally billed.
+  const unpaidPaise = unpaidDues.reduce((s, d) => s + Math.max(0, d.amountMinor - d.paidMinor), 0);
 
-  const unpaidCount = unpaidDues._count.id;
+  const unpaidCount = unpaidDues.length;
   const targetPct = targetPaise === 0 ? 0 : Math.min(Math.round((collectedPaise / targetPaise) * 100), 100);
 
   // Budget utilization
@@ -57,7 +62,7 @@ export async function getDashboard(institutionId: string) {
 
   // Recent collections
   const recentPayments = await prisma.payment.findMany({
-    where: { institutionId, status: 'CLEARED' },
+    where: { institutionId, status: 'CLEARED', reversedAt: null },
     include: {
       studentProfile: { include: { user: { select: { fullName: true } } } },
       receipt: { select: { receiptNo: true } },
@@ -68,7 +73,7 @@ export async function getDashboard(institutionId: string) {
 
   // Defaulters (dues overdue > 7 days)
   const defaulterDues = await prisma.feeDue.findMany({
-    where: { status: { in: ['UNPAID', 'PARTIAL'] }, daysOverdue: { gte: 7 } },
+    where: { status: { in: ['UNPAID', 'PARTIAL'] }, daysOverdue: { gte: 7 }, ...dueTenant },
     include: {
       studentProfile: { include: { user: { select: { fullName: true } } } },
     },
@@ -105,7 +110,7 @@ export async function getDashboard(institutionId: string) {
       student: d.studentProfile.user.fullName,
       rollNo: d.studentProfile.rollNo,
       title: d.title,
-      amountRupees: toRupees(d.amountMinor),
+      amountRupees: toRupees(Math.max(0, d.amountMinor - d.paidMinor)),
       daysOverdue: d.daysOverdue,
     })),
     budget: budgetData,
@@ -131,113 +136,9 @@ export async function getDashboard(institutionId: string) {
   };
 }
 
-// ── F-02 Collections ────────────────────────────────────────
-export async function listCollections(institutionId: string) {
-  const [payments, total] = await Promise.all([
-    prisma.payment.findMany({
-      where: { institutionId },
-      include: {
-        studentProfile: { include: { user: { select: { fullName: true } } } },
-        receipt: { select: { receiptNo: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    }),
-    prisma.payment.count({ where: { institutionId } }),
-  ]);
-
-  const cleared = payments.filter((p) => p.status === 'CLEARED');
-  const totalCleared = cleared.reduce((s, p) => s + p.amountMinor, 0);
-  const partial = payments.filter((p) => p.status === 'PARTIAL');
-  const totalPartial = partial.reduce((s, p) => s + p.amountMinor, 0);
-
-  return {
-    stats: {
-      totalPayments: total,
-      clearedCount: cleared.length,
-      clearedRupees: toRupees(totalCleared),
-      partialCount: partial.length,
-      partialRupees: toRupees(totalPartial),
-    },
-    collections: payments.map((p) => ({
-      id: p.id,
-      student: p.studentProfile?.user.fullName ?? null,
-      rollNo: p.studentProfile?.rollNo ?? null,
-      category: p.category,
-      amountRupees: toRupees(p.amountMinor),
-      method: p.method,
-      status: p.status,
-      referenceNo: p.referenceNo,
-      receiptNo: p.receipt?.receiptNo ?? null,
-      paidAt: p.paidAt,
-      createdAt: p.createdAt,
-    })),
-    total,
-  };
-}
-
-export async function recordPayment(
-  institutionId: string,
-  actorUserId: string,
-  input: { rollNo?: string; studentProfileId?: string; category: string; amountMinor: number; method: string },
-) {
-  // Resolve student
-  let studentProfileId = input.studentProfileId ?? null;
-  let payerUserId = null;
-  if (input.rollNo && !studentProfileId) {
-    const profile = await prisma.studentProfile.findFirst({
-      where: { rollNo: input.rollNo, user: { institutionId, deletedAt: null } },
-      include: { user: { select: { id: true } } },
-    });
-    if (!profile) throw notFound(`No student with roll number ${input.rollNo}`);
-    studentProfileId = profile.id;
-    payerUserId = profile.userId;
-  }
-
-  const count = await prisma.payment.count({ where: { institutionId } });
-  const referenceNo = `PAY-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
-
-  const result = await prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.create({
-      data: {
-        institutionId,
-        payerUserId,
-        studentProfileId,
-        category: input.category,
-        referenceNo,
-        amountMinor: input.amountMinor,
-        method: input.method,
-        status: 'CLEARED',
-        paidAt: new Date(),
-        recordedByUserId: actorUserId,
-      },
-    });
-    const receipt = await tx.receipt.create({
-      data: {
-        paymentId: payment.id,
-        receiptNo: `RCP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`,
-      },
-    });
-    return { payment, receipt };
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'collection.record',
-    entityType: 'Payment',
-    entityId: result.payment.id,
-    after: { referenceNo, amountMinor: input.amountMinor, category: input.category },
-  });
-
-  return {
-    id: result.payment.id,
-    referenceNo: result.payment.referenceNo,
-    receiptNo: result.receipt.receiptNo,
-    amountRupees: toRupees(input.amountMinor),
-    category: input.category,
-  };
-}
+// F-02 Collections (list / record / reverse / statement) now lives in
+// collections.service.ts — it has to allocate money onto `fee_dues`, which this
+// file's fee-structure and dues helpers do not know about.
 
 // ── F-03 Fee structures ─────────────────────────────────────
 export async function listFeeStructures(institutionId: string) {
@@ -292,8 +193,14 @@ export async function requestRevision(
 }
 
 // ── F-04 Fee dues ───────────────────────────────────────────
-export async function listDues(_institutionId: string) {
+export async function listDues(institutionId: string) {
+  // `FeeDue` carries no institutionId — it reaches its tenant through the
+  // student. Without this where-clause the desk listed every school's bills.
+  // (The old signature took the tenant and threw it away.)
+  await syncDueOverdue(institutionId);
+
   const dues = await prisma.feeDue.findMany({
+    where: { studentProfile: { user: { institutionId, deletedAt: null } } },
     include: {
       studentProfile: { include: { user: { select: { fullName: true } } } },
       feeStructure: { include: { program: { select: { name: true } } } },
@@ -301,15 +208,23 @@ export async function listDues(_institutionId: string) {
     orderBy: { daysOverdue: 'desc' },
   });
 
-  const unpaid = dues.filter((d) => d.status === 'UNPAID' || d.status === 'PARTIAL');
+  const open = dues.filter((d) => d.status === 'UNPAID' || d.status === 'PARTIAL');
   const waived = dues.filter((d) => d.status === 'WAIVED');
   const cleared = dues.filter((d) => d.status === 'CLEARED');
-  const totalUnpaid = unpaid.reduce((s, d) => s + d.amountMinor, 0);
+  const balance = (d: { amountMinor: number; paidMinor: number }) =>
+    Math.max(0, d.amountMinor - d.paidMinor);
+  // Outstanding is the BALANCE, not the billed amount — once collections can
+  // half-settle a due, quoting amountMinor overstates what is still owed.
+  const totalUnpaid = open.reduce((s, d) => s + balance(d), 0);
 
   return {
     stats: {
-      unpaidCount: unpaid.length,
+      unpaidCount: open.length,
       unpaidRupees: toRupees(totalUnpaid),
+      partialCount: open.filter((d) => d.status === 'PARTIAL').length,
+      overdueRupees: toRupees(
+        open.filter((d) => d.daysOverdue > 0).reduce((s, d) => s + balance(d), 0),
+      ),
       clearedCount: cleared.length,
       waivedCount: waived.length,
     },
@@ -320,6 +235,8 @@ export async function listDues(_institutionId: string) {
       title: d.title,
       program: d.feeStructure?.program?.name ?? null,
       amountRupees: toRupees(d.amountMinor),
+      paidRupees: toRupees(d.paidMinor),
+      balanceRupees: toRupees(balance(d)),
       dueDate: d.dueDate,
       daysOverdue: d.daysOverdue,
       status: d.status,
@@ -334,7 +251,7 @@ export async function remindDue(
   dueId: string,
 ) {
   const due = await prisma.feeDue.findFirst({
-    where: { id: dueId },
+    where: { id: dueId, studentProfile: { user: { institutionId, deletedAt: null } } },
     include: {
       studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
     },
@@ -373,7 +290,7 @@ export async function waiveFee(
   reason: string,
 ) {
   const due = await prisma.feeDue.findFirst({
-    where: { id: dueId },
+    where: { id: dueId, studentProfile: { user: { institutionId, deletedAt: null } } },
     include: {
       studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
     },

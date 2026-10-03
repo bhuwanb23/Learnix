@@ -6,13 +6,70 @@ export const idParamSchema = z.object({
   id: z.string().min(1).max(64),
 });
 
-// F-02 Collections — record payment
-export const recordPaymentSchema = z.object({
-  rollNo: z.string().trim().min(2).max(40).optional(),
-  studentProfileId: z.string().min(1).max(64).optional(),
-  category: z.enum(['TUITION', 'HOSTEL_RENT', 'MESS', 'TRANSPORT', 'FINE', 'DONATION', 'MISC']),
-  amountMinor: z.number().int().min(1),
-  method: z.enum(['UPI', 'NET_BANKING', 'CARD', 'CASH']).default('CASH'),
+// F-02 Collections — record a collection
+//
+// `allocations` is how the money reaches a balance. Omit it and the desk
+// settles the student's dues oldest-first and books any remainder as an
+// advance; send it and the officer is saying exactly which bills this money
+// pays, which matters when a family part-pays a semester.
+export const recordCollectionSchema = z
+  .object({
+    rollNo: z.string().trim().min(2).max(40).optional(),
+    studentProfileId: z.string().min(1).max(64).optional(),
+    category: z.enum([
+      'TUITION', 'HOSTEL_RENT', 'MESS', 'TRANSPORT', 'FINE', 'DONATION', 'MISC',
+    ]),
+    amountMinor: z.number().int().min(1).max(100_000_000),
+    method: z.enum(['UPI', 'NET_BANKING', 'CARD', 'CASH', 'CHEQUE']).default('CASH'),
+    allocations: z
+      .array(
+        z.object({
+          dueId: z.string().min(1).max(64),
+          amountMinor: z.number().int().min(1).max(100_000_000),
+        }),
+      )
+      .max(50)
+      .optional(),
+    note: z.string().trim().max(300).optional(),
+  })
+  .refine((v) => Boolean(v.rollNo || v.studentProfileId), {
+    message: 'Name the student: rollNo or studentProfileId is required',
+  });
+
+// F-02 Collections — reverse a collection. The reason is mandatory and audited:
+// a reversal puts money back on a bill, so "why" has to survive.
+export const reverseCollectionSchema = z.object({
+  reason: z.string().trim().min(5).max(300),
+});
+
+// F-02 Collections — list filters
+export const collectionQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  category: z
+    .enum(['ALL', 'TUITION', 'HOSTEL_RENT', 'MESS', 'TRANSPORT', 'FINE', 'DONATION', 'MISC'])
+    .default('ALL'),
+  method: z.enum(['ALL', 'UPI', 'NET_BANKING', 'CARD', 'CASH', 'CHEQUE']).default('ALL'),
+  status: z.enum(['ALL', 'CLEARED', 'PENDING', 'FAILED']).default('ALL'),
+  range: z.enum(['ALL', 'TODAY', 'WEEK', 'MONTH']).default('ALL'),
+  sort: z.enum(['NEWEST', 'OLDEST', 'AMOUNT_DESC', 'AMOUNT_ASC']).default('NEWEST'),
+  take: z.coerce.number().int().min(1).max(200).optional(),
+  skip: z.coerce.number().int().min(0).optional(),
+});
+
+// F-02 Collections — a student looks up by roll number or profile id
+export const statementQuerySchema = z
+  .object({
+    rollNo: z.string().trim().min(2).max(40).optional(),
+    studentProfileId: z.string().min(1).max(64).optional(),
+  })
+  .refine((v) => Boolean(v.rollNo || v.studentProfileId), {
+    message: 'rollNo or studentProfileId is required',
+  });
+
+// F-02 Collections — student picker for the collect screen
+export const studentSearchQuerySchema = z.object({
+  q: z.string().trim().min(2).max(60),
+  limit: z.coerce.number().int().min(1).max(30).default(10),
 });
 
 // F-04 Fee dues — waive
