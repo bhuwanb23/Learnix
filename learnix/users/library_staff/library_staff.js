@@ -32,9 +32,9 @@ import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 
 // Feature module registry: key -> { title, component }
 const FEATURE_MODULES = {
-  Requests: { title: 'Book Requests', component: RequestsModule },
-  DigitalLibrary: { title: 'Digital Library', component: DigitalLibraryModule },
-  Notifications: { title: 'Notifications', component: NotificationsScreen },
+  Requests: { title: 'Book Requests', icon: 'cart-outline', component: RequestsModule },
+  DigitalLibrary: { title: 'Digital Library', icon: 'cloud-outline', component: DigitalLibraryModule },
+  Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsScreen },
 };
 
 const TAB_TITLES = {

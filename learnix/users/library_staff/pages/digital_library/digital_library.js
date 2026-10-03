@@ -1,17 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { libraryApi } from '../../../../services/api';
-import { theme } from '../../../../constants/theme';
+import { AnimatedCard, EmptyState, SkeletonStatRow, SkeletonCard } from '../../../../components/ui';
+
+const THEME = '#b45309';
+
+const TYPE_META = {
+  PDF: { color: '#b45309', icon: 'book' },
+  EBOOK: { color: '#2563eb', icon: 'book-outline' },
+  JOURNAL: { color: '#059669', icon: 'newspaper' },
+};
+
+const defaultMeta = { color: '#64748b', icon: 'document-text-outline' };
 
 export default function DigitalLibrary({ navigation }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState('Resources');
+  const [activeType, setActiveType] = useState('All');
 
   const fetchData = useCallback(async () => {
     try {
@@ -31,29 +39,21 @@ export default function DigitalLibrary({ navigation }) {
 
   const resources = data?.resources || [];
   const stats = data?.stats || {};
-  const types = ['All', ...new Set(resources.map((r) => r.type))];
-  const filtered = activeCategory === 'All' ? resources : resources.filter((r) => r.type === activeCategory);
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'PDF': return '#2563eb';
-      case 'EBOOK': return '#0891b2';
-      case 'JOURNAL': return '#059669';
-      default: return '#64748b';
-    }
-  };
-
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'PDF': return 'book';
-      case 'EBOOK': return 'book-outline';
-      case 'JOURNAL': return 'newspaper';
-      default: return 'document';
-    }
-  };
+  const types = useMemo(() => ['All', ...new Set(resources.map((r) => r.type))], [resources]);
+  const filtered = useMemo(
+    () => (activeType === 'All' ? resources : resources.filter((r) => r.type === activeType)),
+    [resources, activeType],
+  );
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /><Text style={styles.loadingText}>Loading digital library…</Text></View>;
+    return (
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <SkeletonStatRow />
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
+      </ScrollView>
+    );
   }
 
   if (error) {
@@ -68,69 +68,84 @@ export default function DigitalLibrary({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Digital Library</Text>
-          <View style={styles.headerIconBtn} />
-        </View>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats.total ?? 0}</Text>
-            <Text style={styles.statLabel}>Resources</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats.totalAccessGrants ?? 0}</Text>
-            <Text style={styles.statLabel}>Access Grants</Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      <View style={styles.tabsRow}>
-        {['Resources'].map((tab) => (
-          <TouchableOpacity key={tab} style={[styles.tab, activeTab === tab && styles.tabActive]} onPress={() => setActiveTab(tab)}>
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-          {types.map((cat) => (
-            <TouchableOpacity key={cat} style={[styles.chip, activeCategory === cat && styles.chipActive]} onPress={() => setActiveCategory(cat)}>
-              <Text style={[styles.chipText, activeCategory === cat && styles.chipTextActive]}>{cat}</Text>
-            </TouchableOpacity>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[THEME]} />}>
+        <AnimatedCard delay={0} style={[styles.block, styles.statsRow]}>
+          {[
+            { label: 'Resources', value: stats.total ?? 0, icon: 'cloud-outline', color: THEME },
+            { label: 'Access Grants', value: stats.totalAccessGrants ?? 0, icon: 'key-outline', color: '#2563eb' },
+          ].map((s, i) => (
+            <React.Fragment key={s.label}>
+              {i > 0 && <View style={styles.statDivider} />}
+              <View style={styles.statCell}>
+                <View style={[styles.statIcon, { backgroundColor: s.color + '14' }]}>
+                  <Ionicons name={s.icon} size={18} color={s.color} />
+                </View>
+                <Text style={styles.statValue}>{s.value}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
+            </React.Fragment>
           ))}
-        </ScrollView>
+        </AnimatedCard>
+
+        {types.length > 1 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
+            <View style={styles.chipsRow}>
+              {types.map((t) => (
+                <TouchableOpacity
+                  key={t}
+                  style={[styles.chip, activeType === t && styles.chipActive]}
+                  onPress={() => setActiveType(t)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.chipText, activeType === t && styles.chipTextActive]}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+
+        <Text style={styles.sectionLabel}>
+          {activeType === 'All' ? 'All Digital Resources' : `${activeType} Resources`}
+        </Text>
 
         {filtered.length === 0 ? (
-          <View style={styles.emptyState}><Ionicons name="cloud-outline" size={40} color="#94a3b8" /><Text style={styles.emptyText}>No resources found</Text></View>
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="No resources found"
+            subtitle="Digital resources for this category will appear here once they are added."
+            color={THEME}
+          />
         ) : (
-          filtered.map((item) => {
-            const color = getTypeColor(item.type);
+          filtered.map((item, idx) => {
+            const meta = TYPE_META[item.type] || defaultMeta;
             return (
-              <View key={item.id} style={styles.card}>
-                <View style={[styles.iconWrap, { backgroundColor: color + '1a' }]}>
-                  <Ionicons name={getTypeIcon(item.type)} size={22} color={color} />
-                </View>
-                <View style={styles.cardBody}>
-                  <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={styles.cardAuthor} numberOfLines={1}>{item.subject || 'General'}</Text>
-                  <View style={styles.metaRow}>
-                    <View style={[styles.typeChip, { backgroundColor: color + '14' }]}>
-                      <Text style={[styles.typeText, { color }]}>{item.type}</Text>
+              <AnimatedCard key={item.id} delay={100 + idx * 60} style={styles.block}>
+                <View style={styles.resourceRow}>
+                  <View style={[styles.resourceIcon, { backgroundColor: meta.color + '14' }]}>
+                    <Ionicons name={meta.icon} size={20} color={meta.color} />
+                  </View>
+                  <View style={styles.resourceBody}>
+                    <Text style={styles.resourceTitle} numberOfLines={2}>{item.title}</Text>
+                    <Text style={styles.meta} numberOfLines={1}>{item.subject || 'General'}</Text>
+                    <View style={styles.metaRow}>
+                      <View style={[styles.typeChip, { backgroundColor: meta.color + '1A' }]}>
+                        <Text style={[styles.typeText, { color: meta.color }]}>{item.type}</Text>
+                      </View>
+                      {item.license ? (
+                        <View style={styles.licenseChip}>
+                          <Ionicons name="shield-checkmark-outline" size={10} color="#64748b" />
+                          <Text style={styles.licenseText}>{item.license}</Text>
+                        </View>
+                      ) : null}
                     </View>
-                    {item.license ? <Text style={styles.metaText}>{item.license}</Text> : null}
+                  </View>
+                  <View style={styles.viewsBox}>
+                    <Ionicons name="eye-outline" size={13} color="#94a3b8" />
+                    <Text style={styles.viewsText}>{item.accessCount ?? 0}</Text>
                   </View>
                 </View>
-                <View style={styles.cardActions}>
-                  <Text style={styles.downloadText}>{item.accessCount} views</Text>
-                </View>
-              </View>
+              </AnimatedCard>
             );
           })
         )}
@@ -140,44 +155,43 @@ export default function DigitalLibrary({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+  container: { flex: 1, backgroundColor: '#f5f7f9' },
+  content: { padding: 24, paddingBottom: 40 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
   errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Medium', textAlign: 'center' },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryBtn: { marginTop: 16, backgroundColor: THEME, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
   retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  header: { paddingTop: theme.spacing.xl + 10, paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.lg, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
-  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontFamily: 'Manrope-Bold', color: '#fff' },
-  headerIconBtn: { width: 40, height: 40 },
-  statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: theme.spacing.lg },
-  statItem: { alignItems: 'center', flex: 1 },
-  statValue: { fontSize: 20, fontFamily: 'Manrope-ExtraBold', color: '#fff' },
-  statLabel: { fontSize: 11, fontFamily: 'Manrope-SemiBold', color: 'rgba(255,255,255,0.8)', marginTop: 2 },
-  statDivider: { width: 1, height: 28, backgroundColor: 'rgba(255,255,255,0.2)' },
-  tabsRow: { flexDirection: 'row', paddingHorizontal: theme.spacing.lg, marginTop: theme.spacing.md, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  tab: { paddingVertical: 12, paddingHorizontal: 18, borderBottomWidth: 2, borderBottomColor: 'transparent', marginRight: 8 },
-  tabActive: { borderBottomColor: theme.colors.primary },
-  tabText: { fontSize: 14, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted },
-  tabTextActive: { color: theme.colors.primary },
-  content: { flex: 1, paddingHorizontal: theme.spacing.lg },
-  chipsRow: { flexDirection: 'row', paddingVertical: theme.spacing.md, flexGrow: 0 },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: theme.colors.surfaceMuted, marginRight: 8 },
-  chipActive: { backgroundColor: theme.colors.primary },
-  chipText: { fontSize: 12, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted },
+  block: { marginBottom: 10 },
+
+  // Stats
+  statsRow: { flexDirection: 'row' },
+  statCell: { flex: 1, alignItems: 'center', paddingVertical: 14, paddingHorizontal: 6 },
+  statDivider: { width: 1, backgroundColor: '#eef2f7', marginVertical: 8 },
+  statIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  statValue: { fontSize: 18, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.5 },
+  statLabel: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
+
+  // Chips
+  chipsScroll: { flexGrow: 0, marginHorizontal: -24, marginTop: 16 },
+  chipsRow: { flexDirection: 'row', paddingHorizontal: 24 },
+  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', marginRight: 8 },
+  chipActive: { backgroundColor: THEME, borderColor: THEME },
+  chipText: { fontSize: 12, fontWeight: '600', color: '#64748b', fontFamily: 'Manrope-SemiBold' },
   chipTextActive: { color: '#fff' },
-  emptyState: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 20 },
-  emptyText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border, padding: 14, marginBottom: 12 },
-  iconWrap: { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  cardBody: { flex: 1 },
-  cardTitle: { fontSize: 14, fontFamily: 'Manrope-Bold', color: theme.colors.text },
-  cardAuthor: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 2 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  typeChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginRight: 8 },
-  typeText: { fontSize: 10, fontFamily: 'Manrope-Bold' },
-  metaText: { fontSize: 11, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
-  cardActions: { alignItems: 'flex-end', marginLeft: 8 },
-  downloadText: { fontSize: 10, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted },
+
+  sectionLabel: { fontSize: 15, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginBottom: 10, marginTop: 18 },
+
+  // Resource rows
+  resourceRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
+  resourceIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  resourceBody: { flex: 1, paddingRight: 8 },
+  resourceTitle: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
+  meta: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 7, gap: 6 },
+  typeChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  typeText: { fontSize: 10, fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  licenseChip: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, backgroundColor: '#f1f5f9' },
+  licenseText: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Medium' },
+  viewsBox: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc', borderRadius: 10, paddingHorizontal: 9, paddingVertical: 7, gap: 2 },
+  viewsText: { fontSize: 11, fontWeight: '700', color: '#475569', fontFamily: 'Manrope-Bold' },
 });
