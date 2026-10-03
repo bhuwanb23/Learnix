@@ -3,13 +3,15 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { syncOverdueStatus } from './circulation.service.js';
 
-const FINE_PER_DAY_PAISE = 500; // ₹5/day
 const toRupees = (paise: number) => Math.round(paise / 100);
 
 // ── L-01 Dashboard ──────────────────────────────────────────
 export async function getDashboard(institutionId: string) {
   const now = new Date();
+  // Promote past-due loans first, otherwise the overdue counters below read zero.
+  await syncOverdueStatus(institutionId);
 
   const [
     totalBooks,
@@ -282,169 +284,6 @@ export async function updateBook(
     author: updated.author,
     totalCopies: updated.totalCopies,
     availableCopies: updated.availableCopies,
-  };
-}
-
-// ── L-03 Circulation: issue / return ────────────────────────
-export async function issueBook(
-  institutionId: string,
-  actorUserId: string,
-  input: { rollNo: string; bookId: string; dueDays: number },
-) {
-  // Resolve student by roll number
-  const studentProfile = await prisma.studentProfile.findFirst({
-    where: { rollNo: input.rollNo, user: { institutionId, deletedAt: null } },
-    include: { user: { select: { id: true, fullName: true } } },
-  });
-  if (!studentProfile) throw notFound(`No student with roll number ${input.rollNo}`);
-
-  // Resolve book
-  const book = await prisma.book.findFirst({ where: { id: input.bookId, institutionId } });
-  if (!book) throw notFound('Book not found');
-  if (book.availableCopies <= 0) throw unprocessable(`No copies of "${book.title}" available`);
-
-  // Check if student already has this book issued
-  const existingIssue = await prisma.bookIssue.findFirst({
-    where: {
-      bookId: book.id,
-      studentProfileId: studentProfile.id,
-      status: { in: ['ISSUED', 'OVERDUE'] },
-    },
-  });
-  if (existingIssue) throw conflict(`${studentProfile.user.fullName} already has this book issued`);
-
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + input.dueDays);
-
-  const issue = await prisma.bookIssue.create({
-    data: {
-      bookId: book.id,
-      studentProfileId: studentProfile.id,
-      issueDate: new Date(),
-      dueDate,
-      status: 'ISSUED',
-      issuedByUserId: actorUserId,
-    },
-  });
-
-  await prisma.book.update({
-    where: { id: book.id },
-    data: { availableCopies: { decrement: 1 } },
-  });
-
-  // Notify student
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: studentProfile.userId,
-      type: 'BOOK_ISSUE',
-      title: `Book issued: ${book.title}`,
-      body: `"${book.title}" has been issued to you. Due date: ${dueDate.toLocaleDateString('en-IN')}.`,
-      sourceModule: 'library',
-    },
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'circulation.issue',
-    entityType: 'BookIssue',
-    entityId: issue.id,
-    after: { book: book.title, student: studentProfile.user.fullName, dueDate },
-  });
-
-  return {
-    id: issue.id,
-    book: book.title,
-    student: studentProfile.user.fullName,
-    rollNo: studentProfile.rollNo,
-    issueDate: issue.issueDate,
-    dueDate: issue.dueDate,
-    status: issue.status,
-  };
-}
-
-export async function returnBook(
-  institutionId: string,
-  actorUserId: string,
-  issueId: string,
-) {
-  const issue = await prisma.bookIssue.findFirst({
-    where: { id: issueId, book: { institutionId } },
-    include: {
-      book: { select: { id: true, title: true } },
-      studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
-    },
-  });
-  if (!issue) throw notFound('Issue record not found');
-  if (issue.status === 'RETURNED') throw conflict('Book already returned');
-
-  const now = new Date();
-  const isOverdue = now > issue.dueDate;
-
-  // Mark returned
-  await prisma.bookIssue.update({
-    where: { id: issue.id },
-    data: { status: 'RETURNED', returnDate: now },
-  });
-
-  // Restore available copies
-  await prisma.book.update({
-    where: { id: issue.bookId },
-    data: { availableCopies: { increment: 1 } },
-  });
-
-  // Create fine if overdue
-  let fine = null;
-  if (isOverdue) {
-    const daysOverdue = Math.ceil((now.getTime() - issue.dueDate.getTime()) / (1000 * 60 * 60 * 24));
-    const amountMinor = daysOverdue * FINE_PER_DAY_PAISE;
-
-    fine = await prisma.fine.create({
-      data: {
-        bookIssueId: issue.id,
-        amountMinor,
-        daysOverdue,
-        status: 'PENDING',
-      },
-    });
-
-    // Notify student about fine
-    await prisma.notification.create({
-      data: {
-        institutionId,
-        recipientUserId: issue.studentProfile.userId,
-        type: 'FINE',
-        title: `Overdue fine: ${issue.book.title}`,
-        body: `You returned "${issue.book.title}" ${daysOverdue} day(s) overdue. Fine: ₹${toRupees(amountMinor)}.`,
-        sourceModule: 'library',
-      },
-    });
-  }
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'circulation.return',
-    entityType: 'BookIssue',
-    entityId: issue.id,
-    before: { status: isOverdue ? 'OVERDUE' : 'ISSUED' },
-    after: {
-      status: 'RETURNED',
-      returnDate: now,
-      fine: fine ? { amountMinor: fine.amountMinor, daysOverdue: fine.daysOverdue } : null,
-    },
-  });
-
-  return {
-    id: issue.id,
-    book: issue.book.title,
-    student: issue.studentProfile.user.fullName,
-    returnDate: now,
-    status: 'RETURNED',
-    fine: fine
-      ? { id: fine.id, amountRupees: toRupees(fine.amountMinor), daysOverdue: fine.daysOverdue }
-      : null,
   };
 }
 

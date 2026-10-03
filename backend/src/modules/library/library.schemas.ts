@@ -25,7 +25,7 @@ export const updateBookSchema = z.object({
   rackLocation: z.string().trim().max(40).optional(),
 });
 
-// L-03 Circulation — issue / return
+// L-03 Circulation — issue / renew / return
 export const issueBookSchema = z.object({
   rollNo: z.string().trim().min(2).max(40),
   bookId: z.string().min(1).max(64),
@@ -34,6 +34,32 @@ export const issueBookSchema = z.object({
 
 export const returnBookSchema = z.object({
   issueId: z.string().min(1).max(64),
+});
+
+export const renewLoanSchema = z.object({
+  days: z.number().int().min(1).max(60).default(14),
+});
+
+// L-03 Circulation — loan queries
+export const loanQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  status: z
+    .enum(['ALL', 'ACTIVE', 'ISSUED', 'OVERDUE', 'DUE_SOON', 'DUE_TODAY'])
+    .default('ACTIVE'),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+});
+
+export const loanHistoryQuerySchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  studentId: z.string().min(1).max(64).optional(),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD').optional(),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD').optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+});
+
+export const studentSearchQuerySchema = z.object({
+  q: z.string().trim().min(2).max(100),
+  limit: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 // L-04 Fines — collect / waive

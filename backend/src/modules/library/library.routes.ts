@@ -9,6 +9,10 @@ import {
   updateBookSchema,
   issueBookSchema,
   returnBookSchema,
+  renewLoanSchema,
+  loanQuerySchema,
+  loanHistoryQuerySchema,
+  studentSearchQuerySchema,
   collectFineSchema,
   waiveFineSchema,
   requestDecisionSchema,
@@ -18,6 +22,7 @@ import {
   catalogQuerySchema,
 } from './library.schemas.js';
 import * as service from './library.service.js';
+import * as circulation from './circulation.service.js';
 
 // Library Staff module — mounted at /api/v1/library (docs/users/07 §4)
 const router = Router();
@@ -88,13 +93,75 @@ router.put(
   }),
 );
 
-// L-03 circulation: issue / return
+// L-03 circulation: loan queries, issue, renew, return
+router.get(
+  '/circulation/loans',
+  validate(loanQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await circulation.listLoans(
+        req.auth!.institutionId,
+        req.query as { q?: string; status?: 'ALL' | 'ACTIVE' | 'ISSUED' | 'OVERDUE' | 'DUE_SOON' | 'DUE_TODAY'; limit?: number },
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/circulation/history',
+  validate(loanHistoryQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await circulation.listLoanHistory(
+        req.auth!.institutionId,
+        req.query as { q?: string; studentId?: string; from?: string; to?: string; limit?: number },
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/circulation/loans/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await circulation.getLoanDetail(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.get(
+  '/circulation/students',
+  validate(studentSearchQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await circulation.searchStudents(req.auth!.institutionId, {
+        q: String(req.query.q),
+        limit: req.query.limit ? Number(req.query.limit) : undefined,
+      }),
+    });
+  }),
+);
+
+router.get(
+  '/circulation/students/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await circulation.getStudentBorrowingProfile(
+        req.auth!.institutionId,
+        String(req.params.id),
+      ),
+    });
+  }),
+);
+
 router.post(
   '/circulation/issue',
   validate(issueBookSchema),
   wrap(async (req, res) => {
     res.status(201).json({
-      data: await service.issueBook(req.auth!.institutionId, req.auth!.userId, req.body),
+      data: await circulation.issueBook(req.auth!.institutionId, req.auth!.userId, req.body),
     });
   }),
 );
@@ -104,7 +171,27 @@ router.post(
   validate(returnBookSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.returnBook(req.auth!.institutionId, req.auth!.userId, req.body.issueId),
+      data: await circulation.returnBook(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body.issueId,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/circulation/loans/:id/renew',
+  validate(idParamSchema, 'params'),
+  validate(renewLoanSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await circulation.renewLoan(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        { days: req.body.days },
+      ),
     });
   }),
 );

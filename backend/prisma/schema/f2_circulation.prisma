@@ -13,6 +13,8 @@ model BookIssue {
   returnDate       DateTime?
   status           String    @default("ISSUED") // ISSUED | RETURNED | OVERDUE
   issuedByUserId   String // scalar → users.id
+  renewCount       Int       @default(0) // renewals consumed, capped by MAX_RENEWALS
+  lastRenewedAt    DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

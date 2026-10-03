@@ -83,6 +83,20 @@ at `/api/v1/library` (role gate: `LIBRARY` or `ADMIN`).
 - `PUT /api/v1/library/catalog/:id` — update book
 - `POST /api/v1/library/circulation/issue` — issue book (rollNo, bookId, dueDays)
 - `POST /api/v1/library/circulation/return` — return book (creates fine if overdue)
+- `GET /api/v1/library/circulation/loans` — active loans with search + status filter (`ACTIVE|ISSUED|OVERDUE|DUE_SOON|DUE_TODAY`)
+- `GET /api/v1/library/circulation/loans/:id` — loan detail, timeline, projected fine, renew eligibility
+- `POST /api/v1/library/circulation/loans/:id/renew` — renew a loan (max 2, blocked when overdue)
+- `GET /api/v1/library/circulation/history` — returned-loan archive with on-time/late and fine totals
+- `GET /api/v1/library/circulation/students` — student lookup for the issue desk
+- `GET /api/v1/library/circulation/students/:id` — borrowing profile and eligibility blockers
+
+> **Derived overdue status.** `book_issues.status` is promoted `ISSUED → OVERDUE` by
+> `syncOverdueStatus()` before every status-filtered read. Without it, overdue counts
+> and the `OVERDUE_MEMBERS` broadcast audience would always read zero.
+>
+> **Borrowing rules** (`circulation.service.ts`): max 4 active loans per student,
+> max 2 renewals per loan, issuing blocked when the student is inactive, over the
+> loan limit, holds an overdue book, or owes more than ₹200 in unpaid fines.
 - `GET /api/v1/library/fines` — pending + collected fines with stats
 - `POST /api/v1/library/fines/:id/collect` — collect fine (write-through: Payment + Receipt + FinePayment)
 - `POST /api/v1/library/fines/:id/waive` — waive fine (audited)
