@@ -12,7 +12,14 @@ Library staff manage the full library lifecycle: catalog, circulation (issue/ret
 ## 3. Modules & Data Entities
 
 ### 3.1 Dashboard
-Hero (library utilization), stats (total books, issued, overdue, fines pending), today's due returns, popular titles, alerts (overdue escalation, low copies), quick-tool launcher, activity feed.
+Every figure is derived live, because most library numbers are a function of the current date rather than stored state. Two definitions the endpoint gets right, and had to be fixed to get right:
+
+- **On loan** is `returnDate: null`, *not* `status: 'ISSUED'`. `syncOverdueStatus()` promotes every past-due loan to OVERDUE before the counters run, so an ISSUED-only count reports "1 issued" on a library with 11 books out.
+- **Circulation rate** is `(total copies − copies on the shelf) / total copies`. It was previously derived from the low-stock list, which reported **100% utilisation on a 22% library**. The screen also used to fall back to an invented `95%` when the field was missing; it now shows the real number or nothing.
+
+Sections: hero (titles, copies on shelf, on loan, members, circulation rate), **today's desk** (due today, overdue, issues today, returns today), live counters that each open the screen that owns them, actionable alerts with a `HIGH`/`MEDIUM`/`LOW` severity, returns to chase (deep-linking into the loan detail, labelled with days late), shelf pressure, most-borrowed titles, and a 9-tile tool launcher.
+
+Two honesty details: `pendingRequests` is tenant-scoped (a bare `status: 'PENDING'` counted other institutions'), and "all copies on loan" is reported differently from "out of stock" — a title with 0 free copies is usually one everyone is reading, not a procurement failure.
 
 ### 3.2 Catalog
 Book search + category filters, book list (title, author, category, copies, available with availability bar). Actions: **Add Book**, **Edit**, mark copies.

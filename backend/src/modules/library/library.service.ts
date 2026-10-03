@@ -9,56 +9,135 @@ import { createBroadcast } from './notifications.service.js';
 
 
 // ── L-01 Dashboard ──────────────────────────────────────────
+const DAY_MS = 1000 * 60 * 60 * 24;
+
+const startOfDay = (d: Date) => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+
+/**
+ * The librarian's landing view. Everything here is derived live, because most
+ * library figures (overdue, on-loan, availability) are a function of the current
+ * date rather than stored state.
+ *
+ * Two things this deliberately does NOT do:
+ *  - Count `status: 'ISSUED'` and call that "on loan". syncOverdueStatus() has
+ *    already promoted every past-due loan to OVERDUE, so an ISSUED-only count
+ *    reported "1 issued" while 11 books were actually out. On-loan means
+ *    `returnDate: null`.
+ *  - Derive the circulation rate from the low-stock list (an earlier bug that
+ *    reported 100% utilisation on a 22% library). It is total copies minus the
+ *    copies sitting on the shelf.
+ */
 export async function getDashboard(institutionId: string) {
   const now = new Date();
-  // Promote past-due loans first, otherwise the overdue counters below read zero.
+  // Promote past-due loans first, otherwise every counter below reads zero.
   await syncOverdueStatus(institutionId);
 
+  const todayStart = startOfDay(now);
+  const todayEnd = new Date(todayStart.getTime() + DAY_MS - 1);
+  const tomorrowEnd = new Date(todayStart.getTime() + 2 * DAY_MS - 1);
+
   const [
-    totalBooks,
-    totalIssued,
-    totalOverdue,
-    pendingFines,
-    pendingRequests,
-    totalMembers,
-    lowCopiesBooks,
+    copies,
+    shelf,
+    titles,
+    onLoan,
+    issued,
+    overdue,
+    members,
+    requests,
+    procurements,
+    fines,
+    digital,
+    issuesToday,
+    returnsToday,
+    lowStock,
   ] = await Promise.all([
     prisma.book.aggregate({ where: { institutionId }, _sum: { totalCopies: true } }),
-    prisma.bookIssue.count({ where: { book: { institutionId }, status: 'ISSUED' } }),
-    prisma.bookIssue.count({ where: { book: { institutionId }, status: 'OVERDUE' } }),
-    prisma.fine.count({
-      where: { status: 'PENDING', bookIssue: { book: { institutionId } } },
+    prisma.book.aggregate({ where: { institutionId }, _sum: { availableCopies: true } }),
+    prisma.book.count({ where: { institutionId } }),
+    prisma.bookIssue.count({ where: { book: { institutionId }, returnDate: null } }),
+    prisma.bookIssue.count({
+      where: { book: { institutionId }, returnDate: null, status: 'ISSUED' },
     }),
-    prisma.bookRequest.count({ where: { status: 'PENDING' } }),
+    prisma.bookIssue.count({
+      where: { book: { institutionId }, returnDate: null, status: 'OVERDUE' },
+    }),
     prisma.studentProfile.count({ where: { user: { institutionId, deletedAt: null } } }),
+    // Scoped: a bare `status: 'PENDING'` would count other institutions'.
+    prisma.bookRequest.count({
+      where: { status: 'PENDING', studentProfile: { user: { institutionId, deletedAt: null } } },
+    }),
+    prisma.bookProcurement.count({
+      where: { institutionId, status: { in: ['REQUESTED', 'ORDERED'] } },
+    }),
+    prisma.fine.aggregate({
+      where: { status: 'PENDING', bookIssue: { book: { institutionId } } },
+      _count: { _all: true },
+      _sum: { amountMinor: true },
+    }),
+    prisma.digitalResource.count({ where: { institutionId, status: 'ACTIVE' } }),
+    prisma.bookIssue.count({
+      where: { book: { institutionId }, issueDate: { gte: todayStart, lte: todayEnd } },
+    }),
+    prisma.bookIssue.count({
+      where: { book: { institutionId }, returnDate: { gte: todayStart, lte: todayEnd } },
+    }),
+    // Shelf pressure is NOT out-of-stock: a title with 0 free copies is usually
+    // one everyone is reading, which is a different message to the librarian.
     prisma.book.findMany({
-      where: { institutionId, availableCopies: 0 },
+      where: { institutionId, availableCopies: { lte: 1 } },
       select: { id: true, title: true, author: true, totalCopies: true, availableCopies: true },
+      orderBy: { availableCopies: 'asc' },
       take: 5,
     }),
   ]);
 
-  // Today's due returns (due today or overdue, still ISSUED)
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date(now);
-  todayEnd.setHours(23, 59, 59, 999);
+  const totalCopies = copies._sum.totalCopies ?? 0;
+  const available = shelf._sum.availableCopies ?? 0;
+  const circulationRatePct =
+    totalCopies === 0 ? 0 : Math.round(((totalCopies - available) / totalCopies) * 100);
 
-  const dueToday = await prisma.bookIssue.findMany({
+  // What needs chasing: anything overdue, due today, or due tomorrow.
+  const dueSoon = await prisma.bookIssue.findMany({
     where: {
       book: { institutionId },
-      status: { in: ['ISSUED', 'OVERDUE'] },
-      dueDate: { lte: todayEnd },
+      returnDate: null,
+      dueDate: { lte: tomorrowEnd },
     },
     include: {
-      book: { select: { title: true } },
+      book: { select: { id: true, title: true } },
       studentProfile: { include: { user: { select: { fullName: true } } } },
     },
     orderBy: { dueDate: 'asc' },
     take: 10,
   });
 
-  // Popular books (most borrowed — count issues per book)
+  const shapedDue = dueSoon.map((i) => {
+    const isOverdue = i.status === 'OVERDUE' || i.dueDate < now;
+    return {
+      id: i.id,
+      bookId: i.book.id,
+      book: i.book.title,
+      student: i.studentProfile.user.fullName,
+      rollNo: i.studentProfile.rollNo,
+      dueDate: i.dueDate,
+      isOverdue,
+      daysOverdue: isOverdue ? Math.ceil((now.getTime() - i.dueDate.getTime()) / DAY_MS) : 0,
+      dueToday: startOfDay(i.dueDate).getTime() === todayStart.getTime(),
+    };
+  });
+
+  // Overdue is already counted above; these two are the forward-looking ones.
+  const dueTodayCount = shapedDue.filter((d) => d.dueToday && !d.isOverdue).length;
+  const dueTomorrowCount = await prisma.bookIssue.count({
+    where: { book: { institutionId }, returnDate: null, dueDate: { gt: todayEnd, lte: tomorrowEnd } },
+  });
+
+  // Most borrowed — lifetime issue count per title.
   const popularRaw = await prisma.bookIssue.groupBy({
     by: ['bookId'],
     where: { book: { institutionId } },
@@ -66,57 +145,100 @@ export async function getDashboard(institutionId: string) {
     orderBy: { _count: { id: 'desc' } },
     take: 5,
   });
-  const popularBookIds = popularRaw.map((r) => r.bookId);
-  const popularBooks = popularBookIds.length
-    ? await prisma.book.findMany({ where: { id: { in: popularBookIds } } })
+  const popularBooks = popularRaw.length
+    ? await prisma.book.findMany({
+      where: { id: { in: popularRaw.map((r) => r.bookId) } },
+      select: { id: true, title: true, author: true },
+    })
     : [];
   const popularMap = new Map(popularBooks.map((b) => [b.id, b]));
-  const popular = popularRaw.map((r) => ({
-    id: r.bookId,
-    title: popularMap.get(r.bookId)?.title ?? 'Unknown',
-    author: popularMap.get(r.bookId)?.author ?? null,
-    borrowed: r._count.id,
-  }));
 
-  const totalBookCount = totalBooks._sum.totalCopies ?? 0;
-  const utilizationPct = totalBookCount === 0 ? 0 : Math.round(((totalBookCount - (lowCopiesBooks.reduce((s, b) => s + b.availableCopies, 0))) / totalBookCount) * 100);
+  // Alerts are actionable sentences, each naming the number behind it.
+  const alerts: { type: string; message: string; severity: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [];
+  if (overdue > 0) {
+    alerts.push({
+      type: 'OVERDUE',
+      severity: 'HIGH',
+      message: `${overdue} book${overdue === 1 ? '' : 's'} overdue`,
+    });
+  }
+  if (requests > 0) {
+    alerts.push({
+      type: 'PENDING_REQUESTS',
+      severity: 'MEDIUM',
+      message: `${requests} book request${requests === 1 ? '' : 's'} awaiting a decision`,
+    });
+  }
+  if (procurements > 0) {
+    alerts.push({
+      type: 'PROCUREMENT',
+      severity: 'LOW',
+      message: `${procurements} purchase${procurements === 1 ? '' : 's'} to order or receive`,
+    });
+  }
+  for (const b of lowStock) {
+    alerts.push({
+      type: b.availableCopies === 0 ? 'ALL_ON_LOAN' : 'LOW_COPIES',
+      severity: b.availableCopies === 0 ? 'MEDIUM' : 'LOW',
+      message:
+        b.availableCopies === 0
+          ? `"${b.title}" — all ${b.totalCopies} cop${b.totalCopies === 1 ? 'y' : 'ies'} on loan`
+          : `"${b.title}" — only ${b.availableCopies} of ${b.totalCopies} on the shelf`,
+    });
+  }
 
   return {
     hero: {
-      totalBooks: totalBookCount,
-      totalIssued,
-      totalMembers,
-      utilizationPct,
-      overdueCount: totalOverdue,
+      titles,
+      totalCopies,
+      availableCopies: available,
+      onLoan,
+      totalMembers: members,
+      circulationRatePct,
+      overdueCount: overdue,
     },
     stats: {
-      totalBooks: totalBookCount,
-      issued: totalIssued,
-      overdue: totalOverdue,
-      pendingFines,
+      titles,
+      totalBooks: totalCopies,
+      onLoan,
+      issued,
+      overdue,
+      members,
+      pendingFines: fines._count._all,
+      pendingFineRupees: Math.round((fines._sum.amountMinor ?? 0) / 100),
+      pendingRequests: requests,
+      digitalResources: digital,
     },
-    dueToday: dueToday.map((i) => ({
-      id: i.id,
-      book: i.book.title,
-      student: i.studentProfile.user.fullName,
-      rollNo: i.studentProfile.rollNo,
-      dueDate: i.dueDate,
-      isOverdue: i.status === 'OVERDUE' || i.dueDate < now,
-    })),
-    popular,
-    alerts: [
-      ...lowCopiesBooks.map((b) => ({
-        type: 'LOW_COPIES' as const,
-        message: `"${b.title}" has 0 available copies`,
+    today: {
+      dueToday: dueTodayCount,
+      dueTomorrow: dueTomorrowCount,
+      overdue,
+      issuesToday,
+      returnsToday,
+    },
+    shelf: {
+      totalCopies,
+      onShelf: available,
+      onLoan,
+      ratePct: circulationRatePct,
+      lowStock: lowStock.map((b) => ({
+        id: b.id,
+        title: b.title,
+        author: b.author,
+        availableCopies: b.availableCopies,
+        totalCopies: b.totalCopies,
+        allOnLoan: b.availableCopies === 0,
       })),
-      ...(pendingRequests > 0
-        ? [{ type: 'PENDING_REQUESTS' as const, message: `${pendingRequests} book request(s) awaiting decision` }]
-        : []),
-      ...(totalOverdue > 0
-        ? [{ type: 'OVERDUE' as const, message: `${totalOverdue} book(s) overdue` }]
-        : []),
-    ],
-    pendingRequests,
+    },
+    dueSoon: shapedDue,
+    popular: popularRaw.map((r) => ({
+      id: r.bookId,
+      title: popularMap.get(r.bookId)?.title ?? 'Unknown',
+      author: popularMap.get(r.bookId)?.author ?? null,
+      borrowed: r._count.id,
+    })),
+    alerts,
+    pendingRequests: requests,
   };
 }
 
