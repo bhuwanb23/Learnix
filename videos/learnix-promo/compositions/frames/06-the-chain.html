@@ -120,10 +120,15 @@
     will-change: transform;
   }
 
-  /* ── chrome eyebrow: the enum name, set as literal code ── */
+  /* ── chrome eyebrow: the enum name, set as literal code ──
+     The Scene 2 push-through reaches scale 1.22, where the visible x-range is
+     only [172, 1748]. Content anchored at left:96 therefore sits outside the
+     canvas for the whole traversal — which is what clipped PENDING off the
+     left edge. 220px keeps the eyebrow and chain inside frame at both the
+     1.22 traversal and the 1.05 settle. */
   .f06c-eyebrow {
     position: absolute;
-    left: 96px;
+    left: 220px;
     top: 100px;
     display: flex;
     align-items: center;
@@ -158,10 +163,11 @@
     line-height: 1;
   }
 
-  /* ── the chain: three instruments, seated centre-left ── */
+  /* ── the chain: three instruments, seated centre-left ──
+     220px, not 96px — see the note on .f06c-eyebrow above. */
   .f06c-chain {
     position: absolute;
-    left: 96px;
+    left: 220px;
     top: 176px;
     height: 64px;
     display: flex;
@@ -261,6 +267,9 @@
     border: 1.5px solid rgba(37, 99, 235, 0.2);
   }
 
+  /* The source SVG carries an opaque full-canvas background and a header bar,
+     so at any higher opacity it stops reading as texture and becomes a grey
+     slab. 0.07 leaves only the node structure as a faint wash behind the chain. */
   .f06c-diagram {
     position: absolute;
     left: 0;
@@ -269,7 +278,7 @@
     height: 100%;
     object-fit: cover;
     object-position: center 46%;
-    opacity: 0.15;
+    opacity: 0.07;
     display: block;
   }
 
