@@ -65,9 +65,61 @@ shipped: `/collections/statement` is a literal path that Express would match aga
 `/collections/:id` if the param were registered first.
 
 ### 3.3 Dues & Recovery
-Due list (student, rollNo, program, semester, due amount, days overdue with severity), reminders. Actions: **Send Reminder** (SMS/email/push), **Waive Fee** (with reason + admin audit), mark collected (links to Collections).
+**Hub (`pages/dues/dues.js`).** The old screen listed every due in one undifferentiated block with two
+unlabelled icon buttons per row, and its headline "Unpaid" card counted **billed amounts** rather than
+what was still owed — so a part-paid bill read as fully outstanding. It offered no way to find a
+family, no sense of how old the debt was, and no record of whether anyone had chased it. Now:
 
-**Entity `fee_due`**: id, studentId, amount, daysOverdue, status (Unpaid/Partial/Cleared/Waived).
+| Area | What it shows |
+|---|---|
+| **Headline** | Outstanding (sum of open **balances**), overdue total + count, money actually **recovered in 30 days** — counted from `PaymentAllocation`, so an advance is not mistaken for recovered fees. Plus flags for part-paid and already-chased bills. Deliberately **filter-independent**, so the summary does not jump as the officer narrows the list. |
+| **Receivables aging** | Five standard buckets (not due · 1–7 · 8–15 · 16–30 · 30+ days) with count and rupee total each. Tappable — each is also a `bucket` filter. The buckets partition the overdue book exactly. |
+| **Filters** | Status chips (Open · Nothing paid · Part-paid · Waived · Settled · Everything), free-text search over student name / roll no / fee title, six sorts (severity, longest overdue, largest/smallest balance, due date, recently chased). The list header reports the *filter's* own count and outstanding total. |
+| **Rows** | Derived status pill, **balance** with progress bar and "₹X of ₹Y paid" when part-paid, an overdue phrase that reads the way a desk says it ("7 months overdue"), and a `chased N× · 3 days ago` tag when a reminder has been sent. |
+| **Waived banner** | When any bill is waived, the waived count and value are named explicitly as excluded from outstanding, with a note that each can be reinstated. |
+
+**Sub-page `DueDetail`** (`pages/dues/due_detail/due_detail.js`) — one bill end to end: amount,
+progress bar, due date, aging, fee-structure breakdown; the student's whole position with a deep link
+to their statement; every payment allocated against this bill (struck through if reversed, tapping one
+opens its receipt); the student's other open dues; and a **recovery history** combining the reminder
+log with the waiver stamp.
+
+**Actions are gated server-side.** The detail response carries `canRemind` / `canCollect` / `canWaive`
+/ `canReinstate`, so the screen renders an explanation instead of a button that would come back as a
+409. Chasing a family for a bill they already paid is the worst thing this desk can do, so it refuses
+rather than guesses.
+
+| Action | Behaviour |
+|---|---|
+| **Send Reminder** | Increments `reminderCount`, stamps `lastRemindedAt`, notifies the student, audits. An optional note is appended to the message — enough to say "we agreed a 7-day grace" or to apologise for chasing a settled bill. Refused on a cleared or waived due. |
+| **Waive Fee** | Sets `WAIVED` with `waivedAt` **and `waivedByUserId`** — a waiver with no actor is an unauditable one. Notifies the student with the reason. Refused on a cleared due or a due with no balance. |
+| **Reinstate Fee** | **New.** Reverses a mistaken waiver: clears the waiver fields and **re-derives** the status from the balance, so a part-paid bill returns as `PARTIAL` — not `UNPAID`. Restores the aging clock and keeps the reminder history. Without this, the desk's only answer to a wrong write-off was a direct database edit with no audit trail. |
+
+**Status is derived, never trusted.** `status` is a denormalised column that older code paths could leave
+contradicting `paidMinor`; a desk that renders "₹0 paid against ₹1.35L settled" is worse than no desk.
+`deriveDueStatus()` recomputes it from the money on every read and `reconcileDues()` repairs the stored
+column when it drifts. `WAIVED` is the one status that is a decision rather than a calculation, so it
+survives the arithmetic.
+
+**`daysOverdue` must be computed in whole local days.** Both ends are normalised with `startOfDay()`,
+matching `syncDueOverdue`. Raw millisecond arithmetic disagrees in any timezone with a fractional
+offset — in IST (+5:30) a dueDate seeded at `00:00 UTC` is `05:30` local, so the raw form floors to 413
+where the normalised one gives 414. Reinstatement originally used the raw form and silently reset a
+414-day-old bill to "413 days overdue"; `daysPastDue()` is the shared helper and `verify-dues.ts` guards
+the regression.
+
+**Tenant scoping.** `FeeDue` carries no `institutionId` — it reaches its tenant through
+`studentProfile.user`. Every read and write goes through that path, so another school's bill is a 404
+here, not a row.
+
+**Entities.** `fee_dues` gains `lastRemindedAt`, `reminderCount`, `waivedAt`, `waivedByUserId`.
+
+**Verification** — `backend/scripts/verify-dues.ts` (86 assertions, service level) and
+`verify-dues-http.ts` (42 assertions, through the real `createApp()`). Both restore the dev DB and are
+idempotent across repeated runs. The HTTP one exists because a direct service call cannot see whether
+`/dues/:id` shadowed a literal route, and it confirms the status-code contract end to end (401/403 for
+auth, 400 for zod, 404 cross-tenant, 409 for a cleared/waived due). It also asserts the cross-feature
+invariant that the dashboard's `unpaidDues` equals the dues desk's `outstandingRupees`.
 
 ### 3.4 Payroll
 Teacher/staff payroll list (name, role, month, salary, deductions, net, status Paid/Pending). Actions: **Run Payroll** (bulk pay), **Mark Paid**, view payslip.
@@ -135,9 +187,11 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `GET /api/v1/accounts/ledger` — F-05 unified ledger (all payments by category)
 - `GET /api/v1/accounts/fee-structure` — F-03 fee structures per program
 - `POST /api/v1/accounts/fee-structure/:id/revision` — F-03 request revision
-- `GET /api/v1/accounts/dues` — F-04 fee dues, tenant-scoped, with `paidRupees`/`balanceRupees` and stats counting **balances** (not billed amounts), plus `partialCount` and `overdueRupees`
-- `POST /api/v1/accounts/dues/:id/remind` — F-04 send reminder notification
-- `POST /api/v1/accounts/dues/:id/waive` — F-04 waive fee (audited)
+- `GET /api/v1/accounts/dues?q=&status=&bucket=&sort=&take=&skip=` — F-04 fee dues, tenant-scoped. `status`: `ALL|OPEN|UNPAID|PARTIAL|CLEARED|WAIVED`; `bucket`: `ALL|NOT_DUE|D1_7|D8_15|D16_30|D30_PLUS|CLEARED`; `sort`: `SEVERITY|OVERDUE_DESC|AMOUNT_DESC|AMOUNT_ASC|DUE_DATE_ASC|RECENTLY_REMINDED`. Rows carry `paidRupees`/`balanceRupees`/`collectible`/aging bucket/chase history; `stats` counts **balances** (not billed amounts) and adds `overdueRupees`, `defaulterCount`, `chasedCount`, `waivedRupees`, `recoveredMonthRupees`; `aging[]` is the receivables breakdown
+- `GET /api/v1/accounts/dues/:id` — F-04 detail: the due, the student, the fee-structure breakdown, allocations (each tappable to its receipt), reminder history from the audit trail, the student's other open dues, their whole `position`, and `canRemind`/`canCollect`/`canWaive`/`canReinstate`
+- `POST /api/v1/accounts/dues/:id/remind` — F-04 send a reminder (body: optional `note`, max 300). Increments `reminderCount`, stamps `lastRemindedAt`, notifies, audits. Refused on a cleared or waived due
+- `POST /api/v1/accounts/dues/:id/waive` — F-04 waive fee (body: `reason`, min 3). Records `waivedAt` + `waivedByUserId`, notifies, audits
+- `POST /api/v1/accounts/dues/:id/reinstate` — F-04 reverse a mistaken waiver (body: `reason`, min 3). Clears the waiver fields, re-derives status from the balance, restores the aging clock, notifies, audits
 - `GET /api/v1/accounts/payroll` — F-06 payroll runs with entries
 - `POST /api/v1/accounts/payroll/run` — F-06 create payroll run for month
 - `POST /api/v1/accounts/payroll/:id/mark-paid` — F-06 mark payroll as paid
@@ -154,4 +208,4 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `POST /api/v1/accounts/broadcasts` — F-10 broadcast (ALL_STUDENTS / DEFAULTERS / ALL_STAFF)
 - `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
 
-**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing; dues has remind + waive; payroll has run + mark paid; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
+**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll has run + mark paid; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.

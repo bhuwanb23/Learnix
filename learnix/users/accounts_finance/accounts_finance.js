@@ -24,6 +24,9 @@ import CollectPayment from './pages/collections/collect_payment/collect_payment'
 import CollectionDetail from './pages/collections/collection_detail/collection_detail';
 import StudentStatement from './pages/collections/student_statement/student_statement';
 
+// Dues sub-pages (pages/dues/*)
+import DueDetail from './pages/dues/due_detail/due_detail';
+
 // Import feature modules (opened from dashboard hub)
 import FeeStructureModule from './pages/fee_structure/fee_structure';
 import ExpensesModule from './pages/expenses/expenses';
@@ -49,6 +52,9 @@ const FEATURE_MODULES = {
   CollectPayment: { title: 'Collect Payment', icon: 'add-circle-outline', component: CollectPayment },
   CollectionDetail: { title: 'Collection Detail', icon: 'receipt-outline', component: CollectionDetail },
   StudentStatement: { title: 'Student Statement', icon: 'document-text-outline', component: StudentStatement },
+
+  // Dues sub-pages
+  DueDetail: { title: 'Fee Due', icon: 'receipt-outline', component: DueDetail },
 };
 
 const TAB_TITLES = {
@@ -141,6 +147,7 @@ export default function AccountsScreen({ navigation }) {
       case 'Dues':
         return (
           <DuesModule
+            route={{ params: routeParams }}
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
               goBack: handleBackPress,

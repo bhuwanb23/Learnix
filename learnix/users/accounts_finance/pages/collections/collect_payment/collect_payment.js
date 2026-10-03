@@ -25,7 +25,14 @@ const AMOUNT_PRESETS = [5000, 10000, 25000, 50000];
 
 export default function CollectPayment({ navigation, route }) {
   // Arriving with a student pre-selected (from the Dues screen) skips search.
+  // Both a roll number and a profile id are accepted: the Dues desk holds a
+  // profile id, while other callers (and a typed roll number) hold a roll no.
   const presetRollNo = route?.params?.rollNo;
+  const presetProfileId = route?.params?.studentProfileId;
+  // A due to point the money at. From the Dues detail screen this means the
+  // officer opened "collect against this bill" and expects THAT bill settled,
+  // not the oldest one the student happens to have.
+  const presetDueId = route?.params?.dueId;
 
   const [term, setTerm] = useState(presetRollNo || '');
   const [results, setResults] = useState([]);
@@ -83,26 +90,45 @@ export default function CollectPayment({ navigation, route }) {
     try {
       const st = await accountsApi.studentStatement({ studentProfileId: picker.id });
       setStatement(st);
-      // Default the amount to exactly what is owed — the overwhelmingly
-      // common case at a fee counter.
-      setAmount(st.position.outstandingRupees > 0 ? String(st.position.outstandingRupees) : '');
+
+      // When we arrived from a specific bill, default to settling THAT bill:
+      // amount = its balance, allocation = all of it, manual mode on. Falling
+      // back to "everything outstanding, oldest first" would quietly do
+      // something other than what the officer asked for.
+      const target = presetDueId
+        ? (st.dues ?? []).find(
+          (d) => d.id === presetDueId && (d.status === 'UNPAID' || d.status === 'PARTIAL'),
+        )
+        : null;
+
+      if (target && target.balanceRupees > 0) {
+        setAutoAllocate(false);
+        setAmount(String(target.balanceRupees));
+        setSplit({ [target.id]: String(target.balanceRupees) });
+      } else {
+        // Default the amount to exactly what is owed — the overwhelmingly
+        // common case at a fee counter.
+        setAmount(st.position.outstandingRupees > 0 ? String(st.position.outstandingRupees) : '');
+      }
     } catch (err) {
       Alert.alert('Cannot Load Statement', err.message);
       setStatement(null);
     } finally {
       setLoadingStatement(false);
     }
-  }, []);
+  }, [presetDueId]);
 
-  // A preset roll number from elsewhere: resolve it straight away.
+  // A preset student from elsewhere: resolve it straight away.
   useEffect(() => {
-    if (!presetRollNo) return;
+    if (!presetRollNo && !presetProfileId) return;
     accountsApi
-      .studentStatement({ rollNo: presetRollNo })
+      .studentStatement(
+        presetProfileId ? { studentProfileId: presetProfileId } : { rollNo: presetRollNo },
+      )
       .then((st) => pickStudent({ id: st.student.id, rollNo: st.student.rollNo, name: st.student.name }))
       .catch((err) => Alert.alert('Student Not Found', err.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetRollNo]);
+  }, [presetRollNo, presetProfileId]);
 
   // ── Derived figures ───────────────────────────────────────
   const openDues = useMemo(

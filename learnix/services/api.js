@@ -529,9 +529,16 @@ export const accountsApi = {
   ledger: () => api.get('/accounts/ledger'),
   feeStructure: () => api.get('/accounts/fee-structure'),
   requestRevision: (id) => api.post(`/accounts/fee-structure/${id}/revision`),
-  dues: () => api.get('/accounts/dues'),
-  remindDue: (id) => api.post(`/accounts/dues/${id}/remind`),
+  dues: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/dues${qs ? `?${qs}` : ''}`);
+  },
+  dueDetail: (id) => api.get(`/accounts/dues/${id}`),
+  remindDue: (id, note) => api.post(`/accounts/dues/${id}/remind`, note ? { note } : {}),
   waiveFee: (id, reason) => api.post(`/accounts/dues/${id}/waive`, { reason }),
+  reinstateDue: (id, reason) => api.post(`/accounts/dues/${id}/reinstate`, { reason }),
   payroll: () => api.get('/accounts/payroll'),
   runPayroll: (month) => api.post('/accounts/payroll/run', { month }),
   markPayrollPaid: (id) => api.post(`/accounts/payroll/${id}/mark-paid`),
