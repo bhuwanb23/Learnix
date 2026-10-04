@@ -3,6 +3,7 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { balanceOf } from './dues.money.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
 
@@ -25,7 +26,7 @@ export async function getDashboard(institutionId: string) {
       }),
       prisma.feeDue.findMany({
         where: { status: { in: ['UNPAID', 'PARTIAL'] }, ...dueTenant },
-        select: { amountMinor: true, paidMinor: true },
+        select: { amountMinor: true, paidMinor: true, lateFeeMinor: true },
       }),
       prisma.payrollRun.findFirst({
         where: { institutionId },
@@ -45,7 +46,9 @@ export async function getDashboard(institutionId: string) {
   const collectedPaise = totalCollected._sum.amountMinor ?? 0;
   const targetPaise = totalDues._sum.totalMinor ?? 0;
   // Outstanding is the balance still owed, not the amount originally billed.
-  const unpaidPaise = unpaidDues.reduce((s, d) => s + Math.max(0, d.amountMinor - d.paidMinor), 0);
+  // Includes any assessed late fine — the same rule the dues desk uses, so the
+  // two screens can never show different totals for the same institution.
+  const unpaidPaise = unpaidDues.reduce((s, d) => s + balanceOf(d), 0);
 
   const unpaidCount = unpaidDues.length;
   const targetPct = targetPaise === 0 ? 0 : Math.min(Math.round((collectedPaise / targetPaise) * 100), 100);

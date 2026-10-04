@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
@@ -14,6 +15,16 @@ import {
   reinstateDueSchema,
   duesQuerySchema,
   remindDueSchema,
+  studentBalancesQuerySchema,
+  courseDuesQuerySchema,
+  lateFeeRuleSchema,
+  runLateFeeSchema,
+  assessLateFeeSchema,
+  waiveLateFeeSchema,
+  planSchema,
+  planListQuerySchema,
+  cancelPlanSchema,
+  bulkRemindSchema,
   runPayrollSchema,
   payPayrollEntrySchema,
   payPayrollRunSchema,
@@ -184,6 +195,128 @@ router.get(
   }),
 );
 
+// ── Dues: literal sub-paths FIRST ───────────────────────────
+// Express matches in registration order, so `/dues/students`, `/dues/courses`,
+// `/dues/plans`, `/dues/late-fee` and `/dues/remind-bulk` are all registered
+// before `/dues/:id`. Register the param first and "students" is read as a due
+// id, which 404s a perfectly good screen.
+router.get(
+  '/dues/students',
+  validate(studentBalancesQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.listStudentBalances(req.auth!.institutionId, {
+        q: req.query.q ? String(req.query.q) : undefined,
+        programId: req.query.programId ? String(req.query.programId) : undefined,
+        minDaysOverdue: req.query.minDaysOverdue ? Number(req.query.minDaysOverdue) : undefined,
+        take: req.query.take ? Number(req.query.take) : undefined,
+        skip: req.query.skip ? Number(req.query.skip) : undefined,
+      }),
+    });
+  }),
+);
+
+router.get(
+  '/dues/students/:studentProfileId',
+  validate(z.object({ studentProfileId: idParamSchema.shape.id }), 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.getStudentDues(
+        req.auth!.institutionId,
+        String(req.params.studentProfileId),
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/dues/courses',
+  validate(courseDuesQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.listCourseDues(req.auth!.institutionId, {
+        academicYearId: req.query.academicYearId ? String(req.query.academicYearId) : undefined,
+        programId: req.query.programId ? String(req.query.programId) : undefined,
+        semester: req.query.semester ? Number(req.query.semester) : undefined,
+      }),
+    });
+  }),
+);
+
+router.get(
+  '/dues/plans',
+  validate(planListQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.listPlans(req.auth!.institutionId, {
+        status: req.query.status ? String(req.query.status) : undefined,
+      }),
+    });
+  }),
+);
+
+// The fine policy AND what running it would do right now, in one response. An
+// officer must never have to press "apply" to find out what "apply" costs.
+router.get(
+  '/dues/late-fee',
+  wrap(async (req, res) => {
+    res.json({ data: await dues.getLateFeeSettings(req.auth!.institutionId) });
+  }),
+);
+
+router.put(
+  '/dues/late-fee',
+  validate(lateFeeRuleSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.saveLateFeeRule(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/dues/late-fee/run',
+  validate(runLateFeeSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.runLateFeeAssessment(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+// The preview is a POST because it takes the same body as the send (an explicit
+// selection, or the whole filtered list) and must run the identical selection
+// logic — a GET preview built from query params would drift the moment the
+// filter changes. Returns WHO would be reached and, per row, WHY anyone is
+// skipped, so "remind everyone" can never be an unverified tap.
+router.post(
+  '/dues/remind-bulk/preview',
+  validate(bulkRemindSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.previewBulkRemind(req.auth!.institutionId, req.body),
+    });
+  }),
+);
+
+router.post(
+  '/dues/remind-bulk',
+  validate(bulkRemindSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.remindBulk(req.auth!.institutionId, req.auth!.userId, req.body),
+    });
+  }),
+);
+
 router.get(
   '/dues/:id',
   validate(idParamSchema, 'params'),
@@ -236,6 +369,81 @@ router.post(
         req.auth!.institutionId,
         req.auth!.userId,
         String(req.params.id),
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/dues/:id/late-fee',
+  validate(idParamSchema, 'params'),
+  validate(assessLateFeeSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.assessLateFee(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.delete(
+  '/dues/:id/late-fee',
+  validate(idParamSchema, 'params'),
+  validate(waiveLateFeeSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.waiveLateFee(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/dues/:id/plan',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    // The plan a due belongs to, in either direction: an instalment knows its
+    // plan, and the replaced parent knows the plan that replaced it.
+    const due = await dues.getDuePlan(req.auth!.institutionId, String(req.params.id));
+    res.json({ data: due });
+  }),
+);
+
+router.post(
+  '/dues/:id/plan',
+  validate(idParamSchema, 'params'),
+  validate(planSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.createInstallmentPlan(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.id),
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/dues/plans/:planId/cancel',
+  validate(z.object({ planId: idParamSchema.shape.id }), 'params'),
+  validate(cancelPlanSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await dues.cancelInstallmentPlan(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.planId),
         req.body.reason,
       ),
     });

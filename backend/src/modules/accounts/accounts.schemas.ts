@@ -76,7 +76,7 @@ export const studentSearchQuerySchema = z.object({
 // derived status (never the stale column) is what `status` filters on.
 export const duesQuerySchema = z.object({
   q: z.string().trim().max(100).optional(),
-  status: z.enum(['ALL', 'OPEN', 'UNPAID', 'PARTIAL', 'CLEARED', 'WAIVED']).default('ALL'),
+  status: z.enum(['ALL', 'OPEN', 'UNPAID', 'PARTIAL', 'CLEARED', 'WAIVED', 'SUPERSEDED']).default('ALL'),
   bucket: z.enum(['ALL', 'NOT_DUE', 'D1_7', 'D8_15', 'D16_30', 'D30_PLUS', 'CLEARED']).default('ALL'),
   sort: z
     .enum(['SEVERITY', 'OVERDUE_DESC', 'AMOUNT_DESC', 'AMOUNT_ASC', 'DUE_DATE_ASC', 'RECENTLY_REMINDED'])
@@ -154,3 +154,110 @@ export const accountsBroadcastSchema = z.object({
   title: z.string().trim().min(2).max(120),
   body: z.string().trim().min(2).max(2000),
 });
+
+// ── Dues: student-wise, course-wise, fines, plans, bulk reminders ──
+// Every one of these is bounded with a literal status/sort list rather than a
+// free string, so a typo in the app is a 400 with a useful message instead of a
+// silently empty screen.
+
+export const studentBalancesQuerySchema = z
+  .object({
+    q: z.string().trim().min(1).optional(),
+    programId: z.string().trim().min(1).optional(),
+    minDaysOverdue: z.coerce.number().int().min(0).max(3650).optional(),
+    take: z.coerce.number().int().min(1).max(200).optional(),
+    skip: z.coerce.number().int().min(0).optional(),
+  })
+  .strict();
+
+export const courseDuesQuerySchema = z
+  .object({
+    academicYearId: z.string().trim().min(1).optional(),
+    programId: z.string().trim().min(1).optional(),
+    // Semester 1–12 covers both UG and PG; anything else is a data error.
+    semester: z.coerce.number().int().min(1).max(12).optional(),
+  })
+  .strict();
+
+/**
+ * The fine policy. Basis points rather than a float percentage: 1.5% is 150bp,
+ * and a float here would make the same policy produce a different fine on two
+ * different machines.
+ */
+export const lateFeeRuleSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80).optional(),
+    enabled: z.boolean().optional(),
+    graceDays: z.coerce.number().int().min(0).max(365).optional(),
+    mode: z.enum(['PERCENT', 'FLAT']).optional(),
+    valueBp: z.coerce.number().int().min(0).max(10000).optional(),
+    flatMinor: z.coerce.number().int().min(0).optional(),
+    capBp: z.coerce.number().int().min(0).max(10000).optional(),
+    maxMonths: z.coerce.number().int().min(0).max(60).optional(),
+    feeStructureId: z.string().trim().min(1).nullable().optional(),
+    note: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const runLateFeeSchema = z
+  .object({
+    minDaysOverdue: z.coerce.number().int().min(0).max(3650).optional(),
+    reason: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const assessLateFeeSchema = z
+  .object({ reason: z.string().trim().max(200).optional() })
+  .strict();
+
+export const waiveLateFeeSchema = z
+  .object({ reason: z.string().trim().min(3, 'Say why the fine is being removed') })
+  .strict();
+
+export const planSchema = z
+  .object({
+    // 2 minimum: one instalment is not a plan. 12 maximum: past that it is a
+    // bookkeeping habit, and every instalment is a bill the desk has to age.
+    count: z.coerce.number().int().min(2, 'A plan needs at least 2 instalments').max(12),
+    frequency: z.enum(['MONTHLY', 'FORTNIGHTLY', 'WEEKLY']).optional(),
+    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').optional(),
+    note: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const planListQuerySchema = z
+  .object({ status: z.enum(['ALL', 'ACTIVE', 'COMPLETED', 'CANCELLED']).optional() })
+  .strict();
+
+export const cancelPlanSchema = z
+  .object({ reason: z.string().trim().min(3, 'Say why the plan is being cancelled') })
+  .strict();
+
+/**
+ * A bulk reminder is either an explicit selection (`dueIds`) or the whole
+ * filtered list. `dryRun` is the important one: the UI always previews first, so
+ * "remind everyone" can never be a single unverified tap.
+ */
+export const bulkRemindSchema = z
+  .object({
+    dueIds: z.array(z.string().trim().min(1)).min(1).max(500).optional(),
+    filter: z
+      .object({
+        status: z.enum(['ALL', 'OPEN', 'UNPAID', 'PARTIAL', 'CLEARED', 'WAIVED', 'SUPERSEDED']).optional(),
+        bucket: z
+          .enum(['ALL', 'NOT_DUE', 'D1_7', 'D8_15', 'D16_30', 'D30_PLUS', 'CLEARED'])
+          .optional(),
+        q: z.string().trim().min(1).optional(),
+      })
+      .strict()
+      .optional(),
+    note: z.string().trim().max(300).optional(),
+    skipChased: z.boolean().optional(),
+    minDaysOverdue: z.coerce.number().int().min(0).max(3650).optional(),
+    cooldownDays: z.coerce.number().int().min(0).max(365).optional(),
+    dryRun: z.boolean().optional(),
+  })
+  .strict()
+  .refine((v) => (v.dueIds?.length ?? 0) > 0 || !!v.filter, {
+    message: 'Choose some bills, or a filter to select them by',
+  });

@@ -24,6 +24,11 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable, badRequest } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+// A due's balance now includes any assessed late fine (dues.money.ts). This
+// import is what stops the two desks disagreeing: without it, a payment could be
+// REFUSED here with "exceeds the ₹22,500 outstanding" while the Dues desk showed
+// ₹23,700 owing after a fine.
+import { balanceOf, deriveDueStatus } from './dues.money.js';
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const toRupees = (paise: number) => Math.round(paise / 100);
@@ -80,15 +85,30 @@ export async function syncDueOverdue(institutionId: string) {
 /**
  * Derive the next PAY-/RCP- number for the year, scoped to the institution.
  * `Payment` carries `@@unique([institutionId, referenceNo])`, so a collision
- * throws rather than silently duplicating — which is why we retry.
+ * throws rather than silently duplicating — which is why the caller retries.
+ *
+ * The next number is the MAX existing suffix plus one, NOT the count plus one.
+ * `count + 1` breaks the moment there is a gap: with PAY-2026-0001, 0002, 0003
+ * and 0005 present, count is 4 so the next is 0005 — which already exists. Every
+ * retry recomputes the same colliding number, so all five attempts fail and the
+ * desk cannot record a payment at all. Gaps are normal here (the seed skips
+ * numbers, and a reversed payment is never deleted), so the max is the only
+ * correct basis.
  */
 type Tx = Prisma.TransactionClient;
 
 async function nextReference(tx: Tx, institutionId: string, prefix: 'PAY' | 'RCP') {
   const year = new Date().getFullYear();
   const head = `${prefix}-${year}-`;
-  const count = await tx.payment.count({ where: { institutionId, referenceNo: { startsWith: head } } });
-  return head + String(count + 1).padStart(4, '0');
+  const existing = await tx.payment.findMany({
+    where: { institutionId, referenceNo: { startsWith: head } },
+    select: { referenceNo: true },
+  });
+  const max = existing.reduce((m, p) => {
+    const n = Number.parseInt(p.referenceNo.slice(head.length), 10);
+    return Number.isFinite(n) && n > m ? n : m;
+  }, 0);
+  return head + String(max + 1).padStart(4, '0');
 }
 
 async function nextReceiptNo(tx: Tx, institutionId: string) {
@@ -340,7 +360,7 @@ export async function getCollectionDetail(institutionId: string, paymentId: stri
       amountRupees: toRupees(a.amountMinor),
       dueAmountRupees: toRupees(a.due.amountMinor),
       duePaidRupees: toRupees(a.due.paidMinor),
-      dueBalanceRupees: toRupees(Math.max(0, a.due.amountMinor - a.due.paidMinor)),
+      dueBalanceRupees: toRupees(balanceOf(a.due)),
       dueStatus: a.due.status,
       clearedThisDue: a.due.status === 'CLEARED',
     })),
@@ -391,7 +411,7 @@ export async function searchPayableStudents(institutionId: string, q: string, li
       studentProfileId: { in: profiles.map((p) => p.id) },
       status: { in: ['UNPAID', 'PARTIAL'] },
     },
-    select: { studentProfileId: true, amountMinor: true, paidMinor: true, daysOverdue: true },
+    select: { studentProfileId: true, amountMinor: true, paidMinor: true, lateFeeMinor: true, daysOverdue: true },
   });
 
   return profiles.map((p) => {
@@ -403,7 +423,7 @@ export async function searchPayableStudents(institutionId: string, q: string, li
       email: p.user.email,
       openDues: mine.length,
       outstandingRupees: toRupees(
-        mine.reduce((s, d) => s + Math.max(0, d.amountMinor - d.paidMinor), 0),
+        mine.reduce((s, d) => s + balanceOf(d), 0),
       ),
       oldestOverdueDays: mine.reduce((m, d) => Math.max(m, d.daysOverdue), 0),
     };
@@ -463,13 +483,13 @@ export async function recordCollection(
   if (allocations.length === 0 && studentProfileId) {
     const dues = await prisma.feeDue.findMany({
       where: { ...dueScopeWhere(institutionId), studentProfileId, status: { in: ['UNPAID', 'PARTIAL'] } },
-      select: { id: true, amountMinor: true, paidMinor: true },
+      select: { id: true, amountMinor: true, paidMinor: true, lateFeeMinor: true },
       orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
     });
     let left = input.amountMinor;
     for (const d of dues) {
       if (left <= 0) break;
-      const balance = Math.max(0, d.amountMinor - d.paidMinor);
+      const balance = balanceOf(d);
       if (balance <= 0) continue;
       const take = Math.min(balance, left);
       allocations.push({ dueId: d.id, amountMinor: take });
@@ -492,7 +512,7 @@ export async function recordCollection(
   const dues = dueIds.length
     ? await prisma.feeDue.findMany({
       where: { id: { in: dueIds }, ...dueScopeWhere(institutionId) },
-      select: { id: true, title: true, amountMinor: true, paidMinor: true, status: true, studentProfileId: true },
+      select: { id: true, title: true, amountMinor: true, paidMinor: true, lateFeeMinor: true, status: true, studentProfileId: true },
     })
     : [];
   const dueById = new Map(dues.map((d) => [d.id, d]));
@@ -505,7 +525,12 @@ export async function recordCollection(
     }
     if (due.status === 'CLEARED') throw conflict(`"${due.title}" is already fully paid`);
     if (due.status === 'WAIVED') throw conflict(`"${due.title}" has been waived`);
-    const balance = due.amountMinor - due.paidMinor;
+    // A bill replaced by an instalment plan is not payable as a whole — the
+    // counter must take the money against a specific instalment.
+    if (due.status === 'SUPERSEDED') {
+      throw conflict(`"${due.title}" was replaced by a payment plan — collect against an instalment instead`);
+    }
+    const balance = balanceOf(due);
     if (a.amountMinor > balance) {
       throw unprocessable(
         `₹${toRupees(a.amountMinor)} exceeds the ₹${toRupees(balance)} outstanding on "${due.title}"`,
@@ -561,7 +586,7 @@ export async function recordCollection(
     for (const a of allocations) {
       const due = dueById.get(a.dueId)!;
       const paid = due.paidMinor + a.amountMinor;
-      const fullyPaid = paid >= due.amountMinor;
+      const fullyPaid = balanceOf({ ...due, paidMinor: paid }) === 0;
       await tx.feeDue.update({
         where: { id: due.id },
         data: {
@@ -577,7 +602,7 @@ export async function recordCollection(
 
   const clearedTitles = allocations
     .map((a) => dueById.get(a.dueId))
-    .filter((d) => d && d.paidMinor + (allocations.find((a) => a.dueId === d!.id)?.amountMinor ?? 0) >= d.amountMinor)
+    .filter((d) => d && balanceOf({ ...d, paidMinor: d.paidMinor + (allocations.find((a) => a.dueId === d!.id)?.amountMinor ?? 0) }) === 0)
     .map((d) => d!.title);
 
   const receiptNo = result.receiptNo;
@@ -665,13 +690,17 @@ export async function reverseCollection(
     for (const a of allocations) {
       const due = await tx.feeDue.findUnique({
         where: { id: a.dueId },
-        select: { id: true, amountMinor: true, paidMinor: true, status: true },
+        select: { id: true, amountMinor: true, paidMinor: true, lateFeeMinor: true, status: true },
       });
       if (!due) continue;
       const paid = Math.max(0, due.paidMinor - a.amountMinor);
       // A WAIVED due stays waived; a reversal simply reopens a settled one.
+      // Re-derive from the money rather than decrementing a status, so a
+      // reversal that un-covers a bill with a fine on it reopens it correctly.
       const status =
-        due.status === 'WAIVED' ? 'WAIVED' : paid >= due.amountMinor ? 'CLEARED' : paid > 0 ? 'PARTIAL' : 'UNPAID';
+        due.status === 'WAIVED' || due.status === 'SUPERSEDED'
+          ? due.status
+          : deriveDueStatus({ ...due, status: 'UNPAID', paidMinor: paid });
       await tx.feeDue.update({
         where: { id: due.id },
         data: { paidMinor: paid, status, lastPaymentAt: paid > 0 ? due.status === 'CLEARED' ? null : now : null },
@@ -760,7 +789,7 @@ export async function getStudentStatement(
     }),
   ]);
 
-  const balance = (d: { amountMinor: number; paidMinor: number }) => Math.max(0, d.amountMinor - d.paidMinor);
+  const balance = balanceOf;
   const open = dues.filter((d) => d.status === 'UNPAID' || d.status === 'PARTIAL');
   const outstandingMinor = open.reduce((s, d) => s + balance(d), 0);
 
@@ -790,9 +819,12 @@ export async function getStudentStatement(
       title: d.title,
       program: d.feeStructure?.program?.name ?? null,
       amountRupees: toRupees(d.amountMinor),
+      lateFeeRupees: toRupees(d.lateFeeMinor),
       paidRupees: toRupees(d.paidMinor),
       balanceRupees: toRupees(balance(d)),
       status: d.status,
+      isInstallment: !!d.installmentPlanId,
+      installmentSequence: d.installmentSequence ?? null,
       dueDate: d.dueDate,
       daysOverdue: d.status === 'UNPAID' || d.status === 'PARTIAL' ? d.daysOverdue : 0,
       waivedReason: d.waivedReason,
