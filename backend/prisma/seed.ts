@@ -2818,18 +2818,19 @@ async function syncExpenses(institutionId: string, actorUserId: string) {
       where: { institutionId, paymentReference: ref },
       select: { id: true },
     });
-    if (existing) continue;
-
-    // Write the receipt bytes BEFORE the skip below. A claim that already exists
-    // still needs its file on disk: the first run of an older seed recorded a
-    // File row with no bytes behind it, so those receipts opened to a 404 and
-    // the "documents are openable" audit check failed on demo data. Writing the
-    // file first makes this idempotent in the direction that matters.
+    // Write the receipt bytes BEFORE the existing-claim skip below. A claim that
+    // already exists still needs its file on disk: the first run of an older
+    // seed recorded a File row with no bytes behind it, so those receipts opened
+    // to a 404 and the "documents are openable" audit check failed on demo
+    // data. Writing first makes the seed idempotent in the direction that
+    // matters — it repairs old rows instead of only ever adding new ones.
     if (c.status !== 'PENDING' || c.key === 'evt-cater') {
       const storageKey = `seed-expense-${c.key}.pdf`;
       mkdirSync(UPLOAD_DIR, { recursive: true });
       writeFileSync(path.join(UPLOAD_DIR, storageKey), seededReceiptPdf(c.vendor ?? c.category, c.amountMinor, c.key));
     }
+
+    if (existing) continue;
 
     const budget = budgetFor(c.budgetCategory, c.departmentId);
     const row = await db.expense.create({

@@ -447,6 +447,8 @@ export async function getProfileDetail(viewer: Viewer, profileId: string) {
     id: profile.id,
     userId: profile.userId,
     name: profile.user.fullName,
+    isSelf: profile.userId === viewer.userId,
+    skillCount: profile.skills.length,
     headline: profile.headline ?? profile.currentRole,
     bio: profile.bio,
     currentRole: profile.currentRole,

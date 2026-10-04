@@ -280,9 +280,189 @@ Per-program fee breakdown (tuition, other charges, total). Actions: **Edit Struc
 **Entity `fee_structure`**: program, tuition, other, total (shared with Admin).
 
 ### 3.6 Expenses (module)
-Departmental expense tracking (category, vendor, amount, date, approval status). Actions: **Add Expense**, **Approve/Reject** (within budget), monthly expense summary.
 
-**Entity `expense`**: id, category, vendor, amount, date, status (Pending/Approved/Rejected), budgetRef.
+The spend desk. One module answering five questions, because "expenses" is
+five questions wearing one name and a flat claim list answers none of them
+properly:
+
+| View | Question | Screen |
+| --- | --- | --- |
+| Claims | What needs approving, and what can I raise? | hub + `expense_detail` + `expense_entry` |
+| Departments | Which department is over, and what did they buy? | `department_spend` |
+| Vendors | Who do we pay, how, and how concentrated is it? | `vendors` |
+| Budgets | Are we within plan, and can I change the plan? | `budgets` |
+| Trends | Is spend climbing, and against what pace? | `trends` |
+
+Screens: `expenses.js` (hub), `pages/expense_entry`, `pages/expense_detail`,
+`pages/budgets`, `pages/vendors`, `pages/department_spend`, `pages/trends`.
+
+#### §3.6.1 Expense entry and categorization
+
+Five categories, each carrying its own hint so the desk picks on purpose rather
+than by guesswork: **Labs & equipment**, **Events & hosting**, **Maintenance**,
+**Utilities**, **Miscellaneous**. Miscellaneous is allowed but asks for a note —
+an uncategorised ₹4L invoice is what makes a trend chart useless a year later.
+
+Amounts are **typed in rupees and stored in integer paise** (ADR-04); the
+conversion happens once, at the edge, with `Math.round(x * 100)` so a thumb on
+the decimal pad cannot produce 123456 paise.
+
+Optional but visible: a claim may be raised with no receipt, and the screen says
+so plainly rather than silently accepting it, because blocking entry would push
+people back to a paper register. It is flagged on the list and on the claim
+instead.
+
+A claim carries title, subcategory, vendor, note, department, budget line,
+payment method, payment reference, tax and date. The date is settable so a claim
+raised after the fact lands in the month the money actually went out.
+
+**Vendor names are normalised on the way in** (whitespace collapsed). "Syslab
+Instruments", "Syslab  Instruments" and "syslab instruments" are one company
+typed three ways by three departments; without normalisation the vendor roll-up
+is a lie dressed as a report.
+
+#### §3.6.2 Department-wise expenditure
+
+Spend ranked by **approved** amount, with pending called out separately — a claim
+awaiting approval is not spend, and folding it in would make this screen
+disagree with the budgets screen, which reads the same expenses.
+
+Each department shows its category split, its vendor count and its own budget
+comparison. **A department spending against no budget line at all is promoted
+above the ranking** — that is the finding, and it is what the screen is for.
+
+#### §3.6.3 Budget allocation and utilization
+
+Budget lines are per `(fiscalYear, category, department)`. The fiscal year runs
+**April → March**, so a claim dated 15 March belongs to the previous one; getting
+that wrong silently moves spend between budget years exactly when the accounts
+are being closed.
+
+Allocation is editable from the same screen it is judged on, because the moment
+you find you are 40% over the lab line is the moment you want to change it.
+Lowering a plan does **not** un-approve anything already counted against it — the
+line simply goes over, and the screen says so.
+
+Two things a read-only budget screen cannot show, both of which turn out to
+matter more than the bars:
+
+- **Unbudgeted spend** — approved spend sitting on no line is counted per line
+  and totalled. Without it a department can spend without limit by filing claims
+  under a category nobody budgeted.
+- **Overspend has its own wording** — a line at 140% and one at 100% both draw a
+  full bar, so "₹14.2L over" appears above the bar while the percentage beside
+  it says 140%. The bar width is capped at 100 (`barPercent`); the label is exact
+  (`percent`). `overspent` is the authoritative signal, never the percentage.
+
+`POST /budgets/reconcile` recomputes every line's spent figure from the approved
+claims attached to it — a repair tool, not a recalculation of the plan.
+
+#### §3.6.4 Vendor / payment records
+
+Roll-up per vendor: approved and pending totals, claim counts, average claim,
+last payment date, category split, and **how each vendor was paid** (method mix
+with counts). Vendors holding a large share of total spend are stated in words —
+concentration risk is worth knowing before the next tender, not after.
+
+Approved claims with no bank reference are flagged: those are the ones worth a
+phone call. Tapping a vendor loads the actual claims behind the total, because a
+₹8.4L total made of one invoice and a total made of forty are different risks.
+
+#### §3.6.5 Approval status
+
+`PENDING → APPROVED | REJECTED`, with `reopen` returning a rejected claim to the
+queue. Approval is the only thing that moves money against a budget, so:
+
+- **Rejection requires a reason.** The server refuses a rejection without one, so
+  the claimer is never told nothing.
+- **Reopening keeps the history.** Nothing is deleted; the audit trail shows the
+  whole sequence.
+- **A claim with no receipt is flagged in the list**, before anyone opens it,
+  because that is the most common reason a claim is sent back.
+- **The decision lives on the claim, not on the row.** A one-tap Approve sitting
+  next to a one-tap Reject on a list row is a mis-tap away from signing off ₹4L.
+
+#### §3.6.6 Monthly expense trends
+
+Approved / pending / rejected per month over a 3–36 month window, with each
+month's top category and the fiscal-year budget spread into a **monthly pace**.
+
+- **Month-on-month is stated in words** ("up 12% on last month"), and is `null`
+  — rendered as "no prior month to compare" — when there is no comparable prior
+  month. A fabricated "+0%" reads as reassurance the data does not support.
+- **The budget pace is a monthly figure**, not this month's allowance. A budget is
+  annual, and comparing a month to it directly is how a department convinces
+  itself it is fine at 20% spent in month one.
+- **Bars scale to the largest month in the window**, not to the budget, so the
+  shape of the series is honest and the budget is drawn as a reference line.
+- Months with no approved spend are shown empty rather than omitted — a gap in
+  the data is a fact about the institute.
+
+#### §3.6.7 Expense receipts / document uploads
+
+Real multipart upload to disk behind the existing `File.storageKey` abstraction,
+so swapping to object storage later is a change to the upload route, not to the
+service, the schema or the app.
+
+- Accepted: **JPEG, PNG, WebP, HEIC, PDF**, up to **8 MB**, one file per request.
+- The stored filename is a **random UUID plus a sanitised extension** — never the
+  client's filename, which is attacker-controlled and could contain path
+  separators.
+- Kinds: **receipt**, **invoice**, **quotation**. `hasReceipt` is true only when
+  a **RECEIPT** specifically is attached — an invoice is not a receipt.
+- The same stored file cannot be attached to two claims; that is the
+  duplicate-payment case an audit looks for.
+- A document row carries the file's `originalName`, `mimeType`, `sizeBytes` and
+  `url`, so a receipt is **openable**, not merely referenced. A receipt you cannot
+  open is not a receipt.
+- The `File` row is written first and rolled back if the attach fails, so a
+  failed upload never leaves an orphaned row or a document pointing at nothing.
+- Detaching removes the document, never the claim.
+
+**Authorization**: upload and detach sit behind the accounts router, so an
+anonymous upload never reaches the handler.
+
+#### API
+
+Literal paths are registered **before** `/expenses/:id` in a dedicated
+`expenses.routes.ts`. Register the param route first and `budgets` is read as an
+expense id and 404s a perfectly good screen — the exact bug the dues desk had to
+be taught twice.
+
+```
+GET    /expenses                     list, filter, shape (+ stats over the whole set)
+POST   /expenses                     raise a claim
+GET    /expenses/budgets             lines + totals + off-budget spend
+POST   /expenses/budgets             create or update a line
+POST   /expenses/budgets/reconcile   recompute spent from approved claims
+GET    /expenses/trends              monthly trend + pace + change
+GET    /expenses/departments         department roll-up + unbudgeted list
+GET    /expenses/vendors             vendor roll-up + concentration
+POST   /expenses/:id/documents       upload a receipt / invoice / quotation
+DELETE /expenses/:id/documents/:docId  detach
+GET    /expenses/:id                 one claim + budget impact + history
+POST   /expenses/:id/approve
+POST   /expenses/:id/reject          reason required
+POST   /expenses/:id/reopen
+```
+
+Filters: `status`, `category`, `departmentId`, `vendor`, `q`, `month`, `fiscalYear`,
+`missingReceipt`, `take`, `skip`.
+
+Write schemas are `.strict()` — silently dropping a misnamed money field turns a
+typo (`amountRupees`) into a silently wrong claim rather than an error.
+
+Headline totals are computed over the **whole filtered set, not the page**, so
+"₹4.2L across 38 claims" is never actually "₹90K across 8 claims".
+
+#### Money and integrity rules
+
+- Integer paise everywhere (ADR-04); rupees only at the API and UI edge.
+- `amountMinor` includes tax; `taxMinor` is carved out of it so the invoice total
+  and the net are both reportable.
+- `spentMinor` is **recomputed from approved claims, never incremented**.
+- `approvedByName` is snapshotted so a historic claim still says who signed it.
+- Every entry, decision, budget change and document change writes an audit entry.
 
 ### 3.7 Scholarships (module)
 Scholarship schemes (name, type Merit/Need-based, coverage %, applicants, awarded). Actions: **Approve Applicant**, **Disburse** (creates collection write-off or payment).

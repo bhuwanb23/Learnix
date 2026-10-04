@@ -151,23 +151,71 @@ export function mediaUrl(path) {
 // ── Alumni Relations endpoints (docs/users/12 §4) ──
 export const alumniApi = {
   dashboard: () => api.get('/alumni/dashboard'),
+  // Directory filters are all optional and independent; the client sends only
+  // what is set. `q` covers name, headline, role, company and location in one
+  // box, which is what the office actually searches by.
   directory: (params = {}) => {
     const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
     ).toString();
     return api.get(`/alumni/directory${qs ? `?${qs}` : ''}`);
   },
+  directoryFacets: () => api.get('/alumni/directory/facets'),
   alumniDetail: (id) => api.get(`/alumni/directory/${id}`),
   inviteAlumni: (id) => api.post(`/alumni/directory/${id}/invite`),
   addMentor: (id) => api.post(`/alumni/directory/${id}/add-mentor`),
+
+  // Self-service profile + privacy (AL-02). `updateMyProfile` is a PATCH-style
+  // body: omit a field to leave it alone, so never send a whole object back.
+  myProfile: () => api.get('/alumni/me'),
+  updateMyProfile: (payload) => api.put('/alumni/me', payload),
+
+  // Professional networking (AL-02)
+  matches: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/matches${qs ? `?${qs}` : ''}`);
+  },
+  connections: (box = 'incoming') => api.get(`/alumni/connections?box=${box}`),
+  connectionStats: () => api.get('/alumni/connections/stats'),
+  sendConnectionRequest: (profileId, message) =>
+    api.post('/alumni/connections', message ? { profileId, message } : { profileId }),
+  respondToConnection: (id, action) => api.post(`/alumni/connections/${id}/${action}`),
+
   events: () => api.get('/alumni/events'),
   eventDetail: (id) => api.get(`/alumni/events/${id}`),
   decideRsvp: (rsvpId, decision) => api.post(`/alumni/rsvps/${rsvpId}/decide`, { decision }),
-  donations: () => api.get('/alumni/donations'),
+
+  donations: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/donations${qs ? `?${qs}` : ''}`);
+  },
   recordDonation: (id) => api.post(`/alumni/donations/${id}/record`),
+
   mentorship: () => api.get('/alumni/mentorship'),
   mentorshipAction: (id, action) => api.post(`/alumni/mentorship/${id}/${action}`),
-  chapters: () => api.get('/alumni/chapters'),
+
+  // Chapters (AL-06). `/chapters` returns { count, totalMembers, chapters[] }.
+  chapters: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/chapters${qs ? `?${qs}` : ''}`);
+  },
+  chapterDetail: (id) => api.get(`/alumni/chapters/${id}`),
+  chapterMembers: (id, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/chapters/${id}/members${qs ? `?${qs}` : ''}`);
+  },
+  chapterActivity: (id) => api.get(`/alumni/chapters/${id}/activity`),
+  announceToChapter: (id, payload) => api.post(`/alumni/chapters/${id}/announce`, payload),
+  createChapterEvent: (id, payload) => api.post(`/alumni/chapters/${id}/events`, payload),
+
   notifications: () => api.get('/alumni/notifications'),
   markAllRead: () => api.post('/alumni/notifications/read-all'),
   broadcast: (payload) => api.post('/alumni/broadcasts', payload),
