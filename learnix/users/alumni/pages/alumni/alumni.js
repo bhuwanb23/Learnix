@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';

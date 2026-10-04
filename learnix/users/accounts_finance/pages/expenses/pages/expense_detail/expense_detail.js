@@ -22,7 +22,7 @@ import {
   statusMeta, paymentMethodMeta, docKindMeta, humanFileSize, utilisationPhrase,
   utilisationColor, utilisationWidth, receiptHint, ACCEPTED_UPLOAD_TYPES,
   ACCEPTED_UPLOAD_LABEL, REJECTION_PRESETS,
-} from '../../../expensesMeta';
+} from '../../expensesMeta';
 
 const ACCENT = '#2563eb';
 

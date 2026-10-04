@@ -33,7 +33,7 @@ import { accountsApi } from '../../../../../../services/api';
 import {
   EXPENSE_CATEGORIES, PAYMENT_METHODS, rupees, categoryMeta,
   ACCEPTED_UPLOAD_TYPES, ACCEPTED_UPLOAD_LABEL, humanFileSize,
-} from '../../../expensesMeta';
+} from '../../expensesMeta';
 
 const ACCENT = '#2563eb';
 

@@ -25,7 +25,7 @@ import { accountsApi } from '../../../../../../services/api';
 import {
   rupees, compactRupees, monthLabel, monthShort, changePhrase, categoryMeta,
   TREND_WINDOWS, THEME,
-} from '../../../expensesMeta';
+} from '../../expensesMeta';
 
 export default function Trends() {
   const [data, setData] = useState(null);
