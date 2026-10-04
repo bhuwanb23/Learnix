@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'node:path';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
@@ -47,6 +48,17 @@ export function createApp() {
 
   app.use(compression());
   app.use(express.json({ limit: '2mb' }));
+  // Expense receipts are served from here. In production this would be signed
+  // object-storage URLs; the `File.storageKey` → path mapping is the same either
+  // way, so only this line changes.
+  app.use(
+    '/uploads',
+    express.static(process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads'), {
+      index: false,
+      dotfiles: 'deny',
+      maxAge: '1h',
+    }),
+  );
 
   // Global API rate limit — generous ceiling; login has its own tighter bucket
   const apiLimiter = rateLimit({

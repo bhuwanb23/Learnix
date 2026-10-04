@@ -136,11 +136,80 @@ export const payrollEntryParamSchema = z.object({
 });
 
 // F-07 Expenses — add expense
+//
+// The category list is the single source of truth shared with `expenses.money.ts`
+// and the entry form, so a category can never exist in the app but not in the
+// database (or vice versa) — which would silently create an unbudgeted bucket.
+export const EXPENSE_CATEGORY_ENUM = z.enum(['LABS', 'EVENTS', 'MAINTENANCE', 'UTILITIES', 'MISC']);
+export const PAYMENT_METHOD_ENUM = z.enum(['BANK_TRANSFER', 'UPI', 'CHEQUE', 'CARD', 'CASH']);
+export const EXPENSE_STATUS_ENUM = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
+export const DOC_KIND_ENUM = z.enum(['RECEIPT', 'INVOICE', 'QUOTATION']);
+
 export const addExpenseSchema = z.object({
-  category: z.enum(['LABS', 'EVENTS', 'MAINTENANCE', 'UTILITIES', 'MISC']),
+  category: EXPENSE_CATEGORY_ENUM,
   vendor: z.string().trim().max(120).optional(),
   amountMinor: z.number().int().min(1),
   budgetId: z.string().min(1).max(64).optional(),
+  title: z.string().trim().max(160).optional(),
+  note: z.string().trim().max(1000).optional(),
+  subcategory: z.string().trim().max(80).optional(),
+  departmentId: z.string().min(1).max(64).optional(),
+  paymentMethod: PAYMENT_METHOD_ENUM.optional(),
+  paymentReference: z.string().trim().max(120).optional(),
+  taxMinor: z.number().int().min(0).optional(),
+  // YYYY-MM-DD. Accepted so a claim raised after the fact lands in the month the
+  // money actually went out, not the month it was remembered.
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').optional(),
+});
+
+export const expenseListQuerySchema = z.object({
+  status: z.string().trim().max(30).optional(),
+  category: z.string().trim().max(30).optional(),
+  departmentId: z.string().trim().max(64).optional(),
+  vendor: z.string().trim().max(120).optional(),
+  q: z.string().trim().max(120).optional(),
+  month: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-MM').optional(),
+  fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),
+  missingReceipt: z.enum(['true', 'false']).optional(),
+  take: z.coerce.number().int().min(1).max(200).optional(),
+  skip: z.coerce.number().int().min(0).optional(),
+});
+
+/** A rejection without a reason is unauditable, so it is required. */
+export const expenseDecisionSchema = z.object({
+  reason: z.string().trim().min(3, 'Say why this claim is being rejected'),
+});
+
+export const budgetLineSchema = z.object({
+  id: z.string().min(1).max(64).optional(),
+  category: EXPENSE_CATEGORY_ENUM,
+  plannedMinor: z.number().int().min(0, 'A budget cannot be negative'),
+  departmentId: z.string().min(1).max(64).optional(),
+  fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),
+  note: z.string().trim().max(200).optional(),
+});
+
+export const budgetListQuerySchema = z.object({
+  fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),
+});
+
+export const attachDocumentSchema = z.object({
+  fileId: z.string().min(1).max(64),
+  kind: DOC_KIND_ENUM.optional(),
+  note: z.string().trim().max(200).optional(),
+});
+
+export const trendQuerySchema = z.object({
+  months: z.coerce.number().int().min(3).max(36).optional(),
+  category: z.string().trim().max(30).optional(),
+});
+
+export const departmentQuerySchema = z.object({
+  fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),
+});
+
+export const vendorQuerySchema = z.object({
+  fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),
 });
 
 // F-08 Scholarships — approve/disburse

@@ -30,13 +30,13 @@ import {
   payPayrollRunSchema,
   adjustPayrollEntrySchema,
   payrollEntryParamSchema,
-  addExpenseSchema,
   accountsBroadcastSchema,
 } from './accounts.schemas.js';
 import * as service from './accounts.service.js';
 import * as collections from './collections.service.js';
 import * as dues from './dues.service.js';
 import * as payroll from './payroll.service.js';
+import expenseRoutes from './expenses.routes.js';
 
 // Accounts & Finance module — mounted at /api/v1/accounts (docs/users/06 §4)
 const router = Router();
@@ -556,52 +556,6 @@ router.post(
   }),
 );
 
-// F-07 expenses
-router.get(
-  '/expenses',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listExpenses(req.auth!.institutionId) });
-  }),
-);
-
-router.post(
-  '/expenses',
-  validate(addExpenseSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.addExpense(req.auth!.institutionId, req.auth!.userId, req.body),
-    });
-  }),
-);
-
-router.post(
-  '/expenses/:id/approve',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.approveExpense(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-      ),
-    });
-  }),
-);
-
-router.post(
-  '/expenses/:id/reject',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.rejectExpense(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-      ),
-    });
-  }),
-);
-
 // F-08 scholarships
 router.get(
   '/scholarships',
@@ -677,5 +631,11 @@ router.get(
     res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
   }),
 );
+
+// Expenses is mounted LAST, and on purpose: every `/expenses/*` literal route
+// lives in its own file so its ordering against `/expenses/:id` is readable, and
+// mounting it after the rest of this router means an expense path can never be
+// shadowed by something registered here later.
+router.use(expenseRoutes);
 
 export default router;
