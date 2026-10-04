@@ -23,8 +23,8 @@ import {
   TextInput, Alert, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { accountsApi } from '../../../../../services/api';
-import { AnimatedCard, SkeletonCard, EmptyState } from '../../../../../components/ui';
+import { accountsApi } from '../../../../../../services/api';
+import { AnimatedCard, SkeletonCard, EmptyState } from '../../../../../../components/ui';
 import {
   THEME, rupees, formatDateTime, relativeTime,
   runStatusMeta, runStatusHint, entryStatusMeta, monthLabel, daysInMonth,

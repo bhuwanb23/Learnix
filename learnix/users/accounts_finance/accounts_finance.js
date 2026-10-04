@@ -27,6 +27,10 @@ import StudentStatement from './pages/collections/student_statement/student_stat
 // Dues sub-pages (pages/dues/*)
 import DueDetail from './pages/dues/due_detail/due_detail';
 
+// Payroll sub-pages (pages/payroll/*)
+import PayrollDetail from './pages/payroll/pages/payroll_detail/payroll_detail';
+import Payslip from './pages/payroll/pages/payslip/payslip';
+
 // Import feature modules (opened from dashboard hub)
 import FeeStructureModule from './pages/fee_structure/fee_structure';
 import ExpensesModule from './pages/expenses/expenses';
@@ -55,6 +59,10 @@ const FEATURE_MODULES = {
 
   // Dues sub-pages
   DueDetail: { title: 'Fee Due', icon: 'receipt-outline', component: DueDetail },
+
+  // Payroll sub-pages
+  PayrollRunDetail: { title: 'Payroll Run', icon: 'card-outline', component: PayrollDetail },
+  Payslip: { title: 'Payslip', icon: 'document-text-outline', component: Payslip },
 };
 
 const TAB_TITLES = {
@@ -158,10 +166,12 @@ export default function AccountsScreen({ navigation }) {
       case 'Payroll':
         return (
           <PayrollModule
+            route={{ params: routeParams }}
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
               goBack: handleBackPress,
               openModule,
+              switchTab: handleTabChange,
             }}
           />
         );

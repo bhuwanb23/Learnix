@@ -122,9 +122,25 @@ auth, 400 for zod, 404 cross-tenant, 409 for a cleared/waived due). It also asse
 invariant that the dashboard's `unpaidDues` equals the dues desk's `outstandingRupees`.
 
 ### 3.4 Payroll
-Teacher/staff payroll list (name, role, month, salary, deductions, net, status Paid/Pending). Actions: **Run Payroll** (bulk pay), **Mark Paid**, view payslip.
+A payroll **hub** for the current month: hero card (run status, net payable, paid/pending split, YTD),
+owed-and-unpaid total, six-month net trend bars, per-month run cards with payment progress, a collapsible
+roster, and a warning listing staff who are excluded because they have no salary on file. When no run
+exists for the month the hub says **Not raised** and offers **Run Payroll**.
 
-**Entity `payroll_entry`**: id, staffId, month, gross, deductions, net, status, paidAt.
+Actions: **Run Payroll** (derives every staff member's salary from `computeSalary` — 50% basic, 40% HRA of
+basic, 12% PF of basic, ₹200 professional tax, pro-rated by loss-of-pay days; every printed line is a
+whole rupee so payslips foot exactly), **Apply LOP** per employee (quick presets), **Approve** a draft run,
+**Pay** a single employee, **Pay all** the run in one sheet, and **view payslip** (earnings/deduction lines,
+net, YTD, full month history). The old `Mark Paid` button is gone — a run moves DRAFT → APPROVED → PAID
+one entry at a time or in bulk, each payment recorded with a reference.
+
+Status is server-owned: the UI renders Approve/Pay-all/Apply-LOP only when the API returns
+`canApprove` / `canPay` / `canAdjust`, and staff not on the run are listed instead of silently dropped.
+
+**Entity `payroll_run`**: id, institutionId, month, status (DRAFT/APPROVED/PAID), gross, deductions, net,
+approvedBy/At, paidBy/At. **Entity `payroll_entry`**: id, runId, staffUserId, snapshot of
+employeeNo/designation/department/bankAccountLast4, earningsJson, deductionsJson, lopDays, gross,
+deductions, net, status, paidByUserId, paidAt, paymentRef.
 
 ### 3.5 Fee Structure (module)
 Per-program fee breakdown (tuition, other charges, total). Actions: **Edit Structure**, **Request Revision** (→ admin approval).
@@ -208,4 +224,4 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `POST /api/v1/accounts/broadcasts` — F-10 broadcast (ALL_STUDENTS / DEFAULTERS / ALL_STAFF)
 - `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
 
-**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll has run + mark paid; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
+**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with two sub-pages (`PayrollRunDetail`, `Payslip`) registered in `FEATURE_MODULES`; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
