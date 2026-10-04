@@ -14,6 +14,7 @@ import { computeSalary } from '../src/modules/accounts/payroll.rules.js';
 // with. Both modules are prisma-free for this.
 import { computeLateFee } from '../src/modules/accounts/dues.fines.js';
 import { splitAmount } from '../src/modules/accounts/dues.plans.js';
+import { fiscalYearOf } from '../src/modules/accounts/expenses.money.js';
 
 const db = new PrismaClient();
 
@@ -1066,6 +1067,10 @@ async function seedDomainE(institutionId: string): Promise<void> {
   console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
   console.log(`  ✓ salary scale on ${allStaff.length} staff · payroll 2026-07 PAID, 2026-08 PAID, 2026-09 APPROVED (part-paid)`);
   console.log('  ✓ LABS budget+expense PENDING, merit scholarship APPROVED');
+  await syncExpenses(
+    institutionId,
+    (await db.user.findFirst({ where: { email: 'accounts@learnix.dev', institutionId } }))?.id ?? admin.id,
+  );
 
   await syncDuesRecovery(institutionId, admin.id);
 }
@@ -2636,4 +2641,222 @@ async function seedDomainL(institutionId: string): Promise<void> {
   }
 
   console.log(`  ✓ platform admin SUPER, 26 permission groups + ${rbacCount} role-permission rows, 6 system_config knobs, 3 feature flags, avatar file linked, audit entry written`);
+}
+
+// ── F-07 Expenses: budgets, claims across several months, departments, vendors
+// and receipt documents (docs/users/06 §3.6).
+//
+// Idempotent by construction: every row is looked up by a natural key before it
+// is created, and nothing is incremented blindly. Budget `spentMinor` is
+// recomputed from the approved claims rather than added to, so running the seed
+// twice leaves the same numbers it left the first time — which is the only way a
+// seed is safe to put in a demo loop.
+async function syncExpenses(institutionId: string, actorUserId: string) {
+  const departments = await db.department.findMany({
+    where: { institutionId },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  });
+  if (!departments.length) return;
+
+  const fy = fiscalYearOf(new Date());
+  const byName = new Map(departments.map((d) => [d.name, d.id]));
+  const pick = (...names: string[]): string | null => {
+    for (const n of names) {
+      const hit = byName.get(n);
+      if (hit) return hit;
+    }
+    return null;
+  };
+
+  const deptOf = (i: number) => departments[i % departments.length].id;
+
+  // Budget lines: a few per category across the first few departments, plus one
+  // institution-wide line. The deliberately small ones are what make the
+  // utilisation bar show a real over-spend rather than always sitting at 40%.
+  const budgetPlan: Array<{ category: string; dept: string | null; minor: number; note: string }> = [
+    { category: 'LABS', dept: departments[0]?.id ?? null, minor: 450000000, note: 'Lab consumables and glassware' },
+    { category: 'LABS', dept: departments[1]?.id ?? null, minor: 200000000, note: 'Second lab stream' },
+    { category: 'EVENTS', dept: departments[0]?.id ?? null, minor: 120000000, note: 'Annual technical festival' },
+    { category: 'EVENTS', dept: null, minor: 80000000, note: 'Institute-wide events' },
+    { category: 'MAINTENANCE', dept: deptOf(2), minor: 90000000, note: 'Civil and electrical upkeep' },
+    { category: 'UTILITIES', dept: null, minor: 150000000, note: 'Electricity, water, internet' },
+    { category: 'MISC', dept: null, minor: 40000000, note: 'Contingency' },
+  ];
+
+  const budgets: Array<{ id: string; category: string; departmentId: string | null; plannedMinor: number }> = [];
+  for (const b of budgetPlan) {
+    const existing = await db.budget.findFirst({
+      where: { institutionId, fiscalYear: fy, category: b.category, departmentId: b.departmentId },
+    });
+    if (existing) {
+      budgets.push({
+        id: existing.id, category: existing.category,
+        departmentId: existing.departmentId, plannedMinor: existing.plannedMinor,
+      });
+      continue;
+    }
+    const created = await db.budget.create({
+      data: {
+        institutionId,
+        fiscalYear: fy,
+        category: b.category,
+        departmentId: b.dept,
+        plannedMinor: b.minor,
+        note: b.note,
+      },
+    });
+    budgets.push({
+      id: created.id, category: created.category,
+      departmentId: created.departmentId, plannedMinor: created.plannedMinor,
+    });
+  }
+
+  const budgetFor = (category: string, deptId: string | null) =>
+    budgets.find((b) => b.category === category && b.departmentId === deptId)
+    ?? budgets.find((b) => b.category === category && b.departmentId === null)
+    ?? budgets.find((b) => b.category === category);
+
+  // Claims are laid down across the last N months so the trend chart has a real
+  // shape — including a month with nothing in it, because a gap that reads as a
+  // gap is the whole point of the chart.
+  const monthsAgo = (n: number, day: number) => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - n);
+    d.setDate(Math.min(day, 26));
+    d.setHours(11, 0, 0, 0);
+    return d;
+  };
+
+  type SeedClaim = {
+    key: string;
+    category: string;
+    title: string;
+    subcategory?: string;
+    vendor: string;
+    amountMinor: number;
+    taxMinor?: number;
+    departmentId: string | null;
+    budgetCategory: string;
+    method: string;
+    reference?: string;
+    date: Date;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    note?: string;
+    rejectionReason?: string;
+  };
+
+  const claims: SeedClaim[] = [
+    // Current month — pending, so the approvals queue is never empty.
+    { key: 'lab-glas', category: 'LABS', title: 'Borosilicate glassware order', subcategory: 'Consumables', vendor: 'Syslab Instruments', amountMinor: 1285000, taxMinor: 143500, departmentId: pick(departments[0]?.name ?? ''), budgetCategory: 'LABS', method: 'BANK_TRANSFER', reference: 'UTR4417', date: monthsAgo(0, 4), status: 'PENDING', note: 'Replacing the chipped set from last year.' },
+    { key: 'evt-cater', category: 'EVENTS', title: 'Catering — annual tech fest', vendor: 'Spice Route Caterers', amountMinor: 4200000, taxMinor: 280000, departmentId: pick(departments[0]?.name ?? ''), budgetCategory: 'EVENTS', method: 'BANK_TRANSFER', reference: 'UTR4402', date: monthsAgo(0, 8), status: 'PENDING' },
+    { key: 'mis-station', category: 'MISC', title: 'Stationery restock', vendor: 'Office Needs Co', amountMinor: 486000, departmentId: departments[0]?.id ?? null, budgetCategory: 'MISC', method: 'UPI', reference: 'UPI88213', date: monthsAgo(0, 11), status: 'PENDING' },
+    // Approved, current month — with a receipt.
+    { key: 'mnt-fan', category: 'MAINTENANCE', title: 'Lab exhaust fan replacement', vendor: 'CoolAir Services', amountMinor: 2150000, taxMinor: 365000, departmentId: pick(departments[1]?.name ?? ''), budgetCategory: 'MAINTENANCE', method: 'CHEQUE', reference: 'CHQ0091', date: monthsAgo(0, 6), status: 'APPROVED' },
+    { key: 'ut-power', category: 'UTILITIES', title: 'Electricity — month', vendor: 'State Power Co', amountMinor: 3980000, departmentId: null, budgetCategory: 'UTILITIES', method: 'BANK_TRANSFER', reference: 'UTR4388', date: monthsAgo(0, 2), status: 'APPROVED' },
+    // One month back.
+    { key: 'lab-mic', category: 'LABS', title: 'Compound microscopes ×4', vendor: 'Syslab Instruments', amountMinor: 9600000, taxMinor: 1440000, departmentId: pick(departments[0]?.name ?? ''), budgetCategory: 'LABS', method: 'BANK_TRANSFER', reference: 'UTR4290', date: monthsAgo(1, 12), status: 'APPROVED' },
+    { key: 'evt-print', category: 'EVENTS', title: 'Banner and standee printing', vendor: 'PrintWorks', amountMinor: 640000, departmentId: pick(departments[0]?.name ?? ''), budgetCategory: 'EVENTS', method: 'CASH', date: monthsAgo(1, 19), status: 'APPROVED', note: 'Cash paid at the counter, receipt collected.' },
+    { key: 'mnt-plumb', category: 'MAINTENANCE', title: 'Hostel plumbing — block C', vendor: 'QuickFix Plumbing', amountMinor: 1780000, departmentId: pick(departments[2]?.name ?? ''), budgetCategory: 'MAINTENANCE', method: 'UPI', reference: 'UPI87455', date: monthsAgo(1, 22), status: 'APPROVED' },
+    // Two months back.
+    { key: 'ut-internet', category: 'UTILITIES', title: 'Campus internet — quarterly', vendor: 'FiberLink Networks', amountMinor: 1450000, departmentId: null, budgetCategory: 'UTILITIES', method: 'BANK_TRANSFER', reference: 'UTR4102', date: monthsAgo(2, 5), status: 'APPROVED' },
+    { key: 'lab-reagent', category: 'LABS', title: 'Chemistry reagents', subcategory: 'Consumables', vendor: 'ChemSupply India', amountMinor: 3420000, taxMinor: 289000, departmentId: pick(departments[1]?.name ?? ''), budgetCategory: 'LABS', method: 'BANK_TRANSFER', reference: 'UTR3988', date: monthsAgo(2, 14), status: 'APPROVED' },
+    { key: 'evt-guest', category: 'EVENTS', title: 'Guest speaker travel and stay', vendor: 'City Lodge', amountMinor: 880000, departmentId: null, budgetCategory: 'EVENTS', method: 'CARD', reference: 'CARD7712', date: monthsAgo(2, 21), status: 'REJECTED', rejectionReason: 'Duplicate of the workshop claim already approved for the same speaker.', note: 'Booked by the HOD directly.' },
+    // Three months back.
+    { key: 'mnt-ac', category: 'MAINTENANCE', title: 'AC servicing — all blocks', vendor: 'CoolAir Services', amountMinor: 2760000, departmentId: pick(departments[2]?.name ?? ''), budgetCategory: 'MAINTENANCE', method: 'BANK_TRANSFER', reference: 'UTR3877', date: monthsAgo(3, 9), status: 'APPROVED' },
+    { key: 'ut-water', category: 'UTILITIES', title: 'Water tanker — dry month', vendor: 'AquaTankers', amountMinor: 240000, departmentId: null, budgetCategory: 'UTILITIES', method: 'CASH', date: monthsAgo(3, 25), status: 'APPROVED' },
+    { key: 'mis-guest', category: 'MISC', title: 'Miscellaneous — departmental', vendor: 'Various', amountMinor: 315000, departmentId: departments[1]?.id ?? null, budgetCategory: 'MISC', method: 'CASH', date: monthsAgo(3, 27), status: 'APPROVED', note: 'Small sundry purchases; itemised list in the drawer.' },
+    // Five months back — the deliberate gap at four.
+    { key: 'lab-chairs', category: 'LABS', title: 'Lab stools ×20', vendor: 'FurnitureMart', amountMinor: 1800000, taxMinor: 306000, departmentId: pick(departments[1]?.name ?? ''), budgetCategory: 'LABS', method: 'BANK_TRANSFER', reference: 'UTR3610', date: monthsAgo(5, 16), status: 'APPROVED' },
+    { key: 'evt-sem', category: 'EVENTS', title: 'Seminar hall booking', vendor: 'VenueHire', amountMinor: 520000, departmentId: departments[0]?.id ?? null, budgetCategory: 'EVENTS', method: 'UPI', reference: 'UPI85011', date: monthsAgo(5, 23), status: 'APPROVED' },
+  ];
+
+  const createdIds: string[] = [];
+  for (const c of claims) {
+    const ref = c.reference ?? `${c.key}-ref`;
+    const existing = await db.expense.findFirst({
+      where: { institutionId, paymentReference: ref },
+      select: { id: true },
+    });
+    if (existing) continue;
+
+    const budget = budgetFor(c.budgetCategory, c.departmentId);
+    const row = await db.expense.create({
+      data: {
+        institutionId,
+        category: c.category,
+        vendor: c.vendor,
+        amountMinor: c.amountMinor,
+        taxMinor: c.taxMinor ?? 0,
+        date: c.date,
+        status: c.status,
+        requestedByUserId: actorUserId,
+        title: c.title,
+        note: c.note ?? null,
+        subcategory: c.subcategory ?? null,
+        departmentId: c.departmentId,
+        budgetId: budget?.id ?? null,
+        paymentMethod: c.method,
+        paymentReference: ref,
+        approvedAt: c.status === 'APPROVED' ? c.date : null,
+        approvedByUserId: c.status === 'APPROVED' ? actorUserId : null,
+        approvedByName: c.status === 'APPROVED' ? 'Accounts Officer' : null,
+        rejectedAt: c.status === 'REJECTED' ? c.date : null,
+        rejectedByUserId: c.status === 'REJECTED' ? actorUserId : null,
+        rejectionReason: c.rejectionReason ?? null,
+      },
+    });
+    createdIds.push(row.id);
+
+    // Every APPROVED claim gets a receipt, and one PENDING claim deliberately
+    // does not — that is what the "missing receipt" filter and the approval
+    // warning exist to surface.
+    if (c.status !== 'PENDING' || c.key === 'evt-cater') {
+      const storageKey = `seed-expense-${c.key}.pdf`;
+      const file = await db.file.create({
+        data: {
+          institutionId,
+          uploaderUserId: actorUserId,
+          purpose: 'EXPENSE_RECEIPT',
+          mimeType: 'application/pdf',
+          sizeBytes: 4096 + (c.amountMinor % 9973),
+          storageKey,
+          originalName: `${c.key}-receipt.pdf`,
+        },
+      });
+      const already = await db.expenseDocument.findFirst({
+        where: { expenseId: row.id, fileId: file.id },
+        select: { id: true },
+      });
+      if (!already) {
+        await db.expenseDocument.create({
+          data: {
+            institutionId,
+            expenseId: row.id,
+            fileId: file.id,
+            kind: 'RECEIPT',
+            uploadedByUserId: actorUserId,
+          },
+        });
+      }
+    }
+  }
+
+  // Recompute spent from the claims that actually count — never incremented.
+  for (const b of budgets) {
+    const agg = await db.expense.aggregate({
+      where: { budgetId: b.id, institutionId, status: 'APPROVED' },
+      _sum: { amountMinor: true },
+    });
+    await db.budget.update({
+      where: { id: b.id },
+      data: { spentMinor: agg._sum.amountMinor ?? 0 },
+    });
+  }
+
+  console.log(
+    `  \u2713 expenses: ${budgets.length} budget lines, ${createdIds.length} new claims ` +
+    `(fy ${fy}), spent recomputed`,
+  );
 }
