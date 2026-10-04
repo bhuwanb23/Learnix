@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const p = (...s) => resolve(ROOT, ...s);
 
-const FILM = p("renders", "learnix-90s.mp4");
+const FILM = p("renders", "learnix-90s-v2.mp4");
 const SCORE = p("audio", "score90.wav");
 const VOMIX = p("audio", "vo90-mix.wav");
 const OUT = p("renders", "learnix-90s-final.mp4");
@@ -24,6 +24,8 @@ const cues = JSON.parse(readFileSync(p("audio", "vo90-manifest.json"), "utf8")).
 const VO_LUFS = -16;
 const SCORE_GAIN_DB = -8;
 const DUCK_RATIO = 6;
+const SFX = p("audio", "sfx90.wav");
+const SFX_GAIN_DB = -6;
 const DUR = 90;
 
 function wavPeak(file) {
@@ -73,11 +75,17 @@ console.log(`vo90-mix.wav  ${cues.length} cues at ${VO_LUFS} LUFS`);
 const FILTER = [
   `[1:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,volume=${SCORE_GAIN_DB}dB[scoreflat]`,
   `[scoreflat][vo]sidechaincompress=threshold=0.03:ratio=${DUCK_RATIO}:attack=25:release=350:makeup=1[ducked]`,
-  `[vo][ducked]amix=inputs=2:normalize=0:dropout_transition=0,alimiter=limit=0.891:level=disabled[out]`,
+  // sfx are punctuation; they sit under everything and are never ducked away
+  `[2:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,volume=${SFX_GAIN_DB}dB[sfx]`,
+  `[vo][ducked][sfx]amix=inputs=3:normalize=0:dropout_transition=0,alimiter=limit=0.891:level=disabled[out]`,
 ].join(";");
 
 const tmpA = p("renders", "mix90.wav");
-run(["-i", SCORE, "-i", VOMIX, "-filter_complex", FILTER, "-map", "[out]", "-t", String(DUR), "-ar", "48000", "-ac", "2", tmpA]);
+run([
+  "-i", SCORE, "-i", VOMIX, "-i", SFX,
+  "-filter_complex", FILTER, "-map", "[out]",
+  "-t", String(DUR), "-ar", "48000", "-ac", "2", tmpA,
+]);
 run(["-i", FILM, "-i", tmpA, "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
      "-movflags", "+faststart", "-shortest", OUT]);
 

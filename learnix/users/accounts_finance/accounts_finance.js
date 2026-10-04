@@ -26,6 +26,10 @@ import StudentStatement from './pages/collections/student_statement/student_stat
 
 // Dues sub-pages (pages/dues/*)
 import DueDetail from './pages/dues/due_detail/due_detail';
+import StudentDues from './pages/dues/pages/student_dues/student_dues';
+import CourseDues from './pages/dues/pages/course_dues/course_dues';
+import PaymentPlans from './pages/dues/pages/payment_plan/payment_plan';
+import LateFeePolicy from './pages/dues/pages/late_fee_policy/late_fee_policy';
 
 // Payroll sub-pages (pages/payroll/*)
 import PayrollDetail from './pages/payroll/pages/payroll_detail/payroll_detail';
@@ -59,6 +63,10 @@ const FEATURE_MODULES = {
 
   // Dues sub-pages
   DueDetail: { title: 'Fee Due', icon: 'receipt-outline', component: DueDetail },
+  StudentDues: { title: 'Student Dues', icon: 'person-outline', component: StudentDues },
+  CourseDues: { title: 'Course Dues', icon: 'school-outline', component: CourseDues },
+  PaymentPlans: { title: 'Payment Plans', icon: 'git-branch-outline', component: PaymentPlans },
+  LateFeePolicy: { title: 'Late Fee Policy', icon: 'pricetag-outline', component: LateFeePolicy },
 
   // Payroll sub-pages
   PayrollRunDetail: { title: 'Payroll Run', icon: 'card-outline', component: PayrollDetail },
