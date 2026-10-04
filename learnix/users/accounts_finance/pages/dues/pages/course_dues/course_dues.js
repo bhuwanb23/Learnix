@@ -18,7 +18,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } 
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../../../services/api';
 import { AnimatedCard, EmptyState, SkeletonStatRow, SkeletonCard } from '../../../../../../components/ui';
-import { THEME, rupees, compactRupees, overduePhrase } from '../duesMeta';
+import { THEME, rupees, compactRupees, overduePhrase } from '../../duesMeta';
 
 export default function CourseDues({ navigation, route }) {
   const [data, setData] = useState(null);

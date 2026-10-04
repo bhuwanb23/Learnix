@@ -18,7 +18,7 @@ import { accountsApi } from '../../../../../../services/api';
 import { AnimatedCard, SkeletonStatRow, SkeletonCard, StatusChip } from '../../../../../../components/ui';
 import {
   THEME, rupees, compactRupees, formatDate, dueStatusMeta, overduePhrase, fineLabel,
-} from '../duesMeta';
+} from '../../duesMeta';
 
 export default function StudentDues({ navigation, route }) {
   const studentProfileId = route?.params?.studentProfileId;

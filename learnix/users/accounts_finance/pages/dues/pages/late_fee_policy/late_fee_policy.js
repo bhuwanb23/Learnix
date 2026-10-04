@@ -22,7 +22,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../../../services/api';
 import { AnimatedCard, SkeletonStatRow, SkeletonCard } from '../../../../../../components/ui';
-import { THEME, rupees, compactRupees, formatDateTime } from '../duesMeta';
+import { THEME, rupees, compactRupees, formatDateTime } from '../../duesMeta';
 
 const MODES = [
   { id: 'PERCENT', label: '% of the bill', hint: 'of the unpaid amount, every month late' },

@@ -23,7 +23,7 @@ import { AnimatedCard, EmptyState, SkeletonStatRow, SkeletonCard } from '../../.
 import {
   THEME, rupees, formatDate, formatDateTime, dueStatusMeta, overduePhrase,
   PLAN_FREQUENCIES, previewSchedule,
-} from '../duesMeta';
+} from '../../duesMeta';
 
 const STATUS_TABS = [
   { id: 'ALL', label: 'All' },
