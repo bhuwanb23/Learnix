@@ -121,6 +121,138 @@ idempotent across repeated runs. The HTTP one exists because a direct service ca
 auth, 400 for zod, 404 cross-tenant, 409 for a cleared/waived due). It also asserts the cross-feature
 invariant that the dashboard's `unpaidDues` equals the dues desk's `outstandingRupees`.
 
+---
+
+#### Recovery sub-features
+
+The desk above answers *"what can I chase right now?"*. The sub-features below answer the four
+questions that follow it, each on its own screen, because one flat bill list answers all of them badly.
+
+**Hub is four views** (`pages/dues/dues.js`). `BILLS` · `STUDENTS` · `COURSES` · `PLANS`. Each view loads
+only its own data. Cross-screen numbers are reconciled on purpose — the audit asserts that the bill
+list, the student roll-up, the cohort roll-up and the dashboard all report the *same* outstanding total.
+
+##### Student-wise outstanding balance
+
+Sub-page `StudentDues` (`pages/dues/pages/student_dues/`). Built around money **owed**, where the
+collections statement is built around money received. Server: `listStudentBalances`,
+`getStudentDues` (`dues.insights.ts`).
+
+| Area | What it shows |
+|---|---|
+| **Position** | Outstanding, overdue slice, late fines charged, paid-to-date against billed, and `oldestOverdueDays`. |
+| **Overdue share** | `overdueSharePercent` with an explicit verdict — ≥60% late means offer a plan, ≥25% means remind, below that means leave it alone. This is the number that decides what happens next, so the screen says which. |
+| **Aging by worst bill** | On the roll-up, each student is placed in the bucket of their *worst* bill, because a desk triages people, not rupees. |
+| **Rows** | Every bill with its fine, an instalment badge, a chase count and the "₹X of ₹Y paid" progress bar. |
+| **Deep links** | Full statement, collect a payment, and the cohort breakdown for this student's programme. |
+
+##### Course / semester-wise dues
+
+Sub-page `CourseDues` (`pages/dues/pages/course_dues/`). Grouped by **program × semester × academic
+year** — the group that actually answers "which cohort is not paying", which is the question a HOD asks.
+Server: `listCourseDues`.
+
+Semester comes from `studentProfile.currentSemester`, not from the fee: fees are raised per program per
+year and carry no semester of their own, so an institution with two running batches of the same program
+sees them apart instead of merged into one meaningless total. Bills with no program land under
+**"Unassigned"** rather than being dropped — an unassigned bill is a data problem the desk needs to see.
+
+`WAIVED` **and** `SUPERSEDED` are counted separately from outstanding. Counting a plan's replaced parent
+as outstanding made this view disagree with the bill list by exactly the original bill — the whole
+amount of the plan. `recoveryPercent` (paid ÷ billed) is the headline; `collectionPercent` is also
+sent, and where the two differ the gap is waived or planned money. `years[]` carries `hasDues` so a
+year filter never produces a silent zero.
+
+##### Late-payment fines
+
+`LateFeeRule` (`late_fee_rules`) is per-institution. The mechanism is universal; **whether a fine is
+charged, and how much, is the institution's decision** — so the rule is a policy statement, written in
+plain English and previewed before it is saved.
+
+| Field | Meaning |
+|---|---|
+| `graceDays` | No fine until the bill is this many days past due. |
+| `mode` + `valueBp`/`flatMinor` | `PERCENT` (basis points of the unpaid bill) or `FLAT` (a fixed sum), per month late. |
+| `capBp` | A fine can never exceed this share of its bill, however long the family takes. This is the protection that stops a small delay becoming a disproportionate bill. |
+| `maxMonths` | Accrual stops after N months (0 = no limit). |
+
+`computeLateFee` (`dues.fines.ts`) is pure and order-independent: grace → started months past grace
+(30 days = 1 month) → rate applied to the **unpaid bill**, never to a figure that already includes a
+fine. That base is the anti-ratchet: because the assessed amount is stored on the due
+(`lateFeeMinor`) and the rule reads only the bill, re-running an assessment can never compound a fine.
+
+Fines are **assessed, never automatic**. `assessLateFee` stamps `lateFeeAssessedAt` /
+`lateFeeAssessedByUserId` and notifies the student; `waiveLateFee` removes it with a recorded reason
+and leaves the **fee** owed. `runLateFeeAssessment` is a bulk run that touches only bills already
+overdue *and* not yet fined, and writes one audit row for the run.
+
+Sub-page `LateFeePolicy` (`pages/dues/pages/late_fee_policy/`) is where the rule is written. It shows
+the server's **projection** — overdue count, already fined, would be fined, total that would be charged
+and how many families it touches — before the policy is saved, so an officer turning on a fine knows
+what it costs this month rather than discovering it on next month's collection report. It also previews
+the plain-English sentence a parent will read back to the desk.
+
+##### Bulk reminder notifications
+
+Tick rows, or **"everyone matching this filter"** — both go through the same `POST /dues/remind-bulk/preview`
+first. The preview returns `targets`, `students`, `totalRupees` and a `skipped[]` list with **a reason
+per row** (`already cleared`, `less than 7 days late`, `reminded 3d ago, cooldown 7d`), so "remind
+everyone" can never be an unverified tap.
+
+Guards: `skipChased`, `minDaysOverdue`, `cooldownDays`. Sending groups by **family, not by bill** — a
+student with four overdue bills gets one itemised message instead of four, which is both what a parent
+wants to see and the only version they keep reading. The hub re-reads guards from the preview request
+rather than the screen state, so what is confirmed is exactly what was shown.
+
+##### Payment plans / instalments
+
+A plan **replaces** one bill with N real bills. The parent becomes `SUPERSEDED` and stops being
+collectable; the instalments are ordinary `FeeDue` rows that age, get chased and get fined on their own
+dates. A plan the desk does not track is just a note in a drawer, so this is deliberate.
+
+Sub-page `PaymentPlans` (`pages/dues/pages/payment_plan/`). Server: `dues.plans.ts`.
+
+| Rule | Why |
+|---|---|
+| 2–12 instalments | One instalment is not a plan; past 12 it is a bookkeeping habit and every instalment is a bill the desk has to age. |
+| Covers only the remaining balance | A plan must never re-charge money that has already landed. |
+| `MONTHLY` / `FORTNIGHTLY` / `WEEKLY` | The only options the server accepts; the picker offers exactly these. |
+| Cancellation refused once any instalment is paid | Restoring the parent after a payment landed would bring back the full original bill and lose the money paid. |
+
+`splitAmount` puts the remainder paise on the **earliest** instalments, so the parts always sum to
+exactly the balance. The agreement screen shows the resulting schedule and checks the sum against the
+balance **before** agreeing, and refuses to submit when they disagree.
+
+`getDuePlan` resolves a plan in either direction — an instalment knows its plan, a replaced parent knows
+the plan that replaced it — so `/dues/:id/plan` works from both ends. `getDueDetail` embeds the plan so
+the bill screen can never render a bill without the schedule that governs it.
+
+##### Dues clearance status
+
+`SUPERSEDED` is a status, not a filter fiction. It is neither settled nor owed: the money now lives in
+the child instalments. It gets its own label ("Split into a plan") and its own status chip, and it is
+**excluded from outstanding** by `deriveDueStatus` on every screen — bill list, student roll-up, cohort
+roll-up and dashboard all agree.
+
+**A balance can exceed the amount billed.** That is correct, not a bug: `balance = amount + lateFee −
+paid`, and the fine is part of what is owed. Every assertion and audit that previously read
+`balance <= amount` now reads `balance <= amount + lateFee`, and progress bars run against the *claimed*
+figure so a part-paid bill with a fine cannot show a bar past its own end.
+
+**Entities.** `fee_dues` gains `lateFeeMinor`, `lateFeeRuleId`, `lateFeeAssessedAt`,
+`lateFeeAssessedByUserId`, `installmentPlanId`, `installmentSequence`, `supersededByPlanId`. New tables
+`late_fee_rules` and `installment_plans`.
+
+**Verification** — `backend/scripts/verify-dues-recovery.ts` (92 assertions, service level) covers the
+split arithmetic, every `computeLateFee` branch, assessment/waiver/bulk-run, all the plan rules
+including cancellation, the bulk preview and family grouping, the student and course views, and the
+collections integration (paying bill + fine clears the due; overpaying is refused).
+`backend/scripts/audit-dues-ui.ts` (54 assertions, through the real `createApp()`) asserts that every
+field the six new screens destructure is actually returned by the endpoint they call, that the three
+roll-ups plus the dashboard agree on outstanding, and that the tenancy boundary holds.
+
+Both restore the dev DB, are idempotent, and leave no fixtures behind.
+
 ### 3.4 Payroll
 A payroll **hub** for the current month: hero card (run status, net payable, paid/pending split, YTD),
 owed-and-unpaid total, six-month net trend bars, per-month run cards with payment progress, a collapsible

@@ -153,6 +153,11 @@ export async function listStudentBalances(
     studentCount: list.length,
     outstandingRupees: toRupees(list.reduce((s, e) => s + e.outstandingMinor, 0)),
     overdueRupees: toRupees(list.reduce((s, e) => s + e.overdueMinor, 0)),
+    // What these families were billed and what they have paid, so the desk can
+    // see the recovery rate without leaving this screen.
+    billedRupees: toRupees(list.reduce((s, e) => s + e.billedMinor, 0)),
+    paidRupees: toRupees(list.reduce((s, e) => s + e.paidMinor, 0)),
+    lateFeeRupees: toRupees(list.reduce((s, e) => s + e.lateFeeMinor, 0)),
     overdueStudentCount: list.filter((e) => e.overdueMinor > 0).length,
     // More than half their bill unpaid is the line the desk actually uses to
     // decide who gets a phone call rather than a notification.

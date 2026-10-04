@@ -7,7 +7,7 @@ import { writeAudit } from '../../lib/audit.js';
 const toRupees = (paise: number) => Math.round(paise / 100);
 
 // ── AL-01 Dashboard ──────────────────────────────────────────
-export async function getDashboard(institutionId: string) {
+export async function getDashboard(institutionId: string, userId: string) {
   const [totalAlumni, activeAlumni, upcomingEvents, receivedDonations, pledgedDonations, activePairs, pendingPairs, notifications] =
     await Promise.all([
       prisma.alumniProfile.count({ where: { institutionId } }),
@@ -28,7 +28,11 @@ export async function getDashboard(institutionId: string) {
       }),
       prisma.mentorshipPair.count({ where: { menteeStudentProfile: { user: { institutionId } }, status: 'ACTIVE' } }),
       prisma.mentorshipPair.count({ where: { menteeStudentProfile: { user: { institutionId } }, status: 'PENDING' } }),
-      prisma.notification.count({ where: { institutionId, readAt: null } }),
+      // Scoped to the REQUESTING USER, not the whole institution. Counting every
+      // unread notification for the tenant put a badge reading "349 unread" on
+      // an officer whose own inbox was empty — the number counted other people's
+      // mail. It read as plausible only because the demo had one user.
+      prisma.notification.count({ where: { institutionId, recipientUserId: userId, readAt: null } }),
     ]);
 
   const campaigns = await prisma.fundraisingCampaign.findMany({
@@ -386,27 +390,64 @@ export async function decideRsvp(
 }
 
 // ── AL-04 Donations ─────────────────────────────────────────
-export async function listDonations(institutionId: string) {
-  const [campaigns, donations] = await Promise.all([
-    prisma.fundraisingCampaign.findMany({
-      where: { institutionId },
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.donation.findMany({
-      where: { institutionId },
-      include: { alumniUser: { select: { fullName: true, alumniProfile: { select: { graduationYear: true } } } } },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    }),
-  ]);
+/**
+ * Page/pageSize bounds for the donation ledger. The ledger grows without limit
+ * (every gift is a row), so it cannot be returned whole.
+ */
+const DONATION_PAGE_SIZE = 25;
+const DONATION_MAX_PAGE_SIZE = 100;
 
-  const receivedPaise = donations.filter((d) => d.status === 'RECEIVED').reduce((s, d) => s + d.amountMinor, 0);
-  const donors = new Set(donations.filter((d) => d.status === 'RECEIVED').map((d) => d.alumniUserId)).size;
+export async function listDonations(
+  institutionId: string,
+  query: { page?: number; pageSize?: number } = {},
+) {
+  const page = Math.max(1, query.page ?? 1);
+  const pageSize = Math.min(
+    DONATION_MAX_PAGE_SIZE,
+    Math.max(1, query.pageSize ?? DONATION_PAGE_SIZE),
+  );
+
+  const [campaigns, donations, total, receivedAgg, pledgedAgg, receivedDonors] =
+    await Promise.all([
+      prisma.fundraisingCampaign.findMany({
+        where: { institutionId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.donation.findMany({
+        where: { institutionId },
+        include: { alumniUser: { select: { fullName: true, alumniProfile: { select: { graduationYear: true } } } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.donation.count({ where: { institutionId } }),
+      // Totals are AGGREGATED over every donation, never summed from the page
+      // of rows being returned. Summing the page reported ₹23.0L while the
+      // dashboard — which aggregates properly — reported ₹2.07 Cr for the same
+      // money: the same app contradicting itself by 11×. It only stayed hidden
+      // while the ledger held 2 rows, well under the old `take: 50`.
+      prisma.donation.aggregate({
+        where: { institutionId, status: 'RECEIVED' },
+        _sum: { amountMinor: true },
+      }),
+      prisma.donation.aggregate({
+        where: { institutionId, status: 'PLEDGED' },
+        _sum: { amountMinor: true },
+      }),
+      // Distinct donors, for real this time — counting DISTINCT alumniUserId in
+      // the database rather than Set() over one page of rows.
+      prisma.donation.findMany({
+        where: { institutionId, status: 'RECEIVED' },
+        distinct: ['alumniUserId'],
+        select: { alumniUserId: true },
+      }),
+    ]);
 
   return {
     fy: {
-      collectedRupees: toRupees(receivedPaise),
-      donors,
+      collectedRupees: toRupees(receivedAgg._sum.amountMinor ?? 0),
+      pledgedRupees: toRupees(pledgedAgg._sum.amountMinor ?? 0),
+      donors: receivedDonors.length,
     },
     campaigns: campaigns.map((c) => ({
       id: c.id,
@@ -414,6 +455,9 @@ export async function listDonations(institutionId: string) {
       description: c.description,
       targetRupees: toRupees(c.targetMinor),
       raisedRupees: toRupees(c.raisedMinor),
+      // NOT clamped: a campaign CAN overshoot (a reunion fund that raised 128%
+      // of target is the common real case). The UI is responsible for rendering
+      // the bar at 100% while still showing the true percentage as text.
       percent: c.targetMinor === 0 ? 0 : Math.round((c.raisedMinor / c.targetMinor) * 100),
       daysLeft: c.deadline ? Math.max(0, Math.ceil((c.deadline.getTime() - Date.now()) / 86400000)) : null,
       status: c.status,
@@ -427,6 +471,12 @@ export async function listDonations(institutionId: string) {
       status: d.status,
       date: d.receivedAt ?? d.createdAt,
     })),
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    },
   };
 }
 

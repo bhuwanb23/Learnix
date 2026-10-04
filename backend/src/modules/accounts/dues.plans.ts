@@ -223,7 +223,10 @@ export async function listPlans(institutionId: string, opts: { status?: string }
 
   // COMPLETED is derived, never stored, so a plan whose last instalment was
   // paid shows as complete even though nothing wrote it down.
-  const shaped = (plans as unknown as PlanRow[]).map((p) => shapePlan(p));
+  // Children are always included: the plan list is the screen where the desk
+  // reads and compares schedules, and a plan without its instalments is just a
+  // number. A plan is at most 12 bills, so this stays cheap.
+  const shaped = (plans as unknown as PlanRow[]).map((p) => shapePlan(p, { withChildren: true }));
 
   return {
     plans: shaped,

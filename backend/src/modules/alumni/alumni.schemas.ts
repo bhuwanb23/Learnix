@@ -11,6 +11,16 @@ export const idParamSchema = z.object({
   id: z.string().min(1).max(64),
 });
 
+/**
+ * The donation ledger is unbounded (one row per gift), so it is paginated.
+ * Defaults match the service; pageSize is capped there so a caller cannot ask
+ * for the whole table.
+ */
+export const donationPageQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+});
+
 export const rsvpDecisionSchema = z.object({
   decision: z.enum(['CONFIRMED', 'DECLINED']),
 });

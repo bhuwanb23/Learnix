@@ -5,6 +5,7 @@ import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   directoryQuerySchema,
+  donationPageQuerySchema,
   idParamSchema,
   rsvpDecisionSchema,
   broadcastSchema,
@@ -26,7 +27,10 @@ router.use(auth, requireRole('ALUMNI', 'ADMIN'));
 router.get(
   '/dashboard',
   wrap(async (req, res) => {
-    res.json({ data: await service.getDashboard(req.auth!.institutionId) });
+    // userId is required: the unread badge is personal, not institution-wide.
+    res.json({
+      data: await service.getDashboard(req.auth!.institutionId, req.auth!.userId),
+    });
   }),
 );
 
@@ -106,8 +110,11 @@ router.post(
 // AL-04 donations + campaigns
 router.get(
   '/donations',
+  validate(donationPageQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listDonations(req.auth!.institutionId) });
+    res.json({
+      data: await service.listDonations(req.auth!.institutionId, req.query as { page?: number; pageSize?: number }),
+    });
   }),
 );
 
