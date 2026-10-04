@@ -50,6 +50,7 @@ model AlumniChapter {
   updatedAt             DateTime @updatedAt
 
   members AlumniProfile[]
+  events  Event[]
 
   @@unique([institutionId, city])
   @@index([institutionId])

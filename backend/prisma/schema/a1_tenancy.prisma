@@ -43,6 +43,11 @@ model User {
   notifications   Notification[]
   pushTokens      PushToken[]
   aiInteractions  AiInteraction[]
+  // Alumni networking. Two distinct relations to User because a connection has
+  // two parties; naming them is what stops Prisma from reporting an ambiguous
+  // relation error.
+  sentConnections     AlumniConnection[] @relation("AlumniConnectionRequester")
+  receivedConnections AlumniConnection[] @relation("AlumniConnectionRecipient")
   donationsMade    Donation[]
   mentorshipsAsMentor MentorshipPair[]
   platformAdmin      PlatformAdmin?

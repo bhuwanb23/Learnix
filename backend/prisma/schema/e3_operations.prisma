@@ -69,6 +69,19 @@ model PayrollEntry {
   @@map("payroll_entries")
 }
 
+// A claim for money spent. This is a document in its own right, so it keeps a
+// SNAPSHOT of what it was for: `title` and `note` say what the money bought,
+// `vendor` is the name as written on the bill (not a foreign key — the same
+// vendor is spelled differently by three different departments), and `taxMinor`
+// is separated so a reader can see what is recoverable.
+//
+// Approval is a decision, so it carries WHO and WHEN and — for a rejection —
+// WHY. A rejection with no reason is unauditable, which is the same argument
+// that put `waivedByUserId` on the dues desk.
+//
+// `departmentId` is denormalised from the chosen budget so department-wise
+// expenditure is answerable without a join through a budget that may itself be
+// re-pointed later.
 model Expense {
   id                String   @id @default(cuid())
   institutionId     String
@@ -80,14 +93,55 @@ model Expense {
   requestedByUserId String // scalar → users.id
   approvedByUserId  String? // scalar → users.id
   budgetId          String?
+
+  title             String?  // what the money bought — the line on the claim
+  note              String?  // anything an approver needs and the category cannot say
+  subcategory       String?  // finer grain than the five categories (e.g. "Chairs", "Bus fare")
+  departmentId      String?  // scalar → departments.id (null = institution-wide)
+  paymentMethod     String?  // CASH | BANK_TRANSFER | UPI | CHEQUE | CARD
+  paymentReference  String?  // UTR / cheque no / txn id
+  taxMinor          Int      @default(0) // GST/VAT carved out of amountMinor
+  approvedAt        DateTime?
+  approvedByName    String?  // snapshot, so a historic claim still says who signed it
+  rejectedAt        DateTime?
+  rejectedByUserId  String?  // scalar → users.id
+  rejectionReason   String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   budget Budget? @relation(fields: [budgetId], references: [id])
+  documents ExpenseDocument[]
 
   @@index([institutionId])
   @@index([status])
+  @@index([institutionId, date])
+  @@index([departmentId])
+  @@index([vendor])
   @@map("expenses")
+}
+
+// A receipt, invoice or quote attached to a claim.
+//
+// The bytes live in object storage behind `File.storageKey`; this row records
+// WHAT the document is in the context of the claim, which storage alone cannot
+// express. `kind` matters to an approver: a quotation is what the spend was
+// justified against, an invoice is what proves it happened, and a receipt is
+// what proves it was paid.
+model ExpenseDocument {
+  id             String   @id @default(cuid())
+  institutionId  String
+  expenseId      String
+  fileId         String // scalar → files.id
+  kind           String   @default("RECEIPT") // RECEIPT | INVOICE | QUOTATION
+  note           String?
+  uploadedByUserId String // scalar → users.id
+  createdAt      DateTime @default(now())
+
+  expense Expense @relation(fields: [expenseId], references: [id])
+
+  @@unique([expenseId, fileId])
+  @@index([expenseId])
+  @@map("expense_documents")
 }
 
 model Budget {
@@ -97,7 +151,8 @@ model Budget {
   fiscalYear    String // "2025-26"
   category      String
   plannedMinor  Int
-  spentMinor    Int      @default(0) // denorm, recomputed on expense approval
+  spentMinor    Int      @default(0) // denorm — RECOMPUTED from approved expenses, never incremented blindly
+  note          String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -105,5 +160,6 @@ model Budget {
 
   @@unique([institutionId, fiscalYear, category, departmentId])
   @@index([institutionId])
+  @@index([departmentId])
   @@map("budgets")
 }

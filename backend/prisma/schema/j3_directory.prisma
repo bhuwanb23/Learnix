@@ -1,0 +1,122 @@
+// Domain J3 — Alumni directory: skills, career journey, privacy, connections.
+// Docs: 12-alumni-relations.md §3.2 · §5 (networking, skills, career, privacy)
+//
+// ── Why these are tables and not columns ───────────────────────
+//
+// · AlumniSkill is NORMALISED rather than a JSON array on the profile because
+//   the directory has to answer "who knows Kubernetes" and "who can mentor a
+//   final-year student into platform engineering" in SQL. A JSON column forces
+//   both into a JS scan, cannot be indexed, and cannot be filtered or sorted
+//   by the database. The uniqueness on (profileId, skill) also stops the same
+//   skill being listed twice with different capitalisation.
+//
+// · AlumniCareerEntry exists because "career journey" is inherently a
+//   TIMELINE — a sequence of roles over time, with gaps and overlaps — not a
+//   column. Storing only the current role (AlumniProfile.currentRole) loses the
+//   promotions and lateral moves that make a career worth reading. `toMonth`
+//   is NULL for the current role: "present" is an absence, not a date.
+//
+// · AlumniPrivacySettings is a 1:1 companion to the profile rather than more
+//   boolean columns on it, so "does this alumnus want to be found" is a single
+//   readable object and the API has ONE place to apply redaction. Default is
+//   CLOSED for contact details: an email address or phone number is not
+//   published because it is technically stored.
+//
+// · AlumniConnection is a single table with a status column rather than a
+//   "friendships" table, because a request has a lifecycle (PENDING →
+//   ACCEPTED/DECLINED) that is itself meaningful to the UI: the recipient has
+//   an inbox to act on, and the requester needs to see "pending" vs "connected".
+//   The unique (requester, recipient) pair makes a duplicate request
+//   impossible; the reverse direction is a separate row, which is what lets an
+//   accepted pair be found from either side.
+
+model AlumniSkill {
+  id               String   @id @default(cuid())
+  alumniProfileId  String
+  skill            String
+  level            String   @default("INTERMEDIATE") // BEGINNER | INTERMEDIATE | ADVANCED | EXPERT
+  yearsExperience  Int?     // years claimed, for "10+ yrs in X" badges
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  profile AlumniProfile @relation(fields: [alumniProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([alumniProfileId, skill])
+  @@index([skill])
+  @@index([level])
+  @@map("alumni_skills")
+}
+
+model AlumniCareerEntry {
+  id               String    @id @default(cuid())
+  alumniProfileId  String
+  title            String
+  companyId        String?   // FK → companies (Domain D)
+  // Denormalised so a career row is still readable when the employer is not in
+  // the companies table (a startup, a self-employed stint, an overseas employer
+  // nobody has registered). companyId is the linkable one; this is the label.
+  employerLabel    String?
+  location         String?
+  fromMonth        DateTime
+  toMonth          DateTime? // NULL = current role
+  isHighlight      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  profile AlumniProfile @relation(fields: [alumniProfileId], references: [id], onDelete: Cascade)
+
+  @@index([alumniProfileId, fromMonth])
+  @@index([companyId])
+  @@map("alumni_career_entries")
+}
+
+model AlumniPrivacySettings {
+  id               String   @id @default(cuid())
+  alumniProfileId  String   @unique
+  // Contact details are OFF by default. Being an alumnus is not consent to
+  // publish an email address and phone number to every logged-in user.
+  showEmail        Boolean  @default(false)
+  showPhone        Boolean  @default(false)
+  showLocation     Boolean  @default(true)
+  showCareer       Boolean  @default(true)
+  showSkills       Boolean  @default(true)
+  // discoverable = may appear in directory search AND in match suggestions.
+  // false hides the profile from browse but leaves a direct link working, so an
+  // alumnus who unlists themselves is still reachable by someone who has their
+  // id — hiding from search and blocking contact are different intentions.
+  discoverable     Boolean  @default(true)
+  // ANYONE → any signed-in user | CONNECTIONS → accepted connections only |
+  // OFFICE → the Alumni Relations office only.
+  visibleTo        String   @default("CONNECTIONS")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  profile AlumniProfile @relation(fields: [alumniProfileId], references: [id], onDelete: Cascade)
+
+  @@map("alumni_privacy_settings")
+}
+
+model AlumniConnection {
+  id                String    @id @default(cuid())
+  institutionId     String
+  requesterUserId   String    // scalar → users.id
+  recipientUserId   String    // scalar → users.id
+  status            String    @default("PENDING") // PENDING | ACCEPTED | DECLINED | CANCELLED
+  message           String?
+  respondedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  requester   User @relation("AlumniConnectionRequester", fields: [requesterUserId], references: [id])
+  recipient   User @relation("AlumniConnectionRecipient", fields: [recipientUserId], references: [id])
+
+  // One request per ordered pair. The reverse direction (A→B then B→A) is a
+  // different row, which the service resolves into a single connection when
+  // both sides have asked — so two people who want each other end up connected
+  // instead of in a deadlock of two pending requests.
+  @@unique([requesterUserId, recipientUserId])
+  @@index([recipientUserId, status])
+  @@index([requesterUserId, status])
+  @@index([institutionId, status])
+  @@map("alumni_connections")
+}

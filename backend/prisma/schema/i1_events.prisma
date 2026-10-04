@@ -14,12 +14,19 @@ model Event {
   venueId         String? // FK → venues (i3, same domain)
   capacity        Int       @default(100)
   organizerUserId String // scalar → users.id
+  // Optional owning chapter. A chapter event is still an Event — reusing this
+  // table means chapter events appear in the same RSVP, schedule, attendance
+  // and notification machinery as every other event, rather than in a parallel
+  // chapter-only structure that would need all of it rebuilt. NULL = not a
+  // chapter event.
+  chapterId       String? // FK → alumni_chapters (Domain J)
   status          String    @default("DRAFT") // DRAFT | PENDING_ADMIN | APPROVED | PUBLISHED | COMPLETED | CANCELLED
   coverFileId     String? // scalar → files.id (Domain L)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   venue          Venue?             @relation(fields: [venueId], references: [id])
+  chapter        AlumniChapter?     @relation(fields: [chapterId], references: [id])
   registrations  EventRegistration[]
   scheduleItems  EventScheduleItem[]
   volunteers     EventVolunteer[]
