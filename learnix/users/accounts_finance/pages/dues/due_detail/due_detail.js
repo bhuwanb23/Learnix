@@ -20,7 +20,7 @@ import { accountsApi } from '../../../../../services/api';
 import { AnimatedCard, SkeletonCard } from '../../../../../components/ui';
 import {
   THEME, rupees, compactRupees, formatDate, formatDateTime, dueStatusMeta, overduePhrase,
-  WAIVER_PRESETS, REMINDER_PRESETS,
+  WAIVER_PRESETS, REMINDER_PRESETS, FINE_REASONS,
 } from '../duesMeta';
 
 export default function DueDetail({ navigation, route }) {
@@ -34,7 +34,7 @@ export default function DueDetail({ navigation, route }) {
   // Which mutation sheet is open. Only one at a time — these are all
   // consequential and stacking two dialogs on a phone is how the wrong one gets
   // confirmed.
-  const [sheet, setSheet] = useState(null); // 'remind' | 'waive' | 'reinstate'
+  const [sheet, setSheet] = useState(null); // 'remind' | 'waive' | 'reinstate' | 'assessFine' | 'waiveFine'
   const [note, setNote] = useState('');
 
   const fetchData = useCallback(async () => {
@@ -86,6 +86,24 @@ export default function DueDetail({ navigation, route }) {
         done: 'Fee waived',
         doneBody: 'It is off the books and the student has been told why.',
       },
+      assessFine: {
+        title: 'Assess This Fine?',
+        body: `${rupees(data.lateFee.wouldBeRupees)} will be added to this bill as a late-payment ` +
+          `fine.\n\n${data.lateFee.ruleSummary}\n\nReason: ${text}\n\n` +
+          'This is charged to the family, notified to them, and stamped with your name.',
+        run: () => accountsApi.assessFine(dueId, text),
+        done: 'Fine assessed',
+        doneBody: 'It is now part of this bill\u2019s balance and the student has been told.',
+      },
+      waiveFine: {
+        title: 'Remove This Fine?',
+        body: `${rupees(data.lateFee.assessedRupees)} will be removed from this bill and the balance ` +
+          `drops to ${rupees(Math.max(0, due.amountRupees - due.paidRupees))}.\n\n` +
+          `Reason: ${text}\n\nThe bill is NOT waived — only the penalty goes. This is audited.`,
+        run: () => accountsApi.waiveFine(dueId, text),
+        done: 'Fine removed',
+        doneBody: 'The penalty is off the bill. The fee itself is still owed.',
+      },
       reinstate: {
         title: 'Reinstate This Fee?',
         body: `${rupees(data.due.balanceRupees)} becomes payable again and the bill returns to the ` +
@@ -102,7 +120,7 @@ export default function DueDetail({ navigation, route }) {
       { text: 'Cancel', style: 'cancel', onPress: closeSheet },
       {
         text: 'Confirm',
-        style: sheet === 'waive' ? 'destructive' : 'default',
+        style: sheet === 'waive' || sheet === 'assessFine' || sheet === 'waiveFine' ? 'destructive' : 'default',
         onPress: async () => {
           setBusy(true);
           try {
@@ -144,12 +162,20 @@ export default function DueDetail({ navigation, route }) {
     );
   }
 
-  const { due, student, feeStructure, position, allocations, reminders, otherOpenDues } = data;
+  const { due, student, feeStructure, position, allocations, reminders, otherOpenDues, lateFee, plan } = data;
   const meta = dueStatusMeta(due.status);
-  const progress = due.amountRupees > 0 ? due.paidRupees / due.amountRupees : 0;
-  const presets = sheet === 'remind' ? REMINDER_PRESETS : WAIVER_PRESETS;
+  // Progress runs against everything claimed, so a part-paid bill carrying a
+  // fine cannot show a bar past its own end.
+  const claimed = due.amountRupees + (lateFee?.assessedRupees ?? 0);
+  const progress = claimed > 0 ? due.paidRupees / claimed : 0;
+  const presets =
+    sheet === 'remind' ? REMINDER_PRESETS : sheet === 'waive' || sheet === 'reinstate' ? WAIVER_PRESETS : FINE_REASONS;
   const sheetTitle =
-    sheet === 'remind' ? 'Send a reminder' : sheet === 'waive' ? 'Waive this fee' : 'Reinstate this fee';
+    sheet === 'remind' ? 'Send a reminder'
+      : sheet === 'waive' ? 'Waive this fee'
+        : sheet === 'reinstate' ? 'Reinstate this fee'
+          : sheet === 'assessFine' ? 'Assess a late fine'
+            : 'Remove the late fine';
   const sheetHint =
     sheet === 'remind'
       ? 'Optional note — it is appended to the message the student receives.'
@@ -238,6 +264,178 @@ export default function DueDetail({ navigation, route }) {
               </View>
             </View>
           </AnimatedCard>
+        )}
+
+        {/* ── Late fine ── */}
+        {lateFee && (
+          <AnimatedCard delay={75} style={[styles.block, lateFee.assessedRupees > 0 ? styles.fineCard : styles.fineCardEmpty]}>
+            <View style={styles.stampRow}>
+              <Ionicons
+                name={lateFee.assessedRupees > 0 ? 'alert-circle' : 'shield-checkmark-outline'}
+                size={17}
+                color={lateFee.assessedRupees > 0 ? '#d97706' : '#059669'}
+              />
+              <View style={styles.stampBody}>
+                <Text style={[styles.fineTitle, { color: lateFee.assessedRupees > 0 ? '#92400e' : '#065f46' }]}>
+                  {lateFee.assessedRupees > 0
+                    ? `Late fine ${rupees(lateFee.assessedRupees)}`
+                    : 'No late fine on this bill'}
+                </Text>
+                <Text style={styles.fineRule}>{lateFee.ruleSummary}</Text>
+
+                {lateFee.assessedRupees > 0 ? (
+                  <>
+                    <Text style={styles.fineMeta}>
+                      Assessed {formatDateTime(lateFee.assessedAt)}
+                      {lateFee.stillAccruing
+                        ? ` · still accruing, would now be ${rupees(lateFee.wouldBeRupees)}`
+                        : ''}
+                    </Text>
+                    {due.canWaiveFine && (
+                      <TouchableOpacity
+                        style={styles.fineAction}
+                        onPress={() => { setNote(''); setSheet('waiveFine'); }}
+                        activeOpacity={0.85}
+                      >
+                        <Ionicons name="close-circle-outline" size={13} color="#dc2626" />
+                        <Text style={styles.fineActionText}>Remove this fine with a reason</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* A ₹0 fine needs an explanation or it reads as a bug: the
+                        bill may simply be inside its grace period. */}
+                    <Text style={styles.fineMeta}>
+                      {lateFee.ruleEnabled
+                        ? lateFee.graceDaysRemaining > 0
+                          ? `Nothing is owed yet — this bill is still inside the ${lateFee.graceDaysRemaining}-day grace period.`
+                          : `No fine has been charged on this bill. It would now be ${rupees(lateFee.wouldBeRupees)}.`
+                        : 'This institution does not charge a late fine.'}
+                    </Text>
+                    {due.canAssessFine && lateFee.canAssess && lateFee.ruleEnabled && (
+                      <TouchableOpacity
+                        style={styles.fineAction}
+                        onPress={() => { setNote(''); setSheet('assessFine'); }}
+                        activeOpacity={0.85}
+                      >
+                        <Ionicons name="add-circle-outline" size={13} color="#d97706" />
+                        <Text style={[styles.fineActionText, { color: '#d97706' }]}>
+                          Assess {rupees(lateFee.wouldBeRupees)} now
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={styles.fineLink}
+                      onPress={() => navigation.openModule('LateFeePolicy')}
+                      activeOpacity={0.85}
+                    >
+                      <Ionicons name="options-outline" size={12} color={THEME} />
+                      <Text style={styles.fineLinkText}>Change the institution’s late fee policy</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </View>
+          </AnimatedCard>
+        )}
+
+        {/* ── Payment plan ── */}
+        {plan ? (
+          <AnimatedCard delay={90} style={[styles.block, styles.planCard]}>
+            <View style={styles.stampRow}>
+              <Ionicons name="git-branch" size={17} color="#7c3aed" />
+              <View style={styles.stampBody}>
+                <Text style={styles.planTitle}>
+                  {plan.count} × {plan.frequencyLabel.toLowerCase()} payment plan
+                </Text>
+                <Text style={styles.fineMeta}>
+                  {rupees(plan.totalRupees)} agreed · started {formatDate(plan.startDate)} ·{' '}
+                  {plan.settledCount}/{plan.count} settled · {plan.progressPercent}% paid
+                </Text>
+                {plan.overdueCount > 0 && (
+                  <Text style={styles.planLate}>
+                    {plan.overdueCount} instalment{plan.overdueCount === 1 ? ' is' : 's are'} past the
+                    due date. The family agreed a plan, so chase gently — and do not waive the fee.
+                  </Text>
+                )}
+                {plan.status === 'CANCELLED' && (
+                  <Text style={styles.planLate}>
+                    Cancelled {formatDateTime(plan.cancelledAt)} — the original bill is collectable again.
+                  </Text>
+                )}
+
+                {(plan.installments || []).map((inst) => {
+                  const m = dueStatusMeta(inst.status);
+                  return (
+                    <TouchableOpacity
+                      key={inst.id}
+                      style={styles.instRow}
+                      activeOpacity={0.8}
+                      onPress={() => navigation.openModule('DueDetail', { dueId: inst.id })}
+                    >
+                      <View style={[styles.instDot, { backgroundColor: m.color }]} />
+                      <View style={styles.instBody}>
+                        <Text style={styles.instTitle}>#{inst.sequence} · {formatDate(inst.dueDate)}</Text>
+                        <Text style={styles.instMeta}>
+                          {inst.status === 'CLEARED'
+                            ? 'paid in full'
+                            : inst.daysOverdue > 0
+                              ? overduePhrase(inst.daysOverdue)
+                              : 'not yet due'}
+                        </Text>
+                      </View>
+                      <Text style={[styles.instAmount, { color: inst.status === 'CLEARED' ? '#059669' : '#dc2626' }]}>
+                        {rupees(inst.balanceRupees)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+
+                <TouchableOpacity
+                  style={styles.fineLink}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.openModule('PaymentPlans', { planId: plan.id })}
+                >
+                  <Ionicons name="open-outline" size={12} color="#7c3aed" />
+                  <Text style={[styles.fineLinkText, { color: '#7c3aed' }]}>
+                    Open the plan, its schedule and cancellation
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </AnimatedCard>
+        ) : (
+          due.canPlan && (
+            <AnimatedCard delay={90} style={[styles.block, styles.planOffer]}>
+              <View style={styles.stampRow}>
+                <Ionicons name="git-branch-outline" size={17} color="#7c3aed" />
+                <View style={styles.stampBody}>
+                  <Text style={styles.planTitle}>Offer a payment plan</Text>
+                  <Text style={styles.fineMeta}>
+                    Split this {rupees(due.balanceRupees)} balance into 2–12 instalments the family
+                    actually commits to. The bill is replaced by real instalments that are chased,
+                    aged and fined on their own dates — a plan is tracked, not a note in a drawer.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.planOfferBtn}
+                    activeOpacity={0.85}
+                    onPress={() => navigation.openModule('PaymentPlans', {
+                      due: {
+                        id: due.id,
+                        title: due.title,
+                        student: student.name,
+                        balanceRupees: due.balanceRupees,
+                      },
+                    })}
+                  >
+                    <Ionicons name="git-branch-outline" size={14} color="#fff" />
+                    <Text style={styles.planOfferBtnText}>Agree a payment plan</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </AnimatedCard>
+          )
         )}
 
         {/* ── Who owes it ── */}
@@ -488,7 +686,13 @@ export default function DueDetail({ navigation, route }) {
                 disabled={busy}
               >
                 <Text style={styles.sheetConfirmText}>
-                  {busy ? 'Working…' : sheet === 'remind' ? 'Send' : sheet === 'waive' ? 'Waive' : 'Reinstate'}
+                  {busy
+                    ? 'Working…'
+                    : sheet === 'remind' ? 'Send'
+                      : sheet === 'waive' ? 'Waive'
+                        : sheet === 'reinstate' ? 'Reinstate'
+                          : sheet === 'assessFine' ? 'Assess fine'
+                            : 'Remove fine'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -565,6 +769,31 @@ const styles = StyleSheet.create({
   waivedTitle: { fontSize: 12, fontWeight: '800', color: '#5b21b6', fontFamily: 'Manrope-Bold' },
   waivedReason: { fontSize: 12, color: '#5b21b6', fontFamily: 'Manrope-Medium', marginTop: 3, lineHeight: 17 },
   waivedBy: { fontSize: 10, color: '#7c3aed', fontFamily: 'Manrope-Regular', marginTop: 4 },
+
+  // Late fine
+  fineCard: { backgroundColor: '#fffbeb', borderWidth: 1, borderColor: '#fde68a' },
+  fineCardEmpty: { backgroundColor: '#f0fdf4', borderWidth: 1, borderColor: '#bbf7d0' },
+  fineTitle: { fontSize: 12, fontWeight: '800', fontFamily: 'Manrope-Bold' },
+  fineRule: { fontSize: 11, color: '#475569', fontFamily: 'Manrope-Medium', marginTop: 3, lineHeight: 16 },
+  fineMeta: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 5, lineHeight: 15 },
+  fineAction: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 9, backgroundColor: '#fff', borderWidth: 1, borderColor: '#fecaca' },
+  fineActionText: { fontSize: 11, fontWeight: '700', color: '#dc2626', fontFamily: 'Manrope-Bold' },
+  fineLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, alignSelf: 'flex-start' },
+  fineLinkText: { fontSize: 10, color: THEME, fontFamily: 'Manrope-Medium' },
+
+  // Payment plan
+  planCard: { backgroundColor: '#f5f3ff', borderWidth: 1, borderColor: '#ddd6fe' },
+  planOffer: { backgroundColor: '#faf5ff', borderWidth: 1, borderColor: '#e9d5ff' },
+  planTitle: { fontSize: 12, fontWeight: '800', color: '#5b21b6', fontFamily: 'Manrope-Bold' },
+  planLate: { fontSize: 10, color: '#92400e', fontFamily: 'Manrope-Medium', marginTop: 7, lineHeight: 15 },
+  instRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 7, borderTopWidth: 1, borderTopColor: '#ede9fe', marginTop: 4 },
+  instDot: { width: 7, height: 7, borderRadius: 4 },
+  instBody: { flex: 1 },
+  instTitle: { fontSize: 11, fontWeight: '700', color: '#0f172a', fontFamily: 'Manrope-Bold' },
+  instMeta: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Regular', marginTop: 1 },
+  instAmount: { fontSize: 12, fontWeight: '800', fontFamily: 'Manrope-Bold' },
+  planOfferBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 11, paddingVertical: 11, borderRadius: 11, backgroundColor: '#7c3aed' },
+  planOfferBtnText: { fontSize: 12, fontWeight: '800', color: '#fff', fontFamily: 'Manrope-Bold' },
 
   // Person
   personRow: { flexDirection: 'row', alignItems: 'center', gap: 11, padding: 14, paddingBottom: 8 },

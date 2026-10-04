@@ -66,7 +66,9 @@ export default function PaymentPlans({ navigation, route }) {
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
 
-  const [expanded, setExpanded] = useState(null);
+  // Opened with a planId (from the hub or a bill): start expanded so the officer
+  // lands on the schedule rather than having to tap into it.
+  const [expanded, setExpanded] = useState(route?.params?.planId ?? null);
 
   const fetchData = useCallback(async () => {
     try {

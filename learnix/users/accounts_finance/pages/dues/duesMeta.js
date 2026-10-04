@@ -188,6 +188,16 @@ export function previewSchedule(totalRupees, count, frequency, startDate) {
   });
 }
 
+// ── Late fine ───────────────────────────────────────────────
+// Why an officer would assess or remove a fine. These are starting points, not
+// answers — the real reason is still typed onto the record and audited.
+export const FINE_REASONS = [
+  'Bill genuinely overdue past the grace period',
+  'Fee was remitted but credited to another bill',
+  'Fine applied in error — bill was on an approved plan',
+  'Hardship approved by the principal',
+];
+
 // ── Bulk reminders ──────────────────────────────────────────
 // One notification per FAMILY, itemised — a student with four bills must not get
 // four messages. These are the guards the preview will report on, so the screen
