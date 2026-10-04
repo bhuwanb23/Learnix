@@ -9,8 +9,20 @@ import {
   idParamSchema,
   rsvpDecisionSchema,
   broadcastSchema,
+  chapterQuerySchema,
+  chapterMembersQuerySchema,
+  connectionsQuerySchema,
+  matchesQuerySchema,
+  connectionRequestSchema,
+  connectionActionSchema,
+  chapterAnnouncementSchema,
+  chapterEventSchema,
+  updateMyProfileSchema,
 } from './alumni.schemas.js';
 import * as service from './alumni.service.js';
+import * as directory from './directory.service.js';
+import * as connections from './connections.service.js';
+import * as chapterSvc from './chapters.service.js';
 
 // Alumni Relations module — mounted at /api/v1/alumni (docs/users/12 §4)
 const router = Router();
@@ -20,6 +32,21 @@ const wrap =
   (req: Request, res: Response, next: NextFunction) => {
     fn(req, res).catch(next);
   };
+
+/**
+ * Builds the privacy-aware viewer context from the auth middleware.
+ *
+ * Three separate rules depend on "is this the Relations Office or a graduate?"
+ * — contact-detail visibility, who may post a chapter announcement, and who may
+ * send a connection request — so the distinction is resolved once per request
+ * here rather than re-derived in each handler where it could drift.
+ */
+async function viewerFor(req: Request) {
+  const institutionId = req.auth!.institutionId;
+  const userId = req.auth!.userId;
+  const office = await directory.officeUserIds(institutionId);
+  return directory.resolveViewer(userId, institutionId, office);
+}
 
 router.use(auth, requireRole('ALUMNI', 'ADMIN'));
 
@@ -34,17 +61,26 @@ router.get(
   }),
 );
 
-// AL-02 directory + detail
+// ── Directory (AL-02) ─────────────────────────────────────────
+// The extended directory lives in directory.service.ts: filtering, facets and
+// privacy-gated shaping. It supersedes the v1 `listDirectory` below for anything
+// beyond name/batch search, but that function is kept so the mobile client does
+// not break mid-release.
 router.get(
   '/directory',
   validate(directoryQuerySchema, 'query'),
   wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
     res.json({
-      data: await service.listDirectory(
-        req.auth!.institutionId,
-        req.query as { q?: string; batch?: number },
-      ),
+      data: await directory.listDirectory(viewer, req.query as never),
     });
+  }),
+);
+
+router.get(
+  '/directory/facets',
+  wrap(async (req, res) => {
+    res.json({ data: await directory.getFacets(req.auth!.institutionId) });
   }),
 );
 
@@ -52,7 +88,140 @@ router.get(
   '/directory/:id',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
-    res.json({ data: await service.getAlumniDetail(req.auth!.institutionId, String(req.params.id)) });
+    const viewer = await viewerFor(req);
+    res.json({ data: await directory.getProfileDetail(viewer, String(req.params.id)) });
+  }),
+);
+
+// ── Self-service profile + privacy (AL-02) ───────────────────
+router.get(
+  '/me',
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await directory.getMyProfile(viewer) });
+  }),
+);
+
+router.put(
+  '/me',
+  validate(updateMyProfileSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await directory.updateMyProfile(viewer, req.body) });
+  }),
+);
+
+// ── Professional networking (AL-02) ──────────────────────────
+router.get(
+  '/matches',
+  validate(matchesQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await connections.getMatches(viewer, req.query as never) });
+  }),
+);
+
+router.get(
+  '/connections',
+  validate(connectionsQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const box = (req.query as { box?: 'incoming' | 'outgoing' | 'accepted' }).box ?? 'incoming';
+    res.json({ data: await connections.listConnections(viewer, box) });
+  }),
+);
+
+router.get(
+  '/connections/stats',
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await connections.getConnectionStats(viewer) });
+  }),
+);
+
+router.post(
+  '/connections',
+  validate(connectionRequestSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const result = await connections.createConnection(viewer, req.body.profileId, req.body.message);
+    res.status(201).json({ data: result });
+  }),
+);
+
+router.post(
+  '/connections/:id/:action',
+  validate(idParamSchema, 'params'),
+  validate(connectionActionSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const action = String(req.params.action) as 'accept' | 'decline' | 'cancel';
+    const id = String(req.params.id);
+    const data =
+      action === 'cancel'
+        ? await connections.cancelConnection(viewer, id)
+        : await connections.respondToConnection(viewer, id, action);
+    res.json({ data });
+  }),
+);
+
+// ── Chapters (AL-06) ─────────────────────────────────────────
+router.get(
+  '/chapters',
+  validate(chapterQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await chapterSvc.listChapterDirectory(req.auth!.institutionId, req.query as never),
+    });
+  }),
+);
+
+router.get(
+  '/chapters/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({ data: await chapterSvc.getChapterDetail(req.auth!.institutionId, String(req.params.id)) });
+  }),
+);
+
+router.get(
+  '/chapters/:id/members',
+  validate(idParamSchema, 'params'),
+  validate(chapterMembersQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await chapterSvc.listChapterMembers(req.auth!.institutionId, String(req.params.id), req.query as never),
+    });
+  }),
+);
+
+router.get(
+  '/chapters/:id/activity',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({ data: await chapterSvc.getChapterActivity(req.auth!.institutionId, String(req.params.id)) });
+  }),
+);
+
+router.post(
+  '/chapters/:id/announce',
+  validate(idParamSchema, 'params'),
+  validate(chapterAnnouncementSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const result = await chapterSvc.announceToChapter(viewer, String(req.params.id), req.body);
+    res.status(201).json({ data: result });
+  }),
+);
+
+router.post(
+  '/chapters/:id/events',
+  validate(idParamSchema, 'params'),
+  validate(chapterEventSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const result = await chapterSvc.createChapterEvent(viewer, String(req.params.id), req.body as never);
+    res.status(201).json({ data: result });
   }),
 );
 
@@ -157,14 +326,6 @@ router.post(
       req.auth!.userId,
     );
     res.json({ data: result });
-  }),
-);
-
-// AL-06 chapters
-router.get(
-  '/chapters',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listChapters(req.auth!.institutionId) });
   }),
 );
 

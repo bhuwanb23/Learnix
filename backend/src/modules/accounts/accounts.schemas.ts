@@ -160,7 +160,9 @@ export const addExpenseSchema = z.object({
   // YYYY-MM-DD. Accepted so a claim raised after the fact lands in the month the
   // money actually went out, not the month it was remembered.
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').optional(),
-});
+  // Strict, like the dues schemas: silently dropping a misnamed money field turns
+  // a typo (`amountRupees`) into a silently wrong claim rather than an error.
+}).strict();
 
 export const expenseListQuerySchema = z.object({
   status: z.string().trim().max(30).optional(),
@@ -176,9 +178,11 @@ export const expenseListQuerySchema = z.object({
 });
 
 /** A rejection without a reason is unauditable, so it is required. */
-export const expenseDecisionSchema = z.object({
-  reason: z.string().trim().min(3, 'Say why this claim is being rejected'),
-});
+export const expenseDecisionSchema = z
+  .object({
+    reason: z.string().trim().min(3, 'Say why this claim is being rejected'),
+  })
+  .strict();
 
 export const budgetLineSchema = z.object({
   id: z.string().min(1).max(64).optional(),
@@ -187,7 +191,7 @@ export const budgetLineSchema = z.object({
   departmentId: z.string().min(1).max(64).optional(),
   fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),
   note: z.string().trim().max(200).optional(),
-});
+}).strict();
 
 export const budgetListQuerySchema = z.object({
   fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),

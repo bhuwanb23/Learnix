@@ -44,7 +44,16 @@ export type DocKind = (typeof DOC_KINDS)[number];
 
 const EXPENSE_INCLUDE = {
   budget: { select: { id: true, category: true, fiscalYear: true, plannedMinor: true, spentMinor: true } },
-  documents: { select: { id: true, fileId: true, kind: true, note: true, uploadedByUserId: true, createdAt: true } },
+  // The `file` is included because a document row without the filename, size and
+  // storage key is not a receipt — it is a reference to one. The detail screen
+  // has to be able to say "receipt.pdf, 240 KB" and open it, or the whole
+  // upload feature is a checkbox nobody can act on.
+  documents: {
+    select: {
+      id: true, fileId: true, kind: true, note: true, uploadedByUserId: true, createdAt: true,
+      file: { select: { originalName: true, mimeType: true, sizeBytes: true, storageKey: true } },
+    },
+  },
 } as const;
 
 /**
@@ -78,6 +87,21 @@ async function shapeExpenses(rows: any[]) {
   ].filter(Boolean) as string[];
   const users = await userMap([...new Set(ids)]);
 
+  // Department names are resolved here rather than sent as a raw id. Every claim
+  // screen labels a row by department — "Physics · ₹4.2L" — and a row that says
+  // "Physics" because the client already had the department list is only honest
+  // if the server is the one that decided it. A claim with no department reads
+  // "Institution-wide", matching the budget line wording rather than showing a
+  // null the UI has to special-case.
+  const deptIds = [...new Set(rows.map((r) => r.departmentId).filter(Boolean))] as string[];
+  const departments = deptIds.length
+    ? await prisma.department.findMany({
+      where: { id: { in: deptIds }, institutionId: rows[0]?.institutionId },
+      select: { id: true, name: true },
+    })
+    : [];
+  const deptNames = new Map(departments.map((d) => [d.id, d.name]));
+
   return rows.map((e) => ({
     id: e.id,
     title: e.title ?? categoryMeta(e.category).label,
@@ -95,6 +119,7 @@ async function shapeExpenses(rows: any[]) {
     status: e.status,
     statusLabel: statusMeta(e.status).label,
     departmentId: e.departmentId ?? null,
+    departmentName: e.departmentId ? deptNames.get(e.departmentId) ?? 'Unknown' : 'Institution-wide',
     budgetId: e.budgetId ?? null,
     budget: e.budget
       ? {
@@ -124,6 +149,12 @@ async function shapeExpenses(rows: any[]) {
       fileId: d.fileId,
       kind: d.kind,
       note: d.note ?? null,
+      originalName: d.file?.originalName ?? null,
+      mimeType: d.file?.mimeType ?? null,
+      sizeBytes: d.file?.sizeBytes ?? null,
+      // The same `/uploads/<storageKey>` path the upload route hands back, so a
+      // document fetched later is openable exactly like one just uploaded.
+      url: d.file?.storageKey ? `/uploads/${d.file.storageKey}` : null,
       createdAt: d.createdAt,
     })),
     createdAt: e.createdAt,

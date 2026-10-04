@@ -199,6 +199,71 @@ const FIELDS = [
   'Global Careers', 'Engineering Management', 'Finance & Investing',
 ] as const;
 
+/**
+ * Skill vocabulary, grouped by department.
+ *
+ * These strings are the MATCHING vocabulary: `AlumniSkill.skill` is compared
+ * literally by the mentor-matcher, so the same concept must always be spelled
+ * the same way. "Kubernetes", "kubernetes" and "K8s" as three separate skills
+ * would make an exact-match matcher report that nobody knows Kubernetes.
+ */
+const SKILLS: Record<string, readonly string[]> = {
+  CSE: [
+    'Backend Engineering', 'Frontend Engineering', 'Data Engineering',
+    'Machine Learning', 'Cloud Architecture', 'DevOps', 'Kubernetes',
+    'Distributed Systems', 'System Design', 'Databases', 'API Design',
+    'Mobile Engineering', 'Security Engineering',
+  ],
+  ECE: [
+    'Embedded Systems', 'VLSI Design', 'Signal Processing', 'Firmware',
+    'Hardware Design', 'RF Engineering', 'Telecom', 'Robotics',
+    'PCB Layout', 'Analog Design',
+  ],
+  ME: [
+    'CAD', 'FEA', 'Manufacturing', 'Automotive Design', 'Thermodynamics',
+    'Supply Chain', 'Quality Engineering', 'Product Design', 'Robotics',
+    'Operations Research',
+  ],
+  MBA: [
+    'Financial Modelling', 'Management Consulting', 'Product Management',
+    'Marketing Strategy', 'Operations Management', 'Negotiation',
+    'Business Valuation', 'Entrepreneurship', 'Change Management',
+    'Analytics',
+  ],
+};
+
+const SKILL_LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'] as const;
+
+/**
+ * Career archetypes per department. `from` is months AFTER graduation, so a
+ * career entry is anchored to the cohort rather than to a wall-clock date —
+ * which keeps the timeline correct no matter when the seed is run.
+ */
+const CAREER_STEPS: Record<string, { title: string; offsetMonths: number }[]> = {
+  CSE: [
+    { title: 'Software Engineer', offsetMonths: 2 },
+    { title: 'Senior Software Engineer', offsetMonths: 26 },
+    { title: 'Staff Engineer', offsetMonths: 54 },
+    { title: 'Engineering Manager', offsetMonths: 82 },
+  ],
+  ECE: [
+    { title: 'Design Engineer', offsetMonths: 3 },
+    { title: 'Senior Design Engineer', offsetMonths: 30 },
+    { title: 'Principal Engineer', offsetMonths: 60 },
+  ],
+  ME: [
+    { title: 'Graduate Engineer', offsetMonths: 1 },
+    { title: 'Design Engineer', offsetMonths: 24 },
+    { title: 'Senior Engineer', offsetMonths: 52 },
+  ],
+  MBA: [
+    { title: 'Business Analyst', offsetMonths: 1 },
+    { title: 'Senior Consultant', offsetMonths: 22 },
+    { title: 'Engagement Manager', offsetMonths: 46 },
+    { title: 'Director', offsetMonths: 70 },
+  ],
+};
+
 // ─────────────────────────────────────────────────────────────
 
 async function main() {
@@ -282,6 +347,7 @@ async function main() {
 
   type AlumniRow = {
     userId: string;
+    email: string;
     profileId: string;
     name: string;
     gradYear: number;
@@ -375,6 +441,7 @@ async function main() {
 
     alumni.push({
       userId: user.id,
+      email,
       profileId: profile.id,
       name,
       gradYear: cohort.gradYear,
@@ -1029,6 +1096,359 @@ let pledgeCount = 0;
   }
   console.log(`  ✓ ${notifCount} notifications`);
 
+  // ── Step 12: mark the Relations Office ──────────────────────
+  // The office user and a graduate are indistinguishable otherwise: both hold
+  // role ALUMNI, both have an AlumniProfile, neither has a StaffProfile. That
+  // matters because connection requests, privacy settings and self-service
+  // profile edits are things an ALUMNUS does, while mentorship approval,
+  // donation recording and broadcast are things the OFFICE does. One extra role
+  // separates them without inventing an employee record.
+  console.log('\n🏷️  Step 12: Marking the Alumni Relations Office...');
+  const officeRole = await db.userRole.findFirst({
+    where: { userId: officer.id, role: 'ALUMNI_OFFICE' },
+  });
+  if (!officeRole) {
+    await db.userRole.create({ data: { userId: officer.id, role: 'ALUMNI_OFFICE' } });
+  }
+  console.log('  ✓ priya@learnix.dev → ALUMNI + ALUMNI_OFFICE');
+
+  // ── Step 13: skills ─────────────────────────────────────────
+  console.log('\n🧠 Step 13: Seeding skills & expertise...');
+  let skillCount = 0;
+  for (const a of alumni) {
+    const pool = SKILLS[a.dept] ?? SKILLS.CSE;
+    // 3–6 skills each, taken from a rotating window of the department's
+    // vocabulary so the whole vocabulary is represented and no two profiles
+    // are identical. Deterministic: the offsets derive from the index.
+    const skillTotal = 3 + (a.profileId.length % 4);
+    const start = a.profileId.charCodeAt(a.profileId.length - 1) % pool.length;
+    for (let s = 0; s < skillTotal; s++) {
+      const skill = pool[(start + s) % pool.length];
+      // Level correlates with seniority — a 2015 graduate is not a BEGINNER in
+      // their field ten years in. A random level would make the mentor-matcher
+      // recommend a brand-new graduate to mentor a final-year student.
+      const level =
+        a.seniority >= 10 ? pick(['ADVANCED', 'EXPERT'] as const)
+        : a.seniority >= 5 ? pick(['INTERMEDIATE', 'ADVANCED'] as const)
+        : pick(['INTERMEDIATE', 'ADVANCED'] as const);
+      const created = await db.alumniSkill.findFirst({
+        where: { alumniProfileId: a.profileId, skill },
+      });
+      if (created) continue;
+      await db.alumniSkill.create({
+        data: {
+          alumniProfileId: a.profileId,
+          skill,
+          level,
+          yearsExperience: Math.max(1, Math.min(a.seniority, 15)),
+        },
+      });
+      skillCount++;
+    }
+  }
+  console.log(`  ✓ ${skillCount} skills`);
+
+  // ── Step 14: career journeys ────────────────────────────────
+  console.log('\n📈 Step 14: Seeding career journeys...');
+  let careerCount = 0;
+  for (const a of alumni) {
+    const ladder = CAREER_STEPS[a.dept] ?? CAREER_STEPS.CSE;
+    // How far up the ladder this person climbed: a fraction of their years out.
+    const reached = Math.max(1, Math.min(ladder.length, Math.round((a.seniority / 22) * ladder.length) || 1));
+    const gradAt = new Date(`${a.gradYear + 1}-06-30T00:00:00.000Z`);
+
+    for (let s = 0; s < reached; s++) {
+      const step = ladder[s];
+      const company = pick(COMPANIES);
+      const from = new Date(gradAt);
+      from.setMonth(from.getMonth() + step.offsetMonths);
+      // The last rung reached is their CURRENT role → toMonth stays null. Every
+      // earlier rung is closed. Without this every entry looks open-ended and
+      // the timeline renders as a stack of simultaneous jobs.
+      const isCurrent = s === reached - 1;
+      const to = isCurrent ? null : new Date(from);
+      if (!isCurrent) to.setMonth(to.getMonth() + Math.max(14, Math.round(a.seniority / reached)));
+
+      const exists = await db.alumniCareerEntry.findFirst({
+        where: { alumniProfileId: a.profileId, title: step.title, fromMonth: from },
+      });
+      if (exists) continue;
+      await db.alumniCareerEntry.create({
+        data: {
+          alumniProfileId: a.profileId,
+          title: step.title,
+          companyId: companyId.get(company.name) ?? null,
+          employerLabel: company.name,
+          location: company.city,
+          fromMonth: from,
+          toMonth: to,
+          isHighlight: isCurrent,
+        },
+      });
+      careerCount++;
+    }
+  }
+  console.log(`  ✓ ${careerCount} career entries`);
+
+  // ── Step 15: privacy settings ───────────────────────────────
+  console.log('\n🔒 Step 15: Seeding privacy settings...');
+  let privacyCount = 0;
+  for (const a of alumni) {
+    const existing = await db.alumniPrivacySettings.findFirst({
+      where: { alumniProfileId: a.profileId },
+    });
+    if (existing) continue;
+    // Contact details stay hidden for MOST alumni — that is the agreed default,
+    // so the directory must demonstrate the redaction rather than showing 56
+    // published email addresses. A deterministic handful opt in, so both
+    // branches of the privacy gate are exercised in the seeded data.
+    const optsIn = a.profileId.charCodeAt(a.profileId.length - 2) % 5 === 0;
+    await db.alumniPrivacySettings.create({
+      data: {
+        alumniProfileId: a.profileId,
+        showEmail: optsIn,
+        showPhone: false,
+        showLocation: true,
+        showCareer: true,
+        showSkills: true,
+        discoverable: a.engagement !== 'LOST',
+        visibleTo: optsIn ? 'ANYONE' : 'CONNECTIONS',
+      },
+    });
+    privacyCount++;
+  }
+  // The officer is not a directory subject, but a self-service profile screen
+  // still reads these — without a row every read has to invent a default.
+  const officerProfile = await db.alumniProfile.findFirst({ where: { userId: officer.id } });
+  if (officerProfile) {
+    const officerPrivacy = await db.alumniPrivacySettings.findFirst({
+      where: { alumniProfileId: officerProfile.id },
+    });
+    if (!officerPrivacy) {
+      await db.alumniPrivacySettings.create({
+        data: {
+          alumniProfileId: officerProfile.id,
+          showEmail: true,
+          showPhone: true,
+          visibleTo: 'ANYONE',
+          discoverable: false, // the office is staff, not a directory entry
+        },
+      });
+      privacyCount++;
+    }
+  }
+  console.log(`  ✓ ${privacyCount} privacy records`);
+
+  // ── Step 16: connections ────────────────────────────────────
+  console.log('\n🤝 Step 16: Seeding connections...');
+  let connCount = 0;
+  // Same-batch pairs (the realistic case: a 2019 CSE cohort stays in touch)
+  // plus same-city pairs across batches.
+  const connectionPlan: { status: string; pick: (i: number) => AlumniRow }[] = [
+    { status: 'ACCEPTED', pick: (i) => alumni[i] },
+    { status: 'ACCEPTED', pick: (i) => alumni[(i * 3 + 1) % alumni.length] },
+    { status: 'ACCEPTED', pick: (i) => alumni[(i * 7 + 2) % alumni.length] },
+    { status: 'PENDING', pick: (i) => alumni[(i * 5 + 4) % alumni.length] },
+    { status: 'PENDING', pick: (i) => alumni[(i * 11 + 6) % alumni.length] },
+    { status: 'DECLINED', pick: (i) => alumni[(i * 13 + 7) % alumni.length] },
+  ];
+
+  for (let i = 0; i < 40; i++) {
+    const from = connectionPlan[i % connectionPlan.length];
+    const requester = from.pick(i);
+    // Prefer a peer from the same cohort or city — the graph should look like a
+    // real network (dense inside a cohort, sparse across the whole population)
+    // rather than 40 uniformly random edges between strangers.
+    const sameCohort = alumni.filter((a) => a.gradYear === requester.gradYear && a.userId !== requester.userId);
+    const sameCity = alumni.filter((a) => a.city === requester.city && a.userId !== requester.userId);
+    const pool = sameCohort.length > 1 && i % 3 !== 2 ? sameCohort : sameCity.length ? sameCity : alumni;
+    const recipient = pool[(i * 13) % pool.length];
+    if (!recipient || recipient.userId === requester.userId) continue;
+
+    const existing = await db.alumniConnection.findFirst({
+      where: {
+        OR: [
+          { requesterUserId: requester.userId, recipientUserId: recipient.userId },
+          { requesterUserId: recipient.userId, recipientUserId: requester.userId },
+        ],
+      },
+    });
+    if (existing) continue;
+
+    await db.alumniConnection.create({
+      data: {
+        institutionId: instId,
+        requesterUserId: requester.userId,
+        recipientUserId: recipient.userId,
+        status: from.status,
+        message:
+          from.status === 'PENDING'
+            ? pick([
+                'Would love to reconnect — I was in your batch.',
+                'Interested in your work on distributed systems. Coffee?',
+                'Saw you are based in Bengaluru too. Let us connect.',
+              ])
+            : null,
+        respondedAt: from.status === 'PENDING' ? null : daysAgo(intBetween(5, 200)),
+        createdAt: daysAgo(intBetween(10, 320)),
+      },
+    });
+    connCount++;
+  }
+  console.log(`  ✓ ${connCount} connections`);
+
+  // ── Step 17: chapter events + announcements ─────────────────
+  console.log('\n🏙️  Step 17: Seeding chapter events & announcements...');
+  let chapterEventCount = 0;
+  let announceCount = 0;
+
+  for (const [city, cid] of chapterId) {
+    const chapter = await db.alumniChapter.findUnique({ where: { id: cid } });
+    if (!chapter) continue;
+
+    const chapterEventSpec = [
+      {
+        title: `${city} Chapter Quarterly Meetup`,
+        description: `Quarterly gathering for ${city} alumni — lightning talks, then dinner.`,
+        offset: intBetween(18, 40),
+        capacity: 60,
+        past: false,
+      },
+      {
+        title: `${city} Chapter Alumni Breakfast`,
+        description: `Informal breakfast for ${city} alumni and recent graduates.`,
+        offset: -(intBetween(40, 120)),
+        capacity: 40,
+        past: true,
+      },
+    ];
+
+    let nextUpcoming: Date | null = null;
+    for (const ce of chapterEventSpec) {
+      let ev = await db.event.findFirst({
+        where: { institutionId: instId, title: ce.title },
+      });
+      if (!ev) {
+        ev = await db.event.create({
+          data: {
+            institutionId: instId,
+            title: ce.title,
+            description: ce.description,
+            category: 'ALUMNI',
+            chapterId: cid,
+            startDate: daysFromNow(ce.offset),
+            endDate: daysFromNow(ce.offset + 1),
+            capacity: ce.capacity,
+            organizerUserId: chapter.presidentAlumniUserId,
+            status: ce.past ? 'COMPLETED' : 'PUBLISHED',
+          },
+        });
+        chapterEventCount++;
+
+        const orderWithinDay = new Map<number, number>();
+        for (const [day, item] of [
+          [1, ce.past ? '10:00 — Welcome & introductions' : '18:30 — Introductions'],
+          [1, ce.past ? '10:30 — Chapter update' : '19:00 — Lightning talks'],
+          [1, ce.past ? '11:30 — Open floor' : '20:00 — Dinner'],
+        ] as [number, string][]) {
+          const order = (orderWithinDay.get(day) ?? 0) + 1;
+          orderWithinDay.set(day, order);
+          await db.eventScheduleItem.create({
+            data: { eventId: ev.id, day, order, item, isDone: ce.past },
+          });
+        }
+      }
+      if (!ce.past && (!nextUpcoming || ev.startDate < nextUpcoming)) nextUpcoming = ev.startDate;
+
+      // Chapter members RSVP to their own chapter's events.
+      const chapterMembers = await db.alumniProfile.findMany({
+        where: { chapterId: cid, engagementStatus: 'ACTIVE' },
+        select: { userId: true },
+      });
+      const take = Math.min(ce.capacity, Math.max(4, Math.round(chapterMembers.length * 0.6)));
+      for (let k = 0; k < take; k++) {
+        const person = chapterMembers[(k * 5 + ce.title.length) % chapterMembers.length];
+        if (!person) continue;
+        const has = await db.eventRegistration.findFirst({
+          where: { eventId: ev.id, registrantUserId: person.userId },
+        });
+        if (has) continue;
+        await db.eventRegistration.create({
+          data: {
+            eventId: ev.id,
+            registrantUserId: person.userId,
+            status: ce.past ? 'CONFIRMED' : (k % 4 === 3 ? 'PENDING' : 'CONFIRMED'),
+            qrPayload: JSON.stringify({ eventId: ev.id, userId: person.userId }),
+          },
+        });
+      }
+    }
+
+    // `nextEventAt` is denormalized on the chapter. It is set from a REAL linked
+    // event rather than left at a random future date, so the chapter card and
+    // the chapter's actual next event can never disagree.
+    if (nextUpcoming) {
+      await db.alumniChapter.update({
+        where: { id: cid },
+        data: { nextEventAt: nextUpcoming },
+      });
+    }
+
+    // Chapter announcement → a Broadcast scoped to the chapter, plus one
+    // notification per member. Same machinery as the institution-wide
+    // broadcast, so it lands in the member's existing notifications inbox.
+    const chapterMemberIds = (
+      await db.alumniProfile.findMany({
+        where: { chapterId: cid, engagementStatus: 'ACTIVE' },
+        select: { userId: true },
+      })
+    ).map((m) => m.userId);
+
+    const announcements = [
+      {
+        title: `${city} Chapter — quarterly meetup on the calendar`,
+        body: `Our next ${city} meetup is scheduled. RSVP through the Events tab; dinner follows the lightning talks.`,
+      },
+      {
+        title: `${city} Chapter — mentoring slots open`,
+        body: 'Two of our members are offering mentoring slots this month. Reply to this message to claim one.',
+      },
+    ];
+
+    for (const an of announcements) {
+      const exists = await db.broadcast.findFirst({
+        where: { institutionId: instId, senderUserId: chapter.presidentAlumniUserId, title: an.title },
+      });
+      if (exists) continue;
+      await db.broadcast.create({
+        data: {
+          institutionId: instId,
+          senderUserId: chapter.presidentAlumniUserId,
+          audienceJson: JSON.stringify({ audience: 'CHAPTER', chapterId: cid, city }),
+          templateKey: 'CHAPTER_ANNOUNCEMENT',
+          title: an.title,
+          body: an.body,
+          channels: 'IN_APP',
+          sentAt: daysAgo(intBetween(2, 40)),
+        },
+      });
+      if (chapterMemberIds.length > 0) {
+        await db.notification.createMany({
+          data: chapterMemberIds.map((rid) => ({
+            institutionId: instId,
+            recipientUserId: rid,
+            type: 'BROADCAST',
+            title: an.title,
+            body: an.body,
+            sourceModule: 'alumni-chapter',
+          })),
+        });
+      }
+      announceCount++;
+    }
+  }
+  console.log(`  ✓ ${chapterEventCount} chapter events, ${announceCount} chapter announcements`);
+
   // ── Summary ────────────────────────────────────────────────
   const [aCount, activeCount, dCount, pledgeOnly, mActive, mPending, evCount, regCount] =
     await Promise.all([
@@ -1042,17 +1462,30 @@ let pledgeCount = 0;
       db.eventRegistration.count(),
     ]);
 
+  const [skillRows, careerRows, privacyRows, connRows, chapterEvents] = await Promise.all([
+    db.alumniSkill.count(),
+    db.alumniCareerEntry.count(),
+    db.alumniPrivacySettings.count(),
+    db.alumniConnection.count(),
+    db.event.count({ where: { institutionId: instId, chapterId: { not: null } } }),
+  ]);
+
   console.log('\n═══════════════════════════════════════════════════');
   console.log('  Alumni Seed Complete');
   console.log('═══════════════════════════════════════════════════');
   console.log(`  Alumni           ${aCount} (${activeCount} active)`);
-  console.log(`  Chapters         ${chapterId.size}`);
+  console.log(`  Chapters         ${chapterId.size} (${chapterEvents} chapter events)`);
   console.log(`  Campaigns        ${campaignIds.size}`);
   console.log(`  Donations        ${dCount} received / ${pledgeOnly} pledged`);
   console.log(`  Mentorship       ${mActive} active / ${mPending} pending`);
   console.log(`  Alumni events    ${evCount}`);
   console.log(`  RSVPs            ${regCount}`);
-  console.log(`\n  Login: priya@learnix.dev / ${PASSWORD}`);
+  console.log(`  Skills           ${skillRows}`);
+  console.log(`  Career entries   ${careerRows}`);
+  console.log(`  Privacy records  ${privacyRows}`);
+  console.log(`  Connections      ${connRows}`);
+  console.log(`\n  Officer login: priya@learnix.dev / ${PASSWORD}  (ALUMNI_OFFICE)`);
+  console.log(`  Alumnus login: ${alumni[0]?.email ?? 'see seed output'} / ${PASSWORD}`);
   console.log('═══════════════════════════════════════════════════');
 }
 

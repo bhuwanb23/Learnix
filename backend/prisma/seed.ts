@@ -15,8 +15,47 @@ import { computeSalary } from '../src/modules/accounts/payroll.rules.js';
 import { computeLateFee } from '../src/modules/accounts/dues.fines.js';
 import { splitAmount } from '../src/modules/accounts/dues.plans.js';
 import { fiscalYearOf } from '../src/modules/accounts/expenses.money.js';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 const db = new PrismaClient();
+
+/**
+ * Where receipts live on disk.
+ *
+ * Deliberately the same expression the upload route uses (`UPLOAD_DIR`, else
+ * `<cwd>/uploads`), so a receipt the seed writes is served at the same URL as one
+ * uploaded through the app. The seed writes REAL bytes rather than only a File
+ * row, because a receipt row that 404s when opened is exactly the bug the audit
+ * checks for — and demo data that cannot demonstrate the feature is not demo
+ * data, it is a promise the app cannot keep.
+ */
+const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads');
+
+/** A tiny, genuinely valid one-page PDF describing a seeded receipt. */
+function seededReceiptPdf(vendor: string, amountMinor: number, key: string): Buffer {
+  const text = `Receipt ${key} — ${vendor} — INR ${(amountMinor / 100).toFixed(2)}`;
+  const safe = text.replace(/[()\\]/g, '');
+  const stream = `BT /F1 18 Tf 60 720 Td (${safe}) Tj ET\n`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
+    `<< /Length ${stream.length} >>\nstream\n${stream}endstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  let pdf = '%PDF-1.4\n';
+  const offsets: number[] = [];
+  objects.forEach((body, i) => {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const off of offsets) pdf += `${String(off).padStart(10, '0')} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(pdf, 'latin1');
+}
 
 const PASSWORD = 'Passw0rd!';
 
@@ -2781,6 +2820,17 @@ async function syncExpenses(institutionId: string, actorUserId: string) {
     });
     if (existing) continue;
 
+    // Write the receipt bytes BEFORE the skip below. A claim that already exists
+    // still needs its file on disk: the first run of an older seed recorded a
+    // File row with no bytes behind it, so those receipts opened to a 404 and
+    // the "documents are openable" audit check failed on demo data. Writing the
+    // file first makes this idempotent in the direction that matters.
+    if (c.status !== 'PENDING' || c.key === 'evt-cater') {
+      const storageKey = `seed-expense-${c.key}.pdf`;
+      mkdirSync(UPLOAD_DIR, { recursive: true });
+      writeFileSync(path.join(UPLOAD_DIR, storageKey), seededReceiptPdf(c.vendor ?? c.category, c.amountMinor, c.key));
+    }
+
     const budget = budgetFor(c.budgetCategory, c.departmentId);
     const row = await db.expense.create({
       data: {
@@ -2814,13 +2864,18 @@ async function syncExpenses(institutionId: string, actorUserId: string) {
     // warning exist to surface.
     if (c.status !== 'PENDING' || c.key === 'evt-cater') {
       const storageKey = `seed-expense-${c.key}.pdf`;
+      const bytes = seededReceiptPdf(c.vendor ?? c.category, c.amountMinor, c.key);
+
+      // The bytes were written above, before the existing-claim skip. Record the
+      // size ACTUALLY on disk rather than a made-up number — the detail screen
+      // prints "240 KB" from this field, so it has to be the true size.
       const file = await db.file.create({
         data: {
           institutionId,
           uploaderUserId: actorUserId,
           purpose: 'EXPENSE_RECEIPT',
           mimeType: 'application/pdf',
-          sizeBytes: 4096 + (c.amountMinor % 9973),
+          sizeBytes: bytes.length,
           storageKey,
           originalName: `${c.key}-receipt.pdf`,
         },
