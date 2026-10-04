@@ -24,77 +24,44 @@ import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { syncDueOverdue } from './collections.service.js';
+import { getDueLateFee } from './dues.fines.js';
+import { getPlanForDue } from './dues.plans.js';
+import {
+  DAY_MS,
+  toRupees,
+  daysPastDue,
+  balanceOf,
+  totalClaimedMinor,
+  deriveDueStatus,
+  isOpenStatus,
+  AGING_BUCKETS,
+  bucketFor,
+  type AgingBucketId,
+} from './dues.money.js';
 
-const toRupees = (paise: number) => Math.round(paise / 100);
-const DAY_MS = 1000 * 60 * 60 * 24;
+// The money rules live in dues.money.ts so that collections.service.ts (which
+// collects against these dues) and this file cannot disagree about what a
+// student owes once a late fine is on the bill. Re-exported here because every
+// caller already depends on this module.
+export {
+  DAY_MS,
+  toRupees,
+  startOfDay,
+  daysPastDue,
+  balanceOf,
+  totalClaimedMinor,
+  deriveDueStatus,
+  AGING_BUCKETS,
+  bucketFor,
+  type AgingBucketId,
+} from './dues.money.js';
 
 /** `FeeDue` has no institutionId of its own. Never bypass this. */
 const dueScopeWhere = (institutionId: string) => ({
   studentProfile: { user: { institutionId, deletedAt: null } },
 });
 
-const isOpen = (status: string) => status === 'UNPAID' || status === 'PARTIAL';
-
-const startOfDay = (d: Date) => {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-};
-
-/**
- * Days past due, counted in whole local days.
- *
- * This MUST normalise both ends with `startOfDay`, and must agree with
- * `syncDueOverdue`. Raw millisecond arithmetic disagrees in any timezone with a
- * fractional offset (IST is +5:30): a dueDate seeded at 00:00 UTC is 05:30 local,
- * so the raw difference floors to 413 where the normalised one gives 414. A
- * reinstatement that used the raw form silently reset a 414-day-old bill to
- * "413 days overdue" — the aging bucket and the ledger would then disagree.
- */
-export function daysPastDue(dueDate: Date, today: Date = new Date()) {
-  const from = startOfDay(dueDate);
-  const to = startOfDay(today);
-  if (from.getTime() >= to.getTime()) return 0;
-  return Math.floor((to.getTime() - from.getTime()) / DAY_MS);
-}
-
-const balanceOf = (d: { amountMinor: number; paidMinor: number }) =>
-  Math.max(0, d.amountMinor - d.paidMinor);
-
-/**
- * What the due ACTUALLY is, from the money. `status` is a denormalised column
- * that an older seed and an older partial-payment path could leave contradicting
- * `paidMinor` — and a desk that renders "₹0 paid against ₹1.35L settled" is
- * worse than no desk. A WAIVED due keeps its status: that is a decision, not a
- * calculation.
- */
-export function deriveDueStatus(d: {
-  status: string;
-  amountMinor: number;
-  paidMinor: number;
-}): string {
-  if (d.status === 'WAIVED') return 'WAIVED';
-  const paid = d.paidMinor;
-  if (paid >= d.amountMinor) return 'CLEARED';
-  if (paid > 0) return 'PARTIAL';
-  return 'UNPAID';
-}
-
-/** Aging buckets. These are the standard receivables buckets; the labels are UI text. */
-export const AGING_BUCKETS = [
-  { id: 'NOT_DUE', label: 'Not yet due', min: -1, max: 0, color: '#64748b' },
-  { id: 'D1_7', label: '1–7 days', min: 1, max: 7, color: '#d97706' },
-  { id: 'D8_15', label: '8–15 days', min: 8, max: 15, color: '#d97706' },
-  { id: 'D16_30', label: '16–30 days', min: 16, max: 30, color: '#dc2626' },
-  { id: 'D30_PLUS', label: 'Over 30 days', min: 31, max: Number.MAX_SAFE_INTEGER, color: '#dc2626' },
-] as const;
-
-export type AgingBucketId = (typeof AGING_BUCKETS)[number]['id'];
-
-function bucketFor(daysOverdue: number) {
-  if (daysOverdue <= 0) return AGING_BUCKETS[0];
-  return AGING_BUCKETS.find((b) => daysOverdue >= b.min && daysOverdue <= b.max) ?? AGING_BUCKETS[4];
-}
+const isOpen = isOpenStatus;
 
 export type DueSort =
   | 'SEVERITY'
@@ -106,7 +73,7 @@ export type DueSort =
 
 export type DueFilter = {
   q?: string;
-  status?: 'ALL' | 'OPEN' | 'UNPAID' | 'PARTIAL' | 'CLEARED' | 'WAIVED';
+  status?: 'ALL' | 'OPEN' | 'UNPAID' | 'PARTIAL' | 'CLEARED' | 'WAIVED' | 'SUPERSEDED';
   // `CLEARED` sits alongside the aging buckets so the chips can offer "settled"
   // next to "over 30 days" without a separate status filter.
   bucket?: 'ALL' | AgingBucketId | 'CLEARED';
@@ -199,7 +166,11 @@ export async function listDues(institutionId: string, filter: DueFilter = {}) {
       ...d,
       derivedStatus: status,
       balanceMinor: balanceOf(d),
-      bucketId: isOpen(status) ? bucketFor(d.daysOverdue).id : ('CLEARED' as const),
+      bucketId: isOpen(status)
+        ? bucketFor(d.daysOverdue).id
+        : status === 'CLEARED'
+          ? ('CLEARED' as const)
+          : (status as 'WAIVED' | 'SUPERSEDED'),
       daysLive: isOpen(status) ? d.daysOverdue : 0,
     };
   });
@@ -293,6 +264,22 @@ export async function listDues(institutionId: string, filter: DueFilter = {}) {
       ),
       recoveredMonthRupees: toRupees(recentAllocations.reduce((s, a) => s + a.amountMinor, 0)),
       recoveredMonthCount: recentAllocations.length,
+      // Late fines currently standing on open bills. Broken out because a
+      // recovery officer looking at "outstanding" needs to know how much of it
+      // is a bill and how much is the cost of waiting.
+      lateFeeRupees: toRupees(open.reduce((s, d) => s + (d.lateFeeMinor ?? 0), 0)),
+      lateFeeCount: open.filter((d) => (d.lateFeeMinor ?? 0) > 0).length,
+      // Installments are real dues, so they count in `openCount` above — these two
+      // just let the screen say how much of the book is already agreed to pay
+      // over time instead of being chased in full.
+      installmentCount: decorated.filter((d) => d.installmentPlanId != null).length,
+      installmentRupees: toRupees(
+        decorated
+          .filter((d) => d.installmentPlanId != null && d.status !== 'SUPERSEDED')
+          .reduce((s, d) => s + totalClaimedMinor(d), 0),
+      ),
+      planCount: new Set(decorated.map((d) => d.installmentPlanId).filter(Boolean)).size,
+      supersededCount: decorated.filter((d) => d.derivedStatus === 'SUPERSEDED').length,
     },
     aging,
     filteredCount: view.length,
@@ -307,6 +294,7 @@ export async function listDues(institutionId: string, filter: DueFilter = {}) {
       title: d.title,
       program: d.feeStructure?.program?.name ?? null,
       amountRupees: toRupees(d.amountMinor),
+      lateFeeRupees: toRupees(d.lateFeeMinor ?? 0),
       paidRupees: toRupees(d.paidMinor),
       balanceRupees: toRupees(d.balanceMinor),
       dueDate: d.dueDate,
@@ -318,6 +306,12 @@ export async function listDues(institutionId: string, filter: DueFilter = {}) {
       waivedReason: d.waivedReason,
       waivedAt: d.waivedAt,
       collectible: isOpen(d.derivedStatus),
+      // An installment is an ordinary bill that happens to know which plan it
+      // belongs to, so the UI can badge it and count the plan's progress.
+      installmentPlanId: d.installmentPlanId,
+      installmentSequence: d.installmentSequence,
+      isInstallment: d.installmentPlanId != null,
+      supersededByPlanId: d.supersededByPlanId,
     })),
   };
 }
@@ -361,7 +355,16 @@ export async function getDueDetail(institutionId: string, dueId: string) {
   // leaving the screen.
   const siblingDues = await prisma.feeDue.findMany({
     where: { studentProfileId: due.studentProfile.id, id: { not: due.id } },
-    select: { id: true, title: true, amountMinor: true, paidMinor: true, status: true, daysOverdue: true },
+    select: {
+      id: true,
+      title: true,
+      amountMinor: true,
+      paidMinor: true,
+      lateFeeMinor: true,
+      status: true,
+      daysOverdue: true,
+      installmentSequence: true,
+    },
     orderBy: { dueDate: 'asc' },
   });
   const siblingOpen = siblingDues
@@ -404,7 +407,13 @@ export async function getDueDetail(institutionId: string, dueId: string) {
       status,
       dueDate: due.dueDate,
       daysOverdue: open ? due.daysOverdue : 0,
-      bucket: open ? bucketFor(due.daysOverdue).id : status === 'CLEARED' ? 'CLEARED' : 'WAIVED',
+      bucket: open
+        ? bucketFor(due.daysOverdue).id
+        : status === 'CLEARED'
+          ? 'CLEARED'
+          : status === 'WAIVED'
+            ? 'WAIVED'
+            : 'SUPERSEDED',
       createdAt: due.createdAt,
       lastPaymentAt: due.lastPaymentAt,
       reminderCount: due.reminderCount,
@@ -418,7 +427,24 @@ export async function getDueDetail(institutionId: string, dueId: string) {
       canCollect: open,
       canWaive: open && balanceMinor > 0,
       canReinstate: status === 'WAIVED',
+      // A plan can only be agreed on a bill that is genuinely open and unpaid
+      // money, has no plan yet, and has not already been split into installments.
+      canPlan: open && balanceMinor > 0 && due.installmentPlanId == null,
+      canAssessFine: open && due.lateFeeMinor === 0,
+      canWaiveFine: open && due.lateFeeMinor > 0,
     },
+    // Late-payment fine, shown as its own thing rather than folded silently into
+    // the total: a family disputing ₹2,25,000 needs to see that ₹2,000 of it is a
+    // penalty and exactly when and by whom it was added.
+    lateFee: await getDueLateFee(institutionId, due),
+    // The agreed payment plan, in whichever direction applies: an instalment
+    // knows its plan, and a replaced parent knows the plan that replaced it.
+    // Loaded here rather than in a second request so the detail screen never
+    // renders a bill without the schedule that governs it.
+    plan: await getPlanForDue(institutionId, {
+      installmentPlanId: due.installmentPlanId,
+      supersededByPlanId: due.supersededByPlanId,
+    }),
     student: {
       id: due.studentProfile.id,
       name: due.studentProfile.user.fullName,
@@ -655,3 +681,39 @@ export async function reinstateDue(
 
   return { id: due.id, status: restored, balanceRupees: amount, daysOverdue };
 }
+// ── Sub-modules ──────────────────────────────────────────────
+// The fines, plans and insights logic lives in its own files because each is
+// a self-contained concern with its own rules. They are re-exported here so
+// `import * as dues from './dues.service.js'` in the router keeps working and
+// every dues capability stays reachable from one module.
+export {
+  computeLateFee,
+  getLateFeeSettings,
+  getActiveLateFeeRule,
+  saveLateFeeRule,
+  getDueLateFee,
+  assessLateFee,
+  waiveLateFee,
+  runLateFeeAssessment,
+  type LateFeeRuleInput,
+} from './dues.fines.js';
+
+export {
+  splitAmount,
+  PLAN_FREQUENCIES,
+  createInstallmentPlan,
+  cancelInstallmentPlan,
+  listPlans,
+  getPlanForDue,
+  getDuePlan,
+  type PlanFrequency,
+} from './dues.plans.js';
+
+export {
+  listStudentBalances,
+  getStudentDues,
+  listCourseDues,
+  previewBulkRemind,
+  remindBulk,
+  type BulkRemindInput,
+} from './dues.insights.js';

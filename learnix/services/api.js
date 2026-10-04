@@ -91,7 +91,9 @@ export const api = {
   // PATCH carries a PARTIAL update — the body is only the fields that changed,
   // never the whole record. Used by payroll loss-of-pay adjustments.
   patch: (path, body) => request('PATCH', path, body),
-  delete: (path) => request('DELETE', path),
+  // DELETE may carry a body when the removal needs a recorded reason (a waived
+  // late fine, for instance). Express reads it with the usual json parser.
+  delete: (path, body) => request('DELETE', path, body),
 };
 
 // ── Alumni Relations endpoints (docs/users/12 §4) ──
@@ -542,6 +544,36 @@ export const accountsApi = {
   remindDue: (id, note) => api.post(`/accounts/dues/${id}/remind`, note ? { note } : {}),
   waiveFee: (id, reason) => api.post(`/accounts/dues/${id}/waive`, { reason }),
   reinstateDue: (id, reason) => api.post(`/accounts/dues/${id}/reinstate`, { reason }),
+  // Dues & Recovery (docs/users/06 §3.3)
+  duesStudents: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/dues/students${qs ? `?${qs}` : ''}`);
+  },
+  studentDues: (studentProfileId) => api.get(`/accounts/dues/students/${studentProfileId}`),
+  duesCourses: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/dues/courses${qs ? `?${qs}` : ''}`);
+  },
+  duePlans: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/dues/plans${qs ? `?${qs}` : ''}`);
+  },
+  duePlan: (dueId) => api.get(`/accounts/dues/${dueId}/plan`),
+  createDuePlan: (dueId, payload) => api.post(`/accounts/dues/${dueId}/plan`, payload),
+  cancelDuePlan: (planId, reason) => api.post(`/accounts/dues/plans/${planId}/cancel`, { reason }),
+  lateFeeSettings: () => api.get('/accounts/dues/late-fee'),
+  saveLateFeeRule: (payload) => api.put('/accounts/dues/late-fee', payload),
+  runLateFee: (payload = {}) => api.post('/accounts/dues/late-fee/run', payload),
+  assessFine: (dueId, reason) => api.post(`/accounts/dues/${dueId}/late-fee`, { reason }),
+  waiveFine: (dueId, reason) => api.delete(`/accounts/dues/${dueId}/late-fee`, { reason }),
+  remindBulk: (payload) => api.post('/accounts/dues/remind-bulk', payload),
+  previewRemindBulk: (payload) => api.post('/accounts/dues/remind-bulk/preview', payload),
   payroll: () => api.get('/accounts/payroll'),
   payrollRun: (id) => api.get(`/accounts/payroll/${id}`),
   payslip: (entryId) => api.get(`/accounts/payroll/entries/${entryId}`),

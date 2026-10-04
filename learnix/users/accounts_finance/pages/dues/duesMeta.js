@@ -53,6 +53,10 @@ export const DUE_STATUS_META = {
   PARTIAL: { color: '#d97706', bg: '#fffbeb', icon: 'pie-chart', label: 'Part-paid' },
   CLEARED: { color: '#059669', bg: '#f0fdf4', icon: 'checkmark-circle', label: 'Cleared' },
   WAIVED: { color: '#7c3aed', bg: '#f5f3ff', icon: 'gift', label: 'Waived' },
+  // A bill that was replaced by an agreed payment plan. It is deliberately NOT
+  // outstanding — its money now lives in the child instalments — but it is also
+  // not settled, so it needs its own label rather than reading as "waived".
+  SUPERSEDED: { color: '#64748b', bg: '#f1f5f9', icon: 'layers', label: 'Split into a plan' },
 };
 
 export const dueStatusMeta = (status) =>
@@ -81,8 +85,21 @@ export const STATUS_FILTERS = [
   { id: 'UNPAID', label: 'Nothing paid', icon: 'remove-circle-outline' },
   { id: 'PARTIAL', label: 'Part-paid', icon: 'pie-chart-outline' },
   { id: 'WAIVED', label: 'Waived', icon: 'gift-outline' },
+  { id: 'SUPERSEDED', label: 'In a plan', icon: 'layers-outline' },
   { id: 'CLEARED', label: 'Settled', icon: 'checkmark-circle-outline' },
-  { id: 'ALL', label: 'Everything', icon: 'layers-outline' },
+  { id: 'ALL', label: 'Everything', icon: 'albums-outline' },
+];
+
+// ── Views ───────────────────────────────────────────────────
+// The recovery desk is asked three different questions, and answering them all
+// from one flat bill list means each answer is bad: "who owes us?", "which
+// cohort is not paying?", "what did we agree to collect?". One switcher, three
+// honest lists — no cross-screen numbers to reconcile.
+export const VIEWS = [
+  { id: 'BILLS', label: 'Bills', icon: 'receipt-outline' },
+  { id: 'STUDENTS', label: 'Students', icon: 'people-outline' },
+  { id: 'COURSES', label: 'Courses', icon: 'school-outline' },
+  { id: 'PLANS', label: 'Plans', icon: 'git-branch-outline' },
 ];
 
 // ── Sorts ────────────────────────────────────────────────────
@@ -127,6 +144,66 @@ export const WAIVER_PRESETS = [
   'Fee already settled in cash, receipt lost',
   'Scholarship covers this head — duplicate bill',
 ];
+
+// ── Late fine ───────────────────────────────────────────────
+// A fine is the part of a balance the family did not agree to pay up front, so
+// it is never folded silently into the headline. Every screen that shows a
+// balance shows this line next to it.
+export const fineLabel = (row) =>
+  Number(row?.lateFeeRupees ?? 0) > 0 ? `incl. ${rupees(row.lateFeeRupees)} fine` : null;
+
+// ── Payment plans ───────────────────────────────────────────
+// A plan splits one bill into N real bills spaced by its frequency. These are the
+// only options the server accepts, so the UI offers exactly these — a picker
+// that could send something else would just produce a 400.
+export const PLAN_FREQUENCIES = [
+  { id: 'MONTHLY', label: 'Monthly', days: 30 },
+  { id: 'FORTNIGHTLY', label: 'Every 2 weeks', days: 14 },
+  { id: 'WEEKLY', label: 'Weekly', days: 7 },
+];
+
+/**
+ * What N instalments of a total actually cost, previewed the way the server
+ * splits it: the remainder paise go onto the EARLIEST parts, so the sum is
+ * always exactly the balance and never off by a rupee.
+ */
+export function previewSplit(totalRupees, count) {
+  const totalMinor = Math.round(Number(totalRupees ?? 0) * 100);
+  if (!count || count < 1 || totalMinor <= 0) return [];
+  const base = Math.floor(totalMinor / count);
+  const remainder = totalMinor - base * count;
+  // Same rule as `splitAmount` on the server — remainder paise land on the
+  // earliest instalments, so the parts always sum to exactly the balance.
+  return Array.from({ length: count }, (_, i) => (base + (i < remainder ? 1 : 0)) / 100);
+}
+
+export function previewSchedule(totalRupees, count, frequency, startDate) {
+  const parts = previewSplit(totalRupees, count);
+  const step = (PLAN_FREQUENCIES.find((f) => f.id === frequency) ?? PLAN_FREQUENCIES[0]).days;
+  const start = startDate ? new Date(startDate) : new Date();
+  return parts.map((amount, i) => {
+    const d = new Date(start.getTime());
+    d.setDate(d.getDate() + step * i);
+    return { sequence: i + 1, amountRupees: amount, dueDate: d.toISOString() };
+  });
+}
+
+// ── Bulk reminders ──────────────────────────────────────────
+// One notification per FAMILY, itemised — a student with four bills must not get
+// four messages. These are the guards the preview will report on, so the screen
+// can explain itself before anything is sent.
+export const BULK_GUARDS = [
+  { key: 'minDaysOverdue', label: 'Only bills at least', suffix: 'days overdue' },
+  { key: 'cooldownDays', label: 'Do not re-chase within', suffix: 'days' },
+];
+
+export const SKIP_REASON_TONE = {
+  'already cleared': 'ok',
+  'already waived': 'ok',
+  'already superseded': 'ok',
+  'no balance left': 'ok',
+  'already reminded': 'warn',
+};
 
 // ── Reminder ────────────────────────────────────────────────
 // An optional note is appended to the notification the student receives, so a
