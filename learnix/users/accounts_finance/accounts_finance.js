@@ -38,6 +38,14 @@ import Payslip from './pages/payroll/pages/payslip/payslip';
 // Import feature modules (opened from dashboard hub)
 import FeeStructureModule from './pages/fee_structure/fee_structure';
 import ExpensesModule from './pages/expenses/expenses';
+
+// Expenses sub-pages (pages/expenses/pages/*)
+import ExpenseEntry from './pages/expenses/pages/expense_entry/expense_entry';
+import ExpenseDetail from './pages/expenses/pages/expense_detail/expense_detail';
+import ExpenseBudgets from './pages/expenses/pages/budgets/budgets';
+import Vendors from './pages/expenses/pages/vendors/vendors';
+import DepartmentSpend from './pages/expenses/pages/department_spend/department_spend';
+import ExpenseTrends from './pages/expenses/pages/trends/trends';
 import ScholarshipsModule from './pages/scholarships/scholarships';
 import ReportsModule from './pages/reports/reports';
 import NotificationsScreen from './pages/notifications/notifications';
@@ -71,6 +79,14 @@ const FEATURE_MODULES = {
   // Payroll sub-pages
   PayrollRunDetail: { title: 'Payroll Run', icon: 'card-outline', component: PayrollDetail },
   Payslip: { title: 'Payslip', icon: 'document-text-outline', component: Payslip },
+
+  // Expenses sub-pages
+  ExpenseEntry: { title: 'Raise a Claim', icon: 'add-circle-outline', component: ExpenseEntry },
+  ExpenseDetail: { title: 'Expense Claim', icon: 'receipt-outline', component: ExpenseDetail },
+  Budgets: { title: 'Budgets', icon: 'pie-chart-outline', component: ExpenseBudgets },
+  Vendors: { title: 'Vendors', icon: 'storefront-outline', component: Vendors },
+  DepartmentSpend: { title: 'Department Spend', icon: 'business-outline', component: DepartmentSpend },
+  ExpenseTrends: { title: 'Expense Trends', icon: 'trending-up-outline', component: ExpenseTrends },
 };
 
 const TAB_TITLES = {

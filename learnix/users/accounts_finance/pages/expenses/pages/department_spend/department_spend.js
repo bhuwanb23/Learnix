@@ -24,7 +24,7 @@ import { accountsApi } from '../../../../../../services/api';
 import {
   rupees, compactRupees, categoryMeta, utilisationPhrase, utilisationColor,
   utilisationWidth, fiscalYearLabel, THEME,
-} from '../expensesMeta';
+} from '../../../expensesMeta';
 
 export default function DepartmentSpend() {
   const [data, setData] = useState(null);

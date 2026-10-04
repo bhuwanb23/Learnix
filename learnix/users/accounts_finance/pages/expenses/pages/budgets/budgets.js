@@ -27,7 +27,7 @@ import { accountsApi } from '../../../../../../services/api';
 import {
   rupees, compactRupees, categoryMeta, utilisationPhrase, utilisationColor,
   utilisationWidth, fiscalYearLabel, EXPENSE_CATEGORIES, THEME,
-} from '../expensesMeta';
+} from '../../../expensesMeta';
 
 const DEPT_NONE = '__none__';
 

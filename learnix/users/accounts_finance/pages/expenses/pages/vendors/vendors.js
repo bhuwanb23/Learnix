@@ -24,7 +24,7 @@ import { accountsApi } from '../../../../../../services/api';
 import {
   rupees, compactRupees, formatDate, categoryMeta, paymentMethodMeta,
   fiscalYearLabel, missingReferenceHint, THEME,
-} from '../expensesMeta';
+} from '../../../expensesMeta';
 
 export default function Vendors() {
   const [data, setData] = useState(null);
