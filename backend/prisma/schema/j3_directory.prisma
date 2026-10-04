@@ -64,6 +64,10 @@ model AlumniCareerEntry {
   updatedAt        DateTime  @updatedAt
 
   profile AlumniProfile @relation(fields: [alumniProfileId], references: [id], onDelete: Cascade)
+  // Optional link to the registered employer. NULL is normal: startups,
+  // self-employment and overseas employers are not in the companies table, and
+  // `employerLabel` carries the name in that case.
+  company Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   @@index([alumniProfileId, fromMonth])
   @@index([companyId])

@@ -53,6 +53,9 @@ model Batch {
   program  Program @relation(fields: [programId], references: [id])
   sections Section[]
   digitalGrants DigitalAccessGrant[]
+  // Back-relation for AlumniProfile.batch. Lets the directory filter by
+  // department (profile → batch → program → department) in one query.
+  alumniProfiles AlumniProfile[]
 
   @@unique([programId, startYear])
   @@index([programId])

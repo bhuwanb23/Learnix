@@ -138,6 +138,10 @@ model ExpenseDocument {
   createdAt      DateTime @default(now())
 
   expense Expense @relation(fields: [expenseId], references: [id])
+  // A document row without the file it points at is a reference, not a receipt.
+  // Exposing the relation lets a claim list say "receipt.pdf, 240 KB" and open
+  // it, rather than only reporting that some file exists somewhere.
+  file File @relation(fields: [fileId], references: [id])
 
   @@unique([expenseId, fileId])
   @@index([expenseId])

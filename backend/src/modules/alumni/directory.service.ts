@@ -487,7 +487,10 @@ export async function getProfileDetail(viewer: Viewer, profileId: string) {
       ? profile.career.map((c) => ({
           id: c.id,
           title: c.title,
-          employer: c.companyId ? null : c.employerLabel,
+          // The registered company's name when there is one, otherwise the free
+          // text label the alumnus typed (startups, self-employment, overseas
+          // employers are not in the companies table).
+          employer: c.company?.name ?? c.employerLabel,
           companyId: c.companyId,
           employerLabel: c.employerLabel,
           location: c.location,

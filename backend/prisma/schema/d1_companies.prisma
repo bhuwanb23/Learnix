@@ -14,6 +14,10 @@ model Company {
 
   jobs   Job[]
   drives PlacementDrive[]
+  // Back-relation for AlumniProfile.company and AlumniCareerEntry.company. The
+  // directory shows "Infosys" rather than a raw companyId because of this.
+  alumniProfiles AlumniProfile[]
+  alumniCareerEntries AlumniCareerEntry[]
 
   @@unique([institutionId, name])
   @@index([institutionId])

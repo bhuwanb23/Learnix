@@ -101,6 +101,13 @@ model AlumniProfile {
 
   user    User           @relation(fields: [userId], references: [id])
   chapter AlumniChapter? @relation(fields: [chapterId], references: [id])
+  // batchId/companyId were plain scalars while Domains B and D were still in
+  // flight; both have landed, so they are real relations now. Without them the
+  // directory cannot filter by department (profile → batch → program →
+  // department) or show an employer name instead of a raw id.
+  // SetNull: retiring a Company row must not delete the alumni who worked there.
+  batch   Batch?         @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  company Company?       @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   skills       AlumniSkill[]
   career       AlumniCareerEntry[]

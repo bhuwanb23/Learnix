@@ -22,6 +22,10 @@ model File {
   @@unique([storageKey])
   @@index([institutionId])
   @@index([purpose])
+  // The back-relation for ExpenseDocument.file. Declared here so the link is
+  // traversable from a claim; the scalar `fileId` on the other side stays the
+  // authority, which is what the duplicate-receipt check relies on.
+  expenseDocuments ExpenseDocument[]
   @@map("files")
 }
 
