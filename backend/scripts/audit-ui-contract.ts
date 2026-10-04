@@ -147,7 +147,17 @@ async function main() {
       'paidAt', 'createdAt', 'isReversed', 'reversedAt', 'reversalReason',
       'recordedBy', 'reversalBy', 'gatewayRef',
     ], 'payment carries every field the receipt card and reversal box read');
-    has(dd?.student, ['id', 'name', 'email', 'rollNo'], 'payer card fields');
+    // `student` is null for a counter payment not tied to a student — the screen
+    // renders a "not tied to a student" panel instead, so only assert the card
+    // fields when a payer is actually present.
+    check('payer card is present or explicitly absent',
+      dd?.student === null || (dd?.student && typeof dd.student === 'object'));
+    if (dd?.student) {
+      has(dd.student, ['id', 'name', 'email', 'rollNo'], 'payer card fields');
+    } else {
+      check('a student-less payment has no allocations it could have paid',
+        (dd?.allocations?.length ?? 0) === 0);
+    }
     has(dd?.receipt, ['receiptNo', 'issuedAt', 'voidedAt', 'voidReason'], 'receipt fields');
     check('canReverse is a boolean the screen branches on',
       typeof dd?.canReverse === 'boolean');
@@ -223,10 +233,10 @@ async function main() {
   has(sd, ['student', 'position', 'dues', 'payments'], 'statement has the three sections the screen renders');
     has(sd?.student, ['id', 'name', 'email', 'rollNo'], 'statement student header');
     if (sd?.dues?.length) {
-      has(sd.dues[0], ['id', 'title', 'amountRupees', 'paidRupees', 'balanceRupees', 'dueDate', 'status'],
-        'a statement due row carries the progress-bar fields');
-      check('no statement due has a balance above its amount',
-        sd.dues.every((x: any) => x.balanceRupees <= x.amountRupees));
+      has(sd.dues[0], ['id', 'title', 'amountRupees', 'lateFeeRupees', 'paidRupees', 'balanceRupees',
+        'dueDate', 'status', 'isInstallment'], 'a statement due row carries the progress-bar fields');
+      check('no statement due has a balance above its amount + assessed fine',
+        sd.dues.every((x: any) => x.balanceRupees <= x.amountRupees + (x.lateFeeRupees ?? 0)));
     }
     check('statement dues and payments are arrays',
       Array.isArray(sd?.dues) && Array.isArray(sd?.payments));
@@ -287,8 +297,11 @@ async function main() {
       'status', 'bucket', 'reminderCount', 'lastRemindedAt',
       'waivedReason', 'waivedAt', 'collectible',
     ], 'a due row carries every field DueRow renders');
-    check('no due row has a balance above its own amount',
-      d.dues.every((x: any) => x.balanceRupees <= x.amountRupees && x.paidRupees <= x.amountRupees));
+    // A balance can exceed the billed amount once a late fine is assessed —
+    // the fine is part of what is owed, so it is part of the ceiling.
+    check('no due row has a balance above its own amount + assessed fine',
+      d.dues.every((x: any) => x.balanceRupees <= x.amountRupees + (x.lateFeeRupees ?? 0)
+        && x.paidRupees <= x.amountRupees + (x.lateFeeRupees ?? 0)));
     check('no due row is negative', d.dues.every((x: any) => x.balanceRupees >= 0));
     check('a collectedible due is never CLEARED or WAIVED',
       d.dues.every((x: any) => !x.collectible || (x.status !== 'CLEARED' && x.status !== 'WAIVED')));

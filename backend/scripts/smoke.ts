@@ -266,8 +266,10 @@ async function main() {
       const d = dues.json?.data;
       check('dues carry stats and aging buckets',
         !!d?.stats?.outstandingRupees && Array.isArray(d?.aging) && d.aging.length === 5);
+      // A balance can exceed the billed amount once a late fine is assessed.
       check('no due row contradicts its own money',
-        d?.dues?.every((x: any) => x.balanceRupees <= x.amountRupees && x.paidRupees <= x.amountRupees));
+        d?.dues?.every((x: any) => x.balanceRupees <= x.amountRupees + (x.lateFeeRupees ?? 0)
+          && x.paidRupees <= x.amountRupees + (x.lateFeeRupees ?? 0)));
       check('outstanding never goes negative', (d?.stats?.outstandingRupees ?? -1) >= 0);
 
       const filtered = await api('/api/v1/accounts/dues?status=OPEN&sort=SEVERITY&take=10', t);

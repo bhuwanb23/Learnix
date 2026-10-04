@@ -9,6 +9,11 @@ import bcrypt from 'bcryptjs';
 // API uses (payroll.rules.ts is prisma-free for exactly this reason), so a
 // seeded payslip foots exactly like a live one.
 import { computeSalary } from '../src/modules/accounts/payroll.rules.js';
+// Same reason: the seeded late fee and instalment split must be produced by the
+// SAME arithmetic the API uses, or the desk opens on numbers the API disagrees
+// with. Both modules are prisma-free for this.
+import { computeLateFee } from '../src/modules/accounts/dues.fines.js';
+import { splitAmount } from '../src/modules/accounts/dues.plans.js';
 
 const db = new PrismaClient();
 
@@ -1061,6 +1066,175 @@ async function seedDomainE(institutionId: string): Promise<void> {
   console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
   console.log(`  ✓ salary scale on ${allStaff.length} staff · payroll 2026-07 PAID, 2026-08 PAID, 2026-09 APPROVED (part-paid)`);
   console.log('  ✓ LABS budget+expense PENDING, merit scholarship APPROVED');
+
+  await syncDuesRecovery(institutionId, admin.id);
+}
+
+// ─────────────────────────────────────────────────────────────
+// F-04 Dues & Recovery — fine policy, an assessed fine, a plan
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Give the recovery desk something real to open on.
+ *
+ * Three things, and each one exercises a different rule:
+ *  · a late-fee POLICY (1.5% a month after a 15-day grace, capped at 25%)
+ *  · two overdue bills with the fine actually ASSESSED, so the fine badge, the
+ *    raised balance and the "would be" figure are all non-zero on first open
+ *  · one agreed instalment plan, because a plan with zero progress is not
+ *    something the desk can be shown
+ *
+ * Idempotent: keyed on stable ids, and re-running leaves existing rows alone.
+ */
+async function syncDuesRecovery(institutionId: string, actorUserId: string): Promise<void> {
+  console.log('  · dues recovery: fine policy, assessed fines, instalment plan…');
+
+  const LATE_FEE_POLICY = {
+    name: 'Standard late fee',
+    enabled: true,
+    graceDays: 15,
+    mode: 'PERCENT',
+    // 150 basis points = 1.5% a month on what is still owed.
+    valueBp: 150,
+    flatMinor: 0,
+    // Cap at 25% of the bill — a fine larger than a quarter of the debt is not
+    // something any college can defend to a parent.
+    capBp: 2500,
+    maxMonths: 0,
+  };
+
+  let rule = await db.lateFeeRule.findFirst({ where: { institutionId, feeStructureId: null } });
+  rule = rule
+    ? await db.lateFeeRule.update({ where: { id: rule.id }, data: LATE_FEE_POLICY })
+    : await db.lateFeeRule.create({
+        data: { institutionId, createdByUserId: actorUserId, ...LATE_FEE_POLICY },
+      });
+
+  // Every genuinely overdue bill that has not already been fined. No `take`:
+  // a limit here would mean each seed run fines a couple more, so the demo data
+  // would differ depending on how many times the seed had been run.
+  const overdueCandidates = await db.feeDue.findMany({
+    where: {
+      studentProfile: { user: { institutionId, deletedAt: null } },
+      status: { in: ['UNPAID', 'PARTIAL'] },
+      dueDate: { lt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) },
+      lateFeeMinor: 0,
+      installmentPlanId: null,
+      supersededByPlanId: null,
+    },
+    orderBy: { dueDate: 'asc' },
+  });
+
+  let finedCount = 0;
+  for (const due of overdueCandidates) {
+    // Computed with the API's own function, so the seeded number and the number
+    // the desk recomputes live are the same number.
+    const fine = computeLateFee(due, LATE_FEE_POLICY);
+    if (fine <= 0) continue;
+    await db.feeDue.update({
+      where: { id: due.id },
+      data: {
+        lateFeeMinor: fine,
+        lateFeeRuleId: rule.id,
+        lateFeeAssessedAt: new Date(),
+        lateFeeAssessedByUserId: actorUserId,
+      },
+    });
+    finedCount += 1;
+  }
+
+  // One plan, three monthly instalments, with the FIRST one already paid. A plan
+  // with nothing settled hides the thing that matters most on the screen: what
+  // is owed next and when.
+  //
+  // Guarded on "this institution has no plan yet". Picking a candidate every run
+  // looks idempotent but is not: the bill it picks becomes SUPERSEDED, so the
+  // next run picks a DIFFERENT one, and re-seeding slowly invents a new plan
+  // every time until the whole book is on instalments.
+  const existingPlanCount = await db.installmentPlan.count({ where: { institutionId } });
+  const planCandidate =
+    existingPlanCount === 0
+      ? await db.feeDue.findFirst({
+          where: {
+            studentProfile: { user: { institutionId, deletedAt: null } },
+            status: { in: ['UNPAID', 'PARTIAL'] },
+            installmentPlanId: null,
+            supersededByPlanId: null,
+            lateFeeMinor: 0,
+          },
+          orderBy: { amountMinor: 'desc' },
+        })
+      : null;
+
+  let planCreated = 0;
+  if (planCandidate) {
+    const existingPlan = await db.installmentPlan.findFirst({
+      where: { parentDueId: planCandidate.id },
+    });
+    if (!existingPlan) {
+      const COUNT = 3;
+      const balance = Math.max(0, planCandidate.amountMinor - planCandidate.paidMinor);
+      const parts = splitAmount(balance, COUNT);
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+
+      const plan = await db.installmentPlan.create({
+        data: {
+          institutionId,
+          parentDueId: planCandidate.id,
+          totalMinor: balance,
+          count: COUNT,
+          frequency: 'MONTHLY',
+          startDate: start,
+          note: 'Agreed with the guardian — three monthly instalments.',
+          status: 'ACTIVE',
+          createdByUserId: actorUserId,
+        },
+      });
+
+      await db.feeDue.update({
+        where: { id: planCandidate.id },
+        data: { status: 'SUPERSEDED', supersededByPlanId: plan.id, daysOverdue: 0 },
+      });
+
+      const children = [];
+      for (let i = 0; i < COUNT; i += 1) {
+        const date = new Date(start.getTime() + i * 30 * 24 * 60 * 60 * 1000);
+        children.push(
+          await db.feeDue.create({
+            data: {
+              studentProfileId: planCandidate.studentProfileId,
+              feeStructureId: planCandidate.feeStructureId,
+              title: `${planCandidate.title} · instalment ${i + 1} of ${COUNT}`,
+              amountMinor: parts[i],
+              dueDate: date,
+              status: 'UNPAID',
+              paidMinor: 0,
+              installmentPlanId: plan.id,
+              installmentSequence: i + 1,
+              daysOverdue: 0,
+            },
+          }),
+        );
+      }
+
+      // Instalment 1 paid. The payment/allocations are omitted on purpose: the
+      // desk is about PLANS, and a seeded payment chain here would only prove
+      // the collections desk works, which it already does elsewhere.
+      await db.feeDue.update({
+        where: { id: children[0].id },
+        data: { paidMinor: parts[0], status: 'CLEARED', lastPaymentAt: start },
+      });
+      planCreated = 1;
+    }
+  }
+
+  console.log(
+    `  ✓ late-fee policy "${LATE_FEE_POLICY.name}" (1.5%/month, 15-day grace, 25% cap)` +
+      ` · ${finedCount} overdue bill(s) fined` +
+      ` · ${planCreated} instalment plan created` +
+      (existingPlanCount > 0 ? ` · ${existingPlanCount} existing plan(s) left alone` : ''),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────

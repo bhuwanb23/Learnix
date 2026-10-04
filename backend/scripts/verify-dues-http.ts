@@ -236,7 +236,8 @@ async function main() {
   check('response reports WAIVED', waive.json?.data?.status === 'WAIVED');
   check('balance reported is the pre-waive balance',
     waive.json?.data?.balanceRupees === Math.max(0,
-      Math.round(beforeWaive.amountMinor / 100) - Math.round(beforeWaive.paidMinor / 100)));
+      (beforeWaive.amountMinor + beforeWaive.lateFeeMinor - beforeWaive.paidMinor) / 100),
+    `reported ${waive.json?.data?.balanceRupees}`);
 
   const waiveNoReason = await req('POST', `/api/v1/accounts/dues/${openDue.id}/waive`, { token, body: {} });
   check('waiving without a reason → 400', waiveNoReason.status === 400, `got ${waiveNoReason.status}`);

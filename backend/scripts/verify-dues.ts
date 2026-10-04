@@ -138,9 +138,11 @@ async function main() {
   check('aging buckets have ids',
     all.aging.every((b) => typeof b.id === 'string' && typeof b.rupees === 'number'));
   check('rows carry derived status + balance',
-    all.dues.every((d) => ['UNPAID', 'PARTIAL', 'CLEARED', 'WAIVED'].includes(d.status)));
-  check('balance never exceeds billed',
-    all.dues.every((d) => d.balanceRupees <= d.amountRupees));
+    all.dues.every((d) => ['UNPAID', 'PARTIAL', 'CLEARED', 'WAIVED', 'SUPERSEDED'].includes(d.status)));
+  // The balance owed can exceed the amount billed once a late fine has been
+  // assessed — that fine is part of the claim, so the ceiling is bill + fine.
+  check('balance never exceeds billed + assessed fine',
+    all.dues.every((d) => d.balanceRupees <= d.amountRupees + d.lateFeeRupees));
   check('paid never exceeds billed',
     all.dues.every((d) => d.paidRupees <= d.amountRupees));
 
@@ -196,10 +198,13 @@ async function main() {
   check('bucket=CLEARED returns only cleared',
     clearedBucket.dues.every((d) => d.status === 'CLEARED'));
 
-  // Aging buckets partition the overdue book exactly.
+  // Aging buckets partition the whole open book (every collectible row lands in
+  // exactly one bucket); overdueRupees is only the already-late slice of it.
   const agingSum = all.aging.reduce((s, b) => s + b.rupees, 0);
-  check('aging buckets sum to overdueRupees', agingSum === all.stats.overdueRupees,
-    `aging ${agingSum} vs overdue ${all.stats.overdueRupees}`);
+  check('aging buckets sum to outstandingRupees', agingSum === all.stats.outstandingRupees,
+    `aging ${agingSum} vs outstanding ${all.stats.outstandingRupees}`);
+  check('overdueRupees is a slice of outstanding',
+    all.stats.overdueRupees <= all.stats.outstandingRupees);
 
   // Sorts
   console.log('\nlistDues sorts');
@@ -345,7 +350,8 @@ check('reminder history is capped at 10', detail2.reminders.length <= 10);
   const beforeWaive = await prisma.feeDue.findUniqueOrThrow({ where: { id: openDue.id } });
   const waived = await waiveFee(inst, accountsUser.id, openDue.id, 'Hardship — single parent, verified');
   check('waive reports the balance it cleared', waived.balanceRupees === Math.max(0,
-    Math.round(beforeWaive.amountMinor / 100) - Math.round(beforeWaive.paidMinor / 100)));
+    (beforeWaive.amountMinor + beforeWaive.lateFeeMinor - beforeWaive.paidMinor) / 100),
+    `reported ${waived.balanceRupees}`);
 
   const afterWaive = await prisma.feeDue.findUniqueOrThrow({ where: { id: openDue.id } });
   check('status is WAIVED', afterWaive.status === 'WAIVED');

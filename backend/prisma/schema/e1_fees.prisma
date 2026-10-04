@@ -19,7 +19,7 @@ model FeeStructure {
   program      Program      @relation(fields: [programId], references: [id])
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   dues         FeeDue[]
-
+  lateFeeRules LateFeeRule[]
   @@unique([programId, academicYearId])
   @@index([institutionId])
   @@map("fee_structures")
@@ -39,6 +39,20 @@ model FeeDue {
   // balance = amountMinor - paidMinor, and status is derived from that.
   paidMinor        Int       @default(0)
   lastPaymentAt    DateTime?
+  // Late-payment fine, assessed from the institution's LateFeeRule. It is
+  // stored on the due rather than shown live, because a fine that is only ever
+  // "estimated" is a fine nobody can collect, dispute or reverse. balance =
+  // amountMinor + lateFeeMinor - paidMinor (see dues.money.ts).
+  lateFeeMinor     Int       @default(0)
+  lateFeeRuleId    String?   // scalar → late_fee_rules.id
+  lateFeeAssessedAt DateTime?
+  lateFeeAssessedByUserId String? // scalar → users.id
+  // Installment plan. A plan REPLACES this due with N child FeeDue rows (one
+  // per instalment), so the parent becomes SUPERSEDED — a decision, not a
+  // calculation, which is why deriveDueStatus() preserves it.
+  installmentPlanId String?   // scalar → installment_plans.id
+  installmentSequence Int?
+  supersededByPlanId String?  // scalar → installment_plans.id
   // Recovery tracking. The old desk sent a reminder and immediately forgot
   // about it, so nobody could tell a family that had never been chased from
   // one that had been asked six times.
@@ -54,8 +68,81 @@ model FeeDue {
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
   feeStructure   FeeStructure?  @relation(fields: [feeStructureId], references: [id])
   allocations    PaymentAllocation[]
+  installmentPlan InstallmentPlan? @relation("InstallmentPlanChildren", fields: [installmentPlanId], references: [id])
 
   @@index([studentProfileId])
   @@index([status])
+  @@index([installmentPlanId])
   @@map("fee_dues")
+}
+
+// ── Late-payment fines ────────────────────────────────────────
+// Docs: 06-accounts-finance.md §3.3
+//
+// A fine is a POLICY decision, so it is configured per institution rather than
+// hard-coded: some colleges charge nothing, some charge a flat ₹500 the month
+// after the due date. The rule only ever produces a NUMBER; a due is what
+// actually carries an assessed fine (`FeeDue.lateFeeMinor`), because an
+// unassessed, unstored fine cannot be collected, disputed or reversed.
+model LateFeeRule {
+  id             String   @id @default(cuid())
+  institutionId  String
+  // Optional link to the fee structure this applies to. NULL = applies to every
+  // fee at the institution, which is the common case.
+  feeStructureId String?
+  name           String   @default("Late payment fine")
+  enabled        Boolean  @default(true)
+  // Days after the due date before the fine starts accruing — the grace period.
+  graceDays      Int      @default(0)
+  // PERCENT charges `valueBp` basis points of the outstanding BALANCE for each
+  // started month or part-month past grace. FLAT charges `flatMinor` for each
+  // such month. Both are capped by `capBp` of the due's billed amount.
+  mode           String   @default("PERCENT") // PERCENT | FLAT
+  valueBp        Int      @default(100)      // 100bp = 1% per started month
+  flatMinor      Int      @default(0)
+  // Cap as basis points of amountMinor; 10000 = 100% (no cap). `maxMonths` of
+  // 0 means the fine keeps accruing until the cap.
+  capBp          Int      @default(10000)
+  maxMonths      Int      @default(0)
+  createdByUserId String? // scalar → users.id
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  feeStructure FeeStructure? @relation(fields: [feeStructureId], references: [id])
+
+  @@index([institutionId, enabled])
+  @@map("late_fee_rules")
+}
+
+// ── Payment plans / instalments ───────────────────────────────
+// Docs: 06-accounts-finance.md §3.3
+//
+// An instalment plan REPLACES the original due with N real FeeDue rows, one per
+// instalment. That is deliberate: each instalment is then an ordinary bill — it
+// ages, it can be collected against, it can be reminded or waived on its own,
+// and it shows up in the aging strip. A plan stored as a side table tracking
+// progress on an un-splittable due would be a schedule nobody could collect
+// against and no one could chase.
+model InstallmentPlan {
+  id             String   @id @default(cuid())
+  institutionId  String
+  parentDueId    String   // the due this plan replaces
+  totalMinor     Int      // snapshot of the parent's balance at agreement time
+  count          Int      // number of instalments, 2..12
+  frequency      String   @default("MONTHLY") // MONTHLY | WEEKLY | FORTNIGHTLY
+  startDate      DateTime // due date of instalment 1
+  note           String?  // "agreed with father over the phone, 10 Mar"
+  status         String   @default("ACTIVE") // ACTIVE | CANCELLED | COMPLETED
+  createdByUserId String? // scalar → users.id
+  cancelledAt    DateTime?
+  cancelledByUserId String?
+  cancelReason   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  children FeeDue[] @relation("InstallmentPlanChildren")
+
+  @@index([institutionId, status])
+  @@index([parentDueId])
+  @@map("installment_plans")
 }
