@@ -1,32 +1,72 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+  Linking,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
 import { alumniApi } from '../../../../../../services/api';
+
+/**
+ * Alumni profile — skills, career journey, education, contributions, contact.
+ *
+ * Two rules drive the layout:
+ *
+ * 1. Contact details are rendered ONLY when the API returned them. The server
+ *    applies each alumnus's privacy settings; the client must not attempt to
+ *    "help" by showing an email it was not given. A redacted field is shown as
+ *    an explicit "hidden by this alumnus" row rather than being omitted, so the
+ *    user learns the information exists and is deliberately withheld — silence
+ *    reads as "we don't have it", which is a different and wrong message.
+ *
+ * 2. The server already decided which actions are legal (connection state,
+ *    whether this is you). This screen renders what it is given and never
+ *    derives permission itself, so the two can't disagree.
+ */
+
+const LEVEL_COLOR = {
+  EXPERT: '#7c3aed',
+  ADVANCED: '#2563eb',
+  INTERMEDIATE: '#059669',
+  BEGINNER: '#64748b',
+};
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmtMonth = (d) => {
+  if (!d) return 'Present';
+  const dt = new Date(d);
+  return `${MONTHS[dt.getMonth()]} ${dt.getFullYear()}`;
+};
+
+const initials = (name) =>
+  (name || '?')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
 export default function AlumniDetail({ alumniId, navigation }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [inviting, setInviting] = useState(false);
-  const [addingMentor, setAddingMentor] = useState(false);
-  const [invited, setInvited] = useState(false);
-  const [mentorPending, setMentorPending] = useState(false);
+  const [busy, setBusy] = useState(null);
 
   const load = useCallback(
     async (showSpinner = true) => {
       try {
         if (showSpinner) setLoading(true);
         setError(null);
-        const d = await alumniApi.alumniDetail(alumniId);
-        setData(d);
-        setInvited(false);
-        setMentorPending(
-          Array.isArray(d?.contributions?.mentorship) &&
-            d.contributions.mentorship.some((m) => m.status === 'PENDING' || m.status === 'ACTIVE'),
-        );
+        setData(await alumniApi.alumniDetail(alumniId));
       } catch (e) {
         setError(e.message);
       } finally {
@@ -41,32 +81,58 @@ export default function AlumniDetail({ alumniId, navigation }) {
     load();
   }, [load]);
 
-  const onInvite = async () => {
-    setInviting(true);
+  const sendRequest = async (message) => {
     try {
+      setBusy('connect');
+      const res = await alumniApi.sendConnectionRequest(alumniId, message || undefined);
+      Alert.alert(
+        res.autoAccepted ? 'Already connected' : 'Request sent',
+        res.autoAccepted
+          ? `${res.with} had already asked you — you are now connected.`
+          : `${res.with} will see your request in their connections inbox.`,
+      );
+      load(false);
+    } catch (e) {
+      Alert.alert('Cannot connect', e.message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // Alert.prompt exists on iOS only. On Android we send the request without a
+  // note rather than showing a dialog the user cannot answer — a note is
+  // optional, and the request itself is the point.
+  const onConnect = () => {
+    if (typeof Alert.prompt === 'function') {
+      Alert.prompt('Connect', `Send a connection request to ${data.name}?`, (message) => {
+        if (message !== undefined) sendRequest(message);
+      }, 'plain-text');
+    } else {
+      sendRequest();
+    }
+  };
+
+  const onInvite = async () => {
+    try {
+      setBusy('invite');
       const res = await alumniApi.inviteAlumni(alumniId);
-      setInvited(true);
-      Alert.alert('Invite Sent', `${res.invited} has been notified about upcoming alumni events.`);
+      Alert.alert('Invite sent', `${res.invited} has been notified about upcoming alumni events.`);
     } catch (e) {
       Alert.alert('Cannot invite', e.message);
     } finally {
-      setInviting(false);
+      setBusy(null);
     }
   };
 
   const onAddMentor = async () => {
-    setAddingMentor(true);
     try {
+      setBusy('mentor');
       const res = await alumniApi.addMentor(alumniId);
-      setMentorPending(true);
-      Alert.alert(
-        'Mentor Added',
-        `${res.mentor} → ${res.mentee} (${res.status}). Approve it from the Mentorship tab to activate.`,
-      );
+      Alert.alert('Mentor added', `${res.mentor} → ${res.mentee} (${res.status}). Approve it from Mentorship to activate.`);
     } catch (e) {
       Alert.alert('Cannot add mentor', e.message);
     } finally {
-      setAddingMentor(false);
+      setBusy(null);
     }
   };
 
@@ -93,167 +159,303 @@ export default function AlumniDetail({ alumniId, navigation }) {
     );
   }
 
-  const initials = data.name.split(' ').map((n) => n[0]).join('').slice(0, 2);
   const c = data.contributions ?? {};
-
-  const contributionRows = [
-    ...(c.donations ?? []).map((d) => ({
-      id: `don-${d.id}`,
-      type: 'Donation',
-      label: `₹${d.amountRupees.toLocaleString('en-IN')} — ${d.fund}`,
-      time: `${d.status} · ${new Date(d.date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`,
-      color: '#059669',
-      icon: 'gift-outline',
-    })),
-    ...(c.events ?? []).map((r) => ({
-      id: `evt-${r.id}-${r.title}`,
-      type: 'Event',
-      label: `${r.title} (${r.status})`,
-      time: `${new Date(r.date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`,
-      color: '#2563eb',
-      icon: 'calendar-outline',
-    })),
-    ...(c.mentorship ?? []).map((m) => ({
-      id: `men-${m.id}`,
-      type: 'Mentoring',
-      label: `${m.status} — ${m.mentee} (${m.field})`,
-      time: m.field,
-      color: '#0891b2',
-      icon: 'hand-left-outline',
-    })),
-  ];
+  const conn = data.connectionStatus;
 
   return (
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(false); }} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            setRefreshing(true);
+            load(false);
+          }}
+        />
+      }
     >
+      {/* ── Hero ── */}
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
-        <View style={styles.avatarLarge}>
-          <Text style={styles.avatarText}>{initials}</Text>
+        <View style={styles.heroTop}>
+          <TouchableOpacity style={styles.backBtn} onPress={navigation.goBack}>
+            <Ionicons name="arrow-back" size={18} color="#fff" />
+          </TouchableOpacity>
+          {data.isSelf && (
+            <View style={styles.youPill}>
+              <Text style={styles.youPillText}>Your profile</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.heroAvatar}>
+          <Text style={styles.heroAvatarText}>{initials(data.name)}</Text>
         </View>
         <Text style={styles.heroName}>{data.name}</Text>
-        <Text style={styles.heroRole}>
-          {data.currentRole || '—'}{data.company ? ` · ${data.company}` : ''}
-        </Text>
-        <View style={styles.heroMetaRow}>
-          <View style={styles.heroMetaChip}>
-            <Ionicons name="school-outline" size={12} color="#fff" />
-            <Text style={styles.heroMetaText}>Batch {data.graduationYear}</Text>
-          </View>
-          {data.location ? (
-            <View style={styles.heroMetaChip}>
-              <Ionicons name="location-outline" size={12} color="#fff" />
-              <Text style={styles.heroMetaText}>{data.location}</Text>
-            </View>
-          ) : null}
-          {data.chapter ? (
-            <View style={styles.heroMetaChip}>
-              <Ionicons name="people-outline" size={12} color="#fff" />
-              <Text style={styles.heroMetaText}>{data.chapter.city} Chapter</Text>
-            </View>
-          ) : null}
-        </View>
-        {c.totalDonatedRupees ? (
-          <Text style={styles.heroDonated}>
-            ₹{c.totalDonatedRupees.toLocaleString('en-IN')} contributed
+        <Text style={styles.heroHeadline}>{data.headline ?? data.currentRole ?? 'Alumnus'}</Text>
+        {data.program && (
+          <Text style={styles.heroMeta}>
+            {data.program.department.code} · {data.program.name}
+            {data.graduationYear ? ` · Batch ${data.graduationYear}` : ''}
           </Text>
-        ) : null}
+        )}
+        <View style={styles.heroChips}>
+          {data.company && (
+            <View style={styles.heroChip}>
+              <Ionicons name="business-outline" size={11} color="#fff" />
+              <Text style={styles.heroChipText}>{data.company.name}</Text>
+            </View>
+          )}
+          {data.location && (
+            <View style={styles.heroChip}>
+              <Ionicons name="location-outline" size={11} color="#fff" />
+              <Text style={styles.heroChipText}>{data.location}</Text>
+            </View>
+          )}
+          {data.chapter && (
+            <View style={styles.heroChip}>
+              <Ionicons name="map-outline" size={11} color="#fff" />
+              <Text style={styles.heroChipText}>{data.chapter.city}</Text>
+            </View>
+          )}
+        </View>
       </LinearGradient>
 
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.actionButton} disabled={inviting} onPress={onInvite}>
-          {inviting ? (
-            <ActivityIndicator size="small" color="#2563eb" />
-          ) : (
-            <Ionicons name={invited ? 'checkmark-circle' : 'calendar-outline'} size={16} color="#2563eb" />
-          )}
-          <Text style={styles.actionText}>{invited ? 'Invited' : 'Invite'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, mentorPending && styles.actionButtonActive]}
-          disabled={addingMentor || mentorPending}
-          onPress={onAddMentor}
-        >
-          {addingMentor ? (
-            <ActivityIndicator size="small" color={mentorPending ? '#fff' : '#2563eb'} />
-          ) : (
-            <Ionicons
-              name={mentorPending ? 'hand-left' : 'hand-left-outline'}
-              size={16}
-              color={mentorPending ? '#fff' : '#2563eb'}
-            />
-          )}
-          <Text style={[styles.actionText, mentorPending && styles.actionTextActive]}>
-            {mentorPending ? 'Mentor' : 'Add Mentor'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => Alert.alert('Message', `Email: ${data.email}\n(Chat arrives with the messaging phase.)`)}
-        >
-          <Ionicons name="chatbubble-ellipses-outline" size={16} color="#2563eb" />
-          <Text style={styles.actionText}>Contact</Text>
-        </TouchableOpacity>
+      {/* ── Networking ── */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{data.mutualConnections ?? 0}</Text>
+          <Text style={styles.statLabel}>Mutuals</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{data.skillCount ?? data.skills?.length ?? 0}</Text>
+          <Text style={styles.statLabel}>Skills</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{data.career?.length ?? 0}</Text>
+          <Text style={styles.statLabel}>Roles</Text>
+        </View>
       </View>
 
+      {/* ── Contact (privacy-gated) ── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Profile</Text>
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Ionicons name="briefcase-outline" size={15} color={theme.colors.textMuted} />
-            <Text style={styles.infoLabel}>Current Role</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>{data.currentRole || '—'}</Text>
+        <Text style={styles.sectionTitle}>Contact</Text>
+        <View style={styles.card}>
+          <ContactRow
+            icon="mail-outline"
+            label="Email"
+            value={data.email}
+            onPress={data.email ? () => Linking.openURL(`mailto:${data.email}`) : undefined}
+            hiddenReason={data.visibilityReason}
+          />
+          <View style={styles.divider} />
+          <ContactRow
+            icon="call-outline"
+            label="Phone"
+            value={data.phone}
+            onPress={data.phone ? () => Linking.openURL(`tel:${data.phone}`) : undefined}
+            hiddenReason={data.visibilityReason}
+          />
+          {!data.contactVisible && (
+            <Text style={styles.privacyNote}>
+              {data.visibilityReason === 'OFFICE'
+                ? 'Contact details are visible to the Alumni Relations Office only.'
+                : 'This alumnus has not published contact details. Accept their connection request to see them.'}
+            </Text>
+          )}
+        </View>
+      </View>
+
+      {/* ── About ── */}
+      {data.bio ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About</Text>
+          <View style={styles.card}>
+            <Text style={styles.bio}>{data.bio}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="business-outline" size={15} color={theme.colors.textMuted} />
-            <Text style={styles.infoLabel}>Company</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>{data.company || '—'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="school-outline" size={15} color={theme.colors.textMuted} />
-            <Text style={styles.infoLabel}>Graduation</Text>
-            <Text style={styles.infoValue}>Batch {data.graduationYear}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={15} color={theme.colors.textMuted} />
-            <Text style={styles.infoLabel}>Location</Text>
-            <Text style={styles.infoValue}>{data.location || '—'}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="mail-outline" size={15} color={theme.colors.textMuted} />
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue} numberOfLines={1}>{data.email}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Ionicons name="pulse-outline" size={15} color={theme.colors.textMuted} />
-            <Text style={styles.infoLabel}>Engagement</Text>
-            <Text style={[styles.infoValue, { color: data.engagementStatus === 'ACTIVE' ? '#059669' : '#d97706' }]}>
-              {data.engagementStatus}
+        </View>
+      ) : null}
+
+      {/* ── Education ── */}
+      {data.education && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Education</Text>
+          <View style={styles.card}>
+            <Row icon="school-outline" label={data.education.program} />
+            <Text style={styles.rowSub}>
+              {data.education.department} · {data.education.batch}
+            </Text>
+            <Text style={styles.rowSub}>
+              {data.education.startYear} – {data.education.graduationYear ?? 'present'}
             </Text>
           </View>
         </View>
+      )}
+
+      {/* ── Skills ── */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Skills & expertise</Text>
+          {data.skills?.length > 0 && <Text style={styles.countBadge}>{data.skills.length}</Text>}
+        </View>
+        <View style={styles.card}>
+          {data.skills?.length > 0 ? (
+            <View style={styles.skillWrap}>
+              {data.skills.map((s) => (
+                <View
+                  key={s.skill}
+                  style={[styles.skillChip, { backgroundColor: (LEVEL_COLOR[s.level] ?? '#64748b') + '18' }]}
+                >
+                  <Text style={[styles.skillText, { color: LEVEL_COLOR[s.level] ?? '#64748b' }]}>{s.skill}</Text>
+                  {s.yearsExperience ? (
+                    <Text style={styles.skillYears}>{s.yearsExperience}y</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.muted}>No skills listed{!data.careerVisible ? ' or hidden by this alumnus' : ''}.</Text>
+          )}
+        </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Engagement & Contributions</Text>
-        {contributionRows.map((row) => (
-          <View key={row.id} style={styles.contributionRow}>
-            <View style={[styles.contributionIcon, { backgroundColor: row.color + '1a' }]}>
-              <Ionicons name={row.icon} size={14} color={row.color} />
-            </View>
-            <View style={styles.contributionBody}>
-              <Text style={styles.contributionLabel} numberOfLines={1}>{row.label}</Text>
-              <Text style={styles.contributionTime}>{row.type} · {row.time}</Text>
-            </View>
+      {/* ── Career journey ── */}
+      {data.careerVisible && data.career?.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Career journey</Text>
+          <View style={styles.card}>
+            {data.career.map((job, i) => (
+              <View key={job.id} style={styles.timelineRow}>
+                <View style={styles.timelineRail}>
+                  <View style={[styles.timelineDot, job.isCurrent && styles.timelineDotCurrent]} />
+                  {i < data.career.length - 1 && <View style={styles.timelineLine} />}
+                </View>
+                <View style={styles.timelineBody}>
+                  <Text style={styles.timelineTitle}>{job.title}</Text>
+                  <Text style={styles.timelineMeta}>
+                    {job.employer ?? '—'}
+                    {job.location ? ` · ${job.location}` : ''}
+                  </Text>
+                  <Text style={styles.timelineDates}>
+                    {fmtMonth(job.fromMonth)} — {fmtMonth(job.toMonth)}
+                    {job.isCurrent ? '  · current' : ''}
+                  </Text>
+                </View>
+              </View>
+            ))}
           </View>
-        ))}
-        {contributionRows.length === 0 && (
-          <Text style={styles.emptyText}>No contributions recorded yet.</Text>
-        )}
+        </View>
+      )}
+
+      {/* ── Contributions ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Contributions</Text>
+        <View style={styles.card}>
+          {c.donations?.length > 0 && (
+            <Text style={styles.contribLine}>
+              Donated ₹{(c.totalDonatedRupees ?? 0).toLocaleString('en-IN')} across {c.donations.length} gift
+              {c.donations.length === 1 ? '' : 's'}
+            </Text>
+          )}
+          {c.mentorship?.length > 0 && (
+            <Text style={styles.contribLine}>
+              Mentoring {c.mentorship.length} student{c.mentorship.length === 1 ? '' : 's'}
+            </Text>
+          )}
+          {c.events?.length > 0 && (
+            <Text style={styles.contribLine}>
+              Attended {c.events.length} alumni event{c.events.length === 1 ? '' : 's'}
+            </Text>
+          )}
+          {!c.donations?.length && !c.mentorship?.length && !c.events?.length && (
+            <Text style={styles.muted}>No recorded contributions yet.</Text>
+          )}
+        </View>
+      </View>
+
+      {/* ── Actions ── */}
+      <View style={styles.actions}>
+        {conn === 'ACCEPTED' ? (
+          <View style={[styles.actionBtn, styles.actionConnected]}>
+            <Ionicons name="checkmark-circle" size={16} color="#059669" />
+            <Text style={styles.actionConnectedText}>Connected</Text>
+          </View>
+        ) : conn === 'PENDING' && data.connectionDirection === 'OUTGOING' ? (
+          <View style={[styles.actionBtn, styles.actionPending]}>
+            <Ionicons name="time-outline" size={16} color="#d97706" />
+            <Text style={styles.actionPendingText}>Request pending</Text>
+          </View>
+        ) : conn === 'PENDING' && data.connectionDirection === 'INCOMING' ? (
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionPrimary]}
+            onPress={async () => {
+              try {
+                setBusy('accept');
+                await alumniApi.respondToConnection(data.connectionId, 'accept');
+                Alert.alert('Connected', `You are now connected with ${data.name}.`);
+                load(false);
+              } catch (e) {
+                Alert.alert('Cannot accept', e.message);
+              } finally {
+                setBusy(null);
+              }
+            }}
+          >
+            <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+            <Text style={styles.actionPrimaryText}>
+              {busy === 'accept' ? 'Accepting…' : 'Accept request'}
+            </Text>
+          </TouchableOpacity>
+        ) : !data.isSelf ? (
+          <TouchableOpacity style={[styles.actionBtn, styles.actionPrimary]} onPress={onConnect} disabled={busy === 'connect'}>
+            <Ionicons name="person-add-outline" size={16} color="#fff" />
+            <Text style={styles.actionPrimaryText}>{busy === 'connect' ? 'Sending…' : 'Connect'}</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={[styles.actionBtn, styles.actionGhost]} onPress={onInvite} disabled={busy === 'invite'}>
+            <Ionicons name="mail-outline" size={15} color="#2563eb" />
+            <Text style={styles.actionGhostText}>{busy === 'invite' ? 'Sending…' : 'Invite to events'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionGhost]}
+            onPress={onAddMentor}
+            disabled={busy === 'mentor'}
+          >
+            <Ionicons name="hand-left-outline" size={15} color="#0891b2" />
+            <Text style={styles.actionGhostText}>{busy === 'mentor' ? 'Adding…' : 'Add as mentor'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
+  );
+}
+
+function ContactRow({ icon, label, value, onPress, hiddenReason }) {
+  return (
+    <TouchableOpacity style={styles.contactRow} onPress={onPress} disabled={!onPress}>
+      <Ionicons name={icon} size={16} color={value ? theme.colors.textMuted : '#cbd5e1'} />
+      <Text style={styles.contactLabel}>{label}</Text>
+      {value ? (
+        <Text style={styles.contactValue} numberOfLines={1}>
+          {value}
+        </Text>
+      ) : (
+        <Text style={styles.contactHidden}>
+          Hidden{hiddenReason === 'CONNECTIONS' ? ' — connect to view' : ''}
+        </Text>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function Row({ icon, label }) {
+  return (
+    <View style={styles.contactRow}>
+      <Ionicons name={icon} size={16} color={theme.colors.textMuted} />
+      <Text style={styles.rowLabel}>{label}</Text>
+    </View>
   );
 }
 
@@ -263,169 +465,72 @@ const styles = StyleSheet.create({
   errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
   retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
-  backLink: { marginTop: 14 },
-  backLinkText: { fontSize: 12, fontFamily: 'Manrope-SemiBold', color: '#2563eb' },
-  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, paddingVertical: 12 },
-  hero: {
-    margin: 16,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-  },
-  avatarLarge: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  avatarText: {
-    fontSize: 20,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-  },
-  heroName: {
-    fontSize: 20,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-  },
-  heroRole: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Medium',
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 3,
-    textAlign: 'center',
-  },
-  heroMetaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  heroMetaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginHorizontal: 4,
-    marginTop: 4,
-  },
-  heroMetaText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-SemiBold',
-    color: '#fff',
-    marginLeft: 4,
-  },
-  heroDonated: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginTop: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    overflow: 'hidden',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginTop: 4,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingVertical: 10,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  actionButtonActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  actionText: {
-    fontSize: 11,
-    fontFamily: 'Manrope-SemiBold',
-    color: '#2563eb',
-    marginLeft: 5,
-  },
-  actionTextActive: {
-    color: '#fff',
-  },
+  backLink: { marginTop: 14, padding: 6 },
+  backLinkText: { fontSize: 12, fontFamily: 'Manrope-SemiBold', color: theme.colors.primary },
+
+  hero: { padding: 18, paddingTop: 14, alignItems: 'center' },
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', alignSelf: 'stretch' },
+  backBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  youPill: { backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 },
+  youPillText: { color: '#fff', fontSize: 10, fontFamily: 'Manrope-SemiBold' },
+  heroAvatar: { width: 64, height: 64, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center', marginTop: 6 },
+  heroAvatarText: { color: '#fff', fontSize: 20, fontFamily: 'Manrope-ExtraBold' },
+  heroName: { color: '#fff', fontSize: 19, fontFamily: 'Manrope-ExtraBold', marginTop: 10 },
+  heroHeadline: { color: 'rgba(255,255,255,0.92)', fontSize: 12, fontFamily: 'Manrope-Medium', marginTop: 3, textAlign: 'center' },
+  heroMeta: { color: 'rgba(255,255,255,0.78)', fontSize: 10, fontFamily: 'Manrope-Medium', marginTop: 4 },
+  heroChips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 10 },
+  heroChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, gap: 3 },
+  heroChipText: { color: '#fff', fontSize: 10, fontFamily: 'Manrope-SemiBold' },
+
+  statsRow: { flexDirection: 'row', paddingHorizontal: 16, marginTop: 14, gap: 8 },
+  statCard: { flex: 1, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, padding: 12, alignItems: 'center' },
+  statValue: { fontSize: 16, fontFamily: 'Manrope-ExtraBold', color: theme.colors.text },
+  statLabel: { fontSize: 9, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 2 },
+
   section: { paddingHorizontal: 16, marginTop: 18 },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceMuted,
-  },
-  infoLabel: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginLeft: 8,
-  },
-  infoValue: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    maxWidth: '55%',
-    textAlign: 'right',
-  },
-  contributionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 10,
-    marginBottom: 8,
-  },
-  contributionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  contributionBody: { flex: 1 },
-  contributionLabel: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  contributionTime: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sectionTitle: { fontSize: 15, fontFamily: 'Manrope-Bold', color: theme.colors.text, marginBottom: 10 },
+  countBadge: { fontSize: 10, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted, marginBottom: 10 },
+  card: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, padding: 14 },
+  muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
+  bio: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.text, lineHeight: 19 },
+
+  contactRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, gap: 10 },
+  contactLabel: { fontSize: 11, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted, width: 52 },
+  contactValue: { flex: 1, fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.text },
+  contactHidden: { flex: 1, fontSize: 11, fontFamily: 'Manrope-Medium', color: '#cbd5e1' },
+  privacyNote: { fontSize: 10, fontFamily: 'Manrope-Medium', color: '#94a3b8', marginTop: 8, lineHeight: 15 },
+  divider: { height: 1, backgroundColor: theme.colors.border, marginVertical: 6 },
+
+  rowLabel: { flex: 1, fontSize: 12, fontFamily: 'Manrope-Bold', color: theme.colors.text },
+  rowSub: { fontSize: 11, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginLeft: 26, marginTop: 2 },
+
+  skillWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  skillChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
+  skillText: { fontSize: 11, fontFamily: 'Manrope-SemiBold' },
+  skillYears: { fontSize: 9, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted },
+
+  timelineRow: { flexDirection: 'row' },
+  timelineRail: { width: 18, alignItems: 'center' },
+  timelineDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#cbd5e1', marginTop: 4 },
+  timelineDotCurrent: { backgroundColor: '#2563eb', width: 11, height: 11, borderRadius: 6 },
+  timelineLine: { flex: 1, width: 2, backgroundColor: theme.colors.border, marginVertical: 2 },
+  timelineBody: { flex: 1, paddingBottom: 14, paddingLeft: 6 },
+  timelineTitle: { fontSize: 12, fontFamily: 'Manrope-Bold', color: theme.colors.text },
+  timelineMeta: { fontSize: 11, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 2 },
+  timelineDates: { fontSize: 10, fontFamily: 'Manrope-SemiBold', color: '#2563eb', marginTop: 2 },
+
+  contribLine: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.text, marginBottom: 4 },
+
+  actions: { padding: 16, gap: 8 },
+  actionRow: { flexDirection: 'row', gap: 8 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 13, gap: 6 },
+  actionPrimary: { backgroundColor: '#2563eb' },
+  actionPrimaryText: { color: '#fff', fontSize: 13, fontFamily: 'Manrope-Bold' },
+  actionGhost: { flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: theme.colors.border },
+  actionGhostText: { fontSize: 12, fontFamily: 'Manrope-SemiBold', color: theme.colors.text },
+  actionConnected: { backgroundColor: '#dcfce7' },
+  actionConnectedText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#059669' },
+  actionPending: { backgroundColor: '#fef3c7' },
+  actionPendingText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#d97706' },
 });
