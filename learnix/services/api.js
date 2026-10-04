@@ -94,7 +94,59 @@ export const api = {
   // DELETE may carry a body when the removal needs a recorded reason (a waived
   // late fine, for instance). Express reads it with the usual json parser.
   delete: (path, body) => request('DELETE', path, body),
+  // Multipart POST, for a receipt upload. Deliberately NOT folded into
+  // `request`: that helper sets Content-Type: application/json unconditionally,
+  // and if you hand it a FormData body the server gets a JSON content type with
+  // no boundary and multer rejects the upload with an unhelpful error. So this
+  // sends the form and lets fetch set the boundary itself.
+  upload: (path, formData) => requestRaw('POST', path, formData),
 };
+
+/**
+ * Send a multipart body. Same auth, same one-shot refresh, same error shape as
+ * `request` — the ONLY difference is that it leaves Content-Type alone so fetch
+ * can generate the multipart boundary.
+ */
+async function requestRaw(method, path, formData) {
+  if (!accessToken) {
+    refreshPromise = refreshPromise || login().finally(() => (refreshPromise = null));
+    await refreshPromise;
+  }
+
+  const call = () =>
+    fetch(`${BASE_URL}${path}`, {
+      method,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      body: formData,
+    });
+
+  let res = await call();
+  if (res.status === 401) {
+    const ok = await tryRefresh();
+    if (ok) res = await call();
+  }
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(json.error?.message || `Upload failed (${res.status})`);
+    err.code = json.error?.code;
+    err.status = res.status;
+    throw err;
+  }
+  return json.data;
+}
+
+/**
+ * Turn a server-relative media path (`/uploads/<key>.pdf`) into something
+ * `Linking.openURL` or an <Image> can actually load. The API path is nested
+ * under BASE_URL (`…/api/v1`) but media is served from the host root, so the
+ * `/api/v1` prefix has to come back off.
+ */
+export function mediaUrl(path) {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const origin = BASE_URL.replace(/\/api\/v1\/?$/, '');
+  return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
+}
 
 // ── Alumni Relations endpoints (docs/users/12 §4) ──
 export const alumniApi = {
@@ -584,10 +636,68 @@ export const accountsApi = {
   payAllPayroll: (id, paymentRefPrefix) =>
     api.post(`/accounts/payroll/${id}/pay-all`, paymentRefPrefix ? { paymentRefPrefix } : {}),
   adjustPayrollEntry: (entryId, payload) => api.patch(`/accounts/payroll/entries/${entryId}`, payload),
-  expenses: () => api.get('/accounts/expenses'),
+  // F-07 Expenses (docs/users/06 §3.6). The old three calls above are kept so
+  // nothing else in the app breaks; these supersede them.
+  expenses: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/expenses${qs ? `?${qs}` : ''}`);
+  },
   addExpense: (payload) => api.post('/accounts/expenses', payload),
+  expenseDetail: (id) => api.get(`/accounts/expenses/${id}`),
   approveExpense: (id) => api.post(`/accounts/expenses/${id}/approve`),
-  rejectExpense: (id) => api.post(`/accounts/expenses/${id}/reject`),
+  rejectExpense: (id, reason) => api.post(`/accounts/expenses/${id}/reject`, { reason }),
+  reopenExpense: (id) => api.post(`/accounts/expenses/${id}/reopen`),
+  // Budget allocation and utilization
+  expenseBudgets: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/expenses/budgets${qs ? `?${qs}` : ''}`);
+  },
+  saveExpenseBudget: (payload) => api.post('/accounts/expenses/budgets', payload),
+  reconcileExpenseBudgets: () => api.post('/accounts/expenses/budgets/reconcile'),
+  // Monthly expense trends
+  expenseTrends: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/expenses/trends${qs ? `?${qs}` : ''}`);
+  },
+  // Department-wise expenditure
+  departmentSpend: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/expenses/departments${qs ? `?${qs}` : ''}`);
+  },
+  // Vendor / payment records
+  vendorSpend: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/expenses/vendors${qs ? `?${qs}` : ''}`);
+  },
+  /**
+   * Attach a receipt. `file` is a React Native file handle — anything with a
+   * `uri`, `name`, `type` and `size`, which is what `expo-document-picker`
+   * returns. The kind is a plain text field alongside the binary, so it travels
+   * in the same multipart body rather than needing a second round trip.
+   */
+  attachExpenseDocument: (expenseId, file, kind = 'RECEIPT', note) => {
+    const form = new FormData();
+    form.append('file', {
+      uri: file.uri,
+      name: file.name ?? 'receipt.jpg',
+      type: file.type ?? 'image/jpeg',
+    });
+    if (kind) form.append('kind', kind);
+    if (note) form.append('note', note);
+    return api.upload(`/accounts/expenses/${expenseId}/documents`, form);
+  },
+  detachExpenseDocument: (expenseId, docId) =>
+    api.delete(`/accounts/expenses/${expenseId}/documents/${docId}`),
   scholarships: () => api.get('/accounts/scholarships'),
   approveScholarship: (id) => api.post(`/accounts/scholarships/${id}/approve`),
   disburseScholarship: (id) => api.post(`/accounts/scholarships/${id}/disburse`),
