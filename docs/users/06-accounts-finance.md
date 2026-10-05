@@ -970,9 +970,125 @@ Headline totals are computed over the **whole filtered set, not the page**, so
 - Every entry, decision, budget change and document change writes an audit entry.
 
 ### 3.7 Scholarships (module)
-Scholarship schemes (name, type Merit/Need-based, coverage %, applicants, awarded). Actions: **Approve Applicant**, **Disburse** (creates collection write-off or payment).
 
-**Entity `scholarship`**: id, name, type, coverage, applicants, awarded; `scholarship_award`: studentId, amount, status (Approved/Disbursed).
+The scholarship desk is a **scheme → application → award → disbursement** pipeline, not a
+list of awards. A scheme is a fund with rules; students apply to it; an application moves
+through a state machine; approving it *computes an amount*; disbursing it *reduces the
+student's real dues*.
+
+#### 3.7.1 Schemes
+A scheme carries the money and the terms: name, type (`MERIT` / `NEED_BASED` / `EXCELLENCE` /
+`SPECIAL`), academic year, status (`DRAFT` / `OPEN` / `CLOSED`), an optional **budget ceiling**,
+an optional **capacity** (max awards), an open/close window, the **amount mode**
+(`PERCENT_OF_DUE` or `FIXED`), its eligibility rules, and its required documents.
+
+`GET /scholarships/catalogue` returns everything the app needs to build a scheme form —
+types, operators, documents, suggested documents per type, statuses, bands, transitions —
+so the client never hard-codes a form.
+
+> Editing a scheme does **not** silently close it. A scheme only stops accepting applications
+> when it is explicitly set to `CLOSED`, and a `DRAFT` scheme refuses applications.
+
+#### 3.7.2 Scholarship applications
+`POST /scholarships/applications` records an application against an `OPEN` scheme, refusing
+a closed scheme, a window that has not opened, and a window that has closed. The student
+declares an annual family income and a gender alongside a free-text statement.
+
+#### 3.7.3 Eligibility verification
+Every scheme holds a **per-scheme rule set**, evaluated live against real server data on
+every read, approval and preview — never cached, never a stored verdict:
+
+| Operator | Requirement | Source |
+|---|---|---|
+| `MIN_PERCENT` | aggregate ≥ N% | **server** — published `Result` marks |
+| `MAX_FAMILY_INCOME` | declared annual income ≤ ₹N | **declared** by the student, verified by the officer |
+| `MIN_SEMESTER` | current semester ≥ N | **server** — `StudentProfile.currentSemester` |
+| `MAX_SEMESTER` | current semester ≤ N | **server** — caps a scheme to, say, first- and second-years |
+| `GENDER` | `FEMALE` / `MALE` / `ANY` | **declared** by the student, checked against the ID |
+| `ACTIVE_STUDENT` | not dropped / alumnus | **server** — profile status |
+
+The result is **rule-by-rule**, reporting what the rule demands, what the student actually has,
+and whether it passed — so an officer sees *which* rule failed, not just "not eligible".
+
+Two rules are **declared** rather than server-verified on purpose. The schema has no
+`familyIncome` or `gender` field anywhere, so inventing one would make every need-based rule
+pass vacuously against `null`. The server marks those two rules `declared: true` and the app
+says plainly that a human checked them against the uploaded documents.
+
+A student with **no published results fails `MIN_PERCENT`** rather than passing it vacuously.
+
+#### 3.7.4 Required-document tracking
+Seven document types — `Income proof`, `Marks statement`, `Category certificate`,
+`Achievement certificate`, `Bank passbook`, `Student ID`, `No-dues certificate` — with a
+suggested set per scheme type. Each required document is scored per application as
+**missing / uploaded / verified / rejected**. Documents are uploaded through
+`POST .../documents/:code/upload` (multer, 8 MB cap, JPEG/PNG/WebP/HEIC/PDF only) or recorded
+by reference, then **verified or rejected** by the officer with a reason. An application
+cannot be approved until every required document is verified.
+
+#### 3.7.5 Approval workflow
+```
+APPLIED ──▶ UNDER_REVIEW ──▶ APPROVED ──▶ DISBURSED
+   │             │              │
+   └──▶ REJECTED ┘              └──▶ (terminal)
+   └──▶ WITHDRAWN ◀──┘
+```
+`REJECTED`, `WITHDRAWN` and `DISBURSED` are **terminal** — nothing skips a state, and a
+disbursed award cannot silently fall back to "approved" because the money has already moved.
+Every transition is written to an application event log (actor, from, to, note) and audited.
+
+**Approval is gated, not decorative.** `POST .../approve` refuses unless eligibility passes,
+every required document is verified, the student actually owes something, and the computed
+award is non-nil. The server returns the allowed action list with reasons attached
+(`BLOCKED:eligibility is not yet satisfied; required documents are not all verified`), and the
+screen greys out exactly those buttons — a disabled button with no explanation is the fastest
+way a desk is talked into a wrong approval.
+
+#### 3.7.6 Scholarship amount tracking
+Each scheme reports **fund / promised / released / headroom / utilisation %**, where every
+figure means exactly one thing:
+
+- **committed** — granted on applications still `APPROVED` or `UNDER_REVIEW` (money promised,
+  not yet moved)
+- **disbursed** — money actually released
+- **awarded** — `committed + disbursed`, i.e. each rupee counted once
+- **headroom** — `budget − awarded`, floored at 0
+- **utilisation %** — `awarded / budget`, capped at 100 for the bar
+
+The tracking screen and the scheme list read the *same* totals helper, so the two can never
+disagree about what "committed" means for one scheme.
+
+#### 3.7.7 Disbursement status
+The award amount is **computed, never typed in**:
+
+1. the scheme's mode gives a requested amount — `FIXED`, or `PERCENT_OF_DUE × outstanding`
+2. it is capped by **budget headroom** (less what is already committed and disbursed)
+3. it is capped at the **outstanding balance** — a scholarship never clears more than is owed
+4. every cap that bit is returned in `warnings`, so the officer sees why an award is smaller
+   than requested
+
+Disbursement **allocates against `fee_dues` oldest-first** through a `scholarship_allocations`
+table, and the student's balance genuinely falls. Releasing part of an award leaves it in
+`PARTIAL`; a full release marks it `DISBURSED`. `POST .../reverse` un-allocates, re-opens the
+dues and returns the application to `APPROVED`.
+
+> A disbursement is **not a payment**. The old implementation wrote a `Payment` row with the
+> finance officer as `payerUserId` and category `MISC`, which booked the institution's own
+> outgoing money as **income** in collections and the ledger, and never touched the student's
+> dues at all — a "disbursed" scholarship left the family owing the full amount. The
+> disbursement now creates **zero** `Payment` rows and reduces the real balance.
+
+Four bands: `NOT_STARTED` / `PENDING` (approved, unpaid) / `PARTIAL` / `SETTLED`.
+
+#### 3.7.8 Student-wise scholarship history
+`GET /scholarships/students/:studentProfileId/history` gives one student across every scheme
+and year: awarded, received, awaiting release, and what they **still owe**, plus each
+application's allocations (which dues the money actually landed on) and its rejection reason.
+
+**Entities:** `scholarship` (scheme), `scholarship_application`, `scholarship_application_document`,
+`scholarship_application_event`, `scholarship_allocation`.
+`ScholarshipAward` is **removed** — the award is now the granted amount on the application,
+so there is one row per student per scheme and no second source of truth for the money.
 
 ### 3.8 Reports (module)
 Finance reports: fee collection summary, dues aging, payroll summary, expense vs budget, scholarship disbursement. Export to CSV/PDF.
@@ -998,7 +1114,17 @@ GET      /api/accounts/payroll/alerts      pending-salary alerts
 GET      /api/accounts/payroll/ageing     per-month balances by age band
 GET/PUT /api/accounts/fee-structure       (POST /{id}/revision)
 GET/POST /api/accounts/expenses           (+ /{id}/approve|reject)
-GET/POST /api/accounts/scholarships       (+ /{id}/approve, /{id}/disburse)
+GET      /api/accounts/scholarships/catalogue  types, operators, documents, transitions
+GET/POST /api/accounts/scholarships
+GET/PUT  /api/accounts/scholarships/:id       (+ /:id/preview/:studentProfileId)
+GET/POST /api/accounts/scholarships/applications
+GET      /api/accounts/scholarships/applications/:id
+POST     /api/accounts/scholarships/applications/:id/review|approve|reject|withdraw
+POST     /api/accounts/scholarships/applications/:id/disburse|reverse
+POST     /api/accounts/scholarships/applications/:id/documents/:code
+POST     /api/accounts/scholarships/applications/:id/documents/:code/upload
+GET      /api/accounts/scholarships/tracking   fund / promised / released per scheme
+GET      /api/accounts/scholarships/students/:studentProfileId/history
 GET  /api/accounts/reports                (+ /export)
 GET  /api/accounts/notifications
 POST /api/accounts/broadcasts
@@ -1054,13 +1180,29 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `POST /api/v1/accounts/expenses` — F-07 add expense
 - `POST /api/v1/accounts/expenses/:id/approve` — F-07 approve (updates budget spentMinor)
 - `POST /api/v1/accounts/expenses/:id/reject` — F-07 reject
-- `GET /api/v1/accounts/scholarships` — F-08 scholarships with awards
-- `POST /api/v1/accounts/scholarships/:id/approve` — F-08 approve award
-- `POST /api/v1/accounts/scholarships/:id/disburse` — F-08 disburse (creates payment write-through)
+- `GET /api/v1/accounts/scholarships/catalogue` — F-08 everything a scheme form needs: 4 types, 6 operators, 7 documents, suggested documents per type, 6 statuses, 4 disbursement bands, the transition map, 2 amount modes
+- `GET /api/v1/accounts/scholarships?status=&type=&q=` — F-08 schemes with per-status counts, the fund figures (budget / committed / disbursed / awarded / headroom / utilisation %), capacity, window and rule count. Tenant-scoped
+- `POST /api/v1/accounts/scholarships` — F-08 create a scheme (name, type, year, amount mode, budget, capacity, window, rules, required documents). Refused when the budget would be exceeded by the first award
+- `GET /api/v1/accounts/scholarships/:id` — F-08 the scheme: the fund figures, its rules, its required documents and every application on it
+- `PUT /api/v1/accounts/scholarships/:id` — F-08 edit a scheme. Editing the amount does **not** reset the status to `DRAFT` — only an explicit status change closes it
+- `GET /api/v1/accounts/scholarships/:id/preview/:studentProfileId` — F-08 what this student would get: rule-by-rule eligibility, the outstanding balance, the computed award with its `basis`, `cappedBy` and `warnings`
+- `GET /api/v1/accounts/scholarships/applications?status=&schemeId=&studentProfileId=&q=` — F-08 the desk, with `stats` by status and requested / granted / disbursed / awaiting totals
+- `POST /api/v1/accounts/scholarships/applications` — F-08 record an application. Refused on a non-`OPEN` scheme, before the window opens, after it closes, or for a student who already holds a live application on the same scheme
+- `GET /api/v1/accounts/scholarships/applications/:id` — F-08 one application in full: the student, the scheme, rule-by-rule eligibility, the document checklist, the amount derivation, the workflow history, the allocations, and `actions[]` (with `BLOCKED:` reasons for what the server would refuse)
+- `POST /api/v1/accounts/scholarships/applications/:id/review` — F-08 move `APPLIED` → `UNDER_REVIEW`
+- `POST /api/v1/accounts/scholarships/applications/:id/approve` — F-08 approve. Gated on eligibility, every required document verified, a real outstanding balance and a non-nil award; computes and stores the granted amount, caps it by budget headroom then by the balance, notifies and audits
+- `POST /api/v1/accounts/scholarships/applications/:id/reject` — F-08 reject with a reason (terminal)
+- `POST /api/v1/accounts/scholarships/applications/:id/withdraw` — F-08 withdraw (terminal)
+- `POST /api/v1/accounts/scholarships/applications/:id/disburse` — F-08 release the award, optionally partially, allocating onto `fee_dues` **oldest-first**. Creates **no** `Payment` row; the student's balance genuinely falls
+- `POST /api/v1/accounts/scholarships/applications/:id/reverse` — F-08 reverse a disbursement with a reason: un-allocates, re-opens the dues, returns the application to `APPROVED`
+- `POST /api/v1/accounts/scholarships/applications/:id/documents/:code` — F-08 record a document by reference, or mark it verified / rejected with a reason
+- `POST /api/v1/accounts/scholarships/applications/:id/documents/:code/upload` — F-08 upload the file itself (multer, 8 MB, JPEG/PNG/WebP/HEIC/PDF)
+- `GET /api/v1/accounts/scholarships/tracking` — F-08 the fund across every scheme: budget, committed, released, awarded, headroom, utilisation %, release %, award count, and institution totals
+- `GET /api/v1/accounts/scholarships/students/:studentProfileId/history` — F-08 one student's whole scholarship record: awarded / received / awaiting / still owed, plus every application with its allocations and rejection reason
 - `GET /api/v1/accounts/reports` — F-09 summary by category, dues by status, expenses by category
 - `GET /api/v1/accounts/notifications` — F-10 inbox
 - `POST /api/v1/accounts/notifications/read-all` — F-10 mark all read
 - `POST /api/v1/accounts/broadcasts` — F-10 broadcast (ALL_STUDENTS / DEFAULTERS / ALL_STAFF)
 - `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
 
-**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with nine screens registered in `FEATURE_MODULES` (`PayrollRunDetail`, `Payslip`, `PayrollSalaryRecords`, `PayrollSalaryRecord`, `PayrollComponents`, `PayrollAttendance`, `PayrollLoans`, `PayrollAlerts`, `PayslipDocument`), the hub carrying **Salary records** and **Pending salaries** desk buttons, and `runPayroll` pricing each person from the salary version in force that month with attendance LOP, YTD TDS and loan recovery rather than a hard-coded 50/40/12 formula; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
+**App:** all 17 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with nine screens registered in `FEATURE_MODULES` (`PayrollRunDetail`, `Payslip`, `PayrollSalaryRecords`, `PayrollSalaryRecord`, `PayrollComponents`, `PayrollAttendance`, `PayrollLoans`, `PayrollAlerts`, `PayslipDocument`), the hub carrying **Salary records** and **Pending salaries** desk buttons, and `runPayroll` pricing each person from the salary version in force that month with attendance LOP, YTD TDS and loan recovery rather than a hard-coded 50/40/12 formula; expenses has approve/reject; scholarships is a hub with seven screens registered in `FEATURE_MODULES` (`ScholarshipApplications`, `ScholarshipApplication`, `ScholarshipDetail`, `ScholarshipDocuments`, `ScholarshipTracking`, `ScholarshipStudentHistory`, `ScholarshipApply`) over live APIs, the hardcoded `scholarshipsData.js` fixture deleted, every server action gated behind `actions[]`, and a disbursement that credits real `fee_dues` rather than booking a payment; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.

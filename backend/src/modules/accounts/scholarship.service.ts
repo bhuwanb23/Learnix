@@ -265,7 +265,7 @@ export async function amountPreviewFor(
 // ── schemes ────────────────────────────────────────────────────────────────
 
 const schemeInclude = {
-  academicYear: { select: { name: true } },
+  academicYear: { select: { id: true, name: true } },
   applications: {
     include: {
       studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
@@ -300,6 +300,7 @@ export async function listSchemes(institutionId: string, filters: { status?: str
         status: s.status,
         coveragePercent: s.coveragePercent,
         academicYear: s.academicYear.name,
+        academicYearId: s.academicYearId,
         description: s.description,
         amountMode: s.amountMode,
         amountModeMeta: AMOUNT_MODE_META[s.amountMode as keyof typeof AMOUNT_MODE_META] ?? null,
@@ -351,6 +352,9 @@ export async function getScheme(institutionId: string, schemeId: string) {
     status: s.status,
     coveragePercent: s.coveragePercent,
     academicYear: s.academicYear.name,
+    // The editor round-trips this field, so the detail has to hand back the id
+    // and not just the year's name — otherwise saving an edit has no year to write.
+    academicYearId: s.academicYearId,
     description: s.description,
     amountMode: s.amountMode,
     amountModeMeta: AMOUNT_MODE_META[s.amountMode as keyof typeof AMOUNT_MODE_META] ?? null,

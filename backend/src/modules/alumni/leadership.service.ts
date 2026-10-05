@@ -511,7 +511,7 @@ export async function getChapterPerformance(institutionId: string, chapterId: st
         startDate: true,
         capacity: true,
         status: true,
-        registrations: { select: { registrantUserId: true, status: true } },
+        registrations: { select: { registrantUserId: true, status: true, checkedInAt: true } },
       },
     }),
     prisma.alumniChapterOfficer.count({ where: { chapterId, isCurrent: true } }),
@@ -531,20 +531,27 @@ export async function getChapterPerformance(institutionId: string, chapterId: st
   const pastEvents = chapterEvents.filter((e) => e.startDate < now);
   const upcomingEvents = chapterEvents.filter((e) => e.startDate >= now && e.status !== 'CANCELLED');
 
-  // Only CONFIRMED registrations count as attendance. A PENDING RSVP is an
-  // intention, and counting it would let a chapter show 90% participation on
-  // the strength of registrations nobody honoured.
-  const confirmedByEvent = chapterEvents.map((e) => ({
+  // Attendance is `checkedInAt`, NOT `status === 'CONFIRMED'`.
+  //
+  // This used to count confirmed RSVPs, which was a fiction: CONFIRMED is written
+  // when the office approves a registration or a seat auto-confirms, so a chapter
+  // could report 100% participation for an event that nobody attended. Now every
+  // participation figure below is driven only by a real check-in, written by
+  // markAttendance() / undoAttendance() and never by an RSVP decision.
+  const attendanceByEvent = chapterEvents.map((e) => ({
     eventId: e.id,
     title: e.title,
     startDate: e.startDate,
     capacity: e.capacity,
     isPast: e.startDate < now,
+    // `checkedIn` is the fact. `confirmed` is kept as the denominator — the share
+    // of people who SAID they would come who actually did.
+    checkedIn: e.registrations.filter((r) => r.checkedInAt !== null).length,
     confirmed: e.registrations.filter((r) => r.status === 'CONFIRMED').length,
-    registered: e.registrations.length,
+    registered: e.registrations.filter((r) => r.status !== 'CANCELLED').length,
   }));
 
-  const past12mo = confirmedByEvent.filter((e) => e.isPast && e.startDate >= yearAgo);
+  const past12mo = attendanceByEvent.filter((e) => e.isPast && e.startDate >= yearAgo);
 
   // Unique attendees need their own query: a person who came to four events
   // must count once, and counting registration rows would inflate the headcount
@@ -552,7 +559,7 @@ export async function getChapterPerformance(institutionId: string, chapterId: st
   const uniqueAttendees = new Set<string>();
   const attendanceRows = await prisma.eventRegistration.findMany({
     where: {
-      status: 'CONFIRMED',
+      checkedInAt: { not: null },
       event: { institutionId, chapterId, startDate: { gte: yearAgo, lt: now } },
     },
     select: { registrantUserId: true, eventId: true },
@@ -564,7 +571,7 @@ export async function getChapterPerformance(institutionId: string, chapterId: st
     (
       await prisma.eventRegistration.findMany({
         where: {
-          status: 'CONFIRMED',
+          checkedInAt: { not: null },
           event: { institutionId, chapterId, startDate: { gte: ninetyDaysAgo, lt: now } },
         },
         select: { registrantUserId: true },
@@ -651,8 +658,16 @@ export async function getChapterPerformance(institutionId: string, chapterId: st
       rate: participationRate,
       uniqueAttendees12mo: attendeesInChapter.length,
       participants90d: [...participantsLast90].filter((id) => memberUserIds.has(id)).length,
-      // Attendance vs sign-ups: the gap between these is the no-show problem.
+      // Of the people who CONFIRMED, how many actually turned up. This is the
+      // no-show problem, and it is the one number that used to be fiction.
       attendanceRate: (() => {
+        const checkedIn = past12mo.reduce((s, e) => s + e.checkedIn, 0);
+        const confirmed = past12mo.reduce((s, e) => s + e.confirmed, 0);
+        return confirmed === 0 ? null : Math.round((checkedIn / confirmed) * 100);
+      })(),
+      // Of everyone who registered at all, how many held a seat. Reported
+      // separately because conflating it with attendance is what caused the bug.
+      confirmationRate: (() => {
         const registered = past12mo.reduce((s, e) => s + e.registered, 0);
         const confirmed = past12mo.reduce((s, e) => s + e.confirmed, 0);
         return registered === 0 ? null : Math.round((confirmed / registered) * 100);
@@ -697,13 +712,15 @@ export async function getChapterPerformance(institutionId: string, chapterId: st
       // chapter-vs-chapter competition over a synthetic number.
       note: 'Composite of participation, event fill, growth, initiative progress and committee coverage. A guide, not a ranking.',
     },
-    // The per-event breakdown, so the office can see WHICH event failed to fill.
-    eventBreakdown: confirmedByEvent
+    // The per-event breakdown, so the office can see WHICH event failed to fill —
+    // and, for past events, how many of the people who promised to come did.
+    eventBreakdown: attendanceByEvent
       .sort((a, b) => b.startDate.getTime() - a.startDate.getTime())
       .slice(0, 12)
       .map((e) => ({
         ...e,
         fillRate: e.capacity > 0 ? Math.min(100, Math.round((e.confirmed / e.capacity) * 100)) : 0,
+        showRate: e.confirmed > 0 ? Math.round((e.checkedIn / e.confirmed) * 100) : null,
       })),
   };
 }

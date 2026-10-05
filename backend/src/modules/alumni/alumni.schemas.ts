@@ -65,6 +65,92 @@ export const chapterAnnouncementSchema = z.object({
   body: z.string().trim().min(3).max(2000),
 });
 
+// ── Events (AL-03) ────────────────────────────────────────────
+
+export const eventTypes = ['REUNION', 'NETWORKING', 'WORKSHOP', 'WEBINAR', 'MEETUP'] as const;
+
+export const eventQuerySchema = z.object({
+  scope: z.enum(['upcoming', 'past', 'mine']).optional(),
+  type: z.enum(eventTypes).optional(),
+  q: z.string().trim().max(120).optional(),
+  sort: z.enum(['date', 'recent', 'popularity', 'title']).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+export const createEventSchema = z.object({
+  title: z.string().trim().min(3).max(160),
+  description: z.string().trim().max(4000).optional(),
+  eventType: z.enum(eventTypes).optional(),
+  startDate: z.string().min(8).max(40),
+  endDate: z.string().min(8).max(40),
+  venueId: z.string().trim().min(1).max(64).optional(),
+  isOnline: z.boolean().optional(),
+  meetingUrl: z.string().trim().max(500).optional(),
+  capacity: z.coerce.number().int().min(1).max(100000).optional(),
+  chapterId: z.string().trim().min(1).max(64).optional(),
+  status: z.enum(['DRAFT', 'APPROVED', 'PUBLISHED', 'COMPLETED', 'CANCELLED']).optional(),
+});
+
+export const updateEventSchema = z
+  .object({
+    title: z.string().trim().min(3).max(160).optional(),
+    description: z.string().trim().max(4000).optional(),
+    eventType: z.enum(eventTypes).optional(),
+    startDate: z.string().min(8).max(40).optional(),
+    endDate: z.string().min(8).max(40).optional(),
+    capacity: z.coerce.number().int().min(1).max(100000).optional(),
+    isOnline: z.boolean().optional(),
+    meetingUrl: z.string().trim().max(500).optional(),
+    status: z.enum(['DRAFT', 'APPROVED', 'PUBLISHED', 'COMPLETED', 'CANCELLED']).optional(),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), {
+    message: 'Provide at least one field to update',
+  });
+
+export const scheduleItemSchema = z.object({
+  day: z.coerce.number().int().min(1).max(30),
+  item: z.string().trim().min(2).max(200),
+  order: z.coerce.number().int().min(1).max(999).optional(),
+  startsAt: z.string().min(8).max(40).optional(),
+  endsAt: z.string().min(8).max(40).optional(),
+  speaker: z.string().trim().max(120).optional(),
+  location: z.string().trim().max(120).optional(),
+  track: z.string().trim().max(80).optional(),
+});
+
+export const scheduleItemDoneSchema = z.object({ isDone: z.boolean() });
+
+/**
+ * Attendance is marked by registration id, not user id, so the office marks the
+ * row they see on screen. It is deliberately an array: real check-in is a
+ * headcount, not one-at-a-time.
+ */
+export const attendanceSchema = z.object({
+  registrationIds: z.array(z.string().trim().min(1).max(64)).min(1).max(500),
+  method: z.enum(['MANUAL', 'QR']).optional(),
+});
+
+export const qrCheckInSchema = z.object({ code: z.string().trim().min(4).max(200) });
+
+export const feedbackSchema = z.object({
+  rating: z.coerce.number().int().min(1).max(5),
+  comment: z.string().trim().max(2000).optional(),
+});
+
+export const photoCaptionSchema = z.object({
+  caption: z.string().trim().max(300).optional(),
+});
+
+export const addAttendeeSchema = z.object({
+  userId: z.string().trim().min(1).max(64),
+  status: z.enum(['CONFIRMED', 'PENDING']).optional(),
+});
+
+export const removeAttendeeSchema = z.object({
+  reason: z.string().trim().min(5).max(500),
+});
+
 export const chapterEventSchema = z.object({
   title: z.string().trim().min(3).max(120),
   description: z.string().trim().min(3).max(1000).optional(),

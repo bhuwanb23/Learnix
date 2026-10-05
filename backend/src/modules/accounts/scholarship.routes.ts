@@ -95,7 +95,15 @@ const upload = multer({
 /** Everything the app needs to render a scheme form without hard-coding it. */
 router.get(
   '/scholarships/catalogue',
-  wrap(async (_req, res) => {
+  wrap(async (req, res) => {
+    // The scheme form needs a year to attach the fund to, and the years are
+    // tenant data — so they belong in the catalogue rather than being typed in
+    // or hardcoded. Current year first, then most recent.
+    const academicYears = await prisma.academicYear.findMany({
+      where: { institutionId: req.auth!.institutionId },
+      select: { id: true, name: true, isCurrent: true, startDate: true },
+      orderBy: [{ isCurrent: 'desc' }, { startDate: 'desc' }],
+    });
     res.json({
       data: {
         types: SCHOLARSHIP_TYPES.map((t) => ({ type: t, ...SCHOLARSHIP_TYPE_META[t] })),
@@ -106,6 +114,7 @@ router.get(
         disbursementBands: Object.entries(DISBURSEMENT_META).map(([band, m]) => ({ band, ...m })),
         transitions: TRANSITIONS,
         amountModes: desk.AMOUNT_MODE_META,
+        academicYears: academicYears.map((y) => ({ id: y.id, name: y.name, isCurrent: y.isCurrent })),
       },
     });
   }),

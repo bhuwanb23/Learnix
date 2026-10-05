@@ -3,6 +3,9 @@ import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
+import { prisma } from '../../db/prisma.js';
+import { badRequest } from '../../lib/errors.js';
+import { photoUpload } from './eventUpload.js';
 import {
   directoryQuerySchema,
   donationPageQuerySchema,
@@ -28,6 +31,17 @@ import {
   officersQuerySchema,
   removeMemberSchema,
   addMemberSchema,
+  eventQuerySchema,
+  createEventSchema,
+  updateEventSchema,
+  scheduleItemSchema,
+  scheduleItemDoneSchema,
+  attendanceSchema,
+  qrCheckInSchema,
+  feedbackSchema,
+  photoCaptionSchema,
+  addAttendeeSchema,
+  removeAttendeeSchema,
 } from './alumni.schemas.js';
 import * as service from './alumni.service.js';
 import * as directory from './directory.service.js';
@@ -35,6 +49,10 @@ import * as connections from './connections.service.js';
 import * as chapterSvc from './chapters.service.js';
 import * as leadership from './leadership.service.js';
 import * as membership from './membership.service.js';
+import * as eventSvc from './events.service.js';
+import * as registration from './registration.service.js';
+import * as feedback from './feedback.service.js';
+import * as memories from './memories.service.js';
 
 // Alumni Relations module — mounted at /api/v1/alumni (docs/users/12 §4)
 const router = Router();
@@ -440,11 +458,45 @@ router.post(
   }),
 );
 
-// AL-03 events + RSVP decisions
+// ── AL-03 events ─────────────────────────────────────────────
+// Literal paths come BEFORE `/events/:id`, otherwise Express matches "upcoming"
+// as an id and the tab endpoints 404.
+router.get(
+  '/events/my-registrations',
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await registration.listMyEvents(viewer, { includePast: true }) });
+  }),
+);
+
+router.get(
+  '/events/my-attendance',
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await registration.getMyAttendance(viewer) });
+  }),
+);
+
 router.get(
   '/events',
+  validate(eventQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listEvents(req.auth!.institutionId) });
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await eventSvc.listEvents(req.auth!.institutionId, {
+        ...(req.query as Record<string, never>),
+        viewer,
+      }),
+    });
+  }),
+);
+
+router.post(
+  '/events',
+  validate(createEventSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await eventSvc.createEvent(viewer, req.body) });
   }),
 );
 
@@ -452,22 +504,262 @@ router.get(
   '/events/:id',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
-    res.json({ data: await service.getEventDetail(req.auth!.institutionId, String(req.params.id)) });
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await eventSvc.getEventDetail(req.auth!.institutionId, String(req.params.id), viewer),
+    });
   }),
 );
 
+router.patch(
+  '/events/:id',
+  validate(idParamSchema, 'params'),
+  validate(updateEventSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await eventSvc.updateEvent(viewer, String(req.params.id), req.body) });
+  }),
+);
+
+// ── Self-service registration ──
+router.post(
+  '/events/:id/register',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await registration.registerForEvent(viewer, String(req.params.id)) });
+  }),
+);
+
+router.post(
+  '/events/:id/cancel-registration',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await registration.cancelRegistration(viewer, String(req.params.id)) });
+  }),
+);
+
+// ── Office RSVP decisions (the waitlist queue) ──
 router.post(
   '/rsvps/:id/decide',
   validate(idParamSchema, 'params'),
   validate(rsvpDecisionSchema),
   wrap(async (req, res) => {
-    const result = await service.decideRsvp(
+    const result = await eventSvc.decideRsvp(
       req.auth!.institutionId,
       String(req.params.id),
       req.body.decision,
       req.auth!.userId,
     );
     res.json({ data: result });
+  }),
+);
+
+router.post(
+  '/events/:id/attendees',
+  validate(idParamSchema, 'params'),
+  validate(addAttendeeSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({
+      data: await registration.addAttendee(viewer, String(req.params.id), req.body),
+    });
+  }),
+);
+
+router.post(
+  '/events/:id/attendees/:registrationId/remove',
+  validate(idParamSchema, 'params'),
+  validate(removeAttendeeSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await registration.removeAttendee(
+        viewer,
+        String(req.params.id),
+        String(req.params.registrationId),
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+// ── Agenda ──
+router.post(
+  '/events/:id/schedule',
+  validate(idParamSchema, 'params'),
+  validate(scheduleItemSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({
+      data: await eventSvc.addScheduleItem(viewer, String(req.params.id), req.body),
+    });
+  }),
+);
+
+router.post(
+  '/schedule-items/:id/toggle',
+  validate(idParamSchema, 'params'),
+  validate(scheduleItemDoneSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await eventSvc.toggleScheduleItem(viewer, String(req.params.id), req.body.isDone) });
+  }),
+);
+
+// ── Attendance ──
+router.post(
+  '/events/:id/attendance',
+  validate(idParamSchema, 'params'),
+  validate(attendanceSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await eventSvc.markAttendance(viewer, String(req.params.id), req.body) });
+  }),
+);
+
+router.post(
+  '/events/:id/attendance/undo',
+  validate(idParamSchema, 'params'),
+  validate(attendanceSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await eventSvc.undoAttendance(viewer, String(req.params.id), {
+        registrationIds: req.body.registrationIds,
+      }),
+    });
+  }),
+);
+
+router.post(
+  '/events/:id/checkin',
+  validate(idParamSchema, 'params'),
+  validate(qrCheckInSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await eventSvc.mockQrCheckIn(viewer, String(req.params.id), req.body) });
+  }),
+);
+
+// ── Feedback ──
+router.get(
+  '/events/:id/feedback',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await feedback.listFeedback(viewer, String(req.params.id), req.auth!.institutionId),
+    });
+  }),
+);
+
+router.post(
+  '/events/:id/feedback',
+  validate(idParamSchema, 'params'),
+  validate(feedbackSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({
+      data: await feedback.submitFeedback(viewer, String(req.params.id), req.body),
+    });
+  }),
+);
+
+router.delete(
+  '/events/:id/feedback',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await feedback.deleteMyFeedback(viewer, String(req.params.id)) });
+  }),
+);
+
+// ── Memories (photos) ──
+router.get(
+  '/events/:id/photos',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await memories.listPhotos(String(req.params.id), req.auth!.institutionId),
+    });
+  }),
+);
+
+// Multipart: multer runs BEFORE the wrap so `req.file` exists. Authentication is
+// still enforced — the router-level `auth` + `requireRole` middleware runs above
+// every route here, so an anonymous upload never reaches this handler.
+router.post(
+  '/events/:id/photos',
+  validate(idParamSchema, 'params'),
+  photoUpload.single('file'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const file = req.file;
+    if (!file) throw badRequest('No file was uploaded — send it as multipart/form-data under "file"');
+
+    // The File row is written FIRST so a failed attach leaves an orphan file
+    // (invisible, harmless) rather than an EventPhoto pointing at nothing.
+    const created = await prisma.file.create({
+      data: {
+        institutionId: req.auth!.institutionId,
+        uploaderUserId: req.auth!.userId,
+        purpose: 'EVENT_PHOTO',
+        mimeType: file.mimetype,
+        sizeBytes: file.size,
+        storageKey: file.filename,
+        originalName: file.originalname,
+      },
+    });
+
+    try {
+      const photo = await memories.addPhoto(viewer, String(req.params.id), {
+        fileId: created.id,
+        caption: req.body.caption,
+      });
+      res.status(201).json({
+        data: {
+          ...photo,
+          originalName: created.originalName,
+          sizeBytes: created.sizeBytes,
+          url: `/uploads/${created.storageKey}`,
+        },
+      });
+    } catch (e) {
+      // Do not leave an unattached file behind — the same photo uploaded twice is
+      // otherwise invisible clutter in the files table.
+      await prisma.file.delete({ where: { id: created.id } }).catch(() => {});
+      throw e;
+    }
+  }),
+);
+
+router.patch(
+  '/events/:id/photos/:photoId',
+  validate(idParamSchema, 'params'),
+  validate(photoCaptionSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await memories.updateCaption(
+        viewer,
+        String(req.params.id),
+        String(req.params.photoId),
+        req.body.caption ?? '',
+      ),
+    });
+  }),
+);
+
+router.delete(
+  '/events/:id/photos/:photoId',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await memories.deletePhoto(viewer, String(req.params.id), String(req.params.photoId)),
+    });
   }),
 );
 
