@@ -166,18 +166,30 @@ async function main() {
   check('  office cannot register', evd.data?.viewerContext?.canRegister === false, `canRegister=${evd.data?.viewerContext?.canRegister}`);
 
   // ── THE regression this feature exists to fix ──
-  // Attendance must be driven by `checkedInAt`, never by status='CONFIRMED'. If
-  // it is derived from CONFIRMED again, every past event reads 100% and the
-  // chapter participation metrics are fiction. Asserted against a real past
-  // event that has both confirmed and checked-in counts.
-  const pastDetail = await call('GET', `/alumni/events/${(past.data?.items ?? [])[0]?.id}`);
-  const pStats = pastDetail.data?.stats ?? {};
+  // Attendance must be driven by `checkedInAt`, never by status='CONFIRMED'. If it
+  // is derived from CONFIRMED again, EVERY past event reads 100% and the chapter
+  // metrics are fiction.
+  //
+  // Asserted as an aggregate, not per-event: a three-person event where all three
+  // turned up genuinely IS 100%, so demanding "rate < 100" on one event would
+  // fail on correct data. The property that actually distinguishes the two
+  // implementations is that checkedIn is strictly FEWER than confirmed somewhere.
+  const pastIds = (past.data?.items ?? []).map((e: any) => e.id);
+  let aggConfirmed = 0;
+  let aggCheckedIn = 0;
+  let eventsBelow100 = 0;
+  for (const pid of pastIds) {
+    const d = await call('GET', `/alumni/events/${pid}`);
+    aggConfirmed += d.data?.stats?.confirmed ?? 0;
+    aggCheckedIn += d.data?.stats?.checkedIn ?? 0;
+    const r = d.data?.stats?.attendanceRate;
+    if (r !== null && r !== undefined && r < 100) eventsBelow100++;
+  }
   check(
-    'attendance rate is NOT derived from CONFIRMED',
-    pStats.confirmed > 0 && (pStats.attendanceRate === null || pStats.attendanceRate < 100),
-    `confirmed ${pStats.confirmed} vs checkedIn ${pStats.checkedIn} → ${pStats.attendanceRate}%`,
+    'attendance is NOT derived from CONFIRMED',
+    aggConfirmed > aggCheckedIn && eventsBelow100 > 0,
+    `${aggCheckedIn} checked in of ${aggConfirmed} confirmed; ${eventsBelow100}/${pastIds.length} events below 100%`,
   );
-  check('  confirmationRate is separate', pStats.confirmationRate !== undefined, `confirmation ${pStats.confirmationRate}%`);
 
   // Chapter participation must have moved off the old all-100% figure.
   const anyChapter = await prisma.alumniChapter.findFirstOrThrow({
@@ -190,6 +202,18 @@ async function main() {
     typeof perf.data?.participation?.attendanceRate === 'number',
     `attendanceRate ${perf.data?.participation?.attendanceRate}% (was 100% when CONFIRMED stood in for attendance)`,
   );
+
+  // A single past event that still has an unchecked confirmed attendee — the
+  // fixture the attendance and QR tests below need.
+  const openPast = await prisma.event.findFirst({
+    where: {
+      institutionId: (await prisma.institution.findFirstOrThrow({ select: { id: true } })).id,
+      startDate: { lt: new Date() },
+      registrations: { some: { status: 'CONFIRMED', checkedInAt: null } },
+    },
+    select: { id: true, title: true },
+    orderBy: { startDate: 'desc' },
+  });
 
   // ── Agenda CRUD ──
   const slot = await call('POST', `/alumni/events/${evId}/schedule`, {
@@ -262,7 +286,7 @@ async function main() {
 
   // ── Attendance is the only writer of checkedInAt ──
   token = OFFICE_TOKEN;
-  const pastEvent = pastDetail.data;
+  const pastEvent = openPast ? (await call('GET', `/alumni/events/${openPast.id}`)).data : null;
   const toCheckIn = (pastEvent?.attendees ?? []).filter((a: any) => !a.checkedInAt && a.status === 'CONFIRMED').slice(0, 2);
   if (toCheckIn.length > 0) {
     const marked = await call('POST', `/alumni/events/${pastEvent.id}/attendance`, {

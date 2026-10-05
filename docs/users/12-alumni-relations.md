@@ -27,9 +27,71 @@ Directory stats (registered/employed/entrepreneurs/higher ed), search + batch fi
 | contributions | [{ type: Donation/Event/Mentoring, label, date }] |
 
 ### 3.3 Events (tab)
-Upcoming/Completed tabs, RSVP progress bars → **event detail**: date/time/venue hero with filled %, **day-wise schedule timeline**, **RSVP list with live Confirm/Decline**, Announce / Remind actions.
+Directory of alumni events with three scopes — Upcoming / Past / **My events** —
+crossed with five event types. Per-event detail adds agenda, attendees, reviews
+and photo memories.
 
-**Entity `alumni_event`**: id, name, date, time, venue, capacity, rsvps, status, schedule[], desc; `rsvp`: alumniId, status (Pending/Confirmed/Declined).
+**Types** — `eventType`: `REUNION | NETWORKING | WORKSHOP | WEBINAR | MEETUP`.
+Kept **separate from `Event.category`**, which is shared with the student and
+sports apps; both render filter chips from `category`, so adding alumni-only
+values there would surface them in two other products.
+
+**Online events** — `isOnline` + `meetingUrl`, with `venueId` cleared. A webinar
+has no room, and a "Virtual" venue row would be a lie in a bookings table.
+
+**Entity `event`** — shared with students/sports. A chapter event is an `Event`
+with `chapterId` set, not a parallel table, so it inherits RSVP, schedule,
+attendance and notification handling for free.
+
+**Entity `eventRegistration`** — `status` PENDING | CONFIRMED | DECLINED | **CANCELLED**,
+plus `checkedInAt`, `checkInMethod` (MANUAL | QR) and a `qrPayload` code.
+
+**Entity `eventScheduleItem`** — `day`, `order`, `item`, `isDone`, plus optional
+`startsAt`, `endsAt`, `speaker`, `location`, `track`. The previous model stored the
+time *inside* the title ("09:30 — Registration"), where it could not be sorted,
+styled, or reasoned about.
+
+**Entity `eventFeedback`** — `rating` 1–5 + `comment`, `@@unique([eventId, authorUserId])`
+so one review per person per event, but **editable**.
+
+**Entity `eventPhoto`** — a real upload into the shared File store (`EVENT_PHOTO`
+purpose) with a caption, rather than a pasted URL that can rot.
+
+Detail tabs: **About · Agenda · Attendees · Reviews · Memories**.
+
+#### Attendance is not a registration status
+
+`status` says what someone **promised**; `checkedInAt` says they **showed up**.
+These were conflated for a while, and treating `status === 'CONFIRMED'` as
+attendance let a chapter report **100% participation for an event nobody
+attended** — because CONFIRMED is written when the office approves an RSVP or a
+seat auto-confirms.
+
+`checkedInAt` is therefore written by exactly two functions,
+`markAttendance()` and `undoAttendance()`, and by nothing else — not by an RSVP
+decision, not by auto-confirmation, not by an office approval. Every
+participation figure in the app (event turnout, chapter Performance) counts
+check-ins and only check-ins.
+
+Three separate rates are reported, because merging them is what caused the bug:
+
+| Metric | Meaning |
+|---|---|
+| `confirmationRate` | of everyone registered, how many held a seat |
+| `attendanceRate` | of those who confirmed, how many actually turned up |
+| `participation.rate` (chapter) | of the chapter's members, how many attended anything |
+
+#### ⚠️ YET TO BUILD — camera QR check-in
+
+`POST /alumni/events/:id/checkin` verifies a real `qrPayload` code and is wired
+end to end: the code is issued on registration, stored, verified by the server,
+and the office can run it from the Attendees tab. **There is no camera scanner.**
+The screen currently asks the office to paste or type the code, which is exactly
+the work a scanner would do minus the camera — swapping the pasted value for a
+scanned one requires no backend change.
+
+`qrPayload` was previously a JSON blob on the registration that **nothing ever
+wrote or read**; it is now load-bearing.
 
 ### 3.4 Donations (tab)
 FY collections hero (target progress), campaign cards (target/raised/donors/days left) with **Share Campaign**, recent donations with **Record** (Pending → Received → receipt forwarded to Accounts).
@@ -197,6 +259,50 @@ is the participation rate — the share of members who actually turned up to
 something — because member count and event count are easy to inflate and a chapter
 of 40 who never meet is not as healthy as a chapter of 12 who meet monthly.
 
+### Events
+```
+GET  /alumni/events                ?scope=upcoming|past|mine&type=&q=&sort=&page=
+                                  → { items[], pagination, facets.types[] }
+GET  /alumni/events/my-registrations
+GET  /alumni/events/my-attendance            history driven by checkedInAt
+GET  /alumni/events/{id}                    + viewerContext
+POST /alumni/events/{id}/register           auto-confirm, or PENDING when full
+POST /alumni/events/{id}/cancel-registration  promotes the waitlist
+POST /alumni/rsvps/{id}/decide              { CONFIRMED | DECLINED } (office)
+POST /alumni/events/{id}/attendees          office adds an attendee
+POST /alumni/events/{id}/attendees/{regId}/remove   { reason } (office)
+
+POST /alumni/events/{id}/schedule           office adds an agenda slot
+POST /alumni/schedule-items/{id}/toggle     { isDone }
+
+POST /alumni/events/{id}/attendance         { registrationIds[], method }
+POST /alumni/events/{id}/attendance/undo    { registrationIds[] }
+POST /alumni/events/{id}/checkin            { code }   ⚠️ mock, no camera yet
+
+GET  /alumni/events/{id}/feedback
+POST /alumni/events/{id}/feedback           { rating 1–5, comment? } — checked-in only
+DELETE /alumni/events/{id}/feedback
+
+GET    /alumni/events/{id}/photos
+POST   /alumni/events/{id}/photos           multipart "file" + caption (office)
+PATCH  /alumni/events/{id}/photos/{photoId} { caption }
+DELETE /alumni/events/{id}/photos/{photoId}
+
+POST  /alumni/events               office create      PATCH /alumni/events/{id}
+```
+
+`scope=mine` is resolved through the viewer's own registration rows rather than a
+status filter, so it can only be answered by the backend.
+
+`viewerContext` is the only authority on permissions — the UI renders Register,
+Cancel, Mark attendance and Upload from these flags and never from a client-side
+role check. Registering **CONFIRMS IMMEDIATELY** while seats remain and lands in
+`PENDING` (the waitlist) once full; cancelling promotes the longest-waiting person
+into the freed seat, so a cancellation is never a wasted seat.
+
+`GET /alumni/events` filters on `category: 'ALUMNI'`. Events is one shared table,
+and without that filter the alumni directory serves student and sports events.
+
 ### Events, donations, mentorship, communications
 ```
 GET  /alumni/events               + /{id}
@@ -223,7 +329,11 @@ GET  /alumni/profile              (office profile card)
 | `AlumniChapter` | + `events` relation; `region`, `tier`, `description`, `meetingFrequency`. `presidentAlumniUserId` is a **denormalised pointer** to the current PRESIDENT, written only by `assignOfficer()` and the seed |
 | `AlumniChapterOfficer` | one row per **term**: `role`, `since`, `until`, `isCurrent`. `@@unique([chapterId, alumniUserId, role])` — re-appointment opens a new term instead of editing history |
 | `AlumniChapterInitiative` | `status`, `targetCount`/`achievedCount`, `ownerAlumniUserId`, optional `campaignId`. No money column by design |
-| `Event` | + `chapterId` (null = not a chapter event) |
+| `Event` | shared with students/sports. + `eventType` (alumni-only taxonomy), `isOnline`, `meetingUrl`, `chapterId`. ⚠️ reads as `alumni_event` in older docs |
+| `EventRegistration` | `@@unique([eventId, registrantUserId])`. `status` is intent; **`checkedInAt` is attendance** — never derived from `status` |
+| `EventScheduleItem` | `@@unique([eventId, day, order])` + optional `startsAt`/`speaker`/`location`/`track` |
+| `EventPhoto` | `@@unique([eventId, fileId])`, `onDelete: Cascade` to both `Event` and `File` |
+| `EventFeedback` | `@@unique([eventId, authorUserId])`, editable; only check-ins may create one |
 | `FundraisingCampaign` / `Donation` | `raisedMinor` denormalised, recomputed from RECEIVED gifts |
 
 Mutual requests auto-accept: if A already asked B and B asks A, they become
@@ -249,6 +359,16 @@ settings and 34 connections.
 - **Office stays out of chapters** — the `ALUMNI_OFFICE` account is detached from
   chapter membership, because an officer in a member list would corrupt that
   chapter's participation metrics.
+- **Attendance is real, and id-stable** — past events carry genuine check-ins at
+  roughly 82% of confirmed registrations, so turnout varies (69–100%) instead of
+  the uniform 100% the old `status`-based derivation produced. Each registration's
+  attendance is decided from a **hash of its id**, never from its index among
+  rows still needing work: re-indexing the leftovers made the second run stamp the
+  remaining 18% as well, quietly returning every event to 100%.
+- **Migrates legacy data in place** — agenda titles of the form `"09:30 — Welcome"`
+  are split into `startsAt` + a clean title, and events that predate `eventType`
+  are classified from their title. Without this, ~60 agenda rows and 16 events
+  would have looked empty on the new screens while the seed reported success.
 
 ⚠️ **Money ceiling**: every `*Minor` column is an `Int` (32-bit), so a single
 amount cannot exceed 2,147,483,647 paise ≈ **₹2.14 crore**. `raisedMinor`
@@ -258,21 +378,29 @@ to record the donation that crosses it. Campaign targets are sized with headroom
 ## 7. Wiring Status
 
 Backend (`directory.service.ts`, `connections.service.ts`, `chapters.service.ts`,
-`membership.service.ts`, `leadership.service.ts`, `alumni.service.ts`) + frontend
-(`learnix/users/alumni/**`) are wired and verified.
-`npx tsx scripts/verify-alumni.ts` runs **161 assertions** against a live server.
+`membership.service.ts`, `leadership.service.ts`, `events.service.ts`,
+`registration.service.ts`, `feedback.service.ts`, `memories.service.ts`,
+`alumni.service.ts`) + frontend (`learnix/users/alumni/**`) are wired and verified.
+`npx tsx scripts/verify-alumni.ts` runs **187 assertions** against a live server.
 
-Two properties the suite is built around, because both were real bugs first:
+Four properties the suite is built around, because each was a real bug first:
 
-- **Assert permissions as somebody who lacks them.** The chapter role gates are
-  exercised by a graduate who holds no office — resolved through prisma, since the
+- **Assert permissions as somebody who lacks them.** Chapter role gates are
+  exercised by a graduate who holds no office, resolved through prisma because the
   directory projection exposes neither `userId` nor `chapterId`. Picking "any
   graduate" once selected an officer, who legitimately *may* create an initiative,
-  and the assertion passed for the wrong reason.
-- **Restore every fixture.** The suite mutates a chapter, two officers, two
-  graduates' memberships and a pledge, and puts all of them back: the presidency is
-  handed over so the sitting president can leave, both graduates are re-enrolled in
-  their seeded chapters, and the scratch chapter is deleted. Two consecutive runs
-  both report `161 passed, 0 failed`.
+  so the assertion passed for the wrong reason.
+- **Switch identity between assertions.** Several checks compare the office
+  against a graduate on the same endpoint; leaving the previous token in place
+  re-asserts a permission instead of testing the refusal, and the test still goes
+  green.
+- **Assert aggregates, not absolutes.** "Attendance is not derived from CONFIRMED"
+  is checked as *checked-in is strictly fewer than confirmed somewhere*, because a
+  three-person event where all three turned up genuinely is 100% — demanding
+  "below 100%" on any single event fails on correct data.
+- **Restore every fixture.** The suite creates events, agenda slots,
+  registrations, reviews and check-ins, and removes them all; the `PLEDGE`
+  donation is returned to `PLEDGED` and its payment rows are deleted. Two
+  consecutive runs both report `187 passed, 0 failed`.
 
 `npx expo export --platform web` builds clean.

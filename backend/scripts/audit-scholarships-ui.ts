@@ -290,6 +290,51 @@ for (const needed of [
   ok(registered.has(needed), `${needed} is registered in FEATURE_MODULES`);
 }
 
+// Registration is not reachability. A screen registered in FEATURE_MODULES but
+// opened by nothing is dead code the user can never reach — which is exactly how
+// the scheme editor, the document upload and the reversal survived a "complete"
+// report: all three were built, tested and registered, with no entry point.
+const navigatesTo: Map<string, string[]> = new Map();
+for (const f of allScreenFiles) {
+  const src = readFileSync(f, 'utf8');
+  for (const m of src.matchAll(/openModule\(\s*'([^']+)'/g)) {
+    const list = navigatesTo.get(m[1]) ?? [];
+    list.push(path.basename(f));
+    navigatesTo.set(m[1], list);
+  }
+}
+const scholarshipKeys = [...registered].filter((k) => k.startsWith('Scholarship'));
+ok(scholarshipKeys.length === 9, 'nine scholarship screens are registered', String(scholarshipKeys.length));
+for (const key of scholarshipKeys) {
+  // The hub itself is opened by the accounts tab, not by another screen.
+  if (key === 'Scholarships') continue;
+  const from = navigatesTo.get(key) ?? [];
+  ok(from.length > 0, `${key} is reachable — something navigates to it`, 'opened by no screen');
+}
+
+// The seven sub-features this desk is built around must each have BOTH a route
+// and the service function that does the work. A documented feature with no
+// endpoint, or an endpoint with no implementation, is a claim rather than a
+// feature.
+const routeSrc = readFileSync(path.resolve(__dirname, '../src/modules/accounts/scholarship.routes.ts'), 'utf8');
+const implSrc = ['scholarship.rules.ts', 'scholarship.service.ts', 'scholarship.desk.ts', 'scholarship.disburse.ts']
+  .map((f) => readFileSync(path.resolve(__dirname, '../src/modules/accounts', f), 'utf8'))
+  .join('\n');
+const routerPaths = new Set([...routeSrc.matchAll(/router\.(?:get|post|put)\(\s*\n\s*'([^']+)'/g)].map((m) => m[1]));
+const SUB_FEATURES: [string, string[], string[]][] = [
+  ['Scholarship applications', ['/scholarships/applications'], ['applyToScheme', 'listApplications', 'getApplication']],
+  ['Eligibility verification', ['/scholarships'], ['evaluateEligibility', 'eligibilityFactsFor', 'availableActions']],
+  ['Required-document tracking', ['/scholarships/applications/:id/documents/:code'], ['recordDocument', 'uploadDocument', 'scoreDocuments']],
+  ['Approval workflow', ['/scholarships/applications/:id/review', '/scholarships/applications/:id/approve'], ['assertTransition', 'canTransition', 'TRANSITIONS']],
+  ['Scholarship amount tracking', ['/scholarships/tracking'], ['amountTracking', 'computeAwardAmount', 'schemeTotals']],
+  ['Disbursement status', ['/scholarships/applications/:id/disburse', '/scholarships/applications/:id/reverse'], ['disburseApplication', 'reverseDisbursement', 'disbursementBand']],
+  ['Student-wise scholarship history', ['/scholarships/students/:studentProfileId/history'], ['studentHistory']],
+];
+for (const [label, routes, fns] of SUB_FEATURES) {
+  for (const r of routes) ok(routerPaths.has(r), `${label}: route ${r} exists`);
+  for (const f of fns) ok(implSrc.includes(f), `${label}: ${f} is implemented`);
+}
+
 // ═══ 3. Imports resolve to real exports ══════════════════════════════════
 section('3. Imports resolve to real exports');
 
