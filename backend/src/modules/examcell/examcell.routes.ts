@@ -5,10 +5,6 @@ import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   idParamSchema,
-  createExamSchema,
-  createExamSlotSchema,
-  rescheduleSlotSchema,
-  allocateRoomSchema,
   generateHallTicketsSchema,
   assignEvaluatorSchema,
   publishResultsSchema,
@@ -38,86 +34,31 @@ router.get(
   }),
 );
 
-// X-02 timetable — list exams
-router.get(
-  '/timetable',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listExams(req.auth!.institutionId) });
-  }),
-);
-
-// X-02 timetable — create exam
-router.post(
-  '/timetable',
-  validate(createExamSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.createExam(req.auth!.institutionId, req.auth!.userId, req.body),
-    });
-  }),
-);
-
-// X-02 timetable — add slot to exam
-router.post(
-  '/timetable/:id/slots',
-  validate(idParamSchema, 'params'),
-  validate(createExamSlotSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.addExamSlot(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-        req.body,
-      ),
-    });
-  }),
-);
-
-// X-02 timetable — reschedule slot
-router.post(
-  '/slots/:id/reschedule',
-  validate(idParamSchema, 'params'),
-  validate(rescheduleSlotSchema),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.rescheduleSlot(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-        req.body,
-      ),
-    });
-  }),
-);
-
-// X-03 room allocations — list
-router.get(
-  '/slots/:id/allocations',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.listRoomAllocations(req.auth!.institutionId, String(req.params.id)),
-    });
-  }),
-);
-
-// X-03 room allocations — allocate
-router.post(
-  '/slots/:id/allocations',
-  validate(idParamSchema, 'params'),
-  validate(allocateRoomSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.allocateRoom(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-        req.body,
-      ),
-    });
-  }),
-);
+// ── X-02 Timetable ───────────────────────────────────────────────────────
+// MOVED to `./timetable.routes.ts`, which is mounted BEFORE this router.
+//
+// The six endpoints that used to live here were removed, not re-pointed:
+//
+//   GET  /timetable            listExams reported `conflicts: examConflicts.length`
+//                              and NOBODY EVER WROTE AN ExamConflict ROW — so the
+//                              count was a hard zero forever, while the screen
+//                              showed "2 conflicts" out of a fixture file.
+//   POST /timetable            create-only. There was no way to EDIT a schedule,
+//                              which is most of what a controller does.
+//   POST /timetable/:id/slots  the offering lookup was `where: { id }` with NO
+//                              institution filter, so another college's offering
+//                              could be scheduled into this exam.
+//   POST /slots/:id/reschedule NO CONFLICT CHECK AT ALL. The operation a
+//                              controller reaches for precisely when something is
+//                              wrong was the only write path with no guard, so a
+//                              fix could introduce the very clash it was fixing.
+//   GET/POST /slots/:id/alloc  `roomId` was an opaque string written straight into
+//                              a scalar column: no venue was checked to exist, to
+//                              belong to this institution, or to be free — and no
+//                              invigilator was ever checked for a double booking.
+//
+// The replacements live in one service with one conflict engine, and every
+// schema they use is `.strict()`.
 
 // X-04 hall tickets — list for exam
 router.get(

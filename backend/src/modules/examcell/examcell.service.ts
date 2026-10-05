@@ -107,205 +107,29 @@ export async function getDashboard(institutionId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// X-02 — Exam schedule (timetable)
+// X-02 / X-03 — REMOVED, superseded by `./timetable.service.ts`
 // ─────────────────────────────────────────────────────────────
-export async function listExams(institutionId: string) {
-  const exams = await prisma.exam.findMany({
-    where: { institutionId },
-    include: {
-      examSlots: {
-        include: { offering: { include: { course: true } } },
-        orderBy: { date: 'asc' },
-      },
-      examConflicts: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return exams.map((e) => ({
-    id: e.id,
-    name: e.name,
-    semester: e.semester,
-    type: e.type,
-    status: e.status,
-    slotsCount: e.examSlots.length,
-    conflicts: e.examConflicts.length,
-    createdAt: e.createdAt,
-    slots: e.examSlots.map((s) => ({
-      id: s.id,
-      course: s.offering.course.name,
-      courseCode: s.offering.course.code,
-      date: s.date,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      room: s.room,
-      seats: s.seats,
-      status: s.status,
-    })),
-  }));
-}
-
-export async function createExam(
-  institutionId: string,
-  userId: string,
-  body: { semester: number; type: string; name: string },
-) {
-  const ay = await prisma.academicYear.findFirst({ where: { institutionId, isCurrent: true } });
-  if (!ay) throw badRequest('No active academic year');
-
-  // Check duplicate
-  const existing = await prisma.exam.findFirst({
-    where: { institutionId, semester: body.semester, type: body.type, name: body.name },
-  });
-  if (existing) throw badRequest('An exam with this name and type already exists for this semester');
-
-  const exam = await prisma.exam.create({
-    data: {
-      institutionId,
-      academicYearId: ay.id,
-      semester: body.semester,
-      type: body.type,
-      name: body.name,
-      createdByUserId: userId,
-      status: 'SCHEDULED',
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'EXAM_CREATED', entityType: 'Exam', entityId: exam.id });
-  return exam;
-}
-
-export async function addExamSlot(
-  institutionId: string,
-  userId: string,
-  examId: string,
-  body: { offeringId: string; date: string; startTime: string; endTime: string; room?: string; seats: number },
-) {
-  const exam = await prisma.exam.findFirst({ where: { id: examId, institutionId } });
-  if (!exam) throw notFound('Exam not found');
-
-  const offering = await prisma.courseOffering.findFirst({ where: { id: body.offeringId } });
-  if (!offering) throw notFound('Course offering not found');
-
-  // Conflict detection: same offering in same time window
-  const conflictSlot = await prisma.examSlot.findFirst({
-    where: {
-      examId,
-      offeringId: body.offeringId,
-      date: new Date(body.date),
-      startTime: body.startTime,
-    },
-  });
-  if (conflictSlot) throw badRequest('A slot already exists for this offering at the same date/time');
-
-  // Room conflict check (same room, same date, overlapping time)
-  if (body.room) {
-    const roomConflict = await prisma.examSlot.findFirst({
-      where: {
-        exam: { institutionId },
-        room: body.room,
-        date: new Date(body.date),
-        startTime: { lte: body.endTime },
-        endTime: { gte: body.startTime },
-      },
-    });
-    if (roomConflict) throw badRequest(`Room ${body.room} is already allocated for another exam at this time`);
-  }
-
-  const slot = await prisma.examSlot.create({
-    data: {
-      examId,
-      offeringId: body.offeringId,
-      date: new Date(body.date),
-      startTime: body.startTime,
-      endTime: body.endTime,
-      room: body.room,
-      seats: body.seats,
-      status: 'SCHEDULED',
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'EXAM_SLOT_ADDED', entityType: 'ExamSlot', entityId: slot.id });
-  return slot;
-}
-
-export async function rescheduleSlot(
-  institutionId: string,
-  userId: string,
-  slotId: string,
-  body: { date: string; startTime: string; endTime: string; room?: string },
-) {
-  const slot = await prisma.examSlot.findFirst({
-    where: { id: slotId, exam: { institutionId } },
-  });
-  if (!slot) throw notFound('Exam slot not found');
-
-  const updated = await prisma.examSlot.update({
-    where: { id: slotId },
-    data: {
-      date: new Date(body.date),
-      startTime: body.startTime,
-      endTime: body.endTime,
-      room: body.room ?? slot.room,
-      status: 'RESCHEDULED',
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'EXAM_SLOT_RESCHEDULED', entityType: 'ExamSlot', entityId: slotId });
-  return updated;
-}
-
-// ─────────────────────────────────────────────────────────────
-// X-03 — Room allocations + invigilator duty
-// ─────────────────────────────────────────────────────────────
-export async function listRoomAllocations(institutionId: string, slotId: string) {
-  const slot = await prisma.examSlot.findFirst({
-    where: { id: slotId, exam: { institutionId } },
-    include: {
-      roomAllocations: true,
-    },
-  });
-  if (!slot) throw notFound('Exam slot not found');
-
-  return {
-    slotId: slot.id,
-    room: slot.room,
-    seats: slot.seats,
-    allocations: slot.roomAllocations.map((a) => ({
-      id: a.id,
-      roomId: a.roomId,
-      invigilatorUserId: a.invigilatorUserId,
-    })),
-  };
-}
-
-export async function allocateRoom(
-  institutionId: string,
-  userId: string,
-  slotId: string,
-  body: { roomId: string; invigilatorUserId?: string },
-) {
-  const slot = await prisma.examSlot.findFirst({
-    where: { id: slotId, exam: { institutionId } },
-  });
-  if (!slot) throw notFound('Exam slot not found');
-
-  const existing = await prisma.examRoomAllocation.findFirst({
-    where: { examSlotId: slotId, roomId: body.roomId },
-  });
-  if (existing) throw badRequest('Room already allocated for this slot');
-
-  const allocation = await prisma.examRoomAllocation.create({
-    data: {
-      examSlotId: slotId,
-      roomId: body.roomId,
-      invigilatorUserId: body.invigilatorUserId,
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'ROOM_ALLOCATED', entityType: 'ExamRoomAllocation', entityId: allocation.id });
-  return allocation;
-}
+//
+// Six functions used to live here and were deleted rather than left as dead
+// exports, because a dead export is still a second answer to "what counts as a
+// clash" — and having three of them is how this module reached the state it was
+// in. For the record, what each one got wrong:
+//
+//   listExams              returned `conflicts: examConflicts.length`, and NO code
+//                          path ever created an ExamConflict row. The count was a
+//                          hard zero forever while the screen showed "2 conflicts"
+//                          out of a fixture file.
+//   createExam             the only way to make an exam; there was no edit at all,
+//                          which is most of what a controller does.
+//   addExamSlot            looked the offering up with `where: { id }` and NO
+//                          institution filter — another college's offering could
+//                          be scheduled into this exam.
+//   rescheduleSlot         checked NOTHING. Moving a paper could create the very
+//                          student clash the controller was trying to fix.
+//   listRoomAllocations    reported a raw roomId with nothing to resolve it
+//                          against; `Room` in this schema is a HOSTEL room.
+//   allocateRoom           wrote an unchecked roomId string into a scalar column
+//                          and never checked the invigilator for a double booking.
 
 // ─────────────────────────────────────────────────────────────
 // X-04 — Hall tickets
