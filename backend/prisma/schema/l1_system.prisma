@@ -26,6 +26,8 @@ model File {
   // traversable from a claim; the scalar `fileId` on the other side stays the
   // authority, which is what the duplicate-receipt check relies on.
   expenseDocuments ExpenseDocument[]
+  // Back-relation for PayrollEntry.payslip — a generated payslip PDF.
+  payslips PayrollEntry[] @relation("PayrollPayslip")
   @@map("files")
 }
 

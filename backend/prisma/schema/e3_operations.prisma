@@ -57,7 +57,15 @@ model PayrollEntry {
   paidAt        DateTime?
   paidByUserId  String? // scalar → users.id
   paymentRef    String? // UTR / cheque / transfer reference
-  payslipFileId String? // scalar → files.id (Domain L)
+  // A generated PDF is a REAL FILE row, so the link is a relation rather than a
+  // bare scalar: the app has to be able to say "payslip.pdf, 34 KB" and open it,
+  // which it cannot do with an id alone.
+  payslipFileId String?
+  payslip  File?   @relation("PayrollPayslip", fields: [payslipFileId], references: [id])
+  // Which salary VERSION priced this entry. A payslip is a historical document,
+  // so it must keep pointing at the record that was in force in THIS month even
+  // after the next raise closes that record's window.
+  salaryRecordId String? // scalar → staff_salary_records.id
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -166,4 +174,159 @@ model Budget {
   @@index([institutionId])
   @@index([departmentId])
   @@map("budgets")
+}
+
+// ── F-06 Payroll, part 2: salary records, allowances, deductions, attendance ──
+//
+// Everything above describes a payroll RUN — one month, one sheet of payslips.
+// What was missing is the thing that decides what those runs are worth: a
+// per-person salary record that a finance officer can actually open, change and
+// audit. `StaffProfile.monthlyGrossMinor` was a single mutable integer with no
+// author, no date and no history, so "why did this person's salary change" had
+// no answer and a raise silently rewrote last month's payslip basis.
+//
+// So a salary is a VERSIONED RECORD, not a field:
+//
+//   StaffSalaryRecord   one person's salary, effective over a window. Changing it
+//                       closes the open record and opens the next one, so the
+//                       run for March still prices at the salary that was in
+//                       force in March — the same effective-date discipline the
+//                       fee-structure desk uses.
+//   StaffPayComponent   the ALLOWANCES and DEDUCTIONS that make up that salary
+//                       (basic / HRA / DA / transport / PF / TDS / professional
+//                       tax …), each a percentage of a named base or a flat
+//                       amount. The old formula hard-coded 50/40/12; this is the
+//                       same idea a college actually needs — a principal's HRA is
+//                       not a maths constant.
+//   StaffLoan           a salary advance or loan, recovered as a deduction over
+//                       the months that follow. This is the deduction an Indian
+//                       payroll desk is asked about every month and which no
+//                       version of this schema could record.
+//   StaffAttendanceSummary  one staff member's month: days present, paid leave,
+//                       unpaid leave, and the loss-of-pay days that fall out of
+//                       it. Kept as a summary rather than a join over class
+//                       attendance because faculty attendance is a different
+//                       thing from a student's register — and because the
+//                       payroll month must be reproducible after the fact.
+//
+// Money: integer paise throughout (ADR-04). Every `…Minor` column is paise.
+
+/// One version of one person's salary.
+model StaffSalaryRecord {
+  id              String    @id @default(cuid())
+  institutionId   String
+  staffUserId     String // scalar → users.id
+  monthlyGrossMinor Int    // paise — the MONTHLY gross this record prices at
+  basicMinor      Int       @default(0) // paise — the base most allowances/retirement are % of
+  effectiveFrom   DateTime // the day this salary starts applying
+  effectiveTo     DateTime? // null = still in force (open-ended window)
+  reason          String?   // why it changed — "Annual increment", "Promotion"
+  note            String?
+  createdByUserId String // scalar → users.id — salary changes have an author
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  components StaffPayComponent[]
+
+  // A person can only have ONE salary in force at a time. The service enforces
+  // the overlap rule; this index is what makes the "is anything already open?"
+  // check cheap rather than a table scan on every raise.
+  @@index([institutionId, staffUserId])
+  @@index([institutionId, staffUserId, effectiveFrom])
+  @@map("staff_salary_records")
+}
+
+/// One allowance or deduction line inside a salary version.
+/// `percentOf` names the BASE the percentage applies to ("BASIC", "GROSS") so a
+/// component is a rule, not a number that was already multiplied by hand.
+model StaffPayComponent {
+  id             String  @id @default(cuid())
+  salaryRecordId String
+  kind           String  // EARNING | DEDUCTION
+  code           String  // BASIC | HRA | DA | TRANSPORT | SPECIAL | PF | PROF_TAX | TDS | LOAN | OTHER
+  label          String
+  percentOf      String? // BASIC | GROSS | null (flat)
+  percent        Int?    // whole percent, e.g. 40
+  amountMinor    Int     @default(0) // flat paise — used when percentOf/percent are null
+  isTaxable      Boolean @default(false) // taxable income (TDS is computed on this)
+  sequence       Int     @default(0) // payslip print order
+  note           String?
+
+  salaryRecord StaffSalaryRecord @relation(fields: [salaryRecordId], references: [id], onDelete: Cascade)
+
+  @@unique([salaryRecordId, code])
+  @@index([salaryRecordId, kind])
+  @@map("staff_pay_components")
+}
+
+/// A loan or salary advance recovered as a monthly deduction.
+/// `recoveredMinor` is denormalised from `StaffLoanRecovery` rows (same
+/// discipline as `Budget.spentMinor`) so "what is still owed" is one column and
+/// not a per-row sum on every payslip.
+model StaffLoan {
+  id              String   @id @default(cuid())
+  institutionId   String
+  staffUserId     String // scalar → users.id
+  kind            String   @default("LOAN") // LOAN | ADVANCE
+  label           String   // "Festival advance", "Staff welfare loan"
+  principalMinor  Int      // paise — how much was given
+  installmentMinor Int     // paise — recovered per month (0 = manual)
+  recoveredMinor  Int      @default(0) // paise — denorm, sum of recoveries
+  grantedMonth    String   // "2026-08" — not paid before this month
+  status          String   @default("ACTIVE") // ACTIVE | CLOSED | CANCELLED
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  recoveries StaffLoanRecovery[]
+
+  @@unique([institutionId, staffUserId, label, grantedMonth])
+  @@index([institutionId, status])
+  @@index([staffUserId])
+  @@map("staff_loans")
+}
+
+/// One month's recovery against a loan — the audit trail for the denormalised
+/// `StaffLoan.recoveredMinor`, and what makes "₹4,000 recovered in August" an
+/// answerable question rather than an inference.
+model StaffLoanRecovery {
+  id         String   @id @default(cuid())
+  loanId     String
+  month      String   // "2026-08"
+  amountMinor Int     // paise
+  note       String?
+  createdAt  DateTime @default(now())
+
+  loan StaffLoan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([loanId, month])
+  @@index([month])
+  @@map("staff_loan_recoveries")
+}
+
+/// One staff member's attendance for one payroll month.
+///
+/// Faculty attendance is NOT the student register: there is no offering, no
+/// session and no per-student row. So this is a monthly summary the desk
+/// maintains or derives from approved leave, and it is the ONLY input that makes
+/// a payslip's loss-of-pay line traceable to a source rather than a typed number.
+model StaffAttendanceSummary {
+  id             String   @id @default(cuid())
+  institutionId  String
+  staffUserId    String // scalar → users.id
+  month          String // "2026-08"
+  workingDays    Int      // days the person was on the roster
+  presentDays    Int      @default(0)
+  paidLeaveDays  Int      @default(0)
+  unpaidLeaveDays Int     @default(0) // THESE become loss of pay
+  lopDays        Int      @default(0) // paise-free day count — may be edited down (partial day)
+  source         String   @default("MANUAL") // MANUAL | LEAVE_SYNC
+  note           String?
+  updatedByUserId String? // scalar → users.id
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([institutionId, staffUserId, month])
+  @@index([institutionId, month])
+  @@map("staff_attendance_summaries")
 }

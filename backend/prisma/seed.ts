@@ -16,6 +16,7 @@ import { computeLateFee } from '../src/modules/accounts/dues.fines.js';
 import { splitAmount } from '../src/modules/accounts/dues.plans.js';
 import { fiscalYearOf } from '../src/modules/accounts/expenses.money.js';
 import { syncFeeStructures } from './syncFeeStructures.js';
+import { syncPayrollSalary, linkRunsToSalaryRecords } from './syncPayrollSalary.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -1068,6 +1069,14 @@ async function seedDomainE(institutionId: string): Promise<void> {
   await syncPayrollRun('2026-07', 'PAID');
   await syncPayrollRun('2026-08', 'PAID');
   await syncPayrollRun('2026-09', 'APPROVED', { payCount: Math.max(1, payable.length - 5), lopForLowest: 2 });
+
+  // The salary DESK (part 2): versioned salary records with real allowance
+  // structures, attendance summaries, and loans. It runs after the runs above
+  // because it then points each historic entry at the salary version that priced
+  // it — so the salary screen and the payslip cannot show two different
+  // structures for the same person in the same month.
+  const salarySeed = await syncPayrollSalary(db, institutionId, admin.id);
+  const linkedEntries = await linkRunsToSalaryRecords(db, institutionId);
   // Budget + expense (LABS)
   const budget = await db.budget.findFirst({ where: { institutionId, fiscalYear: '2025-26', category: 'LABS' } });
   let labBudget = budget;
@@ -1106,6 +1115,9 @@ async function seedDomainE(institutionId: string): Promise<void> {
 
   console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
   console.log(`  ✓ salary scale on ${allStaff.length} staff · payroll 2026-07 PAID, 2026-08 PAID, 2026-09 APPROVED (part-paid)`);
+  console.log(
+    `  ✓ salary records: ${salarySeed.records} opened, ${salarySeed.revisions} increments · attendance ${salarySeed.attendance} · loans ${salarySeed.loans} (+${salarySeed.recoveries} recoveries) · ${linkedEntries} runs linked to a salary version`,
+  );
   console.log('  ✓ LABS budget+expense PENDING, merit scholarship APPROVED');
   await syncExpenses(
     institutionId,
