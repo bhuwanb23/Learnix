@@ -1,510 +1,353 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
-import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
+import { SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
+import { PairCard, StatusChip, Avatar, NoData, ProgressBar } from './components/MentorCard';
+import { pairStatusMeta, fmtDate, relativeDay, sessionModeMeta } from './mentorshipMeta';
 
-const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#7c3aed', '#dc2626'];
-const tabs = ['Active Pairs', 'Requests'];
+import MentorshipDirectory from './pages/mentorship_directory/mentorship_directory';
+import MentorshipRequests from './pages/mentorship_requests/mentorship_requests';
+import PairDetail from './pages/pair_detail/pair_detail';
+
+/**
+ * Mentorship hub.
+ *
+ * Replaces a single 510-line screen that had no navigation at all, rendered no
+ * status labels, and crashed on its own write path (`ActivityIndicator` was used
+ * but never imported, so tapping Approve or Remind threw).
+ *
+ * Three scopes, which is the thing the old version got wrong: it showed ACTIVE
+ * and PENDING only, so declining a pair made it VANISH with no record. History is
+ * a first-class tab now, because the office has to be able to explain to a mentee
+ * why nobody ever replied.
+ */
+const SCOPES = [
+  { id: 'active', label: 'Active', icon: 'checkmark-circle-outline' },
+  { id: 'pending', label: 'Requests', icon: 'hourglass-outline' },
+  { id: 'history', label: 'History', icon: 'time-outline' },
+];
 
 export default function MentorshipModule({ navigation }) {
+  const [scope, setScope] = useState('active');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('Active Pairs');
   const [busyId, setBusyId] = useState(null);
 
-  const load = useCallback(async (showSpinner = true) => {
-    try {
-      if (showSpinner) setLoading(true);
-      setError(null);
-      const d = await alumniApi.mentorship();
-      setData(d);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  // Sub-screens, held as local state rather than pushed onto a router: this app
+  // has no navigation stack, so a drill-down that could not be dismissed would
+  // strand the user. `open`/`back` keeps the exit explicit.
+  const [sub, setSub] = useState(null); // { kind, id }
+  const [requests, setRequests] = useState(null);
+  const [directory, setDirectory] = useState(null);
 
-  React.useEffect(() => {
+  const load = useCallback(
+    async (showSpinner = true) => {
+      try {
+        if (showSpinner) setLoading(true);
+        setError(null);
+        setData(await alumniApi.mentorship({ scope }));
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [scope],
+  );
+
+  useEffect(() => {
     load();
   }, [load]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false);
-  };
+  const reloadAll = useCallback(async () => {
+    await load(false);
+    if (requests) setRequests(null); // force the inbox to refetch on return
+    if (directory) setDirectory(null);
+  }, [load]);
 
-  const act = async (pairId, action, successMsg) => {
-    setBusyId(pairId);
+  const onRemind = async (pair) => {
     try {
-      await alumniApi.mentorshipAction(pairId, action);
-      await load(false);
-      Alert.alert('Done', successMsg);
+      setBusyId(pair.id);
+      await alumniApi.remindMentor(pair.id);
+      Alert.alert('Reminder sent', `${pair.mentor.name} has been nudged about the next session.`);
     } catch (e) {
-      Alert.alert('Cannot update pair', e.message);
+      Alert.alert('Cannot send reminder', e.message);
     } finally {
       setBusyId(null);
     }
   };
 
-  if (loading && !data) {
+  // ── Sub-screen routing ──
+  if (sub?.kind === 'directory') {
     return (
-      <View style={styles.center}>
-        <SkeletonStatRow count={3} style={{ paddingHorizontal: 16 }} />
-        <View style={{ paddingHorizontal: 16, marginTop: 14 }}>
-          {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
-          ))}
-        </View>
-      </View>
+      <MentorshipDirectory
+        navigation={{ goBack: () => setSub(null) }}
+        onRequested={() => {
+          setSub(null);
+          setScope('pending');
+        }}
+      />
+    );
+  }
+  if (sub?.kind === 'requests') {
+    return (
+      <MentorshipRequests
+        navigation={{ goBack: () => setSub(null), openDirectory: () => setSub({ kind: 'directory' }) }}
+        onDecided={reloadAll}
+      />
+    );
+  }
+  if (sub?.kind === 'pair') {
+    return (
+      <PairDetail
+        pairId={sub.id}
+        navigation={{ goBack: () => setSub(null) }}
+        onChanged={reloadAll}
+      />
     );
   }
 
-  if (error && !data) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const pairs = activeTab === 'Active Pairs' ? (data?.active ?? []) : (data?.pending ?? []);
-  const sessions = data?.recentSessions ?? [];
-  const stats = [
-    { label: 'Active Pairs', value: String((data?.active ?? []).length), icon: 'hand-left-outline', color: '#2563eb' },
-    { label: 'Pending', value: String((data?.pending ?? []).length), icon: 'hourglass-outline', color: '#d97706' },
-    { label: 'Sessions Logged', value: String(sessions.length), icon: 'videocam-outline', color: '#059669' },
-  ];
+  const stats = data?.stats ?? {};
+  const items = scope === 'active' ? data?.active ?? [] : scope === 'pending' ? data?.pending ?? [] : data?.history ?? [];
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <View style={styles.statsRow}>
-        {stats.map((s) => (
-          <View key={s.label} style={styles.statCard}>
-            <Ionicons name={s.icon} size={14} color={s.color} />
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
+    <View style={styles.container}>
+      <LinearGradient colors={['#0891b2', '#0e7490']} style={styles.hero}>
+        <View style={styles.heroRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.heroTitle}>Mentorship</Text>
+            <Text style={styles.heroSub}>
+              {stats.active ?? 0} active · {stats.pending ?? 0} awaiting decision
+            </Text>
           </View>
-        ))}
-      </View>
-
-      <View style={styles.tabsWrap}>
-        {tabs.map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.tab, activeTab === t && styles.tabActive]}
-            onPress={() => setActiveTab(t)}
-          >
-            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>{t}</Text>
-            {t === 'Requests' && (data?.pending ?? []).length > 0 && (
-              <View style={styles.tabBadge}>
-                <Text style={styles.tabBadgeText}>{data.pending.length}</Text>
+          <TouchableOpacity style={styles.circleBtn} onPress={() => setSub({ kind: 'requests' })}>
+            <Ionicons name="mail-unread-outline" size={18} color="#fff" />
+            {(stats.pending ?? 0) > 0 ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{stats.pending}</Text>
               </View>
-            )}
+            ) : null}
           </TouchableOpacity>
-        ))}
+        </View>
+
+        <View style={styles.heroStats}>
+          <HeroStat value={stats.active ?? 0} label="active pairs" />
+          <HeroStat value={stats.alumniToAlumni ?? 0} label="a↔a" />
+          <HeroStat value={stats.alumniToStudent ?? 0} label="a↔student" />
+          <HeroStat value={stats.sessionsHeld ?? 0} label="sessions" />
+        </View>
+      </LinearGradient>
+
+      {/* Quick actions. The old empty state told the user to "add mentors from the
+          directory" while rendering no button that could take them there. */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => setSub({ kind: 'requests' })}>
+          <Ionicons name="mail-outline" size={15} color="#0891b2" />
+          <Text style={styles.actionText}>Requests inbox</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => setSub({ kind: 'directory' })}>
+          <Ionicons name="people-outline" size={15} color="#7c3aed" />
+          <Text style={styles.actionText}>Find a mentor</Text>
+        </TouchableOpacity>
       </View>
 
-      {activeTab === 'Active Pairs' && (
-        <>
-          {pairs.map((p, idx) => {
-            const color = COLORS[idx % COLORS.length];
-            return (
-              <AnimatedCard key={p.id} delay={idx * 50} style={styles.pairCard}>
-                <View style={styles.pairRow}>
-                  <View style={[styles.mentorAvatar, { backgroundColor: color + '1a' }]}>
-                    <Text style={[styles.initials, { color }]}>
-                      {p.mentor.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                    </Text>
-                  </View>
-                  <View style={styles.pairBody}>
-                    <Text style={styles.pairTitle} numberOfLines={1}>
-                      {p.mentor.name} → {p.mentee}
-                    </Text>
-                    <Text style={styles.pairMeta}>
-                      {p.field}{p.mentor.batch ? ` · Batch ${p.mentor.batch}` : ''}
-                      {p.mentor.role ? ` · ${p.mentor.role}` : ''}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.pairFooter}>
-                  <View style={styles.sessionChip}>
-                    <Ionicons name="videocam-outline" size={11} color={color} />
-                    <Text style={[styles.sessionText, { color }]}>{p.sessions} sessions</Text>
-                  </View>
-                  <Text style={styles.nextSession}>
-                    Requested {new Date(p.requestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.remindBtn}
-                  disabled={busyId === p.id}
-                  onPress={() => act(p.id, 'remind', `Session reminder sent to ${p.mentor.name}.`)}
-                >
-                  {busyId === p.id ? (
-                    <ActivityIndicator size="small" color="#2563eb" />
-                  ) : (
-                    <Ionicons name="notifications-outline" size={13} color="#2563eb" />
-                  )}
-                  <Text style={styles.remindText}>Send Reminder</Text>
-                </TouchableOpacity>
-              </AnimatedCard>
-            );
-          })}
-          {pairs.length === 0 && (
-            <EmptyState
-              icon="hand-left-outline"
-              title="No active pairs yet"
-              subtitle="Approve requests or add mentors from the directory"
-              color="#2563eb"
-            />
-          )}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabWrap} contentContainerStyle={styles.tabRow}>
+        {SCOPES.map((s) => {
+          const active = scope === s.id;
+          const count =
+            s.id === 'active' ? (data?.active?.length ?? 0) : s.id === 'pending' ? (data?.pending?.length ?? 0) : (data?.history?.length ?? 0);
+          return (
+            <TouchableOpacity key={s.id} style={[styles.tab, active && styles.tabActive]} onPress={() => setScope(s.id)}>
+              <Ionicons name={s.icon} size={13} color={active ? '#fff' : theme.colors.textMuted} />
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>{s.label}</Text>
+              <Text style={[styles.tabCount, active && styles.tabCountActive]}>{count}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
 
-          {sessions.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recent Sessions</Text>
-              {sessions.map((s) => (
-                <View key={s.id} style={styles.sessionRow}>
-                  <View style={styles.sessionIcon}>
-                    <Ionicons name="checkmark-circle" size={16} color="#059669" />
-                  </View>
-                  <View style={styles.sessionBody}>
-                    <Text style={styles.sessionTopic} numberOfLines={1}>
-                      {s.field}{s.notes ? ` — ${s.notes}` : ''}
-                    </Text>
-                    <Text style={styles.sessionMeta}>
-                      {s.mentor} ↔ {s.mentee} · {new Date(s.sessionDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+      {loading && !data ? (
+        <View style={{ paddingHorizontal: 16 }}>
+          <SkeletonStatRow count={4} />
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Ionicons name="cloud-offline-outline" size={38} color={theme.colors.textMuted} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retry} onPress={() => load()}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                load(false);
+              }}
+            />
+          }
+        >
+          {/* Programme-level context. Only on the Active tab — a history tab that
+              also showed programme totals was noise. */}
+          {scope === 'active' && stats.active > 0 ? (
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <SummaryStat label="Goals achieved" value={String(stats.goalsAchieved ?? 0)} />
+                <SummaryStat
+                  label="Avg mentor rating"
+                  value={stats.avgRatingOfMentors != null ? stats.avgRatingOfMentors.toFixed(1) : '—'}
+                />
+                <SummaryStat label="Sessions logged" value={String(stats.sessionsHeld ?? 0)} />
+              </View>
             </View>
-          )}
-        </>
-      )}
+          ) : null}
 
-      {activeTab === 'Requests' && (
-        <>
-          {pairs.length === 0 && (
-            <EmptyState
-              icon="checkmark-done-outline"
-              title="All caught up!"
-              subtitle="No pending mentorship requests"
-              color="#059669"
+          {items.map((p) => (
+            <PairCard
+              key={p.id}
+              pair={p}
+              busy={busyId === p.id}
+              onOpen={() => setSub({ kind: 'pair', id: p.id })}
+              onRemind={p.status === 'ACTIVE' ? () => onRemind(p) : undefined}
             />
-          )}
-          {pairs.map((r, idx) => {
-            const color = COLORS[idx % COLORS.length];
-            return (
-              <AnimatedCard key={r.id} delay={idx * 50} style={styles.requestCard}>
-                <View style={[styles.mentorAvatar, { backgroundColor: color + '1a' }]}>
-                  <Text style={[styles.initials, { color }]}>
-                    {r.mentor.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                  </Text>
-                </View>
-                <View style={styles.pairBody}>
-                  <Text style={styles.pairTitle} numberOfLines={1}>
-                    {r.mentor.name} → {r.mentee}
-                  </Text>
-                  <Text style={styles.pairMeta}>
-                    {r.field} · Batch {r.mentor.batch ?? '—'}
-                  </Text>
-                  <View style={styles.requestActions}>
-                    <TouchableOpacity
-                      style={styles.approveBtn}
-                      disabled={busyId === r.id}
-                      onPress={() => act(r.id, 'approve', `${r.mentor.name} ↔ ${r.mentee} is now active.`)}
-                    >
-                      {busyId === r.id ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                      ) : (
-                        <Ionicons name="checkmark" size={13} color="#fff" />
-                      )}
-                      <Text style={styles.approveText}>Approve</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.rejectBtn}
-                      disabled={busyId === r.id}
-                      onPress={() => act(r.id, 'decline', `${r.mentor.name} ↔ ${r.mentee} pairing declined.`)}
-                    >
-                      <Ionicons name="close" size={13} color="#dc2626" />
-                      <Text style={styles.rejectText}>Decline</Text>
-                    </TouchableOpacity>
+          ))}
+
+          {items.length === 0 ? (
+            <NoData
+              icon={scope === 'pending' ? 'mail-outline' : scope === 'history' ? 'time-outline' : 'people-outline'}
+              title={
+                scope === 'pending'
+                  ? 'No requests waiting'
+                  : scope === 'history'
+                    ? 'Nothing in the history'
+                    : 'No active mentorships'
+              }
+              subtitle={
+                scope === 'pending'
+                  ? 'New requests from mentees appear here with the reason they gave.'
+                  : scope === 'history'
+                    ? 'Declined and completed mentorships are kept here so decisions stay explainable.'
+                    : 'Browse the mentor directory to request a mentor, or accept a request from the inbox.'
+              }
+              // An empty state with no way out is a dead end — offer the next step.
+              actionLabel={scope === 'history' ? 'View active pairs' : 'Open requests inbox'}
+              onAction={
+                scope === 'history'
+                  ? () => setScope('active')
+                  : () => setSub({ kind: 'requests' })
+              }
+            />
+          ) : null}
+
+          {/* Recent sessions, scoped to ACTIVE pairs by the server. */}
+          {scope === 'active' && (data?.recentSessions ?? []).length > 0 ? (
+            <>
+              <Text style={styles.sectionTitle}>Recent sessions</Text>
+              {(data?.recentSessions ?? []).map((s) => (
+                <TouchableOpacity key={s.id} style={styles.sessionRow} onPress={() => setSub({ kind: 'pair', id: s.pairId })}>
+                  <Ionicons name={sessionModeMeta(s.mode).icon} size={14} color="#059669" />
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text style={styles.sessionTitle} numberOfLines={1}>
+                      {s.mentor} → {s.mentee}
+                    </Text>
+                    <Text style={styles.sessionMeta} numberOfLines={1}>
+                      {s.field} · {relativeDay(s.sessionDate)}
+                      {s.mode ? ` · ${sessionModeMeta(s.mode).label.toLowerCase()}` : ''}
+                    </Text>
                   </View>
-                </View>
-              </AnimatedCard>
-            );
-          })}
-        </>
+                  <Text style={styles.sessionDate}>{fmtDate(s.sessionDate)}</Text>
+                </TouchableOpacity>
+              ))}
+            </>
+          ) : null}
+        </ScrollView>
       )}
-    </ScrollView>
+    </View>
+  );
+}
+
+function HeroStat({ value, label }) {
+  return (
+    <View style={styles.heroStat}>
+      <Text style={styles.heroStatValue}>{value}</Text>
+      <Text style={styles.heroStatLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function SummaryStat({ label, value }) {
+  return (
+    <View style={styles.summaryStat}>
+      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryLabel}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginHorizontal: 4,
-  },
-  statValue: {
-    fontSize: 15,
-    fontFamily: 'Manrope-ExtraBold',
-    color: theme.colors.text,
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  tabsWrap: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginHorizontal: 16,
-    marginTop: 14,
-    padding: 4,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 9,
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  tabActive: {
-    backgroundColor: theme.colors.primary,
-  },
-  tabText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.textMuted,
-  },
-  tabTextActive: {
-    color: '#fff',
-  },
-  tabBadge: {
-    backgroundColor: '#EF4444',
-    borderRadius: 9999,
-    minWidth: 16,
-    height: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 5,
-  },
-  tabBadgeText: {
-    fontSize: 9,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-  },
-  pairCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-    marginHorizontal: 16,
-    marginTop: 10,
-  },
-  pairRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  mentorAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  initials: {
-    fontSize: 12,
-    fontFamily: 'Manrope-ExtraBold',
-  },
-  pairBody: { flex: 1 },
-  pairTitle: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  pairMeta: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  pairFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  sessionChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sessionText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-    marginLeft: 4,
-  },
-  nextSession: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-  },
-  remindBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#bfdbfe',
-    borderRadius: 9,
-    paddingVertical: 7,
-    marginTop: 10,
-  },
-  remindText: {
-    fontSize: 11,
-    fontFamily: 'Manrope-SemiBold',
-    color: '#2563eb',
-    marginLeft: 5,
-  },
-  section: { paddingHorizontal: 16, marginTop: 18 },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  sessionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 10,
-    marginBottom: 8,
-  },
-  sessionIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: '#dcfce7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  sessionBody: { flex: 1 },
-  sessionTopic: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  sessionMeta: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  emptyCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 24,
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 10,
-  },
-  emptyTitle: {
-    fontSize: 14,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginTop: 8,
-  },
-  emptySub: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 3,
-  },
-  requestCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 10,
-  },
-  requestActions: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  approveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#059669',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginRight: 8,
-  },
-  approveText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 4,
-  },
-  rejectBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fee2e2',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  rejectText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-    color: '#dc2626',
-    marginLeft: 4,
-  },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  errorText: { marginTop: 10, fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center' },
+  retry: { marginTop: 14, backgroundColor: '#0891b2', paddingHorizontal: 22, paddingVertical: 9, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 12 },
+
+  hero: { padding: 18, paddingTop: 16 },
+  heroRow: { flexDirection: 'row', alignItems: 'center' },
+  heroTitle: { color: '#fff', fontSize: 21, fontFamily: 'Manrope-ExtraBold' },
+  heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 11, fontFamily: 'Manrope-Medium', marginTop: 2 },
+  circleBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', top: -4, right: -4, minWidth: 17, height: 17, borderRadius: 9, backgroundColor: '#dc2626', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  badgeText: { color: '#fff', fontSize: 9, fontFamily: 'Manrope-Bold' },
+  heroStats: { flexDirection: 'row', gap: 7, marginTop: 14 },
+  heroStat: { flex: 1, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 11, paddingHorizontal: 8, paddingVertical: 7 },
+  heroStatValue: { color: '#fff', fontSize: 14, fontFamily: 'Manrope-ExtraBold' },
+  heroStatLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 8, fontFamily: 'Manrope-Medium' },
+
+  actionRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 },
+  actionBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, paddingVertical: 11 },
+  actionText: { fontSize: 12, fontFamily: 'Manrope-Bold', color: theme.colors.text },
+
+  tabWrap: { flexGrow: 0, marginTop: 12 },
+  tabRow: { paddingHorizontal: 16, gap: 6 },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: 11, paddingVertical: 8 },
+  tabActive: { backgroundColor: '#0891b2', borderColor: '#0891b2' },
+  tabText: { fontSize: 11, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted },
+  tabTextActive: { color: '#fff' },
+  tabCount: { fontSize: 9, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted, backgroundColor: theme.colors.surfaceMuted, borderRadius: 7, paddingHorizontal: 5, paddingVertical: 1 },
+  tabCountActive: { color: '#fff', backgroundColor: 'rgba(255,255,255,0.22)' },
+
+  list: { padding: 16, paddingBottom: 28 },
+  summaryCard: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, padding: 12, marginBottom: 12 },
+  summaryRow: { flexDirection: 'row' },
+  summaryStat: { flex: 1, alignItems: 'center' },
+  summaryValue: { fontSize: 17, fontFamily: 'Manrope-ExtraBold', color: theme.colors.text },
+  summaryLabel: { fontSize: 9, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 2, textAlign: 'center' },
+  sectionTitle: { fontSize: 12, fontFamily: 'Manrope-Bold', color: theme.colors.text, marginTop: 6, marginBottom: 8 },
+  sessionRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border, padding: 12, marginBottom: 8 },
+  sessionTitle: { fontSize: 11, fontFamily: 'Manrope-Bold', color: theme.colors.text },
+  sessionMeta: { fontSize: 9, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 2 },
+  sessionDate: { fontSize: 9, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted },
 });

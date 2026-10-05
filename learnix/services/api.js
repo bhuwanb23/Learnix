@@ -231,8 +231,60 @@ export const alumniApi = {
   },
   recordDonation: (id) => api.post(`/alumni/donations/${id}/record`),
 
-  mentorship: () => api.get('/alumni/mentorship'),
+  // ── Mentorship (AL-05) ──
+  // `scope` is active | pending | history | all. `history` exists because the old
+  // list only ever returned ACTIVE and PENDING, so a declined pair disappeared
+  // the instant you declined it.
+  mentorship: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/mentorship${qs ? `?${qs}` : ''}`);
+  },
+  mentorshipPair: (id) => api.get(`/alumni/mentorship/${id}`),
   mentorshipAction: (id, action) => api.post(`/alumni/mentorship/${id}/${action}`),
+  completePair: (id, outcome) => api.post(`/alumni/mentorship/${id}/complete`, { outcome }),
+  remindMentor: (id) => api.post(`/alumni/mentorship/${id}/remind`),
+  createPair: (payload) => api.post('/alumni/mentorship/pairs', payload),
+  // Office shortcut kept for the alumni-detail screen; now requires a mentee.
+  addMentor: (profileId, payload) => api.post(`/alumni/directory/${profileId}/add-mentor`, payload),
+  // The mentor directory. With `requestId` it returns RANKED matches for that
+  // request instead of a flat list.
+  mentorDirectory: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/mentorship/mentors${qs ? `?${qs}` : ''}`);
+  },
+  mentorshipRequests: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/mentorship/requests${qs ? `?${qs}` : ''}`);
+  },
+  requestMentor: (payload) => api.post('/alumni/mentorship/requests', payload),
+  requestMatches: (requestId, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/mentorship/requests/${requestId}/matches${qs ? `?${qs}` : ''}`);
+  },
+  decideMentorshipRequest: (id, payload) => api.post(`/alumni/mentorship/requests/${id}/decide`, payload),
+  withdrawMentorshipRequest: (id) => api.delete(`/alumni/mentorship/requests/${id}`),
+  // Sessions. `planned: true` books a session; omitting it logs one that happened.
+  logMentorshipSession: (pairId, payload) => api.post(`/alumni/mentorship/${pairId}/sessions`, payload),
+  updateMentorshipSession: (sessionId, payload) => api.patch(`/alumni/mentorship/sessions/${sessionId}`, payload),
+  cancelMentorshipSession: (sessionId, reason) =>
+    api.post(`/alumni/mentorship/sessions/${sessionId}/cancel`, { reason }),
+  // Goals & progress
+  createMentorshipGoal: (pairId, payload) => api.post(`/alumni/mentorship/${pairId}/goals`, payload),
+  updateMentorshipGoal: (goalId, payload) => api.patch(`/alumni/mentorship/goals/${goalId}`, payload),
+  deleteMentorshipGoal: (goalId) => api.delete(`/alumni/mentorship/goals/${goalId}`),
+  mentorshipProgress: (pairId) => api.get(`/alumni/mentorship/${pairId}/progress`),
+  // Feedback — two-way, participants only
+  mentorshipFeedback: (pairId) => api.get(`/alumni/mentorship/${pairId}/feedback`),
+  submitMentorshipFeedback: (pairId, payload) => api.post(`/alumni/mentorship/${pairId}/feedback`, payload),
+  deleteMentorshipFeedback: (pairId) => api.delete(`/alumni/mentorship/${pairId}/feedback`),
 
   // Chapters (AL-06). `/chapters` returns
   // { count, totalMembers, regions[], tiers{}, chapters[] }.
@@ -564,6 +616,47 @@ export const studentApi = {
   notifications: () => api.get('/student/notifications'),
   markAllRead: () => api.post('/student/notifications/read-all'),
   profile: () => api.get('/student/profile'),
+
+  // ── Mentorship (student mentee side, docs/users/12 §3.5) ──
+  // Deliberately under `/student/*`, not `/alumni/*`: the alumni router is gated
+  // `requireRole('ALUMNI','ADMIN')`, so a STUDENT could be a mentor's mentee in the
+  // database with no way to see it. These hit the thin `/student/mentorship`
+  // surface, which serves the same shared services.
+  mentorship: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/student/mentorship${qs ? `?${qs}` : ''}`);
+  },
+  mentorshipPair: (id) => api.get(`/student/mentorship/${id}`),
+  mentorDirectory: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/student/mentorship/mentors${qs ? `?${qs}` : ''}`);
+  },
+  mentorshipRequests: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/student/mentorship/requests${qs ? `?${qs}` : ''}`);
+  },
+  requestMentor: (payload) => api.post('/student/mentorship/requests', payload),
+  requestMatches: (requestId) => api.get(`/student/mentorship/requests/${requestId}/matches`),
+  withdrawMentorshipRequest: (id) => api.delete(`/student/mentorship/requests/${id}`),
+  logMentorshipSession: (pairId, payload) => api.post(`/student/mentorship/${pairId}/sessions`, payload),
+  cancelMentorshipSession: (sessionId, reason) =>
+    api.post(`/student/mentorship/sessions/${sessionId}/cancel`, { reason }),
+  mentorshipProgress: (pairId) => api.get(`/student/mentorship/${pairId}/progress`),
+  createMentorshipGoal: (pairId, payload) => api.post(`/student/mentorship/${pairId}/goals`, payload),
+  updateMentorshipGoal: (goalId, payload) => api.patch(`/student/mentorship/goals/${goalId}`, payload),
+  deleteMentorshipGoal: (goalId) => api.delete(`/student/mentorship/goals/${goalId}`),
+  mentorshipFeedback: (pairId) => api.get(`/student/mentorship/${pairId}/feedback`),
+  // A student is always the MENTEE, so they write mentorRating. The service
+  // reassigns the column server-side regardless of which is sent, but sending the
+  // honest one keeps the request readable in logs.
+  submitMentorshipFeedback: (pairId, payload) => api.post(`/student/mentorship/${pairId}/feedback`, payload),
+  deleteMentorshipFeedback: (pairId) => api.delete(`/student/mentorship/${pairId}/feedback`),
 };
 
 // ── Teacher endpoints (docs/users/02 §4) ──
