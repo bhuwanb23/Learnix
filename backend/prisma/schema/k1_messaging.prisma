@@ -33,6 +33,16 @@ model Notification {
   // across re-sends of a recurring reminder in a later cycle. Uniqueness is scoped
   // by the recipient lookup in notifications.delivery.ts, inside the transaction.
   dedupeKey      String?
+  // "Important": the office flagged this as needing attention. Denormalised onto
+  // the row rather than read out of `dataJson` because the inbox has to ask
+  // "unread important broadcasts" as a QUERY — pinning them and offering an
+  // important-only filter are both predicates, and a flag buried in a JSON string
+  // can only be answered by loading rows and filtering in JavaScript.
+  //
+  // Defaults to false, which is exactly right for the 863 existing rows: none of
+  // them was ever flagged important, so none of them should pin itself to the top
+  // of somebody's inbox on the strength of this migration.
+  isImportant    Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -41,6 +51,7 @@ model Notification {
   @@index([recipientUserId])
   @@index([recipientUserId, readAt])
   @@index([recipientUserId, dedupeKey])
+  @@index([recipientUserId, isImportant, readAt])
   @@map("notifications")
 }
 
