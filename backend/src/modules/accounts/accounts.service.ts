@@ -2,156 +2,47 @@
 // Money: integer paise. All amounts converted to rupees at API edge. Tenant-scoped.
 import { prisma } from '../../db/prisma.js';
 import { notFound } from '../../lib/errors.js';
-import { balanceOf } from './dues.money.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
 
-// ── F-01 Dashboard ──────────────────────────────────────────
-export async function getDashboard(institutionId: string) {
-  // `FeeDue` has no institutionId — it inherits its tenant from the student.
-  // The dashboard used to aggregate every institution's dues into this one.
-  const dueTenant = { studentProfile: { user: { institutionId, deletedAt: null } } };
-
-  const [totalCollected, totalDues, unpaidDues, payrollRun, budgets, scholarships] =
-    await Promise.all([
-      prisma.payment.aggregate({
-        where: { institutionId, status: 'CLEARED', reversedAt: null },
-        _sum: { amountMinor: true },
-        _count: { id: true },
-      }),
-      prisma.feeStructure.aggregate({
-        where: { institutionId, status: 'ACTIVE' },
-        _sum: { totalMinor: true },
-      }),
-      prisma.feeDue.findMany({
-        where: { status: { in: ['UNPAID', 'PARTIAL'] }, ...dueTenant },
-        select: { amountMinor: true, paidMinor: true, lateFeeMinor: true },
-      }),
-      prisma.payrollRun.findFirst({
-        where: { institutionId },
-        orderBy: { createdAt: 'desc' },
-        include: { _count: { select: { entries: true } } },
-      }),
-      prisma.budget.findMany({
-        where: { institutionId },
-        orderBy: { category: 'asc' },
-      }),
-      prisma.scholarship.findMany({
-        where: { institutionId },
-        include: {
-          applications: { select: { status: true, grantedMinor: true, disbursedMinor: true } },
-        },
-      }),
-    ]);
-
-  const collectedPaise = totalCollected._sum.amountMinor ?? 0;
-  const targetPaise = totalDues._sum.totalMinor ?? 0;
-  // Outstanding is the balance still owed, not the amount originally billed.
-  // Includes any assessed late fine — the same rule the dues desk uses, so the
-  // two screens can never show different totals for the same institution.
-  const unpaidPaise = unpaidDues.reduce((s, d) => s + balanceOf(d), 0);
-
-  const unpaidCount = unpaidDues.length;
-  const targetPct = targetPaise === 0 ? 0 : Math.min(Math.round((collectedPaise / targetPaise) * 100), 100);
-
-  // Budget utilization
-  const budgetData = budgets.map((b) => ({
-    id: b.id,
-    category: b.category,
-    plannedRupees: toRupees(b.plannedMinor),
-    spentRupees: toRupees(b.spentMinor),
-    utilizationPct: b.plannedMinor === 0 ? 0 : Math.min(Math.round((b.spentMinor / b.plannedMinor) * 100), 100),
-  }));
-
-  // Recent collections
-  const recentPayments = await prisma.payment.findMany({
-    where: { institutionId, status: 'CLEARED', reversedAt: null },
-    include: {
-      studentProfile: { include: { user: { select: { fullName: true } } } },
-      receipt: { select: { receiptNo: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  });
-
-  // Defaulters (dues overdue > 7 days)
-  const defaulterDues = await prisma.feeDue.findMany({
-    where: { status: { in: ['UNPAID', 'PARTIAL'] }, daysOverdue: { gte: 7 }, ...dueTenant },
-    include: {
-      studentProfile: { include: { user: { select: { fullName: true } } } },
-    },
-    orderBy: { daysOverdue: 'desc' },
-    take: 5,
-  });
-
-  // Pending expenses
-  const pendingExpenses = await prisma.expense.count({ where: { institutionId, status: 'PENDING' } });
-
-  return {
-    hero: {
-      collectedRupees: toRupees(collectedPaise),
-      targetRupees: toRupees(targetPaise),
-      targetPct,
-    },
-    stats: {
-      collected: toRupees(collectedPaise),
-      target: toRupees(targetPaise),
-      unpaidDues: toRupees(unpaidPaise),
-      defaulterCount: unpaidCount,
-    },
-    recentCollections: recentPayments.map((p) => ({
-      id: p.id,
-      student: p.studentProfile?.user.fullName ?? 'Donor',
-      amountRupees: toRupees(p.amountMinor),
-      method: p.method,
-      category: p.category,
-      receiptNo: p.receipt?.receiptNo ?? null,
-      createdAt: p.createdAt,
-    })),
-    defaulters: defaulterDues.map((d) => ({
-      id: d.id,
-      student: d.studentProfile.user.fullName,
-      rollNo: d.studentProfile.rollNo,
-      title: d.title,
-      amountRupees: toRupees(Math.max(0, d.amountMinor - d.paidMinor)),
-      daysOverdue: d.daysOverdue,
-    })),
-    budget: budgetData,
-    alerts: [
-      ...(pendingExpenses > 0
-        ? [{ type: 'PENDING_EXPENSES' as const, message: `${pendingExpenses} expense(s) awaiting approval` }]
-        : []),
-      ...(unpaidCount > 0
-        ? [{ type: 'UNPAID_DUES' as const, message: `${unpaidCount} student(s) with unpaid dues` }]
-        : []),
-      ...(payrollRun && payrollRun.status === 'DRAFT'
-        ? [{ type: 'PAYROLL_DUE' as const, message: `Payroll ${payrollRun.month} is in DRAFT` }]
-        : []),
-    ],
-    payroll: payrollRun
-      ? { month: payrollRun.month, status: payrollRun.status, entries: payrollRun._count.entries }
-      : null,
-    scholarships: scholarships.map((s) => {
-      // Approved-but-undisbursed money is what a dashboard headline has to
-      // separate: it is a promise, not a payment, and showing it as "given"
-      // would overstate the aid this institution has actually delivered.
-      let committed = 0;
-      let disbursed = 0;
-      for (const a of s.applications) {
-        if (a.status === 'APPROVED' || a.status === 'UNDER_REVIEW' || a.status === 'DISBURSED') committed += a.grantedMinor;
-        if (a.status === 'DISBURSED') disbursed += a.disbursedMinor;
-      }
-      return {
-        name: s.name,
-        type: s.type,
-        status: s.status,
-        applications: s.applications.length,
-        committedRupees: toRupees(committed),
-        disbursedRupees: toRupees(disbursed),
-      };
-    }),
-  };
-}
+// ── F-01 Dashboard ─────────────────────────────────────────────────────────
+// MOVED to dashboard.service.ts (docs/users/06 §3.11), served by
+// dashboard.routes.ts, mounted BEFORE this router.
+//
+// `getDashboard` is deleted rather than left reachable, because every part of
+// it that mattered was wrong in a way a user would act on:
+//
+//   • THE HERO COMPARED TWO UNRELATED NUMBERS. "Collected vs target" summed
+//     every ACTIVE `FeeStructure.totalMinor` against ALL-TIME collections. A fee
+//     structure is a price list; summing every programme a college offers is not
+//     what it hopes to collect, and the ratio could exceed 100% — and did.
+//     There is no target column in this schema and none was invented.
+//
+//   • THE DEFAULTERS READ THE DRIFTING COLUMN. It filtered
+//     `FeeDue.daysOverdue >= 7`, a denormalised counter that goes stale and was
+//     never refreshed. F-10 found and fixed the identical bug in the broadcast
+//     audience one file over; this screen had it too. Every age is now computed
+//     from `dueDate` against today, which cannot drift.
+//
+//   • `defaulterCount` WAS NOT A COUNT OF DEFAULTERS. It was `unpaidDues.length`
+//     — the number of OPEN BILLS — drawn on the home screen under the word
+//     "Defaulters". A student with four unpaid fees was four defaulters.
+//
+//   • THE TWO ALERTS COULD NOT BE ACTED ON. `PENDING_EXPENSES` and
+//     `UNPAID_DUES` were bare strings with no route and no figure, and neither
+//     mentioned a single unusual transaction or reconciliation problem — the two
+//     things an officer most needs before a board meeting. There are now eight,
+//     in three families, each routed to the thing that causes it.
+//
+//   • THE BUDGET CLAMPED ITS OWN ALARM. `utilizationPct` was
+//     `Math.min(..., 100)`, so a line at 180% of plan drew a full bar and read
+//     "100%". The one number that most needed to look alarming could not.
+//
+//   • SCHOLARSHIP MONEY WAS MERGED. `committed` counted `UNDER_REVIEW`
+//     applications as promised alongside `APPROVED` and `DISBURSED`, reporting a
+//     decision nobody had made as a promise the institution had made.
+//
+// What survives here is the ledger, the profile, and the comment trail.
 
 // F-02 Collections (list / record / reverse / statement) now lives in
 // collections.service.ts — it has to allocate money onto `fee_dues`, which this

@@ -17,6 +17,7 @@ import libraryRoutes from './modules/library/library.routes.js';
 import accountsRoutes from './modules/accounts/accounts.routes.js';
 import reportsRoutes from './modules/accounts/reports.routes.js';
 import notificationsRoutes from './modules/accounts/notifications.routes.js';
+import dashboardRoutes from './modules/accounts/dashboard.routes.js';
 import scholarshipRoutes from './modules/accounts/scholarship.routes.js';
 import feeStructureRoutes from './modules/accounts/feestructure.routes.js';
 import payrollStructureRoutes from './modules/accounts/payroll.structure.routes.js';
@@ -143,6 +144,11 @@ export function createApp() {
   // `/notifications/broadcasts`) must not be read as a notification id, and this
   // router applies its own auth because it no longer inherits accountsRoutes'.
   app.use('/api/v1/accounts', notificationsRoutes);
+  // F-11 Dashboard first: `/dashboard/catalogue`, `/dashboard/overview`,
+  // `/dashboard/alerts` and `/dashboard/actions` are literals that must not be
+  // read as a block id by `/dashboard/blocks/:block`, and this router applies its
+  // own auth because it no longer inherits accountsRoutes'.
+  app.use('/api/v1/accounts', dashboardRoutes);
   app.use('/api/v1/accounts', accountsRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);

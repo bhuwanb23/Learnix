@@ -8,7 +8,6 @@ import { badRequest } from '../../lib/errors.js';
 import { photoUpload } from './eventUpload.js';
 import {
   directoryQuerySchema,
-  donationPageQuerySchema,
   idParamSchema,
   rsvpDecisionSchema,
   broadcastSchema,
@@ -71,6 +70,7 @@ import * as matching from './matching.service.js';
 import * as sessions from './sessions.service.js';
 import * as goals from './goals.service.js';
 import * as mentorshipFeedback from './feedback.service.js';
+import donationsRoutes from './donations/donations.routes.js';
 
 // Alumni Relations module — mounted at /api/v1/alumni (docs/users/12 §4)
 const router = Router();
@@ -789,29 +789,16 @@ router.delete(
 );
 
 // AL-04 donations + campaigns
-router.get(
-  '/donations',
-  validate(donationPageQuerySchema, 'query'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.listDonations(req.auth!.institutionId, req.query as { page?: number; pageSize?: number }),
-    });
-  }),
-);
-
-router.post(
-  '/donations/:id/record',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    const result = await service.recordDonation(
-      req.auth!.institutionId,
-      String(req.params.id),
-      req.auth!.userId,
-      req.ip ?? null,
-    );
-    res.json({ data: result });
-  }),
-);
+//
+// Mounted as a SUB-ROUTER rather than declared inline. This file had reached
+// 1125 lines and the donation surface grew to ~14 endpoints (pledges, campaigns,
+// receipts, standing gifts); inline it would have pushed it past 1400 and buried
+// the ledger under its own routes.
+//
+// The sub-router inherits this router's `auth` + `requireRole('ALUMNI','ADMIN')`
+// because `router.use` runs the parent chain first — so the role gate still
+// applies to every donation route, and a STUDENT is refused exactly as before.
+router.use('/donations', donationsRoutes);
 
 // ── AL-05 mentorship ────────────────────────────────────────
 // Literal paths come BEFORE `/mentorship/:id`, or Express matches "requests" and

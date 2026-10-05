@@ -17,7 +17,7 @@ import { accountsReportQuerySchema, accountsReportExportSchema } from './account
 import * as svc from './reports.service.js';
 import { buildXlsx } from './reports.xlsx.js';
 import { renderReportPdf, reportCsv } from './reports.pdf.js';
-import { PERIODS, assertPeriod, toRupees, type Period, type ExportSheet } from './reports.rules.js';
+import { PERIODS, REPORT_IDS, assertPeriod, toRupees, type Period, type ExportSheet, type ReportId as ReportId_ } from './reports.rules.js';
 import { UPLOAD_DIR } from './expenses.routes.js';
 
 const router = Router();
@@ -31,8 +31,8 @@ const wrap =
   };
 
 /** `/reports/:report/export` must not be read as a report named "export". */
-const REPORTS = ['collections', 'dues', 'expenses', 'payroll', 'scholarships', 'departments', 'comparison'] as const;
-type ReportId = (typeof REPORTS)[number];
+const REPORTS = REPORT_IDS;
+type ReportId = ReportId_;
 
 const assertReport = (v: unknown): ReportId => {
   const s = String(v ?? '');

@@ -207,6 +207,27 @@ export function resolvePeriod(
   return build(from, to, String(a.getFullYear()), pFrom, pTo, String(a.getFullYear() - 1));
 }
 
+// ── Report ids ─────────────────────────────────────────────────────────────────────
+//
+// The canonical list of the seven reports, as a PURE constant with no Prisma and
+// no Express import. It lives here rather than only inside the catalogue payload
+// because two other places need to know how many reports exist: the F-11
+// dashboard's "generate a report" quick action, and the router that validates
+// `/reports/:report`. A number typed into either of those goes stale the moment
+// a report is added, and the quick action would then promise a report that does
+// not exist.
+export const REPORT_IDS = [
+  'collections',
+  'dues',
+  'expenses',
+  'payroll',
+  'scholarships',
+  'departments',
+  'comparison',
+] as const;
+
+export type ReportId = (typeof REPORT_IDS)[number];
+
 // ── Arithmetic ────────────────────────────────────────────────────────────
 
 /** Rupees for display and for the wire. */

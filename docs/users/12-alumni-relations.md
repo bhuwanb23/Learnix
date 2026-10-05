@@ -93,18 +93,81 @@ scanned one requires no backend change.
 `qrPayload` was previously a JSON blob on the registration that **nothing ever
 wrote or read**; it is now load-bearing.
 
-### 3.4 Donations (tab)
-FY collections hero (target progress), campaign cards (target/raised/donors/days left) with **Share Campaign**, recent donations with **Record** (Pending → Received → receipt forwarded to Accounts).
+### 3.4 Donations (module)
 
-**Entity `campaign`**
-| Field | Type |
-|-------|------|
-| id, name | string |
-| target, raised | number |
-| donors, daysLeft | number |
-| status | Active / Completed |
+Five tabs, because they answer five different questions: **Campaigns** (what is being
+raised for), **My giving** (what have I done, and where are my receipts), **History**
+(what has everyone done, filterable), **Standing** (recurring commitments), and
+**Impact** (what did it achieve).
 
-**Entity `donation`**: id, alumniId, amount, fund, date, status (Pledged/Received).
+**The give path did not exist before.** Donations were created only by seeds: there
+was no `POST /donations`, so an alumnus had no way to give at all. The only write was
+the office pressing *Record* on a row that already existed.
+
+**Pledge → confirm → receipt.** The alumnus states the amount, the method and an
+optional dedication. The office confirms the money landed, and only then is a Payment +
+Receipt minted. Keeping confirmation with the office is deliberate: a receipt is a tax
+document, and issuing one from a donor's own claim is how a college ends up promising
+80G deductions on money it never received.
+
+**Anonymity is asymmetric and decided server-side.** An anonymous gift keeps its
+donor's name in the database, because 80G receipts and bank reconciliation need it.
+Every non-office caller receives `"Anonymous"` in place of the name — in the ledger,
+in campaign gift lists, and in search. If the masking lived in the client the name
+would still be on the wire.
+
+**Campaign detail** carries what a donor needs to decide: the beneficiary sentence,
+progress with donor count, pledges still outstanding against confirmed gifts, recent
+gifts (anonymity honoured), and the viewer's own contribution — `null`, not `0`, for
+someone who has not given.
+
+**Progress is not clamped.** A campaign that raised 128% of target is a real outcome;
+the *bar* renders at 100% while the *number* stays true. `remainingRupees` is never
+negative once the target is met — a negative "still needed" reads as a debt the college
+owes the donor. `raisedMinor` is denormalised and read (not re-summed) so the
+chapter-initiative performance view cannot disagree with it.
+
+**Recurring contributions are a record of intent, not a subscription.** There is no
+scheduler in this app, so a mandate holds a `nextDueAt` and the office presses
+*Charge due instalments*; every due `ACTIVE` mandate becomes a PLEDGED donation, which
+the same confirmation path turns into a receipt. A background timer was rejected
+because it dies with the process — a mandate would silently stop being charged after
+every deploy. The action is idempotent per due date (a mandate whose `lastChargedAt` is
+already at or past its `nextDueAt` is skipped), isolates failures per mandate so one
+closed campaign cannot abort a run, and reports *which* mandates were skipped and why.
+Overdue mandates are surfaced loudly, because the failure mode of this design is
+somebody forgetting to press the button.
+
+**Digital receipts are rendered, not stored.** Assembled live from
+Donation → DonationPayment → Payment → Receipt, so a receipt cannot go stale when a
+payment is reversed; a reversed or voided receipt is shown **marked void** rather than
+hidden, because a donor holding an old copy needs to see why it stopped being valid.
+Readable by the donor and the office only — a receipt carries a name and an amount, and
+widening access would undo the anonymity the ledger provides. `receipts/verify` is
+public and deliberately narrow: it confirms a number is real and reports amount,
+date and validity, never a donor name.
+
+**Money.** All amounts are paise (`amountMinor`). A fractional rupee amount is rejected
+outright rather than rounded, because a receipt and a bank statement disagreeing by a
+rupee is exactly the bug nobody reports. `toMinor` also refuses amounts past the SQLite
+`Int` ceiling (~₹2.14 Cr) with a message instead of failing at the INSERT; widening to
+BigInt is the real fix but breaks the arithmetic in every service that touches money,
+so it remains its own task.
+
+**Entities**
+
+`fundraising_campaign`: id, name, description, `category`, `beneficiary`, `imageUrl`,
+targetMinor, `raisedMinor` (denorm), deadline, status (ACTIVE | COMPLETED).
+
+`donation`: id, campaignId?, donorUserId, fund (GENERAL | LIBRARY | SCHOLARSHIP |
+INFRASTRUCTURE), amountMinor, status (PLEDGED | RECEIVED), receivedAt, paymentId,
+`recurringId?`, `method?`, `note?`, `isAnonymous`.
+
+`recurring_contribution`: id, donorUserId, campaignId?, fund, amountMinor, cadence
+(MONTHLY | QUARTERLY | SEMI_ANNUAL | ANNUAL), status (ACTIVE | PAUSED | CANCELLED |
+COMPLETED), nextDueAt, lastChargedAt, chargedThrough, note, `isAnonymous` (carried onto
+every instalment, so an anonymous standing gift does not become named the first time a
+machine charges it).
 
 ### 3.5 Mentorship (module)
 
@@ -356,12 +419,47 @@ into the freed seat, so a cancellation is never a wasted seat.
 `GET /alumni/events` filters on `category: 'ALUMNI'`. Events is one shared table,
 and without that filter the alumni directory serves student and sports events.
 
+### Donation rules that are enforced, not documented
+
+- **Ledger totals are aggregated over every matching row**, never summed from the page
+  being returned. Summing the page once reported ₹23.0L while the dashboard reported
+  ₹2.07 Cr for the same money — the same app contradicting itself by 11×, hidden for as
+  long as the ledger held fewer rows than the old hard-coded `take: 50`.
+- **`mine` is a flag, not a `userId`.** The donor is resolved from the session, so
+  there is no way to ask for somebody else's giving. The Zod schema has no `userId`
+  field at all, and a check asserts a `userId` in the query is dropped rather than
+  honoured.
+- **A closed campaign refuses a pledge** and says which campaign and why. Accepting a
+  pledge against a closed appeal and quietly never recording it is worse than refusing
+  it, because the donor believes they gave. "Closed" is *derived* — a campaign past its
+  deadline is closed while its stored status still says ACTIVE.
+- **A pledge cannot claim a recurring id.** Instalments are generated by charging a
+  mandate, so a hand-made row cannot disagree with the mandate about amount or cadence.
+- **Only the office can confirm a receipt of money**, and `recordDonation` refuses a
+  non-office caller outright. The ledger's `Record` button renders from the server's
+  `canRecord`, because the previous screen rendered it for every viewer on every pledged
+  row — so a graduate was offered the office's button and tapping it produced a
+  permission error instead of a receipt.
+- **`404`, not `403`, for "not yours".** A 403 confirms the donation or receipt exists.
+
 ### Events, donations, mentorship, communications
 ```
 GET  /alumni/events               + /{id}
 POST /alumni/rsvps/{id}/decide    { decision: CONFIRMED | DECLINED }
-GET  /alumni/donations            ?page=&pageSize=   (paged ledger + totals)
-POST /alumni/donations/{id}/record         → Payment + Receipt + DonationPayment
+GET  /alumni/donations            ?page=&pageSize=&campaignId=&fund=&status=&year=&mine=
+POST /alumni/donations            { amountRupees, campaignId?, fund?, method?, note?, isAnonymous? }
+GET  /alumni/donations/impact               (derived from the caller's own gifts)
+GET  /alumni/donations/{id}                 (+ viewerContext: canRecord, canViewReceipt)
+POST /alumni/donations/{id}/record          office → Payment + Receipt + DonationPayment
+GET  /alumni/donations/{id}/receipt         donor or office only
+GET  /alumni/donations/receipts/verify?receiptNo=   public, no donor name
+GET  /alumni/donations/campaigns            ?category=&includeClosed=
+GET  /alumni/donations/campaigns/{id}       (+ recentGifts, viewerContext.canGive)
+POST /alumni/donations/campaigns            PATCH .../campaigns/{id}
+GET  /alumni/donations/recurring            ?dueOnly=
+POST /alumni/donations/recurring            { amountRupees, cadence, campaignId?, fund?, note? }
+POST /alumni/donations/recurring/charge-due office action → PLEDGED instalments
+POST /alumni/donations/recurring/{id}/status  { action: pause|resume|cancel, reason? }
 GET  /alumni/mentorship            ?scope=active|pending|history|all
 GET  /alumni/mentorship/{id}       (+ viewerContext, session log, goals, feedback)
 POST /alumni/mentorship/{id}/complete | /remind

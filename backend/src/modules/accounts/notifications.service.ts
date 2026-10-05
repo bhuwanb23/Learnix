@@ -228,8 +228,15 @@ export async function systemAlerts(institutionId: string) {
   };
 }
 
-/** Approved spend past the plan, per budget line. */
-async function budgetOverruns(institutionId: string) {
+/**
+ * Approved spend past the plan, per budget line.
+ *
+ * EXPORTED because the F-11 dashboard asks the same four reconciliation
+ * questions and must not answer them a second way. Two screens counting the
+ * same problem differently is the failure the reports feature refuses to print
+ * past when a payroll header disagrees with its own entries.
+ */
+export async function budgetOverruns(institutionId: string) {
   const budgets = await prisma.budget.findMany({
     where: { institutionId },
     select: { id: true, category: true, fiscalYear: true, plannedMinor: true, spentMinor: true, departmentId: true },
@@ -257,7 +264,7 @@ async function budgetOverruns(institutionId: string) {
  * The same identity the reports feature checks. It is an alert here because a
  * header that does not foot is money the institution cannot defend.
  */
-async function unreconciledPayroll(institutionId: string) {
+export async function unreconciledPayroll(institutionId: string) {
   const runs = await prisma.payrollRun.findMany({
     where: { institutionId },
     select: { id: true, month: true, status: true, grossMinor: true, deductionsMinor: true, totalMinor: true },
@@ -286,8 +293,8 @@ async function unreconciledPayroll(institutionId: string) {
   return { count: items.length, items };
 }
 
-/** Awarded and approved, still not in a student's hands. */
-async function unreleasedScholarships(institutionId: string) {
+/** Awarded and approved, still not in a student's hands. Exported — see `budgetOverruns`. */
+export async function unreleasedScholarships(institutionId: string) {
   const apps = await prisma.scholarshipApplication.findMany({
     where: { institutionId, status: 'APPROVED' },
     select: {
@@ -323,7 +330,7 @@ async function unreleasedScholarships(institutionId: string) {
  * cannot be applied and is easy to forget. Reported, never reallocated — quietly
  * matching it to a bill here would be inventing a decision.
  */
-async function unallocatedReceipts(institutionId: string) {
+export async function unallocatedReceipts(institutionId: string) {
   const payments = await prisma.payment.findMany({
     where: { institutionId, status: 'CLEARED', reversedAt: null },
     select: {

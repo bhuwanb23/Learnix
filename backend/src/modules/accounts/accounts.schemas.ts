@@ -748,3 +748,26 @@ export const monthQuerySchema = z
   .strict();
 
 export const attachPayslipSchema = z.object({ fileId: z.string().min(1).max(64) }).strict();
+
+// ── F-11 Dashboard (docs/users/06 §3.11) ───────────────────────────────────
+//
+// All `.strict()`. A misspelled filter is REJECTED rather than silently dropped:
+// a filter the server ignores returns everything and looks like it worked, which
+// is the failure the reports feature had to fix. `?family=undefined` is exactly
+// the kind of key a caller sends by accident and it must be a 400, not a filter
+// that quietly does not apply.
+
+export const dashboardCatalogueQuerySchema = z.object({}).strict();
+
+export const dashboardBlockParamSchema = z
+  .object({ block: z.string().trim().min(1).max(32) })
+  .strict();
+
+export const dashboardAlertsQuerySchema = z
+  .object({
+    // Validated for presence and shape here; the ALLOWED VALUES are checked by
+    // `assertAlertFamily`, so the 422 carries the list of what would have worked
+    // rather than a zod issue path the app cannot render.
+    family: z.string().trim().min(1).max(32).optional(),
+  })
+  .strict();

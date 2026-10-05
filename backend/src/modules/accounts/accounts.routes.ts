@@ -48,13 +48,13 @@ const wrap =
 
 router.use(auth, requireRole('ACCOUNTS', 'ADMIN'));
 
-// F-01 dashboard
-router.get(
-  '/dashboard',
-  wrap(async (req, res) => {
-    res.json({ data: await service.getDashboard(req.auth!.institutionId) });
-  }),
-);
+// ── F-01 dashboard ────────────────────────────────────────────────────────
+// MOVED to dashboard.routes.ts (docs/users/06 §3.11), mounted BEFORE this
+// router. `GET /dashboard` is removed rather than left serving the old
+// `getDashboard` beside the new `/dashboard/overview`, because two endpoints
+// publishing the same money with different rules is precisely the failure the
+// reports feature refuses to print past. The defects are listed in full in
+// accounts.service.ts where the function used to live.
 
 // F-02 collections
 router.get(

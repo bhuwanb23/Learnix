@@ -7,12 +7,17 @@ Accounts & Finance runs all money flows: fee collection, dues & recovery, payrol
 
 ## 2. App Shell
 - **Bottom nav**: Dashboard · Collections · Dues · Payroll · Profile.
-- **Feature modules**: FeeStructure, Expenses, Scholarships, Reports, Notifications.
+- **Feature modules**: FeeStructure, Expenses, Scholarships, Reports, Notifications, plus the seven
+  dashboard blocks `DashboardCollections`, `DashboardDues`, `DashboardExpenses`,
+  `DashboardPayroll`, `DashboardScholarships`, `DashboardAlerts`, `DashboardActions` (F-11, §3.11).
 
 ## 3. Modules & Data Entities
 
 ### 3.1 Dashboard
-Hero (FY collections vs target progress), stats (collected/target/dues/defaulters), recent collections, pending dues, alerts (defaulter escalation, payroll due), quick-tool launcher, activity feed.
+Superseded by **§3.11**. What it used to be, and why it was wrong: a hero reading
+"₹4.2 Cr collected of ₹5.1 Cr target", where the target was the sum of every **active fee
+structure** — a price list, not a goal, so the ratio could exceed 100% and did. The replacement
+is §3.11.
 
 ### 3.2 Collections — the money-IN desk
 
@@ -1447,9 +1452,199 @@ opens a screen with an empty body looks exactly like a screen that failed to loa
 ### 3.10 Profile
 Finance officer profile, FY stats, preference toggles, account menu.
 
+### 3.11 Dashboard
+
+#### 3.11.1 What this replaces
+
+The old dashboard was a hero, three stat tiles, five recent payments, four budget bars and two
+alert strings. Five of those were wrong rather than merely thin:
+
+| Old behaviour | Why it was wrong | Now |
+| --- | --- | --- |
+| Hero "₹4.2 Cr collected of ₹5.1 Cr **target**", target = the sum of every **active fee structure** | A price list is not a goal. The ratio could exceed 100% and did, and no two officers meant the same target | The hero names the **window** it is showing, and there is no target it can exceed |
+| Four budget bars with `Math.min(..., 100)` on the percentage | A line at 180% of plan drew a full bar and read "100%" — the one number that most needed to look alarming was the number that could not | Utilisation is reported **unclamped**, to one decimal place; the clamp lives in `barWidth`, where a pixel width is the only thing at stake |
+| Outstanding dues summed `amount`, and overdue read the denormalised `FeeDue.daysOverdue` | Billed amount is not a balance. `daysOverdue` drifts — a bill whose counter said 0 was invisible however late it was | Balance is `amount + lateFee − paid`, and age is derived from `dueDate` at request time. `daysOverdue` is not read anywhere in this module |
+| "Defaulters: 12" counted **bills** | Wrong by a factor of however many bills each student happens to have | `defaulterStudents` counts **families** and is labelled as such; `defaulterBills` is reported next to it |
+| Budget lines summed every `Budget` row the institution had ever created | Last year's exhausted lines were added to this year's plan | Filtered to the current `fiscalYear`, and the window is named in the response |
+
+Also deleted rather than fixed: `getDashboard` in `accounts.service.ts` and `GET /accounts/dashboard`
+in `accounts.routes.ts`. Both were replaced by the block service and the catalogue routes below.
+The stale `constants/dashboardData.js` fixture, and the `constants/` directory it was the only
+occupant of, are gone — a dashboard whose numbers come from a fixture is a dashboard nobody reads.
+
+#### 3.11.2 Seven blocks, one round trip
+
+`GET /accounts/dashboard/overview` returns all seven blocks **and** the catalogue in one response,
+because the hub's job is to show all of it at once and a screen that fetches seven times can show
+seven different moments — a dues figure taken before a collection the officer had just watched land,
+and a payroll figure after. Money is integer paise everywhere inside the service and becomes rupees
+only in the response.
+
+**1 · Total collection** (`COLLECTIONS`) — `todayRupees/Count`, `monthRupees/Count`,
+`semesterRupees/Count`, `allTimeRupees/Count`, a six-month `trend`, `byCategory`, plus
+`semesterLabel` and `academicYearName` so the figure says which semester it is about. Reversed
+payments are excluded from every figure but keep their row, and `reversedRupees` / `reversedCount`
+are reported **separately** rather than netted off — "₹0 collected today" and "₹0 after a reversal"
+are different facts and the officer has to be able to tell them apart.
+
+**2 · Outstanding dues** (`DUES`) — `outstandingRupees` (balances, never billed amounts),
+`outstandingBills`, `studentsOwing`, `overdueRupees` / `overdueBills`, `criticalRupees` past
+`CRITICAL_OVERDUE_DAYS`, `billedRupees`, `paidRupees`, `recoveryPercent`, the ageing buckets and
+`topDebtors[]`. `recoveryPercent` is **null**, not 0, when nothing was ever billed: "0% recovered"
+and "no bill went out" are different facts and only one of them is a problem. Tenant scope comes
+through the student, because `FeeDue` has no `institutionId` of its own —
+`studentProfile.user.institutionId`. `WAIVED` and `SUPERSEDED` bills are excluded whatever their
+stored `status` column says, since that column is denormalised too.
+
+**3 · Expense overview** (`EXPENSES`) — three windows, and the difference between them is the point:
+`monthRupees` is what has actually been spent since the 1st; `plannedRupees` / `spentRupees` are the
+fiscal-year allocation the plan was set in; `monthRupees` against `plannedRupees` is the comparison a
+reader would instinctively make and it is **not** the same comparison, so the block does not make it.
+Adds `remainingRupees`, `overrunCount`, `pendingRupees`/`pendingCount` for claims awaiting approval,
+`utilisationPercent` (unclamped, one decimal), `tone`, a per-line `lines[]` with its own utilisation
+and `overBudget`, and a six-month trend. Thresholds are compared in **paise**, not rounded rupees — a
+rounded comparison flagged ₹49,999.99 of cash as being over the ₹50,000 review limit.
+
+**4 · Payroll summary** (`PAYROLL`) — `thisMonth` + label, `staffCount`, `currentRun` (gross −
+deductions = net, entry/paid/pending counts, `paidPercent`) or an explicit `currentRunRaised: false`,
+`pendingRupees`/`pendingCount`, `upcoming[]` with each run's `dueOn` and days waiting,
+`overdueRunCount`, `ytdNetRupees`/`ytdPaidRupees`/`ytdMonths`, and `duePolicy`. A run for a
+**different** month is never presented wearing this month's label. `PayrollRun` has no payment-date
+column, so the due date is policy: `payrollDueDate(month)` = the 7th of the **following** month. It
+regex-parses `YYYY-MM` because `NaN ?? 1970` is `NaN` — `??` only catches null and undefined — and a
+malformed month used to produce an Invalid Date that every caller then formatted as "Invalid Date" on
+a screen about money. December's salaries are due on 7 January; an implementation that adds 30 days
+gets that wrong in a way nobody notices until it is somebody's December, so the arithmetic is
+exported and tested across the year boundary.
+
+**5 · Scholarship status** (`SCHOLARSHIPS`) — `requestedRupees`, `pendingRupees`/`pendingCount`,
+`approvedRupees`/`approvedCount`, `disbursedRupees`/`disbursedCount`, `unreleasedRupees`/
+`unreleasedCount`, `rejectedCount`, `releasePercent` (disbursed ÷ granted, **null** rather than 0%
+when nothing was granted) and the top five schemes by grant. `UNDER_REVIEW` is **not** approved money
+— it is pending — and awarded is never merged with released: only an application that has actually
+reached a student is disbursed.
+
+**6 · Financial alerts** (`ALERTS`) — eight kinds in three families, all **computed live on read**.
+Nothing is stored: a stored alert goes stale the instant the problem is fixed and then has to be
+dismissed by hand, so an office ends up with forty alerts describing problems that no longer exist.
+
+| Family | Kinds |
+| --- | --- |
+| `UNUSUAL` | `LARGE_PAYMENT` (≥ `UNUSUAL_MULTIPLE`× the median of the last `UNUSUAL_WINDOW_DAYS` days, above an `UNUSUAL_FLOOR_RUPEES` floor), `LARGE_CASH` (cash at or over `CASH_REVIEW_RUPEES`) |
+| `OVERDUE` | `DUES_OVERDUE` (families past `DEFAULTER_MIN_DAYS`), `PAYROLL_OVERDUE` (approved entries unpaid past `PAYROLL_OVERDUE_DAYS`) |
+| `RECONCILIATION` | `PAYROLL_UNFOOTED` (a header that disagrees with its entries), `UNALLOCATED_RECEIPTS`, `BUDGET_OVERRUN`, `SCHOLARSHIP_UNRELEASED` (awards approved past `SCHOLARSHIP_UNRELEASED_DAYS`) |
+
+The four reconciliation counts are **imported from `notifications.service.ts`**, not re-derived here.
+Two screens that each count the same problem in their own way eventually disagree, and the
+disagreement is what gets believed. `dashboard.service.ts` consumes `budgetOverruns`,
+`unreconciledPayroll`, `unreleasedScholarships` and `unallocatedReceipts` for exactly that reason.
+
+Each alert carries a count, its detail rows and a `tone` from `alertTone(count)`, where **zero counts
+are `clear`**, not `warn`. A dashboard whose healthy state is painted in the alarm colour trains its
+reader to ignore the alarm colour, which costs the alert its entire purpose.
+
+**7 · Quick actions** (`QUICK_ACTIONS`) — `ADD_COLLECTION`, `RECORD_EXPENSE`, `GENERATE_REPORT`,
+`SEND_REMINDER`, each with the **live count of what it would act on** and a `countLabel` in words.
+The count is the point: the tap that reminds 40 families and the tap that reminds 400 are very
+different decisions, and the officer needs the number *before* tapping. Exactly one tile can be
+blocked, and only for a reason that is genuinely theirs to fix — `SEND_REMINDER` when no bill is past
+its due date. A collection is never blocked for lack of owing students: a donation is a real collection
+with no student attached, and refusing it would make the most common entry path unusable.
+`blockedReason` is always in words; a tile that is enabled and then refuses is worse than a greyed one.
+
+#### 3.11.3 The catalogue, and why the app mirrors it
+
+`GET /accounts/dashboard/catalogue` publishes the seven blocks (id, label, blurb, icon, colour,
+**route**, `isTab`, order), the three alert families, the eight alert kinds, the four quick actions,
+the five windows (`TODAY`, `MONTH`, `SEMESTER`, `FISCAL_YEAR`, `ALL_TIME`) each with **why it exists**,
+and every threshold together with the sentence the app prints beside it — including
+`payrollDuePolicy`, so the "due on the 7th" claim comes from the server rather than being asserted
+in the app.
+
+`dashboardMeta.js` mirrors the **ids** only. That is a genuine constraint, not a shortcut: the seven
+sub-screens are separate modules that must exist at build time, so the app cannot invent a component
+from a route string it has never seen. The mirror is the fallback for the frame before the catalogue
+lands and nothing else — a mirror that also acted as the source would be a second list to keep true.
+`audit-dashboard-ui.ts` asserts the two agree, so a block added server-side with no screen behind it
+fails the build rather than rendering a card that opens nothing.
+
+#### 3.11.4 Routing: tabs and sub-screens are not the same thing
+
+`goToRoute` in `dashboardUi.js` branches on the block's `isTab` flag and calls
+`navigation.switchTab(route)` for a tab or `openModule(route, params)` for a sub-screen. Mixing them
+up is silent: `openModule('Dues')` finds no such `FEATURE_MODULES` key and opens **nothing**, leaving
+the user exactly where they were. The audit asserts both directions — that no screen calls
+`openModule` with a bottom-nav tab name, and that the `switchTab` branch still exists.
+
+`assertBlock`, `assertAlertFamily` and `assertWindow` all throw **422** for an unknown value. A block
+is a choice from a published list, not a record that might exist, so "there is no block called that"
+is a statement about the request. For the same reason a misspelled `family` on `/dashboard/alerts` is
+422 and not an empty list: a filter the server silently ignores returns everything and looks like it
+worked, so a user narrows to "unusual" and reads the reconciliation problems as if they were unusual
+transactions. The reports feature had to fix exactly that failure.
+
+#### 3.11.5 What the screen will not do
+
+- **It will not render a failed request as zero.** `useDashboard` surfaces the error and a retry;
+  "₹0 outstanding" and "₹0 because the request failed" look identical, and the first one gets read in
+  a meeting.
+- **It will not clamp the printed figure.** The bar is clamped because a pixel width is the only
+  thing at stake, but the number beside it is the server's unbounded one, and the expenses screen says
+  in words that utilisation is not capped at 100 — a user seeing 180% next to a full bar needs to
+  know the bar is not the number.
+- **It will not fall back to a fixture.** There is no local dataset behind this screen.
+
+#### 3.11.6 Auth, and what the 401s do and do not prove
+
+`dashboardRoutes` applies its own `router.use(auth, requireRole('ACCOUNTS', 'ADMIN'))` and is mounted
+**before** `accountsRoutes` in `app.ts`, so it inherits nothing — the latent 500-instead-of-401 bug
+the payroll structure router had, where a request with no token reached a handler that read
+`req.auth!.institutionId` and threw.
+
+That line is load-bearing, and the reason is mount order: it is what makes these routes safe if the
+router is ever mounted first, alone, or on a path no sibling covers. But it does **not** show up in
+the HTTP suite, and this was measured rather than assumed. Removing the line changes nothing an
+unauthenticated caller gets back: every accounts router mounted at this prefix runs
+`router.use(auth, requireRole(...))`, and Express runs a `use` middleware for a request that the
+router then fails to **match**, so the first sibling answers 401 for the whole `/api/v1/accounts`
+prefix before this router is reached. The 401 assertions are therefore evidence that the **prefix** is
+guarded, not that this router guards itself. `audit-dashboard-ui.ts` asserts the line at source level
+with comments stripped — so the line quoted in the router's own explanatory comment cannot satisfy it
+— and asserts the mount order. `prove-dashboard-teeth.sh` proves both assertions bite.
+
+Route order is load-bearing too. `/dashboard/catalogue`, `/dashboard/overview`, `/dashboard/alerts`,
+`/dashboard/actions` and `/dashboard/blocks/:block` are all one or two segments past `/dashboard`, and
+Express matches in registration order, so every literal is registered before the parameterised one.
+Today they cannot actually collide — the literals are two segments and the block route is three — but
+the ordering costs nothing and stops the next literal from silently becoming a block id.
+
+#### 3.11.7 Screens
+
+`dashboard.js` is the hub: the hero with its named window, the block cards, the four action tiles and
+the three alert family rows. `dashboardUi.js` holds the kit (`DashboardScreen`, `BlockCard`,
+`StatGrid`/`StatCell`, `SpendBar`, `AlertRow`, `FamilyHeader`, `ActionTile`, `FigureRow`,
+`DashboardEmpty`, `useDashboard`, `goToRoute`, `TAB_ROUTES`).
+
+Registered in `FEATURE_MODULES`: `DashboardCollections`, `DashboardDues`, `DashboardExpenses`,
+`DashboardPayroll`, `DashboardScholarships`, `DashboardAlerts`, `DashboardActions`. Each sub-screen
+calls `accountsApi.dashboardBlock(id)` for **its own block only**, so opening one does not pay for the
+other six.
+
+**Entities:** no new tables. Reads `payment`, `receipt`, `fee_due`, `student_profile`, `user`,
+`expense`, `budget`, `payroll_run`, `payroll_entry`, `scholarship_application`, `scholarship`;
+writes nothing — every dashboard endpoint is a read and writes no `audit_log` row, which
+`verify-dashboard-http.ts` asserts across all **eleven** dashboard routes: the four literals plus
+`/dashboard/blocks/<id>` for each of the seven block ids.
+
 ## 4. Backend API Surface
 ```
-GET  /api/accounts/dashboard
+GET      /api/accounts/dashboard/catalogue    the 7 blocks (id, label, blurb, icon, colour, route, isTab, order),
+                                                 the 3 alert families, 8 alert kinds, 4 quick actions, 5 windows,
+                                                 and every threshold with the sentence printed beside it
+GET      /api/accounts/dashboard/overview     all 7 blocks + the summary strip, in ONE response
+GET      /api/accounts/dashboard/alerts?family=UNUSUAL|OVERDUE|RECONCILIATION   (422 on a misspelling)
+GET      /api/accounts/dashboard/actions      the 4 quick actions with their live counts
+GET      /api/accounts/dashboard/blocks/:block   one block for a sub-screen (422 on an unknown id)
 GET  /api/accounts/collections            (POST /{id}/record, /{id}/receipt)
 GET  /api/accounts/dues                   (POST /{id}/remind, /{id}/waive)
 GET/POST /api/accounts/payroll            (POST /run, /:id/approve|pay-all, /entries/:entryId/pay)
@@ -1500,7 +1695,12 @@ Backend implemented in `backend/src/modules/accounts/` (routes + service + zod s
 at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 
 **Endpoints live:**
-- `GET /api/v1/accounts/dashboard` — F-01 hero stats, collections, defaulters, budget, alerts
+- `GET /api/v1/accounts/dashboard/catalogue` — F-11 everything the hub builds itself out of: the seven blocks (id, label, blurb, icon, colour, **route**, `isTab`, order), the three alert families, the eight alert kinds, the four quick actions, the five windows with **why each exists**, and every threshold including `payrollDuePolicy`
+- `GET /api/v1/accounts/dashboard/overview` — F-11 all seven blocks **and** the catalogue in one response, plus a `summary` whose collected / spent / payroll figures are all on the **same** window. One call, one moment: a screen that fetched seven times could show seven different ones. Reversed payments are excluded from every figure and reported separately
+- `GET /api/v1/accounts/dashboard/alerts?family=` — F-11 the eight **computed** alerts in three families (`UNUSUAL`, `OVERDUE`, `RECONCILIATION`), recalculated on every read. The four reconciliation counts are imported from `notifications.service.ts` rather than re-derived, so the two screens cannot disagree. `tone` is `clear` at zero — a healthy dashboard painted in the alarm colour trains its reader to ignore it. A misspelled family is 422, not an empty list
+- `GET /api/v1/accounts/dashboard/actions` — F-11 the four quick actions, each with the **live count** of what it would act on and a `countLabel` in words. Only `SEND_REMINDER` can be blocked, only when no bill is past its due date; a collection is never blocked for lack of owing students, because a donation is a real collection with no student attached. `blockedReason` is always present and always in words
+- `GET /api/v1/accounts/dashboard/blocks/:block` — F-11 one block for a sub-screen, so opening one does not pay for the other six. Unknown id is 422 from `assertBlock` — a block is a choice from a published list, not a record that might exist
+- ~~`GET /api/v1/accounts/dashboard`~~ — F-11 **removed**, with `getDashboard` in `accounts.service.ts`. Six defects it carried: the hero's "target" was the sum of every active fee structure (a price list, not a goal), budget percentages were clamped to 100 so an overrun read as 100%, ageing read the drifting `FeeDue.daysOverdue`, dues were summed as billed amounts rather than balances, `UNDER_REVIEW` counted as approved scholarship money, and the budget summed every fiscal year the institution had ever had
 - `GET /api/v1/accounts/collections` — F-02 collection list. Filters `q, category, method, status, range, sort, take, skip`. Returns `stats` (today/30d/all-time **net** of reversals, plus the *filtered* total and a separate reversed count) and `collections[]` with allocated vs unallocated rupees
 - `POST /api/v1/accounts/collections` — F-02 record a collection. Body: `rollNo` or `studentProfileId`, `category`, `amountMinor`, `method`, optional `allocations[{dueId, amountMinor}]`, optional `note`. Allocates onto `fee_dues` (oldest-first when no `allocations`), issues a receipt, notifies the payer, audits
 - `GET /api/v1/accounts/collections/students/search?q=&limit=` — F-02 student picker; each result carries live `outstandingRupees`, `openDues`, `oldestOverdueDays`
@@ -1578,5 +1778,5 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `POST /api/v1/accounts/notifications/broadcasts` — F-10 send an announcement (ALL_STUDENTS / DEFAULTERS / ALL_STAFF). **Every audience branch is tenant-scoped** — the `DEFAULTERS` branch previously had no `institutionId` filter at all and reached defaulters at every college on the instance. Defaulters are resolved from `dueDate` compared to a cutoff, never from the drifting `daysOverdue` column. `.strict()`, so `content` sent instead of `body` is a 400 and no broadcast is written. Audited as `broadcast.send`
 - `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
 
-**App:** all 18 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with nine screens registered in `FEATURE_MODULES` (`PayrollRunDetail`, `Payslip`, `PayrollSalaryRecords`, `PayrollSalaryRecord`, `PayrollComponents`, `PayrollAttendance`, `PayrollLoans`, `PayrollAlerts`, `PayslipDocument`), the hub carrying **Salary records** and **Pending salaries** desk buttons, and `runPayroll` pricing each person from the salary version in force that month with attendance LOP, YTD TDS and loan recovery rather than a hard-coded 50/40/12 formula; expenses has approve/reject; scholarships is a hub with eight screens registered in `FEATURE_MODULES` (`ScholarshipApplications`, `ScholarshipApplication`, `ScholarshipDetail`, `ScholarshipDocuments`, `ScholarshipTracking`, `ScholarshipStudentHistory`, `ScholarshipApply`,
-  `ScholarshipSchemeEditor`) over live APIs, the hardcoded `scholarshipsData.js` fixture deleted, every server action gated behind `actions[]`, and a disbursement that credits real `fee_dues` rather than booking a payment; reports is a hub with seven sub-screens registered in `FEATURE_MODULES` (`ReportCollections`, `ReportDues`, `ReportExpenses`, `ReportPayroll`, `ReportScholarships`, `ReportDepartments`, `ReportComparison`) built from the server's own catalogue rather than a copied list, one shared period selector across all seven, and a real xlsx/csv/pdf export on every screen that writes a file and opens it; the hardcoded `reportsData.js` fixture deleted; notifications is a hub with four sub-screens registered in `FEATURE_MODULES` (`NotificationInbox`, `NotificationAlerts`, `NotificationCompose`, `NotificationHistory`) over live APIs, the seven categories and four alert kinds arriving from the server's own catalogue rather than a copied list, **per-item read** (`markNotificationRead` / `setNotificationRead`) replacing a screen where every row called read-all, real `take`/`skip` paging, per-category unread counts and an out-of-scope count, live recipient counts shown before composing, and a send history that did not previously exist; profile shows live officer data.
+**App:** all 25 screens wired via `accountsApi` (`services/api.js`), five `dashboard*` methods (`dashboardCatalogue`, `dashboardOverview`, `dashboardAlerts`, `dashboardActions`, `dashboardBlock`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with nine screens registered in `FEATURE_MODULES` (`PayrollRunDetail`, `Payslip`, `PayrollSalaryRecords`, `PayrollSalaryRecord`, `PayrollComponents`, `PayrollAttendance`, `PayrollLoans`, `PayrollAlerts`, `PayslipDocument`), the hub carrying **Salary records** and **Pending salaries** desk buttons, and `runPayroll` pricing each person from the salary version in force that month with attendance LOP, YTD TDS and loan recovery rather than a hard-coded 50/40/12 formula; expenses has approve/reject; scholarships is a hub with eight screens registered in `FEATURE_MODULES` (`ScholarshipApplications`, `ScholarshipApplication`, `ScholarshipDetail`, `ScholarshipDocuments`, `ScholarshipTracking`, `ScholarshipStudentHistory`, `ScholarshipApply`,
+  `ScholarshipSchemeEditor`) over live APIs, the hardcoded `scholarshipsData.js` fixture deleted, every server action gated behind `actions[]`, and a disbursement that credits real `fee_dues` rather than booking a payment; reports is a hub with seven sub-screens registered in `FEATURE_MODULES` (`ReportCollections`, `ReportDues`, `ReportExpenses`, `ReportPayroll`, `ReportScholarships`, `ReportDepartments`, `ReportComparison`) built from the server's own catalogue rather than a copied list, one shared period selector across all seven, and a real xlsx/csv/pdf export on every screen that writes a file and opens it; the hardcoded `reportsData.js` fixture deleted; notifications is a hub with four sub-screens registered in `FEATURE_MODULES` (`NotificationInbox`, `NotificationAlerts`, `NotificationCompose`, `NotificationHistory`) over live APIs, the seven categories and four alert kinds arriving from the server's own catalogue rather than a copied list, **per-item read** (`markNotificationRead` / `setNotificationRead`) replacing a screen where every row called read-all, real `take`/`skip` paging, per-category unread counts and an out-of-scope count, live recipient counts shown before composing, and a send history that did not previously exist; profile shows live officer data; the dashboard (F-11) is a hub over seven server-published blocks plus seven sub-screens (`DashboardCollections`, `DashboardDues`, `DashboardExpenses`, `DashboardPayroll`, `DashboardScholarships`, `DashboardAlerts`, `DashboardActions`) registered in `FEATURE_MODULES`, each sub-screen fetching **its own block only** via `dashboardBlock(id)`. The block list comes from `/dashboard/catalogue`, never from a local copy — `dashboardMeta.js` mirrors the ids solely because the sub-screens are separate modules that must exist at build time, and `audit-dashboard-ui.ts` asserts the mirror and the server agree. The hero names the window it is showing rather than comparing collection against a "target" that was really the sum of every active fee structure; budget utilisation is printed **unclamped** with the bar width clamped separately; `daysOverdue` is not read anywhere on the screen; a failed request renders an error and a retry rather than a row of zeros; and the stale `constants/dashboardData.js` fixture is gone with the `constants/` directory it was the only occupant of.

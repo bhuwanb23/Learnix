@@ -160,18 +160,28 @@ export async function listDues(institutionId: string, filter: DueFilter = {}) {
 
   // Decorate with derived status + balance before any filtering, so the aging
   // buckets and stats below agree with the rows the officer actually sees.
+  //
+  // `daysLive` is DERIVED from `dueDate`, never read from `FeeDue.daysOverdue`.
+  // That column is denormalised and drifts: it is only written on the paths that
+  // happen to touch a due, so a bill that went unpaid quietly for two months
+  // still reported 0. F-11 hit this on the dashboard, F-10 hit it again in the
+  // broadcast audience, and this desk was the last reader left — which is how the
+  // morning screen and the dues desk came to report the same overdue money as
+  // ₹39,820 and ₹46,120. One derivation, three screens, no disagreement.
+  const today = new Date();
   const decorated = rows.map((d) => {
     const status = deriveDueStatus(d);
+    const daysLive = isOpen(status) ? daysPastDue(d.dueDate, today) : 0;
     return {
       ...d,
       derivedStatus: status,
       balanceMinor: balanceOf(d),
       bucketId: isOpen(status)
-        ? bucketFor(d.daysOverdue).id
+        ? bucketFor(daysLive).id
         : status === 'CLEARED'
           ? ('CLEARED' as const)
           : (status as 'WAIVED' | 'SUPERSEDED'),
-      daysLive: isOpen(status) ? d.daysOverdue : 0,
+      daysLive,
     };
   });
 
@@ -362,6 +372,7 @@ export async function getDueDetail(institutionId: string, dueId: string) {
       paidMinor: true,
       lateFeeMinor: true,
       status: true,
+      dueDate: true,
       daysOverdue: true,
       installmentSequence: true,
     },
@@ -406,9 +417,13 @@ export async function getDueDetail(institutionId: string, dueId: string) {
       balanceRupees: toRupees(balanceMinor),
       status,
       dueDate: due.dueDate,
-      daysOverdue: open ? due.daysOverdue : 0,
+      // Derived, like the list. The detail screen used to read the stored
+      // column while the list derived it, so tapping through to a bill could
+      // change its own age — and a user who saw "0 days overdue" on one screen
+      // and "23 days overdue" on the next has no way to tell which is real.
+      daysOverdue: open ? daysPastDue(due.dueDate) : 0,
       bucket: open
-        ? bucketFor(due.daysOverdue).id
+        ? bucketFor(daysPastDue(due.dueDate)).id
         : status === 'CLEARED'
           ? 'CLEARED'
           : status === 'WAIVED'
@@ -497,7 +512,7 @@ export async function getDueDetail(institutionId: string, dueId: string) {
       id: d.id,
       title: d.title,
       balanceRupees: toRupees(d.balanceMinor),
-      daysOverdue: d.daysOverdue,
+      daysOverdue: daysPastDue(d.dueDate),
       status: d.derivedStatus,
     })),
   };
@@ -536,7 +551,7 @@ export async function remindDue(
   const amount = toRupees(balanceMinor);
   const body =
     `Your fee "${due.title}" of ₹${amount} is ` +
-    (due.daysOverdue > 0 ? `${due.daysOverdue} day(s) overdue` : 'due') +
+    (daysPastDue(due.dueDate) > 0 ? `${daysPastDue(due.dueDate)} day(s) overdue` : 'due') +
     `. Please clear it at the earliest.` +
     (note ? `\n\nNote from the accounts office: ${note}` : '');
 
