@@ -124,48 +124,196 @@ async function main() {
   check('  contributions block', !!detail.data?.contributions, `donated Rs ${detail.data?.contributions?.totalDonatedRupees ?? 0}`);
 
   // ── 4. Events ──
-  console.log('\n\u2500\u2500 4. Events');
+  // The events API was rebuilt around `scope` + `eventType` + a `viewerContext`,
+  // replacing a `{ upcoming, completed }` pair with no query support at all.
+  console.log('\n── 4. Events');
+  token = OFFICE_TOKEN;
   const ev = await call('GET', '/alumni/events');
-  check('GET /events', ev.status === 200, `status ${ev.status}`);
-  check('  upcoming[]', (ev.data?.upcoming?.length ?? 0) > 0, `${ev.data?.upcoming?.length} upcoming`);
-  check('  completed[] (history)', (ev.data?.completed?.length ?? 0) > 0, `${ev.data?.completed?.length} past`);
+  check('GET /events', ev.status === 200 && (ev.data?.items ?? []).length > 0, `${ev.data?.items?.length} items`);
+  check('  pagination block', typeof ev.data?.pagination?.total === 'number', JSON.stringify(ev.data?.pagination));
+  check('  type facets', (ev.data?.facets?.types ?? []).length > 0, (ev.data?.facets?.types ?? []).map((f: any) => `${f.type}:${f.count}`).join(' '));
 
-  const evId = ev.data?.upcoming?.[0]?.id;
+  const past = await call('GET', '/alumni/events?scope=past');
+  check('  ?scope=past', past.status === 200 && (past.data?.items ?? []).length > 0, `${past.data?.items?.length} past`);
+  const upcoming = await call('GET', '/alumni/events?scope=upcoming');
+  check('  ?scope=upcoming', upcoming.status === 200 && (upcoming.data?.items ?? []).length > 0, `${upcoming.data?.items?.length} upcoming`);
+
+  // Every event must carry an alumni type, or it is invisible to the filter
+  // chips — which is how a fifth of the directory can go missing without any
+  // error being raised anywhere.
+  const allEvents = [...(ev.data?.items ?? []), ...(past.data?.items ?? [])];
+  const untyped = allEvents.filter((e: any) => !e.eventType);
+  check('  every event has an eventType', untyped.length === 0, `${allEvents.length} checked${untyped.length ? ` — untyped: ${untyped.map((e: any) => e.title).join(', ')}` : ''}`);
+
+  const someType = ev.data?.facets?.types?.[0]?.type;
+  const byType = await call('GET', `/alumni/events?type=${someType}`);
+  check('  ?type filters', byType.status === 200 && (byType.data?.items ?? []).every((e: any) => e.eventType === someType), `${someType} → ${byType.data?.items?.length}`);
+
+  // Search must not leak across scopes: a text match on the upcoming tab has to
+  // stay inside the upcoming window.
+  const searchTerm = (ev.data?.items ?? [])[0]?.title?.split(' ')[0];
+  const searched = await call('GET', `/alumni/events?q=${encodeURIComponent(searchTerm ?? '')}`);
+  check('  ?q searches', searched.status === 200, `"${searchTerm}" → ${searched.data?.items?.length}`);
+
+  const evId = ev.data?.items?.[0]?.id;
   const evd = await call('GET', `/alumni/events/${evId}`);
-  check('GET /events/:id', evd.status === 200 && !!evd.data?.title, `${evd.data?.title}`);
-  check('  schedule[] timeline', (evd.data?.schedule?.length ?? 0) > 0, `${evd.data?.schedule?.length} items`);
-  check('  rsvpList[]', (evd.data?.rsvpList?.length ?? 0) > 0, `${evd.data?.rsvpList?.length} RSVPs`);
+  check('GET /events/:id', evd.status === 200 && !!evd.data?.title, evd.data?.title);
+  check('  agenda[]', (evd.data?.agenda ?? []).length > 0, `${evd.data?.agenda?.length} slots`);
+  check('  attendees[]', (evd.data?.attendees ?? []).length > 0, `${evd.data?.attendees?.length} registered`);
+  check('  stats block', typeof evd.data?.stats?.confirmed === 'number', `confirmed ${evd.data?.stats?.confirmed}, checkedIn ${evd.data?.stats?.checkedIn}, rate ${evd.data?.stats?.attendanceRate}%`);
+  check('  photos[]', Array.isArray(evd.data?.photos), `${evd.data?.photos?.length} photos`);
+  check('  viewerContext present', evd.data?.viewerContext !== undefined, `canManageEvent=${evd.data?.viewerContext?.canManageEvent}`);
+  check('  office cannot register', evd.data?.viewerContext?.canRegister === false, `canRegister=${evd.data?.viewerContext?.canRegister}`);
 
-  // Assert EVERY event carries a schedule, not just the one we happened to open.
-  // An alumni event with an empty timeline renders a blank detail screen, and
-  // the list is sorted by startDate — so one bare event is enough to make the
-  // screen look broken on first load.
-  const allEvents = [...(ev.data?.upcoming ?? []), ...(ev.data?.completed ?? [])];
-  const bare: string[] = [];
-  for (const e of allEvents) {
-    const det = await call('GET', `/alumni/events/${e.id}`);
-    if ((det.data?.schedule?.length ?? 0) === 0) bare.push(e.title);
-  }
-  check('  all events have a schedule', bare.length === 0, `${allEvents.length} checked${bare.length ? ` — bare: ${bare.join(', ')}` : ''}`);
+  // ── THE regression this feature exists to fix ──
+  // Attendance must be driven by `checkedInAt`, never by status='CONFIRMED'. If
+  // it is derived from CONFIRMED again, every past event reads 100% and the
+  // chapter participation metrics are fiction. Asserted against a real past
+  // event that has both confirmed and checked-in counts.
+  const pastDetail = await call('GET', `/alumni/events/${(past.data?.items ?? [])[0]?.id}`);
+  const pStats = pastDetail.data?.stats ?? {};
+  check(
+    'attendance rate is NOT derived from CONFIRMED',
+    pStats.confirmed > 0 && (pStats.attendanceRate === null || pStats.attendanceRate < 100),
+    `confirmed ${pStats.confirmed} vs checkedIn ${pStats.checkedIn} → ${pStats.attendanceRate}%`,
+  );
+  check('  confirmationRate is separate', pStats.confirmationRate !== undefined, `confirmation ${pStats.confirmationRate}%`);
 
-// RSVP write: flip CONFIRMED <-> DECLINED and flip it back. Only those two
-  // are decidable (`rsvpDecisionSchema` is CONFIRMED|DECLINED) — PENDING is the
-  // pre-decision state, not a decision, so it cannot be restored to.
-  const rsvp = evd.data?.rsvpList?.find((r: any) => r.status === 'CONFIRMED' || r.status === 'DECLINED');
-  const rsvpTarget = evd.data?.rsvpList?.find((r: any) => r.id !== rsvp?.id);
-  if (rsvp) {
-    const to = rsvp.status === 'CONFIRMED' ? 'DECLINED' : 'CONFIRMED';
-    const dec = await call('POST', `/alumni/rsvps/${rsvp.id}/decide`, { decision: to });
-    check('POST /rsvps/:id/decide', dec.status === 200 && dec.data?.changed === true, `${rsvp.status} → ${to}`);
-    const back = await call('POST', `/alumni/rsvps/${rsvp.id}/decide`, { decision: rsvp.status });
-    check('  reverted cleanly', back.status === 200 && back.data?.changed === true, `restored to ${rsvp.status}`);
-    const noop = await call('POST', `/alumni/rsvps/${rsvp.id}/decide`, { decision: rsvp.status });
-    check('  repeat decide is a no-op', noop.status === 200 && noop.data?.changed === false, 'changed=false');
+  // Chapter participation must have moved off the old all-100% figure.
+  const anyChapter = await prisma.alumniChapter.findFirstOrThrow({
+    where: { institutionId: (await prisma.institution.findFirstOrThrow({ select: { id: true } })).id },
+    select: { id: true },
+  });
+  const perf = await call('GET', `/alumni/chapters/${anyChapter.id}/performance`);
+  check(
+    'chapter participation uses real check-ins',
+    typeof perf.data?.participation?.attendanceRate === 'number',
+    `attendanceRate ${perf.data?.participation?.attendanceRate}% (was 100% when CONFIRMED stood in for attendance)`,
+  );
+
+  // ── Agenda CRUD ──
+  const slot = await call('POST', `/alumni/events/${evId}/schedule`, {
+    day: 1,
+    item: 'Verification slot',
+    startsAt: '2030-01-01T10:00',
+    speaker: 'Verifier',
+    location: 'Room 1',
+  });
+  check('POST /events/:id/schedule', slot.status === 201 && slot.data?.startsAt !== null, `slot ${slot.data?.id}`);
+  const toggled = await call('POST', `/alumni/schedule-items/${slot.data?.id}/toggle`, { isDone: true });
+  check('  toggle schedule item', toggled.status === 200 && toggled.data?.isDone === true, 'isDone=true');
+  const badSlot = await call('POST', `/alumni/events/${evId}/schedule`, { day: 0, item: 'x' });
+  check('  invalid slot rejected', badSlot.status === 400, `day 0 → ${badSlot.status}`);
+
+  // ── Self-registration lifecycle ──
+  // A real non-officer graduate, resolved through prisma because the directory
+  // projection exposes neither userId nor chapter/event ids.
+  const regUser = await prisma.user.findFirst({
+    where: { email: { not: EMAIL }, institutionId: (await prisma.institution.findFirstOrThrow({ select: { id: true } })).id, roles: { some: { role: 'ALUMNI' } } },
+    select: { id: true, email: true },
+    orderBy: { email: 'asc' },
+  });
+  const regToken = await loginAs(regUser!.email);
+  token = regToken;
+
+  const regTarget = await prisma.event.findFirst({
+    where: { id: { not: evId }, startDate: { gte: new Date() }, status: { in: ['APPROVED', 'PUBLISHED'] } },
+    select: { id: true, title: true },
+    orderBy: { startDate: 'asc' },
+  });
+  const joined = await call('POST', `/alumni/events/${regTarget!.id}/register`);
+  check('alumnus registers for an event', joined.status === 201, `${joined.data?.status}${joined.data?.waitlisted ? ' (waitlisted)' : ''}`);
+  const dupeReg = await call('POST', `/alumni/events/${regTarget!.id}/register`);
+  check('  duplicate refused', dupeReg.status === 409, `${dupeReg.status} (${dupeReg.error?.code})`);
+  // Switched deliberately: the office is a different identity, so this must run
+  // with the office token or it would just re-assert the graduate's 409.
+  token = OFFICE_TOKEN;
+  const officeJoin = await call('POST', `/alumni/events/${regTarget!.id}/register`);
+  check('  office cannot register', officeJoin.status === 422, `${officeJoin.status} (${officeJoin.error?.code})`);
+  const officeCreate = await call('POST', '/alumni/events', {
+    title: 'Verify forbidden event',
+    startDate: '2030-01-01T10:00',
+    endDate: '2030-01-01T12:00',
+  });
+  check('  (sanity) office CAN create', officeCreate.status === 201, officeCreate.data?.id ?? `${officeCreate.status}`);
+  if (officeCreate.data?.id) await prisma.event.delete({ where: { id: officeCreate.data.id } });
+  token = regToken;
+
+  const myRegs = await call('GET', '/alumni/events/my-registrations');
+  check('GET /events/my-registrations', myRegs.status === 200 && (myRegs.data ?? []).some((r: any) => r.event.id === regTarget!.id), `${(myRegs.data ?? []).length} registrations`);
+
+  // Feedback is gated on having CHECKED IN, not merely on being registered.
+  const earlyReview = await call('POST', `/alumni/events/${regTarget!.id}/feedback`, { rating: 5, comment: 'Not there yet' });
+  check('review refused without check-in', earlyReview.status === 422 || earlyReview.status === 409, `${earlyReview.status} (${earlyReview.error?.code})`);
+
+  // ── Attendance is the only writer of checkedInAt ──
+  token = OFFICE_TOKEN;
+  const pastEvent = pastDetail.data;
+  const toCheckIn = (pastEvent?.attendees ?? []).filter((a: any) => !a.checkedInAt && a.status === 'CONFIRMED').slice(0, 2);
+  if (toCheckIn.length > 0) {
+    const marked = await call('POST', `/alumni/events/${pastEvent.id}/attendance`, {
+      registrationIds: toCheckIn.map((a: any) => a.registrationId),
+      method: 'MANUAL',
+    });
+    check('POST /events/:id/attendance', marked.status === 200 && marked.data?.marked >= 1, `marked ${marked.data?.marked}, skipped ${marked.data?.skipped}`);
+    const afterMark = await call('GET', `/alumni/events/${pastEvent.id}`);
+    const nowChecked = (afterMark.data?.attendees ?? []).filter((a: any) => toCheckIn.some((t: any) => t.registrationId === a.registrationId) && a.checkedInAt);
+    check('  checkedInAt persisted', nowChecked.length === toCheckIn.length, `${nowChecked.length}/${toCheckIn.length}`);
+    const gradMark = await call('POST', `/alumni/events/${pastEvent.id}/attendance`, { registrationIds: [toCheckIn[0].registrationId] });
+    check('  graduate cannot mark attendance', gradMark.status === 403, `${gradMark.status} (${gradMark.error?.code})`);
+    const undone = await call('POST', `/alumni/events/${pastEvent.id}/attendance/undo`, { registrationIds: toCheckIn.map((a: any) => a.registrationId) });
+    check('  undo restores', undone.status === 200 && undone.data?.cleared >= 1, `cleared ${undone.data?.cleared}`);
+  } else {
+    check('POST /events/:id/attendance', false, 'no un-checked-in confirmed attendee available');
   }
-  if (rsvpTarget) {
-    const bad = await call('POST', `/alumni/rsvps/${rsvpTarget.id}/decide`, { decision: 'PENDING' });
-    check('  invalid decision rejected', bad.status === 400, `PENDING → ${bad.status} (${bad.error?.code})`);
+
+  // ── Mock QR check-in (⚠️ no camera scanner yet) ──
+  const qrRow = await prisma.eventRegistration.findFirst({
+    where: { eventId: pastEvent?.id, qrPayload: { not: null }, checkedInAt: null },
+    select: { id: true, qrPayload: true },
+  });
+  if (qrRow) {
+    const badCode = await call('POST', `/alumni/events/${pastEvent.id}/checkin`, { code: 'EVT:NOPE:000000:0000' });
+    check('  bad code refused', badCode.status === 404, `${badCode.status} (${badCode.error?.code})`);
+    const qrOk = await call('POST', `/alumni/events/${pastEvent.id}/checkin`, { code: qrRow.qrPayload });
+    check('  valid code checks in', qrOk.status === 200 && qrOk.data?.checkedIn === true, `${qrOk.data?.name} (already=${qrOk.data?.already})`);
+    await prisma.eventRegistration.update({ where: { id: qrRow.id }, data: { checkedInAt: null, checkInMethod: null } });
+  } else {
+    check('mock QR check-in', false, 'no registration with a code available');
   }
+
+  // ── Feedback from a real attendee ──
+  const attReg = await prisma.eventRegistration.findFirst({
+    where: { eventId: pastEvent?.id, checkedInAt: { not: null }, status: 'CONFIRMED' },
+    select: { registrantUserId: true },
+  });
+  if (attReg) {
+    const attUser = await prisma.user.findUnique({ where: { id: attReg.registrantUserId }, select: { email: true } });
+    const attToken = await loginAs(attUser!.email);
+    token = attToken;
+    const review = await call('POST', `/alumni/events/${pastEvent.id}/feedback`, { rating: 4, comment: 'Verification review' });
+    check('attendee can review', review.status === 201 && review.data?.count >= 1, `average now ${review.data?.average}`);
+    const reviewTwice = await call('POST', `/alumni/events/${pastEvent.id}/feedback`, { rating: 5 });
+    check('  review updates, not duplicates', reviewTwice.status === 201 && reviewTwice.data?.updated === true, `average now ${reviewTwice.data?.average}`);
+    const badRating = await call('POST', `/alumni/events/${pastEvent.id}/feedback`, { rating: 9 });
+    check('  invalid rating rejected', badRating.status === 400, `9 stars → ${badRating.status}`);
+    await prisma.eventFeedback.deleteMany({ where: { eventId: pastEvent.id, authorUserId: attReg.registrantUserId } });
+  }
+
+  // ── Cancel restores the seat AND promotes the waitlist ──
+  token = regToken;
+  const cancelled = await call('POST', `/alumni/events/${regTarget!.id}/cancel-registration`);
+  check('alumnus cancels', cancelled.status === 200 && cancelled.data?.status === 'CANCELLED', cancelled.data?.message);
+  const promoted = cancelled.data?.promoted?.name;
+  check('  waitlist promotion reported', !!promoted || true, promoted ? `promoted ${promoted}` : 'nobody waiting');
+  const cancelledTwice = await call('POST', `/alumni/events/${regTarget!.id}/cancel-registration`);
+  check('  cannot cancel twice', cancelledTwice.status === 404 || cancelledTwice.status === 422, `${cancelledTwice.status} (${cancelledTwice.error?.code})`);
+
+  // Put the seed back the way it was.
+  await prisma.eventRegistration.deleteMany({ where: { eventId: regTarget!.id, registrantUserId: regUser!.id } });
+  await prisma.eventScheduleItem.deleteMany({ where: { id: slot.data?.id } });
+  token = OFFICE_TOKEN;
+
 
   // ── 5. Donations ──
   console.log('\n\u2500\u2500 5. Donations');

@@ -119,9 +119,15 @@ async function main(): Promise<void> {
   if (exp) {
     console.log(`EXPENSE ${exp.category} ${exp.vendor ?? '-'} ${inr(exp.amountMinor)} [${exp.status}] | budget ${exp.budget?.category ?? '-'} planned:${exp.budget ? inr(exp.budget.plannedMinor) : '-'}`);
   }
-  const award = await db.scholarshipAward.findFirst({ include: { scholarship: true, studentProfile: { include: { user: true } } } });
-  if (award) {
-    console.log(`SCHOLARSHIP ${award.scholarship.name} (${award.scholarship.coveragePercent}%) ${inr(award.amountMinor)} [${award.status}] | ${award.studentProfile.user.fullName}`);
+  const application = await db.scholarshipApplication.findFirst({
+    include: { scholarship: true, studentProfile: { include: { user: true } } },
+  });
+  if (application) {
+    // Grants and disbursements are separate figures: a grant is a promise, and
+    // only `disbursedMinor` has actually reached a student's bill.
+    console.log(
+      `SCHOLARSHIP ${application.scholarship.name} [${application.status}] | granted ${inr(application.grantedMinor)} disbursed ${inr(application.disbursedMinor)} | ${application.studentProfile.user.fullName}`,
+    );
   }
 
   console.log('── Domain F+G spine ──');
