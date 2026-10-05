@@ -56,7 +56,13 @@ model User {
   chapterOfficerRoles    AlumniChapterOfficer[]
   ownedInitiatives       AlumniChapterInitiative[] @relation("InitiativeOwner")
   donationsMade    Donation[]
-  mentorshipsAsMentor MentorshipPair[]
+  // Named relations: User is on both sides of mentorship now that a pair can be
+  // alumnus→alumnus, so the disambiguators are what stop Prisma reporting an
+  // ambiguous relation.
+  mentorshipsAsMentor MentorshipPair[]              @relation("MentorshipMentor")
+  mentorshipFeedback  MentorshipFeedback[]         @relation("MentorshipFeedbackAuthor")
+  mentorshipRequests  MentorshipRequest[]          @relation("MentorshipRequestMentee")
+  mentorshipRequestsAsMentor MentorshipRequest[]   @relation("MentorshipRequestMentor")
   platformAdmin      PlatformAdmin?
   leavesRequested    LeaveRequest[]   @relation("LeaveStaff")
 

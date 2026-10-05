@@ -47,7 +47,8 @@ model StudentProfile {
   eventVolunteering EventVolunteer[]
   teamMemberships   TeamMember[]
   equipmentIssues   EquipmentIssue[]
-  mentorshipsAsMentee MentorshipPair[]
+mentorshipsAsMentee MentorshipPair[]
+  mentorshipRequests  MentorshipRequest[]
 
   @@unique([institutionId, rollNo])
   @@index([institutionId])
@@ -112,6 +113,11 @@ model AlumniProfile {
   skills       AlumniSkill[]
   career       AlumniCareerEntry[]
   privacy      AlumniPrivacySettings?
+
+  // The mentee half of mentorship is polymorphic: an alumnus can mentor a
+  // STUDENT (via StudentProfile.mentorshipsAsMentee) or another alumnus (here).
+  mentorshipsAsMentee MentorshipPair[]     @relation("MenteeAlumniProfile")
+  mentorshipRequests  MentorshipRequest[]  @relation("RequestMenteeAlumniProfile")
 
   @@index([institutionId])
   @@index([graduationYear])

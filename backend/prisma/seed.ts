@@ -18,6 +18,7 @@ import { fiscalYearOf } from '../src/modules/accounts/expenses.money.js';
 import { syncFeeStructures } from './syncFeeStructures.js';
 import { syncPayrollSalary, linkRunsToSalaryRecords } from './syncPayrollSalary.js';
 import { syncScholarships } from './syncScholarships.js';
+import { syncReportHistory } from './syncReportHistory.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -1115,6 +1116,10 @@ async function seedDomainE(institutionId: string): Promise<void> {
   await syncFeeStructures(db, institutionId, admin.id);
 
   await syncDuesRecovery(institutionId, admin.id);
+
+  // F-09 Reports (docs 3.8) - a full year of history so the monthly,
+  // semester and yearly comparisons have something real to compare.
+  await syncReportHistory(db);
 }
 
 // ─────────────────────────────────────────────────────────────

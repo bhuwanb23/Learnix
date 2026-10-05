@@ -1,42 +1,203 @@
 // Domain J2 — Mentorship + city chapters.
 // Docs: 12-alumni-relations.md §3.5–3.6 · 05-state-machines.md §mentorship
-// mentorship_pairs join an alumni USER to a student PROFILE.
-// approvedAt/nextEventAt timestamps; presidentAlumniUserId scalar → users.id.
+//
+// ─────────────────────────────────────────────────────────────
+// Why the mentee side is polymorphic
+// ─────────────────────────────────────────────────────────────
+// The original model could only pair an alumnus with a STUDENT (menteeStudentProfileId),
+// which quietly assumed a student app existed to serve the mentee half. There is
+// none — the student app has no mentorship screen at all — so every student mentee
+// was an inert row: no way to see their mentor, respond to a request, log a
+// session, set a goal, or leave feedback.
+//
+// The programme genuinely serves both cases, so both are modelled: an alumnus
+// mentoring a student, and an alumnus mentoring another alumnus. Exactly one of
+// the two mentee columns is set, and the service enforces that.
+//
+// ⚠️ The `@@unique([mentorAlumniUserId, menteeStudentProfileId])` index on the
+// student side STOPS being enforced once that column is nullable: Prisma/SQLite
+// treat NULLs as distinct in a unique index, so every alumni-mentee pair has a
+// NULL there and the index admits duplicates. "One live pair per mentor+mentee"
+// is therefore enforced in the service layer (see mentorship.service.ts), not by
+// the database. The alumni side has its own index and IS enforced.
 
 model MentorshipPair {
-  id                     String    @id @default(cuid())
-  mentorAlumniUserId     String // scalar → users.id
-  menteeStudentProfileId String
+  id       String  @id @default(cuid())
+  // Mentor is always an alumnus — the whole programme exists because alumni give
+  // their time back.
+  mentorAlumniUserId String // scalar → users.id
+  // Exactly one of these is set. NULL on both is a corrupt row and is rejected by
+  // the service, not by the schema, because SQLite cannot express "exactly one".
+  menteeStudentProfileId String?
+  menteeAlumniProfileId  String?
+
   field                  String // "Career", "Higher Studies", "Entrepreneurship"…
   status                 String    @default("PENDING") // PENDING | ACTIVE | DECLINED | COMPLETED
   requestedAt            DateTime  @default(now())
   approvedAt             DateTime?
+  completedAt            DateTime?
+  declinedReason         String?
+  // The next planned session, so a pair card can say "next: Thu 14 Mar" instead
+  // of printing `requestedAt` under a next-session label. The file header used to
+  // claim this field existed; it did not.
+  nextSessionAt          DateTime?
+  // The match that produced this pair, kept so a surprising pairing can be
+  // explained later ("why were these two matched?") rather than being folklore.
+  matchScore             Int?
+  matchReasons           String? // JSON array of strings
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
-  mentorAlumniUser     User                @relation(fields: [mentorAlumniUserId], references: [id])
-  menteeStudentProfile StudentProfile      @relation(fields: [menteeStudentProfileId], references: [id])
-  sessions             MentorshipSession[]
+  mentorAlumniUser User                @relation("MentorshipMentor", fields: [mentorAlumniUserId], references: [id])
+  menteeStudentProfile StudentProfile? @relation(fields: [menteeStudentProfileId], references: [id])
+  menteeAlumniProfile  AlumniProfile?  @relation("MenteeAlumniProfile", fields: [menteeAlumniProfileId], references: [id])
+  sessions           MentorshipSession[]
+  goals              MentorshipGoal[]
+  feedback           MentorshipFeedback[]
+  // The request this pair came from, when there was one. An office-created pair
+  // (no request) leaves this null.
+  sourceRequest      MentorshipRequest? @relation("PairFromRequest")
 
-  @@unique([mentorAlumniUserId, menteeStudentProfileId])
+  @@unique([mentorAlumniUserId, menteeAlumniProfileId])
   @@index([menteeStudentProfileId])
+  @@index([menteeAlumniProfileId])
+  @@index([mentorAlumniUserId, status])
   @@index([status])
   @@map("mentorship_pairs")
 }
 
 model MentorshipSession {
-  id             String   @id @default(cuid())
-  pairId         String
-  sessionDate    DateTime
-  notes          String?
+  id          String   @id @default(cuid())
+  pairId      String
+  sessionDate DateTime
+  notes       String?
+  // Everything below was added because a session log that cannot say how long it
+  // ran, how it happened, or what came out of it is a diary, not a programme
+  // record. All optional so existing seeded rows stay valid.
+  durationMinutes Int?
+  mode            String? // IN_PERSON | VIDEO | PHONE
+  agenda          String?
+  outcome         String?
+  // PENDING = scheduled but not yet held. A past session is left in the log by
+  // logging it outright; this exists for "booked for Thursday".
+  planned          Boolean  @default(false)
+  cancelledAt      DateTime?
   loggedByUserId String // scalar → users.id (who logged the session)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  pair MentorshipPair @relation(fields: [pairId], references: [id])
+  pair MentorshipPair @relation(fields: [pairId], references: [id], onDelete: Cascade)
 
   @@index([pairId])
+  @@index([pairId, sessionDate])
   @@map("mentorship_sessions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Goals — what the pair is working towards
+// ─────────────────────────────────────────────────────────────
+// Deliberately FLAT: one row per objective with a percentage, rather than goals
+// containing milestone rows. A milestone is just a goal that has a target date.
+// Two tables and a tree of completion states would buy nothing here — a
+// mentorship goal is "get a CV reviewed", not a project plan.
+model MentorshipGoal {
+  id              String    @id @default(cuid())
+  pairId          String
+  title           String
+  detail          String?
+  status          String    @default("PENDING") // PENDING | IN_PROGRESS | ACHIEVED | DROPPED
+  // 0–100. Null is not allowed: an unstarted goal is 0, and "no progress yet"
+  // is already expressed by status = PENDING. A nullable percentage would make
+  // every consumer handle a third "unknown" case for no benefit.
+  progressPct     Int       @default(0)
+  targetDate      DateTime?
+  achievedAt      DateTime?
+  createdByUserId String // scalar → users.id
+  updatedByUserId String? // scalar → users.id
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  pair MentorshipPair @relation(fields: [pairId], references: [id], onDelete: Cascade)
+
+  @@index([pairId, status])
+  @@map("mentorship_goals")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Feedback — both directions, participants only
+// ─────────────────────────────────────────────────────────────
+model MentorshipFeedback {
+  id           String   @id @default(cuid())
+  pairId       String
+  authorUserId String // scalar → users.id (a mentor OR the mentee)
+  // The mentor's rating is of the mentee and vice versa. Kept as two explicit
+  // columns rather than one ambiguous `rating` so a screen can never show "your
+  // rating of them" and "their rating of you" in the same widget by mistake.
+  mentorRating Int? // what the AUTHOR thinks of the MENTOR
+  menteeRating Int? // what the AUTHOR thinks of the MENTEE
+  comment      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pair   MentorshipPair @relation(fields: [pairId], references: [id], onDelete: Cascade)
+  author User            @relation("MentorshipFeedbackAuthor", fields: [authorUserId], references: [id])
+
+  // One review per person per pair, but EDITABLE — a 2-star review given because
+  // scheduling clashed should be fixable once it did not.
+  @@unique([pairId, authorUserId])
+  @@index([pairId])
+  @@map("mentorship_feedback")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Requests — how a mentorship actually starts
+// ─────────────────────────────────────────────────────────────
+// A request exists before there is a pair, because a pair is only created once
+// somebody ACCEPTS. Modelling the request as its own table is what makes
+// "mentee requests, mentor accepts" expressible at all; folding it into
+// MentorshipPair would mean every pair row is half-formed until someone decides.
+//
+// `requestedSkills` exists because StudentProfile has NO skills model — only
+// AlumniProfile does. The request is therefore the honest source of what a mentee
+// wants help with, and for an alumni mentee it is unioned with their real
+// AlumniSkill rows when scoring.
+model MentorshipRequest {
+  id                     String   @id @default(cuid())
+  institutionId          String
+  menteeUserId           String // scalar → users.id — who asked
+  menteeAlumniProfileId  String? // set when the mentee is an alumnus
+  menteeStudentProfileId String? // set when the mentee is a student
+  // Free-text skill list the mentee supplied, comma separated. Normalised to the
+  // shared skill vocabulary when scoring so "React" matches "react".
+  requestedSkills        String?
+  message                String?
+  field                  String? // the area they want help in
+  status                 String   @default("PENDING") // PENDING | ACCEPTED | DECLINED | WITHDRAWN
+  matchScore             Int?
+  matchReasons           String? // JSON array, chosen mentor at request time
+  mentorAlumniUserId     String? // set on ACCEPT
+  // Unique: a request produces AT MOST one pair. If a pair is ever created and
+  // later ended and re-requested, that is a second request, not a second pair
+  // pointing at the same request.
+  pairId                 String?   @unique
+  respondedAt            DateTime?
+  declineReason          String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  menteeUser   User            @relation("MentorshipRequestMentee", fields: [menteeUserId], references: [id])
+  mentorAlumniUser User?        @relation("MentorshipRequestMentor", fields: [mentorAlumniUserId], references: [id])
+  menteeAlumniProfile  AlumniProfile?  @relation("RequestMenteeAlumniProfile", fields: [menteeAlumniProfileId], references: [id])
+  menteeStudentProfile StudentProfile? @relation(fields: [menteeStudentProfileId], references: [id])
+  pair          MentorshipPair? @relation("PairFromRequest", fields: [pairId], references: [id])
+
+  // A mentee may keep ONE live request at a time. Enforced in the service rather
+  // than by this index because the mentee side is polymorphic and a partial
+  // unique over "either column" is not expressible.
+  @@index([institutionId, status])
+  @@index([mentorAlumniUserId, status])
+  @@index([menteeUserId, status])
+  @@map("mentorship_requests")
 }
 
 model AlumniChapter {
