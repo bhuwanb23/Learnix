@@ -1,7 +1,7 @@
 ﻿// Alumni Relations service (docs/users/12 §3 data contracts, rupee fields at API edge).
 // Money: stored paise → API rupees (divide by 100). Tenant-scoped by institutionId.
 import { prisma } from '../../db/prisma.js';
-import { notFound, conflict, unprocessable } from '../../lib/errors.js';
+import { notFound, conflict } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
@@ -108,45 +108,6 @@ export async function inviteAlumni(institutionId: string, profileId: string, act
   });
   return { id: profile.id, invited: profile.user.fullName };
 }
-
-export async function addMentor(institutionId: string, profileId: string, actorUserId: string) {
-  const profile = await prisma.alumniProfile.findFirst({
-    where: { id: profileId, user: { institutionId } },
-    include: { user: { select: { id: true, fullName: true } } },
-  });
-  if (!profile) throw notFound('Alumni not found');
-
-  // Demo mentee: the first active student profile in the institution
-  const mentee = await prisma.studentProfile.findFirst({
-    where: { user: { institutionId, deletedAt: null } },
-    include: { user: { select: { id: true, fullName: true } } },
-  });
-  if (!mentee) throw unprocessable('No student available to pair as mentee');
-
-  const existing = await prisma.mentorshipPair.findFirst({
-    where: { mentorAlumniUserId: profile.userId, menteeStudentProfileId: mentee.id, status: { in: ['PENDING', 'ACTIVE'] } },
-  });
-  if (existing) throw conflict('Already a mentor for an active/pending pair');
-
-  const pair = await prisma.mentorshipPair.create({
-    data: {
-      mentorAlumniUserId: profile.userId,
-      menteeStudentProfileId: mentee.id,
-      field: profile.currentRole ? 'Career Guidance' : 'Career',
-      status: 'PENDING',
-    },
-  });
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'mentorship.request',
-    entityType: 'MentorshipPair',
-    entityId: pair.id,
-    after: { mentor: profile.user.fullName, mentee: mentee.user.fullName },
-  });
-  return { id: pair.id, mentor: profile.user.fullName, mentee: mentee.user.fullName, status: 'PENDING' };
-}
-
 
 // ── AL-04 Donations ─────────────────────────────────────────
 /**
@@ -317,143 +278,6 @@ export async function recordDonation(institutionId: string, donationId: string, 
     receiptNo: result.receipt.receiptNo,
     amountRupees: toRupees(donation.amountMinor),
   };
-}
-
-// ── AL-05 Mentorship ────────────────────────────────────────
-export async function listMentorship(institutionId: string) {
-  const pairs = await prisma.mentorshipPair.findMany({
-    where: { menteeStudentProfile: { user: { institutionId } } },
-    include: {
-      mentorAlumniUser: { select: { id: true, fullName: true, alumniProfile: { select: { graduationYear: true, currentRole: true } } } },
-      menteeStudentProfile: { include: { user: { select: { fullName: true } } } },
-      sessions: { orderBy: { sessionDate: 'desc' } },
-    },
-    orderBy: { requestedAt: 'desc' },
-  });
-
-  const recentSessions = pairs.flatMap((p) =>
-    p.sessions.slice(0, 1).map((s) => ({
-      id: s.id,
-      pairId: p.id,
-      mentor: p.mentorAlumniUser.fullName,
-      mentee: p.menteeStudentProfile.user.fullName,
-      field: p.field,
-      sessionDate: s.sessionDate,
-      notes: s.notes,
-    })),
-  );
-
-  return {
-    active: pairs
-      .filter((p) => p.status === 'ACTIVE')
-      .map((p) => mapPair(p, p.sessions.length)),
-    pending: pairs
-      .filter((p) => p.status === 'PENDING')
-      .map((p) => mapPair(p, p.sessions.length)),
-    recentSessions,
-  };
-}
-
-function mapPair(
-  p: {
-    id: string;
-    field: string;
-    status: string;
-    requestedAt: Date;
-    mentorAlumniUser: { id: string; fullName: string; alumniProfile: { graduationYear: number | null; currentRole: string | null } | null };
-    menteeStudentProfile: { user: { fullName: string } };
-  },
-  sessionCount: number,
-) {
-  return {
-    id: p.id,
-    mentor: {
-      id: p.mentorAlumniUser.id,
-      name: p.mentorAlumniUser.fullName,
-      batch: p.mentorAlumniUser.alumniProfile?.graduationYear ?? null,
-      role: p.mentorAlumniUser.alumniProfile?.currentRole ?? null,
-    },
-    mentee: p.menteeStudentProfile.user.fullName,
-    field: p.field,
-    status: p.status,
-    sessions: sessionCount,
-    requestedAt: p.requestedAt,
-  };
-}
-
-export async function mentorshipAction(
-  institutionId: string,
-  pairId: string,
-  action: 'approve' | 'decline' | 'remind',
-  actorUserId: string,
-) {
-  const pair = await prisma.mentorshipPair.findFirst({
-    where: { id: pairId, menteeStudentProfile: { user: { institutionId } } },
-    include: {
-      mentorAlumniUser: { select: { id: true, fullName: true } },
-      menteeStudentProfile: { include: { user: { select: { id: true, fullName: true } } } },
-    },
-  });
-  if (!pair) throw notFound('Mentorship pair not found');
-
-  if (action === 'remind') {
-    await prisma.notification.create({
-      data: {
-        institutionId,
-        recipientUserId: pair.mentorAlumniUserId,
-        type: 'MENTORSHIP',
-        title: 'Mentorship session reminder',
-        body: `Please schedule your next session with ${pair.menteeStudentProfile.user.fullName} (${pair.field}).`,
-        sourceModule: 'alumni',
-      },
-    });
-    return { id: pair.id, action, reminded: true };
-  }
-
-  if (pair.status !== 'PENDING') {
-    throw unprocessable(`Cannot ${action} a pair that is ${pair.status}`);
-  }
-  if (action === 'approve') {
-    const updated = await prisma.mentorshipPair.update({
-      where: { id: pair.id },
-      data: { status: 'ACTIVE', approvedAt: new Date() },
-    });
-    await Promise.all([
-      writeAudit({
-        actorUserId,
-        institutionId,
-        action: 'mentorship.approve',
-        entityType: 'MentorshipPair',
-        entityId: pair.id,
-        before: { status: 'PENDING' },
-        after: { status: 'ACTIVE' },
-      }),
-      prisma.notification.create({
-        data: {
-          institutionId,
-          recipientUserId: pair.mentorAlumniUserId,
-          type: 'MENTORSHIP',
-          title: 'Mentorship request approved',
-          body: `You are now mentoring ${pair.menteeStudentProfile.user.fullName} (${pair.field}).`,
-          sourceModule: 'alumni',
-        },
-      }),
-    ]);
-    return { id: updated.id, status: updated.status };
-  }
-
-  // decline
-  await prisma.mentorshipPair.update({ where: { id: pair.id }, data: { status: 'DECLINED' } });
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'mentorship.decline',
-    entityType: 'MentorshipPair',
-    entityId: pair.id,
-    before: { status: 'PENDING' },
-    after: { status: 'DECLINED' },
-  });
-  return { id: pair.id, status: 'DECLINED' };
 }
 
 

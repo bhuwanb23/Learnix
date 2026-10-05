@@ -1,141 +1,178 @@
-// Event feedback — reviews from people who were actually in the room.
-// Docs: 12-alumni-relations.md §3.3 · §4
+﻿// Two-way mentorship feedback.
+// Docs: 12-alumni-relations.md §3.5 · §4
 //
-// Only someone whose registration carries `checkedInAt` may review. Letting
-// every registered alumnus rate an event would pad the average with opinions
-// from people who never attended, and the rating is only useful as a proxy for
-// "was it worth turning up for".
+// The Events module has an equivalent, and it is worth copying its gate: only
+// someone who actually attended may review. Here the gate is PARTICIPATION —
+// you can only review a pair you are in, and only while it is ACTIVE. Feedback
+// from an office administrator, or about a pair that ended three years ago, is
+// not evidence of anything.
 //
-// One review per person per event, but EDITABLE: someone who rates an event 2
-// because the Wi-Fi failed should be able to fix it once it is sorted, and a
-// second POST updates rather than colliding.
+// Two explicit rating columns (mentorRating / menteeRating) rather than one
+// ambiguous `rating`, so no screen can accidentally show "their rating of you"
+// and "your rating of them" in the same widget.
 
 import { prisma } from '../../db/prisma.js';
-import { badRequest, conflict, notFound, unprocessable } from '../../lib/errors.js';
+import { notFound, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import type { Viewer } from './directory.service.js';
 
 export async function submitFeedback(
   viewer: Viewer,
-  eventId: string,
-  body: { rating: number; comment?: string },
+  pairId: string,
+  body: { mentorRating?: number; menteeRating?: number; comment?: string },
 ) {
+  const pair = await prisma.mentorshipPair.findFirst({
+    where: {
+      id: pairId,
+      OR: [
+        { menteeStudentProfile: { user: { institutionId: viewer.institutionId } } },
+        { menteeAlumniProfile: { institutionId: viewer.institutionId } },
+      ],
+    },
+    select: {
+      id: true,
+      status: true,
+      mentorAlumniUserId: true,
+      menteeAlumniProfile: { select: { userId: true } },
+      menteeStudentProfile: { select: { user: { select: { id: true } } } },
+    },
+  });
+  if (!pair) throw notFound('Mentorship pair not found');
+
+  const isMentor = viewer.userId === pair.mentorAlumniUserId;
+  const isMentee =
+    viewer.userId === pair.menteeAlumniProfile?.userId ||
+    viewer.userId === pair.menteeStudentProfile?.user.id;
+
+  if (!(isMentor || isMentee)) {
+    throw unprocessable('Only the mentor or the mentee can review this mentorship');
+  }
   if (viewer.isOffice) {
-    throw unprocessable('The Alumni Relations Office cannot review its own events');
+    throw unprocessable('The Alumni Relations Office cannot review a mentorship it administers');
+  }
+  if (pair.status !== 'ACTIVE') {
+    throw unprocessable(`Reviews close when a mentorship ends (this one is ${pair.status})`);
   }
 
-  const event = await prisma.event.findFirst({
-    where: { id: eventId, institutionId: viewer.institutionId },
-    select: { id: true, title: true, startDate: true },
-  });
-  if (!event) throw notFound('Event not found');
-
-  const registration = await prisma.eventRegistration.findFirst({
-    where: { eventId, registrantUserId: viewer.userId },
-    select: { id: true, status: true, checkedInAt: true },
-  });
-  if (!registration) throw conflict(`Register for ${event.title} before reviewing it`);
-  if (registration.checkedInAt === null) {
-    throw unprocessable('Only attendees who checked in can leave a review');
+  const mentorRating = body.mentorRating ?? null;
+  const menteeRating = body.menteeRating ?? null;
+  if (mentorRating === null && menteeRating === null) {
+    throw unprocessable('Give a rating for the mentor, the mentee, or both');
+  }
+  for (const r of [mentorRating, menteeRating]) {
+    if (r !== null && (!Number.isInteger(r) || r < 1 || r > 5)) {
+      throw unprocessable('ratings must be a whole number of stars between 1 and 5');
+    }
   }
 
-  const existing = await prisma.eventFeedback.findFirst({
-    where: { eventId, authorUserId: viewer.userId },
+  // One review per person per pair, but EDITABLE — a 1-star review written because
+  // scheduling clashed should be fixable once it did not.
+  const existing = await prisma.mentorshipFeedback.findFirst({
+    where: { pairId, authorUserId: viewer.userId },
   });
+
+  const data = {
+    // A mentor reviewing rates the mentee; a mentee reviewing rates the mentor.
+    mentorRating: isMentee ? mentorRating : (mentorRating ?? null),
+    menteeRating: isMentor ? menteeRating : (menteeRating ?? null),
+    comment: body.comment?.trim() || null,
+  };
 
   const row = existing
-    ? await prisma.eventFeedback.update({
-        where: { id: existing.id },
-        data: { rating: body.rating, comment: body.comment?.trim() || null },
-      })
-    : await prisma.eventFeedback.create({
-        data: {
-          eventId,
-          authorUserId: viewer.userId,
-          rating: body.rating,
-          comment: body.comment?.trim() || null,
-        },
+    ? await prisma.mentorshipFeedback.update({ where: { id: existing.id }, data })
+    : await prisma.mentorshipFeedback.create({
+        data: { pairId, authorUserId: viewer.userId, ...data },
       });
 
   await writeAudit({
     actorUserId: viewer.userId,
     institutionId: viewer.institutionId,
-    action: existing ? 'event.feedback.update' : 'event.feedback.create',
-    entityType: 'EventFeedback',
+    action: existing ? 'mentorship.feedback.update' : 'mentorship.feedback.create',
+    entityType: 'MentorshipFeedback',
     entityId: row.id,
-    before: existing ? { rating: existing.rating } : undefined,
-    after: { rating: row.rating, event: event.title },
+    before: existing ? { mentorRating: existing.mentorRating, menteeRating: existing.menteeRating } : undefined,
+    after: { mentorRating: row.mentorRating, menteeRating: row.menteeRating },
   });
 
-  return {
-    id: row.id,
-    eventId,
-    rating: row.rating,
-    comment: row.comment,
-    updated: !!existing,
-    ...(await summarise(eventId)),
-  };
+  return { id: row.id, pairId, updated: !!existing, ...(await summarise(pairId)) };
 }
 
-export async function deleteMyFeedback(viewer: Viewer, eventId: string) {
-  const existing = await prisma.eventFeedback.findFirst({
-    where: { eventId, authorUserId: viewer.userId, event: { institutionId: viewer.institutionId } },
+export async function deleteMyFeedback(viewer: Viewer, pairId: string) {
+  const existing = await prisma.mentorshipFeedback.findFirst({
+    where: { pairId, authorUserId: viewer.userId, pair: { id: pairId } },
   });
-  if (!existing) throw notFound('You have not reviewed this event');
-  await prisma.eventFeedback.delete({ where: { id: existing.id } });
-  return { eventId, deleted: true, ...(await summarise(eventId)) };
+  if (!existing) throw notFound('You have not reviewed this mentorship');
+  await prisma.mentorshipFeedback.delete({ where: { id: existing.id } });
+  return { id: existing.id, deleted: true, ...(await summarise(pairId)) };
 }
 
-/**
- * Aggregate + the visible list. Reviews are shown with the reviewer's name:
- * an event rating nobody can attribute is not actionable, and alumni networks
- * are small enough that this is not a privacy problem.
- */
-export async function listFeedback(viewer: Viewer | undefined, eventId: string, institutionId: string) {
-  const event = await prisma.event.findFirst({ where: { id: eventId, institutionId }, select: { id: true } });
-  if (!event) throw notFound('Event not found');
+export async function listFeedback(viewer: Viewer, pairId: string) {
+  const pair = await prisma.mentorshipPair.findFirst({
+    where: {
+      id: pairId,
+      OR: [
+        { menteeStudentProfile: { user: { institutionId: viewer.institutionId } } },
+        { menteeAlumniProfile: { institutionId: viewer.institutionId } },
+      ],
+    },
+    select: {
+      id: true,
+      mentorAlumniUserId: true,
+      menteeAlumniProfile: { select: { userId: true } },
+      menteeStudentProfile: { select: { user: { select: { id: true } } } },
+    },
+  });
+  if (!pair) throw notFound('Mentorship pair not found');
 
-  const rows = await prisma.eventFeedback.findMany({
-    where: { eventId },
+  // The institution check above is NOT enough. A private word a mentee wrote
+  // about a mentor is not every alumnus's business, so the comments are returned
+  // only to the two participants and to the office — and the office gets the
+  // ratings without the text, because the office administers the pairing, it is
+  // not a party to it.
+  const isMentor = viewer.userId === pair.mentorAlumniUserId;
+  const isMentee =
+    viewer.userId === pair.menteeAlumniProfile?.userId ||
+    viewer.userId === pair.menteeStudentProfile?.user.id;
+  const participant = isMentor || isMentee;
+  const mayReadComments = participant;
+
+  const rows = await prisma.mentorshipFeedback.findMany({
+    where: { pairId },
     orderBy: { createdAt: 'desc' },
     include: { author: { select: { id: true, fullName: true } } },
   });
 
   return {
-    ...(await summarise(eventId)),
-    distribution: [1, 2, 3, 4, 5].map((star) => ({
-      star,
-      count: rows.filter((r) => r.rating === star).length,
-    })),
+    ...(await summarise(pairId)),
+    mayReadComments,
     reviews: rows.map((r) => ({
       id: r.id,
-      rating: r.rating,
-      comment: r.comment,
+      mentorRating: r.mentorRating,
+      menteeRating: r.menteeRating,
+      // The comment itself is withheld, not blanked: a blank string reads as
+      // "they wrote nothing" rather than "you may not see this".
+      comment: mayReadComments ? r.comment : null,
       createdAt: r.createdAt,
-      authorName: r.author.fullName,
-      isMine: viewer?.userId === r.authorUserId,
+      authorName: mayReadComments ? r.author.fullName : 'A participant',
+      isMine: r.authorUserId === viewer.userId,
     })),
   };
 }
 
-async function summarise(eventId: string) {
-  const agg = await prisma.eventFeedback.aggregate({
-    where: { eventId },
-    _avg: { rating: true },
-    _count: { _all: true },
+async function summarise(pairId: string) {
+  const rows = await prisma.mentorshipFeedback.findMany({
+    where: { pairId },
+    select: { mentorRating: true, menteeRating: true },
   });
-  const count = agg._count._all;
+  const ofMentor = rows.map((r) => r.mentorRating).filter((x): x is number => x != null);
+  const ofMentee = rows.map((r) => r.menteeRating).filter((x): x is number => x != null);
+  const avg = (xs: number[]) =>
+    xs.length === 0 ? null : Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10;
   return {
-    count,
-    // Null rather than 0: "no reviews yet" and "everyone rated it 1 star" are
-    // completely different facts and must not render the same.
-    average: agg._avg.rating === null ? null : Math.round(agg._avg.rating * 10) / 10,
+    count: rows.length,
+    // What mentees said about the mentor, and what the mentor said about the
+    // mentee. Named apart so neither can be mistaken for the other.
+    ofMentor: avg(ofMentor),
+    ofMentee: avg(ofMentee),
   };
-}
-
-/** Guard shared by the route: rating must be a whole number of stars. */
-export function assertRating(rating: unknown): asserts rating is number {
-  if (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5) {
-    throw badRequest('rating must be a whole number of stars between 1 and 5');
-  }
 }

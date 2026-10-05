@@ -9,6 +9,16 @@ import {
   idParamSchema,
 } from './student.schemas.js';
 import * as service from './student.service.js';
+import * as mentorship from '../alumni/mentorship.service.js';
+import * as matching from '../alumni/matching.service.js';
+import * as sessions from '../alumni/sessions.service.js';
+import * as goals from '../alumni/goals.service.js';
+import * as mentorshipFeedback from '../alumni/feedback.service.js';
+import type { Viewer } from '../alumni/directory.service.js';
+import {
+  mentorshipRequestSchema, mentorshipSessionSchema, updateSessionSchema,
+  cancelSessionSchema, goalSchema, mentorshipFeedbackSchema,
+} from '../alumni/alumni.schemas.js';
 
 // Student module — mounted at /api/v1/student (docs/users/01 §4)
 const router = Router();
@@ -162,6 +172,118 @@ router.post('/notifications/read-all', wrap(async (req, res) => {
 // S-20 Profile
 router.get('/profile', wrap(async (req, res) => {
   res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
+}));
+
+/**
+ * S-21 Mentorship.
+ *
+ * A thin surface over the ALUMNI mentorship services, for the half of the
+ * programme the alumni router could never serve: a STUDENT role is rejected by
+ * `requireRole('ALUMNI','ADMIN')` on the alumni router, so students could be a
+ * mentor's mentee in the database and had no way to see it. Nothing is
+ * reimplemented here — every rule (one open request, decline needs a reason,
+ * participants-only feedback) lives in the shared services, so there is one
+ * implementation of each rather than two that drift.
+ *
+ * The viewer is built inline rather than through `resolveViewer`, because that
+ * helper reads alumni CONNECTIONS, which a student cannot have.
+ */
+function studentViewer(req: Request): Viewer {
+  return {
+    userId: req.auth!.userId,
+    institutionId: req.auth!.institutionId,
+    // A student is never the Relations Office, whatever else they hold.
+    isOffice: false,
+    connectedUserIds: [],
+  };
+}
+
+router.get('/mentorship', wrap(async (req, res) => {
+  res.json({
+    data: await mentorship.listMentorship(req.auth!.institutionId, {
+      scope: (req.query.scope as 'active' | 'pending' | 'history' | 'all') ?? 'active',
+      viewer: studentViewer(req),
+    }),
+  });
+}));
+
+router.get('/mentorship/mentors', wrap(async (req, res) => {
+  res.json({
+    data: await mentorship.listMentorDirectory(req.auth!.institutionId, {
+      skill: (req.query.skill as string) ?? undefined,
+      viewer: studentViewer(req),
+    }),
+  });
+}));
+
+router.post('/mentorship/requests', validate(mentorshipRequestSchema), wrap(async (req, res) => {
+  res.status(201).json({ data: await mentorship.createRequest(studentViewer(req), req.body) });
+}));
+
+router.get('/mentorship/requests', wrap(async (req, res) => {
+  res.json({
+    data: await mentorship.listRequests(req.auth!.institutionId, {
+      status: (req.query.status as string) ?? undefined,
+      viewer: studentViewer(req),
+    }),
+  });
+}));
+
+// Ranked mentor suggestions for the student's own open request. `subjectForRequest`
+// is what makes this work for a student: `requestedSkills` is the only skill
+// input a student has, because StudentProfile has no skills table.
+router.get('/mentorship/requests/:id/matches', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  const { subject } = await matching.subjectForRequest(String(req.params.id), req.auth!.institutionId);
+  res.json({ data: await matching.matchMentors(req.auth!.institutionId, subject, { limit: 30, minScore: 0 }) });
+}));
+
+router.delete('/mentorship/requests/:id', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  res.json({ data: await mentorship.withdrawRequest(studentViewer(req), String(req.params.id)) });
+}));
+
+router.get('/mentorship/:id', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  res.json({ data: await mentorship.getPair(req.auth!.institutionId, String(req.params.id), studentViewer(req)) });
+}));
+
+router.get('/mentorship/:id/progress', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  await mentorship.assertPairInInstitution(req.auth!.institutionId, String(req.params.id));
+  res.json({ data: await goals.progressForPair(String(req.params.id)) });
+}));
+
+router.post('/mentorship/:id/sessions', validate(idParamSchema, 'params'), validate(mentorshipSessionSchema), wrap(async (req, res) => {
+  res.status(201).json({ data: await sessions.logSession(studentViewer(req), String(req.params.id), req.body) });
+}));
+
+router.patch('/mentorship/sessions/:sessionId', validate(idParamSchema, 'params'), validate(updateSessionSchema), wrap(async (req, res) => {
+  res.json({ data: await sessions.updateSession(studentViewer(req), String(req.params.sessionId), req.body) });
+}));
+
+router.post('/mentorship/sessions/:sessionId/cancel', validate(idParamSchema, 'params'), validate(cancelSessionSchema), wrap(async (req, res) => {
+  res.json({ data: await sessions.cancelSession(studentViewer(req), String(req.params.sessionId), req.body.reason) });
+}));
+
+router.post('/mentorship/:id/goals', validate(idParamSchema, 'params'), validate(goalSchema), wrap(async (req, res) => {
+  res.status(201).json({ data: await goals.createGoal(studentViewer(req), String(req.params.id), req.body) });
+}));
+
+router.patch('/mentorship/goals/:goalId', validate(idParamSchema, 'params'), validate(goalSchema), wrap(async (req, res) => {
+  res.json({ data: await goals.updateGoal(studentViewer(req), String(req.params.goalId), req.body) });
+}));
+
+router.delete('/mentorship/goals/:goalId', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  res.json({ data: await goals.deleteGoal(studentViewer(req), String(req.params.goalId)) });
+}));
+
+router.get('/mentorship/:id/feedback', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  res.json({ data: await mentorshipFeedback.listFeedback(studentViewer(req), String(req.params.id)) });
+}));
+
+router.post('/mentorship/:id/feedback', validate(idParamSchema, 'params'), validate(mentorshipFeedbackSchema), wrap(async (req, res) => {
+  res.status(201).json({ data: await mentorshipFeedback.submitFeedback(studentViewer(req), String(req.params.id), req.body) });
+}));
+
+router.delete('/mentorship/:id/feedback', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  res.json({ data: await mentorshipFeedback.deleteMyFeedback(studentViewer(req), String(req.params.id)) });
 }));
 
 export default router;

@@ -44,6 +44,16 @@ export async function officeUserIds(institutionId: string): Promise<string[]> {
   return rows.map((r) => r.userId);
 }
 
+/** Resolve an alumni profile id to its userId, scoped to the institution. */
+export async function resolveProfileId(institutionId: string, profileId: string) {
+  const p = await prisma.alumniProfile.findFirst({
+    where: { id: profileId, institutionId },
+    select: { id: true, userId: true },
+  });
+  if (!p) throw notFound('Alumni profile not found');
+  return p;
+}
+
 export async function resolveViewer(userId: string, institutionId: string, officeUserIds: string[]): Promise<Viewer> {
   const accepted = await prisma.alumniConnection.findMany({
     where: {
@@ -407,7 +417,11 @@ export async function getProfileDetail(viewer: Viewer, profileId: string) {
     }),
     prisma.mentorshipPair.findMany({
       where: { mentorAlumniUserId: profile.userId },
-      include: { menteeStudentProfile: { include: { user: { select: { fullName: true } } } } },
+      // Both mentee sides, because a pair may be alumnus→student OR alumnus→alumnus.
+      include: {
+        menteeStudentProfile: { include: { user: { select: { fullName: true } } } },
+        menteeAlumniProfile: { include: { user: { select: { fullName: true } } } },
+      },
       take: 5,
     }),
     prisma.eventRegistration.findMany({
@@ -522,7 +536,12 @@ export async function getProfileDetail(viewer: Viewer, profileId: string) {
       })),
       mentorship: mentorships.map((m) => ({
         id: m.id,
-        mentee: m.menteeStudentProfile.user.fullName,
+        // The mentee side is polymorphic: an alumnus can mentor a student OR
+        // another alumnus, so a student-only read goes null here. Rendering
+        // "undefined" in someone's profile is worse than saying nothing.
+        mentee:
+          m.menteeStudentProfile?.user.fullName ?? m.menteeAlumniProfile?.user.fullName ?? null,
+        menteeKind: m.menteeAlumniProfileId ? 'ALUMNI' : 'STUDENT',
         field: m.field,
         status: m.status,
       })),
