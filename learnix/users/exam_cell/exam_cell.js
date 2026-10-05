@@ -21,6 +21,24 @@ import HallTicketsModule from './pages/hall_tickets/hall_tickets';
 import CheatingCasesModule from './pages/cheating_cases/cheating_cases';
 import NotificationsScreen from './pages/notifications/notifications';
 
+// X-02 Timetable sub-screens (docs/users/05 §3.9). The hub is
+// `./pages/timetable/timetable`, reached through the Timetable tab; these eight
+// are its blocks, and each `route` in `timetable.rules.ts` names one of them.
+//
+// Registering them HERE is load-bearing and its failure is silent. `renderContent`
+// looks the key up in FEATURE_MODULES, finds nothing, falls through to the tab
+// switcher and puts the controller back on the hub with no error anywhere.
+// `audit-timetable-ui.ts` asserts all eight are present and point at their own
+// component; `prove-timetable-teeth.sh` proves that assertion bites.
+import TimetableCalendar from './pages/timetable/pages/calendar/calendar';
+import TimetableExams from './pages/timetable/pages/exams/exams';
+import TimetableAllocation from './pages/timetable/pages/allocation/allocation';
+import TimetableSlots from './pages/timetable/pages/slots/slots';
+import TimetableRooms from './pages/timetable/pages/rooms/rooms';
+import TimetableDuty from './pages/timetable/pages/duty/duty';
+import TimetableStudents from './pages/timetable/pages/students/students';
+import TimetableConflicts from './pages/timetable/pages/conflicts/conflicts';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 import { setDemoUser } from '../../services/api';
@@ -33,6 +51,14 @@ const FEATURE_MODULES = {
   HallTickets: { title: 'Hall Tickets', component: HallTicketsModule },
   CheatingCases: { title: 'Cheating Cases', component: CheatingCasesModule },
   Notifications: { title: 'Notifications', component: NotificationsScreen },
+  TimetableCalendar: { title: 'Examination Calendar', icon: 'calendar-outline', component: TimetableCalendar },
+  TimetableExams: { title: 'Exam Schedules', icon: 'document-text-outline', component: TimetableExams },
+  TimetableAllocation: { title: 'Course Allocation', icon: 'school-outline', component: TimetableAllocation },
+  TimetableSlots: { title: 'Date & Time Slots', icon: 'time-outline', component: TimetableSlots },
+  TimetableRooms: { title: 'Centres & Rooms', icon: 'business-outline', component: TimetableRooms },
+  TimetableDuty: { title: 'Invigilator Duty', icon: 'people-outline', component: TimetableDuty },
+  TimetableStudents: { title: 'Student Timetable', icon: 'person-outline', component: TimetableStudents },
+  TimetableConflicts: { title: 'Clashes & Publishing', icon: 'warning-outline', component: TimetableConflicts },
 };
 
 const TAB_TITLES = {
@@ -106,6 +132,13 @@ export default function ExamCellScreen({ navigation }) {
               navigate: (screen) => setCurrentScreen(screen),
               goBack: () => setCurrentScreen('main'),
               openModule: (key) => setCurrentScreen(key),
+              // `switchTab` is what `goToRoute` uses for a block whose
+              // published `isTab` is true. It was MISSING on this tab, so a
+              // timetable block routed to a tab would have called
+              // `undefined is not a function` — and because `goToRoute` checks
+              // `TAB_ROUTES.includes(route)` first, that only ever happens for
+              // a server change, which is exactly when nobody is watching.
+              switchTab: (tabId) => handleTabChange(tabId),
             }}
           />
         );

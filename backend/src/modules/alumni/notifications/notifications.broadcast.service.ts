@@ -239,6 +239,42 @@ export async function previewAudience(institutionId: string, audience: Audience,
 }
 
 /**
+ * The year and city lists the composer offers.
+ *
+ * Fetched rather than hardcoded because they are properties of the DATA. The seed
+ * has eleven graduation years and six chapter cities; the old composer offered
+ * exactly one of each as a literal, which is how "notify every graduate" quietly
+ * became "notify three people in 2024".
+ *
+ * Years come back descending (newest first, because that is what somebody composing
+ * a reunion broadcast wants) and cities alphabetically.
+ */
+export async function audienceOptions(institutionId: string) {
+  const [yearGroups, chapters] = await Promise.all([
+    prisma.alumniProfile.groupBy({
+      by: ['graduationYear'],
+      where: { user: { institutionId, deletedAt: null }, graduationYear: { not: null } },
+      _count: { _all: true },
+    }),
+    prisma.alumniChapter.findMany({
+      where: { institutionId },
+      select: { id: true, city: true },
+      orderBy: { city: 'asc' },
+    }),
+  ]);
+
+  const years = yearGroups
+    .filter((g): g is typeof g & { graduationYear: number } => g.graduationYear !== null)
+    .map((g) => ({ year: g.graduationYear, count: g._count._all }))
+    .sort((a, b) => b.year - a.year);
+
+  return {
+    years,
+    cities: chapters.map((c) => ({ id: c.id, city: c.city })),
+  };
+}
+
+/**
  * Send history, newest first.
  *
  * The composer shows it so the office can see what it has already told people —
