@@ -87,8 +87,24 @@ for (const c of chosen) {
   ok(!!full.id, `the ${c!.status} application detail is fetchable`);
 }
 
-const settledApp = settled ? await svc.getApplication(institutionId, settled.id) : null;
-const studentId = (settledApp ?? (await svc.getApplication(institutionId, (pending ?? liveApps[0]).id))).student.id;
+// The detail screen can be audited against ANY application, not only a settled
+// one — but this seed currently produces none that are DISBURSED, and passing
+// `null` silently audited that screen against nothing at all: the per-screen
+// floor below then failed with "0", which reads like a bug in the screen rather
+// than an empty fixture. Fall back, and SAY that the settled branch is
+// unavailable instead of pretending it was covered.
+// Reported, NOT asserted. This audit's job is the UI contract; whether the seed
+// happens to contain a settled award is a fixture fact, and failing the build
+// over it would leave the suite permanently red for a reason nobody can act on
+// from this file. What it must never do is audit NOTHING — hence the fallback
+// below, and the per-screen floor further down that catches a silent skip.
+if (!settled) {
+  console.log('  – no DISBURSED application in this seed; auditing the detail screen against a'
+    + ' non-settled one (the settled-only branches are not exercised)');
+}
+const anyApp = settled ?? pending ?? approved ?? rejected ?? liveApps[0];
+const settledApp = await svc.getApplication(institutionId, anyApp.id);
+const studentId = settledApp.student.id;
 const history = await disburse.studentHistory(institutionId, studentId);
 ok(!!history.student, 'a student history payload is available');
 ok(Array.isArray(history.applications), 'the student history carries applications');

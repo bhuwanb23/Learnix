@@ -2477,14 +2477,34 @@ async function seedDomainJ_K(institutionId: string): Promise<void> {
     await db.donation.update({ where: { id: donation.id }, data: { status: 'RECEIVED', receivedAt: new Date(), paymentId: donationPayment.id } });
   }
 
-  // Mentorship: Priya mentors Arjun (ACTIVE) + 1 logged session
+  // Mentorship: Priya mentors Arjun (ACTIVE) + a logged session, goals, and a
+  // booking. The goals matter: this is the pair every first-run reviewer sees, and
+  // without them the mentorship screen shows an active mentorship with an empty
+  // progress section, which reads as a broken feature rather than an unused one.
   const pair = await db.mentorshipPair.findFirst({ where: { mentorAlumniUserId: priya.id, menteeStudentProfileId: studentProfile.id } });
   if (!pair) {
     const p = await db.mentorshipPair.create({
       data: { mentorAlumniUserId: priya.id, menteeStudentProfileId: studentProfile.id, field: 'Higher Studies', status: 'ACTIVE', requestedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), approvedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000) },
     });
     await db.mentorshipSession.create({
-      data: { pairId: p.id, sessionDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), notes: 'Discussed MS vs M.Tech, GRE timeline, shortlisting universities.', loggedByUserId: priya.id },
+      data: { pairId: p.id, sessionDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), mode: 'VIDEO', durationMinutes: 45, agenda: 'MS vs M.Tech, GRE timeline', notes: 'Discussed MS vs M.Tech, GRE timeline, shortlisting universities.', outcome: 'Shortlist of six programmes; GRE booked for week 6.', loggedByUserId: priya.id },
+    });
+
+    const upcoming = new Date(Date.now() + 9 * 24 * 60 * 60 * 1000);
+    await db.mentorshipSession.create({
+      data: { pairId: p.id, sessionDate: upcoming, mode: 'VIDEO', agenda: 'Application checklist and SOP review', planned: true, loggedByUserId: priya.id },
+    });
+    // The pair card reads this column for "next: <date>", so it is written with
+    // the booking rather than being left for a human to notice.
+    await db.mentorshipPair.update({ where: { id: p.id }, data: { nextSessionAt: upcoming } });
+
+    const day = 24 * 60 * 60 * 1000;
+    await db.mentorshipGoal.createMany({
+      data: [
+        { pairId: p.id, title: 'Shortlist six target universities', detail: 'With deadlines and fees.', status: 'ACHIEVED', progressPct: 100, targetDate: new Date(Date.now() + 5 * day), achievedAt: new Date(Date.now() - 2 * day), createdByUserId: priya.id },
+        { pairId: p.id, title: 'Book the GRE exam date', status: 'IN_PROGRESS', progressPct: 60, targetDate: new Date(Date.now() + 20 * day), createdByUserId: priya.id },
+        { pairId: p.id, title: 'Draft two statement-of-purpose drafts', status: 'PENDING', progressPct: 0, targetDate: new Date(Date.now() + 45 * day), createdByUserId: priya.id },
+      ],
     });
   }
 

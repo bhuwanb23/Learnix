@@ -1108,7 +1108,174 @@ application's allocations (which dues the money actually landed on) and its reje
 so there is one row per student per scheme and no second source of truth for the money.
 
 ### 3.8 Reports (module)
-Finance reports: fee collection summary, dues aging, payroll summary, expense vs budget, scholarship disbursement. Export to CSV/PDF.
+
+The reporting centre is **one period selector in front of seven reports**, plus a real
+export on every one of them. It reads nothing it derives itself: every figure comes from a
+service that aggregates live rows, and every report is re-run when the period changes.
+
+#### 3.8.1 What it replaced
+
+The module this section covers used to draw three stat tiles and two breakdown lists off a
+single `/accounts/reports` summary, and offered four "Export" cards that fired
+`Alert.alert('Export', …)` and did nothing. `constants/reportsData.js` — hard-coded cash-in
+figures with no row behind them — was dead code imported by nobody. All of it is gone.
+
+The summary it used has three defects that mattered more than the missing screens:
+
+| Defect | Effect |
+|---|---|
+| `prisma.feeDue.groupBy` had **no `where` clause at all** | one institution's "unpaid dues" headline summed **every tenant's** bills. `FeeDue` carries no `institutionId` — it reaches an institution through its student — so an unfiltered groupBy crosses the tenant boundary. |
+| "unpaid" summed `amountMinor` (the amount **billed**) | a part-paid bill reported its original value. ₹48 L billed and ₹17 L owing were the same number. |
+| no period filter | every figure was all-time, whatever the screen claimed. |
+
+`getReports` and `GET /api/v1/accounts/reports` are **deleted**, not deprecated. Nothing may
+serve those numbers. `audit-reports-ui.ts` asserts their absence from both the router and the
+service, so they cannot quietly come back.
+
+#### 3.8.2 The period selector
+
+Five periods, resolved by `reports.rules.ts` and returned to the app inside every response as
+`period: { from, to, label, previousFrom, previousTo, previousLabel }`.
+
+| Period | Window | Previous window |
+|---|---|---|
+| `MONTH` | 1st → last day of the anchor month | the month before |
+| `QUARTER` | the anchor's calendar quarter | the quarter before (crossing the year correctly) |
+| `SEMESTER` | half of the **academic year's real dates** | the other half |
+| `YEAR` | Jan → Dec | the year before |
+| `ALL` | unbounded | none |
+
+`?anchor=YYYY-MM-DD` asks for a historical window; it is validated with a regex on every
+route that takes it. The app does not send one today — the period chips change the window,
+they do not rewind it — but the parameter is published so a deep link or a future date
+picker can ask for one without touching the service.
+
+**Semester is derived, not stored.** There is no `Semester` entity in this schema and money
+rows carry dates only, so a semester is the academic year split on its own `startDate` /
+`endDate` — first six months, last six months. A July–June year gives Jul–Dec / Jan–Jun; a
+January-start year gives Jan–Jun / Jul–Dec. Splitting on a hardcoded Jan–Jun / Jul–Dec would
+have been easier and would have been wrong for half the institutions using it.
+
+> When **no academic year covers the anchor**, the label says so —
+> `"Jan–Jun 2026 (no academic year covers this date)"` — rather than pretending to a window
+> the institution never agreed to. The hub shows that label verbatim.
+
+Two arithmetic rules that are easy to get wrong and are asserted directly:
+
+- **`growthPercent` returns `null` when there is no base.** A jump from zero is not "infinite
+  growth"; reporting a number nobody can act on is worse than reporting that there is nothing
+  to compare against. The screens say *"No prior period to compare"*.
+- **`peak` does not floor at zero.** A run of all-negative figures reports the least negative
+  one. Seeding the fold at `0` made a reversal month report a peak that never happened.
+
+#### 3.8.3 The seven reports
+
+| id | Report | What it answers | Key figures |
+|---|---|---|---|
+| `collections` | Collection report | What came in, by category, method and month | `totals.collectedRupees`, `byCategory[]`, `byMethod[]`, `trend[]`, `peakRupees`, `recent[]`, `previous` |
+| `dues` | Outstanding dues | What is still owed, how old, and by whom | `totals.outstandingRupees`, `aging[]`, `topDebtors[]`, `collectedInPeriod`, `recoveryPercent` |
+| `expenses` | Expense statement | Claims against the budget | `totals`, `byCategory[]`, `byVendor[]`, `budget.lines[]`, `statements[]`, `trend[]` |
+| `payroll` | Payroll report | Gross, deductions and net, month by month | `totals`, `runs[]`, `deductionLines[]`, `trend[]`, `integrity` |
+| `scholarships` | Scholarship report | Awarded vs **released**, and credited to which dues | `totals`, `schemes[]`, `creditedTo[]` |
+| `departments` | Department-wise | Spend and staff cost per department | `totals`, `departments[]` (split bar: claims vs payroll) |
+| `comparison` | Period comparison | Twelve months of collections, spend, payroll | `totals.surplusRupees`, `series.{collected,spent,payroll,scholarships,cash}`, `best`, `worst`, `months`, `monthsPerBar`, `bars` |
+
+The comparison's **`granularity`** buckets those twelve months into the bars that are
+drawn *and exported*: `MONTH` gives twelve bars, `QUARTER` four, `YEAR` one or two
+calendar years depending on where the window falls. Grouping changes the shape of the
+series and never its total — `totals.collectedRupees` is identical whichever you pick,
+which is what lets the screen and the exported file agree.
+
+> This control used to change a **label only**: `comparisonReport` returned twelve
+> monthly points whatever you asked for, and the export ignored the choice entirely, so
+> a screen set to "by quarter" handed back a file of month keys. Both halves are fixed
+> and both are asserted — the bar count drops, the keys become `Q4 2025`, the column
+> heading becomes *Quarter*, and the total is unchanged.
+
+Three rules hold across every one of them, and each was a real defect in the code they
+replaced:
+
+1. **Tenant scope on every query.** Dues reach an institution through
+   `studentProfile.user.institutionId`; there is no other path.
+2. **Balances, not billed amounts.** Outstanding is always `amount + lateFee − paid`.
+   `verify-reports.ts` proves it by measuring the headline **before and after** creating a
+   ₹2,000 bill with ₹500 paid: the total moves by exactly ₹1,500, not by ₹2,000.
+3. **Reversed money stops counting.** A reversed payment keeps its row — the ledger must not
+   lose history — but it stops counting toward collections.
+
+#### 3.8.4 The three honesty rules the reports encode
+
+These are the parts that are easy to leave out and expensive to get wrong.
+
+**Payroll integrity is reported, not smoothed over.** The payroll report sums from payslip
+**entries**, never from a run header, and returns
+`integrity: { footsToEntries, unfootedMonths }`. A run whose header disagrees with its entries
+is named, on the hub *and* on the run row. Printing an uncorroborated header total would have
+been the easier choice.
+
+**Scholarship "awarded" and "released" are never one number.** `awarded` is a decision;
+`disbursed` is money matched against a real bill through `scholarship_allocation`. Every
+scheme reports `committedRupees + disbursedRupees = awardedRupees` — each rupee counted once —
+and `creditedToDuesRupees = disbursedRupees`. If the second identity ever broke, the released
+figure would be the wrong one, and the report says which.
+
+**Department spend keeps an explicit "no department" row.** Claims with no `departmentId` are
+shown as *Institution-wide*, not dropped, so the department totals plus that row reconcile
+against the expense statement.
+
+#### 3.8.5 Export — a real file, not an alert
+
+Every report exports to **xlsx, csv or pdf**. All three are built from the same
+`ExportSheet[]`, so the three exports can never show different numbers from each other.
+
+- **xlsx** is hand-written OOXML in a STORE-method ZIP (`reports.xlsx.ts`, `zlib` only — no new
+  dependency, matching the hand-written payslip PDF precedent). Money cells carry a numFmt
+  style and are written as **real numbers**, so `SUM()` works in Excel. `columnName` maps
+  0→A … 25→Z … 701→ZZ, 702→AAA. Sheet names are sanitised (Excel forbids `\ / ? * [ ] :`, 31
+  characters max).
+- **csv** stacks every sheet with an RFC-4180 escaping pass and emits the **byte-order mark
+  exactly once, at the start of the file** — so Excel reads the rupee sign and the sheet
+  separator correctly.
+- **pdf** is an A4-landscape paginating table renderer (`reports.pdf.ts`): the header repeats
+  on every page, rows are zebra-striped, columns are clipped to their width, and each sheet
+  gets its own pages. Amounts are written as `INR 18,000.00` because the PDF font cannot
+  encode `₹` — the alternative is a file that corrupts on the user's machine.
+
+The export writes a **real file** to `UPLOAD_DIR/reports/` and records a `File` row, exactly
+the way a payslip does. `File.storageKey` is `UNIQUE`, so the key carries a UUID suffix:
+exporting the same report twice produces two files, and the second export never fails on the
+unique index or overwrites the first. The response returns the name, byte size, URL, sheet
+names and the totals the export was built from, so the app can say what the file contains
+before anyone opens it. Every export writes an audit row (`REPORT_EXPORTED`, `entityType:
+Report`) — exports are money, they are not anonymous.
+
+#### 3.8.6 Screens
+
+`reports.js` is the hub: the period selector, a headline strip (collected · still owing ·
+recovery % · approved spend · payroll, with **surplus = collected − spent − payroll** as the
+one number that makes the rest worth reading together), the payroll integrity caveat, and one
+card per report carrying a real figure read from the overview already on screen.
+
+The seven report screens are **not hard-coded** — the card list comes from
+`GET /reports/catalogue`, which publishes each report's id, title, blurb, icon, colour and
+**route**, plus the periods with their labels and hints and the export formats. A list copied
+into the app is a list that goes stale the day a report is added. `reportsMeta.js` still holds
+the seven ids because the sub-screens are separate modules that must exist at build time;
+`audit-reports-ui.ts` asserts the client ids, the server allow-list and the catalogue all
+agree, and that each registered key resolves to a file that exports a component.
+
+Screens registered in `FEATURE_MODULES`: `ReportCollections`, `ReportDues`, `ReportExpenses`,
+`ReportPayroll`, `ReportScholarships`, `ReportDepartments`, `ReportComparison` — keys built by
+`reportScreen(id)` so the hub and the registry cannot drift. Each honours the period the hub
+was on via `route.params.period`.
+
+The dead `constants/reportsData.js` fixture and its directory are deleted; no screen carries an
+inline fake dataset.
+
+**Entities:** none new. Reports read `payment`, `fee_due`, `expense`, `budget`,
+`payroll_run`, `payroll_entry`, `scholarship`, `scholarship_application`,
+`scholarship_allocation`, `department`, `academic_year`, and write only `file` (the exported
+artefact) and `audit_log`.
 
 ### 3.9 Notifications
 Inbox (collection/due/payroll/scholarship types) + Broadcast tab (audience: Defaulters / All Students / Staff → fee reminders, payment confirmations, payroll notices).
@@ -1142,7 +1309,10 @@ POST     /api/accounts/scholarships/applications/:id/documents/:code
 POST     /api/accounts/scholarships/applications/:id/documents/:code/upload
 GET      /api/accounts/scholarships/tracking   fund / promised / released per scheme
 GET      /api/accounts/scholarships/students/:studentProfileId/history
-GET  /api/accounts/reports                (+ /export)
+GET      /api/accounts/reports/catalogue        the 7 reports, their routes, periods + hints, formats
+GET      /api/accounts/reports/overview?period=&anchor=    the headline strip
+GET      /api/accounts/reports/:report?period=&anchor=&granularity=
+GET      /api/accounts/reports/:report/export?period=&format=xlsx|csv|pdf
 GET  /api/accounts/notifications
 POST /api/accounts/broadcasts
 ```
@@ -1218,11 +1388,20 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `POST /api/v1/accounts/scholarships/applications/:id/documents/:code/upload` — F-08 upload the file itself (multer, 8 MB, JPEG/PNG/WebP/HEIC/PDF)
 - `GET /api/v1/accounts/scholarships/tracking` — F-08 the fund across every scheme: budget, committed, released, awarded, headroom, utilisation %, release %, award count, and institution totals
 - `GET /api/v1/accounts/scholarships/students/:studentProfileId/history` — F-08 one student's whole scholarship record: awarded / received / awaiting / still owed, plus every application with its allocations and rejection reason
-- `GET /api/v1/accounts/reports` — F-09 summary by category, dues by status, expenses by category
+- `GET /api/v1/accounts/reports/catalogue` — F-09 everything the hub builds itself from: the seven reports (id, title, blurb, icon, colour, **route**), the five periods with their labels and hints, the three granularities and the three export formats
+- `GET /api/v1/accounts/reports/overview?period=&anchor=` — F-09 the headline strip: collected, outstanding, recovery %, approved spend, net payroll, scholarships released, and **surplus** (collected − spent − payroll), plus the per-report totals and `payrollIntegrity`. Every figure is tenant-scoped and reversed payments are excluded
+- `GET /api/v1/accounts/reports/collections?period=&anchor=` — F-09 what came in: totals, `previous` (the comparable window), `byCategory`, `byMethod`, `trend`, `peakRupees`, `recent`
+- `GET /api/v1/accounts/reports/dues?period=&anchor=` — F-09 what is **left owing** (`amount + lateFee − paid`, never the billed amount): `totals`, `collectedInPeriod`, `aging[]` on the dues desk's own buckets, `topDebtors[]` by balance
+- `GET /api/v1/accounts/reports/expenses?period=&anchor=` — F-09 claims by category / subcategory / vendor, `budget.lines[]` with planned-vs-spent and overspend, the statement rows, and the month trend
+- `GET /api/v1/accounts/reports/payroll?period=&anchor=` — F-09 `runs[]` (gross − deductions = net, per run), `deductionLines[]`, `trend[]`, and `integrity: { footsToEntries, unfootedMonths }` — totals are summed from **entries**, never read off a header that disagrees with them
+- `GET /api/v1/accounts/reports/scholarships?period=&anchor=` — F-09 per scheme: awarded / committed / disbursed / awaiting / fund / headroom / utilisation, with `committed + disbursed = awarded` and `creditedToDues = disbursed` held as identities. Released and awarded are never merged
+- `GET /api/v1/accounts/reports/departments?period=&anchor=` — F-09 claims **and** staff cost per department, plus an explicit *Institution-wide* row for claims with no department so the totals reconcile against the expense statement
+- `GET /api/v1/accounts/reports/comparison?period=&anchor=&granularity=MONTH|QUARTER|YEAR` — F-09 the last twelve months as `series.{collected,spent,payroll,scholarships,cash}`, with `surplusRupees = collected − spent − payroll`, best and worst period, and months with no run shown rather than skipped. `granularity` buckets the twelve months into the bars (`monthsPerBar`, `bars`) without changing any total
+- `GET /api/v1/accounts/reports/:report/export?period=&format=xlsx|csv|pdf&granularity=` — F-09 writes a **real file** to `UPLOAD_DIR/reports/` and records a `File` row with a UUID-suffixed unique `storageKey`, so two exports of one report never collide. Returns name, byte size, URL, sheet names and the totals the export was built from. Audited as `REPORT_EXPORTED`
 - `GET /api/v1/accounts/notifications` — F-10 inbox
 - `POST /api/v1/accounts/notifications/read-all` — F-10 mark all read
 - `POST /api/v1/accounts/broadcasts` — F-10 broadcast (ALL_STUDENTS / DEFAULTERS / ALL_STAFF)
 - `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
 
 **App:** all 18 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with nine screens registered in `FEATURE_MODULES` (`PayrollRunDetail`, `Payslip`, `PayrollSalaryRecords`, `PayrollSalaryRecord`, `PayrollComponents`, `PayrollAttendance`, `PayrollLoans`, `PayrollAlerts`, `PayslipDocument`), the hub carrying **Salary records** and **Pending salaries** desk buttons, and `runPayroll` pricing each person from the salary version in force that month with attendance LOP, YTD TDS and loan recovery rather than a hard-coded 50/40/12 formula; expenses has approve/reject; scholarships is a hub with eight screens registered in `FEATURE_MODULES` (`ScholarshipApplications`, `ScholarshipApplication`, `ScholarshipDetail`, `ScholarshipDocuments`, `ScholarshipTracking`, `ScholarshipStudentHistory`, `ScholarshipApply`,
-  `ScholarshipSchemeEditor`) over live APIs, the hardcoded `scholarshipsData.js` fixture deleted, every server action gated behind `actions[]`, and a disbursement that credits real `fee_dues` rather than booking a payment; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
+  `ScholarshipSchemeEditor`) over live APIs, the hardcoded `scholarshipsData.js` fixture deleted, every server action gated behind `actions[]`, and a disbursement that credits real `fee_dues` rather than booking a payment; reports is a hub with seven sub-screens registered in `FEATURE_MODULES` (`ReportCollections`, `ReportDues`, `ReportExpenses`, `ReportPayroll`, `ReportScholarships`, `ReportDepartments`, `ReportComparison`) built from the server's own catalogue rather than a copied list, one shared period selector across all seven, and a real xlsx/csv/pdf export on every screen that writes a file and opens it; the hardcoded `reportsData.js` fixture deleted; notifications has inbox + broadcast (3 audiences); profile shows live officer data.

@@ -831,12 +831,18 @@ let pledgeCount = 0;
   }
   console.log('  ✓ campaign totals match received donations');
 
-  // ── Step 8: mentorship pairs + sessions ────────────────────
-  console.log('\n🤝 Step 8: Creating mentorship pairs...');
+  // ── Step 8: mentorship ─────────────────────────────────────
+  // Requests → accepted pairs → sessions, goals, and two-way feedback.
+  //
+  // Rebuilt because the previous version produced only pairs: every mentee was a
+  // student, no pair had a request behind it, nothing had goals or feedback, and
+  // every session was a bare timestamp with no duration, mode or outcome. That
+  // made the whole programme look like a spreadsheet someone typed by hand.
+  console.log('\n🤝 Step 8: Creating mentorship requests, pairs, sessions, goals...');
 
   const studentProfiles = await db.studentProfile.findMany({
-    where: { user: { institutionId: instId, deletedAt: null } },
-    select: { id: true, user: { select: { fullName: true } } },
+    where: { institutionId: instId },
+    select: { id: true, rollNo: true, currentSemester: true, user: { select: { id: true, fullName: true } } },
   });
   if (studentProfiles.length === 0) throw new Error('No students — run seed-realistic.ts first');
 
@@ -847,73 +853,295 @@ let pledgeCount = 0;
     .sort((a, b) => b.seniority - a.seniority);
   if (mentorPool.length === 0) throw new Error('No senior alumni available to mentor');
 
-  const pairPlan: { status: string; field: string; sessions: number }[] = [
-    { status: 'ACTIVE', field: 'Career Guidance', sessions: 4 },
-    { status: 'ACTIVE', field: 'Higher Studies', sessions: 3 },
-    { status: 'ACTIVE', field: 'Interview Prep', sessions: 5 },
-    { status: 'ACTIVE', field: 'Entrepreneurship', sessions: 2 },
-    { status: 'ACTIVE', field: 'Global Careers', sessions: 3 },
-    { status: 'ACTIVE', field: 'Finance & Investing', sessions: 1 },
-    { status: 'ACTIVE', field: 'Engineering Management', sessions: 2 },
-    { status: 'ACTIVE', field: 'Interview Prep', sessions: 1 },
-    { status: 'ACTIVE', field: 'Career Guidance', sessions: 6 },
-    { status: 'PENDING', field: 'Higher Studies', sessions: 0 },
-    { status: 'PENDING', field: 'Career Guidance', sessions: 0 },
-    { status: 'PENDING', field: 'Entrepreneurship', sessions: 0 },
-    { status: 'PENDING', field: 'Global Careers', sessions: 0 },
-    { status: 'PENDING', field: 'Interview Prep', sessions: 0 },
-    { status: 'DECLINED', field: 'Finance & Investing', sessions: 0 },
-    { status: 'DECLINED', field: 'Global Careers', sessions: 0 },
+  // Alumni↔alumni is now a supported shape, so it is seeded too — otherwise the
+  // `alumniToAlumni` stat on the hub always reads zero and the split is untested.
+  const alumniMenteePool = alumni
+    .filter((a) => a.seniority >= 5)
+    .slice(0, 6);
+
+  const SESSION_NOTES = [
+    'Walked through resume positioning and two mock interviews.',
+    'Reviewed portfolio; suggested one systems-design project.',
+    'Discussed higher-study options and exam timelines.',
+    'Intro call: what the first 90 days in the role look like.',
+    'Referral advice and how to approach hiring managers on LinkedIn.',
+    'Salary negotiation prep — offer comparison sheet.',
+  ];
+  const SESSION_MODES = ['VIDEO', 'IN_PERSON', 'PHONE'] as const;
+  const SESSION_OUTCOMES = [
+    'Landed two interviews; one referral submitted.',
+    'CV rewritten, applying to eight roles this week.',
+    'Decided between two programmes and committed to one.',
+    'Shipped the first version of the side project.',
+    'Offer accepted; negotiation moved the base by 12%.',
+    'Left with a written plan and two deadlines.',
+  ];
+  const AGENDAS = [
+    'Portfolio review + next steps',
+    'Mock interview, behavioural round',
+    'Higher studies: exams, deadlines, funding',
+    'Offer negotiation strategy',
+    'First-time manager: hiring and feedback',
+  ];
+
+  /** Goals for an active pair: the mix is deliberate — a fully-achieved set reads
+   *  as fake, and an untouched set reads as abandoned. */
+  function goalsFor(field: string) {
+    return [
+      { title: `Get the CV reviewed by someone senior`, detail: 'Two rounds of feedback before applying.', pct: 100, offsetDays: 90 },
+      { title: `Apply to ${field.toLowerCase()} roles`, detail: null, pct: 75, offsetDays: 45 },
+      { title: 'Run three mock interviews', detail: 'One behavioural, one technical, one case.', pct: 33, offsetDays: 60 },
+      { title: 'Build one portfolio-worthy project', detail: null, pct: 0, offsetDays: 120 },
+    ];
+  }
+
+  type PairSpec = {
+    status: 'ACTIVE' | 'PENDING' | 'DECLINED' | 'COMPLETED';
+    field: string;
+    sessions: number;
+    mentee: 'STUDENT' | 'ALUMNI';
+    goals?: boolean;
+    feedback?: boolean;
+    planned?: boolean;
+    declineReason?: string;
+    completionOutcome?: string;
+  };
+
+  const pairPlan: PairSpec[] = [
+    { status: 'ACTIVE', field: 'Career Guidance', sessions: 4, mentee: 'STUDENT', goals: true, feedback: true, planned: true },
+    { status: 'ACTIVE', field: 'Higher Studies', sessions: 3, mentee: 'STUDENT', goals: true, planned: true },
+    { status: 'ACTIVE', field: 'Interview Prep', sessions: 5, mentee: 'ALUMNI', goals: true, feedback: true },
+    { status: 'ACTIVE', field: 'Entrepreneurship', sessions: 2, mentee: 'ALUMNI', goals: true },
+    { status: 'ACTIVE', field: 'Global Careers', sessions: 3, mentee: 'ALUMNI', goals: true, feedback: true },
+    { status: 'ACTIVE', field: 'Finance & Investing', sessions: 1, mentee: 'STUDENT', goals: true },
+    { status: 'ACTIVE', field: 'Engineering Management', sessions: 2, mentee: 'ALUMNI', goals: true, planned: true },
+    { status: 'ACTIVE', field: 'Interview Prep', sessions: 1, mentee: 'STUDENT', goals: true },
+    { status: 'ACTIVE', field: 'Career Guidance', sessions: 6, mentee: 'ALUMNI', goals: true, feedback: true, planned: true },
+    { status: 'PENDING', field: 'Higher Studies', sessions: 0, mentee: 'STUDENT' },
+    { status: 'PENDING', field: 'Career Guidance', sessions: 0, mentee: 'ALUMNI' },
+    { status: 'PENDING', field: 'Entrepreneurship', sessions: 0, mentee: 'STUDENT' },
+    { status: 'PENDING', field: 'Global Careers', sessions: 0, mentee: 'STUDENT' },
+    { status: 'PENDING', field: 'Interview Prep', sessions: 0, mentee: 'ALUMNI' },
+    {
+      status: 'DECLINED',
+      field: 'Finance & Investing',
+      sessions: 0,
+      mentee: 'STUDENT',
+      declineReason: 'I am at capacity this term — please ask again in January.',
+    },
+    { status: 'DECLINED', field: 'Global Careers', sessions: 0, mentee: 'STUDENT', declineReason: 'That is outside what I have worked on.' },
+    // A finished pair, so History is not empty and the dropped-goal behaviour is
+    // actually represented in the data rather than only in the service code.
+    { status: 'COMPLETED', field: 'Career Guidance', sessions: 4, mentee: 'STUDENT', goals: true, completionOutcome: 'Placed at a product firm; mentorship no longer needed.' },
   ];
 
   let pairCount = 0;
   let sessionCount = 0;
+  let goalCount = 0;
+  let pairReviewCount = 0;
 
   for (let i = 0; i < pairPlan.length; i++) {
     const plan = pairPlan[i];
     const mentor = mentorPool[i % mentorPool.length];
-    const mentee = studentProfiles[i % studentProfiles.length];
-
-    const existing = await db.mentorshipPair.findFirst({
-      where: { mentorAlumniUserId: mentor.userId, menteeStudentProfileId: mentee.id },
-    });
-    if (existing) continue;
+    const menteeAlumni = plan.mentee === 'ALUMNI' ? alumniMenteePool[i % alumniMenteePool.length] : null;
+    // Never pair someone with themselves, however the modulo lands.
+    if (menteeAlumni && menteeAlumni.userId === mentor.userId) continue;
+    const menteeStudent = menteeAlumni ? null : studentProfiles[i % studentProfiles.length];
 
     const requestedAt = daysAgo(intBetween(20, 300));
-    const pair = await db.mentorshipPair.create({
-      data: {
-        mentorAlumniUserId: mentor.userId,
-        menteeStudentProfileId: mentee.id,
-        field: plan.field,
-        status: plan.status,
-        requestedAt,
-        approvedAt: plan.status === 'ACTIVE' ? daysAgo(intBetween(5, 180)) : null,
-      },
-    });
+    const approvedAt = plan.status === 'ACTIVE' || plan.status === 'COMPLETED' ? daysAgo(intBetween(5, 180)) : null;
+    const completedAt = plan.status === 'COMPLETED' ? daysAgo(intBetween(2, 60)) : null;
+
+    const pairWhere = {
+      mentorAlumniUserId: mentor.userId,
+      ...(menteeAlumni ? { menteeAlumniProfileId: menteeAlumni.profileId } : { menteeStudentProfileId: menteeStudent!.id }),
+    };
+    let pair = await db.mentorshipPair.findFirst({ where: pairWhere });
+
+    if (!pair) {
+      pair = await db.mentorshipPair.create({
+        data: {
+          ...pairWhere,
+          field: plan.field,
+          status: plan.status,
+          requestedAt,
+          approvedAt,
+          completedAt,
+          declinedReason: plan.declineReason ?? null,
+          // Kept as the pair's denormalised pointer, which the card reads for
+          // "next: Thursday". Filled in below once a booking exists.
+          nextSessionAt: null,
+        },
+      });
+    }
     pairCount++;
 
-    // Sessions only exist once a pair is ACTIVE — a PENDING pair with a session
-    // log is a contradiction the mentorship screen would render as-is.
-    for (let s = 0; s < plan.sessions; s++) {
+    // Children are guarded individually rather than by skipping the whole pair.
+    // A single `continue` on an existing pair meant that re-running the seed after
+    // changing the fixture could never ADD what was missing — the three pairs here
+    // stayed goal-less forever and the integrity check below caught it.
+    const hasHeld = (await db.mentorshipSession.count({ where: { pairId: pair.id, planned: false } })) > 0;
+    const hasGoals = (await db.mentorshipGoal.count({ where: { pairId: pair.id } })) > 0;
+    const hasReviews = (await db.mentorshipFeedback.count({ where: { pairId: pair.id } })) > 0;
+    const hasBooking = (await db.mentorshipSession.count({ where: { pairId: pair.id, planned: true, cancelledAt: null } })) > 0;
+
+    // A PENDING pair with a session log is a contradiction the screen would
+    // render as-is, so sessions only exist once a pair is ACTIVE or COMPLETED.
+    if ((plan.status === 'ACTIVE' || plan.status === 'COMPLETED') && !hasHeld) {
+      for (let s = 0; s < plan.sessions; s++) {
+        const mode = SESSION_MODES[(i + s) % SESSION_MODES.length];
+        await db.mentorshipSession.create({
+          data: {
+            pairId: pair.id,
+            sessionDate: daysAgo((plan.sessions - s) * 21 + intBetween(0, 6)),
+            mode,
+            durationMinutes: [30, 45, 45, 60, 90][(i + s) % 5],
+            agenda: AGENDAS[(i + s) % AGENDAS.length],
+            notes: SESSION_NOTES[(i * 3 + s) % SESSION_NOTES.length],
+            outcome: SESSION_OUTCOMES[(i * 3 + s) % SESSION_OUTCOMES.length],
+            planned: false,
+            loggedByUserId: mentor.userId,
+          },
+        });
+        sessionCount++;
+      }
+    }
+
+    // A booking in the future, which is what makes `nextSessionAt` real.
+    if (plan.planned && !hasBooking) {
+      const when = daysFromNow(intBetween(3, 25));
       await db.mentorshipSession.create({
         data: {
           pairId: pair.id,
-          sessionDate: daysAgo((plan.sessions - s) * 21 + intBetween(0, 6)),
-          notes: pick([
-            'Walked through resume positioning and two mock interviews.',
-            'Reviewed portfolio; suggested one systems-design project.',
-            'Discussed higher-study options and exam timelines.',
-            'Intro call: what the first 90 days in the role look like.',
-            'Referral advice and how to approach hiring managers on LinkedIn.',
-            'Salary negotiation prep — offer comparison sheet.',
-          ]),
+          sessionDate: when,
+          mode: 'VIDEO',
+          agenda: 'Next session: progress review and next steps',
+          planned: true,
           loggedByUserId: mentor.userId,
         },
       });
       sessionCount++;
+      await db.mentorshipPair.update({ where: { id: pair.id }, data: { nextSessionAt: when } });
+    }
+
+    if (plan.goals && !hasGoals) {
+      const spec = goalsFor(plan.field);
+      for (let g = 0; g < spec.length; g++) {
+        const goal = spec[g];
+        const achieved = goal.pct === 100;
+        // On a COMPLETED pair the service would have dropped everything still
+        // open, so anything left IN_PROGRESS here would contradict the very rule
+        // the History tab relies on.
+        const dropped = plan.status === 'COMPLETED' && !achieved;
+        await db.mentorshipGoal.create({
+          data: {
+            pairId: pair.id,
+            title: goal.title,
+            detail: goal.detail,
+            status: achieved ? 'ACHIEVED' : dropped ? 'DROPPED' : goal.pct > 0 ? 'IN_PROGRESS' : 'PENDING',
+            progressPct: goal.pct,
+            targetDate: daysFromNow(goal.offsetDays),
+            achievedAt: achieved ? daysAgo(intBetween(10, 70)) : null,
+            createdByUserId: mentor.userId,
+          },
+        });
+        goalCount++;
+      }
+    }
+
+    // Two-way feedback, from both sides, on an ACTIVE pair only — the service
+    // refuses it otherwise, so seeding it anywhere else would be fiction.
+    if (plan.feedback && plan.status === 'ACTIVE' && !hasReviews) {
+      await db.mentorshipFeedback.create({
+        data: {
+          pairId: pair.id,
+          authorUserId: mentor.userId,
+          menteeRating: [4, 5, 5][i % 3],
+          comment: 'Prepared properly every time and followed through on the plan.',
+        },
+      });
+      const menteeUserId = menteeAlumni?.userId ?? menteeStudent!.user.id;
+      await db.mentorshipFeedback.create({
+        data: {
+          pairId: pair.id,
+          authorUserId: menteeUserId,
+          mentorRating: [4, 5, 5][(i + 1) % 3],
+          comment: 'Unrealistically clear on what to do next. Worth the time.',
+        },
+      });
+      pairReviewCount += 2;
     }
   }
-  console.log(`  ✓ ${pairCount} pairs, ${sessionCount} sessions`);
+
+  // Requests. A pair created by accepting a request keeps the link, so the
+  // office can show "this came from a request" instead of an orphan pair.
+  const openRequests = [
+    {
+      mentee: 'ALUMNI' as const,
+      idx: 0,
+      skills: 'System design, Interview prep',
+      message: 'I have an offer for a backend role and want to sanity-check the system design round before the final interview.',
+      field: 'Interview Prep',
+      addressed: true,
+    },
+    {
+      mentee: 'STUDENT' as const,
+      idx: 1,
+      skills: 'C++, Campus placements',
+      message: 'Final year, placements start next month and I would like to know how to structure preparation.',
+      field: 'Career Guidance',
+      addressed: false,
+    },
+    {
+      mentee: 'STUDENT' as const,
+      idx: 2,
+      skills: 'Higher studies, GRE',
+      message: 'Deciding between two programmes and completely lost on the exams.',
+      field: 'Higher Studies',
+      addressed: false,
+    },
+    {
+      mentee: 'ALUMNI' as const,
+      idx: 3,
+      skills: 'Product & Design',
+      message: '',
+      field: 'Product & Design',
+      addressed: true,
+    },
+  ];
+
+  let requestCount = 0;
+  for (const r of openRequests) {
+    const menteeAlumni = r.mentee === 'ALUMNI' ? alumni[r.idx + 8] : null;
+    const menteeStudent = r.mentee === 'STUDENT' ? studentProfiles[(r.idx + 5) % studentProfiles.length] : null;
+    if (!menteeAlumni && !menteeStudent) continue;
+    const menteeUserId = menteeAlumni?.userId ?? menteeStudent!.user.id;
+    if (menteeUserId === officer.id) continue;
+
+    const exists = await db.mentorshipRequest.findFirst({
+      where: { menteeUserId, status: 'PENDING', requestedSkills: r.skills },
+    });
+    if (exists) continue;
+
+    await db.mentorshipRequest.create({
+      data: {
+        institutionId: instId,
+        menteeUserId,
+        menteeAlumniProfileId: menteeAlumni?.profileId ?? null,
+        menteeStudentProfileId: menteeStudent?.id ?? null,
+        mentorAlumniUserId: r.addressed ? mentorPool[(r.idx + 3) % mentorPool.length].userId : null,
+        requestedSkills: r.skills,
+        message: r.message || null,
+        field: r.field,
+        status: 'PENDING',
+      },
+    });
+    requestCount++;
+  }
+
+  console.log(
+    `  ✓ ${pairCount} pairs processed · ${sessionCount} sessions + ${goalCount} goals + ${pairReviewCount} reviews + ${requestCount} requests added`,
+  );
 
   // ── Step 9: alumni events, schedules, RSVPs ────────────────
   console.log('\n🎉 Step 9: Creating alumni events...');
@@ -2075,6 +2303,67 @@ let pledgeCount = 0;
     db.event.count({ where: { institutionId: instId, chapterId: { not: null } } }),
   ]);
 
+  // Mentorship integrity, checked rather than assumed. The polymorphic mentee
+  // means most invariants can no longer be expressed as database constraints, so
+  // they are verified here where a failure is visible instead of silent.
+  const mPairs = await db.mentorshipPair.findMany({
+    select: { id: true, status: true, menteeStudentProfileId: true, menteeAlumniProfileId: true, nextSessionAt: true, sessions: { select: { planned: true, cancelledAt: true } } },
+  });
+  const mentorshipProblems: string[] = [];
+  for (const p of mPairs) {
+    // Exactly one mentee side. Both null is an orphan; both set is ambiguous and
+    // every screen would have to guess which one to show.
+    if (!p.menteeStudentProfileId === !p.menteeAlumniProfileId) mentorshipProblems.push(`pair ${p.id}: mentee side is not exactly one of student/alumni`);
+    // A pair with no goals on the profile looked like the feature did not exist.
+    if (p.status === 'ACTIVE' && (await db.mentorshipGoal.count({ where: { pairId: p.id } })) === 0) {
+      mentorshipProblems.push(`pair ${p.id}: active with no goals`);
+    }
+    // Sessions on a pair that never started is a contradiction the UI would show.
+    if (p.status !== 'ACTIVE' && p.status !== 'COMPLETED' && p.sessions.length > 0) {
+      mentorshipProblems.push(`pair ${p.id}: ${p.status} pair has ${p.sessions.length} session(s)`);
+    }
+    // The denormalised pointer must match a real booking, or the card shows a
+    // next-session date that nothing backs up.
+    if (p.nextSessionAt) {
+      const backed = p.sessions.some((s) => s.planned && !s.cancelledAt);
+      if (!backed) mentorshipProblems.push(`pair ${p.id}: nextSessionAt with no upcoming booking`);
+    }
+  }
+  // Feedback is participants-only, so a review by the office or by an outsider is
+  // a data error, not just a design mistake.
+  const badFeedback = await db.mentorshipFeedback.findMany({
+    select: {
+      id: true,
+      pairId: true,
+      authorUserId: true,
+      mentorRating: true,
+      menteeRating: true,
+      pair: {
+        select: {
+          mentorAlumniUserId: true,
+          menteeAlumniProfile: { select: { userId: true } },
+          menteeStudentProfile: { select: { user: { select: { id: true } } } },
+        },
+      },
+    },
+  });
+  for (const f of badFeedback) {
+    const participants = [
+      f.pair.mentorAlumniUserId,
+      f.pair.menteeAlumniProfile?.userId,
+      f.pair.menteeStudentProfile?.user.id,
+    ].filter(Boolean) as string[];
+    if (!participants.includes(f.authorUserId)) mentorshipProblems.push(`feedback ${f.id}: author is not a participant`);
+    // One side rates the other, so exactly one column per row.
+    if ((f.mentorRating == null) === (f.menteeRating == null)) mentorshipProblems.push(`feedback ${f.id}: must rate exactly one side`);
+  }
+  const mA2A = mPairs.filter((p) => p.status === 'ACTIVE' && p.menteeAlumniProfileId).length;
+  const mA2S = mPairs.filter((p) => p.status === 'ACTIVE' && p.menteeStudentProfileId).length;
+  const mRequests = await db.mentorshipRequest.count({ where: { status: 'PENDING' } });
+  const mGoals = await db.mentorshipGoal.count();
+  const mFeedback = await db.mentorshipFeedback.count();
+  const mHistory = await db.mentorshipPair.count({ where: { status: { in: ['DECLINED', 'COMPLETED'] } } });
+
   const officerRows = await db.alumniChapterOfficer.count({ where: { isCurrent: true } });
   const initiativeRows = await db.alumniChapterInitiative.count();
   // Pointer-vs-table integrity: the denormalised president column must name the
@@ -2097,7 +2386,9 @@ let pledgeCount = 0;
   console.log(`  Chapters         ${chapterId.size} (${chapterEvents} chapter events)`);
   console.log(`  Campaigns        ${campaignIds.size}`);
   console.log(`  Donations        ${dCount} received / ${pledgeOnly} pledged`);
-  console.log(`  Mentorship       ${mActive} active / ${mPending} pending`);
+  console.log(`  Mentorship       ${mActive} active (${mA2A} a↔a / ${mA2S} a↔student) · ${mPending} pending · ${mHistory} history`);
+  console.log(`  M. requests      ${mRequests} open`);
+  console.log(`  M. goals/reviews ${mGoals} goals · ${mFeedback} reviews`);
   console.log(`  Alumni events    ${evCount}`);
   console.log(`  RSVPs            ${regCount}`);
   console.log(`  Skills           ${skillRows}`);
@@ -2138,6 +2429,15 @@ let pledgeCount = 0;
   console.log('\n  Officer login: priya@learnix.dev / ' + PASSWORD + '  (ALUMNI_OFFICE)');
   console.log(`  Alumnus login: ${alumni[0]?.email ?? 'see seed output'} / ${PASSWORD}`);
   console.log('═══════════════════════════════════════════════════');
+
+  // Fail loudly rather than printing a green summary over broken data. Every one
+  // of these is a screen that would otherwise render confidently and wrongly.
+  if (mentorshipProblems.length > 0) {
+    console.error('\n✗ Mentorship data integrity problems:');
+    for (const p of mentorshipProblems) console.error(`    - ${p}`);
+    throw new Error(`${mentorshipProblems.length} mentorship integrity problem(s) — see above`);
+  }
+  console.log('  ✓ mentorship integrity: mentee side, goals, sessions, nextSessionAt, feedback authorship all consistent');
 }
 
 main()

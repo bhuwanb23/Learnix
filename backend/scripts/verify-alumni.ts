@@ -411,18 +411,254 @@ async function main() {
     check('POST /donations/:id/record', false, 'no PLEDGED donation in the database');
   }
 
-  // ── 6. Mentorship ──
-  console.log('\n\u2500\u2500 6. Mentorship');
+// ── 6. Mentorship ──
+  // Rebuilt as a LIFECYCLE rather than a list read. The previous version checked
+  // that `/mentorship` returned some rows and that a reminder fired — which is
+  // true even when the request flow, the decline reason rule, the goal/session
+  // writes, the participant-only feedback gate and the student side are all
+  // broken. Those are the parts that actually decide whether the feature works.
+  console.log('\n── 6. Mentorship');
+  const inst = await prisma.institution.findFirstOrThrow({ select: { id: true } });
+
   const men = await call('GET', '/alumni/mentorship');
   check('GET /mentorship', men.status === 200, `status ${men.status}`);
   check('  active[] pairs', (men.data?.active?.length ?? 0) > 0, `${men.data?.active?.length} active`);
   check('  pending[] requests', (men.data?.pending?.length ?? 0) > 0, `${men.data?.pending?.length} pending`);
   check('  recentSessions[]', (men.data?.recentSessions?.length ?? 0) > 0, `${men.data?.recentSessions?.length} sessions`);
+  check('  stats.alumniToStudent populated', (men.data?.stats?.alumniToStudent ?? 0) > 0, `${men.data?.stats?.alumniToStudent} active a↔student`);
+  check('  stats.alumniToAlumni populated', (men.data?.stats?.alumniToAlumni ?? 0) > 0, `${men.data?.stats?.alumniToAlumni} active a↔a`);
+  check('  both mentee kinds represented', (men.data?.stats?.alumniToAlumni ?? 0) > 0 && (men.data?.stats?.alumniToStudent ?? 0) > 0, 'polymorphic mentee in the seed');
+
   const activePair = men.data?.active?.[0];
-  check('  pair shows session count', (activePair?.sessions ?? 0) >= 0, `${activePair?.sessions} sessions on "${activePair?.field}"`);
+  // `sessions` is an OBJECT ({ held, totalMinutes, lastAt }), not a number. The
+  // old assertion compared the object itself with 0, which is always false.
+  check('  pair reports sessions.held', typeof activePair?.sessions?.held === 'number', `${activePair?.sessions?.held} sessions on "${activePair?.field}"`);
+  check('  pair reports goals totals', typeof activePair?.goals?.total === 'number', `${activePair?.goals?.achieved}/${activePair?.goals?.total} achieved`);
+  check('  mentee identified', !!activePair?.mentee?.name, `${activePair?.mentee?.name} (${activePair?.mentee?.kind})`);
+
+  const history = await call('GET', '/alumni/mentorship?scope=history');
+  check('GET /mentorship?scope=history', history.status === 200 && (history.data?.history?.length ?? 0) > 0, `${history.data?.history?.length} declined/completed — History is a real tab`);
+  check('  history excludes active', (history.data?.history ?? []).every((p: any) => p.status !== 'ACTIVE'), (history.data?.history ?? []).map((p: any) => p.status).join(','));
+
+  const mDetail = await call('GET', `/alumni/mentorship/${activePair.id}`);
+  check('GET /mentorship/:id', mDetail.status === 200 && mDetail.data?.id === activePair.id, `${mDetail.data?.field}`);
+  check('  sessions.log[] present', Array.isArray(mDetail.data?.sessions?.log), `${(mDetail.data?.sessions?.log ?? []).length} entries`);
+  check('  goals[] present', Array.isArray(mDetail.data?.goals), `${(mDetail.data?.goals ?? []).length} goals`);
+  check('  viewerContext present', mDetail.data?.viewerContext !== undefined, `isOffice=${mDetail.data?.viewerContext?.isOffice} isMentor=${mDetail.data?.viewerContext?.isMentor}`);
+  check('  office cannot leave feedback', mDetail.data?.viewerContext?.canLeaveFeedback === false, 'the office administers the pair, it is not a party to it');
+
+  const progress = await call('GET', `/alumni/mentorship/${activePair.id}/progress`);
+  check('GET /mentorship/:id/progress', progress.status === 200 && typeof progress.data?.averageProgress === 'number', `avg ${progress.data?.averageProgress}% over ${progress.data?.goals?.total} goals`);
+  // A pair with no goals must report null, not 0: "nothing set" and "nothing done"
+  // are different states and must not render identically.
+  check('  null progress when no goals', Array.isArray(progress.data?.goals) && (progress.data?.goals?.total ?? 0) > 0 ? true : progress.data?.goalCompletion === null, `goalCompletion=${progress.data?.goalCompletion}`);
+
+  const fb = await call('GET', `/alumni/mentorship/${activePair.id}/feedback`);
+  check('GET /mentorship/:id/feedback', fb.status === 200 && typeof fb.data?.ofMentor !== 'undefined', `ofMentor=${fb.data?.ofMentor} ofMentee=${fb.data?.ofMentee}`);
+  check('  office sees ratings but not comments', fb.data?.mayReadComments === false && (fb.data?.reviews ?? []).every((r: any) => r.comment === null), `${(fb.data?.reviews ?? []).length} review(s) redacted`);
+
+  const mDir = await call('GET', '/alumni/mentorship/mentors');
+  check('GET /mentorship/mentors', mDir.status === 200 && (mDir.data?.mentors?.length ?? 0) > 0, `${mDir.data?.count} mentors`);
+  check('  directory rows carry skills', (mDir.data?.mentors ?? []).every((x: any) => Array.isArray(x.skills)), 'skills[] on every row');
+  check('  directory rows carry a load', (mDir.data?.mentors ?? []).every((x: any) => typeof x.activeMentees === 'number'), 'activeMentees[] on every row');
 
   const remind = await call('POST', `/alumni/mentorship/${activePair.id}/remind`);
   check('POST /mentorship/:id/remind', remind.status === 200 && remind.data?.reminded === true, 'reminder sent');
+
+  // ── Request lifecycle, on two real people ──
+  // Subjects are chosen via prisma for two reasons that matter to the assertions:
+  // the mentee must have no OPEN request already (the service allows only one), and
+  // the two must be different people.
+  const openRequestMentees = (await prisma.mentorshipRequest.findMany({ where: { status: 'PENDING' }, select: { menteeUserId: true } })).map((r) => r.menteeUserId);
+  const mSubjects = await prisma.alumniProfile.findMany({
+    where: {
+      engagementStatus: 'ACTIVE',
+      user: { institutionId: inst.id, deletedAt: null },
+      userId: { notIn: openRequestMentees },
+    },
+    orderBy: { graduationYear: 'asc' },
+    take: 3,
+    select: { id: true, userId: true, user: { select: { fullName: true, email: true } } },
+  });
+  const mMentee = mSubjects[0];
+  const mMentor = mSubjects[1];
+  check('found request-lifecycle subjects', !!mMentee && !!mMentor && mMentee.userId !== mMentor.userId, `${mMentee?.user.fullName} → ${mMentor?.user.fullName}`);
+  const mMenteeToken = mMentee ? await loginAs(mMentee.user.email) : '';
+
+  if (mMentee && mMentor) {
+    token = mMenteeToken;
+    const asked = await call('POST', '/alumni/mentorship/requests', {
+      requestedSkills: 'System design, Interview prep',
+      message: 'Verification run: I want to sanity-check a system design round.',
+      field: 'Interview Prep',
+      mentorUserId: mMentor.userId,
+    });
+    const reqId = asked.data?.id;
+    check('POST /mentorship/requests (self)', asked.status === 201 && !!reqId, reqId ?? `${asked.status} ${asked.error?.message}`);
+
+    // One open request at a time. Without this a mentor's inbox fills with five
+    // requests from one person and becomes unusable.
+    const second = await call('POST', '/alumni/mentorship/requests', { requestedSkills: 'Something else' });
+    check('  a second open request is refused', second.status === 409, `${second.status} (${second.error?.code})`);
+
+    const mine = await call('GET', '/alumni/mentorship/requests');
+    check('  mentee sees only their own requests', (mine.data?.requests ?? []).every((r: any) => r.mentee?.userId === mMentee.userId), `${mine.data?.count} request(s)`);
+
+    const matches = await call('GET', `/alumni/mentorship/requests/${reqId}/matches`);
+    check('GET /requests/:id/matches', matches.status === 200 && Array.isArray(matches.data?.candidates), `${(matches.data?.candidates ?? []).length} ranked candidate(s)`);
+    check('  candidates are explained, not just scored', (matches.data?.candidates ?? []).every((c: any) => Array.isArray(c.reasons) && c.reasons.length > 0), (matches.data?.candidates ?? []).slice(0, 2).map((c: any) => `${c.name}:${c.score}%`).join(' '));
+    check('  matchedOnSkills reported', matches.data?.matchedOnSkills === true, `skills = ${matches.data?.matchedOnSkills}`);
+
+    // A mentee cannot accept their own request.
+    const selfAccept = await call('POST', `/alumni/mentorship/requests/${reqId}/decide`, { action: 'accept', mentorUserId: mMentor.userId });
+    check('  mentee cannot accept their own request', selfAccept.status === 403, `${selfAccept.status} (${selfAccept.error?.code})`);
+
+    const noReason = await call('POST', `/alumni/mentorship/requests/${reqId}/decide`, { action: 'decline' });
+    check('  decline without a reason rejected', noReason.status === 400, `${noReason.status} (${noReason.error?.code})`);
+    const shortReason = await call('POST', `/alumni/mentorship/requests/${reqId}/decide`, { action: 'decline', reason: 'no' });
+    check('  too-short decline reason rejected', shortReason.status === 400, `${shortReason.status} (${shortReason.error?.code})`);
+
+    // Accepted as the addressee mentor, in their own token — the positive case
+    // that proves the request is what CREATES the pair.
+    const mentorToken = await loginAs(mMentor.user.email);
+    token = mentorToken;
+    const accepted = await call('POST', `/alumni/mentorship/requests/${reqId}/decide`, { action: 'accept' });
+    const pairId = accepted.data?.pairId;
+    check('POST /requests/:id/decide accept', accepted.status === 200 && accepted.data?.status === 'ACCEPTED' && !!pairId, pairId ?? `${accepted.status} ${accepted.error?.message}`);
+
+    const mineAfter = await call('GET', '/alumni/mentorship/requests');
+    check('  request now ACCEPTED with its pair', (mineAfter.data?.requests ?? []).find((r: any) => r.id === reqId)?.status === 'ACCEPTED', `pairId=${(mineAfter.data?.requests ?? []).find((r: any) => r.id === reqId)?.pairId}`);
+
+    if (pairId) {
+      // ── Sessions, goals, feedback on the new pair ──
+      const past = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString();
+      const future = new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString();
+
+      const held = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: past, durationMinutes: 45, mode: 'VIDEO', notes: 'Verification run', outcome: 'Planned two mock interviews.' });
+      check('POST /mentorship/:id/sessions (held)', held.status === 201 && held.data?.planned === false, `${held.data?.id ?? held.error?.message}`);
+
+      const booked = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: future, mode: 'VIDEO', agenda: 'Verification booking' });
+      check('  booking accepted', booked.status === 201 && booked.data?.planned === true, booked.data?.id ?? `${booked.status}`);
+
+      // A booking in the past would sit on the "upcoming" list forever and be
+      // permanently undismissable, so the service refuses it.
+      const pastBooking = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: past, planned: true });
+      check('  booking in the past rejected', pastBooking.status === 400 || pastBooking.status === 422, `${pastBooking.status} (${pastBooking.error?.code})`);
+
+      const zeroLength = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: past, durationMinutes: 0 });
+      check('  zero-length session rejected', zeroLength.status === 400 || zeroLength.status === 422, `${zeroLength.status} (${zeroLength.error?.code})`);
+
+      const afterBooking = await call('GET', `/alumni/mentorship/${pairId}`);
+      check('  nextSessionAt follows the booking', !!afterBooking.data?.nextSessionAt, `${afterBooking.data?.nextSessionAt}`);
+
+      const goal = await call('POST', `/alumni/mentorship/${pairId}/goals`, { title: 'Get the CV reviewed', detail: 'Verification run', progressPct: 40, targetDate: new Date(Date.now() + 20 * 864e5).toISOString().slice(0, 10) });
+      const goalId = goal.data?.id;
+      check('POST /mentorship/:id/goals', goal.status === 201 && goal.data?.progressPct === 40, goalId ?? `${goal.status}`);
+      // status and percentage must be kept consistent at the source, or a bar
+      // lies about what is done.
+      const contradictory = await call('PATCH', `/alumni/mentorship/goals/${goalId}`, { status: 'ACHIEVED', progressPct: 20 });
+      check('  ACHIEVED forces 100%', contradictory.status === 200 && contradictory.data?.progressPct === 100, `progressPct=${contradictory.data?.progressPct}`);
+      const reopened = await call('PATCH', `/alumni/mentorship/goals/${goalId}`, { status: 'IN_PROGRESS' });
+      check('  leaving ACHIEVED clears achievedAt', reopened.status === 200 && reopened.data?.achievedAt === null, `achievedAt=${reopened.data?.achievedAt}`);
+      const outOfRange = await call('PATCH', `/alumni/mentorship/goals/${goalId}`, { progressPct: 140 });
+      check('  out-of-range percentage rejected', outOfRange.status === 400 || outOfRange.status === 422, `${outOfRange.status} (${outOfRange.error?.code})`);
+
+      // Feedback is participants-only, and the office is not a participant.
+      token = OFFICE_TOKEN;
+      const officeReview = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { mentorRating: 5, comment: 'Office review' });
+      check('  office cannot review a mentorship', officeReview.status === 400 || officeReview.status === 422, `${officeReview.status} (${officeReview.error?.code})`);
+
+      const outsider = await prisma.alumniProfile.findFirst({ where: { engagementStatus: 'ACTIVE', user: { institutionId: inst.id }, id: { notIn: [mMentee.id, mMentor.id] } }, select: { user: { select: { email: true } } } });
+      if (outsider) {
+        token = await loginAs(outsider.user.email);
+        const strangerReview = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { mentorRating: 1, comment: 'Not my pair' });
+        check('  a non-participant cannot review', strangerReview.status === 400 || strangerReview.status === 422, `${strangerReview.status} (${strangerReview.error?.code})`);
+        const strangerProgress = await call('GET', `/alumni/mentorship/${pairId}/progress`);
+        check('  a non-participant reads no detail', strangerProgress.status === 403 || strangerProgress.status === 404, `${strangerProgress.status} (${strangerProgress.error?.code})`);
+      }
+
+      token = mMenteeToken;
+      const myReview = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { mentorRating: 5, comment: 'Verification run: clear and useful.' });
+      check('  mentee may review the mentor', myReview.status === 201 && myReview.data?.ofMentor === 5, `ofMentor=${myReview.data?.ofMentor}`);
+      const edited = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { mentorRating: 4, comment: 'Verification run: edited.' });
+      check('  a review is editable, not a duplicate', edited.status === 200 || edited.status === 201, `updated=${edited.data?.updated} ofMentor=${edited.data?.ofMentor}`);
+
+      token = mentorToken;
+      const mentorReview = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { menteeRating: 4, comment: 'Verification run: came prepared.' });
+      check('  mentor may review the mentee', mentorReview.status === 201 && mentorReview.data?.ofMentee === 4, `ofMentee=${mentorReview.data?.ofMentee}`);
+      const twoWay = await call('GET', `/alumni/mentorship/${pairId}/feedback`);
+      check('  both sides recorded separately', twoWay.data?.ofMentor === 4 && twoWay.data?.ofMentee === 4 && twoWay.data?.count === 2, `ofMentor=${twoWay.data?.ofMentor} ofMentee=${twoWay.data?.ofMentee} n=${twoWay.data?.count}`);
+
+      token = OFFICE_TOKEN;
+      const officeReads = await call('GET', `/alumni/mentorship/${pairId}/feedback`);
+      check('  office sees the aggregate, not the words', officeReads.data?.mayReadComments === false, `${(officeReads.data?.reviews ?? []).length} review(s), comments withheld`);
+
+      // ── Completion drops open goals rather than leaving them live ──
+      const openGoal = await call('POST', `/alumni/mentorship/${pairId}/goals`, { title: 'Never finished' });
+      const ended = await call('POST', `/alumni/mentorship/${pairId}/complete`, { outcome: 'Verification run: ended early.' });
+      check('POST /mentorship/:id/complete', ended.status === 200 && ended.data?.status === 'COMPLETED', `${ended.status}`);
+      const afterEnd = await call('GET', `/alumni/mentorship/${pairId}`);
+      const dropped = (afterEnd.data?.goals ?? []).find((g: any) => g.id === openGoal.data?.id);
+      check('  open goals DROPPED, not deleted', dropped?.status === 'DROPPED', `${(afterEnd.data?.goals ?? []).map((g: any) => `${g.status}`).join(',')}`);
+      const lateReview = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { mentorRating: 5 });
+      check('  reviews close when the pair ends', lateReview.status === 400 || lateReview.status === 422, `${lateReview.status} (${lateReview.error?.code})`);
+      const lateSession = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: past, durationMinutes: 30 });
+      check('  sessions close when the pair ends', lateSession.status === 400 || lateSession.status === 422, `${lateSession.status} (${lateSession.error?.code})`);
+      const twice = await call('POST', `/alumni/mentorship/${pairId}/complete`, { outcome: 'again' });
+      check('  cannot complete twice', twice.status === 400 || twice.status === 422, `${twice.status} (${twice.error?.code})`);
+    }
+
+    // Cleanup through prisma: there is no DELETE pair route, and a live
+    // verification pair would be counted by the next run's "seed has N active"
+    // assertions and by the dashboard metrics.
+    const deletedPair = await prisma.mentorshipPair.deleteMany({ where: { id: pairId ?? '' } });
+    const deletedReq = await prisma.mentorshipRequest.deleteMany({ where: { id: reqId ?? '' } });
+    check('cleanup: verification pair + request removed', deletedPair.count === 1 && deletedReq.count === 1, `${deletedPair.count} pair, ${deletedReq.count} request (sessions/goals/feedback cascaded)`);
+  }
+
+  // ── The student side ──
+  // A STUDENT can be a mentor's mentee in the schema, but `/alumni/*` is gated to
+  // ALUMNI/ADMIN roles, so the student route is the only way they could ever see
+  // their own mentorship. Asserted because it is easy to delete and invisible until
+  // a student reports the screen is missing.
+  let studentToken = '';
+  try {
+    studentToken = await loginAs('student@learnix.dev');
+  } catch {
+    check('student can log in', false, 'student@learnix.dev unavailable — skipping the student-side checks');
+  }
+  if (studentToken) {
+    token = studentToken;
+    const sMen = await call('GET', '/student/mentorship');
+    check('GET /student/mentorship', sMen.status === 200, `status ${sMen.status}`);
+    check('  student sees their pairs', Array.isArray(sMen.data?.active) && Array.isArray(sMen.data?.history), `${(sMen.data?.active ?? []).length} active / ${(sMen.data?.history ?? []).length} history`);
+
+    // A STUDENT role must be refused by the alumni router — this is WHY the
+    // student route exists, so the gate itself is part of the contract.
+    const blocked = await call('GET', '/alumni/mentorship');
+    check('  student is refused by /alumni/mentorship', blocked.status === 403, `${blocked.status} (${blocked.error?.code})`);
+
+    const sStudent = await prisma.studentProfile.findFirst({ where: { user: { email: 'student@learnix.dev' } }, select: { id: true, userId: true } });
+    const hasOpen = sStudent ? await prisma.mentorshipRequest.findFirst({ where: { menteeUserId: sStudent.userId, status: 'PENDING' } }) : null;
+    if (sStudent && !hasOpen) {
+      const sReq = await call('POST', '/student/mentorship/requests', { requestedSkills: 'Verification: campus placements', message: 'Verification run.', field: 'Career Guidance' });
+      check('  student can request a mentor', sReq.status === 201, sReq.data?.id ?? `${sReq.status} ${sReq.error?.message}`);
+      const sMentees = await call('GET', '/student/mentorship/mentors');
+      check('  student sees the mentor directory', sMentees.status === 200 && (sMentees.data?.mentors?.length ?? 0) > 0, `${sMentees.data?.count} mentors`);
+      if (sReq.data?.id) {
+        const sMatches = await call('GET', `/student/mentorship/requests/${sReq.data.id}/matches`);
+        check('  ranked matches work for a student', sMatches.status === 200 && Array.isArray(sMatches.data?.candidates), `${(sMatches.data?.candidates ?? []).length} candidate(s)`);
+        const withdrawn = await call('DELETE', `/student/mentorship/requests/${sReq.data.id}`);
+        check('  student can withdraw their request', withdrawn.status === 200 && withdrawn.data?.status === 'WITHDRAWN', `${withdrawn.data?.status ?? withdrawn.status}`);
+        await prisma.mentorshipRequest.deleteMany({ where: { id: sReq.data.id } });
+      }
+    } else {
+      check('  student request lifecycle', true, hasOpen ? 'skipped — the seeded student already has an open request' : 'skipped — no student profile');
+    }
+  }
+
+  token = OFFICE_TOKEN;
+
 
 // ── 7. Chapters ──
 // `/chapters` returns an OBJECT ({ count, totalMembers, chapters[] }), not a

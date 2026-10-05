@@ -465,9 +465,20 @@ async function run() {
       trend.months.every((m, i) => i === 0 || trend.months[i - 1].key < m.key));
     check('every month has a label', trend.months.every((m) => typeof m.label === 'string' && m.label.length > 0));
     check('every month reports rupees', trend.months.every((m) => typeof m.approvedRupees === 'number'));
-    const allZeroMonths = trend.months.filter((m) => m.approvedRupees === 0);
+    // A month with no spend must still be REPORTED, not dropped — otherwise a bar
+    // chart quietly hides a gap. The twelve-month window no longer contains one
+    // (the F-09 seed fills every month so the comparison report has real history),
+    // so the behaviour is checked on a window that reaches past the seeded data
+    // instead of relying on a gap in the fixture.
+    const wide = await monthlyTrend(instId, 24);
+    const allZeroMonths = wide.months.filter((m) => m.approvedRupees === 0);
+    check('the trend can reach past the seeded history', wide.months.length === 24,
+      `${wide.months.length}`);
     check('months with no spend are still present, not dropped', allZeroMonths.length > 0,
-      `${allZeroMonths.length} empty months`);
+      `${allZeroMonths.length} empty months of ${wide.months.length}`);
+    check('an empty month still carries its label and a zero figure',
+      allZeroMonths.every((m) => typeof m.label === 'string' && m.label.length > 0
+        && m.approvedRupees === 0 && m.count === 0));
     const totMonths = trend.months.reduce((s, m) => s + m.approvedRupees, 0);
     check('the trend total matches the sum of its months',
       Math.abs(trend.totals.approvedRupees - totMonths) < 0.001,

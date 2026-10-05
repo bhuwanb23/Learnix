@@ -35,7 +35,29 @@ function check(name: string, ok: boolean, detail?: string) {
 const app = createApp();
 
 const createdRunIds: string[] = [];
-const LIVE_MONTH = '2026-02'; // inside the accepted window, and not seeded
+
+/**
+ * A month with no seeded run, found rather than hard-coded.
+ *
+ * The F-09 seed fills the last twelve months so the comparison report has real
+ * history, which swallowed the hard-coded month this used to rely on. The window
+ * moves with the calendar, so the month is derived: one month before the newest
+ * seeded run — inside `assertMonth`'s range, and covered by the open-ended
+ * salary records so the run prices real staff.
+ */
+async function findUnseededMonth(institutionId: string): Promise<string> {
+  const taken = new Set(
+    (await prisma.payrollRun.findMany({ where: { institutionId }, select: { month: true } })).map((r) => r.month),
+  );
+  const anchor = new Date();
+  for (let back = 13; back <= 40; back += 1) {
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - back, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!taken.has(key)) return key;
+  }
+  throw new Error('could not find an unseeded payroll month');
+}
+let LIVE_MONTH = '2026-02';
 
 let BASE = '';
 
@@ -220,6 +242,7 @@ async function main() {
 
   // ── Lifecycle over HTTP ────────────────────────────────────
   console.log('\nlifecycle over HTTP');
+  LIVE_MONTH = await findUnseededMonth(inst);
   const clash = await prisma.payrollRun.findUnique({
     where: { institutionId_month: { institutionId: inst, month: LIVE_MONTH } },
   });

@@ -33,9 +33,35 @@ function check(name: string, ok: boolean, detail?: string) {
 }
 
 const createdRunIds: string[] = [];
-const LIVE_MONTH = '2026-01'; // inside the accepted window, and not seeded
+
+/**
+ * A month with no seeded run, found rather than hard-coded.
+ *
+ * The F-09 seed fills the last twelve months so the comparison report has real
+ * history, which swallowed the hard-coded `2026-01` this used to rely on. The
+ * window moves with the calendar, so the month is derived: one month before the
+ * newest seeded run. It is still inside `assertMonth`'s accepted range and still
+ * covered by the open-ended salary records, so the run prices real staff.
+ */
+async function findUnseededMonth(): Promise<string> {
+  const taken = new Set(
+    (await prisma.payrollRun.findMany({ select: { month: true } })).map((r) => r.month),
+  );
+  const anchor = new Date();
+  // Walk backwards until a free month turns up. Anchoring on "now" rather than on
+  // a seeded row means this keeps working whatever the calendar does, and the
+  // walk means a gap in the seeded history cannot hand us a clash.
+  for (let back = 13; back <= 40; back += 1) {
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - back, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!taken.has(key)) return key;
+  }
+  throw new Error('could not find an unseeded payroll month');
+}
+let LIVE_MONTH = '2026-01';
 
 async function main() {
+  LIVE_MONTH = await findUnseededMonth();
   const accountsUser = await prisma.user.findFirst({
     where: { roles: { some: { role: 'ACCOUNTS' } } },
     select: { id: true, institutionId: true },
@@ -197,7 +223,12 @@ async function main() {
   const sample = detail.entries[0];
   const slip = await getPayslip(inst, sample.id);
   check('payslip carries the month', slip.entry.month === detail.run.month);
-  check('payslip has three earnings lines', slip.entry.earnings.length === 3);
+  // Not "exactly three": how many earnings lines a person has depends on THEIR
+  // salary structure, so a fixed count was really asserting the identity of
+  // whoever `detail.entries[0]` happened to return. What must hold for every
+  // entry is checked for every entry, below.
+  check('payslip has at least one earnings line', slip.entry.earnings.length >= 1,
+    `${slip.entry.earnings.length}`);
   check('payslip has at least PF + professional tax', slip.entry.deductions.length >= 2);
   check('payslip earnings foot',
     slip.entry.earnings.reduce((s, l) => s + l.amountMinor, 0) / 100 === slip.entry.grossRupees);
@@ -206,6 +237,26 @@ async function main() {
   check('per-day rate is derived from the month length',
     slip.perDayRupees === Math.floor(slip.entry.grossRupees / daysInMonth(detail.run.month)));
   check('history includes this entry', slip.history.some((h) => h.id === sample.id));
+
+  // Every payslip in the run, not just the first: each one's earnings lines must
+  // foot to that person's own gross, and their deductions to their own
+  // deductions. A single sampled entry proves nothing about the other twenty.
+  let payslipsChecked = 0;
+  for (const e of detail.entries) {
+    const p2 = await getPayslip(inst, e.id);
+    payslipsChecked += 1;
+    check(`payslip ${e.staffUserId ?? e.id}: earnings foot to gross`,
+      p2.entry.earnings.reduce((s2, l) => s2 + l.amountMinor, 0) / 100 === p2.entry.grossRupees,
+      `${p2.entry.earnings.reduce((s2, l) => s2 + l.amountMinor, 0) / 100} vs ${p2.entry.grossRupees}`);
+    check(`payslip ${e.staffUserId ?? e.id}: deductions foot`,
+      p2.entry.deductions.reduce((s2, l) => s2 + l.amountMinor, 0) / 100 === p2.entry.deductionsRupees);
+    check(`payslip ${e.staffUserId ?? e.id}: net is gross minus deductions`,
+      p2.entry.grossRupees - p2.entry.deductionsRupees === p2.entry.netRupees);
+    check(`payslip ${e.staffUserId ?? e.id}: every line is labelled`,
+      [...p2.entry.earnings, ...p2.entry.deductions].every((l) => !!l.label));
+  }
+  check('every entry in the run was checked', payslipsChecked === detail.entries.length,
+    `${payslipsChecked} of ${detail.entries.length}`);
   check('history is newest first',
     slip.history.every((h, i) => i === 0 || slip.history[i - 1].month >= h.month));
   check('YTD net is the sum of this year’s history',

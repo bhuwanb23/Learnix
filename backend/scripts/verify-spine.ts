@@ -243,10 +243,20 @@ async function main(): Promise<void> {
     console.log(`CAMPAIGN ${campaign.name} ₹${(campaign.raisedMinor / 1e7).toFixed(1)}L / ₹${(campaign.targetMinor / 1e7).toFixed(1)}L [${campaign.status}]`);
   }
   const pairRow = await db.mentorshipPair.findFirst({
-    include: { mentorAlumniUser: true, menteeStudentProfile: { include: { user: true } }, sessions: true },
+    include: {
+      mentorAlumniUser: true,
+      menteeStudentProfile: { include: { user: true } },
+      menteeAlumniProfile: { include: { user: true } },
+      sessions: true,
+    },
   });
   if (pairRow) {
-    console.log(`MENTORSHIP ${pairRow.mentorAlumniUser.fullName} → ${pairRow.menteeStudentProfile.user.fullName} (${pairRow.field}) [${pairRow.status}] sessions:${pairRow.sessions.length}`);
+    // The mentee is polymorphic: either a student or another alumnus. Printing
+    // only `menteeStudentProfile.user` threw on every alumni↔alumni pair, which is
+    // now a supported shape rather than a hypothetical one.
+    const mentee =
+      pairRow.menteeAlumniProfile?.user.fullName ?? pairRow.menteeStudentProfile?.user.fullName ?? 'unknown';
+    console.log(`MENTORSHIP ${pairRow.mentorAlumniUser.fullName} → ${mentee} (${pairRow.field}) [${pairRow.status}] sessions:${pairRow.sessions.length}`);
   }
   const chapterRow = await db.alumniChapter.findFirst({ include: { members: true } });
   if (chapterRow) {
