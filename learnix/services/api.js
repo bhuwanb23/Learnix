@@ -774,6 +774,24 @@ export const placementApi = {
 };
 
 // ── Accounts & Finance endpoints (docs/users/06 §4) ──
+/**
+ * Build a `?a=1&b=2` string from only the filters that are actually set.
+ *
+ * The F-09 report query schemas are `.strict()`, so a key the server does not
+ * expect is a 400 — and `?period=undefined` is exactly that kind of key. Only
+ * the three report filters go through here; other APIs keep their own inline
+ * URLSearchParams because their parameter names differ.
+ */
+function reportQs(filters) {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(filters || {})) {
+    if (v === undefined || v === null || v === '') continue;
+    sp.set(k, String(v));
+  }
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+}
+
 export const accountsApi = {
   dashboard: () => api.get('/accounts/dashboard'),
   collections: (params = {}) => {
@@ -1030,7 +1048,16 @@ export const accountsApi = {
   scholarshipTracking: () => api.get('/accounts/scholarships/tracking'),
   studentScholarshipHistory: (studentProfileId) =>
     api.get(`/accounts/scholarships/students/${studentProfileId}/history`),
-  reports: () => api.get('/accounts/reports'),
+  // F-09 Reports (docs/users/06 §3.8). The old `reports()` hit
+  // GET /accounts/reports, whose summary aggregated `feeDue` with no tenant
+  // filter. Seven named reports sit behind one period selector now.
+  reportCatalogue: () => api.get('/accounts/reports/catalogue'),
+  reportOverview: ({ period, anchor } = {}) =>
+    api.get(`/accounts/reports/overview${reportQs({ period, anchor })}`),
+  report: (id, { period, anchor, granularity } = {}) =>
+    api.get(`/accounts/reports/${id}${reportQs({ period, anchor, granularity })}`),
+  exportReport: (id, { period, anchor, format } = {}) =>
+    api.get(`/accounts/reports/${id}/export${reportQs({ period, anchor, format })}`),
   notifications: () => api.get('/accounts/notifications'),
   markAllRead: () => api.post('/accounts/notifications/read-all'),
   broadcast: (payload) => api.post('/accounts/broadcasts', payload),

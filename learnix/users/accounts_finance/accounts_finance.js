@@ -73,6 +73,14 @@ import ScholarshipStudentHistory from './pages/scholarships/pages/student_histor
 import ScholarshipApply from './pages/scholarships/pages/apply/apply';
 import ScholarshipSchemeEditor from './pages/scholarships/pages/scheme_editor/scheme_editor';
 import ReportsModule from './pages/reports/reports';
+// Reports sub-pages (docs/users/06 §3.8) — one per report the hub can open.
+import ReportCollections from './pages/reports/pages/collections/collections';
+import ReportDues from './pages/reports/pages/dues/dues';
+import ReportExpenses from './pages/reports/pages/expenses/expenses';
+import ReportPayroll from './pages/reports/pages/payroll/payroll';
+import ReportScholarships from './pages/reports/pages/scholarships/scholarships';
+import ReportDepartments from './pages/reports/pages/departments/departments';
+import ReportComparison from './pages/reports/pages/comparison/comparison';
 import NotificationsScreen from './pages/notifications/notifications';
 
 // Import theme
@@ -129,6 +137,16 @@ const FEATURE_MODULES = {
   PayrollLoans: { title: 'Loans & Advances', icon: 'card-outline', component: PayrollLoans },
   PayrollAlerts: { title: 'Pending Salaries', icon: 'alert-circle-outline', component: PayrollAlerts },
   PayslipDocument: { title: 'Payslip Document', icon: 'document-text-outline', component: PayslipDocument },
+
+  // Reports sub-pages (docs §3.8). The keys are `Report<Id>` — built by
+  // `reportScreen()` in reportsMeta.js so the hub and this registry cannot drift.
+  ReportCollections: { title: 'Collection Report', icon: 'cash-outline', component: ReportCollections },
+  ReportDues: { title: 'Outstanding Dues', icon: 'alert-circle-outline', component: ReportDues },
+  ReportExpenses: { title: 'Expense Statement', icon: 'receipt-outline', component: ReportExpenses },
+  ReportPayroll: { title: 'Payroll Report', icon: 'card-outline', component: ReportPayroll },
+  ReportScholarships: { title: 'Scholarship Report', icon: 'ribbon-outline', component: ReportScholarships },
+  ReportDepartments: { title: 'Department-wise', icon: 'business-outline', component: ReportDepartments },
+  ReportComparison: { title: 'Period Comparison', icon: 'trending-up-outline', component: ReportComparison },
 
   // Expenses sub-pages
   ExpenseEntry: { title: 'Raise a Claim', icon: 'add-circle-outline', component: ExpenseEntry },
