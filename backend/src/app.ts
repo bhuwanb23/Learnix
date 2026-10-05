@@ -15,6 +15,7 @@ import transportRoutes from './modules/transport/transport.routes.js';
 import hostelRoutes from './modules/hostel/hostel.routes.js';
 import libraryRoutes from './modules/library/library.routes.js';
 import accountsRoutes from './modules/accounts/accounts.routes.js';
+import reportsRoutes from './modules/accounts/reports.routes.js';
 import scholarshipRoutes from './modules/accounts/scholarship.routes.js';
 import feeStructureRoutes from './modules/accounts/feestructure.routes.js';
 import payrollStructureRoutes from './modules/accounts/payroll.structure.routes.js';
@@ -133,6 +134,9 @@ export function createApp() {
   // literal sub-resource paths must stay ahead of `/fee-structures/:id`, and
   // it deliberately still answers the legacy singular `/fee-structure` alias.
   app.use('/api/v1/accounts', feeStructureRoutes);
+  // F-09 Reports first: `/reports/:report/export` must not be shadowed, and
+  // this router applies its own auth because it no longer inherits it.
+  app.use('/api/v1/accounts', reportsRoutes);
   app.use('/api/v1/accounts', accountsRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);

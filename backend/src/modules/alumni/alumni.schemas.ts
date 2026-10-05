@@ -233,6 +233,116 @@ export const removeMemberSchema = z.object({
   reason: z.string().trim().min(5).max(500),
 });
 
+// ── Mentorship (AL-05) ──────────────────────────────────────
+
+export const mentorshipQuerySchema = z.object({
+  scope: z.enum(['active', 'pending', 'history', 'all']).optional(),
+});
+
+export const mentorshipRequestSchema = z
+  .object({
+    // Office enrolment on someone's behalf. A graduate requesting for themselves
+    // supplies neither — their identity comes from the session.
+    alumniProfileId: z.string().trim().min(1).max(64).optional(),
+    studentProfileId: z.string().trim().min(1).max(64).optional(),
+    requestedSkills: z.string().trim().max(500).optional(),
+    message: z.string().trim().max(2000).optional(),
+    field: z.string().trim().max(120).optional(),
+    mentorUserId: z.string().trim().min(1).max(64).optional(),
+  })
+  .refine((v) => !(v.alumniProfileId && v.studentProfileId), {
+    message: 'A mentee is either an alumnus or a student, not both',
+  });
+
+export const mentorshipDecisionSchema = z
+  .object({
+    action: z.enum(['accept', 'decline']),
+    mentorUserId: z.string().trim().min(1).max(64).optional(),
+    reason: z.string().trim().max(500).optional(),
+  })
+  .refine((v) => v.action !== 'decline' || (v.reason && v.reason.trim().length >= 5), {
+    message: 'A decline needs a reason of at least 5 characters',
+    path: ['reason'],
+  });
+
+const pairBodyShape = {
+  mentorUserId: z.string().trim().min(1).max(64),
+  alumniProfileId: z.string().trim().min(1).max(64).optional(),
+  studentProfileId: z.string().trim().min(1).max(64).optional(),
+  // Required: there is no demo fallback any more, and a pair with no field
+  // cannot be matched, filtered, or reported on.
+  field: z.string().trim().min(2).max(120),
+};
+
+/** Both refine()s live in a helper because a ZodEffects has no `.omit()` — which
+ *  is exactly what the office shortcut below needs. */
+function withMenteeRules<T extends z.ZodTypeAny>(shape: T) {
+  return shape
+    .refine((v: any) => !!(v.alumniProfileId || v.studentProfileId), {
+      message: 'Specify alumniProfileId or studentProfileId',
+    })
+    .refine((v: any) => !(v.alumniProfileId && v.studentProfileId), {
+      message: 'A mentee is either an alumnus or a student, not both',
+    });
+}
+
+export const createPairSchema = withMenteeRules(z.object(pairBodyShape));
+
+/** The office pairing shortcut: the mentor comes from the route, not the body. */
+export const officePairMentorSchema = withMenteeRules(
+  z.object({ ...pairBodyShape, mentorUserId: z.undefined().optional() }),
+);
+
+export const completePairSchema = z.object({ outcome: z.string().trim().max(1000).optional() });
+
+export const mentorshipSessionSchema = z
+  .object({
+    sessionDate: z.string().min(8).max(40),
+    notes: z.string().trim().max(4000).optional(),
+    durationMinutes: z.coerce.number().int().min(1).max(1440).optional(),
+    mode: z.enum(['IN_PERSON', 'VIDEO', 'PHONE']).optional(),
+    agenda: z.string().trim().max(2000).optional(),
+    outcome: z.string().trim().max(2000).optional(),
+    planned: z.boolean().optional(),
+  })
+  .refine((v) => v.planned !== true || !v.durationMinutes, {
+    message: 'A planned session has no duration yet — log it once it has happened',
+    path: ['durationMinutes'],
+  });
+
+export const updateSessionSchema = z.object({
+  sessionDate: z.string().min(8).max(40).optional(),
+  notes: z.string().trim().max(4000).optional(),
+  durationMinutes: z.coerce.number().int().min(1).max(1440).optional(),
+  mode: z.enum(['IN_PERSON', 'VIDEO', 'PHONE']).optional(),
+  agenda: z.string().trim().max(2000).optional(),
+  outcome: z.string().trim().max(2000).optional(),
+});
+
+export const cancelSessionSchema = z.object({ reason: z.string().trim().max(500).optional() });
+
+export const goalSchema = z
+  .object({
+    title: z.string().trim().min(2).max(200),
+    detail: z.string().trim().max(2000).optional(),
+    targetDate: z.string().min(8).max(40).optional(),
+    status: z.enum(['PENDING', 'IN_PROGRESS', 'ACHIEVED', 'DROPPED']).optional(),
+    progressPct: z.coerce.number().int().min(0).max(100).optional(),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), {
+    message: 'Provide at least one field to update',
+  });
+
+export const mentorshipFeedbackSchema = z
+  .object({
+    mentorRating: z.coerce.number().int().min(1).max(5).optional(),
+    menteeRating: z.coerce.number().int().min(1).max(5).optional(),
+    comment: z.string().trim().max(2000).optional(),
+  })
+  .refine((v) => v.mentorRating !== undefined || v.menteeRating !== undefined, {
+    message: 'Rate the mentor, the mentee, or both',
+  });
+
 /** Office-side enrolment. The reason is optional here — unlike a removal, adding
  *  someone is not destructive — but recorded when given. */
 export const addMemberSchema = z.object({

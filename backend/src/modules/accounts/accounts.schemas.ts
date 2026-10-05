@@ -239,6 +239,34 @@ export const scholarshipDocumentParamSchema = z.object({
   code: z.string().min(1).max(40),
 });
 
+// ── F-09 Reports ──────────────────────────────────────────────────────────
+//
+// `.strict()` on all three: an unknown filter is a typo, and silently ignoring
+// it would show the user a whole year of figures while their screen says "this
+// month" because their `perid` was dropped on the floor.
+const REPORT_PERIODS = ['MONTH', 'QUARTER', 'SEMESTER', 'YEAR', 'ALL'] as const;
+
+export const accountsReportQuerySchema = z
+  .object({
+    period: z.enum(REPORT_PERIODS).optional(),
+    /** An explicit `YYYY-MM-DD` anchor, so a historical window can be asked for. */
+    anchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'anchor must be YYYY-MM-DD').optional(),
+    /** Only meaningful for the comparison report: how each bar is grouped. */
+    granularity: z.enum(['MONTH', 'QUARTER', 'YEAR']).optional(),
+  })
+  .strict();
+
+export const accountsReportExportSchema = z
+  .object({
+    period: z.enum(REPORT_PERIODS).optional(),
+    anchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'anchor must be YYYY-MM-DD').optional(),
+    format: z.enum(['xlsx', 'csv', 'pdf']).optional(),
+    granularity: z.enum(['MONTH', 'QUARTER', 'YEAR']).optional(),
+  })
+  .strict();
+
+export const accountsReportCatalogueSchema = z.object({}).strict();
+
 export const scholarshipListQuerySchema = z
   .object({
     status: z.enum(['ALL', 'OPEN', 'CLOSED', 'DRAFT']).optional(),

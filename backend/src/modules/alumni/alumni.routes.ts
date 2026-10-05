@@ -1,4 +1,4 @@
-import { Router } from 'express';
+﻿import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
@@ -42,6 +42,17 @@ import {
   photoCaptionSchema,
   addAttendeeSchema,
   removeAttendeeSchema,
+  mentorshipQuerySchema,
+  mentorshipRequestSchema,
+  mentorshipDecisionSchema,
+  createPairSchema,
+  officePairMentorSchema,
+  completePairSchema,
+  mentorshipSessionSchema,
+  updateSessionSchema,
+  cancelSessionSchema,
+  goalSchema,
+  mentorshipFeedbackSchema,
 } from './alumni.schemas.js';
 import * as service from './alumni.service.js';
 import * as directory from './directory.service.js';
@@ -53,6 +64,11 @@ import * as eventSvc from './events.service.js';
 import * as registration from './registration.service.js';
 import * as feedback from './feedback.service.js';
 import * as memories from './memories.service.js';
+import * as mentorship from './mentorship.service.js';
+import * as matching from './matching.service.js';
+import * as sessions from './sessions.service.js';
+import * as goals from './goals.service.js';
+import * as mentorshipFeedback from './feedback.service.js';
 
 // Alumni Relations module — mounted at /api/v1/alumni (docs/users/12 §4)
 const router = Router();
@@ -448,12 +464,19 @@ router.post(
   }),
 );
 
+// The office pairing shortcut, kept at its old path so the existing client keeps
+// working. It now REQUIRES a mentee: the previous version silently paired the
+// mentor with "the first active student profile in the institution", which meant
+// the Requests tab could only ever be filled by an accident of database ordering.
 router.post(
   '/directory/:id/add-mentor',
   validate(idParamSchema, 'params'),
+  validate(officePairMentorSchema),
   wrap(async (req, res) => {
-    res.json({
-      data: await service.addMentor(req.auth!.institutionId, String(req.params.id), req.auth!.userId),
+    const viewer = await viewerFor(req);
+    const profile = await directory.resolveProfileId(req.auth!.institutionId, String(req.params.id));
+    res.status(201).json({
+      data: await mentorship.createPair(viewer, { ...req.body, mentorUserId: profile.userId }),
     });
   }),
 );
@@ -650,7 +673,7 @@ router.get(
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
     res.json({
-      data: await feedback.listFeedback(viewer, String(req.params.id), req.auth!.institutionId),
+      data: await feedback.listFeedback(viewer, String(req.params.id)),
     });
   }),
 );
@@ -788,14 +811,248 @@ router.post(
   }),
 );
 
-// AL-05 mentorship
+// ── AL-05 mentorship ────────────────────────────────────────
+// Literal paths come BEFORE `/mentorship/:id`, or Express matches "requests" and
+// "mentors" as a pair id.
 router.get(
   '/mentorship',
+  validate(mentorshipQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listMentorship(req.auth!.institutionId) });
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await mentorship.listMentorship(req.auth!.institutionId, {
+        scope: (req.query as { scope?: 'active' | 'pending' | 'history' | 'all' }).scope,
+        viewer,
+      }),
+    });
   }),
 );
 
+// The office inbox. Separate from the graduate's own request list.
+router.get(
+  '/mentorship/requests',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await mentorship.listRequests(req.auth!.institutionId, {
+        status: (req.query as { status?: string }).status,
+        forMentor: (req.query as { forMentor?: string }).forMentor === 'true',
+        viewer,
+      }),
+    });
+  }),
+);
+
+router.post(
+  '/mentorship/requests',
+  validate(mentorshipRequestSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await mentorship.createRequest(viewer, req.body) });
+  }),
+);
+
+// Ranked mentor candidates for a request, with the reason for each.
+router.get(
+  '/mentorship/requests/:id/matches',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const { subject } = await matching.subjectForRequest(String(req.params.id), req.auth!.institutionId);
+    const q = req.query as { limit?: string; minScore?: string };
+    res.json({
+      data: await matching.matchMentors(req.auth!.institutionId, subject, {
+        limit: q.limit ? Number(q.limit) : undefined,
+        minScore: q.minScore ? Number(q.minScore) : undefined,
+      }),
+    });
+  }),
+);
+
+router.post(
+  '/mentorship/requests/:id/decide',
+  validate(idParamSchema, 'params'),
+  validate(mentorshipDecisionSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await mentorship.decideRequest(viewer, String(req.params.id), req.body.action, req.body) });
+  }),
+);
+
+router.delete(
+  '/mentorship/requests/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await mentorship.withdrawRequest(viewer, String(req.params.id)) });
+  }),
+);
+
+// The mentor directory: everyone available to mentor, with why they are a match
+// for the asking mentee when a request is supplied.
+router.get(
+  '/mentorship/mentors',
+  validate(mentorshipQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const q = req.query as { field?: string; skill?: string; requestId?: string };
+    if (q.requestId) {
+      const { subject } = await matching.subjectForRequest(q.requestId, req.auth!.institutionId);
+      res.json({ data: await matching.matchMentors(req.auth!.institutionId, subject, { limit: 50, minScore: 0 }) });
+      return;
+    }
+    res.json({
+      data: await mentorship.listMentorDirectory(req.auth!.institutionId, {
+        field: q.field,
+        skill: q.skill,
+        viewer,
+      }),
+    });
+  }),
+);
+
+router.post(
+  '/mentorship/pairs',
+  validate(createPairSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await mentorship.createPair(viewer, req.body) });
+  }),
+);
+
+router.get(
+  '/mentorship/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await mentorship.getPair(req.auth!.institutionId, String(req.params.id), viewer) });
+  }),
+);
+
+router.post(
+  '/mentorship/:id/complete',
+  validate(idParamSchema, 'params'),
+  validate(completePairSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await mentorship.completePair(viewer, String(req.params.id), req.body) });
+  }),
+);
+
+router.post(
+  '/mentorship/:id/remind',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await mentorship.remindMentor(viewer, String(req.params.id)) });
+  }),
+);
+
+// ── Sessions ──
+router.post(
+  '/mentorship/:id/sessions',
+  validate(idParamSchema, 'params'),
+  validate(mentorshipSessionSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await sessions.logSession(viewer, String(req.params.id), req.body) });
+  }),
+);
+
+router.patch(
+  '/mentorship/sessions/:sessionId',
+  validate(idParamSchema, 'params'),
+  validate(updateSessionSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await sessions.updateSession(viewer, String(req.params.sessionId), req.body) });
+  }),
+);
+
+router.post(
+  '/mentorship/sessions/:sessionId/cancel',
+  validate(idParamSchema, 'params'),
+  validate(cancelSessionSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await sessions.cancelSession(viewer, String(req.params.sessionId), req.body.reason) });
+  }),
+);
+
+// ── Goals ──
+router.post(
+  '/mentorship/:id/goals',
+  validate(idParamSchema, 'params'),
+  validate(goalSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await goals.createGoal(viewer, String(req.params.id), req.body) });
+  }),
+);
+
+router.get(
+  '/mentorship/:id/progress',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    // Scoped before the read: this route used to take a bare pairId, so any
+    // authenticated caller could read another institution's goal progress.
+    await mentorship.assertPairInInstitution(req.auth!.institutionId, String(req.params.id));
+    res.json({ data: await goals.progressForPair(String(req.params.id)) });
+  }),
+);
+
+router.patch(
+  '/mentorship/goals/:goalId',
+  validate(idParamSchema, 'params'),
+  validate(goalSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await goals.updateGoal(viewer, String(req.params.goalId), req.body) });
+  }),
+);
+
+router.delete(
+  '/mentorship/goals/:goalId',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await goals.deleteGoal(viewer, String(req.params.goalId)) });
+  }),
+);
+
+// ── Feedback ──
+router.get(
+  '/mentorship/:id/feedback',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await mentorshipFeedback.listFeedback(viewer, String(req.params.id)) });
+  }),
+);
+
+router.post(
+  '/mentorship/:id/feedback',
+  validate(idParamSchema, 'params'),
+  validate(mentorshipFeedbackSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await mentorshipFeedback.submitFeedback(viewer, String(req.params.id), req.body) });
+  }),
+);
+
+router.delete(
+  '/mentorship/:id/feedback',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await mentorshipFeedback.deleteMyFeedback(viewer, String(req.params.id)) });
+  }),
+);
+
+// ── Legacy action route, kept working ───────────────────────
+// `POST /mentorship/:id/approve|decline|remind` predates the request flow and is
+// still called by the office console. Reimplemented over the new service so there
+// is one set of rules rather than two.
 const MENTORSHIP_ACTIONS = ['approve', 'decline', 'remind'] as const;
 router.post(
   '/mentorship/:id/:action',
@@ -806,13 +1063,13 @@ router.post(
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Unknown mentorship action' } });
       return;
     }
-    const result = await service.mentorshipAction(
-      req.auth!.institutionId,
-      String(req.params.id),
-      action as 'approve' | 'decline' | 'remind',
-      req.auth!.userId,
-    );
-    res.json({ data: result });
+    const viewer = await viewerFor(req);
+    res.json({
+      data:
+        action === 'remind'
+          ? await mentorship.remindMentor(viewer, String(req.params.id))
+          : await mentorship.decidePair(viewer, String(req.params.id), action as 'approve' | 'decline', req.body?.reason),
+    });
   }),
 );
 
