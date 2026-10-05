@@ -175,11 +175,17 @@ ok(/Notifications:\s*\{[^}]*component:\s*NotificationsModule/.test(f11EntrySrc),
   'Notifications is registered in FEATURE_MODULES');
 ok(/onNotificationsPress/.test(f11EntrySrc) && /setCurrentScreen\('Notifications'\)/.test(f11EntrySrc),
   'and the shell is what actually opens it');
-const profileSrc = read(FEATURE_DIR, 'pages', 'profile', 'profile.js');
-ok(/onNotificationsPress/.test(profileSrc),
-  'the Profile tab renders the control that calls that handler');
-ok(/Notifications/.test(profileSrc) || /notification/i.test(profileSrc),
-  'and the Profile tab is the screen the officer is on when they do');
+// The bell lives in the app SHELL header, not in the Profile screen — the
+// header is rendered above every tab. Asserting the handler reaches an actual
+// pressable, because a handler that is passed and never wired up is the failure
+// that looks exactly like a working bell.
+const headerSrc = read(FEATURE_DIR, 'components', 'AccountsHeader.js');
+ok(/onNotificationsPress/.test(headerSrc),
+  'the header accepts the notifications handler');
+ok(/onPress=\{onNotificationsPress\}/.test(headerSrc),
+  'and binds it to a pressable, rather than accepting and ignoring it');
+ok(/<AccountsHeader[\s\S]*onNotificationsPress=/.test(f11EntrySrc),
+  'and the shell is what passes it');
 // The tile must not still describe itself as a one-way broadcast tool.
 ok(!/desc:\s*'Broadcast to students'/.test(read(FEATURE_DIR, 'pages', 'notifications', 'notificationsMeta.js')),
   'and the tile no longer claims the desk is only "Broadcast to students"');
