@@ -1,4 +1,4 @@
-﻿import { Router } from 'express';
+import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
@@ -10,7 +10,6 @@ import {
   directoryQuerySchema,
   idParamSchema,
   rsvpDecisionSchema,
-  broadcastSchema,
   chapterQuerySchema,
   chapterMembersQuerySchema,
   connectionsQuerySchema,
@@ -70,7 +69,12 @@ import * as matching from './matching.service.js';
 import * as sessions from './sessions.service.js';
 import * as goals from './goals.service.js';
 import * as mentorshipFeedback from './feedback.service.js';
+// `broadcastSchema` is no longer imported: the broadcast contract moved into
+// notifications/notifications.schemas.ts and now takes a structured audience
+// (`{ kind, value }`) instead of two hardcoded literals. The old schema would have
+// kept validating a payload the new service cannot use.
 import donationsRoutes from './donations/donations.routes.js';
+import notificationsRoutes from './notifications/notifications.routes.js';
 
 // Alumni Relations module — mounted at /api/v1/alumni (docs/users/12 §4)
 const router = Router();
@@ -800,6 +804,19 @@ router.delete(
 // applies to every donation route, and a STUDENT is refused exactly as before.
 router.use('/donations', donationsRoutes);
 
+// -- AL-07 notifications ---------------------------------------------------------
+// Split for the same reason as donations, and it needed it more: the inbox grew a
+// category filter, pagination, single-row read, an eight-category mute list and an
+// on-demand reminder sweep, which is more surface than the rest of this file.
+//
+// Ordering against the donations mount does not matter — the prefixes are distinct.
+// The ordering that DOES matter is inside notifications.routes.ts, where `/categories`
+// and `/preferences` must precede `/:id`.
+//
+// The sub-router inherits `auth` + `requireRole('ALUMNI','ADMIN')`, so a STUDENT is
+// refused every notification route exactly as before.
+router.use('/notifications', notificationsRoutes);
+
 // ── AL-05 mentorship ────────────────────────────────────────
 // Literal paths come BEFORE `/mentorship/:id`, or Express matches "requests" and
 // "mentors" as a pair id.
@@ -1072,34 +1089,13 @@ router.post(
 );
 
 // AL-07 notifications + broadcast
-router.get(
-  '/notifications',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listNotifications(req.auth!.userId, req.auth!.institutionId) });
-  }),
-);
-
-router.post(
-  '/notifications/read-all',
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.markAllRead(req.auth!.userId, req.auth!.institutionId),
-    });
-  }),
-);
-
-router.post(
-  '/broadcasts',
-  validate(broadcastSchema),
-  wrap(async (req, res) => {
-    const result = await service.createBroadcast(
-      req.auth!.institutionId,
-      req.auth!.userId,
-      req.body,
-    );
-    res.status(201).json({ data: result });
-  }),
-);
+//
+// Replaced by the `notifications` sub-router mounted at the top of this file. The
+// inline handlers that used to live here could not filter, could not paginate, had
+// no single-row read, and typed every chapter announcement as BROADCAST — so there
+// was nowhere to put a category, a mute, or a dedupe key. They are deleted rather
+// than left shadowed, because two readers of `/alumni/notifications` in one file is
+// how the donations sub-router was nearly shipped alongside its own inline twin.
 
 // AL-08 profile
 router.get(

@@ -148,6 +148,11 @@ async function main() {
   // ── GET /dues ──────────────────────────────────────────────
   console.log('\nGET /dues');
   const list = await req('GET', '/api/v1/accounts/dues', { token });
+  // The seeded demo data already carries waived bills. "Returned to its opening
+  // value" therefore has to be compared against the value captured HERE, not
+  // against a literal 0 — the old assertion failed on a perfectly healthy book
+  // and would have gone on failing forever.
+  const openingWaivedCount: number = list.json?.data?.stats?.waivedCount ?? -1;
   check('200 OK', list.status === 200, `got ${list.status}`);
   const d = list.json?.data;
   check('shape has stats / aging / dues', !!d?.stats && Array.isArray(d?.aging) && Array.isArray(d?.dues));
@@ -289,22 +294,38 @@ async function main() {
   // ── Cross-feature coherence ────────────────────────────────
   console.log('\ncoherence with Collections');
   const listAfter = await req('GET', '/api/v1/accounts/dues', { token });
-  check('the due is open again in the list',
-    listAfter.json?.data?.dues?.some((x: any) => x.id === openDue.id && x.collectible === true));
+  // On page one of a 50-row page, this asserted the SORT rather than the
+  // reinstatement: the book has far more open bills than fit on the first page,
+  // so a bill reinstated to the bottom simply never appeared. Ask for it by id.
+  const detailAfter = await req('GET', `/api/v1/accounts/dues/${openDue.id}`, { token });
+  const reopened = detailAfter.json?.data?.due;
+  check('the due is open again, with a live balance',
+    reopened?.status !== 'WAIVED' && reopened?.status !== 'SUPERSEDED' && reopened?.balanceRupees > 0,
+    `status ${reopened?.status}, balance ${reopened?.balanceRupees}`);
+  check('and the server offers to collect it',
+    reopened?.canCollect === true, `canCollect ${reopened?.canCollect}`);
+  check('and it is genuinely on the open list, fetched to be sure',
+    (await req('GET', `/api/v1/accounts/dues?q=${encodeURIComponent(beforeWaive.title)}&take=200`, { token }))
+      .json?.data?.dues?.some((x: any) => x.id === openDue.id && x.collectible === true));
   check('waivedCount returned to its opening value',
-    listAfter.json?.data?.stats?.waivedCount === 0,
-    `got ${listAfter.json?.data?.stats?.waivedCount}`);
+    listAfter.json?.data?.stats?.waivedCount === openingWaivedCount,
+    `got ${listAfter.json?.data?.stats?.waivedCount}, opened at ${openingWaivedCount}`);
 
-  const dash = await req('GET', '/api/v1/accounts/dashboard', { token });
-  check('dashboard still 200s after dues churn', dash.status === 200, `got ${dash.status}`);
+  // F-11 replaced `/accounts/dashboard` with the seven-block `/overview`.
+  const dash = await req('GET', '/api/v1/accounts/dashboard/overview', { token });
+  check('dashboard overview still 200s after dues churn', dash.status === 200, `got ${dash.status}`);
 
   const ledger = await req('GET', '/api/v1/accounts/ledger', { token });
   check('ledger still 200s', ledger.status === 200, `got ${ledger.status}`);
 
   // The dashboard's unpaid figure must equal the dues desk's outstanding figure.
-  const dupes = dash.json?.data?.stats?.unpaidDues;
+  // This is the cross-screen invariant: two screens, one rupee, one answer.
+  const dupes = dash.json?.data?.dues?.outstandingRupees;
   const outst = listAfter.json?.data?.stats?.outstandingRupees;
-  check('dashboard unpaidDues == dues outstandingRupees', dupes === outst, `${dupes} vs ${outst}`);
+  check('dashboard DUES block == dues outstandingRupees', dupes === outst, `${dupes} vs ${outst}`);
+  const dashOverdue = dash.json?.data?.dues?.overdueRupees;
+  const deskOverdue = listAfter.json?.data?.stats?.overdueRupees;
+  check('dashboard overdue == dues overdueRupees', dashOverdue === deskOverdue, `${dashOverdue} vs ${deskOverdue}`);
 }
 
 async function runCleanup() {

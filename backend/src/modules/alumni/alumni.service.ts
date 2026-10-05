@@ -1,4 +1,4 @@
-﻿// Alumni Relations service (docs/users/12 §3 data contracts, rupee fields at API edge).
+// Alumni Relations service (docs/users/12 §3 data contracts, rupee fields at API edge).
 // Money: stored paise → API rupees (divide by 100). Tenant-scoped by institutionId.
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict } from '../../lib/errors.js';
@@ -280,111 +280,16 @@ export async function recordDonation(institutionId: string, donationId: string, 
   };
 }
 
+// AL-07 Notifications + broadcast
+//
+// `listNotifications`, `markAllRead` and `createBroadcast` were deleted from this file
+// and now live in `./notifications/`, reached through the `notifications` sub-router.
+// They could not stay: the inbox needed a category filter, a page, a single-row read and
+// a mute list; the broadcast needed a real audience instead of two hardcoded values,
+// plus a `deletedAt` filter on every branch. A half-migrated pair - a route here and
+// a service there - is how two inboxes end up reading one table differently.
 
-// ── AL-07 Notifications + broadcast ─────────────────────────
-export async function listNotifications(userId: string, institutionId: string) {
-  const [items, unread] = await Promise.all([
-    prisma.notification.findMany({
-      where: { recipientUserId: userId, institutionId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    }),
-    prisma.notification.count({ where: { recipientUserId: userId, institutionId, readAt: null } }),
-  ]);
-  return {
-    unread,
-    notifications: items.map((n) => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      body: n.body,
-      read: n.readAt !== null,
-      createdAt: n.createdAt,
-      data: n.dataJson ? JSON.parse(n.dataJson) : null,
-    })),
-  };
-}
-
-export async function markAllRead(userId: string, institutionId: string) {
-  const res = await prisma.notification.updateMany({
-    where: { recipientUserId: userId, institutionId, readAt: null },
-    data: { readAt: new Date() },
-  });
-  return { updated: res.count };
-}
-
-export async function createBroadcast(
-  institutionId: string,
-  senderUserId: string,
-  body: { audience: string; templateKey: string; title: string; body: string },
-) {
-  // Resolve audience → recipient userIds
-  let recipientIds: string[] = [];
-  if (body.audience === 'ALL_ALUMNI') {
-    const users = await prisma.alumniProfile.findMany({
-      where: { user: { institutionId, deletedAt: null } },
-      select: { userId: true },
-    });
-    recipientIds = users.map((u) => u.userId);
-  } else if (body.audience === 'CITY_BENGALURU') {
-    const users = await prisma.alumniProfile.findMany({
-      where: { user: { institutionId }, chapter: { city: 'Bengaluru' } },
-      select: { userId: true },
-    });
-    recipientIds = users.map((u) => u.userId);
-  } else if (body.audience === 'MENTORS') {
-    const users = await prisma.mentorshipPair.findMany({
-      where: { menteeStudentProfile: { user: { institutionId } }, status: 'ACTIVE' },
-      select: { mentorAlumniUserId: true },
-    });
-    recipientIds = [...new Set(users.map((u) => u.mentorAlumniUserId))];
-  } else if (body.audience === 'BATCH_2024') {
-    const users = await prisma.alumniProfile.findMany({
-      where: { user: { institutionId }, graduationYear: 2024 },
-      select: { userId: true },
-    });
-    recipientIds = users.map((u) => u.userId);
-  }
-
-  const broadcast = await prisma.broadcast.create({
-    data: {
-      institutionId,
-      senderUserId,
-      audienceJson: JSON.stringify({ audience: body.audience }),
-      templateKey: body.templateKey,
-      title: body.title,
-      body: body.body,
-      channels: 'IN_APP',
-      sentAt: new Date(),
-    },
-  });
-
-  if (recipientIds.length > 0) {
-    await prisma.notification.createMany({
-      data: recipientIds.map((rid) => ({
-        institutionId,
-        recipientUserId: rid,
-        type: 'BROADCAST',
-        title: body.title,
-        body: body.body,
-        sourceModule: 'alumni',
-      })),
-    });
-  }
-
-  await writeAudit({
-    actorUserId: senderUserId,
-    institutionId,
-    action: 'broadcast.send',
-    entityType: 'Broadcast',
-    entityId: broadcast.id,
-    after: { audience: body.audience, recipients: recipientIds.length },
-  });
-
-  return { id: broadcast.id, recipients: recipientIds.length };
-}
-
-// ── AL-08 Profile ───────────────────────────────────────────
+// -- AL-08 Profile --------------------------------------------------------------------
 export async function getProfile(userId: string, institutionId: string) {
   const user = await prisma.user.findFirst({
     where: { id: userId, institutionId },

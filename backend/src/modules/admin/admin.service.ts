@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { notFound } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { fanOutAnnouncement } from '../alumni/notifications/notifications.announcements.js';
 
 const prisma = new PrismaClient();
 
@@ -321,6 +322,48 @@ export async function decideAnnouncement(institutionId: string, userId: string, 
   if (!announcement) throw notFound('Announcement not found');
   const updated = await prisma.announcement.update({ where: { id: announcementId }, data: { status: decision } });
   await writeAudit({ institutionId, actorUserId: userId, action: `ANNOUNCEMENT_${decision}`, entityType: 'Announcement', entityId: announcementId });
+
+  // Fan out on the PUBLISHED transition.
+  //
+  // Two things were missing here. First, nothing at all was written to
+  // `notifications` — publishing flipped a string and nobody was told, so an
+  // admin's "Library extended hours" notice reached the students it was written
+  // for only if they happened to open an announcements screen. Second,
+  // `publishedAt` was never set on this path, so "never published" and "published
+  // months ago" were indistinguishable on the row; only the seed ever wrote it.
+  //
+  // The status is updated BEFORE the fan-out so a notification can never exist for
+  // an announcement that is not PUBLISHED. A mail that outlives its own rejection is
+  // not retractable.
+  if (decision === 'PUBLISHED') {
+    const published = await prisma.announcement.update({
+      where: { id: announcementId },
+      data: { status: decision, publishedAt: new Date() },
+    });
+    const result = await fanOutAnnouncement(institutionId, published);
+
+    // Recorded separately from the ANNOUNCEMENT_PUBLISHED entry above, because
+    // "published" and "actually delivered to N people" are different facts and the
+    // audit log is the only place the second one survives.
+    await writeAudit({
+      institutionId,
+      actorUserId: userId,
+      action: 'ANNOUNCEMENT_FANOUT',
+      entityType: 'Announcement',
+      entityId: announcementId,
+      after: {
+        audience: result.kind,
+        resolved: result.userIds.length,
+        delivered: result.delivered,
+        muted: result.muted,
+        unresolved: result.unresolved,
+        reason: result.reason ?? null,
+      },
+    });
+
+    return { ...updated, publishedAt: published.publishedAt, fanOut: result };
+  }
+
   return updated;
 }
 

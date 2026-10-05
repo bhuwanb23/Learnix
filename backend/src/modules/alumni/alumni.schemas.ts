@@ -411,13 +411,13 @@ export const rsvpDecisionSchema = z.object({
   decision: z.enum(['CONFIRMED', 'DECLINED']),
 });
 
-export const broadcastSchema = z.object({
-  audience: z.enum(['ALL_ALUMNI', 'BATCH_2024', 'CITY_BENGALURU', 'MENTORS']),
-  templateKey: z.enum(['EVENT_INVITE', 'NEWSLETTER', 'REUNION', 'DONATION_APPEAL']),
-  title: z.string().min(3).max(120),
-  body: z.string().min(3).max(2000),
-});
+// `broadcastSchema` was removed from this file. It pinned the audience to two
+// literals - 'BATCH_2024' and 'CITY_BENGALURU' - which meant a graduate who finished
+// in any other year could not be reached by any broadcast, ever. The replacement is
+// `notifications/notifications.schemas.ts#broadcastCreateSchema`, which takes
+// `{ kind, value }` and validates that the value is present when the kind needs one.
 
+// �� AL-11 mentorship actions ����������������������������������
 export const mentorshipActionSchema = z.object({
   action: z.enum(['approve', 'decline', 'remind']).optional(),
 });

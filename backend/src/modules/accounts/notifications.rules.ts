@@ -151,6 +151,41 @@ export const TYPE_META: Record<string, TypeMeta> = {
   MENTORSHIP: { label: 'Mentorship', category: null, icon: 'people-outline', color: '#64748b' },
   SOCIAL: { label: 'Social', category: null, icon: 'happy-outline', color: '#64748b' },
   DONATION: { label: 'Donation', category: null, icon: 'gift-outline', color: '#64748b' },
+
+  // -- Alumni desk (src/modules/alumni/notifications/notifications.rules.ts) ----
+  //
+  // APPEND-ONLY. Four new keys, all `category: null` for the reason stated above:
+  // these are not finance messages and must stay out of the finance inbox. They are
+  // declared so an alumni row that reaches a finance inbox is LABELLED correctly
+  // rather than falling through to the SYSTEM default.
+  //
+  // `EVENT` and `EVENT_REG` above are deliberately NOT redefined. The alumni desk
+  // reuses both rather than inventing `EVENT_REMINDER`-style duplicates:
+  //
+  //   EVENT      - an RSVP decision on an event (33 live rows)
+  //   EVENT_REG  - seat confirmed / waitlisted / promoted (1 live row, from the
+  //                transport desk; alumni now shares the key)
+  //
+  // So only the genuinely new keys are added here. `check-notifications.ts` asserts
+  // that every type the alumni rules file owns appears in this registry, which is
+  // how the two copies are kept from drifting.
+  //
+  // `ALUMNI_BROADCAST` exists because the alumni desk had been writing plain
+  // `BROADCAST`, which this file maps to the FINANCE announcement category. The
+  // alumni desk now writes its own type and keeps plain `BROADCAST` only as a
+  // legacy value for rows already on disk. Do not "simplify" it back.
+  EVENT_REMINDER: { label: 'Event reminder', category: null, icon: 'alarm-outline', color: '#64748b' },
+  CHAPTER: { label: 'Chapter news', category: null, icon: 'location-outline', color: '#64748b' },
+  // The KEY is `ANNOUNCEMENT` because that is the literal value the alumni desk
+  // writes to `Notification.type` - a registry key that does not match the emitted
+  // string is worse than no entry, because the row then falls through to the
+  // unknown-type default and lands in the FINANCE inbox as a "System alert".
+  //
+  // `category: null` despite the name colliding with the `ANNOUNCEMENT` CATEGORY id
+  // above: `TYPE_META` is keyed by type and `CATEGORIES` by category, and they are
+  // separate maps. `BROADCAST` claims the ANNOUNCEMENT category; this key does not.
+  ANNOUNCEMENT: { label: 'Institutional', category: null, icon: 'newspaper-outline', color: '#64748b' },
+  ALUMNI_BROADCAST: { label: 'Alumni office broadcast', category: null, icon: 'megaphone-outline', color: '#64748b' },
 };
 
 /**
