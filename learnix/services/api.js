@@ -223,13 +223,52 @@ export const alumniApi = {
     api.patch(`/alumni/events/${id}/photos/${photoId}`, { caption }),
   deleteEventPhoto: (id, photoId) => api.delete(`/alumni/events/${id}/photos/${photoId}`),
 
+  // ── Donations & fundraising (AL-04) ──
+  // `donations` is the ledger: filters are campaignId / fund / status / year /
+  // `mine`. There is deliberately no userId filter — "my giving" is resolved from
+  // the session on the server, so a client cannot ask to read someone else's.
   donations: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
     ).toString();
     return api.get(`/alumni/donations${qs ? `?${qs}` : ''}`);
   },
+  donation: (id) => api.get(`/alumni/donations/${id}`),
+  // An alumnus commits to a gift. Returns a PLEDGE — the office confirms the
+  // money, and only then is a receipt issued.
+  pledgeDonation: (payload) => api.post('/alumni/donations', payload),
   recordDonation: (id) => api.post(`/alumni/donations/${id}/record`),
+  donationReceipt: (id) => api.get(`/alumni/donations/${id}/receipt`),
+  // Narrow by design: confirms a receipt number is real, returns amount and
+  // validity, never a donor name.
+  verifyReceipt: (receiptNo) =>
+    api.get(`/alumni/donations/receipts/verify?receiptNo=${encodeURIComponent(receiptNo)}`),
+
+  campaigns: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/donations/campaigns${qs ? `?${qs}` : ''}`);
+  },
+  campaign: (id) => api.get(`/alumni/donations/campaigns/${id}`),
+  createCampaign: (payload) => api.post('/alumni/donations/campaigns', payload),
+  updateCampaign: (id, payload) => api.patch(`/alumni/donations/campaigns/${id}`, payload),
+
+  recurringGifts: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/donations/recurring${qs ? `?${qs}` : ''}`);
+  },
+  createRecurringGift: (payload) => api.post('/alumni/donations/recurring', payload),
+  setRecurringGiftStatus: (id, payload) => api.post(`/alumni/donations/recurring/${id}/status`, payload),
+  // Office action. There is no scheduler in this app, so this is what actually
+  // turns due mandates into donations — safe to press twice.
+  chargeDueRecurringGifts: () => api.post('/alumni/donations/recurring/charge-due'),
+  // Derived entirely from the caller's own gifts on the server. Declared before
+  // `donation(id)` in spirit only — they are different paths — but named to make
+  // it obvious this is "my" impact, not the programme's.
+  donationsImpact: () => api.get('/alumni/donations/impact'),
 
   // ── Mentorship (AL-05) ──
   // `scope` is active | pending | history | all. `history` exists because the old
@@ -793,7 +832,32 @@ function reportQs(filters) {
 }
 
 export const accountsApi = {
-  dashboard: () => api.get('/accounts/dashboard'),
+  // F-11 Dashboard (docs/users/06 §3.11). The single `dashboard()` call is
+  // replaced by a catalogue plus seven blocks: the old endpoint returned six
+  // differently-shaped fragments and could not be extended without breaking
+  // every screen that read it.
+  //
+  //   GET /accounts/dashboard/catalogue   the 7 blocks, 3 alert families,
+  //                                       8 alert kinds, 4 quick actions,
+  //                                       5 windows and every threshold
+  //   GET /accounts/dashboard/overview    all seven blocks in ONE response
+  //   GET /accounts/dashboard/alerts      the alerts, optionally one family
+  //   GET /accounts/dashboard/actions     the quick actions with live counts
+  //   GET /accounts/dashboard/blocks/:id  one block on its own
+  //
+  // `blocks/:id` is NOT `/dashboard/blocks`, so the literal paths above cannot be
+  // read as a block id — but they are registered first on the server regardless,
+  // for the same reason the notification literals are.
+  dashboardCatalogue: () => api.get('/accounts/dashboard/catalogue'),
+  /** All seven blocks at once: the hub shows them together, so one call is one moment. */
+  dashboardOverview: () => api.get('/accounts/dashboard/overview'),
+  /** `family` is UNUSUAL | OVERDUE | RECONCILIATION. A misspelled one is a 422, not an empty list. */
+  dashboardAlerts: ({ family } = {}) =>
+    api.get(`/accounts/dashboard/alerts${reportQs({ family })}`),
+  /** Each action carries the live count of what it would act on. */
+  dashboardActions: () => api.get('/accounts/dashboard/actions'),
+  /** One block: COLLECTIONS | DUES | EXPENSES | PAYROLL | SCHOLARSHIPS | ALERTS | QUICK_ACTIONS. */
+  dashboardBlock: (block) => api.get(`/accounts/dashboard/blocks/${encodeURIComponent(block)}`),
   collections: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),

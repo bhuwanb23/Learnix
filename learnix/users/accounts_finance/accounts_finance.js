@@ -19,6 +19,18 @@ import DuesModule from './pages/dues/dues';
 import PayrollModule from './pages/payroll/payroll';
 import AccountsProfile from './pages/profile/profile';
 
+// F-11 Dashboard sub-screens (docs/users/06 §3.11) — one per block, seven deep,
+// so every import path below is '../../../../../../services/api' from inside.
+// They are registered as `Dashboard<Block>` below, and `audit-dashboard-ui.ts`
+// asserts that every route the server publishes resolves to one of these keys.
+import DashboardCollections from './pages/dashboard/pages/collections/collections';
+import DashboardDues from './pages/dashboard/pages/dues/dues';
+import DashboardExpenses from './pages/dashboard/pages/expenses/expenses';
+import DashboardPayroll from './pages/dashboard/pages/payroll/payroll';
+import DashboardScholarships from './pages/dashboard/pages/scholarships/scholarships';
+import DashboardAlerts from './pages/dashboard/pages/alerts/alerts';
+import DashboardActions from './pages/dashboard/pages/actions/actions';
+
 // Collections sub-pages (pages/collections/*)
 import CollectPayment from './pages/collections/collect_payment/collect_payment';
 import CollectionDetail from './pages/collections/collection_detail/collection_detail';
@@ -101,6 +113,19 @@ const FEATURE_MODULES = {
   Scholarships: { title: 'Scholarships', icon: 'ribbon-outline', component: ScholarshipsModule },
   Reports: { title: 'Reports & Analytics', icon: 'stats-chart-outline', component: ReportsModule },
   Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsModule },
+
+  // F-11 Dashboard sub-screens (docs §3.11). The keys are `Dashboard<Block>` — the
+  // same block ids the server publishes, so the catalogue the app receives names
+  // these screens directly. They are NOT derived by a helper here: seven separate
+  // modules must exist at build time, so the mapping is written out and
+  // `audit-dashboard-ui.ts` checks the server's list against it.
+  DashboardCollections: { title: 'Total Collection', icon: 'cash-outline', component: DashboardCollections },
+  DashboardDues: { title: 'Outstanding Dues', icon: 'alert-circle-outline', component: DashboardDues },
+  DashboardExpenses: { title: 'Expense Overview', icon: 'receipt-outline', component: DashboardExpenses },
+  DashboardPayroll: { title: 'Payroll Summary', icon: 'card-outline', component: DashboardPayroll },
+  DashboardScholarships: { title: 'Scholarship Status', icon: 'ribbon-outline', component: DashboardScholarships },
+  DashboardAlerts: { title: 'Financial Alerts', icon: 'warning-outline', component: DashboardAlerts },
+  DashboardActions: { title: 'Quick Actions', icon: 'flash-outline', component: DashboardActions },
 
   // Fee structure sub-pages (docs §3.5)
   FeeStructureDetail: { title: 'Fee Structure', icon: 'pricetag-outline', component: FeeStructureDetail },

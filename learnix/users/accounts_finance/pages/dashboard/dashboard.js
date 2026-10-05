@@ -1,222 +1,436 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl,
-} from 'react-native';
+// F-11 Dashboard — the finance officer's morning screen (docs/users/06 §3.11).
+//
+// What this screen replaced: a hero reading "₹4.2 Cr collected of ₹5.1 Cr target"
+// where the "target" was the sum of every ACTIVE fee structure — a price list,
+// not a goal, so the ratio could exceed 100% and did — plus three stat tiles, a
+// list of five recent payments, four budget bars whose percentages were CLAMPED
+// so a line at 180% of plan read "100%", and two alert strings ("3 expense(s)
+// awaiting approval") with no figure and nowhere to go.
+//
+// It is now seven blocks, each answering one question, each with a route:
+//
+//   1. Total collection   — today, this month, this semester
+//   2. Outstanding dues   — balances, not billed amounts; overdue by due date
+//   3. Expense overview   — month vs fiscal-year plan, plus what's pending
+//   4. Payroll summary    — this month's run, salaries due, and when
+//   5. Scholarship status — promised vs approved vs actually released
+//   6. Financial alerts   — unusual, overdue, and reconciliation, in families
+//   7. Quick actions      — four, each with the live count of what it acts on
+//
+// EVERYTHING COMES FROM ONE CALL. The block list is NOT hard-coded here: it
+// arrives from `/dashboard/catalogue` with each block's id, label, icon, colour
+// and route, so a block added on the server draws itself. `dashboardMeta.js`
+// still mirrors the ids because the seven sub-screens are separate modules that
+// must exist at build time, and `audit-dashboard-ui.ts` asserts the two agree.
+//
+// The hero says WHICH WINDOW it is showing. The old one had no window at all, so
+// "₹4.2 Cr collected" and "₹18.4 L collected" were the same sentence — and a
+// number with nothing to compare it to is not information.
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../services/api';
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
-const MODULES = [
-  { id: 'FeeStructure', label: 'Fee Structure', desc: 'Program fees & revisions', icon: 'school-outline', color: '#2563eb' },
-  { id: 'Expenses', label: 'Expenses', desc: 'Approve & track expenses', icon: 'receipt-outline', color: '#059669' },
-  { id: 'Scholarships', label: 'Scholarships', desc: 'Awards & disbursements', icon: 'gift-outline', color: '#d97706' },
-  { id: 'Reports', label: 'Reports', desc: 'Finance analytics', icon: 'analytics-outline', color: '#0284c7' },
-  // The desk is not only "broadcast to students" any more (docs §3.9): it is the
-// officer's inbox across all seven finance categories, plus the financial alerts
-// and the announcement composer. Saying otherwise here is what made the tile
-// look like a one-way spam tool.
-  { id: 'Notifications', label: 'Notifications', desc: 'Inbox, alerts & announcements', icon: 'notifications-outline', color: '#dc2626' },
-];
+import {
+  THEME, GREEN, RED, AMBER, SLATE, MUTED,
+  compactRupees, rupees, windowMeta, percentPhrase,
+} from './dashboardMeta';
+import {
+  ActionTile, BlockCard, DashboardScreen, Section, SpendBar, StatGrid, StatCell,
+  goToRoute, useDashboard,
+} from './dashboardUi';
 
 export default function AccountsDashboard({ navigation }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const catalogue = useDashboard(() => accountsApi.dashboardCatalogue());
+  const overview = useDashboard(() => accountsApi.dashboardOverview());
 
-  const fetchData = useCallback(async () => {
-    try {
-      setError(null);
-      const result = await accountsApi.dashboard();
-      setData(result);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const reload = useCallback(() => {
+    catalogue.reload();
+    overview.reload();
+  }, [catalogue, overview]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-  const onRefresh = () => { setRefreshing(true); fetchData(); };
+  // The block list comes from the server. The mirror in dashboardMeta.js is the
+  // FALLBACK for the frame before the catalogue lands, and nothing more — a
+  // fallback that also acted as the source would be a second list to keep true.
+  const blocks = catalogue.data?.blocks ?? [];
+  const thresholds = catalogue.data?.thresholds ?? {};
 
-  const handleModulePress = (moduleId) => {
-    if (moduleId === 'Collections' || moduleId === 'Dues' || moduleId === 'Payroll') {
-      navigation.switchTab(moduleId);
-    } else {
-      navigation.openModule(moduleId);
-    }
-  };
+  const d = overview.data;
+  const collections = d?.collections;
+  const dues = d?.dues;
+  const expenses = d?.expenses;
+  const payroll = d?.payroll;
+  const scholarships = d?.scholarships;
+  const alerts = d?.alerts;
+  const actions = d?.actions ?? [];
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /><Text style={styles.loadingText}>Loading finance data…</Text></View>;
-  }
+  const reloadBoth = () => reload();
 
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color="#dc2626" />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={fetchData}><Text style={styles.retryText}>Retry</Text></TouchableOpacity>
+  return (
+    <DashboardScreen
+      loading={overview.loading && catalogue.loading}
+      refreshing={overview.refreshing || catalogue.refreshing}
+      error={overview.error ?? catalogue.error}
+      onRetry={reloadBoth}
+      onRefresh={reloadBoth}
+    >
+      {/* The hero. It states the WINDOW before the number, because the number
+          means something different in each one — and it states that there is no
+          target, because the old target was a fiction built out of a price list. */}
+      <View style={styles.hero}>
+        <View style={styles.heroTop}>
+          <Text style={styles.heroLabel}>Collected this month</Text>
+          <View style={styles.heroStamp}>
+            <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.9)" />
+            <Text style={styles.heroStampText}>Calendar month</Text>
+          </View>
+        </View>
+        <Text style={styles.heroValue}>{rupees(collections?.monthRupees ?? 0)}</Text>
+        <View style={styles.heroRule} />
+        <View style={styles.heroRow}>
+          <View style={styles.heroCell}>
+            <Text style={styles.heroCellLabel}>Today</Text>
+            <Text style={styles.heroCellValue}>{compactRupees(collections?.todayRupees ?? 0)}</Text>
+            <Text style={styles.heroCellNote}>{collections?.todayCount ?? 0} receipt{collections?.todayCount === 1 ? '' : 's'}</Text>
+          </View>
+          <View style={styles.heroDivider} />
+          <View style={styles.heroCell}>
+            <Text style={styles.heroCellLabel}>This semester</Text>
+            <Text style={styles.heroCellValue}>{compactRupees(collections?.semesterRupees ?? 0)}</Text>
+            <Text style={styles.heroCellNote} numberOfLines={1}>
+              {collections?.semesterLabel ?? '—'}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.heroFootnote}>
+          {windowMeta('MONTH')?.why}
+        </Text>
       </View>
+
+      {/* The three numbers an officer checks before they check anything else. */}
+      <View style={styles.statCard}>
+        <StatGrid>
+          <StatCell
+            label="Still owing"
+            value={compactRupees(dues?.outstandingRupees ?? 0)}
+            tone={RED}
+            hint="Balance, not billed amount"
+            onPress={() => navigation.openModule('DashboardDues')}
+          />
+          <StatCell
+            label="Of that, overdue"
+            value={compactRupees(dues?.overdueRupees ?? 0)}
+            tone={dues?.overdueRupees > 0 ? RED : GREEN}
+            hint={`${dues?.overdueBills ?? 0} bill${dues?.overdueBills === 1 ? '' : 's'} past due`}
+            onPress={() => navigation.openModule('DashboardDues')}
+          />
+          <StatCell
+            label="Spent this month"
+            value={compactRupees(expenses?.monthRupees ?? 0)}
+            tone={AMBER}
+            hint={`${percentPhrase(expenses?.utilisationPercent)} of FY plan`}
+            onPress={() => navigation.openModule('DashboardExpenses')}
+          />
+          <StatCell
+            label="Salaries still to pay"
+            value={compactRupees(payroll?.pendingRupees ?? 0)}
+            tone={payroll?.overdueRunCount > 0 ? RED : THEME}
+            hint={
+              payroll?.pendingCount > 0
+                ? `${payroll.pendingCount} ${payroll.pendingCount === 1 ? 'person' : 'people'} unpaid`
+                : 'All approved salaries paid'
+            }
+            onPress={() => navigation.openModule('DashboardPayroll')}
+          />
+        </StatGrid>
+      </View>
+
+      {/* A reconciliation warning sits ABOVE the blocks, not below them. If the
+          books do not add up, every figure underneath is provisional, and a user
+          who reads top-to-bottom has to be stopped before they reach the money. */}
+      {alerts && alerts.firing > 0 ? (
+        <TouchableWarningBlock
+          alerts={alerts}
+          navigation={navigation}
+          onPress={() => navigation.openModule('DashboardAlerts')}
+        />
+      ) : null}
+
+      {alerts && alerts.firing === 0 ? (
+        <View style={styles.allClear}>
+          <Ionicons name="shield-checkmark-outline" size={15} color={GREEN} />
+          <Text style={styles.allClearText}>
+            All eight financial checks are clear. Nothing unusual, nothing overdue, and the
+            books add up.
+          </Text>
+        </View>
+      ) : null}
+
+      {/* The seven blocks, in the order they are asked about. */}
+      <Section title="Where the money stands" note="Each opens with its own detail">
+        {blocks.map((block) => (
+          <BlockCard
+            key={block.id}
+            block={block}
+            badge={badgeFor(block.id, { alerts, dues, payroll, scholarships })}
+            onPress={() => goToRoute(navigation, block.route, block.isTab)}
+          >
+            <BlockSummary id={block.id} data={d} />
+          </BlockCard>
+        ))}
+        {blocks.length === 0 ? (
+          <Text style={styles.noBlocks}>
+            The server did not return a block list, so there is nothing to show here.
+          </Text>
+        ) : null}
+      </Section>
+
+      {/* The four actions an officer reaches for in the first five minutes, each
+          with the LIVE count of what it would act on. */}
+      {actions.length > 0 ? (
+        <Section title="Do something now" note="Each shows what it would act on">
+          {actions.map((a) => (
+            <ActionTile
+              key={a.id}
+              action={a}
+              onPress={() => goToRoute(navigation, a.route, a.isTab)}
+            />
+          ))}
+        </Section>
+      ) : null}
+
+      {/* The thresholds, published. An officer who wants to know why a payment
+          was flagged needs the number, not "a large amount". */}
+      {thresholds.unusualMultiple ? (
+        <Text style={styles.footnote}>
+          A payment is flagged as unusual when it is at least {thresholds.unusualMultiple}× the
+          usual payment here and over {rupees(thresholds.unusualFloorRupees)}, or when it is cash
+          over {rupees(thresholds.cashReviewRupees)}. Compared against this institution's own
+          receipts from the last {thresholds.unusualWindowDays} days, not a fixed rule.
+          {'\n'}A defaulter is a bill at least {thresholds.defaulterMinDays} days past its due
+          date, worked out from the date itself. {payroll?.duePolicy ?? ''}
+        </Text>
+      ) : null}
+    </DashboardScreen>
+  );
+}
+
+/**
+ * The badge on a block card.
+ *
+ * Only blocks that have something to count get one, and only counts that mean
+ * "look here" — not a count of every open bill on the dues card, which would be
+ * alarming by default and stop meaning anything.
+ */
+function badgeFor(id, { alerts, dues, payroll, scholarships }) {
+  if (id === 'ALERTS') return alerts?.total ?? 0;
+  if (id === 'DUES') return dues?.defaulterStudents ?? 0;
+  if (id === 'PAYROLL') return payroll?.overdueRunCount ?? 0;
+  if (id === 'SCHOLARSHIPS') return scholarships?.unreleasedCount ?? 0;
+  return null;
+}
+
+/**
+ * One real figure under each block card, so the hub answers something without a
+ * tap.
+ *
+ * This reads from the overview the hub already fetched — no seventh request, and
+ * no chance of the card and the strip disagreeing because they were loaded at
+ * different moments. Each block has its OWN shape, so they are rendered by id
+ * rather than through one generic list; a generic list would print "undefined"
+ * in a column labelled "amount".
+ */
+function BlockSummary({ id, data }) {
+  if (!data) return null;
+
+  if (id === 'COLLECTIONS') {
+    const c = data.collections;
+    return (
+      <>
+        <Text style={styles.summary}>{rupees(c.todayRupees)} today · {rupees(c.monthRupees)} this month</Text>
+        <Text style={styles.summaryNote}>
+          {c.semesterLabel} · {rupees(c.semesterRupees)}
+          {c.reversedCount > 0 ? ` · ${c.reversedCount} reversal${c.reversedCount === 1 ? '' : 's'} excluded` : ''}
+        </Text>
+      </>
     );
   }
 
-  const hero = data?.hero || {};
-  const stats = data?.stats || {};
-  const recentCollections = data?.recentCollections || [];
-  const budget = data?.budget || [];
-  const alerts = data?.alerts || [];
+  if (id === 'DUES') {
+    const d2 = data.dues;
+    return (
+      <>
+        <Text style={styles.summary}>
+          {rupees(d2.outstandingRupees)} across {d2.outstandingBills} open bill{d2.outstandingBills === 1 ? '' : 's'}
+        </Text>
+        <Text style={styles.summaryNote}>
+          {d2.studentsOwing} {d2.studentsOwing === 1 ? 'family' : 'families'} owe · {d2.defaulterStudents} defaulter{d2.defaulterStudents === 1 ? '' : 's'} at {d2.defaulterMinDays}+ days
+        </Text>
+      </>
+    );
+  }
 
+  if (id === 'EXPENSES') {
+    const e = data.expenses;
+    return (
+      <>
+        <Text style={styles.summary}>
+          {rupees(e.spentRupees)} of {rupees(e.plannedRupees)} planned
+        </Text>
+        <SpendBar
+          label={`${e.fiscalYear} budget used`}
+          percent={e.utilisationPercent}
+          display={percentPhrase(e.utilisationPercent)}
+          sublabel={`${rupees(e.remainingRupees)} left · ${rupees(e.pendingRupees)} pending approval`}
+          over={e.overrunCount > 0}
+        />
+      </>
+    );
+  }
+
+  if (id === 'PAYROLL') {
+    const p = data.payroll;
+    if (!p.currentRun) {
+      return (
+        <>
+          <Text style={styles.summary}>No payroll run raised for {p.thisMonthLabel}</Text>
+          <Text style={styles.summaryNote}>
+            {p.staffCount} on the staff roll. A run is a proposal until it is approved, so nothing
+            is owed yet.
+          </Text>
+        </>
+      );
+    }
+    return (
+      <>
+        <Text style={styles.summary}>
+          {p.currentRun.status} · {rupees(p.currentRun.netRupees)} net for {p.currentRun.entryCount} staff
+        </Text>
+        <Text style={styles.summaryNote}>
+          {p.currentRun.paidCount} paid · {p.currentRun.pendingCount} to go
+          {p.pendingCount > 0 ? ` · ${rupees(p.pendingRupees)} outstanding across all runs` : ''}
+        </Text>
+      </>
+    );
+  }
+
+  if (id === 'SCHOLARSHIPS') {
+    const s = data.scholarships;
+    return (
+      <>
+        <Text style={styles.summary}>
+          {rupees(s.disbursedRupees)} released of {rupees(s.approvedRupees)} approved
+        </Text>
+        <Text style={styles.summaryNote}>
+          {percentPhrase(s.releasePercent)} of what was granted has reached a student
+          {s.unreleasedCount > 0 ? ` · ${rupees(s.unreleasedRupees)} still unreleased` : ''}
+        </Text>
+      </>
+    );
+  }
+
+  if (id === 'ALERTS') {
+    const a = data.alerts;
+    if (a.firing === 0) {
+      return <Text style={[styles.summary, { color: GREEN }]}>All eight checks clear.</Text>;
+    }
+    return (
+      <>
+        <Text style={[styles.summary, { color: RED }]}>
+          {a.firing} of {a.kinds.length} firing · {a.total} item{a.total === 1 ? '' : 's'}
+        </Text>
+        <Text style={styles.summaryNote}>
+          {a.families.filter((f) => f.count > 0).map((f) => f.label).join(' · ')}
+        </Text>
+      </>
+    );
+  }
+
+  if (id === 'QUICK_ACTIONS') {
+    const acts = data.actions ?? [];
+    return (
+      <Text style={styles.summaryNote}>
+        {acts.filter((x) => x.enabled !== false).length} of {acts.length} available right now
+      </Text>
+    );
+  }
+
+  return null;
+}
+
+/**
+ * The reconciliation warning.
+ *
+ * It says which family is firing and what the total is, and it sits above every
+ * figure because a user who scrolls past a payroll header that disagrees with
+ * its own payslips has read a net salary total that is not real.
+ */
+function TouchableWarningBlock({ alerts, navigation, onPress }) {
+  const firing = alerts.families.filter((f) => f.count > 0);
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
-      {/* Hero banner */}
-      <View style={styles.heroCard}>
-        <View style={styles.heroRow}>
-          <View style={styles.heroIcon}><Ionicons name="wallet" size={20} color="#2563eb" /></View>
-          <View style={styles.heroText}>
-            <Text style={styles.heroTitle}>FY 2026-27 Financials</Text>
-            <Text style={styles.heroSubtitle}>Collection target {hero.targetPct ?? 0}% • {hero.targetRupees ? `₹${(hero.targetRupees / 100000).toFixed(1)}L target` : 'No target set'}</Text>
-          </View>
-        </View>
-        <View style={styles.heroProgressTrack}>
-          <View style={[styles.heroProgressFill, { width: `${hero.targetPct ?? 0}%` }]} />
-        </View>
-        <Text style={styles.heroNote}>₹{((hero.collectedRupees ?? 0) / 100000).toFixed(1)}L collected of ₹{((hero.targetRupees ?? 0) / 100000).toFixed(1)}L target</Text>
+    <View style={styles.warn}>
+      <View style={styles.warnTop}>
+        <Ionicons name="warning-outline" size={16} color={RED} />
+        <Text style={styles.warnTitle}>
+          {alerts.firing} financial check{alerts.firing === 1 ? '' : 's'} failing
+        </Text>
+        <TouchableOpacity onPress={onPress} activeOpacity={0.8} accessibilityRole="button">
+          <Text style={styles.warnLink}>See all</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        {[
-          { id: 'collected', label: 'Collected', value: `₹${((stats.collected ?? 0) / 1000).toFixed(0)}K`, icon: 'cash', color: '#059669', tab: 'Collections' },
-          { id: 'dues', label: 'Unpaid Dues', value: `₹${((stats.unpaidDues ?? 0) / 1000).toFixed(0)}K`, icon: 'alert-circle', color: '#dc2626', tab: 'Dues' },
-          { id: 'defaulters', label: 'Defaulters', value: stats.defaulterCount?.toString() ?? '0', icon: 'people', color: '#d97706', tab: 'Dues' },
-        ].map((stat) => (
-          <TouchableOpacity key={stat.id} style={styles.statCard} activeOpacity={0.8} onPress={() => navigation.switchTab(stat.tab)}>
-            <View style={[styles.statIcon, { backgroundColor: stat.color + '14' }]}><Ionicons name={stat.icon} size={18} color={stat.color} /></View>
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Recent collections */}
-      {recentCollections.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Collections</Text>
-            <TouchableOpacity onPress={() => navigation.switchTab('Collections')} activeOpacity={0.7}>
-              <Text style={styles.sectionAction}>Record payment</Text>
-            </TouchableOpacity>
-          </View>
-          {recentCollections.slice(0, 3).map((item) => (
-            <View key={item.id} style={styles.collectionCard}>
-              <View style={[styles.collectionIcon, { backgroundColor: '#05966914' }]}><Ionicons name="person-outline" size={16} color="#059669" /></View>
-              <View style={styles.collectionInfo}>
-                <Text style={styles.collectionName}>{item.student}</Text>
-                <Text style={styles.collectionMeta}>{item.category} • {item.method}</Text>
-              </View>
-              <Text style={styles.collectionAmount}>₹{item.amountRupees.toLocaleString()}</Text>
-            </View>
-          ))}
-        </>
-      )}
-
-      {/* Budget utilization */}
-      {budget.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Budget Utilization</Text>
-          </View>
-          {budget.slice(0, 4).map((item) => (
-            <View key={item.id} style={styles.budgetCard}>
-              <View style={styles.budgetHeader}>
-                <Text style={styles.budgetName}>{item.category}</Text>
-                <Text style={[styles.budgetPct, { color: item.utilizationPct > 90 ? '#dc2626' : '#059669' }]}>{item.utilizationPct}%</Text>
-              </View>
-              <View style={styles.budgetTrack}>
-                <View style={[styles.budgetFill, { width: `${item.utilizationPct}%`, backgroundColor: item.utilizationPct > 90 ? '#dc2626' : '#059669' }]} />
-              </View>
-            </View>
-          ))}
-        </>
-      )}
-
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Needs Attention</Text></View>
-          {alerts.map((item, idx) => (
-            <TouchableOpacity key={idx} style={styles.taskCard} activeOpacity={0.8}
-              onPress={() => handleModulePress(item.type === 'PENDING_EXPENSES' ? 'Expenses' : item.type === 'PAYROLL_DUE' ? 'Payroll' : 'Dues')}>
-              <View style={[styles.taskIcon, { backgroundColor: '#d9770614' }]}><Ionicons name="alert-circle-outline" size={16} color="#d97706" /></View>
-              <View style={styles.taskInfo}><Text style={styles.taskTitle}>{item.message}</Text></View>
-              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
-
-      {/* Module hub */}
-      <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Finance Tools</Text></View>
-      <View style={styles.moduleGrid}>
-        {MODULES.map((mod) => (
-          <TouchableOpacity key={mod.id} style={styles.moduleCard} activeOpacity={0.8} onPress={() => handleModulePress(mod.id)}>
-            <View style={[styles.moduleIcon, { backgroundColor: mod.color + '14' }]}><Ionicons name={mod.icon} size={20} color={mod.color} /></View>
-            <Text style={styles.moduleLabel}>{mod.label}</Text>
-            <Text style={styles.moduleDesc} numberOfLines={2}>{mod.desc}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+      <Text style={styles.warnBody}>
+        {firing.map((f) => `${f.label} (${f.count})`).join(' · ')}
+      </Text>
+      <Text style={styles.warnNote}>
+        A reconciliation failure means a figure below may not be right until it is resolved.
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f7f9' },
-  content: { padding: 24, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
-  errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Medium', textAlign: 'center' },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  heroCard: { backgroundColor: '#2563eb', borderRadius: BORDER_RADIUS.lg, padding: 20, marginBottom: 20 },
-  heroRow: { flexDirection: 'row', alignItems: 'center' },
-  heroIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  heroText: { flex: 1 },
-  heroTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.3 },
-  heroSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontFamily: 'Manrope-Regular', marginTop: 2 },
-  heroProgressTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.25)', marginTop: 16, overflow: 'hidden' },
-  heroProgressFill: { height: '100%', borderRadius: 3, backgroundColor: '#FFFFFF' },
-  heroNote: { fontSize: 11, color: 'rgba(255,255,255,0.9)', fontFamily: 'Manrope-Medium', marginTop: 8 },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  statCard: { flex: 1, backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14 },
-  statIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  statValue: { fontSize: 17, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 4 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.3 },
-  sectionAction: { fontSize: 12, color: '#2563eb', fontFamily: 'Manrope-SemiBold' },
-  collectionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
-  collectionIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  collectionInfo: { flex: 1 },
-  collectionName: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  collectionMeta: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
-  collectionAmount: { fontSize: 14, fontWeight: '700', color: '#059669', fontFamily: 'Manrope-Bold' },
-  budgetCard: { backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
-  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  budgetName: { fontSize: 13, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  budgetPct: { fontSize: 13, fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  budgetTrack: { height: 6, borderRadius: 3, backgroundColor: '#eef2f7', marginTop: 8, overflow: 'hidden' },
-  budgetFill: { height: '100%', borderRadius: 3 },
-  taskCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
-  taskIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  taskInfo: { flex: 1 },
-  taskTitle: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
-  moduleCard: { width: '48%', backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 16 },
-  moduleIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  moduleLabel: { fontSize: 14, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginBottom: 2 },
-  moduleDesc: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 16 },
+  hero: { backgroundColor: THEME, borderRadius: 16, padding: 18, marginTop: 4 },
+  heroTop: { flexDirection: 'row', alignItems: 'center' },
+  heroLabel: { flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.9)', fontWeight: '600' },
+  heroStamp: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3,
+  },
+  heroStampText: { fontSize: 9, color: '#fff', fontWeight: '700' },
+  heroValue: { fontSize: 32, fontWeight: '800', color: '#fff', marginTop: 6, letterSpacing: -1 },
+  heroRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.22)', marginVertical: 14 },
+  heroRow: { flexDirection: 'row', alignItems: 'stretch' },
+  heroCell: { flex: 1 },
+  heroDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.22)', marginHorizontal: 14 },
+  heroCellLabel: { fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
+  heroCellValue: { fontSize: 17, fontWeight: '800', color: '#fff', marginTop: 2 },
+  heroCellNote: { fontSize: 9, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  heroFootnote: { fontSize: 9, color: 'rgba(255,255,255,0.8)', marginTop: 14, lineHeight: 14, fontStyle: 'italic' },
+
+  statCard: {
+    backgroundColor: '#fff', borderRadius: 14, borderWidth: 1,
+    borderColor: '#eef2f7', padding: 15, marginTop: 12,
+  },
+
+  warn: {
+    backgroundColor: '#fef2f2', borderRadius: 14, borderWidth: 1,
+    borderColor: '#fecaca', padding: 14, marginTop: 12,
+  },
+  warnTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  warnTitle: { flex: 1, fontSize: 13, fontWeight: '800', color: '#991b1b' },
+  warnLink: { fontSize: 12, fontWeight: '700', color: RED },
+  warnBody: { fontSize: 11, color: '#b91c1c', marginTop: 6, lineHeight: 16, fontWeight: '600' },
+  warnNote: { fontSize: 10, color: '#b91c1c', marginTop: 6, lineHeight: 14, fontStyle: 'italic' },
+
+  allClear: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12,
+    backgroundColor: '#ecfdf5', borderRadius: 12, borderWidth: 1,
+    borderColor: '#a7f3d0', padding: 12,
+  },
+  allClearText: { flex: 1, fontSize: 11, color: '#065f46', lineHeight: 15, fontWeight: '600' },
+
+  summary: { fontSize: 13, fontWeight: '700', color: '#0f172a', marginTop: 10 },
+  summaryNote: { fontSize: 10, color: SLATE, marginTop: 3, lineHeight: 14 },
+  noBlocks: { fontSize: 12, color: MUTED, marginTop: 8 },
+
+  footnote: { fontSize: 10, color: MUTED, marginTop: 18, lineHeight: 15 },
 });
