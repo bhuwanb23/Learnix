@@ -539,9 +539,15 @@ check('  goalCompletion is derived from the goals', progress.data?.goalCompletio
     const pairId = accepted.data?.pairId;
     check('POST /requests/:id/decide accept', accepted.status === 200 && accepted.data?.status === 'ACCEPTED' && !!pairId, pairId ?? `${accepted.status} ${accepted.error?.message}`);
 
-    const mineAfter = await call('GET', '/alumni/mentorship/requests');
+    // Back to the mentee before reading their request list. Left on the mentor's token
+// by mistake, and the list is scoped to `menteeUserId`, so the mentee saw nothing.
+token = mMenteeToken;
+const mineAfter = await call('GET', '/alumni/mentorship/requests');
     const acceptedRow = (mineAfter.data?.requests ?? []).find((r: any) => r.id === reqId);
-    check('  request now ACCEPTED', acceptedRow?.status === 'ACCEPTED', `status=${acceptedRow?.status}`);
+    check('  mentee sees their request ACCEPTED', acceptedRow?.status === 'ACCEPTED', `status=${acceptedRow?.status} of ${mineAfter.data?.count} request(s)`);
+    const officeSees = await call('GET', '/alumni/mentorship/requests', undefined);
+    check('  office sees every request, not just its own', (officeSees.data?.count ?? 0) >= (mineAfter.data?.count ?? 0), `office ${officeSees.data?.count} vs mentee ${mineAfter.data?.count}`);
+    token = mentorToken;
 
 
     if (pairId) {

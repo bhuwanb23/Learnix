@@ -1278,7 +1278,171 @@ inline fake dataset.
 artefact) and `audit_log`.
 
 ### 3.9 Notifications
-Inbox (collection/due/payroll/scholarship types) + Broadcast tab (audience: Defaulters / All Students / Staff → fee reminders, payment confirmations, payroll notices).
+
+The finance notification desk: an officer's inbox across **seven categories**, four
+**computed** financial alerts, an announcement composer with live audience sizes, and a
+record of what this office has already sent.
+
+#### 3.9.1 What this replaces
+
+The screen this replaces was two tabs. "Inbox" returned `take: 50` rows of **any**
+`Notification.type` the platform had ever written to that officer, in one flat list, every row
+wearing the same blue bell. "Broadcast" was a form with no history. Three things were wrong
+with it, and two of them were outright bugs:
+
+1. **The inbox was not filtered at all.** Sixteen distinct `Notification.type` values exist
+   across the codebase — `FEE_DUE`, `PAYMENT`, `SCHOLARSHIP`, `SYSTEM`, `BROADCAST`, but also
+   `DELAY`, `HOSTEL` and `MAINTORSHIP` from other modules. A transport bus delay sat above a
+   fee reminder. There was no category, no unread-only filter, no pagination, and only 16 of
+   527 seeded rows carried a `dataJson` deep link at all.
+
+2. **Reading one message was impossible.** The only read control was `POST /read-all`, and
+   every row was wired to it. Opening the desk to read a single fee reminder silently marked
+   *every* other unread message as read.
+
+3. **The `DEFAULTERS` broadcast audience was not tenant-scoped.** `accounts.service.ts`
+   resolved it with
+
+   ```ts
+   prisma.feeDue.findMany({ where: { status: { in: ['UNPAID','PARTIAL'] }, daysOverdue: { gte: 7 } } })
+   ```
+
+   — **no `institutionId` filter anywhere.** Broadcasting a fee reminder notified defaulters
+   at *every college on the instance*. The dashboard 190 lines above the same function did
+   scope this correctly; the broadcast did not. The same branch also read
+   `FeeDue.daysOverdue`, a denormalised column that drifts as days pass (documented in
+   `collections.service.ts`, which refreshes it on every desk read), so *who received the
+   message depended on when somebody last opened the dues screen*.
+
+#### 3.9.2 The seven categories
+
+The category of a message is derived from its `type` string by a registry in
+`notifications.rules.ts` (`TYPE_META`), which maps **every** type the platform writes. A type
+belonging to another module carries `category: null` and is left out of the finance inbox
+entirely — a bus delay is not a finance message. A type that is **not registered at all**
+resolves to `SYSTEM` rather than vanishing, because a module shipping a new financial
+notification without registering it would otherwise disappear from the inbox silently, and
+that failure mode is not noticed until a family says they were never told.
+
+| Category | Types filed here | What it answers |
+| --- | --- | --- |
+| `FEE_DUE` | `FEE_DUE`, `FEE` | a bill is unpaid, part-paid, or has been chased |
+| `PAYMENT` | `PAYMENT`, `PAYMENT_REVERSED` | money received, or a payment taken back |
+| `RECEIPT` | `RECEIPT` | a numbered receipt has been issued |
+| `SCHOLARSHIP` | `SCHOLARSHIP` | an application approved, declined or released |
+| `PAYROLL` | `PAYROLL`, `PAYSLIP` | a salary run approved or paid |
+| `ANNOUNCEMENT` | `BROADCAST` | what the accounts office has broadcast |
+| `SYSTEM` | `SYSTEM`, *anything unregistered* | financial problems the system found |
+
+`verify-notifications.ts` asserts this registry against the types **the database actually
+contains** — read from the data, not from a list typed into the test — so a `Notification.type`
+added elsewhere without a category fails the suite.
+
+`RECEIPT` is a **separate category from `PAYMENT`** on purpose. "Your money arrived" and "here
+is the document that proves it" are different facts with different follow-ups: a family that
+needs the receipt for a bank query cannot find it inside a payment notice. Recording a
+collection now writes **two** messages, and a reversal is `PAYMENT_REVERSED` rather than
+`PAYMENT`, so a reversed payment is not filed as a confirmation.
+
+#### 3.9.3 The inbox
+
+`GET /notifications` is filtered, paged and honest about what it left out:
+
+- `?category=` one of the seven, validated against a literal list — a typo is a **422**, never
+  a silently unfiltered list.
+- `?unreadOnly=true|false` coerced, not `Boolean(v)`: the query string `"false"` is a truthy
+  string, and treating it as true would show the wrong list.
+- `?take=` (max 200) and `?skip=` — real paging.
+- The response carries `unread`, `unreadByCategory[]` (computed over the **whole** inbox, so
+  the badge does not jump when you scroll), `total`, `hasMore`, and **`outOfScope`** — the
+  count of messages that were filtered out as another module's, so an officer who remembers
+  one can tell it was hidden rather than lost.
+- A row with malformed `dataJson` degrades to `data: null` rather than taking the inbox down.
+
+Per-item read is now possible, and is scoped to the recipient: `POST /notifications/:id/read`
+is a **404** for another officer's message and writes nothing on the way out, and
+`PUT /notifications/:id/read` with `{ read: false }` puts a message back to unread. Read-all
+survives at `POST /notifications/read-all` as one control among several.
+
+The category is resolved in memory rather than in the Prisma `where` clause. It is derived
+from a type *string*, so expressing it in SQL would need a hardcoded `IN` list that drifts
+from the registry; the set is one officer's messages, not the institution's.
+
+#### 3.9.4 Audiences — scoped, and resolved by date
+
+`POST /notifications/broadcasts` takes one of `ALL_STUDENTS`, `DEFAULTERS`, `ALL_STAFF`.
+**Every branch is tenant-scoped.** The `DEFAULTERS` audience is resolved from `dueDate`
+compared to a cutoff, **never** from `daysOverdue`:
+
+```ts
+where: {
+  ...dueScope(institutionId),                       // studentProfile.user.institutionId
+  status: { in: ['UNPAID', 'PARTIAL'] },
+  dueDate: { lte: cutoff(7) },
+}
+```
+
+Comparing dates cannot go stale. `syncDueOverdue` is still called (inside a `try`/`catch`, so a
+failed refresh cannot block an officer from sending a reminder) to keep the *dues desk's* own
+counter honest — but the selection does not depend on it. A due 60 days past with
+`daysOverdue: 0` is reached; a due due tomorrow is not; a cleared due is not, however old its
+due date.
+
+The composer shows each audience's **live recipient count** from `/notifications/catalogue`
+before anything is written, so "Defaulters (0)" is visible before composing rather than after
+sending to nobody.
+
+#### 3.9.5 The four financial alerts are computed, not stored
+
+Each alert is a question the database can answer *right now*. Nothing writes a row when one
+starts firing, so an alert cannot go stale, cannot be read twice, and does not need
+dismissing — fixing the problem is enough.
+
+| Alert | Question | Counted by |
+| --- | --- | --- |
+| `BUDGET_OVERRUN` | has approved spend passed the plan? | `budget.spentMinor > plannedMinor` |
+| `PAYROLL_UNFOOTED` | does a run header match its own payslips? | header gross/deductions/net vs `SUM(payroll_entry)` |
+| `SCHOLARSHIP_UNRELEASED` | has promised money been paid out? | `APPROVED` applications with `granted − disbursed > 0` |
+| `UNALLOCATED_RECEIPTS` | is there money matched against no bill? | cleared, unreversed payments where `amount − Σ allocations > 0` |
+
+Unallocated money is **reported, never reallocated** — quietly matching it to a bill here
+would be inventing a decision. A clear alert is drawn green with a tick: painting "0
+overruns" in the alarm colour would train the officer to ignore the alarm colour.
+
+Each alert publishes a `route` to the screen that fixes it. `Collections` is a bottom-nav
+**tab**, not a `FEATURE_MODULES` screen, so the alerts screen routes it through `switchTab` —
+reading a tab name as a screen key opens nothing, silently.
+
+#### 3.9.6 Writers
+
+`payroll.service.ts` previously contained **no** `notification.create` at all: approving or
+paying a run told nobody, so `PAYROLL` could never be non-empty. It now notifies every person
+on the run on approval and on payment (with the payment reference), via a shared `notify()`
+helper — the single writer other finance modules use. Auditing the seed found `SCHOLARSHIP`
+and `RECEIPT` at **zero rows** despite four schemes, applications in every workflow state, and
+a populated `receipts` table; `syncNotifications.ts` now builds one message of each of the
+seven categories from a **real seeded row**, quoting that row's real figures, idempotently on
+`dataJson.seedKey`.
+
+#### 3.9.7 Screens
+
+`notifications.js` is the hub: unread count, the four alerts, the seven categories with live
+unread counts, and the two announcements. The category and alert lists are **not hard-coded** —
+they come from `/notifications/catalogue` and `/notifications/alerts`, which is where the
+server publishes each id, label, blurb, icon, colour and route. `notificationsMeta.js` mirrors
+those ids because the sub-screens are separate modules that must exist at build time, and
+`audit-notifications-ui.ts` asserts the two agree.
+
+Screens registered in `FEATURE_MODULES`: `NotificationInbox`, `NotificationAlerts`,
+`NotificationCompose`, `NotificationHistory`, plus the hub as `Notifications`. Deep links
+resolve from the notification's `data` payload to `DueDetail` (`dueId`), `CollectionDetail`
+(`paymentId`), `ScholarshipApplication` (`applicationId`) and `PayrollRunDetail` (`runId`); the
+audit asserts each param name matches what that screen actually reads, because a link that
+opens a screen with an empty body looks exactly like a screen that failed to load.
+
+**Entities:** no new tables. Reads `notification`, `broadcast`, `fee_due`, `payment`,
+`payment_allocation`, `receipt`, `budget`, `payroll_run`, `payroll_entry`,
+`scholarship_application`; writes `notification`, `broadcast` and `audit_log`.
 
 ### 3.10 Profile
 Finance officer profile, FY stats, preference toggles, account menu.
@@ -1313,8 +1477,14 @@ GET      /api/accounts/reports/catalogue        the 7 reports, their routes, per
 GET      /api/accounts/reports/overview?period=&anchor=    the headline strip
 GET      /api/accounts/reports/:report?period=&anchor=&granularity=
 GET      /api/accounts/reports/:report/export?period=&format=xlsx|csv|pdf
-GET  /api/accounts/notifications
-POST /api/accounts/broadcasts
+GET      /api/accounts/notifications/catalogue   the 7 categories, 3 audiences with LIVE counts, 4 alert kinds
+GET      /api/accounts/notifications/alerts      the 4 computed financial alerts
+GET      /api/accounts/notifications?category=&unreadOnly=&take=&skip=   the filtered, paged inbox
+POST     /api/accounts/notifications/:id/read    read ONE message (404 for another's)
+PUT      /api/accounts/notifications/:id/read    read / un-read one message
+POST     /api/accounts/notifications/read-all
+GET      /api/accounts/notifications/broadcasts  what this office has sent, to whom, how many
+POST     /api/accounts/notifications/broadcasts  compose and send an announcement
 ```
 
 ## 5. Cross-App Dependencies
@@ -1398,10 +1568,15 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `GET /api/v1/accounts/reports/departments?period=&anchor=` — F-09 claims **and** staff cost per department, plus an explicit *Institution-wide* row for claims with no department so the totals reconcile against the expense statement
 - `GET /api/v1/accounts/reports/comparison?period=&anchor=&granularity=MONTH|QUARTER|YEAR` — F-09 the last twelve months as `series.{collected,spent,payroll,scholarships,cash}`, with `surplusRupees = collected − spent − payroll`, best and worst period, and months with no run shown rather than skipped. `granularity` buckets the twelve months into the bars (`monthsPerBar`, `bars`) without changing any total
 - `GET /api/v1/accounts/reports/:report/export?period=&format=xlsx|csv|pdf&granularity=` — F-09 writes a **real file** to `UPLOAD_DIR/reports/` and records a `File` row with a UUID-suffixed unique `storageKey`, so two exports of one report never collide. Returns name, byte size, URL, sheet names and the totals the export was built from. Audited as `REPORT_EXPORTED`
-- `GET /api/v1/accounts/notifications` — F-10 inbox
-- `POST /api/v1/accounts/notifications/read-all` — F-10 mark all read
-- `POST /api/v1/accounts/broadcasts` — F-10 broadcast (ALL_STUDENTS / DEFAULTERS / ALL_STAFF)
+- `GET /api/v1/accounts/notifications/catalogue` — F-10 everything the hub builds itself from: the seven categories (id, label, blurb, icon, colour), the three audiences with **live** `recipientCount` (the student roll, the staff roll, and the defaulters the date-based rule would actually reach), the four alert kinds and the `defaulterMinDays` threshold
+- `GET /api/v1/accounts/notifications/alerts` — F-10 the four **computed** financial alerts, each with its count, its detail rows and the route that fixes it. Recalculated on every read against live rows, so a fixed problem disappears with nothing to dismiss
+- `GET /api/v1/accounts/notifications?category=&unreadOnly=&take=&skip=` — F-10 the filtered, paged inbox. Every row carries `category`, `icon`, `colour`, `typeLabel` and its parsed `data` deep link. Returns `unread`, `unreadByCategory[]` (over the **whole** inbox, not the page), `total`, `hasMore`, and **`outOfScope`** — messages excluded as another module's. A row whose `dataJson` will not parse degrades to `data: null` instead of failing the inbox
+- `POST /api/v1/accounts/notifications/:id/read` — F-10 read **one** message. Scoped to the recipient: another officer's is a 404 that writes nothing. Reports `alreadyRead` so the client can tell its optimistic update was right
+- `PUT /api/v1/accounts/notifications/:id/read` — F-10 read or un-read, so a tap can be undone. Accepts a JSON boolean or the strings `"true"`/`"false"`
+- `POST /api/v1/accounts/notifications/read-all` — F-10 mark everything read, still scoped to the recipient and institution
+- `GET /api/v1/accounts/notifications/broadcasts?take=` — F-10 what this office has sent, with the audience label and sender resolved server-side. A row whose stored audience string will not parse still appears
+- `POST /api/v1/accounts/notifications/broadcasts` — F-10 send an announcement (ALL_STUDENTS / DEFAULTERS / ALL_STAFF). **Every audience branch is tenant-scoped** — the `DEFAULTERS` branch previously had no `institutionId` filter at all and reached defaulters at every college on the instance. Defaulters are resolved from `dueDate` compared to a cutoff, never from the drifting `daysOverdue` column. `.strict()`, so `content` sent instead of `body` is a 400 and no broadcast is written. Audited as `broadcast.send`
 - `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
 
 **App:** all 18 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with nine screens registered in `FEATURE_MODULES` (`PayrollRunDetail`, `Payslip`, `PayrollSalaryRecords`, `PayrollSalaryRecord`, `PayrollComponents`, `PayrollAttendance`, `PayrollLoans`, `PayrollAlerts`, `PayslipDocument`), the hub carrying **Salary records** and **Pending salaries** desk buttons, and `runPayroll` pricing each person from the salary version in force that month with attendance LOP, YTD TDS and loan recovery rather than a hard-coded 50/40/12 formula; expenses has approve/reject; scholarships is a hub with eight screens registered in `FEATURE_MODULES` (`ScholarshipApplications`, `ScholarshipApplication`, `ScholarshipDetail`, `ScholarshipDocuments`, `ScholarshipTracking`, `ScholarshipStudentHistory`, `ScholarshipApply`,
-  `ScholarshipSchemeEditor`) over live APIs, the hardcoded `scholarshipsData.js` fixture deleted, every server action gated behind `actions[]`, and a disbursement that credits real `fee_dues` rather than booking a payment; reports is a hub with seven sub-screens registered in `FEATURE_MODULES` (`ReportCollections`, `ReportDues`, `ReportExpenses`, `ReportPayroll`, `ReportScholarships`, `ReportDepartments`, `ReportComparison`) built from the server's own catalogue rather than a copied list, one shared period selector across all seven, and a real xlsx/csv/pdf export on every screen that writes a file and opens it; the hardcoded `reportsData.js` fixture deleted; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
+  `ScholarshipSchemeEditor`) over live APIs, the hardcoded `scholarshipsData.js` fixture deleted, every server action gated behind `actions[]`, and a disbursement that credits real `fee_dues` rather than booking a payment; reports is a hub with seven sub-screens registered in `FEATURE_MODULES` (`ReportCollections`, `ReportDues`, `ReportExpenses`, `ReportPayroll`, `ReportScholarships`, `ReportDepartments`, `ReportComparison`) built from the server's own catalogue rather than a copied list, one shared period selector across all seven, and a real xlsx/csv/pdf export on every screen that writes a file and opens it; the hardcoded `reportsData.js` fixture deleted; notifications is a hub with four sub-screens registered in `FEATURE_MODULES` (`NotificationInbox`, `NotificationAlerts`, `NotificationCompose`, `NotificationHistory`) over live APIs, the seven categories and four alert kinds arriving from the server's own catalogue rather than a copied list, **per-item read** (`markNotificationRead` / `setNotificationRead`) replacing a screen where every row called read-all, real `take`/`skip` paging, per-category unread counts and an out-of-scope count, live recipient counts shown before composing, and a send history that did not previously exist; profile shows live officer data.

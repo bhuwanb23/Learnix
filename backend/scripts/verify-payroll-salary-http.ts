@@ -662,6 +662,12 @@ try {
   // institution, so deleting it cannot touch seeded data.
   await prisma.$transaction([
     prisma.auditLog.deleteMany({ where: { institutionId: inst.id } }),
+    // F-10: approving or paying a run now notifies every person on it
+    // (`payroll.service.ts` → `notifyRunStaff`). `Notification.recipient` is a
+    // real FK to User with no onDelete, so without this the `user.deleteMany`
+    // below fails on a foreign key and the suite leaves its institution behind.
+    prisma.notification.deleteMany({ where: { institutionId: inst.id } }),
+    prisma.notification.deleteMany({ where: { institutionId: otherInstId } }),
     prisma.staffLoanRecovery.deleteMany({ where: { loan: { institutionId: inst.id } } }),
     prisma.staffLoan.deleteMany({ where: { institutionId: inst.id } }),
     prisma.payrollEntry.deleteMany({ where: { payrollRun: { institutionId: inst.id } } }),
