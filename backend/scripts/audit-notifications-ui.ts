@@ -160,14 +160,28 @@ for (const [name, src] of [
   }
 }
 
-// The hub itself must be reachable FROM the dashboard tile, or the whole feature
-// is unreachable no matter how well it is built.
-section('4. The desk is reachable from the dashboard');
+// The hub must be reachable, or the whole feature is unreachable no matter how
+// well it is built. F-11 REPLACED THE PATH, and this follows the real one: the
+// dashboard's seven blocks are all money blocks and none of them is a message
+// list, so Notifications is reached from the Profile tab. The old assertion
+// (`id: 'Notifications'` inside dashboard.js) would now fail forever while the
+// feature stayed perfectly reachable — a test that has stopped describing the
+// product is worse than no test. These assert the whole chain instead: the
+// registration, the handler, and the button that calls it.
+section('4. The desk is reachable from the app shell');
 
-const dashSrc = read(FEATURE_DIR, 'pages', 'dashboard', 'dashboard.js');
-ok(/id:\s*'Notifications'/.test(dashSrc), 'the dashboard has a Notifications tile');
+const f11EntrySrc = read(FEATURE_DIR, 'accounts_finance.js');
+ok(/Notifications:\s*\{[^}]*component:\s*NotificationsModule/.test(f11EntrySrc),
+  'Notifications is registered in FEATURE_MODULES');
+ok(/onNotificationsPress/.test(f11EntrySrc) && /setCurrentScreen\('Notifications'\)/.test(f11EntrySrc),
+  'and the shell is what actually opens it');
+const profileSrc = read(FEATURE_DIR, 'pages', 'profile', 'profile.js');
+ok(/onNotificationsPress/.test(profileSrc),
+  'the Profile tab renders the control that calls that handler');
+ok(/Notifications/.test(profileSrc) || /notification/i.test(profileSrc),
+  'and the Profile tab is the screen the officer is on when they do');
 // The tile must not still describe itself as a one-way broadcast tool.
-ok(!/desc:\s*'Broadcast to students'/.test(dashSrc),
+ok(!/desc:\s*'Broadcast to students'/.test(read(FEATURE_DIR, 'pages', 'notifications', 'notificationsMeta.js')),
   'and the tile no longer claims the desk is only "Broadcast to students"');
 
 // ═══ 5. The mirrors agree ════════════════════════════════════════════════

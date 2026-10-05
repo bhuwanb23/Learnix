@@ -84,6 +84,13 @@ console.log(
 // ExportBar reads must appear in it.
 const routeSrc = readFileSync(path.resolve(__dirname, '../src/modules/accounts/reports.routes.ts'), 'utf8');
 
+// Comments are stripped before any source pattern is tested. Several of these
+// files quote the exact string another assertion is looking for — in an
+// explanatory comment, to say why it matters — and a regex that matches its own
+// documentation is a test that passes for the wrong reason.
+const stripJsComments = (src: string): string =>
+  src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
 const client = (await import(`file://${META.replace(/\\/g, '/')}`)) as Record<string, unknown>;
 const reportScreen = client.reportScreen as (id: string) => string;
 
@@ -360,11 +367,22 @@ section('3. Every report screen is reachable, not just registered');
       }
     }
   }
-  // The hub itself must be opened by the dashboard.
+  // The hub must still be one tap away from the finance home screen. The PATH
+  // changed in F-11 and this follows the path instead of pinning the old one:
+  // Reports used to be a hard-coded module card in dashboard.js, and is now the
+  // GENERATE_REPORT quick action, whose route is PUBLISHED BY THE SERVER rather
+  // than written into the app. Asserting `id: 'Reports'` in dashboard.js from
+  // here on would assert that the dashboard never changes again.
   const dashSrc = readFileSync(path.join(APP, 'users/accounts_finance/pages/dashboard/dashboard.js'), 'utf8');
-  ok(/id:\s*'Reports'/.test(dashSrc), 'the accounts dashboard lists the Reports module');
-  ok(/navigation\.openModule\(moduleId\)/.test(dashSrc),
-    'and the dashboard actually opens a module when its card is tapped');
+  const dashRules = readFileSync(path.resolve(__dirname, '../src/modules/accounts/dashboard.rules.ts'), 'utf8');
+  const genReport = /id:\s*'GENERATE_REPORT'[\s\S]*?route:\s*'([^']+)'/.exec(dashRules)?.[1] ?? null;
+  ok(genReport === 'Reports',
+    'the dashboard offers Generate a report, routed to the Reports module');
+  // …and the app must follow the published route rather than keep its own copy.
+  ok(!/route:\s*'Reports'/.test(stripJsComments(dashSrc)),
+    'the app does not hard-code the Reports route the server already publishes');
+  ok(/ActionTile/.test(dashSrc) && /onPress/.test(dashSrc),
+    'and the dashboard renders its quick actions as tappable tiles');
 }
 
 // ═══ 4. Every documented sub-feature has a route AND an implementation ═══
@@ -402,7 +420,13 @@ for (const [label, routes, fns] of SUB_FEATURES) {
 
 // Every catalogued report must be in the route's allow-list, or the catalogue
 // would advertise a screen that answers 422.
-const routeAllowList = /const REPORTS = \[([^\]]*)\]/.exec(routeSrc)?.[1] ?? '';
+// The router no longer keeps its own copy of the list — it derives it from
+// `REPORT_IDS`, so the two cannot drift. The assertion reads the ONE list both
+// files are now built from instead of a literal that has moved.
+const rulesSrc = readFileSync(path.resolve(__dirname, '../src/modules/accounts/reports.rules.ts'), 'utf8');
+ok(/const REPORTS = REPORT_IDS/.test(routeSrc),
+  'the router derives its allow-list from REPORT_IDS instead of keeping a second copy');
+const routeAllowList = /export const REPORT_IDS = \[([^\]]*)\]/.exec(rulesSrc)?.[1] ?? '';
 for (const id of SERVER_REPORTS) {
   ok(new RegExp(`['"\`]${id}['"\`]`).test(routeAllowList), `${id} is in the route allow-list`);
 }

@@ -512,16 +512,27 @@ async function main() {
   // The two hubs share money; if they disagree the app tells the user two
   // different truths about the same rupee.
   console.log('\ncross-screen invariants');
-  const dash = await api('/api/v1/accounts/dashboard', token);
-  check('dashboard responds 200', dash.status === 200, `got ${dash.status}`);
+  // F-11 replaced `/accounts/dashboard` with `/accounts/dashboard/overview` and
+  // its seven blocks. The cross-screen invariant does not get skipped when the
+  // shape changes — the old version printed "dashboard shape changed; cross-check
+  // skipped" and continued, and that sentence is precisely what lets two screens
+  // drift apart quietly. If the block is missing, that is a FAILURE.
+  const dash = await api('/api/v1/accounts/dashboard/overview', token);
+  check('dashboard overview responds 200', dash.status === 200, `got ${dash.status}`);
   if (d && dash.json?.data) {
-    const du = dash.json.data.due ?? dash.json.data.dues ?? null;
+    const du = dash.json.data.dues ?? null;
+    check('the dashboard actually carries a DUES block', !!du,
+      du ? '' : `blocks: ${Object.keys(dash.json.data ?? {}).join(', ')}`);
     if (du) {
-      check('dashboard unpaidDues equals the dues hub outstanding',
-        du.unpaidDues === d.stats.outstandingRupees,
-        `${du.unpaidDues} vs ${d.stats.outstandingRupees}`);
-    } else {
-      console.log('  – dashboard shape changed; cross-check skipped');
+      check('dashboard outstanding equals the dues hub outstanding',
+        du.outstandingRupees === d.stats.outstandingRupees,
+        `${du.outstandingRupees} vs ${d.stats.outstandingRupees}`);
+      check('dashboard overdue equals the dues hub overdue',
+        du.overdueRupees === d.stats.overdueRupees,
+        `${du.overdueRupees} vs ${d.stats.overdueRupees}`);
+      check('dashboard defaulter count is FAMILIES, not bills',
+        du.defaulterStudents <= du.defaulterBills,
+        `${du.defaulterStudents} students vs ${du.defaulterBills} bills`);
     }
   }
   if (anyDue && profileId) {

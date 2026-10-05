@@ -271,10 +271,23 @@ async function main() {
   // ── Cross-feature: the three views agree ──
   console.log('\ncross-feature agreement');
   const dl = await api('/api/v1/accounts/dues?status=OPEN&take=200', token);
-  const dash = await api('/api/v1/accounts/dashboard', token);
-  check('dashboard unpaidDues == dues outstanding',
-    dash.json?.data?.stats?.unpaidDues === dl.json?.data?.stats?.outstandingRupees,
-    `${dash.json?.data?.stats?.unpaidDues} vs ${dl.json?.data?.stats?.outstandingRupees}`);
+  // F-11 replaced the single `/accounts/dashboard` with the seven-block one. The
+  // invariant is unchanged and is still the one that matters: the morning screen
+  // and the dues desk must not tell the user two different truths about the same
+  // rupee. Two more are asserted while we are here, because the two figures that
+  // used to be one were exactly the pair that drifted.
+  const dash = await api('/api/v1/accounts/dashboard/overview', token);
+  const dashDues = dash.json?.data?.dues ?? null;
+  check('dashboard DUES block == dues outstanding',
+    dashDues?.outstandingRupees === dl.json?.data?.stats?.outstandingRupees,
+    `${dashDues?.outstandingRupees} vs ${dl.json?.data?.stats?.outstandingRupees}`);
+  check('dashboard overdue == dues overdue',
+    dashDues?.overdueRupees === dl.json?.data?.stats?.overdueRupees,
+    `${dashDues?.overdueRupees} vs ${dl.json?.data?.stats?.overdueRupees}`);
+  check('dashboard counts FAMILIES for defaulters, not bills',
+    typeof dashDues?.defaulterStudents === 'number' &&
+      dashDues?.defaulterBills >= dashDues?.defaulterStudents,
+    `${dashDues?.defaulterStudents} students, ${dashDues?.defaulterBills} bills`);
   const studentsAgain = await api('/api/v1/accounts/dues/students?take=200', token);
   check('student outstanding == bill outstanding (unpaged)',
     studentsAgain.json?.data?.stats?.outstandingRupees === dl.json?.data?.stats?.outstandingRupees,
