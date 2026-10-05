@@ -1,7 +1,7 @@
 // Accounts & Finance module service (docs/users/06 §4, tables: Domain E)
 // Money: integer paise. All amounts converted to rupees at API edge. Tenant-scoped.
 import { prisma } from '../../db/prisma.js';
-import { notFound, conflict } from '../../lib/errors.js';
+import { notFound } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { balanceOf } from './dues.money.js';
 
@@ -39,7 +39,9 @@ export async function getDashboard(institutionId: string) {
       }),
       prisma.scholarship.findMany({
         where: { institutionId },
-        include: { _count: { select: { awards: true } } },
+        include: {
+          applications: { select: { status: true, grantedMinor: true, disbursedMinor: true } },
+        },
       }),
     ]);
 
@@ -130,11 +132,25 @@ export async function getDashboard(institutionId: string) {
     payroll: payrollRun
       ? { month: payrollRun.month, status: payrollRun.status, entries: payrollRun._count.entries }
       : null,
-    scholarships: scholarships.map((s) => ({
-      name: s.name,
-      type: s.type,
-      awards: s._count.awards,
-    })),
+    scholarships: scholarships.map((s) => {
+      // Approved-but-undisbursed money is what a dashboard headline has to
+      // separate: it is a promise, not a payment, and showing it as "given"
+      // would overstate the aid this institution has actually delivered.
+      let committed = 0;
+      let disbursed = 0;
+      for (const a of s.applications) {
+        if (a.status === 'APPROVED' || a.status === 'UNDER_REVIEW' || a.status === 'DISBURSED') committed += a.grantedMinor;
+        if (a.status === 'DISBURSED') disbursed += a.disbursedMinor;
+      }
+      return {
+        name: s.name,
+        type: s.type,
+        status: s.status,
+        applications: s.applications.length,
+        committedRupees: toRupees(committed),
+        disbursedRupees: toRupees(disbursed),
+      };
+    }),
   };
 }
 
@@ -201,130 +217,6 @@ export async function getLedger(institutionId: string) {
 // StaffProfile.monthlyGrossMinor.
 
 // ── F-08 Scholarships ───────────────────────────────────────
-export async function listScholarships(institutionId: string) {
-  const scholarships = await prisma.scholarship.findMany({
-    where: { institutionId },
-    include: {
-      academicYear: { select: { name: true } },
-      awards: {
-        include: {
-          studentProfile: { include: { user: { select: { fullName: true } } } },
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return scholarships.map((s) => ({
-    id: s.id,
-    name: s.name,
-    type: s.type,
-    coveragePercent: s.coveragePercent,
-    academicYear: s.academicYear.name,
-    awards: s.awards.map((a) => ({
-      id: a.id,
-      student: a.studentProfile.user.fullName,
-      rollNo: a.studentProfile.rollNo,
-      amountRupees: toRupees(a.amountMinor),
-      status: a.status,
-    })),
-    totalAwards: s.awards.length,
-    approved: s.awards.filter((a) => a.status === 'APPROVED').length,
-    disbursed: s.awards.filter((a) => a.status === 'DISBURSED').length,
-  }));
-}
-
-export async function approveScholarship(
-  institutionId: string,
-  _actorUserId: string,
-  awardId: string,
-) {
-  const award = await prisma.scholarshipAward.findFirst({
-    where: { id: awardId, scholarship: { institutionId } },
-    include: {
-      scholarship: { select: { name: true } },
-      studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
-    },
-  });
-  if (!award) throw notFound('Scholarship award not found');
-  if (award.status !== 'APPROVED') throw conflict(`Award is already ${award.status}`);
-
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: award.studentProfile.userId,
-      type: 'SCHOLARSHIP',
-      title: `Scholarship approved: ${award.scholarship.name}`,
-      body: `Your application for "${award.scholarship.name}" has been approved. Amount: ₹${toRupees(award.amountMinor)}.`,
-      sourceModule: 'accounts',
-    },
-  });
-
-  return { id: award.id, status: 'APPROVED', student: award.studentProfile.user.fullName };
-}
-
-export async function disburseScholarship(
-  institutionId: string,
-  actorUserId: string,
-  awardId: string,
-) {
-  const award = await prisma.scholarshipAward.findFirst({
-    where: { id: awardId, scholarship: { institutionId } },
-    include: {
-      scholarship: { select: { name: true } },
-      studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
-    },
-  });
-  if (!award) throw notFound('Scholarship award not found');
-  if (award.status !== 'APPROVED') throw conflict(`Award must be APPROVED before disbursement`);
-
-  // Create payment (write-through)
-  const count = await prisma.payment.count({ where: { institutionId } });
-  const payment = await prisma.payment.create({
-    data: {
-      institutionId,
-      payerUserId: actorUserId,
-      studentProfileId: award.studentProfileId,
-      category: 'MISC',
-      referenceNo: `PAY-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`,
-      amountMinor: award.amountMinor,
-      method: 'NET_BANKING',
-      status: 'CLEARED',
-      paidAt: new Date(),
-      recordedByUserId: actorUserId,
-    },
-  });
-
-  await prisma.scholarshipAward.update({
-    where: { id: award.id },
-    data: { status: 'DISBURSED', disbursedPaymentId: payment.id },
-  });
-
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: award.studentProfile.userId,
-      type: 'SCHOLARSHIP',
-      title: `Scholarship disbursed: ${award.scholarship.name}`,
-      body: `₹${toRupees(award.amountMinor)} from "${award.scholarship.name}" has been credited to your account.`,
-      sourceModule: 'accounts',
-    },
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'scholarship.disburse',
-    entityType: 'ScholarshipAward',
-    entityId: awardId,
-    before: { status: 'APPROVED' },
-    after: { status: 'DISBURSED', paymentRef: payment.referenceNo },
-  });
-
-  return { id: award.id, status: 'DISBURSED', paymentRef: payment.referenceNo };
-}
-
-// ── F-09 Reports ────────────────────────────────────────────
 export async function getReports(institutionId: string) {
   const [payments, dues, payrollRuns, expenses, budgets] = await Promise.all([
     prisma.payment.groupBy({

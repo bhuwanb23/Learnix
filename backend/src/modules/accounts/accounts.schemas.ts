@@ -216,10 +216,126 @@ export const vendorQuerySchema = z.object({
   fiscalYear: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-YY').optional(),
 });
 
-// F-08 Scholarships — approve/disburse
-export const scholarshipDecisionSchema = z.object({
-  decision: z.enum(['APPROVED', 'REJECTED']),
+// F-08 Scholarships — the scholarship desk (docs/users/06 §3.7)
+//
+// All `.strict()`: silently dropping a misnamed money field turns a typo
+// (`fixedAmountRupeess`) into a scheme that quietly awards nothing, which is
+// worse than a rejected request.
+
+const moneyRupees = z.number().int().min(0).max(100_000_000); // up to 10 crore
+const isoDayString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+
+export const scholarshipIdParamSchema = z.object({ id: z.string().min(1).max(64) });
+export const scholarshipAppParamSchema = z.object({ id: z.string().min(1).max(64) });
+// For `/scholarships/:id/preview/:studentProfileId` — the param is `:id`, not
+// `:scholarshipId`. Validating against a differently-named shape made every
+// preview request a 400.
+export const scholarshipPreviewParamSchema = z
+  .object({ id: z.string().min(1).max(64), studentProfileId: z.string().min(1).max(64) })
+  .strict();
+export const scholarshipStudentParamSchema = z.object({ studentProfileId: z.string().min(1).max(64) });
+export const scholarshipDocumentParamSchema = z.object({
+  id: z.string().min(1).max(64),
+  code: z.string().min(1).max(40),
 });
+
+export const scholarshipListQuerySchema = z
+  .object({
+    status: z.enum(['ALL', 'OPEN', 'CLOSED', 'DRAFT']).optional(),
+    type: z.enum(['MERIT', 'NEED_BASED', 'EXCELLENCE', 'SPECIAL']).optional(),
+    q: z.string().trim().max(80).optional(),
+  })
+  .strict();
+
+export const scholarshipApplicationsQuerySchema = z
+  .object({
+    status: z.enum([
+      'ALL',
+      'APPLIED',
+      'UNDER_REVIEW',
+      'APPROVED',
+      'REJECTED',
+      'WITHDRAWN',
+      'DISBURSED',
+    ])
+      .optional(),
+    schemeId: z.string().max(64).optional(),
+    studentProfileId: z.string().max(64).optional(),
+    q: z.string().trim().max(80).optional(),
+  })
+  .strict();
+
+const eligibilityRuleSchema = z
+  .object({
+    operator: z.enum([
+      'MIN_PERCENT',
+      'MAX_FAMILY_INCOME',
+      'MIN_SEMESTER',
+      'MAX_SEMESTER',
+      'GENDER',
+      'ACTIVE_STUDENT',
+    ]),
+    value: z.number().int().nullable().optional(),
+    gender: z.string().max(10).nullable().optional(),
+    enabled: z.boolean().optional(),
+    note: z.string().trim().max(200).nullable().optional(),
+  })
+  .strict();
+
+export const saveScholarshipSchema = z
+  .object({
+    id: z.string().max(64).nullable().optional(),
+    name: z.string().trim().min(3).max(120),
+    type: z.enum(['MERIT', 'NEED_BASED', 'EXCELLENCE', 'SPECIAL']),
+    academicYearId: z.string().min(1).max(64),
+    status: z.enum(['OPEN', 'CLOSED', 'DRAFT']).optional(),
+    description: z.string().trim().max(500).nullable().optional(),
+    amountMode: z.enum(['PERCENT_OF_DUE', 'FIXED']),
+    awardPercent: z.number().int().min(0).max(100).nullable().optional(),
+    fixedAmountRupees: moneyRupees.nullable().optional(),
+    budgetRupees: moneyRupees.nullable().optional(),
+    capacity: z.number().int().min(0).max(100_000).nullable().optional(),
+    coveragePercent: z.number().int().min(0).max(100).nullable().optional(),
+    rules: z.array(eligibilityRuleSchema).max(20).optional(),
+    requiredDocuments: z.array(z.string().max(40)).max(12).optional(),
+    opensAt: isoDayString.nullable().optional(),
+    closesAt: isoDayString.nullable().optional(),
+  })
+  .strict();
+
+export const applyScholarshipSchema = z
+  .object({
+    scholarshipId: z.string().min(1).max(64),
+    studentProfileId: z.string().min(1).max(64),
+    declaredAnnualIncomeRupees: moneyRupees.nullable().optional(),
+    declaredGender: z.string().trim().max(10).nullable().optional(),
+    statement: z.string().trim().max(2000).nullable().optional(),
+  })
+  .strict();
+
+export const scholarshipDocumentSchema = z
+  .object({
+    status: z.enum(['UPLOADED', 'VERIFIED', 'REJECTED']),
+    fileId: z.string().max(64).nullable().optional(),
+    note: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict();
+
+export const scholarshipNoteSchema = z
+  .object({ note: z.string().trim().max(1000).nullable().optional() })
+  .strict();
+
+export const rejectScholarshipSchema = z
+  .object({ reason: z.string().trim().min(5).max(1000) })
+  .strict();
+
+export const disburseScholarshipSchema = z
+  .object({
+    // Omit for the full remaining grant; send a smaller figure to part-release.
+    amountRupees: moneyRupees.nullable().optional(),
+    note: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict();
 
 // F-10 Notifications — broadcast
 export const accountsBroadcastSchema = z.object({

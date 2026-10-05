@@ -95,6 +95,13 @@ ok(Array.isArray(history.applications), 'the student history carries application
 
 const hubSchemes = schemes;
 
+// The shape POST /applications returns. Manufacturing one would need an OPEN
+// scheme and would mutate the seeded desk, so the shape is read off a real row —
+// `applyToScheme` returns the same `shapeApplicationRow` the list uses, and
+// `getApplication` is a superset of it, so a screen reading `created.id` or
+// `created.student.name` is covered either way.
+const createdPayload = await svc.getApplication(institutionId, liveApps[0].id);
+
 // ═══ 1. Every destructured property exists ═══════════════════════════════
 section('1. Screens read only fields the API actually sends');
 
@@ -159,35 +166,88 @@ const SCREENS: { file: string; payloads: Record<string, unknown> }[] = [
   { file: 'pages/documents/documents.js', payloads: { data: apps } },
   { file: 'pages/tracking/tracking.js', payloads: { data: tracking, totals: tracking.totals } },
   { file: 'pages/student_history/student_history.js', payloads: { data: history, t: history.totals } },
-  { file: 'pages/apply/apply.js', payloads: {} },
+  { file: 'pages/apply/apply.js', payloads: { created: createdPayload } },
 ];
 
-/** The optional-chained member accesses in a source file, e.g. `a?.b?.c`. */
+/**
+ * The optional-chained member accesses in a source file, e.g. `a?.b?.c`.
+ *
+ * The trailing group is `(?:...\??\.)*` — a ZERO-or-more repetition, not one-or-
+ * more. Requiring two segments meant a single-level read such as `apps?.stats`
+ * or `data?.name` was never collected, so the most common reads on a screen were
+ * the ones the audit skipped.
+ */
 function accessedPaths(src: string): string[] {
   const out = new Set<string>();
-  const re = /\b([A-Za-z_$][\w$]*)\??\.((?:[A-Za-z_$][\w$]*\??\.)+[A-Za-z_$][\w$]*)/g;
+  const re = /\b([A-Za-z_$][\w$]*)\??\.((?:[A-Za-z_$][\w$]*\??\.)*[A-Za-z_$][\w$]*)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(src))) out.add(`${m[1]}.${m[2].replace(/\?\./g, '.')}`);
   return [...out];
 }
 
+/**
+ * Is `name` in this screen bound to something the API actually returned?
+ *
+ * Screens reach the API in three shapes, and all three had to be recognised:
+ *   const data = await accountsApi.x()
+ *   setData(await accountsApi.x())
+ *   const [a, b, c] = await Promise.all([accountsApi.x(), ...])
+ * The gate exists so a locally-built object named `data` is not audited against
+ * a payload it never came from — but a gate that recognises only the first
+ * shape silently skips every other screen, which is worse than no gate at all.
+ */
+function boundToApi(src: string, name: string): boolean {
+  const cap = name.charAt(0).toUpperCase() + name.slice(1);
+  if (new RegExp(`(const|let)\\s+${name}\\s*=\\s*await\\s+accountsApi`).test(src)) return true;
+  if (new RegExp(`set${cap}\\(\\s*await\\s+accountsApi`).test(src)) return true;
+  // `const [a, b] = await Promise.all([accountsApi.x(), ...])` — the hub's shape.
+  // The destructured names are then pushed into state under DIFFERENT names
+  // (`setSchemes(s)`), so the state name is only API-bound if the value it is
+  // given came out of that destructure.
+  for (const m of src.matchAll(/const\s*\[([^\]]+)\]\s*=\s*await\s+Promise\.all\(/g)) {
+    const names = m[1].split(',').map((s) => s.trim()).filter(Boolean);
+    if (!names.includes(name)) {
+      // `name` is a state slot fed by one of the destructured names.
+      if (names.some((n) => new RegExp(`set${cap}\\(\\s*${n}\\b`).test(src))) return true;
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+let fieldChecks = 0;
 for (const { file, payloads } of SCREENS) {
   const full = path.join(DIR, file);
   ok(existsSync(full), `${file} exists`);
   if (!existsSync(full)) continue;
   const src = readFileSync(full, 'utf8');
+  let perScreen = 0;
+  // Derived locals are not payloads in their own right — they hang off one that
+  // is, and auditing them is already covered by auditing their source.
+  const derived = new Set(['stats', 'totals', 't', 's', 'app']);
   for (const [rootName, payload] of Object.entries(payloads)) {
     if (!payload) continue;
+    // Derived locals (`apps?.stats`) are not payloads in their own right — they
+    // are already covered by auditing the object they hang off.
+    if (!derived.has(rootName)) {
+      ok(boundToApi(src, rootName), `${file}: \`${rootName}\` is bound to an accountsApi response`);
+    }
     const paths = pathsOf(payload, rootName);
     for (const expr of accessedPaths(src)) {
       if (!expr.startsWith(`${rootName}.`)) continue;
-      // Only audit a name that really IS this root's API payload; a local `data`
-      // may also hold a locally-built object.
-      if (rootName === 'data' && !new RegExp(`(const|let)\\s+${rootName}\\s*=\\s*await\\s+accountsApi`).test(src)) continue;
+      fieldChecks += 1;
+      perScreen += 1;
       ok(has(paths, expr), `${file}: \`${expr}\` exists in the ${rootName} payload`);
     }
   }
+  // Per-screen floor: a screen that suddenly contributes nothing must fail
+  // loudly rather than quietly shrink the report.
+  ok(perScreen > 0, `${file}: contributes payload field reads to the audit`, `${perScreen}`);
 }
+// A floor, so a future edit that makes every gate miss shows up as a FAILURE
+// rather than as a quietly shorter report.
+ok(fieldChecks > 20, `a meaningful number of payload field reads were checked`, String(fieldChecks));
 
 // ═══ 2. navigate() targets are registered ═══════════════════════════════
 section('2. Navigation targets are real');

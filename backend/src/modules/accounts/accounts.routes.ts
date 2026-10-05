@@ -539,42 +539,6 @@ router.post(
   }),
 );
 
-// F-08 scholarships
-router.get(
-  '/scholarships',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listScholarships(req.auth!.institutionId) });
-  }),
-);
-
-router.post(
-  '/scholarships/:id/approve',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.approveScholarship(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-      ),
-    });
-  }),
-);
-
-router.post(
-  '/scholarships/:id/disburse',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.disburseScholarship(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-      ),
-    });
-  }),
-);
-
 // F-09 reports
 router.get(
   '/reports',

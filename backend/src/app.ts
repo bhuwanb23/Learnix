@@ -15,6 +15,7 @@ import transportRoutes from './modules/transport/transport.routes.js';
 import hostelRoutes from './modules/hostel/hostel.routes.js';
 import libraryRoutes from './modules/library/library.routes.js';
 import accountsRoutes from './modules/accounts/accounts.routes.js';
+import scholarshipRoutes from './modules/accounts/scholarship.routes.js';
 import feeStructureRoutes from './modules/accounts/feestructure.routes.js';
 import payrollStructureRoutes from './modules/accounts/payroll.structure.routes.js';
 import { UPLOAD_DIR } from './modules/accounts/expenses.routes.js';
@@ -116,6 +117,11 @@ export function createApp() {
   app.use('/api/v1/transport', transportRoutes);
   app.use('/api/v1/hostel', hostelRoutes);
   app.use('/api/v1/library', libraryRoutes);
+// The scholarship desk (docs §3.7) is mounted BEFORE accountsRoutes for the
+  // same reason as the routers below: its literal paths (`/scholarships/catalogue`,
+  // `/scholarships/applications`, `/scholarships/tracking`) must not be read as
+  // a scheme id by `/scholarships/:id`.
+  app.use('/api/v1/accounts', scholarshipRoutes);
   // The payroll salary desk is mounted BEFORE accountsRoutes, and that ordering
   // is load-bearing rather than cosmetic: accountsRoutes owns `/payroll/:id`,
   // so if it ran first, `/payroll/alerts` would be read as a run with the id
