@@ -67,41 +67,130 @@ Inbox (event/donation/mentorship/chapter/newsletter types, unread dots, **mark a
 Director of Alumni Relations profile, program stats, preference toggles (event invites, donation appeals, chapter news), account menu.
 
 ## 4. Backend API Surface
+
+All routes are mounted at `/api/v1/alumni` and gated by `requireRole('ALUMNI', 'ALUMNI_OFFICE', 'ADMIN')`.
+
+### Office vs graduate
+Two distinct actors share this app, separated by the **`ALUMNI_OFFICE`** role:
+
+| Actor | Role | Can do |
+|-------|------|--------|
+| Alumni Relations Office | `ALUMNI` + `ALUMNI_OFFICE` | Everything a graduate can, plus broadcast, mentorship approve/decline, donation record, chapter announcements/events |
+| Graduate | `ALUMNI` | Directory, own profile + privacy, connections, chapters |
+| Student / staff | — | `403 AUTH_FORBIDDEN` |
+
+Without `ALUMNI_OFFICE` an office user and a graduate are indistinguishable in the
+database (both hold `ALUMNI`, both have an `AlumniProfile`, neither has a
+`StaffProfile`), so the role is what makes the privacy, announce and
+connect-request rules possible.
+
+### Directory & networking
 ```
-GET  /api/alumni/dashboard
-GET  /api/alumni/directory               (?batch=&q=, + /{id})
-POST /api/alumni/{id}/invite|add-mentor
-GET  /api/alumni/events                  (+ /{id})
-POST /api/alumni/rsvps/{id}/confirm|decline
-GET  /api/alumni/donations               (campaigns + donations)
-POST /api/alumni/donations/{id}/record   → creates Accounts receipt
-POST /api/alumni/campaigns/{id}/share
-GET  /api/alumni/mentorship              (POST /{id}/approve|decline, /{id}/remind)
-GET  /api/alumni/chapters
-GET  /api/alumni/notifications
-POST /api/alumni/broadcasts
+GET  /alumni/directory            ?q=&batch=&departmentId=&companyId=&sector=
+                                  &location=&skill=&chapterId=&engagement=
+                                  &page=&pageSize=&sort=name|recent|seniority
+GET  /alumni/directory/facets     departments, companies, sectors, locations,
+                                  batches (unique per year), skills, chapters
+                                  — each with a live count
+GET  /alumni/directory/{id}       skills, career journey, education, contributions,
+                                  connection state — contact gated by privacy
+GET  /alumni/me                   PUT /alumni/me   (headline, bio, skills,
+                                  career, chapter, privacy settings)
+GET  /alumni/matches              ?type=connections|mentors&skill=&limit=
+GET  /alumni/connections          ?box=incoming|outgoing|accepted
+GET  /alumni/connections/stats
+POST /alumni/connections          { profileId, message? }
+POST /alumni/connections/{id}/accept | /decline | /cancel
 ```
 
-## 5. Cross-App Dependencies
-- Writes → **Accounts**: donation receipts.
-- Writes → **Student**: event RSVPs/announcements, mentorship pairing, broadcasts.
-- Reads ← **Admin**: alumni event config, batch master.
-- Reads ← **Placement**: hiring/mentorship opportunities for alumni.
+**Department filtering needs no column** — it resolves
+`AlumniProfile.batchId → Batch.programId → Program.departmentId`.
 
-## 6. Wiring Status (backend v1) — ✅ COMPLETE
-Implemented in `backend/src/modules/alumni/` (routes + service + zod schemas) and wired
-into `learnix/users/alumni/**` via `learnix/services/api.js` (demo login: `priya@learnix.dev`).
+**Contact details are hidden unless opted in.** `AlumniPrivacySettings` defaults
+to `showEmail:false`, `visibleTo:'CONNECTIONS'`. The API returns `null` for a
+withheld field (never a missing key) and `contactVisible` + `visibilityReason`
+so the UI can explain *why* it is blank. The office always sees everything.
 
-Deltas vs the sketch above (final API surface):
-- RSVP decide is `POST /api/v1/alumni/rsvps/{id}/decide` body `{ decision: CONFIRMED | DECLINED }`
-- Mentorship actions: `POST /api/v1/alumni/mentorship/{id}/approve|decline|remind`
-- Invite / add-mentor: `POST /api/v1/alumni/directory/{id}/invite` and `.../add-mentor`
-- Notifications: `GET /api/v1/alumni/notifications` + `POST .../notifications/read-all`
-- Broadcast: `POST /api/v1/alumni/broadcasts` `{ audience, templateKey, title, body }`
-  (audience: ALL_ALUMNI | BATCH_2024 | CITY_BENGALURU | MENTORS) → notifications + audit
+**Match scoring is deterministic, not a model call.** `scoreCandidate()` in
+`connections.service.ts` scores shared skills (40), skill depth (15), cohort
+(20), city/chapter (20) and employer (5) and returns the *reasons* alongside the
+score. A pure function, deliberately: every input is structured, the relations
+are exact-membership questions, and the population is small enough to score in
+one query — so the office can always answer "why this person?".
 
-Verified live: dashboard engagement %, directory search/batch filter, events + RSVP decide,
-donation record → payment PAY-2026-0004 + receipt (409 on re-record), mentorship
-approve/decline/remind, chapters, read-all, broadcast fan-out. Campaign share is a client
-side action in v1 (no endpoint needed). All actions write audit_logs; state changes notify
-the affected user.
+### Chapters
+```
+GET  /alumni/chapters             ?q=&sort=city|members|activity
+                                  → { count, totalMembers, chapters[] }
+GET  /alumni/chapters/{id}        overview, president, upcoming/past events,
+                                  announcements, stats (avg fill rate)
+GET  /alumni/chapters/{id}/members ?q=&sort=name|seniority|recent&limit=
+GET  /alumni/chapters/{id}/activity   derived feed (events | announcements | joins)
+POST /alumni/chapters/{id}/announce   office or chapter president only
+POST /alumni/chapters/{id}/events     office or chapter president only
+```
+
+A chapter event is an `Event` with `chapterId` set — not a parallel table — so
+it inherits RSVP decisions, schedules, QR payloads and notifications, and appears
+in the Events tab with no synchronisation. The activity feed is **derived** from
+events, announcements and member joins rather than stored, so it cannot drift
+from the rows it summarises.
+
+### Events, donations, mentorship, communications
+```
+GET  /alumni/events               + /{id}
+POST /alumni/rsvps/{id}/decide    { decision: CONFIRMED | DECLINED }
+GET  /alumni/donations            ?page=&pageSize=   (paged ledger + totals)
+POST /alumni/donations/{id}/record         → Payment + Receipt + DonationPayment
+GET  /alumni/mentorship
+POST /alumni/mentorship/{id}/approve | /decline | /remind
+GET  /alumni/notifications        POST .../read-all
+POST /alumni/broadcasts           { audience, templateKey, title, body }
+POST /alumni/directory/{id}/invite | /add-mentor
+GET  /alumni/profile              (office profile card)
+```
+
+## 5. Data Model (Domain J)
+
+| Model | Purpose |
+|-------|---------|
+| `AlumniProfile` | + `headline`, `bio`; real relations to `batch` and `company` |
+| `AlumniSkill` | `(profileId, skill)` unique, `level`, `yearsExperience` — normalised so the directory can filter and the matcher can score in SQL |
+| `AlumniCareerEntry` | `title`, `companyId`, `fromMonth`, `toMonth` (null = current). A timeline, not a column |
+| `AlumniPrivacySettings` | 1:1 with the profile; the single place redaction is applied |
+| `AlumniConnection` | `(requester, recipient)` unique, `status` PENDING/ACCEPTED/DECLINED/CANCELLED |
+| `AlumniChapter` | + `events` relation |
+| `Event` | + `chapterId` (null = not a chapter event) |
+| `FundraisingCampaign` / `Donation` | `raisedMinor` denormalised, recomputed from RECEIVED gifts |
+
+Mutual requests auto-accept: if A already asked B and B asks A, they become
+`ACCEPTED` rather than deadlocking on two pending rows.
+
+## 6. Seed
+
+`backend/prisma/seed-alumni.ts` — 56 graduates across 16 cohorts, 18 companies,
+6 chapters, 5 campaigns, ~215 received donations (each with its Payment +
+Receipt write-through), 16 mentorship pairs with sessions, 20 alumni events with
+schedules and RSVPs, plus skills, career journeys, privacy settings and 34
+connections.
+
+- **Deterministic** — a seeded PRNG and fixed gift tables; no `Math.random()`.
+  Re-running converges instead of doubling.
+- **Idempotent** — every write is guarded. Verified by running it repeatedly and
+  comparing totals.
+- **Reconciles** — `sum(donations RECEIVED) = sum(DONATION payments) = sum(receipts)`,
+  so the finance report (F-09) stays honest.
+
+⚠️ **Money ceiling**: every `*Minor` column is an `Int` (32-bit), so a single
+amount cannot exceed 2,147,483,647 paise ≈ **₹2.14 crore**. `raisedMinor`
+accumulates, so a campaign whose lifetime giving crosses that ceiling will fail
+to record the donation that crosses it. Campaign targets are sized with headroom.
+
+## 7. Wiring Status
+
+Backend (`directory.service.ts`, `connections.service.ts`, `chapters.service.ts`,
+`alumni.service.ts`) + frontend (`learnix/users/alumni/**`) are wired and
+verified. `npx tsx scripts/verify-alumni.ts` runs **98 assertions** against a live
+server, including the privacy gate as a behaviour (withdraw → `null`, opt in →
+visible) and the full connection lifecycle. `npx expo export --platform web`
+builds clean.
