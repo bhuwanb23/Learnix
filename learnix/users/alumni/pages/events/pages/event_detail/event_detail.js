@@ -1,34 +1,61 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+﻿import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+  Linking,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../../../constants/theme';
 import { alumniApi } from '../../../../../../services/api';
+import { SkeletonCard } from '../../../../../../components/ui';
+import { typeMeta, eventStatusMeta, fmtDate, fmtTime, stars } from '../../eventMeta';
+import { Fact, Meter } from '../../components/EventCard';
+import EventAgenda from '../event_agenda/event_agenda';
+import EventAttendees from '../event_attendees/event_attendees';
+import EventFeedback from '../event_feedback/event_feedback';
+import EventMemories from '../event_memories/event_memories';
 
-const STATUS_META = {
-  PENDING: { chip: 'Pending', bg: '#fef3c7', color: '#d97706' },
-  APPROVED: { chip: 'Approved', bg: '#dbeafe', color: '#2563eb' },
-  CONFIRMED: { chip: 'Confirmed', bg: '#dcfce7', color: '#059669' },
-  DECLINED: { chip: 'Declined', bg: '#fee2e2', color: '#dc2626' },
-  REJECTED: { chip: 'Rejected', bg: '#fee2e2', color: '#dc2626' },
-};
+/**
+ * Event detail — a tab host.
+ *
+ * The four heavy tabs are separate screens that receive `event` (already loaded
+ * by this hub) plus a `reload` callback, so switching tabs never refetches and
+ * the hub owns the single source of truth for the event. Keeping Agenda,
+ * Attendees, Feedback and Memories in their own files is what stops this file
+ * becoming the 900-line screen the previous version was.
+ *
+ * EVERY action button is rendered from the server's `viewerContext`. Deciding
+ * "is this person an officer?" here would put buttons on screen that the API
+ * then answers with 403, which reads as a broken app rather than a locked one.
+ */
+const TABS = [
+  { id: 'about', label: 'About', icon: 'information-circle-outline' },
+  { id: 'agenda', label: 'Agenda', icon: 'list-outline' },
+  { id: 'attendees', label: 'Attendees', icon: 'people-outline' },
+  { id: 'feedback', label: 'Reviews', icon: 'star-outline' },
+  { id: 'memories', label: 'Memories', icon: 'images-outline' },
+];
 
 export default function EventDetail({ eventId, navigation }) {
-  const [data, setData] = useState(null);
+  const [event, setEvent] = useState(null);
+  const [tab, setTab] = useState('about');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [busyId, setBusyId] = useState(null);
-  const [announcing, setAnnouncing] = useState(false);
-  const [announced, setAnnounced] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(
     async (showSpinner = true) => {
       try {
         if (showSpinner) setLoading(true);
         setError(null);
-        const d = await alumniApi.eventDetail(eventId);
-        setData(d);
+        setEvent(await alumniApi.eventDetail(eventId));
       } catch (e) {
         setError(e.message);
       } finally {
@@ -39,471 +66,389 @@ export default function EventDetail({ eventId, navigation }) {
     [eventId],
   );
 
-  React.useEffect(() => {
+  useEffect(() => {
     load();
   }, [load]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false);
-  };
+  const reload = useCallback(() => load(false), [load]);
 
-  const decide = async (rsvpId, decision) => {
-    setBusyId(rsvpId);
+  // ── Registration ──
+  const onRegister = async () => {
     try {
-      await alumniApi.decideRsvp(rsvpId, decision);
-      await load(false);
+      setBusy(true);
+      const res = await alumniApi.registerForEvent(eventId);
+      Alert.alert(res.waitlisted ? 'Added to waitlist' : 'Registered', res.message);
+      load(false);
     } catch (e) {
-      Alert.alert('Cannot update RSVP', e.message);
+      Alert.alert('Cannot register', e.message);
     } finally {
-      setBusyId(null);
+      setBusy(false);
     }
   };
 
-  const onAnnounce = async () => {
-    setAnnouncing(true);
-    try {
-      await alumniApi.broadcast({
-        audience: 'ALL_ALUMNI',
-        templateKey: 'EVENT_INVITE',
-        title: `${data.title} — you're invited!`,
-        body: `Join us for ${data.title}${data.venue ? ` at ${data.venue}` : ''} on ${new Date(data.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}. RSVP from the Events tab.`,
-      });
-      setAnnounced(true);
-      Alert.alert('Announcement Sent', 'All alumni have been notified about this event.');
-    } catch (e) {
-      Alert.alert('Cannot announce', e.message);
-    } finally {
-      setAnnouncing(false);
-    }
+  const onCancelRegistration = () => {
+    Alert.alert('Cancel your registration?', 'Your seat is released to the next person on the waitlist.', [
+      { text: 'Keep it', style: 'cancel' },
+      {
+        text: 'Cancel registration',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setBusy(true);
+            const res = await alumniApi.cancelEventRegistration(eventId);
+            Alert.alert('Cancelled', res.message);
+            load(false);
+          } catch (e) {
+            Alert.alert('Cannot cancel', e.message);
+          } finally {
+            setBusy(false);
+          }
+        },
+      },
+    ]);
   };
 
-  const onRemind = () => {
-    const pending = (data.rsvpList ?? []).filter((r) => r.status === 'PENDING').length;
-    Alert.alert(
-      'RSVP Reminders',
-      pending > 0
-        ? `${pending} alumni still haven't responded. Reminder notifications will go out from the notification worker.`
-        : 'Every invited alumnus has responded — no reminders needed.',
-    );
+  const onJoin = () => {
+    // A webinar link is only useful if you can actually open it, so this is
+    // handled explicitly rather than relying on Linking silently doing nothing.
+    Alert.alert('Join', 'The joining link will open in your browser.', [
+      { text: 'Not now', style: 'cancel' },
+      {
+        text: 'Open link',
+        onPress: async () => {
+          try {
+            await Linking.openURL(event.meetingUrl);
+          } catch (e) {
+            Alert.alert('Cannot open link', e.message);
+          }
+        },
+      },
+    ]);
   };
 
-  if (loading && !data) {
+  if (loading && !event) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View style={styles.container}>
+        {[1, 2, 3, 4].map((i) => (
+          <SkeletonCard key={i} style={{ marginHorizontal: 16, marginBottom: 8 }} />
+        ))}
       </View>
     );
   }
 
-  if (error && !data) {
+  if (error && !event) {
     return (
       <View style={styles.center}>
         <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+        <TouchableOpacity style={styles.retry} onPress={() => load()}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.backLink} onPress={navigation.goBack}>
+        <TouchableOpacity style={styles.backLink} onPress={() => navigation.goBack()}>
           <Text style={styles.backLinkText}>Go back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const confirmed = (data.rsvpList ?? []).filter((r) => r.status === 'CONFIRMED').length;
-  const pending = (data.rsvpList ?? []).filter((r) => r.status === 'PENDING').length;
-  const pct = data.capacity > 0 ? Math.min(Math.round((data.rsvps / data.capacity) * 100), 100) : 0;
-  const COLORS = ['#2563eb', '#059669', '#d97706', '#0891b2', '#dc2626', '#7c3aed'];
+  const t = typeMeta(event.eventType);
+  const st = eventStatusMeta(event.status);
+  const vc = event.viewerContext ?? {};
+  const stats = event.stats ?? {};
+
+  const badges = (id) => {
+    switch (id) {
+      case 'agenda':
+        return event.agenda?.length ?? 0;
+      case 'attendees':
+        return stats.registered ?? 0;
+      case 'feedback':
+        return stats.feedbackCount ?? 0;
+      case 'memories':
+        return stats.photoCount ?? 0;
+      default:
+        return 0;
+    }
+  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
+    <View style={styles.container}>
+      <LinearGradient colors={[t.color, '#0f172a']} style={styles.hero}>
         <View style={styles.heroTop}>
-          <View style={styles.heroBadge}>
-            <Ionicons name="calendar-outline" size={12} color="#fff" />
-            <Text style={styles.heroBadgeText}>
-              {new Date(data.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </Text>
-          </View>
-          <View style={styles.heroBadge}>
-            <Ionicons name="time-outline" size={12} color="#fff" />
-            <Text style={styles.heroBadgeText}>
-              {new Date(data.startDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-            </Text>
-          </View>
-          <View style={styles.heroBadge}>
-            <Ionicons name="information-circle-outline" size={12} color="#fff" />
-            <Text style={styles.heroBadgeText}>{data.status}</Text>
+          <TouchableOpacity style={styles.circleBtn} onPress={navigation.goBack}>
+            <Ionicons name="arrow-back" size={17} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.heroChips}>
+            <View style={styles.heroChip}>
+              <Ionicons name={t.icon} size={10} color="#fff" />
+              <Text style={styles.heroChipText}>{t.label}</Text>
+            </View>
+            {event.isOnline ? (
+              <View style={styles.heroChip}>
+                <Ionicons name="globe-outline" size={10} color="#fff" />
+                <Text style={styles.heroChipText}>Online</Text>
+              </View>
+            ) : null}
+            {vc.isWaitlisted ? (
+              <View style={[styles.heroChip, { backgroundColor: '#d97706' }]}>
+                <Text style={styles.heroChipText}>Waitlisted</Text>
+              </View>
+            ) : null}
+            {vc.hasCheckedIn ? (
+              <View style={[styles.heroChip, { backgroundColor: '#059669' }]}>
+                <Ionicons name="checkmark" size={10} color="#fff" />
+                <Text style={styles.heroChipText}>Attended</Text>
+              </View>
+            ) : null}
           </View>
         </View>
-        <Text style={styles.heroTitle}>{data.title}</Text>
-        {data.venue ? (
-          <Text style={styles.heroVenue}>
-            <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.85)" /> {data.venue}
+
+        <Text style={styles.heroTitle}>{event.title}</Text>
+
+        <View style={styles.heroMeta}>
+          <Ionicons name="calendar-outline" size={12} color="rgba(255,255,255,0.85)" />
+          <Text style={styles.heroMetaText}>
+            {fmtDate(event.startDate)}
+            {fmtTime(event.startDate) ? ` · ${fmtTime(event.startDate)}` : ''}
           </Text>
-        ) : null}
+        </View>
+        <View style={styles.heroMeta}>
+          <Ionicons name={event.isOnline ? 'globe-outline' : 'location-outline'} size={12} color="rgba(255,255,255,0.85)" />
+          <Text style={styles.heroMetaText} numberOfLines={1}>
+            {event.isOnline ? 'Online event' : (event.venue?.name ?? 'Venue to be announced')}
+            {event.chapter ? ` · ${event.chapter.city} chapter` : ''}
+          </Text>
+        </View>
+
         <View style={styles.heroStats}>
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatValue}>{data.rsvps}</Text>
-            <Text style={styles.heroStatLabel}>RSVPs</Text>
-          </View>
-          <View style={styles.heroStatDivider} />
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatValue}>{data.capacity}</Text>
-            <Text style={styles.heroStatLabel}>Capacity</Text>
-          </View>
-          <View style={styles.heroStatDivider} />
-          <View style={styles.heroStat}>
-            <Text style={styles.heroStatValue}>{pct}%</Text>
-            <Text style={styles.heroStatLabel}>Filled</Text>
-          </View>
+          <HeroStat value={stats.registered ?? 0} label="registered" />
+          <HeroStat value={stats.confirmed ?? 0} label="going" />
+          <HeroStat value={stats.checkedIn ?? 0} label="attended" />
+          <HeroStat
+            value={stats.avgRating ?? '—'}
+            label={stats.avgRating != null ? `★ ${stats.avgRating}` : 'no reviews'}
+          />
         </View>
       </LinearGradient>
 
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.actionButton} disabled={announcing || announced} onPress={onAnnounce}>
-          {announcing ? (
-            <ActivityIndicator size="small" color="#2563eb" />
-          ) : (
-            <Ionicons name={announced ? 'checkmark-circle' : 'megaphone-outline'} size={16} color="#2563eb" />
-          )}
-          <Text style={styles.actionText}>{announced ? 'Announced' : 'Announce'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={onRemind}>
-          <Ionicons name="notifications-outline" size={16} color="#2563eb" />
-          <Text style={styles.actionText}>Remind</Text>
-        </TouchableOpacity>
-      </View>
-
-      {data.description ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.desc}>{data.description}</Text>
+      {/* The single most important control on the screen. Exactly one of
+          Register / Cancel is ever offered, per viewerContext. */}
+      {!vc.isOffice && !event.isPast && (vc.canRegister || vc.canCancel) ? (
+        <View style={styles.actionBar}>
+          {vc.canRegister ? (
+            <TouchableOpacity
+              style={[styles.primaryBtn, vc.seatsLeft === 0 && styles.primaryBtnFull]}
+              onPress={onRegister}
+              disabled={busy}
+            >
+              <Ionicons
+                name={vc.seatsLeft === 0 ? 'hourglass-outline' : 'add-circle-outline'}
+                size={16}
+                color="#fff"
+              />
+              <Text style={styles.primaryBtnText}>
+                {busy ? 'Working…' : vc.seatsLeft === 0 ? 'Join the waitlist' : 'Register'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {vc.canCancel ? (
+            <TouchableOpacity style={styles.secondaryBtn} onPress={onCancelRegistration} disabled={busy}>
+              <Ionicons name="close-circle-outline" size={16} color="#dc2626" />
+              <Text style={styles.secondaryBtnText}>Cancel my spot</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : null}
 
-      {(data.schedule ?? []).length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Schedule</Text>
-          {data.schedule.map((s, idx) => (
-            <View key={`${s.day}-${s.order}`} style={styles.scheduleRow}>
-              <View style={styles.timelineCol}>
-                <View style={[styles.timelineDot, s.isDone && styles.timelineDotDone]}>
-                  {s.isDone && <Ionicons name="checkmark" size={10} color="#fff" />}
-                </View>
-                {idx < data.schedule.length - 1 && <View style={styles.timelineLine} />}
-              </View>
-              <View style={styles.scheduleBody}>
-                <Text style={styles.scheduleTime}>Day {s.day}</Text>
-                <Text style={styles.scheduleTitle}>{s.item}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
+      {vc.hasCheckedIn && event.meetingUrl && event.isOnline ? (
+        <TouchableOpacity style={styles.joinBar} onPress={onJoin}>
+          <Ionicons name="videocam-outline" size={15} color="#fff" />
+          <Text style={styles.joinText}>Join the webinar</Text>
+        </TouchableOpacity>
+      ) : null}
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>RSVP List</Text>
-          <Text style={styles.rsvpSummary}>
-            {confirmed} confirmed · {pending} pending
-          </Text>
-        </View>
-        {(data.rsvpList ?? []).map((r, idx) => {
-          const meta = STATUS_META[r.status] ?? { chip: r.status, bg: '#f1f5f9', color: '#64748b' };
-          const color = COLORS[idx % COLORS.length];
-          const isPending = r.status === 'PENDING';
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabWrap}
+        contentContainerStyle={styles.tabRow}
+      >
+        {TABS.map((x) => {
+          const active = tab === x.id;
+          const n = badges(x.id);
           return (
-            <View key={r.id} style={styles.rsvpCard}>
-              <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
-                <Text style={[styles.avatarText, { color }]}>
-                  {r.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                </Text>
-              </View>
-              <View style={styles.rsvpBody}>
-                <Text style={styles.rsvpName} numberOfLines={1}>{r.name}</Text>
-                <Text style={styles.rsvpMeta}>
-                  {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                </Text>
-              </View>
-              {isPending ? (
-                <View style={styles.pendingActions}>
-                  <TouchableOpacity
-                    style={styles.confirmBtn}
-                    disabled={busyId === r.id}
-                    onPress={() => decide(r.id, 'CONFIRMED')}
-                  >
-                    {busyId === r.id ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Ionicons name="checkmark" size={13} color="#fff" />
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.declineBtn}
-                    disabled={busyId === r.id}
-                    onPress={() => decide(r.id, 'DECLINED')}
-                  >
-                    <Ionicons name="close" size={13} color="#dc2626" />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View style={[styles.statusChip, { backgroundColor: meta.bg }]}>
-                  <Text style={[styles.statusText, { color: meta.color }]}>{meta.chip}</Text>
-                </View>
-              )}
-            </View>
+            <TouchableOpacity
+              key={x.id}
+              style={[styles.tab, active && styles.tabActive]}
+              onPress={() => setTab(x.id)}
+            >
+              <Ionicons name={x.icon} size={13} color={active ? '#fff' : theme.colors.textMuted} />
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>{x.label}</Text>
+              {n > 0 && x.id !== 'about' ? (
+                <Text style={[styles.tabCount, active && styles.tabCountActive]}>{n}</Text>
+              ) : null}
+            </TouchableOpacity>
           );
         })}
-        {(data.rsvpList ?? []).length === 0 && (
-          <Text style={styles.emptyText}>No RSVPs yet — announce the event to reach alumni.</Text>
-        )}
-      </View>
-    </ScrollView>
+      </ScrollView>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              reload();
+            }}
+          />
+        }
+      >
+        {tab === 'about' ? (
+          <View style={styles.section}>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Details</Text>
+              <Fact label="Status" value={st.label} valueColor={st.color} />
+              <Fact label="Type" value={t.label} />
+              <Fact label="Starts" value={`${fmtDate(event.startDate)} · ${fmtTime(event.startDate)}`} />
+              <Fact label="Ends" value={`${fmtDate(event.endDate)} · ${fmtTime(event.endDate)}`} />
+              <Fact label="Where" value={event.isOnline ? 'Online' : (event.venue?.name ?? 'TBC')} />
+              {event.chapter ? <Fact label="Chapter" value={event.chapter.city} /> : null}
+              <Fact label="Capacity" value={`${stats.confirmed ?? 0} / ${event.capacity}`} />
+              {stats.pending > 0 ? <Fact label="Waitlist" value={`${stats.pending} waiting`} /> : null}
+            </View>
+
+            {event.description ? (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>About this event</Text>
+                <Text style={styles.body}>{event.description}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Turnout</Text>
+              <Meter
+                label="Registered"
+                value={
+                  event.capacity > 0
+                    ? Math.round(((stats.registered ?? 0) / event.capacity) * 100)
+                    : null
+                }
+                color="#2563eb"
+                hint={`${stats.registered ?? 0} of ${event.capacity} places taken`}
+              />
+              <Meter
+                label="Confirmed"
+                value={
+                  stats.registered > 0
+                    ? Math.round(((stats.confirmed ?? 0) / stats.registered) * 100)
+                    : null
+                }
+                color="#0891b2"
+                hint="Of everyone who registered"
+              />
+              {/* The number that used to be fiction. */}
+              <Meter
+                label="Actually attended"
+                value={stats.attendanceRate}
+                color="#059669"
+                hint={
+                  stats.confirmed > 0
+                    ? `${stats.checkedIn} of ${stats.confirmed} confirmed turned up`
+                    : 'Nothing confirmed yet'
+                }
+              />
+            </View>
+
+            {stats.avgRating != null ? (
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Rating</Text>
+                <View style={styles.ratingRow}>
+                  <Text style={styles.ratingBig}>{stats.avgRating}</Text>
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.starRow}>
+                      {stars(stats.avgRating, 14).map((s) => (
+                        <Ionicons
+                          key={s.n}
+                          name={s.icon}
+                          size={14}
+                          color={s.filled ? '#f59e0b' : '#cbd5e1'}
+                        />
+                      ))}
+                    </View>
+                    <Text style={styles.muted}>{stats.feedbackCount} attendee review(s)</Text>
+                  </View>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {tab === 'agenda' ? <EventAgenda event={event} reload={reload} /> : null}
+        {tab === 'attendees' ? <EventAttendees event={event} reload={reload} /> : null}
+        {tab === 'feedback' ? <EventFeedback event={event} reload={reload} /> : null}
+        {tab === 'memories' ? <EventMemories event={event} reload={reload} /> : null}
+      </ScrollView>
+    </View>
+  );
+}
+
+function HeroStat({ value, label }) {
+  return (
+    <View style={styles.heroStat}>
+      <Text style={styles.heroStatValue}>{value}</Text>
+      <Text style={styles.heroStatLabel}>{label}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, backgroundColor: theme.colors.background },
+  errorText: { marginTop: 10, fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center' },
+  retry: { marginTop: 14, backgroundColor: '#2563eb', paddingHorizontal: 22, paddingVertical: 9, borderRadius: 10 },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 12 },
   backLink: { marginTop: 14 },
-  backLinkText: { fontSize: 12, fontFamily: 'Manrope-SemiBold', color: '#2563eb' },
-  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 16 },
-  hero: {
-    margin: 16,
-    borderRadius: 20,
-    padding: 18,
-  },
-  heroTop: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  heroBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginRight: 8,
-    marginTop: 4,
-  },
-  heroBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-SemiBold',
-    color: '#fff',
-    marginLeft: 4,
-  },
-  heroTitle: {
-    fontSize: 20,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-    marginTop: 12,
-  },
-  heroVenue: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 5,
-  },
-  heroStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 12,
-    paddingVertical: 10,
-    marginTop: 14,
-  },
-  heroStat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  heroStatValue: {
-    fontSize: 16,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-  },
-  heroStatLabel: {
-    fontSize: 9,
-    fontFamily: 'Manrope-Medium',
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 1,
-  },
-  heroStatDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginTop: 4,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingVertical: 10,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  actionText: {
-    fontSize: 11,
-    fontFamily: 'Manrope-SemiBold',
-    color: '#2563eb',
-    marginLeft: 5,
-  },
-  section: { paddingHorizontal: 16, marginTop: 18 },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  desc: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Regular',
-    color: theme.colors.textMuted,
-    lineHeight: 19,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-  },
-  scheduleRow: {
-    flexDirection: 'row',
-  },
-  timelineCol: {
-    alignItems: 'center',
-    width: 20,
-    marginRight: 10,
-  },
-  timelineDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  timelineDotDone: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary,
-  },
-  timelineLine: {
-    flex: 1,
-    width: 2,
-    backgroundColor: theme.colors.border,
-    marginVertical: 2,
-  },
-  scheduleBody: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
-  },
-  scheduleTime: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.primary,
-  },
-  scheduleTitle: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginTop: 3,
-  },
-  rsvpSummary: {
-    fontSize: 11,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.textMuted,
-  },
-  rsvpCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 10,
-    marginBottom: 8,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  avatarText: {
-    fontSize: 11,
-    fontFamily: 'Manrope-ExtraBold',
-  },
-  rsvpBody: { flex: 1 },
-  rsvpName: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  rsvpMeta: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  statusChip: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  statusText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-  },
-  pendingActions: {
-    flexDirection: 'row',
-  },
-  confirmBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#059669',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 6,
-  },
-  declineBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#fee2e2',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  backLinkText: { color: theme.colors.textMuted, fontFamily: 'Manrope-SemiBold', fontSize: 12 },
+
+  hero: { padding: 18, paddingTop: 14 },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  circleBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  heroChips: { flexDirection: 'row', gap: 5, flexWrap: 'wrap', justifyContent: 'flex-end' },
+  heroChip: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.22)', borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 },
+  heroChipText: { color: '#fff', fontSize: 9, fontFamily: 'Manrope-Bold' },
+  heroTitle: { color: '#fff', fontSize: 20, fontFamily: 'Manrope-ExtraBold', lineHeight: 26 },
+  heroMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
+  heroMetaText: { color: 'rgba(255,255,255,0.88)', fontSize: 11, fontFamily: 'Manrope-Medium', flex: 1 },
+  heroStats: { flexDirection: 'row', gap: 7, marginTop: 14 },
+  heroStat: { flex: 1, backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 11, paddingHorizontal: 8, paddingVertical: 7 },
+  heroStatValue: { color: '#fff', fontSize: 14, fontFamily: 'Manrope-ExtraBold' },
+  heroStatLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 8, fontFamily: 'Manrope-Medium' },
+
+  actionBar: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 12 },
+  primaryBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 12, paddingVertical: 12 },
+  primaryBtnFull: { backgroundColor: '#d97706' },
+  primaryBtnText: { color: '#fff', fontSize: 13, fontFamily: 'Manrope-Bold' },
+  secondaryBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: '#fecaca', borderRadius: 12, paddingVertical: 12 },
+  secondaryBtnText: { color: '#dc2626', fontSize: 13, fontFamily: 'Manrope-Bold' },
+  joinBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#7c3aed', marginHorizontal: 16, marginTop: 10, borderRadius: 12, paddingVertical: 12 },
+  joinText: { color: '#fff', fontSize: 13, fontFamily: 'Manrope-Bold' },
+
+  tabWrap: { flexGrow: 0, marginTop: 12 },
+  tabRow: { paddingHorizontal: 16, gap: 6 },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: 10, paddingVertical: 8 },
+  tabActive: { backgroundColor: '#0f172a', borderColor: '#0f172a' },
+  tabText: { fontSize: 11, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted },
+  tabTextActive: { color: '#fff' },
+  tabCount: { fontSize: 9, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted, backgroundColor: theme.colors.surfaceMuted, borderRadius: 7, paddingHorizontal: 5, paddingVertical: 1 },
+  tabCountActive: { color: '#fff', backgroundColor: 'rgba(255,255,255,0.22)' },
+
+  section: { padding: 16, paddingBottom: 28 },
+  card: { backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: theme.colors.border, padding: 14, marginBottom: 10 },
+  cardTitle: { fontSize: 10, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  body: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.text, lineHeight: 18 },
+  muted: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 3 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  ratingBig: { fontSize: 34, fontFamily: 'Manrope-ExtraBold', color: '#f59e0b' },
+  starRow: { flexDirection: 'row', gap: 2 },
 });

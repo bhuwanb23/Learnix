@@ -47,9 +47,21 @@ export default function AlumniScreen({ navigation }) {
   setDemoUser('priya@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
+  // Bumped when the user re-taps the tab they are already on. Tapping the active
+  // tab is the universal "take me back to the top" gesture, but the tab modules
+  // keep their own drill-down state (an open event, an open chapter), so setting
+  // the same tab and screen values makes React bail out of the re-render and the
+  // user is stranded on a detail screen with no way back. Remounting on the new
+  // epoch resets that state, which is what the gesture means.
+  const [tabEpoch, setTabEpoch] = useState(0);
   const insets = useSafeAreaInsetsWithPadding();
 
   const handleTabChange = (tabId) => {
+    if (tabId === activeTab) {
+      setTabEpoch((n) => n + 1);
+      setCurrentScreen('main');
+      return;
+    }
     setActiveTab(tabId);
     setCurrentScreen('main');
   };
@@ -112,6 +124,7 @@ export default function AlumniScreen({ navigation }) {
       case 'Events':
         return (
           <EventsModule
+            key={`events-${tabEpoch}`}
             navigation={{
               navigate: (screen) => setCurrentScreen(screen),
               goBack: () => setCurrentScreen('main'),
