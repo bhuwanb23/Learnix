@@ -34,6 +34,14 @@ import LateFeePolicy from './pages/dues/pages/late_fee_policy/late_fee_policy';
 // Payroll sub-pages (pages/payroll/*)
 import PayrollDetail from './pages/payroll/pages/payroll_detail/payroll_detail';
 import Payslip from './pages/payroll/pages/payslip/payslip';
+// The salary desk (docs/users/06 §3.4): the records a payroll run is built FROM.
+import PayrollSalaryRecords from './pages/payroll/pages/salary_records/salary_records';
+import PayrollSalaryRecord from './pages/payroll/pages/salary_record/salary_record';
+import PayrollComponents from './pages/payroll/pages/salary_components/salary_components';
+import PayrollAttendance from './pages/payroll/pages/salary_attendance/salary_attendance';
+import PayrollLoans from './pages/payroll/pages/salary_loans/salary_loans';
+import PayrollAlerts from './pages/payroll/pages/payroll_alerts/payroll_alerts';
+import PayslipDocument from './pages/payroll/pages/payslip_document/payslip_document';
 
 // Import feature modules (opened from dashboard hub)
 import FeeStructureModule from './pages/fee_structure/fee_structure';
@@ -96,6 +104,13 @@ const FEATURE_MODULES = {
   // Payroll sub-pages
   PayrollRunDetail: { title: 'Payroll Run', icon: 'card-outline', component: PayrollDetail },
   Payslip: { title: 'Payslip', icon: 'document-text-outline', component: Payslip },
+  PayrollSalaryRecords: { title: 'Salary Records', icon: 'people-outline', component: PayrollSalaryRecords },
+  PayrollSalaryRecord: { title: 'Salary Record', icon: 'person-outline', component: PayrollSalaryRecord },
+  PayrollComponents: { title: 'Salary Structure', icon: 'options-outline', component: PayrollComponents },
+  PayrollAttendance: { title: 'Attendance', icon: 'calendar-outline', component: PayrollAttendance },
+  PayrollLoans: { title: 'Loans & Advances', icon: 'card-outline', component: PayrollLoans },
+  PayrollAlerts: { title: 'Pending Salaries', icon: 'alert-circle-outline', component: PayrollAlerts },
+  PayslipDocument: { title: 'Payslip Document', icon: 'document-text-outline', component: PayslipDocument },
 
   // Expenses sub-pages
   ExpenseEntry: { title: 'Raise a Claim', icon: 'add-circle-outline', component: ExpenseEntry },

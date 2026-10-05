@@ -20,10 +20,10 @@ import {
   ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { accountsApi } from '../../../../../services/api';
-import { AnimatedCard, EmptyState, SkeletonCard, StatusChip } from '../../../../../components/ui';
+import { accountsApi } from '../../../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../../../components/ui';
 import {
-  THEME, rupees, componentMeta, componentFormula, isPercentComponent,
+  THEME, rupees, componentMeta, isPercentComponent,
   COMPONENT_CATALOG, COMPONENT_BASES, currentMonth,
 } from '../../payrollSalaryMeta';
 

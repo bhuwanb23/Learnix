@@ -29,7 +29,7 @@ import {
 } from '../../../../components/ui';
 import {
   THEME, rupees, compactRupees, formatDate, relativeTime,
-  runStatusMeta, entryStatusMeta, monthLabel, monthShort, suggestedMonth,
+  runStatusMeta, monthLabel, monthShort, suggestedMonth,
 } from './payrollMeta';
 
 export default function PayrollModule({ navigation }) {
@@ -224,6 +224,27 @@ export default function PayrollModule({ navigation }) {
           </Text>
         </TouchableOpacity>
 
+        {/* The salary desk is a different job from the run desk: this screen asks
+            "what did this month cost", that one asks "what is each person paid, on
+            what basis, and what is still owed to them". Both have to be reachable
+            from here or the second one is invisible. */}
+        <View style={styles.deskRow}>
+          <TouchableOpacity
+            style={styles.deskBtn}
+            onPress={() => navigation.openModule('PayrollSalaryRecords', { month: currentMonth })}
+          >
+            <Ionicons name="people-outline" size={16} color={THEME} />
+            <Text style={styles.deskBtnText}>Salary records</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.deskBtn, styles.deskBtnAlert]}
+            onPress={() => navigation.openModule('PayrollAlerts', {})}
+          >
+            <Ionicons name="alert-circle-outline" size={16} color="#d97706" />
+            <Text style={[styles.deskBtnText, { color: '#d97706' }]}>Pending salaries</Text>
+          </TouchableOpacity>
+        </View>
+
         {openRun && openRun.id !== currentRun?.id && (
           <AnimatedCard
             delay={40}
@@ -401,6 +422,13 @@ function RunCard({ run, index, isCurrent, onPress }) {
 }
 
 const styles = StyleSheet.create({
+  deskRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  deskBtn: {
+    flex: 1, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 12, borderRadius: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#dbeafe',
+  },
+  deskBtnAlert: { borderColor: '#fde68a', backgroundColor: '#fffbeb' },
+  deskBtnText: { fontSize: 13, fontWeight: '700', color: THEME },
   container: { flex: 1, backgroundColor: '#f5f7f9' },
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
@@ -497,4 +525,4 @@ const styles = StyleSheet.create({
 
   excludedCard: { backgroundColor: '#fef2f2', borderColor: '#fecaca' },
   excludedText: { flex: 1, fontSize: 11, color: '#991b1b', lineHeight: 16 },
-});
+});

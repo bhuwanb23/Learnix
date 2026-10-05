@@ -20,10 +20,10 @@ import {
   ActivityIndicator, Alert, Modal, TextInput, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { accountsApi } from '../../../../../services/api';
-import { AnimatedCard, EmptyState, SkeletonCard, StatusChip } from '../../../../../components/ui';
+import { accountsApi } from '../../../../../../services/api';
+import { AnimatedCard, EmptyState, SkeletonCard, StatusChip } from '../../../../../../components/ui';
 import {
-  THEME, rupees, compactRupees, formatDate, effectiveDateLabel, monthLabel, monthShort,
+  THEME, rupees, effectiveDateLabel, monthLabel, monthShort,
   currentMonth, shiftMonth, componentMeta, componentFormula, isPercentComponent,
   attendanceTone, loanTone, LOAN_KIND_LABELS, SALARY_REASON_PRESETS,
 } from '../../payrollSalaryMeta';

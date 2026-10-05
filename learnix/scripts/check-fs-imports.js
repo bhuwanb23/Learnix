@@ -1,5 +1,5 @@
-// Static check that every named import in the Fee Structure screens resolves to
-// a real export in the module it imports from.
+// Static check that every named import in the Fee Structure and Payroll screens
+// resolves to a real export in the module it imports from.
 //
 // A Babel parse sweep only proves the file is SYNTACTICALLY valid. A screen
 // importing `formatDay` from a meta module that does not export it parses
@@ -11,14 +11,27 @@
 const fs = require('fs');
 const path = require('path');
 
-const FS_DIR = path.resolve(__dirname, '..', 'users', 'accounts_finance', 'pages', 'fee_structure');
+const PAGES_DIR = path.resolve(__dirname, '..', 'users', 'accounts_finance', 'pages');
+const FS_DIR = path.join(PAGES_DIR, 'fee_structure');
 const API_FILE = path.resolve(__dirname, '..', 'services', 'api.js');
+
+// A meta module is a leaf — it imports nothing by design — so the
+// "has at least one relative import" check does not apply to it.
+const LEAF_META = new Set(['feeStructureMeta.js', 'payrollSalaryMeta.js', 'payrollMeta.js']);
 
 const files = [
   path.join(FS_DIR, 'fee_structure.js'),
   path.join(FS_DIR, 'feeStructureMeta.js'),
   ...['component_editor', 'concessions', 'installments', 'penalties', 'structure_detail', 'version_history']
     .map((d) => path.join(FS_DIR, 'pages', d, `${d}.js`)),
+
+  // The payroll salary desk (docs/users/06 §3.4).
+  path.join(PAGES_DIR, 'payroll', 'payroll.js'),
+  path.join(PAGES_DIR, 'payroll', 'payrollMeta.js'),
+  path.join(PAGES_DIR, 'payroll', 'payrollSalaryMeta.js'),
+  ...['payroll_detail', 'payslip', 'payslip_document', 'payroll_alerts', 'salary_attendance',
+      'salary_components', 'salary_loans', 'salary_record', 'salary_records']
+    .map((d) => path.join(PAGES_DIR, 'payroll', 'pages', d, `${d}.js`)),
 ];
 
 /** Every named export a module offers, plus its default. */
@@ -62,7 +75,7 @@ for (const file of files) {
   const src = fs.readFileSync(file, 'utf8');
   // The meta module is a leaf — it imports nothing by design — so "has at least
   // one relative import" only applies to the screens.
-  const mustHaveImports = path.basename(file) !== 'feeStructureMeta.js';
+  const mustHaveImports = !LEAF_META.has(path.basename(file));
 
   // Only relative imports can be resolved from disk; package imports are a
   // different question and are checked by the bundler instead.

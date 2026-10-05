@@ -20,7 +20,7 @@ import { accountsApi } from '../../../../../../services/api';
 import { AnimatedCard, SkeletonCard, EmptyState } from '../../../../../../components/ui';
 import {
   THEME, rupees, formatDate, formatDateTime,
-  runStatusMeta, entryStatusMeta, monthLabel, monthShort, lineRupees,
+  runStatusMeta, entryStatusMeta, monthLabel, lineRupees,
 } from '../../payrollMeta';
 
 export default function Payslip({ navigation, route }) {
