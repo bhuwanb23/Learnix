@@ -22,10 +22,10 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../../../services/api';
-import { VIOLET, GREEN, RED, SLATE, MUTED, AMBER, compactRupees, rupees, percentPhrase } from '../../../dashboardMeta';
+import { VIOLET, GREEN, RED, SLATE, MUTED, AMBER, compactRupees, rupees, percentPhrase } from '../../dashboardMeta';
 import {
   DashboardEmpty, DashboardScreen, FigureRow, Section, SpendBar, StatGrid, StatCell, goToRoute, useDashboard,
-} from '../../../dashboardUi';
+} from '../../dashboardUi';
 
 export default function DashboardScholarships({ navigation }) {
   const { data, loading, refreshing, error, reload, onRefresh } = useDashboard(

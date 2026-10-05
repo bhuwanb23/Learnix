@@ -31,10 +31,10 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../../../services/api';
-import { GREEN, RED, SLATE, MUTED, rupees, timeAgo, overduePhrase, percentPhrase } from '../../../dashboardMeta';
+import { GREEN, RED, SLATE, MUTED, rupees, timeAgo, overduePhrase, percentPhrase } from '../../dashboardMeta';
 import {
   AlertRow, DashboardEmpty, DashboardScreen, FamilyHeader, goToRoute, useDashboard,
-} from '../../../dashboardUi';
+} from '../../dashboardUi';
 
 export default function DashboardAlerts({ navigation }) {
   // The family is held here rather than passed in a route param, because tapping

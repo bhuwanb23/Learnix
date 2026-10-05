@@ -23,8 +23,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../../../services/api';
-import { THEME, GREEN, SLATE, MUTED, rupees } from '../../../dashboardMeta';
-import { ActionTile, DashboardEmpty, DashboardScreen, Section, goToRoute, useDashboard } from '../../../dashboardUi';
+import { THEME, GREEN, SLATE, MUTED, rupees } from '../../dashboardMeta';
+import { ActionTile, DashboardEmpty, DashboardScreen, Section, goToRoute, useDashboard } from '../../dashboardUi';
 
 export default function DashboardActions({ navigation }) {
   const { data, loading, refreshing, error, reload, onRefresh } = useDashboard(

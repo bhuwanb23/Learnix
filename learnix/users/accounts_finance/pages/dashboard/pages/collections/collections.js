@@ -19,10 +19,10 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../../../services/api';
-import { GREEN, RED, SLATE, MUTED, AMBER, compactRupees, rupees, formatDateTime, percentPhrase } from '../../../dashboardMeta';
+import { GREEN, RED, SLATE, MUTED, AMBER, compactRupees, rupees, formatDateTime, percentPhrase } from '../../dashboardMeta';
 import {
   DashboardEmpty, DashboardScreen, FigureRow, Section, SpendBar, StatGrid, StatCell, goToRoute, useDashboard,
-} from '../../../dashboardUi';
+} from '../../dashboardUi';
 
 export default function DashboardCollections({ navigation }) {
   const { data, loading, refreshing, error, reload, onRefresh } = useDashboard(
