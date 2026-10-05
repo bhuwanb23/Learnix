@@ -4,16 +4,35 @@
 // announcements: admin approval queue → student notices.
 // senderUserId / authorUserId / approvedByUserId scalar actor-stamps.
 
+// One row per person per message. `type` is free text on purpose: five modules
+// raise mail into this one table and none of them can afford a migration when a
+// sibling adds a category. The de-facto vocabulary is registered in ONE place per
+// owning desk (`alumni/notifications/notifications.rules.ts` for the categories
+// below, `accounts/notifications.rules.ts` for the financial ones). A type no desk
+// registers is still delivered — it just renders with the fallback chrome.
+//
+// The comment that used to sit on `type` was a lie: it listed EVENT|FEE|GRADE|
+// MENTORSHIP|COMPLAINT|BROADCAST|SYSTEM while the table already held EVENT_REG,
+// DONATION, ADMIN_BROADCAST, PAYSLIP, DELAY and more. A stale enumeration on a
+// String column is worse than none, so there is none.
 model Notification {
   id             String    @id @default(cuid())
   institutionId  String
   recipientUserId String
-  type           String // EVENT | FEE | GRADE | MENTORSHIP | COMPLAINT | BROADCAST | SYSTEM | …
+  type           String // registered per desk; unregistered types fall back to SYSTEM chrome
   title          String
   body           String
   dataJson       String? // deep-link payload { module, id }
   readAt         DateTime?
   sourceModule   String? // which app raised it
+  // Idempotency key for anything that can fire twice: the reminder sweep runs on
+  // demand, so "event X starts in 24h" must not become a second row when the
+  // office presses the button twice. NULL for the ~70 emitters that fire once by
+  // nature — which is every other module, so this column changes nothing for them.
+  // Not UNIQUE: the same logical key legitimately repeats across institutions and
+  // across re-sends of a recurring reminder in a later cycle. Uniqueness is scoped
+  // by the recipient lookup in notifications.delivery.ts, inside the transaction.
+  dedupeKey      String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -21,7 +40,36 @@ model Notification {
 
   @@index([recipientUserId])
   @@index([recipientUserId, readAt])
+  @@index([recipientUserId, dedupeKey])
   @@map("notifications")
+}
+
+// Per-recipient mute list, one row per category the person has actually touched.
+//
+// Why a table and not a JSON column on the user row: a mute is a fact about a
+// relationship between one person and one category, and it needs its own unique
+// constraint to stop two concurrent PATCHes writing two contradictory rows. It
+// also has to outlive the alumni module — this table is shared by every desk that
+// reads `notifications`, and a JSON blob parked on AlumniProfile would give the
+// student and transport apps nowhere to put theirs.
+//
+// Absence of a row means "not muted". The defaults live in
+// alumni/notifications/notifications.rules.ts so that adding a ninth category does
+// not silently switch anybody's mail off.
+model NotificationPreference {
+  id             String   @id @default(cuid())
+  institutionId  String
+  userId         String
+  category       String // registered category id — NOT Notification.type
+  muted          Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category])
+  @@index([institutionId])
+  @@map("notification_preferences")
 }
 
 model Broadcast {
@@ -33,6 +81,12 @@ model Broadcast {
   title          String
   body           String
   channels       String // "IN_APP" | "IN_APP,EMAIL,PUSH"
+  // "Important alumni update": the office can flag one broadcast as needing to be
+  // seen, which pins it to the top of the inbox and keeps it visible when the
+  // graduate filters the inbox down to one category. Without a flag there is no
+  // way to say "this one matters" — every broadcast looks identical, and the
+  // inbox can only sort by time.
+  isImportant    Boolean   @default(false)
   sentAt         DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt

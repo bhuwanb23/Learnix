@@ -19,7 +19,7 @@ const API_FILE = path.resolve(__dirname, '..', 'services', 'api.js');
 // "has at least one relative import" check does not apply to it.
 const LEAF_META = new Set([
   'feeStructureMeta.js', 'payrollSalaryMeta.js', 'payrollMeta.js', 'scholarshipsMeta.js',
-  'reportsMeta.js', 'notificationsMeta.js',
+  'reportsMeta.js', 'notificationsMeta.js', 'dashboardMeta.js',
 ]);
 
 const files = [
@@ -59,6 +59,13 @@ const files = [
   path.join(PAGES_DIR, 'notifications', 'notificationsUi.js'),
   ...['alerts', 'compose', 'history', 'inbox']
     .map((d) => path.join(PAGES_DIR, 'notifications', 'pages', d, `${d}.js`)),
+
+  // The finance dashboard (docs/users/06 §3.11). One sub-screen per block.
+  path.join(PAGES_DIR, 'dashboard', 'dashboard.js'),
+  path.join(PAGES_DIR, 'dashboard', 'dashboardMeta.js'),
+  path.join(PAGES_DIR, 'dashboard', 'dashboardUi.js'),
+  ...['actions', 'alerts', 'collections', 'dues', 'expenses', 'payroll', 'scholarships']
+    .map((d) => path.join(PAGES_DIR, 'dashboard', 'pages', d, `${d}.js`)),
 ];
 
 /** Every named export a module offers, plus its default. */

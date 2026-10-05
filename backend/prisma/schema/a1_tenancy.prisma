@@ -45,6 +45,7 @@ model User {
   eventPhotos         EventPhoto[]     @relation("EventPhotoUploader")
   eventFeedback       EventFeedback[]
   notifications   Notification[]
+  notificationPreferences NotificationPreference[]
   pushTokens      PushToken[]
   aiInteractions  AiInteraction[]
   // Alumni networking. Two distinct relations to User because a connection has

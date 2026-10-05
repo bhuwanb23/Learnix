@@ -117,6 +117,16 @@ the regression.
 `studentProfile.user`. Every read and write goes through that path, so another school's bill is a 404
 here, not a row.
 
+**The desk derives its ageing; it never reads the stored counter** (F-11). `daysOverdue` is still
+*written* — `syncDueOverdue` keeps it repaired — but every READ path now derives the age from
+`dueDate` through `daysPastDue()`: the list, the ageing buckets, the detail payload, the other open
+dues on the detail screen, and the sentence the reminder actually sends. The desk was the last reader
+of the denormalised column, and that is how the morning screen and the dues desk came to report the
+same overdue money as ₹39,820 and ₹46,120 — two screens, one rupee, two answers. Three modules now
+share one derivation (dashboard, notifications audience, dues desk) instead of three readings of one
+drifting column. `verify-dues-http.ts` asserts the dashboard and the desk agree on outstanding,
+overdue and the defaulter split.
+
 **Entities.** `fee_dues` gains `lastRemindedAt`, `reminderCount`, `waivedAt`, `waivedByUserId`.
 
 **Verification** — `backend/scripts/verify-dues.ts` (86 assertions, service level) and
