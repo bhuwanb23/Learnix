@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+﻿import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,10 @@ import {
   RefreshControl,
   Alert,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -104,6 +108,8 @@ export default function ChapterDetail({ chapterId, navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Non-null opens the compose sheet: { kind: 'initiative' | 'announcement', ... }
+  const [composer, setComposer] = useState(null);
 
   const load = useCallback(
     async (showSpinner = true) => {
@@ -313,32 +319,6 @@ export default function ChapterDetail({ chapterId, navigation }) {
       Alert.alert('Cannot update', e.message);
     } finally {
       setBusy(false);
-    }
-  };
-
-  const onAnnounce = () => {
-    if (typeof Alert.prompt === 'function') {
-      Alert.prompt('New announcement', `Post to the ${chapter.city} chapter`, async (body) => {
-        if (!body) return;
-        try {
-          setBusy(true);
-          const res = await alumniApi.announceToChapter(chapterId, {
-            title: `${chapter.city} Chapter notice`,
-            body,
-          });
-          Alert.alert('Posted', `Delivered to ${res.recipients} chapter members.`);
-          load(false);
-        } catch (e) {
-          Alert.alert('Cannot post', e.message);
-        } finally {
-          setBusy(false);
-        }
-      }, 'plain-text');
-    } else {
-      Alert.alert(
-        'Post an announcement',
-        'Android cannot prompt for text inline. Use the Broadcast tab in Notifications to reach this chapter.',
-      );
     }
   };
 
@@ -880,6 +860,90 @@ export default function ChapterDetail({ chapterId, navigation }) {
           <ActivityIndicator size="large" color="#0891b2" />
         </View>
       )}
+
+      <Modal visible={!!composer} transparent animationType="slide" onRequestClose={() => setComposer(null)}>
+        <KeyboardAvoidingView
+          style={styles.modalBackdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {composer?.kind === 'initiative' ? 'New initiative' : 'New announcement'}
+              </Text>
+              <TouchableOpacity onPress={() => setComposer(null)}>
+                <Ionicons name="close" size={20} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.fieldLabel}>Title</Text>
+            <TextInput
+              style={styles.field}
+              value={composer?.title ?? ''}
+              onChangeText={(t) => setComposer((c) => ({ ...c, title: t }))}
+              placeholder={composer?.kind === 'initiative' ? 'Mentor 50 first-year students' : 'Notice title'}
+              placeholderTextColor="#94a3b8"
+            />
+
+            {composer?.kind === 'initiative' && (
+              <>
+                <Text style={styles.fieldLabel}>Category</Text>
+                <View style={styles.chipWrap}>
+                  {Object.keys(INITIATIVE_CATEGORY).map((k) => {
+                    const active = composer.category === k;
+                    return (
+                      <TouchableOpacity
+                        key={k}
+                        style={[styles.pickChip, active && styles.pickChipActive]}
+                        onPress={() => setComposer((c) => ({ ...c, category: k }))}
+                      >
+                        <Text style={[styles.pickChipText, active && styles.pickChipTextActive]}>
+                          {k}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text style={styles.fieldLabel}>Target count</Text>
+                <TextInput
+                  style={styles.field}
+                  value={composer?.target ?? ''}
+                  onChangeText={(t) => setComposer((c) => ({ ...c, target: t.replace(/[^0-9]/g, '') }))}
+                  keyboardType="number-pad"
+                  placeholder="Leave blank for open-ended"
+                  placeholderTextColor="#94a3b8"
+                />
+                <Text style={styles.fieldHint}>
+                  Blank means open-ended — no progress bar is shown for those.
+                </Text>
+              </>
+            )}
+
+            <Text style={styles.fieldLabel}>
+              {composer?.kind === 'initiative' ? 'Description' : 'Message'}
+            </Text>
+            <TextInput
+              style={[styles.field, styles.fieldMultiline]}
+              value={composer?.body ?? ''}
+              onChangeText={(t) => setComposer((c) => ({ ...c, body: t }))}
+              multiline
+              textAlignVertical="top"
+              placeholder={composer?.kind === 'initiative' ? 'What does done look like?' : 'Write to the chapter…'}
+              placeholderTextColor="#94a3b8"
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setComposer(null)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSubmit} onPress={submitComposer} disabled={busy}>
+                <Text style={styles.modalSubmitText}>{busy ? 'Saving…' : 'Save'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -1084,4 +1148,22 @@ const styles = StyleSheet.create({
   announceBtnText: { color: '#fff', fontSize: 13, fontFamily: 'Manrope-Bold' },
 
   busyOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.55)', justifyContent: 'flex-end' },
+  modalCard: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 28 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  modalTitle: { fontSize: 15, fontFamily: 'Manrope-ExtraBold', color: theme.colors.text },
+  fieldLabel: { fontSize: 10, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 5, marginTop: 10 },
+  fieldHint: { fontSize: 9, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 4 },
+  field: { borderWidth: 1, borderColor: theme.colors.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.text, backgroundColor: '#fff' },
+  fieldMultiline: { minHeight: 88 },
+  pickChip: { borderWidth: 1, borderColor: theme.colors.border, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6 },
+  pickChipActive: { backgroundColor: '#0891b2', borderColor: '#0891b2' },
+  pickChipText: { fontSize: 10, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted },
+  pickChipTextActive: { color: '#fff' },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  modalCancel: { flex: 1, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  modalCancelText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: theme.colors.textMuted },
+  modalSubmit: { flex: 1, backgroundColor: '#0891b2', borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  modalSubmitText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
 });

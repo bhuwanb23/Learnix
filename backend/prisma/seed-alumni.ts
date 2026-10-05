@@ -1714,7 +1714,15 @@ let pledgeCount = 0;
       initiativeCount++;
     }
   }
-  console.log(`  ✓ ${initiativeCount} initiatives`);
+  // `initiativeCount` counts only rows created on THIS run, so on a re-run it is
+  // legitimately 0 while the rows are all still there. Reporting the verified
+  // total instead stops a healthy idempotent re-run from reading as data loss.
+  const seededInitiatives = await db.alumniChapterInitiative.count({
+    where: { chapter: { institutionId: instId } },
+  });
+  console.log(
+    `  ✓ ${seededInitiatives} initiatives${initiativeCount > 0 ? ` (${initiativeCount} new)` : ' (already present)'}`,
+  );
 
   // ── Summary ────────────────────────────────────────────────
   const [aCount, activeCount, dCount, pledgeOnly, mActive, mPending, evCount, regCount] =

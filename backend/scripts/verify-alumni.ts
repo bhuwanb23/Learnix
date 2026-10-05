@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Alumni endpoint verification — proves every screen in
  * `learnix/users/alumni/**` has real data behind it.
  *
@@ -13,6 +13,12 @@
 const BASE = process.env.BASE_URL ?? 'http://localhost:4000/api/v1';
 const EMAIL = 'priya@learnix.dev';
 const PASSWORD = 'Passw0rd!';
+
+// Direct database access is used for exactly two things: proving that a chosen
+// graduate holds no office (so the role-gate assertions below are meaningful),
+// and deleting the scratch chapter at the end — there is no DELETE chapter route
+// and a leftover scratch chapter would corrupt the next run's region assertions.
+const { prisma } = await import('../src/db/prisma.js');
 
 let token = '';
 let pass = 0;
@@ -46,6 +52,11 @@ async function loginAs(email: string) {
   const json = (await res.json().catch(() => ({}))) as { data?: { accessToken?: string } };
   if (!json.data?.accessToken) throw new Error(`login failed for ${email}`);
   return json.data.accessToken;
+}
+
+/** Unique-per-run suffix so a scratch chapter can be found and deleted again. */
+function stampSuffix() {
+  return String(Date.now() % 1000000);
 }
 
 function check(label: string, ok: boolean, detail: string) {
@@ -166,15 +177,35 @@ async function main() {
   const pctShown = don.data?.campaigns?.[0]?.percent;
   check('  campaign percent computed', typeof pctShown === 'number', `${pctShown}% on "${don.data?.campaigns?.[0]?.name}"`);
 
-  // Record a pledge end-to-end: PLEDGED → payment + receipt
-  const pledged = don.data?.donations?.find((x: any) => x.status === 'PLEDGED');
+  // Record a pledge end-to-end: PLEDGED → payment + receipt.
+  //
+  // Two things this must get right. The subject is chosen via prisma rather than
+  // from `donations[]`, because that endpoint is paged and a PLEDGED donation is
+  // not guaranteed to be on page 1 — searching the page turned a working feature
+  // into a failing assertion once the seed's first-page pledge had been recorded.
+  // And the donation is restored afterwards, because recording it is the one
+  // mutation here that cannot be replayed.
+  const pledged = await prisma.donation.findFirst({
+    where: { status: 'PLEDGED' },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
   if (pledged) {
     const rec = await call('POST', `/alumni/donations/${pledged.id}/record`);
     check('POST /donations/:id/record', rec.status === 200 && rec.data?.status === 'RECEIVED', `receipt ${rec.data?.receiptNo ?? 'n/a'}`);
     const dup = await call('POST', `/alumni/donations/${pledged.id}/record`);
     check('  re-record rejected 409', dup.status === 409, `got ${dup.status} (${dup.error?.code})`);
+    // Recording also writes through to a Payment row. The link is removed and the
+    // donation returned to PLEDGED so the next run finds a usable fixture; the
+    // Payment row itself is LEFT IN PLACE because six tables reference it and
+    // deleting it would reach outside this module to clean up after the test.
+    const links = await prisma.donationPayment.findMany({ where: { donationId: pledged.id }, select: { paymentId: true } });
+    await prisma.donationPayment.deleteMany({ where: { donationId: pledged.id } });
+    await prisma.donation.update({ where: { id: pledged.id }, data: { status: 'PLEDGED', receivedAt: null, paymentId: null } });
+    const restored = await prisma.donation.findUnique({ where: { id: pledged.id }, select: { status: true, paymentId: true } });
+    check('  donation restored to PLEDGED', restored?.status === 'PLEDGED' && restored?.paymentId === null, `status ${restored?.status}, ${links.length} link(s) removed`);
   } else {
-    check('POST /donations/:id/record', false, 'no PLEDGED donation available to record');
+    check('POST /donations/:id/record', false, 'no PLEDGED donation in the database');
   }
 
   // ── 6. Mentorship ──
@@ -399,12 +430,264 @@ check('GET /chapters/:id/activity', ca.status === 200 && (ca.data?.activity?.len
   const badSkill = await call('PUT', '/alumni/me', { skills: 'not-an-array' });
   check('  invalid body rejected', badSkill.status === 400, `${badSkill.status} (${badSkill.error?.code})`);
 
-  // ── summary ──
-  console.log('\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550');
+  // ── 15. Chapters v2: regions, leadership, initiatives, performance ──
+  // Write assertions run against a scratch chapter that is deleted again at the
+  // end, so no officer or initiative rows survive in the seeded chapters.
+  console.log('\n── 15. Chapters: directory, leadership, initiatives');
+  token = OFFICE_TOKEN;
+
+  const chapters = await call('GET', '/alumni/chapters');
+  check('GET /chapters', chapters.status === 200 && (chapters.data?.chapters ?? []).length > 0, `${chapters.data?.chapters?.length} chapters`);
+  check('  regions[] grouped', (chapters.data?.regions ?? []).length > 0, (chapters.data?.regions ?? []).map((r: any) => `${r.region}(${r.count})`).join(' '));
+  check('  tiers[] counts by type', typeof chapters.data?.tiers?.local === 'number' && typeof chapters.data?.tiers?.regional === 'number', `local ${chapters.data?.tiers?.local} / regional ${chapters.data?.tiers?.regional}`);
+  const allChapters = chapters.data?.chapters ?? [];
+  check('  every chapter has a region', allChapters.every((c: any) => !!c.region), `${allChapters.filter((c: any) => !!c.region).length}/${allChapters.length}`);
+  const regionalChapter = allChapters.find((c: any) => c.tier === 'REGIONAL');
+  const localChapter = allChapters.find((c: any) => c.tier === 'LOCAL');
+  check('  seed has both tiers', !!regionalChapter && !!localChapter, `${regionalChapter?.city ?? '-'} / ${localChapter?.city ?? '-'}`);
+
+  const sampleRegion = chapters.data?.regions?.[0]?.region;
+  const byRegion = await call('GET', `/alumni/chapters?region=${encodeURIComponent(sampleRegion)}`);
+  check('  ?region filters', byRegion.status === 200 && (byRegion.data?.chapters ?? []).every((c: any) => c.region === sampleRegion), `${sampleRegion} -> ${byRegion.data?.chapters?.length}`);
+  const byTier = await call('GET', '/alumni/chapters?tier=REGIONAL');
+  check('  ?tier filters', byTier.status === 200 && (byTier.data?.chapters ?? []).every((c: any) => c.tier === 'REGIONAL'), `${byTier.data?.chapters?.length} regional`);
+
+  // The detail screen shows the president from the officers table and the
+  // denormalised pointer at the same time, so they must agree.
+  const seeded = allChapters.find((c: any) => c.officerCount > 0) ?? allChapters[0];
+  const seededDetail = await call('GET', `/alumni/chapters/${seeded.id}`);
+  check('GET /chapters/:id', seededDetail.status === 200 && seededDetail.data?.city === seeded.city, seededDetail.data?.city);
+  check('  president present in detail', !!seededDetail.data?.president, seededDetail.data?.president?.name ?? 'none');
+  check('  viewerContext present', seededDetail.data?.viewerContext !== undefined, `canManageOfficers=${seededDetail.data?.viewerContext?.canManageOfficers}`);
+  check('  office cannot join', seededDetail.data?.viewerContext?.canJoin === false, `canJoin=${seededDetail.data?.viewerContext?.canJoin}`);
+
+  const seedOfficers = await call('GET', `/alumni/chapters/${seeded.id}/officers?includePast=true`);
+  const currentSeed = (seedOfficers.data?.officers ?? []).filter((o: any) => o.isCurrent);
+  check('GET /officers', seedOfficers.status === 200 && currentSeed.length > 0, `${currentSeed.length} current, ${seedOfficers.data?.counts?.past ?? 0} past`);
+  check('  every current officer resolved', currentSeed.every((o: any) => !!o.person?.name), 'person resolved for all');
+  check('  tenureDays computed', currentSeed.every((o: any) => typeof o.tenureDays === 'number'), currentSeed.map((o: any) => `${o.role}:${o.tenureDays}d`).join(' '));
+  check('  vacantRoles computed', Array.isArray(seedOfficers.data?.vacantRoles), (seedOfficers.data?.vacantRoles ?? []).join(',') || 'none vacant');
+
+  const seedInit = await call('GET', `/alumni/chapters/${seeded.id}/initiatives`);
+  check('GET /initiatives', seedInit.status === 200 && (seedInit.data?.initiatives ?? []).length > 0, `${seedInit.data?.initiatives?.length} initiatives`);
+  check('  percent null or 0-100', (seedInit.data?.initiatives ?? []).every((i: any) => i.percent === null || (i.percent >= 0 && i.percent <= 100)), (seedInit.data?.initiatives ?? []).map((i: any) => `${i.status}:${i.percent}`).join(' '));
+  check('  stats block', typeof seedInit.data?.stats?.active === 'number', JSON.stringify(seedInit.data?.stats));
+
+  const seedPerf = await call('GET', `/alumni/chapters/${seeded.id}/performance`);
+  check('GET /performance', seedPerf.status === 200 && typeof seedPerf.data?.engagement?.score === 'number', `score ${seedPerf.data?.engagement?.score}`);
+  check('  rates are numbers', typeof seedPerf.data?.participation?.rate === 'number' && typeof seedPerf.data?.participation?.attendanceRate === 'number', `rate ${seedPerf.data?.participation?.rate}% attendance ${seedPerf.data?.participation?.attendanceRate}%`);
+  check('  giving breakdown', typeof seedPerf.data?.giving?.receivedRupees === 'number', `₹${seedPerf.data?.giving?.receivedRupees}`);
+
+  // ── Role gates, asserted as a real graduate who holds no office ──
+  // Picking "any graduate" is not enough: an officer legitimately may create an
+  // initiative, so the subject must be someone with no seat anywhere. Chosen via
+  // prisma because the directory projection exposes neither userId nor chapterId.
+  const subject = await prisma.alumniProfile.findFirst({
+    where: {
+      engagementStatus: 'ACTIVE',
+      chapterId: { not: null },
+      user: { institutionId: (await prisma.institution.findFirstOrThrow({ select: { id: true } })).id },
+      userId: { notIn: (await prisma.alumniChapterOfficer.findMany({ where: { isCurrent: true }, select: { alumniUserId: true } })).map((o) => o.alumniUserId) },
+    },
+    orderBy: { graduationYear: 'desc' },
+    select: { id: true, chapterId: true, user: { select: { id: true, fullName: true, email: true } } },
+  });
+  check('found a non-officer graduate to test with', !!subject, subject ? `${subject.user.fullName} (${subject.user.email})` : 'none available');
+  if (!subject) {
+    // Without a subject the rest of this section would assert against undefined
+    // and report noise instead of the one real problem.
+    console.log('  ! skipping the chapter v2 lifecycle: no eligible graduate in the seed');
+    const removedEarly = await prisma.alumniChapter.deleteMany({ where: { city: { startsWith: 'VerifyChapter' } } });
+    check('cleanup: scratch chapters removed', true, `${removedEarly.count} row(s)`);
+    return finish();
+  }
+  const graduateToken = await loginAs(subject.user.email);
+  token = graduateToken;
+  const gradAssign = await call('POST', `/alumni/chapters/${seeded.id}/officers`, { profileId: subject.id, role: 'COORDINATOR' });
+  check('graduate cannot appoint', gradAssign.status === 403, `${gradAssign.status} (${gradAssign.error?.code})`);
+  const gradInit = await call('POST', `/alumni/chapters/${seeded.id}/initiatives`, { title: 'nope', category: 'SOCIAL' });
+  check('graduate cannot add initiative', gradInit.status === 403, `${gradInit.status} (${gradInit.error?.code})`);
+  const gradChapter = await call('POST', '/alumni/chapters', { city: `Nope${stampSuffix()}`, country: 'India' });
+  check('graduate cannot create chapter', gradChapter.status === 403, `${gradChapter.status} (${gradChapter.error?.code})`);
+  const gradEnrol = await call('POST', `/alumni/chapters/${seeded.id}/members`, { profileId: subject.id });
+  check('graduate cannot enrol others', gradEnrol.status === 403, `${gradEnrol.status} (${gradEnrol.error?.code})`);
+
+  // ── Scratch chapter: office-only writes ──
+  token = OFFICE_TOKEN;
+  const stamp = stampSuffix();
+  const created = await call('POST', '/alumni/chapters', { city: `VerifyChapter${stamp}`, country: 'India', region: 'Verification', tier: 'LOCAL' });
+  const tempId = created.data?.id;
+  check('POST /chapters (office)', created.status === 201 && !!tempId, tempId ?? `${created.status} ${created.error?.message}`);
+  const dupe = await call('POST', '/alumni/chapters', { city: `VerifyChapter${stamp}`, country: 'India', region: 'Verification', tier: 'LOCAL' });
+  check('  duplicate city rejected', dupe.status === 409, `${dupe.status} (${dupe.error?.code})`);
+
+  // Officers must be chapter members, so the office has to move the graduate
+  // into the scratch chapter first. Both halves of the move are reversed at the
+  // end of this block, and re-running the seed repairs any interrupted run.
+  const originalChapter = subject.chapterId;
+  check('  graduate starts in a seeded chapter', !!originalChapter, originalChapter ?? 'none');
+
+  const enrolBlocked = await call('POST', `/alumni/chapters/${tempId}/members`, { profileId: subject.id });
+  check('  cannot enrol someone already placed', enrolBlocked.status === 409, `${enrolBlocked.status} (${enrolBlocked.error?.code})`);
+
+  const detach = await call('POST', `/alumni/chapters/${originalChapter}/remove-member`, {
+    profileId: subject.id,
+    reason: 'Verification run - relocating to a scratch chapter.',
+  });
+  check('  office removes from their chapter', detach.status === 200, `${detach.status} memberCount=${detach.data?.memberCount}`);
+
+  const enrolled = await call('POST', `/alumni/chapters/${tempId}/members`, {
+    profileId: subject.id,
+    reason: 'Verification run.',
+  });
+  check('  office enrols into scratch chapter', enrolled.status === 201 && enrolled.data?.memberCount === 1, `${enrolled.data?.memberCount ?? enrolled.status}`);
+
+  const tempMembers = await call('GET', `/alumni/chapters/${tempId}/members`);
+  check('  scratch roster shows them', (tempMembers.data?.members ?? []).some((m: any) => m.id === subject.id), `${tempMembers.data?.total} member(s)`);
+
+  const appointed = await call('POST', `/alumni/chapters/${tempId}/officers`, { profileId: subject.id, role: 'PRESIDENT' });
+  check('POST /officers appoints', appointed.status === 201 && appointed.data?.role === 'PRESIDENT', `${appointed.data?.officer ?? appointed.error?.message}`);
+  const afterAppoint = await call('GET', `/alumni/chapters/${tempId}`);
+  check('  president pointer follows', afterAppoint.data?.president?.name === subject.user.fullName, afterAppoint.data?.president?.name ?? 'null');
+
+  const secAppoint = await call('POST', `/alumni/chapters/${tempId}/officers`, { profileId: subject.id, role: 'SECRETARY' });
+  check('  second office accepted', secAppoint.status === 201, `${secAppoint.data?.role ?? secAppoint.status}`);
+
+  const tempOfficers = await call('GET', `/alumni/chapters/${tempId}/officers`);
+  const presRow = (tempOfficers.data?.officers ?? []).find((o: any) => o.role === 'PRESIDENT');
+  const secRow = (tempOfficers.data?.officers ?? []).find((o: any) => o.role === 'SECRETARY');
+  check('  both seats listed as current', !!presRow && !!secRow, `vacant=${(tempOfficers.data?.vacantRoles ?? []).join(',')}`);
+
+  // An officer may manage initiatives; this is the positive half of the gate that
+  // a plain member must fail above.
+  token = graduateToken;
+  const officerInit = await call('POST', `/alumni/chapters/${tempId}/initiatives`, { title: `Officer initiative ${stamp}`, category: 'OUTREACH' });
+  check('officer may add an initiative', officerInit.status === 201, `${officerInit.status}`);
+
+  // Only the OFFICE changes the committee — an officer cannot demote themselves.
+  const selfResign = await call('POST', `/alumni/chapters/${tempId}/officers/${secRow?.id}/resign`, { reason: 'Verification run' });
+  check('officer cannot resign their own seat', selfResign.status === 403, `${selfResign.status} (${selfResign.error?.code})`);
+
+  token = OFFICE_TOKEN;
+  const presResign = await call('POST', `/alumni/chapters/${tempId}/officers/${presRow?.id}/resign`, { reason: 'Testing' });
+  check('president resign blocked', presResign.status === 422, `${presResign.status} (${presResign.error?.code})`);
+  const secResign = await call('POST', `/alumni/chapters/${tempId}/officers/${secRow?.id}/resign`, { reason: 'Verification run' });
+  check('office resigns a secretary', secResign.status === 200, `${secResign.status}`);
+  const afterResign = await call('GET', `/alumni/chapters/${tempId}/officers?includePast=true`);
+  check('  vacated seat kept as history', (afterResign.data?.officers ?? []).some((o: any) => o.role === 'SECRETARY' && !o.isCurrent), `past=${afterResign.data?.counts?.past}`);
+
+  // An officer must not be offered Leave, and the server must agree.
+  token = graduateToken;
+  const officerCtx = await call('GET', `/alumni/chapters/${tempId}`);
+  check('officer canLeave=false', officerCtx.data?.viewerContext?.canLeave === false, `roles=${JSON.stringify(officerCtx.data?.viewerContext?.officerRoles)}`);
+  check('  officerRoles lists every seat', (officerCtx.data?.viewerContext?.officerRoles ?? []).length === 1, JSON.stringify(officerCtx.data?.viewerContext?.officerRoles));
+  check('  officer may manage initiatives', officerCtx.data?.viewerContext?.canManageInitiatives === true, 'canManageInitiatives=true');
+  const officerLeave = await call('POST', `/alumni/chapters/${tempId}/leave`);
+  check('  server refuses officer leave', officerLeave.status === 422, `${officerLeave.status} (${officerLeave.error?.code})`);
+
+  // `/me` must expose the viewer's own chapter so the directory can gate Join.
+  const myCtx = await call('GET', '/alumni/me');
+  check('GET /me has chapterContext', myCtx.data?.chapterContext !== undefined, JSON.stringify(myCtx.data?.chapterContext));
+  const otherId = allChapters.find((c: any) => c.id !== tempId)?.id;
+  const joinOther = await call('POST', `/alumni/chapters/${otherId}/join`);
+  check('second chapter refused', joinOther.status === 409, `${joinOther.status}: ${joinOther.error?.message ?? ''}`);
+
+  // ── Handover: a presidency is handed over, never vacated ──
+  // A president can never resign, so the ONLY way out of the seat is to appoint
+  // a successor. That also frees the first president to leave, which is the
+  // canLeave=true case the UI needs to get right.
+  token = OFFICE_TOKEN;
+  const successor = await prisma.alumniProfile.findFirst({
+    where: {
+      engagementStatus: 'ACTIVE',
+      chapterId: { not: null },
+      id: { notIn: [subject.id] },
+      userId: { notIn: (await prisma.alumniChapterOfficer.findMany({ where: { isCurrent: true }, select: { alumniUserId: true } })).map((o) => o.alumniUserId) },
+      user: { institutionId: (await prisma.institution.findFirstOrThrow({ select: { id: true } })).id },
+    },
+    orderBy: { graduationYear: 'desc' },
+    select: { id: true, chapterId: true, user: { select: { fullName: true } } },
+  });
+  if (!successor) {
+    check('found a successor candidate', false, 'no second non-officer graduate in the seed');
+    return finish();
+  }
+  check('found a successor candidate', true, successor.user.fullName);
+  await call('POST', `/alumni/chapters/${successor.chapterId}/remove-member`, { profileId: successor.id, reason: 'Verification run.' });
+  await call('POST', `/alumni/chapters/${tempId}/members`, { profileId: successor.id, reason: 'Verification run.' });
+  const handover = await call('POST', `/alumni/chapters/${tempId}/officers`, { profileId: successor.id, role: 'PRESIDENT' });
+  check('appointing a successor retires the incumbent', handover.status === 201 && !!handover.data?.replaced, `replaced ${handover.data?.replaced ?? 'nobody'}`);
+
+  token = graduateToken;
+  const nowAble = await call('GET', `/alumni/chapters/${tempId}`);
+  check('  canLeave once the seat is gone', nowAble.data?.viewerContext?.canLeave === true, `roles=${JSON.stringify(nowAble.data?.viewerContext?.officerRoles)}`);
+  const left = await call('POST', `/alumni/chapters/${tempId}/leave`);
+  check('  member without a seat leaves', left.status === 200, `${left.status}`);
+
+  // Restore both graduates to the chapters the seed gave them.
+  token = OFFICE_TOKEN;
+  const restoreSubject = await call('POST', `/alumni/chapters/${originalChapter}/members`, { profileId: subject.id, reason: 'Verification run - restoring.' });
+  check('  subject restored to original chapter', restoreSubject.status === 201, `${restoreSubject.status} ${restoreSubject.data?.chapter ?? ''}`);
+
+  // ── Initiative lifecycle ──
+  token = OFFICE_TOKEN;
+  const init = await call('POST', `/alumni/chapters/${tempId}/initiatives`, {
+    title: `Verify initiative ${stamp}`,
+    category: 'MENTORSHIP',
+    description: 'Created by the verification run.',
+    targetCount: 5,
+  });
+  const initId = init.data?.id;
+  check('POST /initiatives', init.status === 201 && init.data?.status === 'PLANNED', initId ?? `${init.status}`);
+  const toActive = await call('PATCH', `/alumni/chapters/${tempId}/initiatives/${initId}`, { status: 'ACTIVE' });
+  check('  PLANNED -> ACTIVE', toActive.status === 200 && toActive.data?.status === 'ACTIVE', `percent ${toActive.data?.percent}`);
+  const toDone = await call('PATCH', `/alumni/chapters/${tempId}/initiatives/${initId}`, { status: 'COMPLETED', achievedCount: 5 });
+  check('  ACTIVE -> COMPLETED', toDone.status === 200 && toDone.data?.percent === 100, `percent ${toDone.data?.percent}`);
+  const reopen = await call('PATCH', `/alumni/chapters/${tempId}/initiatives/${initId}`, { status: 'ACTIVE' });
+  check('  completed cannot reopen', reopen.status === 422, `${reopen.status} (${reopen.error?.code})`);
+  const badTarget = await call('PATCH', `/alumni/chapters/${tempId}/initiatives/${initId}`, { targetCount: 0 });
+  check('  invalid body rejected', badTarget.status === 400, `${badTarget.status} (${badTarget.error?.code})`);
+
+  // Open-ended: the compose sheet sends NO targetCount when the field is blank,
+  // and the UI then renders no progress bar. Asserted because `percent` must be
+  // null rather than 0 — a 0% bar on an uncountable initiative states a falsehood.
+  const openEnded = await call('POST', `/alumni/chapters/${tempId}/initiatives`, {
+    title: `Open-ended ${stamp}`,
+    category: 'SOCIAL',
+  });
+  check('open-ended initiative accepted', openEnded.status === 201, `${openEnded.status}`);
+  const openList = await call('GET', `/alumni/chapters/${tempId}/initiatives`);
+  const openRow = (openList.data?.initiatives ?? []).find((i: any) => i.title === `Open-ended ${stamp}`);
+  check('  percent is null, not 0', openRow?.percent === null, `percent ${openRow?.percent}`);
+
+  // Cleanup goes through prisma rather than the API: there is no DELETE chapter
+  // route, and leaving a scratch chapter behind would corrupt the next run's
+  // "seed has both tiers" and region assertions.
+const removed = await prisma.alumniChapter.deleteMany({ where: { city: `VerifyChapter${stamp}` } });
+  check('cleanup: scratch chapter removed', removed.count === 1, `${removed.count} row(s) cascaded`);
+  // The successor's presidency was cascaded away with the chapter, so put them
+  // back on their seeded chapter too. Checked afterwards rather than assumed,
+  // because a dangling chapterId would silently drop them out of every metric.
+  const successorNow = await prisma.alumniProfile.findUnique({ where: { id: successor.id }, select: { chapterId: true } });
+  check('  successor left with no chapter', successorNow?.chapterId === null, `chapterId=${successorNow?.chapterId ?? 'null'}`);
+  const restoreSuccessor = await call('POST', `/alumni/chapters/${successor.chapterId}/members`, { profileId: successor.id, reason: 'Verification run - restoring.' });
+  check('  successor restored to original chapter', restoreSuccessor.status === 201, `${restoreSuccessor.status} ${restoreSuccessor.data?.chapter ?? ''}`);
+  const stray = await prisma.alumniChapterInitiative.count({
+    where: { title: { in: ['nope', `Officer initiative ${stamp}`, `Verify initiative ${stamp}`, `Open-ended ${stamp}`] } },
+  });
+  check('  no stray initiatives left behind', stray === 0, `${stray} found`);
+
+  finish();
+}
+
+/** Prints the tally and sets the exit code. Split out so the chapter section can
+ *  bail out early without duplicating it. */
+function finish(): never {
+  console.log('\n\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550');
   console.log(`  ${pass} passed, ${fail} failed`);
   if (failures.length) console.log(`  failing: ${failures.join(', ')}`);
-  console.log('\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550');
-  process.exit(fail === 0 ? 0 : 1);
+  console.log('\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550');
+process.exit(fail === 0 ? 0 : 1);
 }
 
 main().catch((e) => {
