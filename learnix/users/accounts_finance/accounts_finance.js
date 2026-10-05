@@ -81,7 +81,12 @@ import ReportPayroll from './pages/reports/pages/payroll/payroll';
 import ReportScholarships from './pages/reports/pages/scholarships/scholarships';
 import ReportDepartments from './pages/reports/pages/departments/departments';
 import ReportComparison from './pages/reports/pages/comparison/comparison';
-import NotificationsScreen from './pages/notifications/notifications';
+import NotificationsModule from './pages/notifications/notifications';
+// F-10 Notifications sub-pages (docs §3.9) — inbox, alerts, compose, history.
+import NotificationInbox from './pages/notifications/pages/inbox/inbox';
+import NotificationAlerts from './pages/notifications/pages/alerts/alerts';
+import NotificationCompose from './pages/notifications/pages/compose/compose';
+import NotificationHistory from './pages/notifications/pages/history/history';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -95,7 +100,7 @@ const FEATURE_MODULES = {
   Expenses: { title: 'Expenses', icon: 'receipt-outline', component: ExpensesModule },
   Scholarships: { title: 'Scholarships', icon: 'ribbon-outline', component: ScholarshipsModule },
   Reports: { title: 'Reports & Analytics', icon: 'stats-chart-outline', component: ReportsModule },
-  Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsScreen },
+  Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsModule },
 
   // Fee structure sub-pages (docs §3.5)
   FeeStructureDetail: { title: 'Fee Structure', icon: 'pricetag-outline', component: FeeStructureDetail },
@@ -137,6 +142,15 @@ const FEATURE_MODULES = {
   PayrollLoans: { title: 'Loans & Advances', icon: 'card-outline', component: PayrollLoans },
   PayrollAlerts: { title: 'Pending Salaries', icon: 'alert-circle-outline', component: PayrollAlerts },
   PayslipDocument: { title: 'Payslip Document', icon: 'document-text-outline', component: PayslipDocument },
+
+  // Notifications sub-pages (docs §3.9). These four keys are also the targets the
+  // server's alert `route` fields and the notification deep links resolve to, so
+  // `notificationsMeta.js` keeps them next to those routes and
+  // `audit-notifications-ui.ts` asserts every one is registered here.
+  NotificationInbox: { title: 'Inbox', icon: 'mail-outline', component: NotificationInbox },
+  NotificationAlerts: { title: 'Financial Alerts', icon: 'warning-outline', component: NotificationAlerts },
+  NotificationCompose: { title: 'Compose Announcement', icon: 'megaphone-outline', component: NotificationCompose },
+  NotificationHistory: { title: 'Send History', icon: 'time-outline', component: NotificationHistory },
 
   // Reports sub-pages (docs §3.8). The keys are `Report<Id>` — built by
   // `reportScreen()` in reportsMeta.js so the hub and this registry cannot drift.

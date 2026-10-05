@@ -19,7 +19,7 @@ const API_FILE = path.resolve(__dirname, '..', 'services', 'api.js');
 // "has at least one relative import" check does not apply to it.
 const LEAF_META = new Set([
   'feeStructureMeta.js', 'payrollSalaryMeta.js', 'payrollMeta.js', 'scholarshipsMeta.js',
-  'reportsMeta.js',
+  'reportsMeta.js', 'notificationsMeta.js',
 ]);
 
 const files = [
@@ -49,6 +49,16 @@ const files = [
   path.join(PAGES_DIR, 'reports', 'reportsUi.js'),
   ...['collections', 'comparison', 'departments', 'dues', 'expenses', 'payroll', 'scholarships']
     .map((d) => path.join(PAGES_DIR, 'reports', 'pages', d, `${d}.js`)),
+
+  // The notification desk (docs/users/06 §3.9). The four sub-pages live under
+  // `pages/notifications/pages/<name>/<name>.js` — one directory deeper than the
+  // reports and scholarship sub-pages, because the hub itself already sits at
+  // `pages/notifications/notifications.js`.
+  path.join(PAGES_DIR, 'notifications', 'notifications.js'),
+  path.join(PAGES_DIR, 'notifications', 'notificationsMeta.js'),
+  path.join(PAGES_DIR, 'notifications', 'notificationsUi.js'),
+  ...['alerts', 'compose', 'history', 'inbox']
+    .map((d) => path.join(PAGES_DIR, 'notifications', 'pages', d, `${d}.js`)),
 ];
 
 /** Every named export a module offers, plus its default. */

@@ -11,7 +11,11 @@ const MODULES = [
   { id: 'Expenses', label: 'Expenses', desc: 'Approve & track expenses', icon: 'receipt-outline', color: '#059669' },
   { id: 'Scholarships', label: 'Scholarships', desc: 'Awards & disbursements', icon: 'gift-outline', color: '#d97706' },
   { id: 'Reports', label: 'Reports', desc: 'Finance analytics', icon: 'analytics-outline', color: '#0284c7' },
-  { id: 'Notifications', label: 'Notifications', desc: 'Broadcast to students', icon: 'megaphone-outline', color: '#dc2626' },
+  // The desk is not only "broadcast to students" any more (docs §3.9): it is the
+// officer's inbox across all seven finance categories, plus the financial alerts
+// and the announcement composer. Saying otherwise here is what made the tile
+// look like a one-way spam tool.
+  { id: 'Notifications', label: 'Notifications', desc: 'Inbox, alerts & announcements', icon: 'notifications-outline', color: '#dc2626' },
 ];
 
 export default function AccountsDashboard({ navigation }) {

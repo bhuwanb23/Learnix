@@ -41,15 +41,21 @@ export default function NotificationsModule({ navigation }) {
     }
   }, []);
 
-  // One fetch for the catalogue and one for the alerts: both are cheap and both
-  // are needed for the hub, so they are not serialised.
+  // The hub opens on three things: the category list, the live alerts, and how
+  // much is waiting. The third is a cheap `take: 1` page — the unread total it
+  // returns covers the WHOLE inbox, so one row is enough to know the number.
   const catalogue = useNotifications(loadCatalogue);
   const alerts = useNotifications(() => accountsApi.notificationAlerts());
+  const inbox = useNotifications(() => accountsApi.notifications({ take: 1 }));
 
   const reload = useCallback(() => {
     catalogue.reload();
     alerts.reload();
-  }, [catalogue, alerts]);
+    inbox.reload();
+  }, [catalogue, alerts, inbox]);
+
+  const unread = inbox.data?.unread ?? null;
+  const outOfScope = inbox.data?.outOfScope ?? 0;
 
   const categories = catalogue.data?.categories ?? [];
   const audiences = catalogue.data?.audiences ?? [];
@@ -59,20 +65,33 @@ export default function NotificationsModule({ navigation }) {
 
   return (
     <NotificationScreen
-      loading={catalogue.loading && alerts.loading}
-      refreshing={catalogue.refreshing || alerts.refreshing}
-      error={catalogue.error ?? alerts.error ?? catalogueError}
+      loading={catalogue.loading && alerts.loading && inbox.loading}
+      refreshing={catalogue.refreshing || alerts.refreshing || inbox.refreshing}
+      error={catalogue.error ?? alerts.error ?? inbox.error ?? catalogueError}
       onRetry={reload}
       onRefresh={reload}
     >
       {/* The one number the officer opens this screen for. */}
       <View style={styles.hero}>
         <Text style={styles.heroLabel}>Unread messages</Text>
-        <Text style={styles.heroValue}>{catalogue.data ? 'Open the inbox' : '—'}</Text>
-        <Text style={styles.heroHint}>
-          Fee reminders, payment confirmations, receipts, scholarship decisions,
-          payroll, announcements and financial alerts — each in its own category.
+        <Text style={[styles.heroValue, unread > 0 && { color: RED }]}>
+          {unread === null ? '—' : unread === 1 ? '1 waiting' : `${unread} waiting`}
         </Text>
+        <TouchableOpacity
+          style={styles.heroLink}
+          activeOpacity={0.8}
+          onPress={() => navigation.openModule('NotificationInbox')}
+          accessibilityRole="button"
+        >
+          <Text style={styles.heroLinkText}>Open the inbox</Text>
+          <Ionicons name="arrow-forward" size={14} color={THEME} />
+        </TouchableOpacity>
+        {outOfScope > 0 ? (
+          <Text style={styles.heroScope}>
+            {outOfScope} message{outOfScope === 1 ? '' : 's'} from other modules {outOfScope === 1 ? 'is' : 'are'}
+            filtered out of this desk.
+          </Text>
+        ) : null}
       </View>
 
       {/* What needs attention, computed live. Zero is drawn with a tick: an alert
@@ -195,8 +214,10 @@ const styles = StyleSheet.create({
     padding: 16, marginBottom: 4,
   },
   heroLabel: { fontSize: 12, color: SLATE, fontWeight: '600' },
-  heroValue: { fontSize: 22, fontWeight: '800', color: '#0f172a', marginTop: 4 },
-  heroHint: { fontSize: 11, color: SLATE, lineHeight: 16, marginTop: 8 },
+  heroValue: { fontSize: 24, fontWeight: '800', color: '#0f172a', marginTop: 4 },
+  heroLink: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },
+  heroLinkText: { fontSize: 12, fontWeight: '700', color: THEME },
+  heroScope: { fontSize: 10, color: MUTED, lineHeight: 15, marginTop: 9 },
 
   catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
   catCard: {
