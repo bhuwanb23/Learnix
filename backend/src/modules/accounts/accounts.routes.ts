@@ -30,7 +30,6 @@ import {
   payPayrollRunSchema,
   adjustPayrollEntrySchema,
   payrollEntryParamSchema,
-  accountsBroadcastSchema,
 } from './accounts.schemas.js';
 import * as service from './accounts.service.js';
 import * as collections from './collections.service.js';
@@ -545,30 +544,22 @@ router.post(
 // "unpaid" headline summed every tenant's bills. It is gone rather than kept
 // behind a flag: nothing may serve those numbers.
 
-// F-10 notifications + broadcast + profile
-router.get(
-  '/notifications',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listNotifications(req.auth!.userId, req.auth!.institutionId) });
-  }),
-);
-
-router.post(
-  '/notifications/read-all',
-  wrap(async (req, res) => {
-    res.json({ data: await service.markAllRead(req.auth!.userId, req.auth!.institutionId) });
-  }),
-);
-
-router.post(
-  '/broadcasts',
-  validate(accountsBroadcastSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.createBroadcast(req.auth!.institutionId, req.auth!.userId, req.body),
-    });
-  }),
-);
+// F-10 notifications + broadcast moved to notifications.routes.ts (mounted
+// BEFORE this router, so `/notifications/catalogue` is never read as an id).
+// Three things changed for the better, and one of them was a bug:
+//
+//   \u2022 GET  /notifications      now takes category/unreadOnly/take/skip and
+//     returns per-category unread counts, an `outOfScope` count, and one page
+//     at a time instead of a flat top-50 of every type the platform has ever
+//     written. It was never filtered at all.
+//   \u2022 POST /notifications/:id/read  is new. Reading ONE message was not
+//     possible before \u2014 tapping a row marked everything read.
+//   \u2022 POST /broadcasts became POST /notifications/broadcasts, beside
+//     GET /notifications/broadcasts (the send history this desk never had).
+//     Its `DEFAULTERS` audience is now institution-scoped; it was not, and
+//     delivered one college's reminder to every college's defaulters.
+//
+// `/notifications/read-all` survives at the same path.
 
 router.get(
   '/profile',

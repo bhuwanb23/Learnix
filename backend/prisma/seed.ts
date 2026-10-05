@@ -19,6 +19,7 @@ import { syncFeeStructures } from './syncFeeStructures.js';
 import { syncPayrollSalary, linkRunsToSalaryRecords } from './syncPayrollSalary.js';
 import { syncScholarships } from './syncScholarships.js';
 import { syncReportHistory } from './syncReportHistory.js';
+import { syncNotifications } from './syncNotifications.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -1120,6 +1121,11 @@ async function seedDomainE(institutionId: string): Promise<void> {
   // F-09 Reports (docs 3.8) - a full year of history so the monthly,
   // semester and yearly comparisons have something real to compare.
   await syncReportHistory(db);
+
+  // F-10 Notifications (docs 3.9) - last, because it reads the receipts,
+  // payments, scholarship applications and payroll runs seeded above, and quotes
+  // their real figures in the message bodies.
+  await syncNotifications(db, institutionId);
 }
 
 // ─────────────────────────────────────────────────────────────

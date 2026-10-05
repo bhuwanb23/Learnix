@@ -2,7 +2,6 @@
 // Money: integer paise. All amounts converted to rupees at API edge. Tenant-scoped.
 import { prisma } from '../../db/prisma.js';
 import { notFound } from '../../lib/errors.js';
-import { writeAudit } from '../../lib/audit.js';
 import { balanceOf } from './dues.money.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
@@ -223,101 +222,27 @@ export async function getLedger(institutionId: string) {
 // BILLED rather than the balance left owing. It is deleted rather than left
 // reachable: nothing may serve those numbers.
 
-// ── F-10 Notifications + broadcast + profile ────────────────
-export async function listNotifications(userId: string, institutionId: string) {
-  const [items, unread] = await Promise.all([
-    prisma.notification.findMany({
-      where: { recipientUserId: userId, institutionId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    }),
-    prisma.notification.count({ where: { recipientUserId: userId, institutionId, readAt: null } }),
-  ]);
-  return {
-    unread,
-    notifications: items.map((n) => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      body: n.body,
-      read: n.readAt !== null,
-      createdAt: n.createdAt,
-    })),
-  };
-}
-
-export async function markAllRead(userId: string, institutionId: string) {
-  const res = await prisma.notification.updateMany({
-    where: { recipientUserId: userId, institutionId, readAt: null },
-    data: { readAt: new Date() },
-  });
-  return { updated: res.count };
-}
-
-export async function createBroadcast(
-  institutionId: string,
-  senderUserId: string,
-  body: { audience: string; title: string; body: string },
-) {
-  let recipientIds: string[] = [];
-
-  if (body.audience === 'ALL_STUDENTS') {
-    const students = await prisma.studentProfile.findMany({
-      where: { user: { institutionId, deletedAt: null } },
-      select: { userId: true },
-    });
-    recipientIds = students.map((s) => s.userId);
-  } else if (body.audience === 'DEFAULTERS') {
-    const duelist = await prisma.feeDue.findMany({
-      where: { status: { in: ['UNPAID', 'PARTIAL'] }, daysOverdue: { gte: 7 } },
-      select: { studentProfile: { select: { userId: true } } },
-      distinct: ['studentProfileId'],
-    });
-    recipientIds = [...new Set(duelist.map((d) => d.studentProfile.userId))];
-  } else if (body.audience === 'ALL_STAFF') {
-    const staff = await prisma.staffProfile.findMany({
-      where: { institutionId, user: { deletedAt: null } },
-      select: { userId: true },
-    });
-    recipientIds = staff.map((s) => s.userId);
-  }
-
-  const broadcast = await prisma.broadcast.create({
-    data: {
-      institutionId,
-      senderUserId,
-      audienceJson: JSON.stringify({ audience: body.audience }),
-      title: body.title,
-      body: body.body,
-      channels: 'IN_APP',
-      sentAt: new Date(),
-    },
-  });
-
-  if (recipientIds.length > 0) {
-    await prisma.notification.createMany({
-      data: recipientIds.map((rid) => ({
-        institutionId,
-        recipientUserId: rid,
-        type: 'BROADCAST',
-        title: body.title,
-        body: body.body,
-        sourceModule: 'accounts',
-      })),
-    });
-  }
-
-  await writeAudit({
-    actorUserId: senderUserId,
-    institutionId,
-    action: 'broadcast.send',
-    entityType: 'Broadcast',
-    entityId: broadcast.id,
-    after: { audience: body.audience, recipients: recipientIds.length },
-  });
-
-  return { id: broadcast.id, recipients: recipientIds.length };
-}
+// ── F-10 Notifications + broadcast ─────────────────────────────────────────
+// MOVED to notifications.service.ts (docs/users/06 §3.9), served by
+// notifications.routes.ts, mounted BEFORE this router.
+//
+// These three functions are deleted rather than left reachable, because each
+// served something wrong:
+//
+//   • listNotifications returned the newest 50 rows of ANY type, so a transport
+//     DELAY sat above a fee reminder, all painted the same blue bell. There was
+//     no category, no unread filter, no pagination, and no way to read ONE
+//     message — tapping any row called markAllRead.
+//   • markAllRead survived, but as one of several read controls alongside
+//     markRead/setRead rather than the only option.
+//   • createBroadcast resolved its DEFAULTERS audience with NO institution
+//     filter, so one college's fee reminder was delivered to every college's
+//     defaulters on the instance. It also read `FeeDue.daysOverdue`, a
+//     denormalised column that drifts, without ever refreshing it — so who
+//     received the message depended on when somebody last opened the dues desk.
+//
+// The replacement scopes every audience branch to the institution and resolves
+// defaulters from `dueDate`, which cannot go stale.
 
 export async function getProfile(userId: string, institutionId: string) {
   const user = await prisma.user.findFirst({

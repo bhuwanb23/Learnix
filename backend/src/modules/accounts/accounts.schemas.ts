@@ -365,12 +365,56 @@ export const disburseScholarshipSchema = z
   })
   .strict();
 
-// F-10 Notifications — broadcast
-export const accountsBroadcastSchema = z.object({
-  audience: z.enum(['ALL_STUDENTS', 'DEFAULTERS', 'ALL_STAFF']),
-  title: z.string().trim().min(2).max(120),
-  body: z.string().trim().min(2).max(2000),
-});
+// ── F-10 Notifications (docs/users/06 §3.9) ───────────────────────────────
+// The inbox is queryable, and every knob is bounded here rather than clamped in
+// the service. `category` is a literal list, so a typo from the app is a 422
+// with a useful message instead of a silently empty screen. `take` is capped at
+// 200 because the service reads a recipient's whole inbox and pages in memory;
+// an unbounded `take` would be a request for the entire table.
+export const notificationInboxQuerySchema = z
+  .object({
+    category: z.enum([
+      'FEE_DUE', 'PAYMENT', 'RECEIPT', 'SCHOLARSHIP', 'PAYROLL', 'ANNOUNCEMENT', 'SYSTEM',
+    ]).optional(),
+    /** A bad boolean string is a 422 here; `Boolean('false')` would be `true`. */
+    unreadOnly: z
+      .enum(['true', 'false'])
+      .transform((v) => v === 'true')
+      .optional(),
+    take: z.coerce.number().int().min(1).max(200).optional(),
+    skip: z.coerce.number().int().min(0).optional(),
+  })
+  .strict();
+
+/** The catalogue and the alerts take no filters — they are built to be asked whole. */
+export const notificationCatalogueQuerySchema = z.object({}).strict();
+
+/**
+ * A JSON body sends a BOOLEAN, while a query string sends text — so this
+ * accepts either and normalises. `z.enum(['true','false'])` alone rejected the
+ * real request: `{"read": false}` is not a string, so un-reading a message came
+ * back 400 and the row menu's "mark unread" was dead on arrival.
+ */
+const boolish = z
+  .union([z.boolean(), z.enum(['true', 'false'])])
+  .transform((v) => (typeof v === 'boolean' ? v : v === 'true'));
+
+export const notificationReadSchema = z.object({ read: boolish }).strict();
+
+export const notificationBroadcastsQuerySchema = z
+  .object({ take: z.coerce.number().int().min(1).max(100).optional() })
+  .strict();
+
+// `.strict()` is the point here: the old schema accepted and silently ignored
+// any extra key, so a client sending `content` instead of `body` got a broadcast
+// with an empty body and a 201 telling them it worked.
+export const accountsBroadcastSchema = z
+  .object({
+    audience: z.enum(['ALL_STUDENTS', 'DEFAULTERS', 'ALL_STAFF']),
+    title: z.string().trim().min(2).max(120),
+    body: z.string().trim().min(2).max(2000),
+  })
+  .strict();
 
 // ── Dues: student-wise, course-wise, fines, plans, bulk reminders ──
 // Every one of these is bounded with a literal status/sort list rather than a

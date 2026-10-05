@@ -333,6 +333,26 @@ export const goalSchema = z
     message: 'Provide at least one field to update',
   });
 
+/**
+ * The UPDATE half of the goal contract, where every field is optional.
+ *
+ * `goalSchema` requires `title`, because a goal without one is meaningless. But it
+ * was also wired to the PATCH route, so `{ status: 'ACHIEVED' }` — a partial
+ * update, which is what the UI's "mark done" button sends — was rejected with
+ * "title Required". Goals could therefore be created and never moved.
+ */
+export const updateGoalSchema = z
+  .object({
+    title: z.string().trim().min(2).max(200).optional(),
+    detail: z.string().trim().max(2000).optional(),
+    targetDate: z.string().min(8).max(40).nullable().optional(),
+    status: z.enum(['PENDING', 'IN_PROGRESS', 'ACHIEVED', 'DROPPED']).optional(),
+    progressPct: z.coerce.number().int().min(0).max(100).optional(),
+  })
+  .refine((v) => Object.values(v).some((x) => x !== undefined), {
+    message: 'Provide at least one field to update',
+  });
+
 export const mentorshipFeedbackSchema = z
   .object({
     mentorRating: z.coerce.number().int().min(1).max(5).optional(),

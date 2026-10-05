@@ -606,7 +606,13 @@ export async function recordCollection(
     .map((d) => d!.title);
 
   const receiptNo = result.receiptNo;
+  const referenceNo = result.payment.referenceNo;
 
+  // Two messages, not one. "Your money arrived" and "here is the document that
+  // proves it" are different facts with different follow-ups: a family that
+  // needs the receipt for a bank query cannot find it inside a payment notice,
+  // and a family looking for proof of payment should not have to read a bill
+  // summary to find it.
   if (payerUserId) {
     await prisma.notification.create({
       data: {
@@ -616,9 +622,23 @@ export async function recordCollection(
         title: `Payment received: ₹${toRupees(input.amountMinor)}`,
         body:
           clearedTitles.length > 0
-            ? `We have received ₹${toRupees(input.amountMinor)}. Receipt ${receiptNo}. This cleared: ${clearedTitles.join(', ')}.`
-            : `We have received ₹${toRupees(input.amountMinor)}. Receipt ${receiptNo}. It is held as an advance against your dues.`,
+            ? `We have received ₹${toRupees(input.amountMinor)}. This cleared: ${clearedTitles.join(', ')}.`
+            : `We have received ₹${toRupees(input.amountMinor)}. It is held as an advance against your dues.`,
         sourceModule: 'accounts',
+        dataJson: JSON.stringify({ module: 'accounts', screen: 'Collections', referenceNo }),
+      },
+    });
+    await prisma.notification.create({
+      data: {
+        institutionId,
+        recipientUserId: payerUserId,
+        type: 'RECEIPT',
+        title: `Receipt ${receiptNo}`,
+        body:
+          `₹${toRupees(input.amountMinor)} received from ${input.method}. `
+          + `Receipt ${receiptNo}${referenceNo ? ` against ${referenceNo}` : ''}.`,
+        sourceModule: 'accounts',
+        dataJson: JSON.stringify({ module: 'accounts', screen: 'Collections', referenceNo, receiptNo }),
       },
     });
   }
@@ -732,7 +752,10 @@ export async function reverseCollection(
         data: {
           institutionId,
           recipientUserId: student.userId,
-          type: 'PAYMENT',
+          // Its own type: a reversal is the opposite of a confirmation, and
+          // filing it under PAYMENT made the two indistinguishable in a filter
+          // and put a "payment received" row in the receipt list.
+          type: 'PAYMENT_REVERSED',
           title: `Payment reversed: ${detail.payment.referenceNo}`,
           body: `The ₹${detail.payment.amountRupees} payment recorded against your account has been reversed. ${why}`,
           sourceModule: 'accounts',

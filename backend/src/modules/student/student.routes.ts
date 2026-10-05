@@ -17,7 +17,7 @@ import * as mentorshipFeedback from '../alumni/feedback.service.js';
 import type { Viewer } from '../alumni/directory.service.js';
 import {
   mentorshipRequestSchema, mentorshipSessionSchema, updateSessionSchema,
-  cancelSessionSchema, goalSchema, mentorshipFeedbackSchema,
+  cancelSessionSchema, goalSchema, updateGoalSchema, mentorshipFeedbackSchema,
 } from '../alumni/alumni.schemas.js';
 
 // Student module — mounted at /api/v1/student (docs/users/01 §4)
@@ -254,24 +254,24 @@ router.post('/mentorship/:id/sessions', validate(idParamSchema, 'params'), valid
   res.status(201).json({ data: await sessions.logSession(studentViewer(req), String(req.params.id), req.body) });
 }));
 
-router.patch('/mentorship/sessions/:sessionId', validate(idParamSchema, 'params'), validate(updateSessionSchema), wrap(async (req, res) => {
-  res.json({ data: await sessions.updateSession(studentViewer(req), String(req.params.sessionId), req.body) });
+router.patch('/mentorship/sessions/:id', validate(idParamSchema, 'params'), validate(updateSessionSchema), wrap(async (req, res) => {
+  res.json({ data: await sessions.updateSession(studentViewer(req), String(req.params.id), req.body) });
 }));
 
-router.post('/mentorship/sessions/:sessionId/cancel', validate(idParamSchema, 'params'), validate(cancelSessionSchema), wrap(async (req, res) => {
-  res.json({ data: await sessions.cancelSession(studentViewer(req), String(req.params.sessionId), req.body.reason) });
+router.post('/mentorship/sessions/:id/cancel', validate(idParamSchema, 'params'), validate(cancelSessionSchema), wrap(async (req, res) => {
+  res.json({ data: await sessions.cancelSession(studentViewer(req), String(req.params.id), req.body.reason) });
 }));
 
 router.post('/mentorship/:id/goals', validate(idParamSchema, 'params'), validate(goalSchema), wrap(async (req, res) => {
   res.status(201).json({ data: await goals.createGoal(studentViewer(req), String(req.params.id), req.body) });
 }));
 
-router.patch('/mentorship/goals/:goalId', validate(idParamSchema, 'params'), validate(goalSchema), wrap(async (req, res) => {
-  res.json({ data: await goals.updateGoal(studentViewer(req), String(req.params.goalId), req.body) });
+router.patch('/mentorship/goals/:id', validate(idParamSchema, 'params'), validate(updateGoalSchema), wrap(async (req, res) => {
+  res.json({ data: await goals.updateGoal(studentViewer(req), String(req.params.id), req.body) });
 }));
 
-router.delete('/mentorship/goals/:goalId', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await goals.deleteGoal(studentViewer(req), String(req.params.goalId)) });
+router.delete('/mentorship/goals/:id', validate(idParamSchema, 'params'), wrap(async (req, res) => {
+  res.json({ data: await goals.deleteGoal(studentViewer(req), String(req.params.id)) });
 }));
 
 router.get('/mentorship/:id/feedback', validate(idParamSchema, 'params'), wrap(async (req, res) => {

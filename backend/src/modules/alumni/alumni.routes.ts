@@ -52,6 +52,8 @@ import {
   updateSessionSchema,
   cancelSessionSchema,
   goalSchema,
+
+  updateGoalSchema,
   mentorshipFeedbackSchema,
 } from './alumni.schemas.js';
 import * as service from './alumni.service.js';
@@ -829,9 +831,12 @@ router.get(
 );
 
 // The office inbox. Separate from the graduate's own request list.
+//
+// NOTE: no `idParamSchema` here — this is a COLLECTION route with no `:id` in
+// the path, so validating `params.id` rejected every request to it with
+// "id Required". Only the `:id` routes below validate.
 router.get(
   '/mentorship/requests',
-  validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
     res.json({
@@ -960,22 +965,22 @@ router.post(
 );
 
 router.patch(
-  '/mentorship/sessions/:sessionId',
+  '/mentorship/sessions/:id',
   validate(idParamSchema, 'params'),
   validate(updateSessionSchema),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json({ data: await sessions.updateSession(viewer, String(req.params.sessionId), req.body) });
+    res.json({ data: await sessions.updateSession(viewer, String(req.params.id), req.body) });
   }),
 );
 
 router.post(
-  '/mentorship/sessions/:sessionId/cancel',
+  '/mentorship/sessions/:id/cancel',
   validate(idParamSchema, 'params'),
   validate(cancelSessionSchema),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json({ data: await sessions.cancelSession(viewer, String(req.params.sessionId), req.body.reason) });
+    res.json({ data: await sessions.cancelSession(viewer, String(req.params.id), req.body.reason) });
   }),
 );
 
@@ -1004,22 +1009,25 @@ router.get(
   }),
 );
 
+// The param is `:id`, not `:goalId` — `idParamSchema` validates `params.id`, so a
+// route declaring `:goalId` failed validation with "id Required" on EVERY call.
+// Goals could be created and then never updated or deleted.
 router.patch(
-  '/mentorship/goals/:goalId',
+  '/mentorship/goals/:id',
   validate(idParamSchema, 'params'),
-  validate(goalSchema),
+  validate(updateGoalSchema),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json({ data: await goals.updateGoal(viewer, String(req.params.goalId), req.body) });
+    res.json({ data: await goals.updateGoal(viewer, String(req.params.id), req.body) });
   }),
 );
 
 router.delete(
-  '/mentorship/goals/:goalId',
+  '/mentorship/goals/:id',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json({ data: await goals.deleteGoal(viewer, String(req.params.goalId)) });
+    res.json({ data: await goals.deleteGoal(viewer, String(req.params.id)) });
   }),
 );
 

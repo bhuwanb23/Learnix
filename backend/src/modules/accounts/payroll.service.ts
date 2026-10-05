@@ -28,6 +28,7 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable, badRequest } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { notify } from './notifications.service.js';
 import { daysInMonth, currentMonth, assertMonth } from './payroll.rules.js';
 import type { SalaryLine } from './payroll.rules.js';
 import { computeIncomeTax } from './payroll.tax.js';
@@ -691,7 +692,26 @@ export async function approvePayrollRun(
     after: { status: 'APPROVED' },
   });
 
-  return { id: run.id, status: 'APPROVED' };
+  // Nobody was told. `grep notification src/modules/accounts/payroll*.ts` was
+  // empty before this: approving a run — which is the moment the numbers stop
+  // being a draft and become what somebody will be paid — sent no message to
+  // anybody, so a staff member learned about it by asking.
+  let notified = 0;
+  try {
+    const { notifyRunStaff } = await import('./notifications.service.js');
+    notified = await notifyRunStaff(institutionId, run.id, (e) => ({
+      type: 'PAYROLL',
+      title: `Salary approved for ${e.month}`,
+      body: `Your salary for ${e.month} has been approved at the accounts office. `
+        + `Net payable ₹${Math.round(e.netMinor / 100).toLocaleString('en-IN')}.`,
+    }));
+  } catch {
+    // An approval that succeeded must not be reported as failed because a
+    // message could not be written. The run is approved either way.
+    notified = 0;
+  }
+
+  return { id: run.id, status: 'APPROVED', notified };
 }
 
 export async function adjustPayrollEntry(
@@ -840,6 +860,7 @@ async function settleEntry(
   entry: {
     id: string;
     payrollRunId: string;
+    staffUserId: string;
     status: string;
     netMinor: number;
   },
@@ -870,6 +891,25 @@ async function settleEntry(
     entityId: entry.payrollRunId,
     after: { entryId: entry.id, netMinor: entry.netMinor, paymentRef: paymentRef?.trim() || null },
   });
+
+  try {
+    const month = await prisma.payrollRun.findUnique({
+      where: { id: entry.payrollRunId },
+      select: { month: true },
+    });
+    await notify({
+      institutionId,
+      recipientUserId: entry.staffUserId,
+      type: 'PAYROLL',
+      title: `Salary paid for ${month?.month ?? 'this month'}`,
+      body: `₹${Math.round(entry.netMinor / 100).toLocaleString('en-IN')} has been paid out`
+        + `${paymentRef?.trim() ? ` (ref ${paymentRef.trim()})` : ''}. Your payslip is on the payroll desk.`,
+      data: { module: 'accounts', screen: 'Payroll', entryId: entry.id },
+    });
+  } catch {
+    // The payment is settled and audited; a failed notification must not undo
+    // or dispute it.
+  }
 }
 
 export async function payPayrollEntry(
