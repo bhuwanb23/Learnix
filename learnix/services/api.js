@@ -198,7 +198,8 @@ export const alumniApi = {
   mentorship: () => api.get('/alumni/mentorship'),
   mentorshipAction: (id, action) => api.post(`/alumni/mentorship/${id}/${action}`),
 
-  // Chapters (AL-06). `/chapters` returns { count, totalMembers, chapters[] }.
+  // Chapters (AL-06). `/chapters` returns
+  // { count, totalMembers, regions[], tiers{}, chapters[] }.
   chapters: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
@@ -215,6 +216,38 @@ export const alumniApi = {
   chapterActivity: (id) => api.get(`/alumni/chapters/${id}/activity`),
   announceToChapter: (id, payload) => api.post(`/alumni/chapters/${id}/announce`, payload),
   createChapterEvent: (id, payload) => api.post(`/alumni/chapters/${id}/events`, payload),
+
+  // Chapter membership. `canJoin` / `canLeave` come from the detail response's
+  // viewerContext — never decide them client-side.
+  joinChapter: (id) => api.post(`/alumni/chapters/${id}/join`),
+  leaveChapter: (id) => api.post(`/alumni/chapters/${id}/leave`),
+  removeChapterMember: (id, profileId, reason) =>
+    api.post(`/alumni/chapters/${id}/remove-member`, { profileId, reason }),
+  addChapterMember: (id, profileId, reason) =>
+    api.post(`/alumni/chapters/${id}/members`, { profileId, reason }),
+
+  // Chapter leadership. The committee is the source of truth; the president
+  // pointer on the chapter is maintained server-side.
+  chapterOfficers: (id, includePast = false) =>
+    api.get(`/alumni/chapters/${id}/officers${includePast ? '?includePast=true' : ''}`),
+  assignChapterOfficer: (id, payload) => api.post(`/alumni/chapters/${id}/officers`, payload),
+  resignChapterOfficer: (id, officerId, reason) =>
+    api.post(`/alumni/chapters/${id}/officers/${officerId}/resign`, reason ? { reason } : {}),
+
+  // Chapter initiatives. Money progress is derived from a linked campaign, so
+  // there is no amount to send here.
+  chapterInitiatives: (id, status) =>
+    api.get(`/alumni/chapters/${id}/initiatives${status ? `?status=${status}` : ''}`),
+  createChapterInitiative: (id, payload) => api.post(`/alumni/chapters/${id}/initiatives`, payload),
+  updateChapterInitiative: (id, initiativeId, payload) =>
+    api.patch(`/alumni/chapters/${id}/initiatives/${initiativeId}`, payload),
+
+  // Chapter performance / participation — all derived server-side.
+  chapterPerformance: (id) => api.get(`/alumni/chapters/${id}/performance`),
+
+  // Chapter administration (office only).
+  createChapter: (payload) => api.post('/alumni/chapters', payload),
+  updateChapter: (id, payload) => api.patch(`/alumni/chapters/${id}`, payload),
 
   notifications: () => api.get('/alumni/notifications'),
   markAllRead: () => api.post('/alumni/notifications/read-all'),
@@ -730,6 +763,36 @@ export const accountsApi = {
   payAllPayroll: (id, paymentRefPrefix) =>
     api.post(`/accounts/payroll/${id}/pay-all`, paymentRefPrefix ? { paymentRefPrefix } : {}),
   adjustPayrollEntry: (entryId, payload) => api.patch(`/accounts/payroll/entries/${entryId}`, payload),
+
+  // F-06 Payroll salary desk (docs/users/06 §3.4). These back the versioned
+  // salary records, allowance/deduction components, loans, attendance and
+  // generated payslips — the things a run is built FROM. Every one is a real
+  // endpoint: nothing here is mocked client-side.
+  payrollComponents: () => api.get('/accounts/payroll/components'),
+  salaryDesk: (month) =>
+    api.get(`/accounts/payroll/salary-records${month ? `?month=${month}` : ''}`),
+  staffSalary: (staffUserId, month) =>
+    api.get(`/accounts/payroll/staff/${staffUserId}/salary${month ? `?month=${month}` : ''}`),
+  setSalary: (staffUserId, payload) => api.post(`/accounts/payroll/staff/${staffUserId}/salary`, payload),
+  saveSalaryComponents: (salaryRecordId, components) =>
+    api.put(`/accounts/payroll/salary-records/${salaryRecordId}/components`, { components }),
+  staffAttendance: (staffUserId, month, workingDays) => {
+    const qs = new URLSearchParams();
+    if (month) qs.set('month', month);
+    if (workingDays) qs.set('workingDays', String(workingDays));
+    const suffix = qs.toString();
+    return api.get(`/accounts/payroll/staff/${staffUserId}/attendance${suffix ? `?${suffix}` : ''}`);
+  },
+  saveAttendance: (staffUserId, month, payload) =>
+    api.put(`/accounts/payroll/staff/${staffUserId}/attendance?month=${month}`, payload),
+  grantLoan: (staffUserId, payload) => api.post(`/accounts/payroll/staff/${staffUserId}/loans`, payload),
+  recoverLoan: (loanId, payload) => api.post(`/accounts/payroll/loans/${loanId}/recover`, payload),
+  cancelLoan: (loanId, reason) => api.post(`/accounts/payroll/loans/${loanId}/cancel`, { reason }),
+  payrollAlerts: () => api.get('/accounts/payroll/alerts'),
+  payrollAgeing: () => api.get('/accounts/payroll/ageing'),
+  payslipDocument: (entryId) => api.get(`/accounts/payroll/entries/${entryId}/payslip`),
+  generatePayslip: (entryId) => api.post(`/accounts/payroll/entries/${entryId}/payslip`),
+  attachPayslip: (entryId, fileId) => api.put(`/accounts/payroll/entries/${entryId}/payslip`, { fileId }),
   // F-07 Expenses (docs/users/06 §3.6). The old three calls above are kept so
   // nothing else in the app breaks; these supersede them.
   expenses: (params = {}) => {
