@@ -246,7 +246,7 @@ router.get('/mentorship/:id', validate(idParamSchema, 'params'), wrap(async (req
 }));
 
 router.get('/mentorship/:id/progress', validate(idParamSchema, 'params'), wrap(async (req, res) => {
-  await mentorship.assertPairInInstitution(req.auth!.institutionId, String(req.params.id));
+  await mentorship.assertPairReadable(studentViewer(req), String(req.params.id));
   res.json({ data: await goals.progressForPair(String(req.params.id)) });
 }));
 

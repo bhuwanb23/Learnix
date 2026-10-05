@@ -316,6 +316,43 @@ export async function assertPairInInstitution(institutionId: string, pairId: str
   if (!pair) throw notFound('Mentorship pair not found');
 }
 
+/**
+ * The stricter version, for reads that describe the relationship itself — the
+ * goal counts and the time two people have spent together.
+ *
+ * `assertPairInInstitution` is deliberately only an institution check, which is
+ * the right bar for the pair card in the office's own list. But `/progress`
+ * would otherwise let any alumnus in the institution read how many meetings
+ * somebody else's mentorship has had, which is not their business.
+ */
+export async function assertPairReadable(viewer: Viewer, pairId: string) {
+  const pair = await prisma.mentorshipPair.findFirst({
+    where: {
+      id: pairId,
+      OR: [
+        { menteeStudentProfile: { user: { institutionId: viewer.institutionId } } },
+        { menteeAlumniProfile: { institutionId: viewer.institutionId } },
+      ],
+    },
+    select: {
+      id: true,
+      mentorAlumniUserId: true,
+      menteeAlumniProfile: { select: { userId: true } },
+      menteeStudentProfile: { select: { user: { select: { id: true } } } },
+    },
+  });
+  if (!pair) throw notFound('Mentorship pair not found');
+
+  const participant =
+    viewer.userId === pair.mentorAlumniUserId ||
+    viewer.userId === pair.menteeAlumniProfile?.userId ||
+    viewer.userId === pair.menteeStudentProfile?.user.id;
+  if (!(participant || viewer.isOffice)) {
+    throw forbidden('Only a participant or the Alumni Relations Office can read this mentorship');
+  }
+  return pair;
+}
+
 /** One pair, with the caller's permissions resolved server-side. */
 
 export async function getPair(institutionId: string, pairId: string, viewer?: Viewer) {

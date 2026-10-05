@@ -216,70 +216,12 @@ export async function getLedger(institutionId: string) {
 // every employee regardless of who they were is gone — gross now comes from
 // StaffProfile.monthlyGrossMinor.
 
-// ── F-08 Scholarships ───────────────────────────────────────
-export async function getReports(institutionId: string) {
-  const [payments, dues, payrollRuns, expenses, budgets] = await Promise.all([
-    prisma.payment.groupBy({
-      by: ['category'],
-      where: { institutionId, status: 'CLEARED' },
-      _sum: { amountMinor: true },
-      _count: { id: true },
-    }),
-    prisma.feeDue.groupBy({
-      by: ['status'],
-      _sum: { amountMinor: true },
-      _count: { id: true },
-    }),
-    prisma.payrollRun.findMany({
-      where: { institutionId },
-      orderBy: { month: 'desc' },
-      take: 6,
-    }),
-    prisma.expense.groupBy({
-      by: ['category'],
-      where: { institutionId },
-      _sum: { amountMinor: true },
-      _count: { id: true },
-    }),
-    prisma.budget.findMany({ where: { institutionId } }),
-  ]);
-
-  const totalCollected = payments.reduce((s, p) => s + (p._sum.amountMinor ?? 0), 0);
-  const totalDuesUnpaid = dues
-    .filter((d) => d.status === 'UNPAID' || d.status === 'PARTIAL')
-    .reduce((s, d) => s + (d._sum.amountMinor ?? 0), 0);
-  const totalExpenses = expenses.reduce((s, e) => s + (e._sum.amountMinor ?? 0), 0);
-  const totalBudget = budgets.reduce((s, b) => s + b.plannedMinor, 0);
-
-  return {
-    summary: {
-      totalCollectedRupees: toRupees(totalCollected),
-      totalUnpaidDuesRupees: toRupees(totalDuesUnpaid),
-      totalExpensesRupees: toRupees(totalExpenses),
-      totalBudgetRupees: toRupees(totalBudget),
-    },
-    collectionsByCategory: payments.map((p) => ({
-      category: p.category,
-      amountRupees: toRupees(p._sum.amountMinor ?? 0),
-      count: p._count.id,
-    })),
-    duesByStatus: dues.map((d) => ({
-      status: d.status,
-      amountRupees: toRupees(d._sum.amountMinor ?? 0),
-      count: d._count.id,
-    })),
-    expensesByCategory: expenses.map((e) => ({
-      category: e.category,
-      amountRupees: toRupees(e._sum.amountMinor ?? 0),
-      count: e._count.id,
-    })),
-    payrollHistory: payrollRuns.map((r) => ({
-      month: r.month,
-      status: r.status,
-      totalRupees: toRupees(r.totalMinor),
-    })),
-  };
-}
+// ── F-09 Reports ───────────────────────────────────────────
+// Moved to reports.service.ts. The summary this file served came from a
+// `feeDue.groupBy` with NO tenant filter, so one institution saw every other
+// institution's unpaid dues in its headline, and "unpaid" summed the AMOUNT
+// BILLED rather than the balance left owing. It is deleted rather than left
+// reachable: nothing may serve those numbers.
 
 // ── F-10 Notifications + broadcast + profile ────────────────
 export async function listNotifications(userId: string, institutionId: string) {

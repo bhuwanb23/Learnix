@@ -278,6 +278,44 @@ export function trend(points: { key: string; label: string; count: number; amoun
   });
 }
 
+export type Granularity = 'MONTH' | 'QUARTER' | 'YEAR';
+
+/**
+ * Collapse a run of MONTHLY points into quarters or years.
+ *
+ * This is what makes the comparison's granularity control real. Without it the
+ * control only changed a label while the series stayed monthly — a filter that
+ * looks live and is not, which is worse than having none.
+ *
+ * The window itself never changes: the caller decides how many months it read,
+ * and this only decides how those months are BUCKETS. Buckets are contiguous and
+ * emitted in order, so `grouped[i]` and `monthly[i]` cover the same first N
+ * months — the series total is identical either way, which is what lets the
+ * export and the screen agree.
+ */
+export function groupByGranularity(
+  monthly: { key: string; label: string; count: number; amountMinor: number }[],
+  granularity: Granularity,
+): { key: string; label: string; count: number; amountMinor: number; months: number }[] {
+  if (granularity === 'MONTH' || monthly.length === 0) {
+    return monthly.map((m) => ({ ...m, months: 1 }));
+  }
+  const out: { key: string; label: string; count: number; amountMinor: number; months: number }[] = [];
+  for (const m of monthly) {
+    const [y, mm] = m.key.split('-').map(Number);
+    const key = granularity === 'YEAR' ? String(y) : `Q${Math.floor((mm - 1) / 3) + 1} ${y}`;
+    const last = out[out.length - 1];
+    if (last && last.key === key) {
+      last.count += m.count;
+      last.amountMinor += m.amountMinor;
+      last.months += 1;
+    } else {
+      out.push({ key, label: key, count: m.count, amountMinor: m.amountMinor, months: 1 });
+    }
+  }
+  return out;
+}
+
 /** Largest value in a series, so a bar chart has a scale. 0 for an empty series. */
 export function peak(values: number[]): number {
   // 0 is only the answer for an EMPTY series. Seeding the fold with 0 would make

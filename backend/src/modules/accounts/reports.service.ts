@@ -22,8 +22,9 @@ import { writeAudit } from '../../lib/audit.js';
 import { AGING_BUCKETS } from './dues.money.js';
 import {
   budgetVariance, growthPercent, monthKey, monthKeysBack, monthLabel, monthShortLabel,
-  peak, recoveryStats, resolvePeriod, sharePercent, tally, trend, toRupees,
-  type Period, type ResolvedPeriod, type ExportSheet,
+  groupByGranularity, peak, PERIOD_META, PERIODS, recoveryStats, resolvePeriod, sharePercent,
+  tally, trend, toRupees,
+  type Granularity, type Period, type ResolvedPeriod, type ExportSheet,
 } from './reports.rules.js';
 
 /** Every due belongs to a student, and the student belongs to the institution. */
@@ -648,12 +649,15 @@ export async function departmentsReport(institutionId: string, period: Period, a
  * use, so a comparison can never disagree with the report it summarises.
  */
 export async function comparisonReport(institutionId: string, granularity: Period, anchor?: string) {
-  const g = (['MONTH', 'QUARTER', 'YEAR'] as Period[]).includes(granularity) ? granularity : 'MONTH';
+  const g: Granularity = (['MONTH', 'QUARTER', 'YEAR'] as Period[]).includes(granularity)
+    ? (granularity as Granularity)
+    : 'MONTH';
   const p = await resolveFor(institutionId, g, anchor);
 
-  // A comparison needs a RUN of periods, so the window is the last 12 months
-  // regardless of the granularity chosen — "monthly" and "yearly" here mean how
-  // each BAR is grouped, not how many bars there are.
+  // The WINDOW is always the last 12 months — that is what makes the series a
+  // comparison. `granularity` buckets those twelve months into the bars that are
+  // drawn and exported. Both halves matter and neither substitutes for the other:
+  // grouping alone (the old behaviour) changed a label and nothing else.
   const keys = monthKeysBack(12);
   const from = new Date(Number(keys[0].slice(0, 4)), Number(keys[0].slice(5, 7)) - 1, 1);
   const to = new Date();
@@ -686,15 +690,26 @@ export async function comparisonReport(institutionId: string, granularity: Perio
       amountMinor: xs.filter((x) => pick(x.d) === k).reduce((s, x) => s + x.amountMinor, 0),
     }));
 
-  const collected = trend(perMonth(payments.map((x) => ({ d: x.createdAt, amountMinor: x.amountMinor }))));
-  const spent = trend(perMonth(expenses.map((x) => ({ d: x.date, amountMinor: x.amountMinor }))));
+  // Monthly first, then bucketed — the bucketing is a pure fold over the monthly
+  // points, so the twelve-month total is identical whichever way it is drawn.
+  const monthlyOf = (xs: { d: Date; amountMinor: number }[]) =>
+    groupByGranularity(perMonth(xs), g);
+  const monthlyCollected = perMonth(payments.map((x) => ({ d: x.createdAt, amountMinor: x.amountMinor })));
+  const monthlySpent = perMonth(expenses.map((x) => ({ d: x.date, amountMinor: x.amountMinor })));
   const runMap = new Map(runs.map((x) => [x.month, x]));
-  const netPayroll = keys.map((k) => {
+  const monthlyPayroll = keys.map((k) => {
     const run = runMap.get(k);
     return { key: k, label: monthShortLabel(k), count: run ? 1 : 0, amountMinor: run?.totalMinor ?? 0 };
   });
-  const trendedPayroll = trend(netPayroll);
-  const released = trend(perMonth(allocations.map((x) => ({ d: x.createdAt, amountMinor: x.amountMinor }))));
+  const monthlyReleased = perMonth(allocations.map((x) => ({ d: x.createdAt, amountMinor: x.amountMinor })));
+
+  const collected = trend(groupByGranularity(monthlyCollected, g));
+  const spent = trend(groupByGranularity(monthlySpent, g));
+  const trendedPayroll = trend(groupByGranularity(monthlyPayroll, g));
+  const released = trend(groupByGranularity(monthlyReleased, g));
+  // Kept for the assertions that the grouping preserves the total.
+  void monthlyOf;
+  const monthsInWindow = keys.length;
 
   const cash = collected.map((c, i) => ({
     key: c.key,
@@ -715,7 +730,10 @@ export async function comparisonReport(institutionId: string, granularity: Perio
   return {
     period: p,
     granularity: g,
-    months: keys.length,
+    months: monthsInWindow,
+    /** How many months each bar covers — 1 for MONTH, 3 for QUARTER, 12 for YEAR. */
+    monthsPerBar: g === 'MONTH' ? 1 : g === 'QUARTER' ? 3 : 12,
+    bars: collected.length,
     totals: {
       collectedRupees: r(totalCollected),
       spentRupees: r(totalSpent),
@@ -785,17 +803,22 @@ export async function reportsOverview(institutionId: string, period: Period, anc
 }
 
 export async function reportCatalogue() {
+  // `route` and `periodMeta` are published rather than hard-coded in the app:
+  // the hub builds seven entry points and a period filter out of this payload,
+  // and a screen that invented its own copy would drift from the server the
+  // first time a route or a period changed.
   return {
     reports: [
-      { id: 'collections', title: 'Collection report', blurb: 'What came in, by category, method and month.', icon: 'cash-outline', color: '#059669' },
-      { id: 'dues', title: 'Outstanding dues', blurb: 'What is still owed, how old it is, and by whom.', icon: 'alert-circle-outline', color: '#dc2626' },
-      { id: 'expenses', title: 'Expense statement', blurb: 'Claims by category and vendor, against the budget.', icon: 'receipt-outline', color: '#d97706' },
-      { id: 'payroll', title: 'Payroll report', blurb: 'Gross, deductions and net, month by month.', icon: 'card-outline', color: '#2563eb' },
-      { id: 'scholarships', title: 'Scholarship report', blurb: 'Awarded, released, and credited to which dues.', icon: 'ribbon-outline', color: '#7c3aed' },
-      { id: 'departments', title: 'Department-wise', blurb: 'Spend and staff cost per department.', icon: 'business-outline', color: '#0284c7' },
-      { id: 'comparison', title: 'Period comparison', blurb: 'Twelve months of collections, spend and payroll.', icon: 'trending-up-outline', color: '#4f46e5' },
+      { id: 'collections', title: 'Collection report', blurb: 'What came in, by category, method and month.', icon: 'cash-outline', color: '#059669', route: '/reports/collections' },
+      { id: 'dues', title: 'Outstanding dues', blurb: 'What is still owed, how old it is, and by whom.', icon: 'alert-circle-outline', color: '#dc2626', route: '/reports/dues' },
+      { id: 'expenses', title: 'Expense statement', blurb: 'Claims by category and vendor, against the budget.', icon: 'receipt-outline', color: '#d97706', route: '/reports/expenses' },
+      { id: 'payroll', title: 'Payroll report', blurb: 'Gross, deductions and net, month by month.', icon: 'card-outline', color: '#2563eb', route: '/reports/payroll' },
+      { id: 'scholarships', title: 'Scholarship report', blurb: 'Awarded, released, and credited to which dues.', icon: 'ribbon-outline', color: '#7c3aed', route: '/reports/scholarships' },
+      { id: 'departments', title: 'Department-wise', blurb: 'Spend and staff cost per department.', icon: 'business-outline', color: '#0284c7', route: '/reports/departments' },
+      { id: 'comparison', title: 'Period comparison', blurb: 'Twelve months of collections, spend and payroll.', icon: 'trending-up-outline', color: '#4f46e5', route: '/reports/comparison' },
     ],
-    periods: ['MONTH', 'QUARTER', 'SEMESTER', 'YEAR', 'ALL'],
+    periods: PERIODS,
+    periodMeta: PERIODS.map((p) => ({ id: p, ...PERIOD_META[p] })),
     granularities: ['MONTH', 'QUARTER', 'YEAR'],
     formats: ['xlsx', 'csv', 'pdf'],
   };
@@ -814,6 +837,7 @@ export async function exportSheets(
   institutionId: string,
   period: Period,
   anchor?: string,
+  granularity?: Period,
 ): Promise<{ sheets: ExportSheet[]; title: string; subtitle: string }> {
   const { moneyColumn, numberColumn, textColumn } = await import('./reports.rules.js');
   void (await resolveFor(institutionId, period, anchor));
@@ -1026,15 +1050,19 @@ export async function exportSheets(
   }
 
   if (report === 'comparison') {
-    const d = await comparisonReport(institutionId, period === 'ALL' ? 'MONTH' : period, anchor);
+    // The comparison's OWN granularity is what buckets the bars — not the period
+    // window. Passing `period` here (as an earlier version did) meant a screen
+    // set to "by quarter" exported a file whose rows were still month keys.
+    const d = await comparisonReport(institutionId, (granularity ?? 'MONTH') as Period, anchor);
+    const bucket = d.granularity === 'MONTH' ? 'month' : d.granularity === 'QUARTER' ? 'quarter' : 'year';
     return {
       title: 'Period comparison',
-      subtitle: `${d.months} months to date — collected against spent`,
+      subtitle: `${d.months} months to date, grouped by ${bucket} — collected against spent`,
       sheets: [
         {
           name: 'Cash flow',
           columns: [
-            textColumn('Month', 'label'),
+            textColumn(bucketLabel(d.granularity), 'label'),
             textColumn('Key', 'month'),
             moneyColumn('Collected (INR)', 'collectedRupees'),
             moneyColumn('Spent (INR)', 'spentRupees'),
@@ -1045,7 +1073,7 @@ export async function exportSheets(
         {
           name: 'Payroll net',
           columns: [
-            textColumn('Month', 'label'),
+            textColumn(bucketLabel(d.granularity), 'label'),
             textColumn('Key', 'month'),
             moneyColumn('Net paid (INR)', 'netRupees'),
             numberColumn('Change %', 'changePercent'),
@@ -1055,7 +1083,7 @@ export async function exportSheets(
         {
           name: 'Scholarships released',
           columns: [
-            textColumn('Month', 'label'),
+            textColumn(bucketLabel(d.granularity), 'label'),
             textColumn('Key', 'month'),
             moneyColumn('Released (INR)', 'amountRupees'),
             numberColumn('Change %', 'changePercent'),
@@ -1068,6 +1096,10 @@ export async function exportSheets(
 
   throw notFound(`Unknown report "${report}"`);
 }
+
+/** The column heading for a comparison row, so a quarterly file does not say "Month". */
+const bucketLabel = (g: string) =>
+  g === 'QUARTER' ? 'Quarter' : g === 'YEAR' ? 'Year' : 'Month';
 
 export { exportSheets as buildExportSheets };
 

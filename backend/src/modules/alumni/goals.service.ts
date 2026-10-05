@@ -77,7 +77,7 @@ export async function updateGoal(
   }
   if (body.progressPct !== undefined) assertPct(body.progressPct);
 
-  const data: Record<string, unknown> = { updatedByUserId: viewer.userId };
+const data: Record<string, unknown> = { updatedByUserId: viewer.userId };
   if (body.title !== undefined) {
     if (!body.title.trim()) throw unprocessable('A goal needs a title');
     data.title = body.title.trim();
@@ -93,9 +93,28 @@ export async function updateGoal(
     // Reaching 100% stamps the achievement date; moving away from ACHIEVED clears
     // it, so "achieved on" never describes a goal that is no longer achieved.
     data.achievedAt = body.status === 'ACHIEVED' ? new Date() : null;
-    if (body.status === 'ACHIEVED') data.progressPct = 100;
   }
   if (body.progressPct !== undefined) data.progressPct = body.progressPct;
+
+  // Status and percentage are reconciled here rather than trusting the caller,
+  // because the two can arrive together and disagree — `{ status: 'ACHIEVED',
+  // progressPct: 20 }` is accepted by the schema, and writing it verbatim would
+  // produce an "achieved" goal showing a 20% bar.
+  const nextStatus = (data.status ?? existing.status) as string;
+  const nextPct = (data.progressPct ?? existing.progressPct) as number;
+
+  if (nextStatus === 'ACHIEVED') {
+    data.progressPct = 100;
+    data.achievedAt = data.achievedAt ?? new Date();
+  } else if (nextPct === 100 && body.status === undefined) {
+    // Reaching 100% without naming a status still means achieved, exactly as on
+    // create — otherwise the bar says "done" and the chip says "in progress".
+    data.status = 'ACHIEVED';
+    data.achievedAt = new Date();
+  } else {
+    data.progressPct = nextPct;
+  }
+
 
   const updated = await prisma.mentorshipGoal.update({ where: { id: existing.id }, data });
   await writeAudit({

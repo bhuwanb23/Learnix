@@ -539,13 +539,11 @@ router.post(
   }),
 );
 
-// F-09 reports
-router.get(
-  '/reports',
-  wrap(async (req, res) => {
-    res.json({ data: await service.getReports(req.auth!.institutionId) });
-  }),
-);
+// F-09 reports moved to reports.routes.ts (mounted BEFORE this router).
+// The endpoint that used to live here returned a summary from `getReports`,
+// whose `feeDue.groupBy` carried no tenant filter — one institution's
+// "unpaid" headline summed every tenant's bills. It is gone rather than kept
+// behind a flag: nothing may serve those numbers.
 
 // F-10 notifications + broadcast + profile
 router.get(

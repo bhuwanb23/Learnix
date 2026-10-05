@@ -88,7 +88,9 @@ router.get(
       throw unprocessable(`Unknown format "${format}"`, [{ code: 'BAD_FORMAT', message: 'Supported: xlsx, csv, pdf' }]);
     }
 
-    const { sheets, title, subtitle } = await svc.exportSheets(report, req.auth!.institutionId, period, q.anchor);
+    const { sheets, title, subtitle } = await svc.exportSheets(
+      report, req.auth!.institutionId, period, q.anchor, q.granularity as Period | undefined,
+    );
     const stamp = `${period.toLowerCase()}${q.anchor ? `-${q.anchor}` : ''}`;
     const ext = format === 'xlsx' ? 'xlsx' : format === 'csv' ? 'csv' : 'pdf';
     // `File.storageKey` is UNIQUE and the user-facing name stays predictable.

@@ -994,9 +994,12 @@ router.get(
   '/mentorship/:id/progress',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
-    // Scoped before the read: this route used to take a bare pairId, so any
-    // authenticated caller could read another institution's goal progress.
-    await mentorship.assertPairInInstitution(req.auth!.institutionId, String(req.params.id));
+    const viewer = await viewerFor(req);
+    // Participants and the office only. This route used to take a bare pairId
+    // with no scoping at all, so any authenticated caller could read another
+    // institution's goal progress — or, once scoped to their own institution,
+    // somebody else's mentorship.
+    await mentorship.assertPairReadable(viewer, String(req.params.id));
     res.json({ data: await goals.progressForPair(String(req.params.id)) });
   }),
 );
