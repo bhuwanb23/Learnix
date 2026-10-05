@@ -9,9 +9,20 @@ model Event {
   title           String
   description     String?
   category        String // TECH | SPORTS | CULTURAL | ALUMNI | OTHER
+  // ── Alumni-facing classification, kept SEPARATE from `category` ──
+  // `category` is shared with the student and sports apps, which both render
+  // filter chips from it. Adding REUNION/NETWORKING/WORKSHOP/WEBINAR there would
+  // surface alumni-only types in the sports and student UIs, so the alumni
+  // taxonomy lives here instead. NULL = not alumni-classified (student/sport
+  // events), which keeps every existing filter untouched.
+  eventType       String? // REUNION | NETWORKING | WORKSHOP | WEBINAR | MEETUP
   startDate       DateTime
   endDate         DateTime
   venueId         String? // FK → venues (i3, same domain)
+  // A webinar has no room. Rather than inventing a "Virtual" venue row, the
+  // event says so and carries the link to join.
+  isOnline        Boolean   @default(false)
+  meetingUrl      String?
   capacity        Int       @default(100)
   organizerUserId String // scalar → users.id
   // Optional owning chapter. A chapter event is still an Event — reusing this
@@ -30,9 +41,13 @@ model Event {
   registrations  EventRegistration[]
   scheduleItems  EventScheduleItem[]
   volunteers     EventVolunteer[]
+  photos         EventPhoto[]
+  feedback       EventFeedback[]
 
   @@index([institutionId])
   @@index([category])
+  // Alumni lists filter by type on every request; without this it is a scan.
+  @@index([eventType, startDate])
   @@index([status])
   @@map("events")
 }
@@ -41,9 +56,16 @@ model EventRegistration {
   id               String    @id @default(cuid())
   eventId          String
   registrantUserId String // user-level: students, staff, alumni all register
-  status           String    @default("PENDING") // PENDING | APPROVED | REJECTED | CONFIRMED | DECLINED
+  status           String    @default("PENDING") // PENDING | APPROVED | REJECTED | CONFIRMED | DECLINED | CANCELLED
   qrPayload        String?
   reminderAt       DateTime?
+  // ── Real attendance ──
+  // Status says what someone PROMISED; this says they SHOWED UP. These were
+  // conflated for a while, and treating CONFIRMED registrations as attendance
+  // let a chapter report 100% participation for an event nobody attended.
+  // checkedInAt NULL = not checked in. Never set from the RSVP decision.
+  checkedInAt      DateTime?
+  checkInMethod    String? // MANUAL | QR
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -53,24 +75,82 @@ model EventRegistration {
   @@unique([eventId, registrantUserId])
   @@index([eventId])
   @@index([registrantUserId])
+  // "Who actually turned up" and "my attendance history" are both point queries
+  // on this pair; without it they degrade to a scan of every registration.
+  @@index([eventId, checkedInAt])
   @@map("event_registrations")
 }
 
 model EventScheduleItem {
-  id       String   @id @default(cuid())
-  eventId  String
-  day      Int // day 1, 2, …
-  item     String
-  isDone   Boolean  @default(false)
-  order    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id      String @id @default(cuid())
+  eventId String
+  day     Int // day 1, 2, …
+  item    String
+  isDone  Boolean  @default(false)
+  order   Int
+  // ── Agenda detail ──
+  // `item` alone ("Keynote") cannot answer "when does it start, who is speaking,
+  // which room" — which is most of what an agenda is for. All optional so the
+  // sports app's existing string-only rows stay valid.
+  startsAt   DateTime?
+  endsAt     DateTime?
+  speaker    String?
+  location   String?
+  track      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   event Event @relation(fields: [eventId], references: [id])
 
   @@unique([eventId, day, order])
   @@index([eventId])
   @@map("event_schedule_items")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Memories — photos an event collects after it has happened
+// ─────────────────────────────────────────────────────────────
+// A chapter reunion is worth little if the photographs vanish with the event
+// page. Photos are real uploads into the shared File store (Domain L) rather than
+// pasted URLs, so a dead image host cannot break a page years later.
+model EventPhoto {
+  id               String   @id @default(cuid())
+  eventId          String
+  fileId           String // FK → files.id (Domain L)
+  caption          String?
+  uploadedByUserId String? // scalar → users.id
+  createdAt        DateTime @default(now())
+
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  file    File  @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  uploader User? @relation("EventPhotoUploader", fields: [uploadedByUserId], references: [id])
+
+  // The same file attached twice is a double-tap, not two memories.
+  @@unique([eventId, fileId])
+  @@index([eventId])
+  @@map("event_photos")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Feedback — what attendees thought, once the event is over
+// ─────────────────────────────────────────────────────────────
+model EventFeedback {
+  id            String   @id @default(cuid())
+  eventId       String
+  authorUserId  String // scalar → users.id
+  rating        Int // 1–5
+  comment       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event  Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorUserId], references: [id])
+
+  // One review per person per event, but EDITABLE — a guest who rates 2 stars
+  // because the Wi-Fi failed should be able to fix it once it is sorted.
+  @@unique([eventId, authorUserId])
+  @@index([eventId])
+  @@map("event_feedback")
 }
 
 model EventVolunteer {

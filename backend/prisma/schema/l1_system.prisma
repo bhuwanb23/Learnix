@@ -11,7 +11,7 @@ model File {
   id             String   @id @default(cuid())
   institutionId  String
   uploaderUserId String // scalar → users.id
-  purpose        String // NOTE_ATTACHMENT | ASSIGNMENT_ATTACHMENT | SUBMISSION | AVATAR | COVER | PAYSLIP | LOGO | RESUME | EXPENSE_RECEIPT
+  purpose        String // NOTE_ATTACHMENT | ASSIGNMENT_ATTACHMENT | SUBMISSION | AVATAR | COVER | PAYSLIP | LOGO | RESUME | EXPENSE_RECEIPT | EVENT_PHOTO
   mimeType       String
   sizeBytes      Int
   storageKey     String // unique object path

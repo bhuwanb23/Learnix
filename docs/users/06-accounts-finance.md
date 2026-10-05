@@ -254,25 +254,270 @@ roll-ups plus the dashboard agree on outstanding, and that the tenancy boundary 
 Both restore the dev DB, are idempotent, and leave no fixtures behind.
 
 ### 3.4 Payroll
-A payroll **hub** for the current month: hero card (run status, net payable, paid/pending split, YTD),
-owed-and-unpaid total, six-month net trend bars, per-month run cards with payment progress, a collapsible
-roster, and a warning listing staff who are excluded because they have no salary on file. When no run
-exists for the month the hub says **Not raised** and offers **Run Payroll**.
 
-Actions: **Run Payroll** (derives every staff member's salary from `computeSalary` — 50% basic, 40% HRA of
-basic, 12% PF of basic, ₹200 professional tax, pro-rated by loss-of-pay days; every printed line is a
-whole rupee so payslips foot exactly), **Apply LOP** per employee (quick presets), **Approve** a draft run,
-**Pay** a single employee, **Pay all** the run in one sheet, and **view payslip** (earnings/deduction lines,
-net, YTD, full month history). The old `Mark Paid` button is gone — a run moves DRAFT → APPROVED → PAID
-one entry at a time or in bulk, each payment recorded with a reference.
+Two desks that used to be one confusing screen. **The run desk** raises and pays a month; **the
+salary desk** is what a month gets raised *from* — who is on the roster, what each person is paid, what
+the deductions are, and which salaries have still not been paid. The run desk used to invent every
+figure from a hard-coded 50/40/12 formula; it now prices each person from the salary version in force
+that month, and the salary desk is where those versions are written.
 
-Status is server-owned: the UI renders Approve/Pay-all/Apply-LOP only when the API returns
-`canApprove` / `canPay` / `canAdjust`, and staff not on the run are listed instead of silently dropped.
+| Sub-feature | Question | Screen |
+| --- | --- | --- |
+| Faculty / staff salary records | Who is on the roster, and does each of them have a salary on file? | `salary_records` |
+| Basic salary and allowances | What does this person earn, and out of which components? | `salary_record` + `salary_components` |
+| Deductions and taxes | What is withheld — PF, professional tax, TDS — and how was the TDS reached? | `salary_record` (tax block) |
+| Attendance / leave-linked pay | How many days were rostered, present, on paid leave, on unpaid leave, and what does that cost? | `salary_attendance` |
+| Loans and advances | What has this person borrowed, what has been recovered, and what is still due this month? | `salary_loans` |
+| Payslip generation | Is there an actual document, how big is it, and can it be opened or shared? | `payslip_document` (+ `payslip`) |
+| Payroll history and pending-salary alerts | Which months exist, what is still unpaid, and how old is it? | `payroll` (hub) + `payroll_alerts` |
 
-**Entity `payroll_run`**: id, institutionId, month, status (DRAFT/APPROVED/PAID), gross, deductions, net,
-approvedBy/At, paidBy/At. **Entity `payroll_entry`**: id, runId, staffUserId, snapshot of
-employeeNo/designation/department/bankAccountLast4, earningsJson, deductionsJson, lopDays, gross,
-deductions, net, status, paidByUserId, paidAt, paymentRef.
+Screens: `payroll.js` (run hub), `payrollMeta.js`, `payrollSalaryMeta.js`, and `pages/{payroll_detail,
+payslip, salary_records, salary_record, salary_components, salary_attendance, salary_loans,
+payroll_alerts, payslip_document}` — nine screens, all registered in `FEATURE_MODULES`. The hub carries
+two extra desk buttons: **Salary records** and **Pending salaries**.
+
+#### §3.4.1 The run desk (existing behaviour, now priced from salary records)
+
+Hero card (run status, net payable, paid/pending split, owed-and-unpaid total, six-month net trend bars),
+per-month run cards with payment progress, a collapsible roster, and a warning listing staff excluded
+because they have no salary on file. With no run for the month the hub says **Not raised** and offers
+**Run Payroll**.
+
+Actions: **Run Payroll**, **Apply LOP** per employee (quick presets), **Approve** a draft run, **Pay** a
+single employee, **Pay all**, and **view payslip**. The old `Mark Paid` button is gone — a run moves
+DRAFT → APPROVED → PAID one entry at a time or in bulk, each payment recorded with a reference.
+
+Status is server-owned: the UI renders Approve/Pay-all/Apply-LOP only when the API returns `canApprove` /
+`canPay` / `canAdjust`, and staff not on the run are listed instead of silently dropped.
+
+`runPayroll` and `adjustPayrollEntry` both price from the **salary version in force that month**
+(`salaryInForce`), apply **loss of pay** from the saved attendance summary (`lopDaysFor`), **TDS** from
+year-to-date taxable income, and **loan recovery** from active loans. `StaffProfile.monthlyGrossMinor`
+is only a fallback so a seeded institution keeps running while every new raise goes through the versioned
+record. Each entry keeps a pointer to the `salaryRecordId` that priced it, because a payslip is a
+historical document and must still resolve to the rules that applied when it was raised.
+
+#### §3.4.2 Faculty / staff salary records
+
+`GET /payroll/salary-records?month=` is the roster: every active `StaffProfile` with their live name,
+employee no, department and designation, plus `hasSalaryRecord`, the gross in force, the version's
+effective window, and the components attached to it. Stats cover roster size, how many have a salary,
+how many do not, and the total monthly gross.
+
+Staff with **no salary record** are listed in the roster and in the pending-alerts desk, never skipped
+without a word — a person silently absent from payroll is the failure this sub-feature exists to prevent.
+
+A salary belongs to a **person**, so it is created at `/payroll/staff/:staffUserId/salary`, not guessed
+from a body field. `saveSalaryRecord` opens a new versioned record rather than editing one in place: it
+closes the outgoing record's window the day before the new one starts, so `effectiveFrom`/`effectiveTo`
+are **inclusive** and there is never a day with two live salaries or a gap with none. It is also how a
+promotion is recorded — the reason (`Annual increment`, `Promotion`, …) is stored on the record, not just
+in a log line.
+
+#### §3.4.3 Basic salary and allowances
+
+A component is a **rule, never a pre-multiplied number**: `percentOf` (`BASIC` | `GROSS`) + `percent`,
+or a flat `amountMinor`. "HRA = 40% of basic" survives a raise; "HRA = ₹20,000" does not, and a raise that
+quietly leaves HRA at last year's figure is exactly the bug the old hard-coded formula had.
+
+The catalogue is server-owned and published at `GET /payroll/components` — 11 codes (BASIC, HRA, DA,
+TRANSPORT, MEDICAL, SPECIAL on the earning side; PF, PROF_TAX, TDS, LOAN, OTHER as deductions), each with
+its kind, base, default percent, taxable flag, icon and a one-line hint. The app renders what the
+server sends and mirrors the constants in `payrollSalaryMeta.js`; it never invents a code.
+
+`PUT /payroll/salary-records/:id/components` is a **replacement** edit, not an append, and the detail
+screen shows a **live preview** of the resulting gross, deductions and net before anything is saved.
+
+Three invariants hold on every computation, because a payslip reader adds the printed columns:
+
+- the earnings lines sum to **gross**, and gross minus deductions is exactly the **net**;
+- every line is a **whole rupee**, so the printed sheet foots — a reader who adds them up and gets a
+  different number stops trusting the whole sheet;
+- a component set that declares **more than the gross** is clamped and the excess is reported in
+  `warnings` rather than silently dropped.
+
+`SPECIAL` is the balancing line: it absorbs the rounding residue so earnings foot to gross exactly
+instead of the gross being an unrounded sum of rounded parts.
+
+#### §3.4.4 Deductions and taxes
+
+`PF` is a percentage **of basic**, not of gross — the commonest payroll error and one the component model
+makes impossible to make silently. `PROF_TAX` is a flat monthly state levy (₹200 in most states).
+
+**TDS is computed, never typed.** The New Regime FY 2024-25 table is a **constant in `payroll.tax.ts`,**
+not a database row: a tax table a finance user can edit by accident is a tax table that will be wrong.
+₹75,000 standard deduction, slabs 0/5/10/20/30% at ₹3L/₹7L/₹10L/₹12L, plus 4% cess. An institution
+overrides the table per salary record rather than by editing the file mid-year.
+
+Tax is a **year-to-date liability**, so the calculation needs the months already collected:
+
+- taxable income is summed **up to and including the month being paid**, not only the months before it.
+  Using prior months only means the very first payroll month an institution runs collects no tax at
+  all, and the liability stays one month behind for the rest of the year;
+- `remainingTaxMinor` is **never negative** — a refund is a separate exercise needing a PAN, a declaration
+  and a form, so a desk that credited a negative deduction would be inventing money;
+- the balance is spread over the months remaining in the calendar year, and **December sweeps whatever is
+  left**, so the year never ends a rupee short;
+- the slab lines sum to the slab total exactly in paise, so the printed tax table adds up.
+
+TDS is applied from the computed amount **whether or not the salary record declares a `TDS` component**,
+and warns when it does not. Gating tax on a component row means a desk that forgot to tick "TDS"
+silently under-collects for a whole year.
+
+#### §3.4.5 Attendance and leave-linked pay
+
+`GET /payroll/staff/:staffUserId/attendance?month=&workingDays=` **derives** the month from the approved
+leave rows that overlap it; `PUT` on the same path with `?month=` records the register by hand. A
+typed-in summary **wins** over the derived leave totals — the desk has seen the register, the leave table
+has not.
+
+Two rules the desk would otherwise apply by hand, inconsistently:
+
+- only **APPROVED** leave counts, and only `EARNED` / `CASUAL` / `MEDICAL` is **paid**. A pending request
+  must not cost somebody money;
+- absence of **2 days or fewer is not charged** (`graceUnpaidDays`). Nobody's payslip says "loss of pay:
+  1 day" for one Friday — it reads as a punishment.
+
+The result is clamped to the working days of the month, so a leave row that overruns cannot produce more
+LOP days than the month has. Each summary stores `source` (`MANUAL` | `LEAVE_SYNC`) and the derivation
+returns a human-readable `basis` sentence, which the payslip prints — the reader sees *why* they were
+charged, not just the number.
+
+When the caller supplies **only** leave, an unstated present count means "present on every day they were
+not on leave", **not** "absent every other day". Defaulting `presentDays` to 0 here turned a three-day
+approved leave into a sixteen-day deduction, which is how a one-click derivation quietly docks somebody
+most of a month.
+
+#### §3.4.6 Loans and advances
+
+`StaffLoan` is a principal (`principalMinor`), a monthly `installmentMinor` (0 = manual recovery), and a
+denormalised `recoveredMinor` that is **recomputed from the recovery rows, never incremented**.
+`StaffLoanRecovery` is unique on `(loanId, month)`, so a month cannot be recovered from the same loan
+twice — double-recovery is the failure mode that quietly makes an employee's deduction wrong for a year.
+
+`loanRecoveryDue` is what the run desk prices: active loans only, never before `grantedMonth`, and only
+what is still outstanding. A loan can be **cancelled** with a reason, which stops future recovery without
+erasing the money already taken back.
+
+#### §3.4.7 Payslip generation
+
+`POST /payroll/entries/:entryId/payslip` renders a **real single-page PDF** and stores it as a real
+`File` row, so the screen can say "payslip.pdf, 34 KB" and open it — which it cannot do with an id alone.
+`GET` on the same path returns the document state, `PUT` attaches an externally uploaded payslip to an
+entry. It is written by hand in `payroll.pdf.ts` with **no new dependency**; ₹ is written as `INR` because
+WinAnsi cannot hold the rupee sign.
+
+Generation is refused on an entry that is not priced, and the nested `payslips/<month>/` directory is
+created on demand — otherwise payslip generation 500s on a **fresh install**, which is exactly the
+environment that has generated the most.
+
+`payslip.js` is the on-screen document: earnings lines, deduction lines, net, YTD, and the full month
+history. The old "payslip" was an Alert whose body was a template string claiming the slip had been
+emailed and was available in a portal that does not exist in this app.
+
+#### §3.4.8 Payroll history and pending-salary alerts
+
+`GET /payroll/alerts` is the chase list, and each row answers *how long has this been waiting*, because
+that is what decides whether to transfer the money or chase someone:
+
+| Kind | Severity | Meaning |
+| --- | --- | --- |
+| `PAYROLL_UNPAID` | MEDIUM | this month's approved run is still unpaid |
+| `PAYROLL_OVERDUE` | HIGH | an older month is still unpaid past `overdueDays` (7) |
+| `RUN_STALE_DRAFT` | LOW / HIGH | a draft has sat untouched past `staleDraftDays` (5) |
+| `NO_SALARY_RECORD` | HIGH | rostered staff who cannot be paid because no salary is on file |
+| `NO_RUN_RAISED` | HIGH | the month is over and nothing was raised |
+| `LOAN_STALLED` | MEDIUM | a recovery has not been posted for `stalledLoanMonths` (3) |
+
+`GET /payroll/ageing` bands every month's balance into the four bands a desk actually uses: `NEVER`
+raised, `DUE` now, `OVERDUE`, and `CRITICAL`. **Never-paid is its own band, not a zero** — a month that was
+never raised and a month paid today both have zero days of age and are not the same fact.
+
+**Entities**
+
+- **`staff_salary_records`**: staffUserId, monthlyGrossMinor, basicMinor, effectiveFrom, effectiveTo
+  (null = open), reason, note, createdByUserId. One open record per person at a time; the service
+  enforces the overlap, and the `(institutionId, staffUserId)` index is what keeps that check cheap
+  instead of a table scan on every raise.
+- **`staff_pay_components`**: salaryRecordId, kind, code, label, percentOf, percent, amountMinor,
+  isTaxable, sequence, note. Unique on `(salaryRecordId, code)`.
+- **`staff_loans`** / **`staff_loan_recoveries`**: principal, installment, recovered, grantedMonth,
+  status (ACTIVE | CLOSED | CANCELLED); recoveries unique on `(loanId, month)`.
+- **`staff_attendance_summaries`**: unique on `(institutionId, staffUserId, month)`; workingDays,
+  presentDays, paidLeaveDays, unpaidLeaveDays, lopDays, source, note.
+- **`payroll_entries`** gains `salaryRecordId` and a real `payslip File?` relation.
+- **`payroll_run`**: id, institutionId, month, status (DRAFT/APPROVED/PAID), gross, deductions, net,
+  approvedBy/At, paidBy/At.
+
+**API**
+
+The salary desk lives in `payroll.structure.routes.ts`, mounted **before** `accountsRoutes` and
+`feeStructureRoutes`, and applies its **own** `auth` + `requireRole('ACCOUNTS','ADMIN')`. Mounting a
+router as a sibling before the accounts router costs it the middleware it used to inherit, so without its
+own line every handler 500s on `req.auth!` instead of returning 401.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/payroll/components` | the catalogue + kinds + bases + a default component set |
+| GET | `/payroll/salary-records` | `?month=`; roster + stats + who has no salary |
+| GET | `/payroll/staff/:staffUserId/salary` | person, version in force, components, preview, tax, loans |
+| POST | `/payroll/staff/:staffUserId/salary` | opens a new versioned record; closes the outgoing window |
+| PUT | `/payroll/salary-records/:salaryRecordId/components` | replacement edit |
+| GET | `/payroll/staff/:staffUserId/attendance` | `?month=&workingDays=`; derives from approved leave |
+| PUT | `/payroll/staff/:staffUserId/attendance` | `?month=` in the query; the body is the attendance |
+| POST | `/payroll/staff/:staffUserId/loans` | grant a loan or advance |
+| POST | `/payroll/loans/:loanId/recover` | post a month's recovery |
+| POST | `/payroll/loans/:loanId/cancel` | stop future recovery, reason recorded |
+| GET | `/payroll/entries/:entryId/payslip` | document state + the file |
+| POST | `/payroll/entries/:entryId/payslip` | render and store the PDF |
+| PUT | `/payroll/entries/:entryId/payslip` | attach an uploaded payslip |
+| GET | `/payroll/alerts` | the six alert kinds, with days waiting |
+| GET | `/payroll/ageing` | per-month balances in the four ageing bands |
+
+Every literal path is registered **before** `/payroll/:id` in a dedicated router file, for the reason the
+expenses router has one: registered second, `alerts` is read as a run id and a working screen 404s.
+
+**Money and integrity rules**
+
+- Integer paise everywhere (ADR-04); rupees only at the API and UI edge.
+- A component is a rule; only its computed amount is money, and it is rounded to a whole rupee.
+- TDS comes from the year-to-date position, including the month being paid, and is never negative.
+- `recoveredMinor` is recomputed from recovery rows, never incremented.
+- A payslip keeps pointing at the salary version that priced it, forever.
+- Write schemas are `.strict()` — silently dropping a misnamed money field turns a typo into a silently
+  wrong payslip rather than an error.
+- Salary, loan and attendance writes all write an audit entry.
+
+**Verification**
+
+`backend/scripts/verify-payroll-salary.ts` (724 assertions) exercises the pure rules with no database
+(component arithmetic and the three footing invariants, tax slabs, cess, year-to-date TDS, December
+sweep, LOP grace and clamping, alert and ageing rules), then the service against a throwaway institution:
+version windows and overlap refusal, replacement component edits, attendance derivation both ways,
+loans, recovery double-post refusal, PDF generation and the audit trail.
+
+`backend/scripts/verify-payroll-salary-http.ts` (148) covers what a service call cannot see: that no
+literal path is shadowed by `/payroll/:id`, that this router returns **401 and not 500** without a
+token, that `.strict()` rejects a misspelled money field, and that no money field arrives as a
+fractional rupee.
+
+`backend/scripts/audit-payroll-salary-ui.ts` (429) checks every field the seven new screens read against
+real responses, every `navigate()` target against `FEATURE_MODULES`, the accountsApi paths against the
+router, the six-level import depth of each sub-page, and the client/server constant lists.
+
+**Bugs these suites caught** — each one a defect, not a test artefact:
+
+1. **TDS lagged a month.** Computed on prior months only, so the first payroll month collected no tax
+   at all and the liability stayed a month behind all year.
+2. **TDS and loan recovery vanished** when a salary record declared no `TDS` / `LOAN` component — silently
+   under-collecting tax. Now applied from the computed amount regardless, with a warning.
+3. **Leave-only LOP derivation invented 16 absence days** off a 3-day approved leave, because
+   `presentDays` defaulted to 0.
+4. **The new router had no `auth`** — 500 instead of 401. The same latent bug existed in
+   `feestructure.routes.ts`; both now apply their own.
+5. **Payslip generation 500'd on a fresh install** — the nested `payslips/<month>/` directory was never
+   created.
+6. **Components declaring more than the gross were silently clamped** — now reported in `warnings`.
 
 ### 3.5 Fee Structure (module)
 
@@ -743,7 +988,14 @@ Finance officer profile, FY stats, preference toggles, account menu.
 GET  /api/accounts/dashboard
 GET  /api/accounts/collections            (POST /{id}/record, /{id}/receipt)
 GET  /api/accounts/dues                   (POST /{id}/remind, /{id}/waive)
-GET/POST /api/accounts/payroll            (POST /run, /{id}/payslip)
+GET/POST /api/accounts/payroll            (POST /run, /:id/approve|pay-all, /entries/:entryId/pay)
+GET      /api/accounts/payroll/components  the salary component catalogue
+GET/POST /api/accounts/payroll/salary-records (PUT /:id/components)
+GET/POST /api/accounts/payroll/staff/:staffUserId/salary|attendance|loans
+POST     /api/accounts/payroll/loans/:loanId/recover|cancel
+GET/POST/PUT /api/accounts/payroll/entries/:entryId/payslip
+GET      /api/accounts/payroll/alerts      pending-salary alerts
+GET      /api/accounts/payroll/ageing     per-month balances by age band
 GET/PUT /api/accounts/fee-structure       (POST /{id}/revision)
 GET/POST /api/accounts/expenses           (+ /{id}/approve|reject)
 GET/POST /api/accounts/scholarships       (+ /{id}/approve, /{id}/disburse)
@@ -782,7 +1034,22 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `POST /api/v1/accounts/dues/:id/reinstate` — F-04 reverse a mistaken waiver (body: `reason`, min 3). Clears the waiver fields, re-derives status from the balance, restores the aging clock, notifies, audits
 - `GET /api/v1/accounts/payroll` — F-06 payroll runs with entries
 - `POST /api/v1/accounts/payroll/run` — F-06 create payroll run for month
-- `POST /api/v1/accounts/payroll/:id/mark-paid` — F-06 mark payroll as paid
+- `POST /api/v1/accounts/payroll/:id/approve` — F-06 approve a DRAFT run
+- `POST /api/v1/accounts/payroll/:id/pay-all` — F-06 pay every PENDING entry, each with a reference
+- `POST /api/v1/accounts/payroll/entries/:entryId/pay` — F-06 pay one entry
+- `GET /api/v1/accounts/payroll/components` — F-06 salary component catalogue (11 codes), kinds, bases, a default set
+- `GET /api/v1/accounts/payroll/salary-records?month=` — F-06 salary desk roster + stats + who has no salary on file
+- `GET /api/v1/accounts/payroll/staff/:staffUserId/salary?month=` — F-06 the person, the version in force, its components, a live preview, the YTD tax breakdown and their loans
+- `POST /api/v1/accounts/payroll/staff/:staffUserId/salary` — F-06 open a new versioned salary record, closing the outgoing window the day before (inclusive bounds, no overlap, no gap)
+- `PUT /api/v1/accounts/payroll/salary-records/:salaryRecordId/components` — F-06 replacement component edit
+- `GET /api/v1/accounts/payroll/staff/:staffUserId/attendance?month=&workingDays=` — F-06 derive the month from approved leave rows (paid vs unpaid types, 2-day grace, clamped to working days)
+- `PUT /api/v1/accounts/payroll/staff/:staffUserId/attendance?month=` — F-06 record the register by hand
+- `POST /api/v1/accounts/payroll/staff/:staffUserId/loans` — F-06 grant a loan or advance
+- `POST /api/v1/accounts/payroll/loans/:loanId/recover` — F-06 post a month's recovery (one per `(loanId, month)`)
+- `POST /api/v1/accounts/payroll/loans/:loanId/cancel` — F-06 stop future recovery, reason recorded
+- `GET|POST|PUT /api/v1/accounts/payroll/entries/:entryId/payslip` — F-06 read / render-and-store the PDF / attach an uploaded one
+- `GET /api/v1/accounts/payroll/alerts` — F-06 six alert kinds (`PAYROLL_UNPAID`, `PAYROLL_OVERDUE`, `RUN_STALE_DRAFT`, `NO_SALARY_RECORD`, `NO_RUN_RAISED`, `LOAN_STALLED`) with days waiting
+- `GET /api/v1/accounts/payroll/ageing` — F-06 per-month balances in the four ageing bands (`NEVER`, `DUE`, `OVERDUE`, `CRITICAL`)
 - `GET /api/v1/accounts/expenses` — F-07 expenses + budgets
 - `POST /api/v1/accounts/expenses` — F-07 add expense
 - `POST /api/v1/accounts/expenses/:id/approve` — F-07 approve (updates budget spentMinor)
@@ -796,4 +1063,4 @@ at `/api/v1/accounts` (role gate: `ACCOUNTS` or `ADMIN`).
 - `POST /api/v1/accounts/broadcasts` — F-10 broadcast (ALL_STUDENTS / DEFAULTERS / ALL_STAFF)
 - `GET /api/v1/accounts/profile` — F-10 finance officer profile + FY stats
 
-**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with two sub-pages (`PayrollRunDetail`, `Payslip`) registered in `FEATURE_MODULES`; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
+**App:** all 10 screens wired via `accountsApi` (`services/api.js`), demo identity `setDemoUser('accounts@learnix.dev')` in `accounts_finance.js`. Every static array removed; loading/error/retry/pull-to-refresh states throughout. Collections is a hub with three sub-pages (`CollectPayment`, `CollectionDetail`, `StudentStatement`) registered in `FEATURE_MODULES`, with `routeParams` plumbing added to `accounts_finance.js` so sub-pages know which record they are showing. Dues is a hub with a `DueDetail` sub-page (bill + student + allocations + reminders, server-gated Collect / Remind / Waive / Reinstate, and an action sheet for every mutating call); `collect_payment` accepts `dueId` so a due can be paid directly, switching to manual mode pre-pointed at that due instead of silently paying oldest-first; payroll is a hub with nine screens registered in `FEATURE_MODULES` (`PayrollRunDetail`, `Payslip`, `PayrollSalaryRecords`, `PayrollSalaryRecord`, `PayrollComponents`, `PayrollAttendance`, `PayrollLoans`, `PayrollAlerts`, `PayslipDocument`), the hub carrying **Salary records** and **Pending salaries** desk buttons, and `runPayroll` pricing each person from the salary version in force that month with attendance LOP, YTD TDS and loan recovery rather than a hard-coded 50/40/12 formula; expenses has approve/reject; scholarships has disburse; reports shows live aggregates; notifications has inbox + broadcast (3 audiences); profile shows live officer data.
