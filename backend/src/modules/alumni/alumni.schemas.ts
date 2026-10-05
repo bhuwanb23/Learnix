@@ -30,6 +30,8 @@ export const idParamSchema = z.object({
 export const chapterQuerySchema = z.object({
   q: z.string().trim().min(1).max(80).optional(),
   sort: z.enum(['city', 'members', 'activity']).optional(),
+  region: z.string().trim().min(1).max(80).optional(),
+  tier: z.enum(['LOCAL', 'REGIONAL']).optional(),
 });
 
 export const chapterMembersQuerySchema = z.object({
@@ -70,6 +72,79 @@ export const chapterEventSchema = z.object({
   endDate: z.string().datetime({ offset: true }).or(z.string().min(10).max(40)).optional(),
   capacity: z.coerce.number().int().min(1).max(100000).optional(),
   venueId: z.string().trim().min(1).max(64).optional(),
+});
+
+// ── Chapter creation / metadata (office) ──
+export const createChapterSchema = z.object({
+  city: z.string().trim().min(2).max(80),
+  region: z.string().trim().min(1).max(80).optional(),
+  tier: z.enum(['LOCAL', 'REGIONAL']).optional(),
+  description: z.string().trim().max(1000).optional(),
+  foundedOn: z.string().min(8).max(40).optional(),
+  meetingFrequency: z.string().trim().max(60).optional(),
+  // Optional: a chapter may be created before its president is appointed, in
+  // which case the seat starts vacant.
+  presidentProfileId: z.string().trim().min(1).max(64).optional(),
+});
+
+export const updateChapterSchema = z.object({
+  region: z.string().trim().max(80).nullish(),
+  tier: z.enum(['LOCAL', 'REGIONAL']).optional(),
+  description: z.string().trim().max(1000).nullish(),
+  meetingFrequency: z.string().trim().max(60).nullish(),
+});
+
+// ── Leadership ──
+export const assignOfficerSchema = z.object({
+  profileId: z.string().trim().min(1).max(64),
+  role: z.enum(['PRESIDENT', 'VICE_PRESIDENT', 'SECRETARY', 'TREASURER', 'COORDINATOR']),
+  since: z.string().min(8).max(40).optional(),
+  notes: z.string().trim().max(500).optional(),
+});
+
+export const resignOfficerSchema = z.object({
+  reason: z.string().trim().max(500).optional(),
+});
+
+// ── Initiatives ──
+export const createInitiativeSchema = z.object({
+  title: z.string().trim().min(3).max(120),
+  description: z.string().trim().max(2000).optional(),
+  category: z.enum(['MENTORSHIP', 'SCHOLARSHIP', 'OUTREACH', 'FUNDRAISING', 'SOCIAL']).optional(),
+  // Nullable: an open-ended initiative ("a mentoring hour each month") has no
+  // countable goal, so 0 must not be the way to say "none".
+  targetCount: z.coerce.number().int().min(1).max(1000000).nullish(),
+  startDate: z.string().min(8).max(40).optional(),
+  targetDate: z.string().min(8).max(40).optional(),
+  campaignId: z.string().trim().min(1).max(64).optional(),
+  ownerProfileId: z.string().trim().min(1).max(64).optional(),
+});
+
+export const updateInitiativeSchema = z.object({
+  status: z.enum(['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED']).optional(),
+  achievedCount: z.coerce.number().int().min(0).max(1000000).optional(),
+  targetCount: z.coerce.number().int().min(1).max(1000000).nullish(),
+  targetDate: z.string().min(8).max(40).nullish(),
+  description: z.string().trim().max(2000).nullish(),
+});
+
+export const initiativesQuerySchema = z.object({
+  status: z.enum(['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED']).optional(),
+});
+
+export const officersQuerySchema = z.object({
+  includePast: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .transform((v) => v === true || v === 'true' || v === '1'),
+});
+
+// ── Membership ──
+export const removeMemberSchema = z.object({
+  profileId: z.string().trim().min(1).max(64),
+  // Required, not optional: silently dropping someone off a roster is
+  // indistinguishable from a data error three months later.
+  reason: z.string().trim().min(5).max(500),
 });
 
 /**

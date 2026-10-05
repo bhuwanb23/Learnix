@@ -334,3 +334,125 @@ export const bulkRemindSchema = z
   .refine((v) => (v.dueIds?.length ?? 0) > 0 || !!v.filter, {
     message: 'Choose some bills, or a filter to select them by',
   });
+
+// ── F-04 Fee structure (docs §3.5) ──────────────────────────
+//
+// Every write schema is `.strict()`. A misspelled money field (`amount` instead
+// of `amountMinor`) is silently DROPPED by zod in non-strict mode, and the
+// screen then reports "saved" while storing a zero — which is how the old fee
+// structure ended up with a tuition line of nothing and no error anywhere.
+
+const componentSchema = z
+  .object({
+    kind: z.enum(['TUITION', 'EXAMINATION', 'HOSTEL', 'LIBRARY', 'ADMISSION', 'TRANSPORT', 'OTHER']),
+    label: z.string().trim().min(1).max(80),
+    // Paise. The client converts rupees → paise with Math.round(x * 100).
+    amountMinor: z.number().int().min(0).max(100_000_000),
+    // 0 = applies to every semester of the year.
+    semester: z.number().int().min(0).max(12).default(0),
+    optional: z.boolean().default(false),
+    firstYearOnly: z.boolean().default(false),
+    note: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const feeStructureQuerySchema = z
+  .object({
+    q: z.string().trim().max(80).optional(),
+    programId: z.string().trim().max(64).optional(),
+    academicYearId: z.string().trim().max(64).optional(),
+    status: z.enum(['ALL', 'ACTIVE', 'REVISION_REQUESTED']).default('ALL'),
+    sort: z.enum(['PROGRAM', 'TOTAL_DESC', 'YEAR']).default('PROGRAM'),
+  })
+  .strict();
+
+export const feeStructureDetailQuerySchema = z
+  .object({
+    // The date the bill was raised on. Which version priced it depends on this,
+    // not on today.
+    onDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').optional(),
+  })
+  .strict();
+
+export const createFeeStructureSchema = z
+  .object({
+    programId: z.string().trim().min(1).max(64),
+    academicYearId: z.string().trim().min(1).max(64),
+    components: z.array(componentSchema).min(1, 'A fee structure needs at least one charge line').max(40),
+    effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    changeNote: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const replaceComponentsSchema = z
+  .object({
+    components: z.array(componentSchema).min(1).max(40),
+    // Optimistic concurrency: the edit fails if someone published in between,
+    // instead of silently discarding their changes.
+    expectedVersionId: z.string().trim().max(64).nullable().optional(),
+    changeNote: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const versionDraftSchema = z
+  .object({
+    effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    changeNote: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const publishVersionSchema = z
+  .object({
+    effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    changeNote: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const concessionSchema = z
+  .object({
+    id: z.string().trim().max(64).optional(),
+    name: z.string().trim().min(2, 'Give the rule a name the office will recognise').max(80),
+    kind: z.enum(['MERIT', 'NEED_BASED', 'SIBLING', 'STAFF_WARD', 'SCHOLARSHIP', 'OTHER']).default('SCHOLARSHIP'),
+    basis: z.enum(['PERCENT', 'FLAT']),
+    valueBp: z.number().int().min(0).max(10000).optional(),
+    amountMinor: z.number().int().min(0).max(100_000_000).optional(),
+    appliesTo: z
+      .enum(['ALL', 'TUITION', 'EXAMINATION', 'HOSTEL', 'LIBRARY', 'ADMISSION', 'TRANSPORT', 'OTHER'])
+      .default('TUITION'),
+    semester: z.number().int().min(0).max(12).default(0),
+    enabled: z.boolean().default(true),
+    note: z.string().trim().max(200).optional(),
+  })
+  .strict();
+
+export const concessionPreviewSchema = z
+  .object({
+    concessionIds: z.array(z.string().trim().max(64)).max(20).optional(),
+    semester: z.number().int().min(0).max(12).optional(),
+  })
+  .strict();
+
+export const installmentConfigSchema = z
+  .object({
+    // 1 = one payment, not a plan. 12 is the ceiling the dues desk enforces on
+    // real plans too — past that every instalment is a bill to age and chase.
+    count: z.number().int().min(1).max(12),
+    frequency: z.enum(['ONE_TIME', 'MONTHLY', 'QUARTERLY', 'TRIMESTER', 'SEMESTERLY']),
+    firstDueDays: z.number().int().min(0).max(365).optional(),
+  })
+  .strict();
+
+export const effectiveDateQuerySchema = z
+  .object({
+    onDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD').optional(),
+    semester: z.coerce.number().int().min(0).max(12).optional(),
+  })
+  .strict();
+
+export const versionParamSchema = z
+  .object({ id: z.string().min(1).max(64), versionId: z.string().min(1).max(64) })
+  .strict();
+
+export const concessionParamSchema = z
+  .object({ id: z.string().min(1).max(64), concessionId: z.string().min(1).max(64) })
+  .strict();

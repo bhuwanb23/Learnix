@@ -18,11 +18,22 @@ import {
   chapterAnnouncementSchema,
   chapterEventSchema,
   updateMyProfileSchema,
+  createChapterSchema,
+  updateChapterSchema,
+  assignOfficerSchema,
+  resignOfficerSchema,
+  createInitiativeSchema,
+  updateInitiativeSchema,
+  initiativesQuerySchema,
+  officersQuerySchema,
+  removeMemberSchema,
 } from './alumni.schemas.js';
 import * as service from './alumni.service.js';
 import * as directory from './directory.service.js';
 import * as connections from './connections.service.js';
 import * as chapterSvc from './chapters.service.js';
+import * as leadership from './leadership.service.js';
+import * as membership from './membership.service.js';
 
 // Alumni Relations module — mounted at /api/v1/alumni (docs/users/12 §4)
 const router = Router();
@@ -180,7 +191,169 @@ router.get(
   '/chapters/:id',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
-    res.json({ data: await chapterSvc.getChapterDetail(req.auth!.institutionId, String(req.params.id)) });
+    // Viewer-aware: the response carries `viewerContext` (member? officer? may
+    // this viewer post or join?) so the UI never offers an action the backend
+    // would reject.
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await chapterSvc.getChapterDetail(req.auth!.institutionId, String(req.params.id), viewer),
+    });
+  }),
+);
+
+// ── Chapter membership ──
+router.post(
+  '/chapters/:id/join',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({ data: await membership.joinChapter(viewer, String(req.params.id)) });
+  }),
+);
+
+router.post(
+  '/chapters/:id/leave',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await membership.leaveChapter(viewer, String(req.params.id)) });
+  }),
+);
+
+router.post(
+  '/chapters/:id/remove-member',
+  validate(idParamSchema, 'params'),
+  validate(removeMemberSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await membership.removeMember(
+        viewer,
+        String(req.params.id),
+        req.body.profileId,
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+// ── Chapter leadership ──
+router.get(
+  '/chapters/:id/officers',
+  validate(idParamSchema, 'params'),
+  validate(officersQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await leadership.listOfficers(
+        req.auth!.institutionId,
+        String(req.params.id),
+        (req.query as { includePast?: boolean }).includePast === true,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/chapters/:id/officers',
+  validate(idParamSchema, 'params'),
+  validate(assignOfficerSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const result = await leadership.assignOfficer(viewer, String(req.params.id), req.body);
+    res.status(201).json({ data: result });
+  }),
+);
+
+router.post(
+  '/chapters/:id/officers/:officerId/resign',
+  validate(idParamSchema, 'params'),
+  validate(resignOfficerSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await leadership.resignOfficer(
+        viewer,
+        String(req.params.id),
+        String(req.params.officerId),
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+// ── Chapter initiatives ──
+router.get(
+  '/chapters/:id/initiatives',
+  validate(idParamSchema, 'params'),
+  validate(initiativesQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await leadership.listInitiatives(
+        req.auth!.institutionId,
+        String(req.params.id),
+        (req.query as { status?: string }).status,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/chapters/:id/initiatives',
+  validate(idParamSchema, 'params'),
+  validate(createInitiativeSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const result = await leadership.createInitiative(viewer, String(req.params.id), req.body);
+    res.status(201).json({ data: result });
+  }),
+);
+
+router.patch(
+  '/chapters/:id/initiatives/:initiativeId',
+  validate(idParamSchema, 'params'),
+  validate(updateInitiativeSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({
+      data: await leadership.updateInitiative(
+        viewer,
+        String(req.params.id),
+        String(req.params.initiativeId),
+        req.body,
+      ),
+    });
+  }),
+);
+
+// ── Chapter performance ──
+router.get(
+  '/chapters/:id/performance',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await leadership.getChapterPerformance(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+// ── Chapter administration (office) ──
+router.post(
+  '/chapters',
+  validate(createChapterSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const result = await membership.createChapter(viewer, req.body);
+    res.status(201).json({ data: result });
+  }),
+);
+
+router.patch(
+  '/chapters/:id',
+  validate(idParamSchema, 'params'),
+  validate(updateChapterSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json({ data: await membership.updateChapter(viewer, String(req.params.id), req.body) });
   }),
 );
 

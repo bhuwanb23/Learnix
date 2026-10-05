@@ -275,9 +275,269 @@ employeeNo/designation/department/bankAccountLast4, earningsJson, deductionsJson
 deductions, net, status, paidByUserId, paidAt, paymentRef.
 
 ### 3.5 Fee Structure (module)
-Per-program fee breakdown (tuition, other charges, total). Actions: **Edit Structure**, **Request Revision** (→ admin approval).
 
-**Entity `fee_structure`**: program, tuition, other, total (shared with Admin).
+The pricing desk. A hub over six sub-screens, one per sub-feature:
+
+| Sub-feature | Question | Screen |
+| --- | --- | --- |
+| Course & semester-wise setup | What does this program cost, and what does one semester of it cost? | hub + `structure_detail` + `component_editor` |
+| Charge components | Tuition, examination, hostel, library, admission, transport, other — and which are optional? | `component_editor` |
+| Instalment configuration | How is the fee meant to be split? | `installments` |
+| Scholarship / concession rules | What is the written policy, and what does a student pay under it? | `concessions` |
+| Late-payment penalties | Which rule governs this program's bills, and what would a family be charged? | `penalties` |
+| Version history | What did this cost last year, which lines moved, and who said why? | `version_history` |
+| Effective-date management | Which version priced a bill raised on a given day? | `structure_detail` (date switcher) + `…/resolve` |
+
+Screens: `fee_structure.js` (hub), `pages/structure_detail`,
+`pages/component_editor`, `pages/version_history`, `pages/concessions`,
+`pages/installments`, `pages/penalties`.
+
+#### §3.5.1 Charge components and semester-wise setup
+
+A fee structure used to be **three integers** — `tuitionMinor`, `otherMinor`,
+`totalMinor` — typed in by hand beside a breakdown printed next to them. That
+could not answer what the hostel charge was, whether semester 3 cost more than
+semester 1, or whether the printed breakdown added up to the total printed
+above it. It usually did not.
+
+A **`FeeComponent`** is now one real charge line: `kind` (one of TUITION,
+EXAMINATION, HOSTEL, LIBRARY, ADMISSION, TRANSPORT, OTHER), a `label` the student
+will recognise, an `amountMinor`, a `semester`, and two flags. The headline
+totals are **rolled up from these rows on publish, inside the same transaction**
+and are never typed beside them.
+
+- `semester: 0` means "every semester of the year" — the normal case for an exam
+  or library charge. `semester: n` books the charge to that semester alone,
+  which is how a degree with a more expensive final year is expressed.
+- `optional: true` (hostel, transport) is **excluded from the headline total**
+  and reported separately. A "total fee" that silently includes a hostel bed
+  nobody is taking is a number the office cannot defend to a day-scholar.
+- `firstYearOnly: true` (an admission charge) is charged in the joining year
+  only, without needing a second program.
+
+**Per-semester bills are computed, not stored.** A semester's bill is its own
+component rows plus an equal share of each `semester: 0` charge, so semester 1
+does not quietly cost less than semester 2 for reasons no family can see. The
+proration floors each share to a **whole rupee** and puts the leftover rupees on
+the **last** semester, so the eight cells the screen prints add up to the annual
+total to the rupee. Prorating in paise and rounding for display does not: eight
+cells each rounding up by half a rupee come to ₹4 more than the total shown
+directly above them. This was a real bug, caught by
+`audit-fee-structure-ui.ts`.
+
+Editing the charge lines is a **replacement, not a patch** — the screen says so
+before Save. The version history records what the structure was on a given day,
+and a patch list cannot distinguish "removed" from "never existed". The write
+carries `expectedVersionId`, so an edit made while someone else published is
+refused with a 409 instead of silently discarding their changes.
+
+Validation is **collected, not thrown one at a time**: zero-priced lines,
+negative amounts, duplicate (kind, semester, label), unlabelled lines, unknown
+charge types, a semester the program does not have, and a structure with no
+tuition line are all reported in one pass. Every write schema is `.strict()`, so a
+misspelled money field is rejected rather than dropped — zod silently discards
+unknown keys, and a fee line saved as ₹0 with a "Saved" toast is the failure this
+prevents.
+
+#### §3.5.2 Instalment configuration
+
+The default plan every bill against the structure is **offered**. It is the menu,
+not the meal: the actual plan for a family is still agreed per student on the
+dues desk, and the screen says so, because a configuration that looks binding
+gets treated as binding and families get told the wrong thing.
+
+`defaultInstallments` splits the fee with the same integer-paise arithmetic the
+dues desk uses (`splitAmount` semantics: the remainder paise ride on the earliest
+instalments), so the bills add back to the fee exactly. The screen mirrors that
+split locally so it moves as the officer picks, and the **server's** schedule
+replaces it on save. `count` is 1–12 and `ONE_TIME` is a single bill rather than
+a plan; a count above 1 with no frequency is refused rather than silently
+accepted, because past 12 every instalment is a bill to age, remind and chase and
+the collection cost exceeds the goodwill.
+
+#### §3.5.3 Scholarship and concession rules
+
+`Scholarship` records **who got money**. `FeeConcession` records the **written
+policy** — "50% off tuition for the top 5% of each batch", "full waiver of the
+exam fee for staff ward". Without a written rule every concession is a fresh
+negotiation at the counter; an award that cannot name the rule it came from
+cannot be defended at audit.
+
+A rule is `basis` (PERCENT in basis points, or FLAT in paise), `appliesTo` (a
+charge type or ALL), an optional `semester`, `enabled`, and a note saying who
+qualifies and against what evidence.
+
+Three rules the arithmetic obeys, enforced on the **write**, not just displayed:
+
+- **Each rule is computed against the full eligible base**, not against what is
+  left after the previous rule. A merit concession and a sibling waiver are
+  independent entitlements; applying them in sequence made the second silently
+  depend on the order the desk typed them.
+- **The sum is capped at the bill.** A student pays nothing, never less than
+  nothing.
+- **A rule is scoped.** Waiving 50% of "everything" quietly waives the hostel
+  bill of a student who was never living in the hostel.
+
+An over-large FLAT rule is **refused at save time** with the eligible amount
+named, rather than accepted and silently trimmed forever. The cap check runs with
+the rule treated as ENABLED regardless of what was saved, so a closed fund can
+still be **parked as switched off** — which is exactly what you want to do with a
+scholarship whose money ran out.
+
+A **disabled** rule is kept, not deleted: "the alumni bursary ran out in 2023" is
+a fact the office should be able to answer.
+
+The concessions screen is a **calculator**, not a list: pick a semester, tick the
+rules a student actually holds, and it shows the bill before and after, per line
+and in total. Without that, "50% merit" is a phrase and "₹60,000 off" is a
+guess.
+
+#### §3.5.4 Late-payment penalties
+
+Charging interest on a late fee is a **policy decision**, not a universal rule.
+The arithmetic and the rule row (`LateFeeRule`, already `feeStructureId`-aware)
+stay in `dues.fines.ts`, and `getActiveLateFeeRule(institutionId,
+feeStructureId)` resolves which rule governs a bill — a program-specific row
+**overrides** the institution default, whether or not it is enabled, because
+"this program charges no late fee" is a decision and not a gap to be filled with
+the default. The lookup is two queries rather than one with an `OR`, because
+SQLite sorts NULL first ascending and a single `orderBy: { feeStructureId: 'asc' }`
+silently prefers the less specific rule.
+
+`runLateFeeAssessment` resolves the rule **per bill** (once per distinct
+structure, not once per row) and skips a bill whose structure has switched its
+rule off, rather than dropping it back to the default. The audit records how many
+fines came from an override, so a surprising total is explainable.
+
+The fee-structure screen does **not** re-derive any of this. It reports which
+rule governs, restates it in words ("1% a month after a 15-day grace, capped at
+25% of the bill"), and shows what one month late and long-overdue would actually
+cost — all computed by the server. A client with its own estimate eventually
+disagrees with the fine the dues desk assesses, and the officer is shown two
+numbers for the same bill.
+
+#### §3.5.5 Version history
+
+A **version is an immutable snapshot** of the components plus an effective
+window. Editing never mutates a published structure: **copy-then-publish**.
+
+- A `DRAFT` copies the current lines, bills nothing, can be discarded with no
+  effect, and only publishing moves money.
+- Publishing **supersedes** the outgoing version — its window closes the day
+  BEFORE the new one opens, because `effectiveTo` is inclusive and leaving both
+  open on one day would mean two live rates on that date.
+- A discarded draft is **marked `DRAFT_DISCARDED`, not deleted** — "someone
+  started a revision and abandoned it" is itself a fact worth keeping.
+
+The snapshot is stored as **JSON, not references to live rows**, precisely
+because `FeeComponent` rows are mutable: a snapshot pointing at live rows would
+rewrite its own history every time a rate changed. Snapshots are normalised into
+a fixed order so two versions with the same rates typed in a different order are
+byte-identical — otherwise "nothing changed" is not assertable.
+
+The timeline diffs each version against the one before it, line by line, as
+ADDED / REMOVED / CHANGED / **UNCHANGED**. `UNCHANGED` is included deliberately:
+"we revised the fee structure" and "we revised four lines of it" are different
+conversations.
+
+Year-on-year movement is reported as a **percentage against the prior version**,
+or as `null` when there is no comparable version — which the screen renders as
+"No earlier version to compare", never as a fabricated "+0%". A fee cut is shown
+green, not red: the board may well have voted for it.
+
+#### §3.5.6 Effective-date management
+
+This is the sub-feature the whole module exists for. **A bill is priced by the
+version in force on the day it was raised, not by today's rate.** A structure
+revised in November must not retroactively reprice a bill raised in July.
+
+`effectiveTo` is **inclusive**: a version effective 1 Apr → 30 Nov applies ON the
+30th, and its successor starts 1 December. Comparisons are made on whole local
+days, because a raw timestamp comparison retires a version at 00:00 on its final
+day.
+
+A **SUPERSEDED version still resolves** for the window it records. Restricting
+resolution to `PUBLISHED` would make every historical bill unresolvable the
+moment a revision is published — exactly the failure effective dates exist to
+prevent.
+
+`GET /fee-structures/:id/resolve?onDate=YYYY-MM-DD` answers the question
+directly and returns `resolved: false` with an explanation when the date falls
+outside every window, rather than substituting today's rate. The detail screen
+exposes the same switch: point it at any date and the charge lines, the semester
+split and the version all re-resolve to what applied then.
+
+**Backdating is refused.** Publishing a version whose start is on or before the
+day the live one began would reprice bills already issued and collected, so the
+server rejects it and names the window it collides with.
+
+Dates cross the wire as **`*Day` local `YYYY-MM-DD` strings** (`isoDay` on the
+server, matching `isoDay` in the client), alongside the raw instants. This is not
+cosmetic: `new Date('2026-07-01')` at local midnight in IST is 30 June 18:30 UTC,
+so `toISOString().slice(0, 10)` reports a fee in force "from 1 July" as starting
+30 June — and a version ending 30 November looks like it ended 29 November. The
+UI renders a `*Day` string the family can read.
+
+**Entities**
+
+- **`fee_structure`** (shared with Admin): programId, academicYearId, tuitionMinor,
+  otherMinor, totalMinor, status, effectiveFrom/To, publishedVersionId,
+  defaultInstallments/Frequency/FirstDueDays. Unique on (programId,
+  academicYearId). The three money columns are **denormalised roll-ups**, repaired
+  on every publish and every seed run — never incremented.
+- **`fee_component`**: feeStructureId, kind, label, amountMinor, semester,
+  optional, firstYearOnly, sortOrder, note.
+- **`fee_structure_version`**: feeStructureId, versionNo (unique per structure),
+  status (DRAFT | PUBLISHED | SUPERSEDED | DRAFT_DISCARDED), effectiveFrom/To,
+  componentsJson, tuitionMinor/otherMinor/totalMinor, changeNote, publishedAt,
+  publishedByUserId.
+- **`fee_concession`**: feeStructureId, name, kind, basis, valueBp, amountMinor,
+  appliesTo, semester, enabled, note.
+
+**API**
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/accounts/fee-structures` | filters `q`, `programId`, `academicYearId`, `status`, `sort`; returns items + stats + filter options |
+| POST | `/accounts/fee-structures` | creates and publishes v1 in one transaction |
+| GET | `/accounts/fee-structures/:id` | `?onDate=` re-resolves every figure to that date |
+| PUT | `/accounts/fee-structures/:id/components` | replacement edit, `expectedVersionId` guard |
+| GET | `/accounts/fee-structures/:id/versions` | items + a per-version diff timeline |
+| POST | `/accounts/fee-structures/:id/versions` | opens a draft |
+| POST | `/accounts/fee-structures/:id/versions/:versionId/publish` | supersedes, closes the outgoing window, moves the roll-ups |
+| POST | `/accounts/fee-structures/:id/versions/:versionId/discard` | marks, never deletes |
+| GET/POST | `/accounts/fee-structures/:id/concessions` | list / create |
+| PUT/DELETE | `/accounts/fee-structures/:id/concessions/:concessionId` | update / remove |
+| POST | `/accounts/fee-structures/:id/concessions/preview` | the calculator; `concessionIds`, `semester` |
+| PUT | `/accounts/fee-structures/:id/installments` | default plan + the server's own schedule |
+| GET | `/accounts/fee-structures/:id/resolve` | `?onDate=&semester=` → which version priced that day |
+| GET/POST | `/accounts/fee-structure`, `…/:id/revision` | legacy alias, kept for the transport module and older clients |
+
+Literal sub-resource paths are registered **before** `/fee-structures/:id`, in a
+dedicated router file for exactly the reason the expenses router is: registered
+first, "versions" is read as a structure id and a working screen 404s.
+
+**Verification**
+
+`backend/scripts/verify-fee-structure.ts` (243 assertions) exercises the pure
+rules with no database at all — component roll-ups, whole-rupee proration and the
+footing invariant, instalment splits across many shapes, concession caps and
+scoping, `isInForceOn` on window boundaries, snapshot normalisation and diffs —
+then the service against a throwaway institution: creation, duplicate refusal,
+optimistic-concurrency refusal, draft → publish → backdating refusal →
+discard, resolution on both sides of a version boundary, the penalty override and
+its fallback, tenancy, and the audit trail.
+
+`backend/scripts/verify-fee-structure-http.ts` (108) covers what a service call
+cannot see: that no literal path is shadowed by `/:id`, that `.strict()` rejects a
+misspelled money field instead of dropping it, and that no money field arrives as
+a fractional rupee.
+
+`backend/scripts/audit-fee-structure-ui.ts` (338) checks every field the seven
+screens read against real responses, every `navigate()` target against
+`FEATURE_MODULES`, both import paths in each six-deep sub-page, and the
+client/server constant lists. It is what caught the proration rounding bug, where
+the semester grid printed ₹4 more than the total directly above it.
 
 ### 3.6 Expenses (module)
 

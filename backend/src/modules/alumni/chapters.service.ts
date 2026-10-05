@@ -22,26 +22,33 @@ import { prisma } from '../../db/prisma.js';
 import { notFound, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import type { Viewer } from './directory.service.js';
+import { officerUserIds } from './leadership.service.js';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const fmtMonth = (d: Date) => `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 
 export async function listChapterDirectory(
   institutionId: string,
-  query: { q?: string; sort?: 'city' | 'members' | 'activity' },
+  query: { q?: string; sort?: 'city' | 'members' | 'activity'; region?: string; tier?: 'LOCAL' | 'REGIONAL' },
 ) {
   const chapters = await prisma.alumniChapter.findMany({
     where: {
       institutionId,
       ...(query.q ? { city: { contains: query.q } } : {}),
+      ...(query.region ? { region: { contains: query.region } } : {}),
+      ...(query.tier ? { tier: query.tier } : {}),
     },
     select: {
       id: true,
       city: true,
+      region: true,
+      tier: true,
+      description: true,
+      meetingFrequency: true,
       memberCount: true,
       nextEventAt: true,
       presidentAlumniUserId: true,
-      _count: { select: { members: true, events: true } },
+      _count: { select: { members: true, events: true, officers: true, initiatives: true } },
     },
   });
 
@@ -71,6 +78,10 @@ export async function listChapterDirectory(
     return {
       id: c.id,
       city: c.city,
+      region: c.region,
+      tier: c.tier,
+      description: c.description,
+      meetingFrequency: c.meetingFrequency,
       // `memberCount` is denormalized, but `_count.members` is the truth. Both
       // are returned so the UI can show the denormalised one and a verification
       // script can compare them.
@@ -78,6 +89,8 @@ export async function listChapterDirectory(
       actualMemberCount: c._count.members,
       eventCount: c._count.events,
       upcomingEventCount: upcomingMap.get(c.id) ?? 0,
+      officerCount: c._count.officers,
+      initiativeCount: c._count.initiatives,
       nextEventAt: c.nextEventAt,
       president: president
         ? {
@@ -97,14 +110,43 @@ export async function listChapterDirectory(
     );
   } else items = items.sort((a, b) => a.city.localeCompare(b.city));
 
+  // Regions, for the directory's group headers. Derived from whatever survived
+  // the filters rather than a separate query, so the group count always equals
+  // the number of chapters on screen.
+  const regionMap = new Map<string, typeof items>();
+  for (const c of items) {
+    const key = c.region ?? 'Other';
+    if (!regionMap.has(key)) regionMap.set(key, []);
+    regionMap.get(key)!.push(c);
+  }
+
   return {
     count: items.length,
     totalMembers: items.reduce((s, c) => s + c.memberCount, 0),
+    regions: [...regionMap.entries()]
+      .map(([region, chaptersIn]) => ({
+        region,
+        count: chaptersIn.length,
+        members: chaptersIn.reduce((s, c) => s + c.memberCount, 0),
+      }))
+      .sort((a, b) => a.region.localeCompare(b.region)),
+    tiers: {
+      local: items.filter((c) => c.tier === 'LOCAL').length,
+      regional: items.filter((c) => c.tier === 'REGIONAL').length,
+    },
     chapters: items,
   };
 }
 
-export async function getChapterDetail(institutionId: string, chapterId: string) {
+/**
+ * Chapter detail.
+ *
+ * Takes a VIEWER, not just an institutionId, because it must report what the
+ * caller is allowed to do — `viewerContext` drives the join / leave / announce
+ * buttons. Deriving those permissions in the client would let the UI offer an
+ * action the backend then rejects with a 403.
+ */
+export async function getChapterDetail(institutionId: string, chapterId: string, viewer?: Viewer) {
   const chapter = await prisma.alumniChapter.findFirst({
     where: { id: chapterId, institutionId },
     include: { members: { select: { id: true } } },
@@ -166,9 +208,66 @@ export async function getChapterDetail(institutionId: string, chapterId: string)
   const upcoming = events.filter((e) => e.startDate >= now && e.status !== 'CANCELLED' && e.status !== 'COMPLETED').map(mapEvent);
   const past = events.filter((e) => e.startDate < now || e.status === 'COMPLETED').map(mapEvent);
 
+  // Leadership + initiative counts come from the officers/initiatives tables,
+  // not the denormalised president pointer, so the two can be compared.
+  const [officers, initiativeCount] = await Promise.all([
+    prisma.alumniChapterOfficer.findMany({
+      where: { chapterId, isCurrent: true },
+      include: {
+        alumniUser: {
+          select: {
+            fullName: true,
+            alumniProfile: {
+              select: { graduationYear: true, currentRole: true, company: { select: { name: true } } },
+            },
+          },
+        },
+      },
+      orderBy: { since: 'asc' },
+    }),
+    prisma.alumniChapterInitiative.count({ where: { chapterId } }),
+  ]);
+
+  // What the CALLER may do. Returned even when viewer is undefined (an internal
+  // call), in which case everything privileged is false.
+  const myOfficerRow = viewer
+    ? officers.find((o) => o.alumniUserId === viewer.userId)
+    : undefined;
+  const myProfile = viewer
+    ? await prisma.alumniProfile.findFirst({
+        where: { userId: viewer.userId, institutionId },
+        select: { chapterId: true, engagementStatus: true },
+      })
+    : null;
+
+  const viewerContext = {
+    isOffice: viewer?.isOffice ?? false,
+    isMember: myProfile?.chapterId === chapter.id,
+    isOfficer: !!myOfficerRow,
+    isPresident: myOfficerRow?.role === 'PRESIDENT',
+    officerRoles: myOfficerRow ? [myOfficerRow.role] : [],
+    // The office cannot join a chapter, so it must never be offered the button.
+    canJoin:
+      !!viewer && !viewer.isOffice && myProfile?.engagementStatus === 'ACTIVE' && myProfile?.chapterId !== chapter.id,
+    // A president cannot leave: that would vacate the seat.
+    canLeave:
+      !!viewer &&
+      !viewer.isOffice &&
+      myProfile?.chapterId === chapter.id &&
+      myOfficerRow?.role !== 'PRESIDENT',
+    canPost:
+      !!viewer && (viewer.isOffice || officers.some((o) => o.alumniUserId === viewer.userId)),
+    canManageOfficers: viewer?.isOffice ?? false,
+    canManageInitiatives: !!viewer && (viewer.isOffice || !!myOfficerRow),
+  };
+
   return {
     id: chapter.id,
     city: chapter.city,
+    region: chapter.region,
+    tier: chapter.tier,
+    description: chapter.description,
+    meetingFrequency: chapter.meetingFrequency,
     memberCount: chapter.memberCount,
     actualMemberCount: chapter.members.length,
     nextEventAt: chapter.nextEventAt,
@@ -182,6 +281,21 @@ export async function getChapterDetail(institutionId: string, chapterId: string)
           company: president.alumniProfile?.company?.name ?? null,
         }
       : null,
+    // Committee summary. The full list lives at /chapters/:id/officers so this
+    // stays cheap for the overview tab.
+    leadership: {
+      count: officers.length,
+      roles: officers.map((o) => o.role),
+      members: officers.map((o) => ({
+        role: o.role,
+        name: o.alumniUser.fullName,
+        graduationYear: o.alumniUser.alumniProfile?.graduationYear ?? null,
+        company: o.alumniUser.alumniProfile?.company?.name ?? null,
+        since: o.since,
+      })),
+    },
+    initiativeCount,
+    viewerContext,
     stats: {
       upcomingEvents: upcoming.length,
       pastEvents: past.length,
@@ -276,9 +390,13 @@ export async function listChapterMembers(
 }
 
 /**
- * Chapter activity feed. Derived from events, announcements and member
+ * Chapter activity feed.
+ *
+ * Derived from events, announcements, initiatives, committee changes and member
  * registrations — newest first, with a discriminator so the client can pick an
- * icon and a colour per type.
+ * icon and colour per type. Nothing is stored: an activity row would be a
+ * second copy of a fact that already lives in the events / broadcasts /
+ * officers / initiatives tables, and the two would drift.
  */
 export async function getChapterActivity(institutionId: string, chapterId: string, limit = 40) {
   const chapter = await prisma.alumniChapter.findFirst({
@@ -287,7 +405,7 @@ export async function getChapterActivity(institutionId: string, chapterId: strin
   });
   if (!chapter) throw notFound('Chapter not found');
 
-  const [events, announcements, recentMembers] = await Promise.all([
+  const [events, announcements, recentMembers, initiatives, officerChanges] = await Promise.all([
     prisma.event.findMany({
       where: { institutionId, chapterId },
       select: { id: true, title: true, startDate: true, status: true, _count: { select: { registrations: true } } },
@@ -306,11 +424,33 @@ export async function getChapterActivity(institutionId: string, chapterId: strin
       orderBy: { createdAt: 'desc' },
       take: 10,
     }),
+    prisma.alumniChapterInitiative.findMany({
+      where: { chapterId },
+      select: { id: true, title: true, status: true, createdAt: true, updatedAt: true, targetCount: true, achievedCount: true },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    }),
+    // Committee history, newest first. Appointments AND resignations are both
+    // worth surfacing: a chapter's leadership turning over is exactly the kind of
+    // thing an office should notice.
+    prisma.alumniChapterOfficer.findMany({
+      where: { chapterId },
+      select: {
+        id: true,
+        role: true,
+        since: true,
+        until: true,
+        isCurrent: true,
+        alumniUser: { select: { fullName: true } },
+      },
+      orderBy: { since: 'desc' },
+      take: 20,
+    }),
   ]);
 
   type Activity = {
     id: string;
-    type: 'EVENT' | 'ANNOUNCEMENT' | 'MEMBER';
+    type: 'EVENT' | 'ANNOUNCEMENT' | 'MEMBER' | 'INITIATIVE' | 'LEADERSHIP';
     title: string;
     detail: string | null;
     at: Date;
@@ -353,6 +493,29 @@ export async function getChapterActivity(institutionId: string, chapterId: strin
       at: m.createdAt,
       refId: m.id,
     })),
+    ...initiatives.map((i) => ({
+      id: `init-${i.id}`,
+      type: 'INITIATIVE' as const,
+      title: i.title,
+      detail:
+        i.targetCount && i.targetCount > 0
+          ? `${i.achievedCount}/${i.targetCount} · ${i.status.toLowerCase()}`
+          : i.status.toLowerCase(),
+      // updatedAt, not createdAt: an initiative whose status moved to COMPLETED
+      // is news, and dating it from creation would bury it.
+      at: i.updatedAt,
+      refId: i.id,
+    })),
+    ...officerChanges.map((o) => ({
+      id: `off-${o.id}`,
+      type: 'LEADERSHIP' as const,
+      title: o.isCurrent
+        ? `${o.alumniUser.fullName} took office as ${o.role.replace(/_/g, ' ').toLowerCase()}`
+        : `${o.alumniUser.fullName} stepped down as ${o.role.replace(/_/g, ' ').toLowerCase()}`,
+      detail: null,
+      at: o.isCurrent ? o.since : (o.until ?? o.since),
+      refId: o.id,
+    })),
   ];
 
   items.sort((a, b) => b.at.getTime() - a.at.getTime());
@@ -362,6 +525,14 @@ export async function getChapterActivity(institutionId: string, chapterId: strin
     city: chapter.city,
     count: Math.min(items.length, limit),
     activity: items.slice(0, limit),
+    // Counts per type, so the UI can label each section without walking the
+    // (already truncated) feed to work out what it is missing.
+    breakdown: {
+      events: events.length,
+      announcements: items.filter((i) => i.type === 'ANNOUNCEMENT').length,
+      initiatives: initiatives.length,
+      leadership: officerChanges.length,
+    },
   };
 }
 
@@ -377,11 +548,14 @@ export async function announceToChapter(
   });
   if (!chapter) throw notFound('Chapter not found');
 
-  // The OFFICE or the chapter PRESIDENT may announce. An arbitrary alumnus
-  // posting official chapter announcements would make the feed meaningless.
-  const isPresident = viewer.userId === chapter.presidentAlumniUserId;
-  if (!viewer.isOffice && !isPresident) {
-    throw unprocessable('Only the Alumni Relations Office or the chapter president can post an announcement');
+  // The OFFICE or any current chapter OFFICER may announce. The rule was
+  // "president only" when leadership was a single column; with a committee in
+  // place, requiring the president would mean the secretary cannot post the
+  // meeting notice. An arbitrary alumnus still cannot — that would make the
+  // feed meaningless.
+  const officers = await officerUserIds(chapter.id);
+  if (!viewer.isOffice && !officers.includes(viewer.userId)) {
+    throw unprocessable('Only the Alumni Relations Office or a chapter officer can post an announcement');
   }
 
   const memberIds = (
@@ -450,9 +624,9 @@ export async function createChapterEvent(
   });
   if (!chapter) throw notFound('Chapter not found');
 
-  const isPresident = viewer.userId === chapter.presidentAlumniUserId;
-  if (!viewer.isOffice && !isPresident) {
-    throw unprocessable('Only the Alumni Relations Office or the chapter president can create an event');
+  const officers = await officerUserIds(chapter.id);
+  if (!viewer.isOffice && !officers.includes(viewer.userId)) {
+    throw unprocessable('Only the Alumni Relations Office or a chapter officer can create an event');
   }
 
   const start = new Date(body.startDate);

@@ -155,27 +155,10 @@ router.get(
   }),
 );
 
-// F-03 fee structures
-router.get(
-  '/fee-structure',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listFeeStructures(req.auth!.institutionId) });
-  }),
-);
-
-router.post(
-  '/fee-structure/:id/revision',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.requestRevision(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-      ),
-    });
-  }),
-);
+// F-03/F-04 fee structures now live in feestructure.routes.ts — their literal
+// sub-resource paths (versions, concessions, installments, resolve) must be
+// registered ahead of `/fee-structures/:id`, which is only visible in a small
+// dedicated file. That router also answers the legacy `/fee-structure` alias.
 
 // F-04 dues
 router.get(

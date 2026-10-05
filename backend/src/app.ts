@@ -16,6 +16,7 @@ import transportRoutes from './modules/transport/transport.routes.js';
 import hostelRoutes from './modules/hostel/hostel.routes.js';
 import libraryRoutes from './modules/library/library.routes.js';
 import accountsRoutes from './modules/accounts/accounts.routes.js';
+import feeStructureRoutes from './modules/accounts/feestructure.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -111,6 +112,11 @@ export function createApp() {
   app.use('/api/v1/hostel', hostelRoutes);
   app.use('/api/v1/library', libraryRoutes);
   app.use('/api/v1/accounts', accountsRoutes);
+  // Fee structure (docs §3.5) has its own router so its literal sub-resource
+  // paths stay ahead of `/fee-structures/:id`. Mounted AFTER accountsRoutes
+  // because its paths are more specific; it deliberately still answers the
+  // legacy singular `/fee-structure` alias.
+  app.use('/api/v1/accounts', feeStructureRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);

@@ -142,57 +142,11 @@ export async function getDashboard(institutionId: string) {
 // collections.service.ts — it has to allocate money onto `fee_dues`, which this
 // file's fee-structure and dues helpers do not know about.
 
-// ── F-03 Fee structures ─────────────────────────────────────
-export async function listFeeStructures(institutionId: string) {
-  const structures = await prisma.feeStructure.findMany({
-    where: { institutionId },
-    include: {
-      program: { select: { name: true, code: true } },
-      academicYear: { select: { name: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return structures.map((s) => ({
-    id: s.id,
-    program: s.program.name,
-    programCode: s.program.code,
-    academicYear: s.academicYear.name,
-    tuitionRupees: toRupees(s.tuitionMinor),
-    otherRupees: toRupees(s.otherMinor),
-    totalRupees: toRupees(s.totalMinor),
-    status: s.status,
-  }));
-}
-
-export async function requestRevision(
-  institutionId: string,
-  actorUserId: string,
-  feeStructureId: string,
-) {
-  const fs = await prisma.feeStructure.findFirst({
-    where: { id: feeStructureId, institutionId },
-  });
-  if (!fs) throw notFound('Fee structure not found');
-  if (fs.status === 'REVISION_REQUESTED') throw conflict('Revision already requested');
-
-  await prisma.feeStructure.update({
-    where: { id: fs.id },
-    data: { status: 'REVISION_REQUESTED', requestedByUserId: actorUserId },
-  });
-
-  await writeAudit({
-    actorUserId,
-    institutionId,
-    action: 'fee_structure.revision_request',
-    entityType: 'FeeStructure',
-    entityId: fs.id,
-    before: { status: fs.status },
-    after: { status: 'REVISION_REQUESTED' },
-  });
-
-  return { id: fs.id, status: 'REVISION_REQUESTED' };
-}
+// ── F-03/F-04 Fee structures ────────────────────────────────
+// Superseded by feestructure.service.ts / feestructure.routes.ts: components,
+// versioned effective dates, concessions and instalment configuration. The two
+// functions below remain only for the dashboard's roll-up call and are not the
+// desk's source of truth.
 
 // F-04 Dues & Recovery (list / detail / remind / waive / reinstate) now lives in
 // dues.service.ts. It has to derive status from `paidMinor`, age the book into

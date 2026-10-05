@@ -14,6 +14,15 @@ export const ROLES = [
   'SPORTS',
   'HOD',
   'ALUMNI',
+  // The Alumni Relations OFFICE, as distinct from a graduate.
+  //
+  // `ALUMNI` alone cannot tell them apart: an office user and a graduate both
+  // hold `ALUMNI`, both have an AlumniProfile, and neither has a StaffProfile.
+  // Three rules depend on the difference — who may post a chapter
+  // announcement, who may assign officers, and whether contact details are
+  // visible — so it is modelled as a role rather than a boolean flag on the
+  // profile.
+  'ALUMNI_OFFICE',
   'PLATFORM_ADMIN',
 ] as const;
 
@@ -113,6 +122,35 @@ export const CAMPAIGN_STATUS = ['ACTIVE', 'COMPLETED'] as const;
 export const DONATION_STATUS = ['PLEDGED', 'RECEIVED'] as const;
 export const DONATION_FUND = ['GENERAL', 'LIBRARY', 'SCHOLARSHIP', 'INFRASTRUCTURE'] as const;
 export const MENTORSHIP_STATUS = ['PENDING', 'ACTIVE', 'DECLINED', 'COMPLETED'] as const;
+
+// Chapters (docs/users/12 §3.6). A chapter is a CITY; `tier` distinguishes a
+// neighbourhood/local chapter from a large regional one, and `region` groups
+// cities for the directory ("Karnataka → Bengaluru") without introducing a
+// nested Region parent, which would complicate every join/leave and aggregate
+// for no benefit at college scale.
+export const CHAPTER_TIER = ['LOCAL', 'REGIONAL'] as const;
+// A chapter is a committee, not one person. `presidentAlumniUserId` on
+// AlumniChapter is a maintained POINTER to the current PRESIDENT row — the
+// officers table is authoritative and this column is written only by the
+// assign/resign service functions.
+export const CHAPTER_OFFICER_ROLE = [
+  'PRESIDENT',
+  'VICE_PRESIDENT',
+  'SECRETARY',
+  'TREASURER',
+  'COORDINATOR',
+] as const;
+export const INITIATIVE_CATEGORY = [
+  'MENTORSHIP',
+  'SCHOLARSHIP',
+  'OUTREACH',
+  'FUNDRAISING',
+  'SOCIAL',
+] as const;
+export const INITIATIVE_STATUS = ['PLANNED', 'ACTIVE', 'COMPLETED', 'CANCELLED'] as const;
+// What the viewer is allowed to do in a chapter. Computed server-side so the UI
+// never offers an action the backend would reject.
+export const CHAPTER_VISIBILITY = ['ANYONE', 'CONNECTIONS', 'OFFICE'] as const;
 
 // ── Domain K — Communication ──
 export const BROADCAST_CHANNEL = ['IN_APP', 'EMAIL', 'PUSH'] as const;

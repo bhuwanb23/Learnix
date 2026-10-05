@@ -135,13 +135,37 @@ const shapeRule = (r: LateFeeRule | null) => ({
   updatedAt: r?.updatedAt ?? null,
 });
 
-/** The rule this institution runs on, or `null` when fines are off. */
-export async function getActiveLateFeeRule(institutionId: string) {
+/**
+ * The rule that governs a bill, or the institution default when the bill's
+ * structure has none of its own.
+ *
+ * `feeStructureId` overrides the institution-wide default. That override has to
+ * be resolved HERE rather than in each caller, because the fee-structure screen
+ * and the dues desk both show "what fine applies to this bill" — and if they
+ * picked the rule independently, a structure with an override would show one
+ * rate on the fee structure and another on the bill it governs.
+ *
+ * The lookup is two queries rather than one with an `OR`: SQLite sorts NULL
+ * FIRST ascending, so a single `orderBy: { feeStructureId: 'asc' }` would
+ * silently prefer the institution default over the more specific rule.
+ */
+export async function getActiveLateFeeRule(institutionId: string, feeStructureId?: string | null) {
+  if (feeStructureId) {
+    // A structure row governs whether or not it is ENABLED. Falling back to the
+    // institution default when the program has deliberately switched its own
+    // rule off would mean "this program charges no late fee" silently became
+    // "charge them the default fine" — the opposite of what the officer set.
+    const specific = await prisma.lateFeeRule.findFirst({
+      where: { institutionId, feeStructureId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (specific) return { ...shapeRule(specific), scope: 'STRUCTURE' as const };
+  }
   const rule = await prisma.lateFeeRule.findFirst({
     where: { ...ruleWhere(institutionId), enabled: true },
     orderBy: { createdAt: 'desc' },
   });
-  return shapeRule(rule);
+  return { ...shapeRule(rule), scope: 'INSTITUTION' as const };
 }
 
 /**
@@ -264,9 +288,10 @@ export async function getDueLateFee(
     status?: string;
     lateFeeAssessedAt?: Date | null;
     lateFeeRuleId?: string | null;
+    feeStructureId?: string | null;
   },
 ) {
-  const rule = await getActiveLateFeeRule(institutionId);
+  const rule = await getActiveLateFeeRule(institutionId, due.feeStructureId);
   const daysOverdue = daysPastDue(due.dueDate);
   const wouldBe = computeLateFee(due, rule);
   const status = deriveDueStatus({ ...due, status: due.status ?? 'UNPAID' });
@@ -328,14 +353,16 @@ export async function assessLateFee(
   }
   if (balanceOf(due) <= 0) throw unprocessable('This fee has no outstanding balance');
 
-  const rule = await getActiveLateFeeRule(institutionId);
+  const rule = await getActiveLateFeeRule(institutionId, due.feeStructureId);
   if (!rule.enabled) {
     throw conflict('This institution has no late-fee rule. Turn it on first.');
   }
-  const ruleRow = await prisma.lateFeeRule.findFirst({
-    where: { ...ruleWhere(institutionId) },
-    orderBy: { createdAt: 'desc' },
-  });
+  const ruleRow = rule.id
+    ? await prisma.lateFeeRule.findUnique({ where: { id: rule.id } })
+    : await prisma.lateFeeRule.findFirst({
+        where: { ...ruleWhere(institutionId) },
+        orderBy: { createdAt: 'desc' },
+      });
 
   const amount = computeLateFee(due, rule);
   if (amount <= 0) {
@@ -476,16 +503,41 @@ export async function runLateFeeAssessment(
       amountMinor: true,
       paidMinor: true,
       dueDate: true,
+      // Per-structure overrides mean one rule cannot price the whole book, so
+      // the structure has to be known here. Without it a bill governed by a
+      // structure-specific rule would be fined at the institution rate.
+      feeStructureId: true,
     },
   });
+
+  // Resolve each distinct structure's rule ONCE and reuse it, rather than
+  // querying per bill — a month of overdue dues is hundreds of rows and this is
+  // the batch job.
+  const structureIds = [...new Set(candidates.map((d) => d.feeStructureId).filter(Boolean))] as string[];
+  const ruleByStructure = new Map<string, ReturnType<typeof getActiveLateFeeRule> extends Promise<infer T> ? T : never>();
+  await Promise.all(
+    structureIds.map(async (sid) => {
+      ruleByStructure.set(sid, await getActiveLateFeeRule(institutionId, sid));
+    }),
+  );
 
   let assessed = 0;
   let skipped = 0;
   let addedMinor = 0;
+  let overrideAssessed = 0;
   const rows: Array<{ id: string; lateFeeRupees: number }> = [];
 
   for (const due of candidates) {
-    const amount = computeLateFee(due, rule);
+    const applicable = (due.feeStructureId ? ruleByStructure.get(due.feeStructureId) : undefined) ?? rule;
+    // A bill whose structure has a rule of its own, and that rule is switched
+    // off, is skipped rather than dropped back to the institution rate: an
+    // explicit "this program does not charge a late fee" is a decision, not a
+    // gap to be filled with the default.
+    if (applicable.scope === 'STRUCTURE' && !applicable.enabled) {
+      skipped += 1;
+      continue;
+    }
+    const amount = computeLateFee(due, applicable);
     if (amount <= 0) {
       skipped += 1;
       continue;
@@ -494,13 +546,14 @@ export async function runLateFeeAssessment(
       skipped += 1;
       continue;
     }
+    if (applicable.scope === 'STRUCTURE') overrideAssessed += 1;
     await prisma.feeDue.update({
       where: { id: due.id },
       data: {
         lateFeeMinor: amount,
         lateFeeAssessedAt: new Date(),
         lateFeeAssessedByUserId: actorUserId,
-        lateFeeRuleId: rule.id,
+        lateFeeRuleId: applicable.id,
       },
     });
     assessed += 1;
@@ -541,6 +594,9 @@ export async function runLateFeeAssessment(
         assessedCount: assessed,
         skippedCount: skipped,
         addedRupees: toRupees(addedMinor),
+        // How many of those were priced by a program-specific override rather
+        // than the institution default, so a surprising total is explainable.
+        overrideAssessedCount: overrideAssessed,
         minDaysOverdue: minDays,
         reason: opts.reason ?? null,
       },
