@@ -634,6 +634,52 @@ export const accountsApi = {
   ledger: () => api.get('/accounts/ledger'),
   feeStructure: () => api.get('/accounts/fee-structure'),
   requestRevision: (id) => api.post(`/accounts/fee-structure/${id}/revision`),
+
+  // ── Fee Structure (docs/users/06 §3.5) ──
+  //
+  // Every method below targets the `/fee-structures` (plural) surface. The
+  // singular alias above is kept for the legacy screen and the transport module.
+  //
+  // Amounts go UP as integer paise (`Math.round(rupees * 100)`) and come DOWN
+  // as whole rupees. That conversion happens once, here, so no screen has to
+  // remember it — a screen dividing by 100 twice was a real bug in the expenses
+  // vendor roll-up, and the guard against repeating it is that there is only one
+  // place left where the division can happen.
+  feeStructures: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/accounts/fee-structures${qs ? `?${qs}` : ''}`);
+  },
+  feeStructureDetail: (id, onDate) =>
+    api.get(`/accounts/fee-structures/${id}${onDate ? `?onDate=${encodeURIComponent(onDate)}` : ''}`),
+  createFeeStructure: (payload) => api.post('/accounts/fee-structures', payload),
+  replaceFeeComponents: (id, payload) => api.put(`/accounts/fee-structures/${id}/components`, payload),
+
+  feeStructureVersions: (id) => api.get(`/accounts/fee-structures/${id}/versions`),
+  createFeeVersionDraft: (id, payload) => api.post(`/accounts/fee-structures/${id}/versions`, payload),
+  publishFeeVersion: (id, versionId, payload) =>
+    api.post(`/accounts/fee-structures/${id}/versions/${versionId}/publish`, payload),
+  discardFeeVersion: (id, versionId) =>
+    api.post(`/accounts/fee-structures/${id}/versions/${versionId}/discard`, {}),
+
+  feeConcessions: (id) => api.get(`/accounts/fee-structures/${id}/concessions`),
+  createFeeConcession: (id, payload) => api.post(`/accounts/fee-structures/${id}/concessions`, payload),
+  updateFeeConcession: (id, concessionId, payload) =>
+    api.put(`/accounts/fee-structures/${id}/concessions/${concessionId}`, payload),
+  deleteFeeConcession: (id, concessionId) =>
+    api.delete(`/accounts/fee-structures/${id}/concessions/${concessionId}`),
+  previewFeeConcessions: (id, payload = {}) =>
+    api.post(`/accounts/fee-structures/${id}/concessions/preview`, payload),
+
+  saveFeeInstallments: (id, payload) => api.put(`/accounts/fee-structures/${id}/installments`, payload),
+  resolveFeeOnDate: (id, onDate, semester) => {
+    const qs = new URLSearchParams();
+    if (onDate) qs.set('onDate', onDate);
+    if (semester) qs.set('semester', String(semester));
+    const s = qs.toString();
+    return api.get(`/accounts/fee-structures/${id}/resolve${s ? `?${s}` : ''}`);
+  },
   dues: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),

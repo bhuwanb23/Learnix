@@ -39,6 +39,15 @@ import Payslip from './pages/payroll/pages/payslip/payslip';
 import FeeStructureModule from './pages/fee_structure/fee_structure';
 import ExpensesModule from './pages/expenses/expenses';
 
+// Fee structure sub-pages (docs/users/06 §3.5) — one per sub-feature, six deep,
+// so every import path below is '../../../../../../services/api' from inside.
+import FeeStructureDetail from './pages/fee_structure/pages/structure_detail/structure_detail';
+import FeeStructureEditor from './pages/fee_structure/pages/component_editor/component_editor';
+import FeeStructureVersions from './pages/fee_structure/pages/version_history/version_history';
+import FeeStructureConcessions from './pages/fee_structure/pages/concessions/concessions';
+import FeeStructureInstallments from './pages/fee_structure/pages/installments/installments';
+import FeeStructurePenalties from './pages/fee_structure/pages/penalties/penalties';
+
 // Expenses sub-pages (pages/expenses/pages/*)
 import ExpenseEntry from './pages/expenses/pages/expense_entry/expense_entry';
 import ExpenseDetail from './pages/expenses/pages/expense_detail/expense_detail';
@@ -63,6 +72,14 @@ const FEATURE_MODULES = {
   Scholarships: { title: 'Scholarships', icon: 'ribbon-outline', component: ScholarshipsModule },
   Reports: { title: 'Reports & Analytics', icon: 'stats-chart-outline', component: ReportsModule },
   Notifications: { title: 'Notifications', icon: 'notifications-outline', component: NotificationsScreen },
+
+  // Fee structure sub-pages (docs §3.5)
+  FeeStructureDetail: { title: 'Fee Structure', icon: 'pricetag-outline', component: FeeStructureDetail },
+  FeeStructureEditor: { title: 'Charge Lines', icon: 'create-outline', component: FeeStructureEditor },
+  FeeStructureVersions: { title: 'Version History', icon: 'git-branch-outline', component: FeeStructureVersions },
+  FeeStructureConcessions: { title: 'Concession Rules', icon: 'ribbon-outline', component: FeeStructureConcessions },
+  FeeStructureInstallments: { title: 'Instalment Plan', icon: 'calendar-outline', component: FeeStructureInstallments },
+  FeeStructurePenalties: { title: 'Late Fee on Fees', icon: 'shield-checkmark-outline', component: FeeStructurePenalties },
 
   // Collections sub-pages
   CollectPayment: { title: 'Collect Payment', icon: 'add-circle-outline', component: CollectPayment },
