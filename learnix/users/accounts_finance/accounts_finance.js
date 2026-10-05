@@ -71,6 +71,7 @@ import ScholarshipDocuments from './pages/scholarships/pages/documents/documents
 import ScholarshipTracking from './pages/scholarships/pages/tracking/tracking';
 import ScholarshipStudentHistory from './pages/scholarships/pages/student_history/student_history';
 import ScholarshipApply from './pages/scholarships/pages/apply/apply';
+import ScholarshipSchemeEditor from './pages/scholarships/pages/scheme_editor/scheme_editor';
 import ReportsModule from './pages/reports/reports';
 import NotificationsScreen from './pages/notifications/notifications';
 
@@ -104,6 +105,7 @@ const FEATURE_MODULES = {
   ScholarshipTracking: { title: 'Scholarship Amounts', icon: 'stats-chart-outline', component: ScholarshipTracking },
   ScholarshipStudentHistory: { title: 'Student Scholarships', icon: 'person-outline', component: ScholarshipStudentHistory },
   ScholarshipApply: { title: 'Record Application', icon: 'add-circle-outline', component: ScholarshipApply },
+  ScholarshipSchemeEditor: { title: 'Scheme', icon: 'create-outline', component: ScholarshipSchemeEditor },
 
   // Collections sub-pages
   CollectPayment: { title: 'Collect Payment', icon: 'add-circle-outline', component: CollectPayment },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 /**
@@ -23,9 +23,13 @@ export default function EmptyState({ icon = 'folder-open-outline', title, subtit
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {actionLabel && onAction ? (
-        <View style={styles.actionBtn}>
+        // TouchableOpacity, not View: rendered as a plain View this looked like a
+        // button and silently swallowed taps, so every caller passing
+        // actionLabel/onAction got an empty state that could not be dismissed.
+        <TouchableOpacity style={styles.actionBtn} onPress={onAction} activeOpacity={0.85}>
           <Text style={styles.actionText}>{actionLabel}</Text>
-        </View>
+          <Ionicons name="arrow-forward" size={15} color="#fff" />
+        </TouchableOpacity>
       ) : null}
     </View>
   );
@@ -67,6 +71,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   actionText: {
     fontSize: 14,

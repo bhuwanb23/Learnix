@@ -157,6 +157,10 @@ export default function ScholarshipDetail({ navigation, route }) {
           <Ionicons name="add-circle-outline" size={16} color="#fff" />
           <Text style={styles.primaryText}>Record an application</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.openModule('ScholarshipSchemeEditor', { schemeId: data.id })}>
+          <Ionicons name="create-outline" size={16} color={THEME} />
+          <Text style={styles.secondaryText}>Edit this scheme</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -225,6 +229,8 @@ const styles = StyleSheet.create({
   appRight: { alignItems: 'flex-end', gap: 4 },
   appAmount: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
   actions: { marginTop: 8 },
+  secondaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 13, marginTop: 10, borderWidth: 1, borderColor: '#bfdbfe' },
+  secondaryText: { color: THEME, fontWeight: '700', fontSize: 13 },
   primaryBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: THEME, borderRadius: 12, paddingVertical: 13 },
   primaryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 });

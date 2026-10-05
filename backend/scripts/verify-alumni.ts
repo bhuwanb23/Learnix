@@ -209,15 +209,29 @@ async function main() {
   // A real non-officer graduate, resolved through prisma because the directory
   // projection exposes neither userId nor chapter/event ids.
   const regUser = await prisma.user.findFirst({
-    where: { email: { not: EMAIL }, institutionId: (await prisma.institution.findFirstOrThrow({ select: { id: true } })).id, roles: { some: { role: 'ALUMNI' } } },
+    where: {
+      email: { not: EMAIL },
+      institutionId: (await prisma.institution.findFirstOrThrow({ select: { id: true } })).id,
+      // The office account must not be the subject: it is ALUMNI_OFFICE, which
+      // `requireRole('ALUMNI','ADMIN')` rejects outright, so every call made as
+      // this user would 403 and prove nothing.
+      AND: [{ roles: { some: { role: 'ALUMNI' } } }, { roles: { none: { role: 'ALUMNI_OFFICE' } } }],
+    },
     select: { id: true, email: true },
     orderBy: { email: 'asc' },
   });
   const regToken = await loginAs(regUser!.email);
   token = regToken;
 
+  // An event this graduate is NOT already registered for — otherwise the first
+  // register returns 409 and the "duplicate refused" assertion passes for the
+  // wrong reason.
   const regTarget = await prisma.event.findFirst({
-    where: { id: { not: evId }, startDate: { gte: new Date() }, status: { in: ['APPROVED', 'PUBLISHED'] } },
+    where: {
+      startDate: { gte: new Date() },
+      status: { in: ['APPROVED', 'PUBLISHED'] },
+      registrations: { none: { registrantUserId: regUser!.id } },
+    },
     select: { id: true, title: true },
     orderBy: { startDate: 'asc' },
   });
@@ -259,8 +273,13 @@ async function main() {
     const afterMark = await call('GET', `/alumni/events/${pastEvent.id}`);
     const nowChecked = (afterMark.data?.attendees ?? []).filter((a: any) => toCheckIn.some((t: any) => t.registrationId === a.registrationId) && a.checkedInAt);
     check('  checkedInAt persisted', nowChecked.length === toCheckIn.length, `${nowChecked.length}/${toCheckIn.length}`);
+    // Must run as the graduate: the previous line is the office marking people in,
+    // and leaving the office token in place would re-assert the office's own
+    // permission instead of testing the refusal.
+    token = regToken;
     const gradMark = await call('POST', `/alumni/events/${pastEvent.id}/attendance`, { registrationIds: [toCheckIn[0].registrationId] });
-    check('  graduate cannot mark attendance', gradMark.status === 403, `${gradMark.status} (${gradMark.error?.code})`);
+    check('  graduate cannot mark attendance', gradMark.status === 403, `${gradMark.status} (${gradMark.error?.code}: ${gradMark.error?.message ?? ''})`);
+    token = OFFICE_TOKEN;
     const undone = await call('POST', `/alumni/events/${pastEvent.id}/attendance/undo`, { registrationIds: toCheckIn.map((a: any) => a.registrationId) });
     check('  undo restores', undone.status === 200 && undone.data?.cleared >= 1, `cleared ${undone.data?.cleared}`);
   } else {
@@ -284,7 +303,19 @@ async function main() {
 
   // ── Feedback from a real attendee ──
   const attReg = await prisma.eventRegistration.findFirst({
-    where: { eventId: pastEvent?.id, checkedInAt: { not: null }, status: 'CONFIRMED' },
+    where: {
+      eventId: pastEvent?.id,
+      checkedInAt: { not: null },
+      status: 'CONFIRMED',
+      // Must be an attendee who can actually REACH the alumni app: the feedback route
+      // is gated by requireRole('ALUMNI','ADMIN'), so a donor who checked in
+      // would 403 at the middleware and the attendance gate would never be
+      // exercised at all.
+      registrant: {
+        roles: { some: { role: 'ALUMNI' } },
+        id: { not: (await prisma.user.findFirstOrThrow({ where: { email: EMAIL }, select: { id: true } })).id },
+      },
+    },
     select: { registrantUserId: true },
   });
   if (attReg) {
@@ -292,7 +323,7 @@ async function main() {
     const attToken = await loginAs(attUser!.email);
     token = attToken;
     const review = await call('POST', `/alumni/events/${pastEvent.id}/feedback`, { rating: 4, comment: 'Verification review' });
-    check('attendee can review', review.status === 201 && review.data?.count >= 1, `average now ${review.data?.average}`);
+    check('attendee can review', review.status === 201 && review.data?.count >= 1, `${review.status} ${review.data?.average ?? review.error?.message}`);
     const reviewTwice = await call('POST', `/alumni/events/${pastEvent.id}/feedback`, { rating: 5 });
     check('  review updates, not duplicates', reviewTwice.status === 201 && reviewTwice.data?.updated === true, `average now ${reviewTwice.data?.average}`);
     const badRating = await call('POST', `/alumni/events/${pastEvent.id}/feedback`, { rating: 9 });

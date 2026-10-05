@@ -102,6 +102,15 @@ const hubSchemes = schemes;
 // `created.student.name` is covered either way.
 const createdPayload = await svc.getApplication(institutionId, liveApps[0].id);
 
+// The catalogue the scheme form is built from.
+const catalogue = {
+  types: SERVER_TYPES.map((type) => ({ type })),
+  documents: Object.keys(SERVER_DOCS).map((code) => ({ ...SERVER_DOCS[code] })),
+  suggestedDocuments: Object.fromEntries(SERVER_TYPES.map((t) => [t, []])),
+  amountModes: AMOUNT_MODES.map((mode) => ({ mode })),
+  academicYears: [{ id: 'ay-1', name: '2026-27', isCurrent: true }],
+};
+
 // ═══ 1. Every destructured property exists ═══════════════════════════════
 section('1. Screens read only fields the API actually sends');
 
@@ -167,6 +176,7 @@ const SCREENS: { file: string; payloads: Record<string, unknown> }[] = [
   { file: 'pages/tracking/tracking.js', payloads: { data: tracking, totals: tracking.totals } },
   { file: 'pages/student_history/student_history.js', payloads: { data: history, t: history.totals } },
   { file: 'pages/apply/apply.js', payloads: { created: createdPayload } },
+  { file: 'pages/scheme_editor/scheme_editor.js', payloads: { cat: catalogue, s: scheme, saved: scheme } },
 ];
 
 /**
@@ -275,6 +285,7 @@ for (const f of allScreenFiles) {
 for (const needed of [
   'ScholarshipApplications', 'ScholarshipApplication', 'ScholarshipDetail',
   'ScholarshipDocuments', 'ScholarshipTracking', 'ScholarshipStudentHistory', 'ScholarshipApply',
+  'ScholarshipSchemeEditor',
 ]) {
   ok(registered.has(needed), `${needed} is registered in FEATURE_MODULES`);
 }

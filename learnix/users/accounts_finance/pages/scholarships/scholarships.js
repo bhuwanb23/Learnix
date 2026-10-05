@@ -123,6 +123,12 @@ export default function ScholarshipsModule({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Without this the desk could read and approve but never onboard a fund. */}
+      <TouchableOpacity style={styles.newSchemeBtn} onPress={() => navigation.openModule('ScholarshipSchemeEditor', {})}>
+        <Ionicons name="add-circle-outline" size={16} color={THEME} />
+        <Text style={styles.newSchemeText}>Create a scholarship scheme</Text>
+      </TouchableOpacity>
+
       <View style={styles.statRow}>
         {[
           { label: 'Schemes', value: schemes.length, icon: 'school-outline', color: THEME },
@@ -249,6 +255,8 @@ const styles = StyleSheet.create({
   heroSplitItem: { flex: 1 },
   heroSplitLabel: { fontSize: 10, color: '#64748b' },
   heroSplitValue: { fontSize: 14, fontWeight: '700', color: '#0f172a', marginTop: 2 },
+  newSchemeBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 12, paddingVertical: 12, marginBottom: 12, borderWidth: 1, borderColor: '#bfdbfe', backgroundColor: '#eff6ff' },
+  newSchemeText: { color: THEME, fontWeight: '700', fontSize: 12 },
   deskBtns: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   deskBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: '#eef2f7', borderRadius: 12, paddingVertical: 11 },
   deskBtnWarn: { borderColor: '#fde68a', backgroundColor: '#fffbeb' },
@@ -282,4 +290,4 @@ const styles = StyleSheet.create({
   appFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
   appAmount: { fontSize: 13, fontWeight: '700', color: '#0f172a' },
   appWarn: { fontSize: 10, color: AMBER, marginTop: 6 },
-});
+});

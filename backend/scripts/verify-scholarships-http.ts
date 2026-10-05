@@ -138,6 +138,16 @@ try {
     ok(!!d.transitions && !!d.transitions.APPLIED, 'the workflow transitions are published');
     ok(Array.isArray(d.disbursementBands) && d.disbursementBands.length === 4, 'four disbursement bands');
     ok(!!d.statuses?.find((s: { status: string }) => s.status === 'DISBURSED'), 'every status carries its label and colour');
+
+    // The scheme form attaches a fund to an academic year. The years are tenant
+    // data, so they have to come from the API — an editor with no year list has
+    // nowhere to attach a new scheme.
+    ok(Array.isArray(d.academicYears) && d.academicYears.length > 0,
+      'the catalogue publishes the academic years a scheme can attach to', String(d.academicYears?.length));
+    ok(!!d.academicYears?.[0]?.id && !!d.academicYears?.[0]?.name,
+      'each published year carries an id and a name');
+    ok(typeof d.academicYears?.[0]?.isCurrent === 'boolean',
+      'each published year says whether it is the current one');
   }
   for (const url of ['/accounts/scholarships/applications', '/accounts/scholarships/tracking']) {
     const r = await call('GET', url);
@@ -163,6 +173,14 @@ try {
   eq(created.status, 201, 'a scheme is created');
   const schemeId = created.body.data?.id as string;
   ok(!!schemeId, 'and returns its id');
+
+  // The editor loads a scheme to pre-fill its form and PUTs it back. If the
+  // detail handed back only the year's NAME and not its id, the save would have
+  // no year to write and the scheme would be left unattached.
+  const detail = await call('GET', `/accounts/scholarships/${schemeId}`);
+  eq(detail.status, 200, 'the new scheme is readable');
+  eq(detail.body.data?.academicYearId, ay.id, 'the scheme detail round-trips the academic year id');
+  ok(!!detail.body.data?.academicYear, 'the scheme detail still names the year for display');
 
   {
     const r = await call('POST', '/accounts/scholarships', {

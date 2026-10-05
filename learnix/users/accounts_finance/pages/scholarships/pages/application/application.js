@@ -9,6 +9,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, ActivityIndicator, Modal, TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as DocumentPicker from 'expo-document-picker';
 import { accountsApi } from '../../../../../../services/api';
 import { AnimatedCard, EmptyState, SkeletonCard, StatusChip } from '../../../../../../components/ui';
 import {
@@ -16,12 +17,18 @@ import {
   DOCUMENT_STATUS_META, blockedReason,
 } from '../../scholarshipsMeta';
 
+// The server accepts exactly these (scholarship.routes.ts ALLOWED_MIME).
+const ACCEPTED_UPLOAD_TYPES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf',
+];
+
 export default function ScholarshipApplication({ navigation, route }) {
   const applicationId = route?.params?.applicationId;
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(null); // the document code mid-upload
   const [error, setError] = useState(null);
   const [reasonModal, setReasonModal] = useState(null); // { kind, title, hint, onSubmit }
 
@@ -53,6 +60,52 @@ export default function ScholarshipApplication({ navigation, route }) {
   };
 
   const askReason = (kind, title, hint, onSubmit) => setReasonModal({ kind, title, hint, onSubmit });
+
+  /**
+   * Attach the file itself. The two refusals below are the ones the server would
+   * make anyway, checked locally so the desk finds out before spending their
+   * mobile data on an 8 MB upload that was always going to bounce.
+   */
+  const uploadDoc = async (code, label) => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        // Copy to cache: on Android the original content:// uri is revoked when
+        // the picker closes, and the upload then fails some seconds later with a
+        // bare "no such file".
+        copyToCacheDirectory: true,
+        multiple: false,
+        type: ACCEPTED_UPLOAD_TYPES,
+      });
+      if (res.canceled) return;
+      const asset = res.assets?.[0];
+      if (!asset) return;
+
+      const type = asset.mimeType ?? '';
+      if (type && !ACCEPTED_UPLOAD_TYPES.includes(type)) {
+        Alert.alert('That file type will not upload', `${label} must be a JPEG, PNG, WebP, HEIC or PDF.`);
+        return;
+      }
+      if (asset.size && asset.size > 8 * 1024 * 1024) {
+        Alert.alert('That file is too large', `${Math.round(asset.size / 1024 / 1024 * 10) / 10} MB — the limit is 8 MB.`);
+        return;
+      }
+
+      setUploading(code);
+      await accountsApi.uploadScholarshipDocument(data.id, code, {
+        uri: asset.uri,
+        name: asset.name ?? label,
+        // Fall back to a type the server accepts; an asset with no reported MIME
+        // type is not a reason to refuse an upload the server would take.
+        type: type || 'application/pdf',
+      });
+      await fetchData();
+      Alert.alert('Attached', `${label} uploaded. Verify it to complete the checklist.`);
+    } catch (err) {
+      Alert.alert('Upload failed', err.message);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   if (loading) return <View style={styles.wrap}><SkeletonCard /><SkeletonCard /></View>;
 
@@ -126,6 +179,27 @@ export default function ScholarshipApplication({ navigation, route }) {
                 act(() => accountsApi.withdrawScholarship(data.id, note), 'Withdrawn'))} />
           ) : null}
         </View>
+      ) : null}
+
+      {data.status === 'DISBURSED' && (data.allocations ?? []).length ? (
+        // A disbursement moves real money onto the student's bill. Without a way
+        // back, a wrong release is permanent — the app could take money off the
+        // ledger but never put it back.
+        <AnimatedCard style={[styles.card, styles.reverseCard]}>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Released funds</Text>
+            <Text style={styles.countText}>{rupees(data.amount?.disbursedRupees)} released</Text>
+          </View>
+          <Text style={styles.mutedLine}>
+            Credited to {(data.allocations ?? []).map((a) => a.dueTitle).join(', ')}. Reversing puts the money back on the bill and returns this application to Approved.
+          </Text>
+          <TouchableOpacity style={styles.reverseBtn} disabled={busy}
+            onPress={() => askReason('reverse', 'Reverse this disbursement', 'The student will see this reason.', (reason) =>
+              act(() => accountsApi.reverseDisbursement(data.id, reason), 'Reversed — the balance is back on the student’s dues'))}>
+            <Ionicons name="arrow-undo-outline" size={15} color={RED} />
+            <Text style={styles.reverseBtnText}>Reverse the disbursement</Text>
+          </TouchableOpacity>
+        </AnimatedCard>
       ) : null}
 
       {blocked ? (
@@ -206,6 +280,9 @@ export default function ScholarshipApplication({ navigation, route }) {
               </View>
               {!closed && d.status !== 'VERIFIED' ? (
                 <View style={styles.docActions}>
+                  {/* Upload first, then verify. Without this a document could only
+                      ever be rejected, the checklist could never complete, and
+                      approval would be permanently blocked. */}
                   {d.file ? (
                     <TouchableOpacity
                       style={styles.docBtn}
@@ -214,7 +291,15 @@ export default function ScholarshipApplication({ navigation, route }) {
                     >
                       <Text style={styles.docBtnText}>Verify</Text>
                     </TouchableOpacity>
-                  ) : null}
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.docBtn, uploading === d.code && styles.docBtnBusy]}
+                      disabled={uploading === d.code}
+                      onPress={() => uploadDoc(d.code, meta.label)}
+                    >
+                      <Text style={styles.docBtnText}>{uploading === d.code ? 'Sending…' : 'Upload'}</Text>
+                    </TouchableOpacity>
+                  )}
                   <TouchableOpacity
                     style={[styles.docBtn, styles.docBtnReject]}
                     onPress={() => askReason('doc', `Reject ${meta.label}`, 'The student must be told why.', (reason) =>
@@ -384,6 +469,11 @@ const styles = StyleSheet.create({
   docLabel: { fontSize: 12, fontWeight: '600', color: '#0f172a' },
   docStatus: { fontSize: 10, color: '#64748b', marginTop: 1 },
   docActions: { flexDirection: 'row', gap: 6 },
+  docBtnBusy: { opacity: 0.6 },
+  reverseCard: { borderColor: '#fecaca', borderWidth: 1 },
+  reverseBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10, borderRadius: 10, paddingVertical: 11, backgroundColor: '#fef2f2' },
+  reverseBtnText: { color: RED, fontWeight: '700', fontSize: 12 },
+  mutedLine: { fontSize: 11, color: '#64748b', lineHeight: 16 },
   docBtn: { borderWidth: 1, borderColor: GREEN, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 },
   docBtnReject: { borderColor: RED },
   docBtnText: { fontSize: 11, fontWeight: '700', color: GREEN },
