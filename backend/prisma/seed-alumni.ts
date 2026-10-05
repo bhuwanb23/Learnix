@@ -57,6 +57,20 @@ const intBetween = (min: number, max: number) => min + Math.floor(rng() * (max -
 const DAY = 24 * 60 * 60 * 1000;
 const daysFromNow = (d: number) => new Date(Date.now() + d * DAY);
 const daysAgo = (d: number) => new Date(Date.now() - d * DAY);
+
+/**
+ * Recompute a chapter's denormalised memberCount.
+ *
+ * RECOMPUTED, never incremented: a counter that goes up by one on every join
+ * drifts the first time two people join at once, and nothing would notice.
+ */
+async function recomputeChapterMembers(institutionId: string, chapterId: string) {
+  const members = await db.alumniProfile.count({
+    where: { institutionId, chapterId, engagementStatus: 'ACTIVE' },
+  });
+  await db.alumniChapter.update({ where: { id: chapterId }, data: { memberCount: members } });
+  return members;
+}
 /** Rupees → paise. Every amount in this file goes through here. */
 const inr = (rupees: number) => rupees * 100;
 
@@ -150,8 +164,28 @@ const COMPANIES = [
 /**
  * Cities double as chapter names — a chapter IS a city, per
  * `AlumniChapter @@unique([institutionId, city])`.
+ *
+ * `region` groups chapters for the directory; `tier` separates a big regional
+ * hub from a small local chapter. Both are seeded so the region grouping and the
+ * tier filter have something to work with.
  */
-const CITIES = ['Bengaluru', 'Mumbai', 'Hyderabad', 'Pune', 'Chennai', 'Delhi NCR'] as const;
+const CITIES = [
+  { city: 'Bengaluru', region: 'Karnataka', tier: 'REGIONAL' },
+  { city: 'Mumbai', region: 'Maharashtra', tier: 'REGIONAL' },
+  { city: 'Hyderabad', region: 'Telangana', tier: 'REGIONAL' },
+  { city: 'Pune', region: 'Maharashtra', tier: 'LOCAL' },
+  { city: 'Chennai', region: 'Tamil Nadu', tier: 'REGIONAL' },
+  { city: 'Delhi NCR', region: 'Delhi NCR', tier: 'REGIONAL' },
+] as const;
+
+/** Chapter committee roles, in the order they are displayed. */
+const COMMITTEE = [
+  'PRESIDENT',
+  'VICE_PRESIDENT',
+  'SECRETARY',
+  'TREASURER',
+  'COORDINATOR',
+] as const;
 
 const FIRST_NAMES = [
   'Aditi', 'Akash', 'Ananya', 'Aniket', 'Arjun', 'Ashwin', 'Bhavana', 'Chetan',
@@ -382,7 +416,7 @@ async function main() {
     if (usedEmails.has(email)) continue;
     usedEmails.add(email);
 
-    const city = pick(CITIES);
+    const city = pick(CITIES).city;
     const role = ROLES[cohort.dept] ? pick(ROLES[cohort.dept]) : null;
     // Older cohorts are more likely to be disengaged — otherwise engagement is
     // a flat 100% and the dashboard hero measures nothing.
@@ -464,7 +498,8 @@ async function main() {
 
   const chapterId = new Map<string, string>();
   const chapterPresident = new Map<string, string>();
-  for (const city of CITIES) {
+  for (const spec of CITIES) {
+    const { city, region, tier } = spec;
     const members = alumni.filter((a) => a.city === city && a.engagement === 'ACTIVE');
     if (members.length === 0) continue;
     // The most senior active alumnus in the city presides. A president drawn at
@@ -473,11 +508,22 @@ async function main() {
 
     const chapter = await db.alumniChapter.upsert({
       where: { institutionId_city: { institutionId: instId, city } },
-      update: { presidentAlumniUserId: president.userId },
+      update: {
+        presidentAlumniUserId: president.userId,
+        region,
+        tier,
+        meetingFrequency: tier === 'REGIONAL' ? 'Quarterly' : 'Monthly',
+        description: `${city} chapter of the Learnix alumni network — ${tier === 'REGIONAL' ? 'regional hub connecting alumni across the region' : 'local chapter for alumni based in and around the city'}.`,
+      },
       create: {
         institutionId: instId,
         city,
+        region,
+        tier,
         presidentAlumniUserId: president.userId,
+        meetingFrequency: tier === 'REGIONAL' ? 'Quarterly' : 'Monthly',
+        description: `${city} chapter of the Learnix alumni network — ${tier === 'REGIONAL' ? 'regional hub connecting alumni across the region' : 'local chapter for alumni based in and around the city'}.`,
+        foundedOn: new Date(`${intBetween(2015, 2021)}-01-15T00:00:00.000Z`),
         memberCount: 0, // recomputed below — never trusted from the seed
         nextEventAt: daysFromNow(intBetween(20, 70)),
       },
@@ -1306,19 +1352,33 @@ let pledgeCount = 0;
     const chapter = await db.alumniChapter.findUnique({ where: { id: cid } });
     if (!chapter) continue;
 
+    const chapterMembers = await db.alumniProfile.findMany({
+      where: { institutionId: instId, chapterId: cid, engagementStatus: 'ACTIVE' },
+      select: { userId: true },
+    });
+    if (chapterMembers.length === 0) continue;
+
+    // Capacity is scaled to the chapter, not hardcoded.
+    //
+    // With `capacity: 60` a three-member chapter ran a 60-seat event that four
+    // people registered for — a 5% fill rate on every chapter, which made the
+    // whole Performance tab read as a disaster and told the office nothing. A
+    // chapter event seats roughly its own membership plus guests.
+    const seatCount = Math.max(12, Math.round(chapterMembers.length * 1.8));
+
     const chapterEventSpec = [
       {
         title: `${city} Chapter Quarterly Meetup`,
         description: `Quarterly gathering for ${city} alumni — lightning talks, then dinner.`,
         offset: intBetween(18, 40),
-        capacity: 60,
+        capacity: seatCount,
         past: false,
       },
       {
         title: `${city} Chapter Alumni Breakfast`,
         description: `Informal breakfast for ${city} alumni and recent graduates.`,
         offset: -(intBetween(40, 120)),
-        capacity: 40,
+        capacity: Math.max(10, Math.round(seatCount * 0.7)),
         past: true,
       },
     ];
@@ -1360,14 +1420,16 @@ let pledgeCount = 0;
       }
       if (!ce.past && (!nextUpcoming || ev.startDate < nextUpcoming)) nextUpcoming = ev.startDate;
 
-      // Chapter members RSVP to their own chapter's events.
-      const chapterMembers = await db.alumniProfile.findMany({
-        where: { chapterId: cid, engagementStatus: 'ACTIVE' },
-        select: { userId: true },
-      });
-      const take = Math.min(ce.capacity, Math.max(4, Math.round(chapterMembers.length * 0.6)));
-      for (let k = 0; k < take; k++) {
-        const person = chapterMembers[(k * 5 + ce.title.length) % chapterMembers.length];
+// Chapter members RSVP to their own chapter's events. Attendance is high
+      // (65–90% of members) because that is what a healthy local chapter looks
+      // like, and a low rate here would make the participation metric meaningless.
+      const target = Math.min(ce.capacity, Math.round(chapterMembers.length * (0.65 + rng() * 0.25)));
+      // A plain increment, not a stride: `(k * 5) % len` aliases whenever the
+      // stride shares a factor with the length, so a 6-member chapter would pick
+      // the same three people repeatedly and quietly RSVP fewer than `target`.
+      const offset = ce.title.length % chapterMembers.length;
+      for (let k = 0; k < target; k++) {
+        const person = chapterMembers[(offset + k) % chapterMembers.length];
         if (!person) continue;
         const has = await db.eventRegistration.findFirst({
           where: { eventId: ev.id, registrantUserId: person.userId },
@@ -1377,7 +1439,10 @@ let pledgeCount = 0;
           data: {
             eventId: ev.id,
             registrantUserId: person.userId,
-            status: ce.past ? 'CONFIRMED' : (k % 4 === 3 ? 'PENDING' : 'CONFIRMED'),
+            // Past events keep a few PENDING rows: they are the no-shows, and
+            // they are what makes `attendanceRate` (confirmed ÷ registered)
+            // anything other than a meaningless 100%.
+            status: ce.past ? (k % 7 === 5 ? 'PENDING' : 'CONFIRMED') : k % 4 === 3 ? 'PENDING' : 'CONFIRMED',
             qrPayload: JSON.stringify({ eventId: ev.id, userId: person.userId }),
           },
         });
@@ -1449,6 +1514,208 @@ let pledgeCount = 0;
   }
   console.log(`  ✓ ${chapterEventCount} chapter events, ${announceCount} chapter announcements`);
 
+  // ── Step 18: chapter leadership (committee) ──────────────────
+  // Officers are ROWS, not columns, so the seed must create the committee AND
+  // keep AlumniChapter.presidentAlumniUserId pointing at the current PRESIDENT —
+  // that column is a denormalised pointer with exactly two legal writers, and a
+  // seed that set officers without setting the pointer would leave every chapter
+  // detail reporting a president mismatch.
+  console.log('\n🎽 Step 18: Seeding chapter committees...');
+  let officerCount = 0;
+
+  for (const [city, cid] of chapterId) {
+    const members = await db.alumniProfile.findMany({
+      where: { institutionId: instId, chapterId: cid, engagementStatus: 'ACTIVE' },
+      select: { id: true, userId: true, graduationYear: true },
+    });
+    if (members.length === 0) continue;
+
+    // Order by seniority so the most senior member takes the top seat.
+    const ordered = [...members].sort(
+      (a, b) => (a.graduationYear ?? 9999) - (b.graduationYear ?? 9999),
+    );
+
+    // Committee size scales with chapter size, and never exceeds the member
+    // count — a committee of five drawn from three members would be fiction.
+    const committeeSize = Math.max(1, Math.min(COMMITTEE.length, Math.floor(ordered.length / 3)));
+
+    for (let r = 0; r < committeeSize; r++) {
+      const role = COMMITTEE[r];
+      const holder = ordered[r];
+      if (!holder) continue;
+
+      const exists = await db.alumniChapterOfficer.findFirst({
+        where: { chapterId: cid, alumniUserId: holder.userId, role },
+      });
+      if (exists) continue;
+
+      await db.alumniChapterOfficer.create({
+        data: {
+          chapterId: cid,
+          alumniUserId: holder.userId,
+          role,
+          since: new Date(`${(holder.graduationYear ?? 2019) + 1}-04-01T00:00:00.000Z`),
+          isCurrent: true,
+          notes:
+            role === 'PRESIDENT'
+              ? 'Founding president of the chapter.'
+              : role === 'TREASURER'
+                ? 'Handles chapter subscriptions and event costs.'
+                : null,
+          createdByUserId: officer.id,
+        },
+      });
+      officerCount++;
+
+      // Re-point the denormalised president column at the PRESIDENT row.
+      if (role === 'PRESIDENT') {
+        await db.alumniChapter.update({
+          where: { id: cid },
+          data: { presidentAlumniUserId: holder.userId },
+        });
+      }
+    }
+
+    // A former president, so the "past officers" view is not empty and the
+    // committee has visibly turned over at least once.
+    if (ordered.length > committeeSize + 1) {
+      const former = ordered[committeeSize + 1];
+      if (former) {
+        const alreadyPast = await db.alumniChapterOfficer.findFirst({
+          where: { chapterId: cid, alumniUserId: former.userId, role: 'PRESIDENT', isCurrent: false },
+        });
+        if (!alreadyPast) {
+          await db.alumniChapterOfficer.create({
+            data: {
+              chapterId: cid,
+              alumniUserId: former.userId,
+              role: 'PRESIDENT',
+              since: new Date(`${(former.graduationYear ?? 2019) + 1}-04-01T00:00:00.000Z`),
+              until: new Date(`${intBetween(2023, 2025)}-09-30T00:00:00.000Z`),
+              isCurrent: false,
+              notes: 'Preceding president.',
+              createdByUserId: officer.id,
+            },
+          });
+          officerCount++;
+        }
+      }
+    }
+  }
+  console.log(`  ✓ ${officerCount} officer appointments`);
+
+  // ── Step 19: chapter initiatives ────────────────────────────
+  console.log('\n🚀 Step 19: Seeding chapter initiatives...');
+  let initiativeCount = 0;
+
+  const initiativeTemplates = [
+    {
+      title: 'Mentor 50 final-year students',
+      category: 'MENTORSHIP',
+      status: 'ACTIVE',
+      targetCount: 50,
+      description: 'Match chapter members with final-year students for career guidance over one semester.',
+    },
+    {
+      title: 'Chapter scholarship top-up',
+      category: 'SCHOLARSHIP',
+      status: 'ACTIVE',
+      targetCount: 25,
+      description: 'Fund additional merit scholarships from the chapter’s own contributions.',
+      campaignLinked: true,
+    },
+    {
+      title: 'Monthly mentoring hour',
+      category: 'MENTORSHIP',
+      status: 'ACTIVE',
+      targetCount: null, // open-ended: no countable goal
+      description: 'An informal mentoring hour on the first Saturday of every month.',
+    },
+    {
+      title: 'School outreach programme',
+      category: 'OUTREACH',
+      status: 'PLANNED',
+      targetCount: 12,
+      description: 'Visit nearby schools to talk about engineering careers.',
+    },
+    {
+      title: 'Alumni scholarship interviews',
+      category: 'SCHOLARSHIP',
+      status: 'COMPLETED',
+      targetCount: 20,
+      description: 'Panel interviews for the merit scholarship shortlist — completed for this cycle.',
+    },
+  ];
+
+  for (const [city, cid] of chapterId) {
+    const members = await db.alumniProfile.findMany({
+      where: { institutionId: instId, chapterId: cid, engagementStatus: 'ACTIVE' },
+      select: { id: true, userId: true },
+      orderBy: { graduationYear: 'asc' },
+    });
+    if (members.length === 0) continue;
+
+    // A larger chapter runs more initiatives, so the Performance tab has
+    // something to compare rather than six identical chapters.
+    const count = Math.max(2, Math.min(initiativeTemplates.length, Math.floor(members.length / 3) + 1));
+
+    for (let t = 0; t < count; t++) {
+      const tpl = initiativeTemplates[t % initiativeTemplates.length];
+      if (!tpl) continue;
+
+      const exists = await db.alumniChapterInitiative.findFirst({
+        where: { chapterId: cid, title: tpl.title },
+      });
+      if (exists) continue;
+
+      const startedAt = daysAgo(intBetween(60, 300));
+      const targetDate = new Date(startedAt.getTime() + intBetween(120, 300) * DAY);
+      // Progress is derived from the goal rather than random: an ACTIVE
+      // initiative should look under way, a COMPLETED one should be done.
+      const achieved =
+        tpl.status === 'COMPLETED'
+          ? (tpl.targetCount ?? 0)
+          : tpl.status === 'ACTIVE' && tpl.targetCount
+            ? Math.max(1, Math.floor(tpl.targetCount * (0.2 + rng() * 0.6)))
+            : tpl.status === 'ACTIVE'
+              ? intBetween(1, 12) // running count for an open-ended initiative
+              : 0;
+
+      // Link the scholarship initiative to a real campaign so its money progress
+      // is read from the campaign rather than duplicated here.
+      const campaign =
+        tpl.campaignLinked === true
+          ? await db.fundraisingCampaign.findFirst({
+              where: { institutionId: instId, status: 'ACTIVE' },
+              select: { id: true },
+              orderBy: { createdAt: 'asc' },
+            })
+          : null;
+
+      await db.alumniChapterInitiative.create({
+        data: {
+          chapterId: cid,
+          title: tpl.title,
+          description: tpl.description,
+          category: tpl.category,
+          status: tpl.status,
+          targetCount: tpl.targetCount,
+          achievedCount: achieved,
+          startDate: startedAt,
+          targetDate: tpl.status === 'COMPLETED' ? daysAgo(intBetween(10, 50)) : targetDate,
+          completedAt: tpl.status === 'COMPLETED' ? daysAgo(intBetween(5, 45)) : null,
+          campaignId: campaign?.id ?? null,
+          // The most senior member owns it — an initiative needs an accountable
+          // name, not a committee.
+          ownerAlumniUserId: members[t % Math.min(3, members.length)]?.userId ?? null,
+          createdByUserId: officer.id,
+        },
+      });
+      initiativeCount++;
+    }
+  }
+  console.log(`  ✓ ${initiativeCount} initiatives`);
+
   // ── Summary ────────────────────────────────────────────────
   const [aCount, activeCount, dCount, pledgeOnly, mActive, mPending, evCount, regCount] =
     await Promise.all([
@@ -1470,6 +1737,21 @@ let pledgeCount = 0;
     db.event.count({ where: { institutionId: instId, chapterId: { not: null } } }),
   ]);
 
+  const officerRows = await db.alumniChapterOfficer.count({ where: { isCurrent: true } });
+  const initiativeRows = await db.alumniChapterInitiative.count();
+  // Pointer-vs-table integrity: the denormalised president column must name the
+  // same person as the current PRESIDENT officer row in every chapter.
+  const pointerMismatches: string[] = [];
+  for (const ch of await db.alumniChapter.findMany({ select: { id: true, city: true, presidentAlumniUserId: true } })) {
+    const president = await db.alumniChapterOfficer.findFirst({
+      where: { chapterId: ch.id, role: 'PRESIDENT', isCurrent: true },
+      select: { alumniUserId: true },
+    });
+    if (!president || president.alumniUserId !== ch.presidentAlumniUserId) {
+      pointerMismatches.push(ch.city);
+    }
+  }
+
   console.log('\n═══════════════════════════════════════════════════');
   console.log('  Alumni Seed Complete');
   console.log('═══════════════════════════════════════════════════');
@@ -1484,7 +1766,38 @@ let pledgeCount = 0;
   console.log(`  Career entries   ${careerRows}`);
   console.log(`  Privacy records  ${privacyRows}`);
   console.log(`  Connections      ${connRows}`);
-  console.log(`\n  Officer login: priya@learnix.dev / ${PASSWORD}  (ALUMNI_OFFICE)`);
+  console.log(`  Officers         ${officerRows} (current)`);
+  console.log(`  Initiatives      ${initiativeRows}`);
+  console.log(
+    `  President pointer${pointerMismatches.length === 0 ? ' OK' : ` MISMATCH: ${pointerMismatches.join(', ')}`}`,
+  );
+  // ── Step 20: the Relations Office is not a chapter member ──
+  // The office runs the alumni network; it does not belong to one of its
+  // chapters. The base seed gave `priya@learnix.dev` an AlumniProfile (she is a
+  // person with a record), and that profile carried a chapterId, which put a
+  // staff member into a member roster and inflated participation metrics by one.
+  console.log('\n🏢 Step 20: Detaching the office from chapter membership...');
+  const officeProfile = await db.alumniProfile.findFirst({ where: { userId: officer.id } });
+  let officeDetached = 0;
+  if (officeProfile?.chapterId) {
+    const formerChapter = officeProfile.chapterId;
+    await db.alumniProfile.update({ where: { id: officeProfile.id }, data: { chapterId: null } });
+    await recomputeChapterMembers(instId, formerChapter);
+    officeDetached = 1;
+  }
+  // And she must not hold chapter office, or the office could not join but
+  // would still show as an officer.
+  const officeOfficerRows = await db.alumniChapterOfficer.findMany({
+    where: { alumniUserId: officer.id },
+    select: { id: true },
+  });
+  if (officeOfficerRows.length > 0) {
+    await db.alumniChapterOfficer.deleteMany({ where: { alumniUserId: officer.id } });
+    officeDetached++;
+  }
+  console.log(`  ✓ office detached (${officeDetached} change${officeDetached === 1 ? '' : 's'})`);
+
+  console.log('\n  Officer login: priya@learnix.dev / ' + PASSWORD + '  (ALUMNI_OFFICE)');
   console.log(`  Alumnus login: ${alumni[0]?.email ?? 'see seed output'} / ${PASSWORD}`);
   console.log('═══════════════════════════════════════════════════');
 }

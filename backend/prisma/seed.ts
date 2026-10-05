@@ -15,6 +15,7 @@ import { computeSalary } from '../src/modules/accounts/payroll.rules.js';
 import { computeLateFee } from '../src/modules/accounts/dues.fines.js';
 import { splitAmount } from '../src/modules/accounts/dues.plans.js';
 import { fiscalYearOf } from '../src/modules/accounts/expenses.money.js';
+import { syncFeeStructures } from './syncFeeStructures.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -1110,6 +1111,8 @@ async function seedDomainE(institutionId: string): Promise<void> {
     institutionId,
     (await db.user.findFirst({ where: { email: 'accounts@learnix.dev', institutionId } }))?.id ?? admin.id,
   );
+
+  await syncFeeStructures(db, institutionId, admin.id);
 
   await syncDuesRecovery(institutionId, admin.id);
 }
