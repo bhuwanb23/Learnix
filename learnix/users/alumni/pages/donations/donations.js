@@ -1,34 +1,67 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
-import { AnimatedCard, EmptyState, SkeletonCard } from '../../../../components/ui';
+import { SkeletonCard, SkeletonStatRow, EmptyState } from '../../../../components/ui';
+import { CampaignCard } from './components/CampaignCard';
+import { DonationRow } from './components/DonationRow';
+import { ImpactPanel } from './components/ImpactPanel';
+import { inr, inrExact, campaignShareText, relativeDay } from './donationsMeta';
 
-const fmt = (n) => {
-  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
-  if (n >= 100000) return `₹${(n / 100000).toFixed(1)} L`;
-  return `₹${(n / 1000).toFixed(1)}K`;
-};
+import CampaignDetail from './pages/campaign_detail/campaign_detail';
+import GiveScreen from './pages/give/give';
+import HistoryScreen from './pages/history/history';
+import ReceiptScreen from './pages/receipt/receipt';
+import RecurringScreen from './pages/recurring/recurring';
 
-const CAMPAIGN_COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
-const CAMPAIGN_ICONS = ['school-outline', 'library-outline', 'trophy-outline', 'heart-outline', 'build-outline', 'flag-outline'];
-const DONOR_COLORS = ['#2563eb', '#059669', '#d97706', '#0891b2', '#dc2626', '#7c3aed'];
+/**
+ * Donations & fundraising — the hub.
+ *
+ * Replaces one 236-line screen that had no give path at all: it listed campaigns,
+ * listed donations, and offered the office a "Record" button. An alumnus who
+ * wanted to give had no button to press, and a campaign was a name and a
+ * percentage with nothing behind it to decide on.
+ *
+ * Five tabs, because these are five different questions:
+ *   Campaigns  what is being raised for?
+ *   My giving  what have I done, and do I have receipts?
+ *   History    what has everyone done?
+ *   Standing   what have I committed to give regularly?
+ *   Impact     what did it achieve?
+ */
+const TABS = [
+  { id: 'campaigns', label: 'Campaigns', icon: 'megaphone-outline' },
+  { id: 'mine', label: 'My giving', icon: 'heart-outline' },
+  { id: 'history', label: 'History', icon: 'time-outline' },
+  { id: 'standing', label: 'Standing', icon: 'repeat-outline' },
+  { id: 'impact', label: 'Impact', icon: 'analytics-outline' },
+];
 
 export default function DonationsModule({ navigation }) {
-  const [data, setData] = useState(null);
+  const [tab, setTab] = useState('campaigns');
+  const [campaigns, setCampaigns] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [impact, setImpact] = useState(null);
+  const [impactLoading, setImpactLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [recordingId, setRecordingId] = useState(null);
+  const [error, setError] = useState(null);
+  const [recordingId, setRecordingId] = useState(false);
 
-  const load = useCallback(async (showSpinner = true) => {
+  // Sub-screens, held as local state rather than pushed: this app has no
+  // navigation stack, so a drill-down that could not be dismissed would strand the
+  // user on it with no way back.
+  const [sub, setSub] = useState(null); // { kind, id, campaign }
+
+  const load = useCallback(async (spinner = true) => {
     try {
-      if (showSpinner) setLoading(true);
+      if (spinner) setLoading(true);
       setError(null);
-      const d = await alumniApi.donations();
-      setData(d);
+      const [c, s] = await Promise.all([alumniApi.campaigns(), alumniApi.donations({ pageSize: 6 })]);
+      setCampaigns(c);
+      setSummary(s);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -37,200 +70,282 @@ export default function DonationsModule({ navigation }) {
     }
   }, []);
 
-  React.useEffect(() => {
+  const loadImpact = useCallback(async () => {
+    try {
+      setImpactLoading(true);
+      setImpact(await alumniApi.donationsImpact());
+    } catch {
+      setImpact(null);
+    } finally {
+      setImpactLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
     load();
   }, [load]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false);
-  };
+  useEffect(() => {
+    if (tab === 'impact') loadImpact();
+  }, [tab, loadImpact]);
 
-  const markReceived = async (id) => {
-    setRecordingId(id);
+  const refreshAll = useCallback(() => {
+    load(false);
+    loadImpact();
+  }, [load, loadImpact]);
+
+  const onRecord = async (donation) => {
+    // This is the OFFICE's action: a donor tapping "Confirm received" on their own
+    // gift would be minting their own tax receipt, so the button is rendered from
+    // the server's `canRecord` rather than from the status alone.
     try {
-      const res = await alumniApi.recordDonation(id);
+      setRecordingId(donation.id);
+      const res = await alumniApi.recordDonation(donation.id);
       Alert.alert(
-        'Donation Recorded',
-        `₹${res.amountRupees.toLocaleString('en-IN')} received from ${res.donor}.\nReceipt ${res.receiptNo} forwarded to Accounts & Finance.`
+        'Receipt issued',
+        `${inrExact(res.amountRupees)} from ${res.donor}.\nReceipt ${res.receiptNo} is now available to them.`,
       );
-      await load(false);
+      refreshAll();
     } catch (e) {
       Alert.alert('Cannot record', e.message);
     } finally {
-      setRecordingId(null);
+      setRecordingId(false);
     }
   };
 
-  if (loading && !data) {
+  const onShareCampaign = async (campaign) => {
+    try {
+      await Share.share({ message: campaignShareText(campaign) });
+    } catch {
+      Alert.alert('Cannot share', 'Sharing is not available on this device.');
+    }
+  };
+
+  // ── Sub-screens ──
+  if (sub?.kind === 'campaign') {
     return (
-      <View style={styles.center}>
-        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 16 }} />
-        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
-        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
-      </View>
+      <CampaignDetail
+        campaignId={sub.id}
+        navigation={{ goBack: () => setSub(null) }}
+        onGive={(c) => setSub({ kind: 'give', campaign: c })}
+      />
+    );
+  }
+  if (sub?.kind === 'give') {
+    return <GiveScreen navigation={{ goBack: () => setSub(null) }} campaign={sub.campaign} />;
+  }
+  if (sub?.kind === 'history') {
+    return (
+      <HistoryScreen
+        navigation={{ goBack: () => setSub(null) }}
+        recordingId={recordingId}
+        onRecord={onRecord}
+        onChanged={refreshAll}
+        onShowReceipt={(d) => setSub({ kind: 'receipt', id: d.id })}
+      />
+    );
+  }
+  if (sub?.kind === 'receipt') {
+    return <ReceiptScreen donationId={sub.id} navigation={{ goBack: () => setSub(null) }} />;
+  }
+  if (sub?.kind === 'standing') {
+    return (
+      <RecurringScreen
+        navigation={{ goBack: () => setSub(null) }}
+        onChanged={refreshAll}
+        isOffice={!!summary?.viewerContext?.isOffice}
+      />
     );
   }
 
-  if (error && !data) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const campaigns = data?.campaigns ?? [];
-  const donationsList = data?.donations ?? [];
-  const fy = data?.fy ?? { collectedRupees: 0, donors: 0 };
+  const fy = summary?.fy ?? { collectedRupees: 0, pledgedRupees: 0, donors: 0 };
+  const list = campaigns?.campaigns ?? [];
+  const recent = summary?.donations ?? [];
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
+    <View style={styles.container}>
       <LinearGradient colors={['#059669', '#047857']} style={styles.hero}>
-        <Text style={styles.heroLabel}>FY 2025-26 COLLECTIONS</Text>
-        <Text style={styles.heroValue}>₹{fy.collectedRupees.toLocaleString('en-IN')}</Text>
-        <Text style={styles.heroSub}>{fy.donors} donor{fy.donors === 1 ? '' : 's'} · recorded this year</Text>
-        <View style={styles.heroNote}>
-          <Ionicons name="arrow-redo-outline" size={13} color="rgba(255,255,255,0.9)" />
-          <Text style={styles.heroNoteText}>All receipts forwarded to Accounts & Finance</Text>
+        <View style={styles.heroTop}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.heroLabel}>ALUMNI GIVING</Text>
+            <Text style={styles.heroValue}>{inr(fy.collectedRupees)}</Text>
+            <Text style={styles.heroSub}>
+              {fy.donors} donor{fy.donors === 1 ? '' : 's'} · {fy.pledgedRupees > 0 ? `${inr(fy.pledgedRupees)} pledged` : 'nothing outstanding'}
+            </Text>
+          </View>
         </View>
+
+        {/* The primary action, stated once. */}
+        <TouchableOpacity style={styles.heroBtn} onPress={() => setSub({ kind: 'give' })}>
+          <Ionicons name="hand-left-outline" size={16} color="#047857" />
+          <Text style={styles.heroBtnText}>Make a donation</Text>
+        </TouchableOpacity>
       </LinearGradient>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Active Campaigns</Text>
-        {campaigns.map((c, idx) => {
-          const color = CAMPAIGN_COLORS[idx % CAMPAIGN_COLORS.length];
-          const icon = CAMPAIGN_ICONS[idx % CAMPAIGN_ICONS.length];
-          return (
-            <AnimatedCard key={c.id} delay={idx * 60} style={styles.campaignCard}>
-              <View style={styles.campaignHeader}>
-                <View style={[styles.campaignIcon, { backgroundColor: color + '1a' }]}>
-                  <Ionicons name={icon} size={16} color={color} />
-                </View>
-                <View style={styles.campaignHeaderBody}>
-                  <Text style={styles.campaignName}>{c.name}</Text>
-                  <Text style={styles.campaignMeta}>
-                    {c.daysLeft !== null ? `${c.daysLeft} days left` : 'No deadline'} · {c.status}
-                  </Text>
-                </View>
-                <Text style={[styles.campaignPct, { color }]}>{c.percent}%</Text>
-              </View>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${Math.min(c.percent, 100)}%`, backgroundColor: color }]} />
-              </View>
-              <View style={styles.campaignFooter}>
-                <Text style={styles.campaignAmount}>
-                  <Text style={styles.campaignRaised}>{fmt(c.raisedRupees)}</Text> raised
-                </Text>
-                <Text style={styles.campaignTarget}>of {fmt(c.targetRupees)}</Text>
-              </View>
+      <View style={styles.quickRow}>
+        <QuickBtn icon="repeat-outline" label="Standing gifts" onPress={() => setSub({ kind: 'standing' })} />
+        <QuickBtn icon="receipt-outline" label="History & receipts" onPress={() => setSub({ kind: 'history' })} />
+        <QuickBtn icon="analytics-outline" label="Impact" onPress={() => setTab('impact')} />
+      </View>
 
-              <TouchableOpacity
-                style={[styles.shareBtn, { borderColor: color }]}
-                onPress={() => Alert.alert('Campaign Shared', `${c.name} link copied — share with alumni batches.`)}
-              >
-                <Ionicons name="share-social-outline" size={13} color={color} />
-                <Text style={[styles.shareText, { color }]}>Share Campaign</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabWrap} contentContainerStyle={styles.tabRow}>
+        {TABS.map((t) => (
+          <TouchableOpacity key={t.id} style={[styles.tab, tab === t.id && styles.tabActive]} onPress={() => setTab(t.id)}>
+            <Ionicons name={t.icon} size={13} color={tab === t.id ? '#fff' : theme.colors.textMuted} />
+            <Text style={[styles.tabText, tab === t.id && styles.tabTextActive]}>{t.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {loading && !campaigns ? (
+        <View style={{ paddingHorizontal: 16 }}>
+          <SkeletonStatRow count={3} />
+          {[1, 2, 3].map((i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Ionicons name="cloud-offline-outline" size={38} color={theme.colors.textMuted} />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retry} onPress={() => load()}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refreshAll(); }} />}
+        >
+          {tab === 'campaigns' ? (
+            <>
+              {list.map((c) => (
+                <CampaignCard
+                  key={c.id}
+                  campaign={c}
+                  onOpen={() => setSub({ kind: 'campaign', id: c.id })}
+                  onGive={() => setSub({ kind: 'give', campaign: c })}
+                />
+              ))}
+              {list.length === 0 ? (
+                <EmptyState
+                  icon="megaphone-outline"
+                  title="No open campaigns"
+                  subtitle="When the Alumni Relations Office opens an appeal it appears here with its target and progress."
+                  actionLabel="Give to the general fund"
+                  onAction={() => setSub({ kind: 'give' })}
+                  color="#059669"
+                />
+              ) : null}
+            </>
+          ) : null}
+
+          {tab === 'mine' ? (
+            <>
+              <ImpactPanel impact={impact} loading={impactLoading} onGive={() => setSub({ kind: 'give' })} onOpenCampaign={(id) => setSub({ kind: 'campaign', id })} />
+
+              <Text style={styles.sectionTitle}>My recent gifts</Text>
+              {recent.length === 0 ? (
+                <Text style={styles.note}>Your gifts appear here once you give.</Text>
+              ) : (
+                recent.map((d) => (
+                  <DonationRow
+                    key={d.id}
+                    donation={d}
+                    onShowReceipt={d.hasReceipt ? () => setSub({ kind: 'receipt', id: d.id }) : undefined}
+                  />
+                ))
+              )}
+            </>
+          ) : null}
+
+          {tab === 'history' ? (
+            <>
+              <Text style={styles.sectionTitle}>Programme-wide ledger</Text>
+              {recent.map((d) => (
+                <DonationRow key={d.id} donation={d} onShowReceipt={d.hasReceipt ? () => setSub({ kind: 'receipt', id: d.id }) : undefined} />
+              ))}
+              {recent.length === 0 ? (
+                <EmptyState icon="receipt-outline" title="No gifts recorded yet" subtitle="Confirmed gifts appear here with a receipt." color="#059669" />
+              ) : null}
+              <TouchableOpacity style={styles.moreBtn} onPress={() => setSub({ kind: 'history' })}>
+                <Text style={styles.moreText}>Open full history with filters</Text>
+                <Ionicons name="chevron-forward" size={14} color="#059669" />
               </TouchableOpacity>
-            </AnimatedCard>
-          );
-        })}
-        {campaigns.length === 0 && <EmptyState icon="gift-outline" title="No active campaigns" subtitle="Start a new fundraising campaign" color="#059669" />}
-      </View>
+            </>
+          ) : null}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recent Donations</Text>
-        {donationsList.map((d, idx) => {
-          const color = DONOR_COLORS[idx % DONOR_COLORS.length];
-          const dateStr = new Date(d.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-          return (
-            <AnimatedCard key={d.id} delay={idx * 40} style={styles.donationCard}>
-              <View style={[styles.donorAvatar, { backgroundColor: color + '1a' }]}>
-                <Text style={[styles.donorInitials, { color }]}>
-                  {d.donor.split(' ').map((n) => n[0]).join('')}
-                </Text>
-              </View>
-              <View style={styles.donationBody}>
-                <Text style={styles.donorName}>{d.donor}{d.batch ? ` · Batch ${d.batch}` : ''}</Text>
-                <Text style={styles.donationMeta}>{d.fund} · {dateStr}</Text>
-              </View>
-              <View style={styles.donationRight}>
-                <Text style={styles.donationAmount}>₹{d.amountRupees.toLocaleString('en-IN')}</Text>
-                {d.status === 'RECEIVED' ? (
-                  <View style={styles.receivedChip}>
-                    <Text style={styles.receivedText}>Received</Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.recordBtn}
-                    disabled={recordingId === d.id}
-                    onPress={() => markReceived(d.id)}
-                  >
-                    {recordingId === d.id ? (
-                      <ActivityIndicator size="small" color="#059669" />
-                    ) : (
-                      <Text style={styles.recordText}>Record</Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-              </View>
-            </AnimatedCard>
-          );
-        })}
-        {donationsList.length === 0 && <EmptyState icon="wallet-outline" title="No donations yet" subtitle="Donations will appear here once recorded" color="#d97706" />}
-      </View>
-    </ScrollView>
+          {tab === 'standing' ? (
+            <>
+              <Text style={styles.sectionTitle}>Standing gifts</Text>
+              <Text style={styles.note}>
+                A standing gift records an intention to give regularly. Nothing is charged automatically — the office
+                creates each instalment when it falls due, then confirms the money before a receipt is issued.
+              </Text>
+              <TouchableOpacity style={styles.ctaBtn} onPress={() => setSub({ kind: 'standing' })}>
+                <Ionicons name="repeat" size={15} color="#fff" />
+                <Text style={styles.ctaText}>Manage standing gifts</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+
+          {tab === 'impact' ? <ImpactPanel impact={impact} loading={impactLoading} onGive={() => setSub({ kind: 'give' })} onOpenCampaign={(id) => setSub({ kind: 'campaign', id })} /> : null}
+
+          {tab === 'campaigns' && list.length > 0 ? (
+            <TouchableOpacity style={styles.shareAllBtn} onPress={() => onShareCampaign(list[0])}>
+              <Ionicons name="share-social-outline" size={14} color={theme.colors.textMuted} />
+              <Text style={styles.shareAllText}>Share the top appeal with your batch</Text>
+            </TouchableOpacity>
+          ) : null}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+function QuickBtn({ icon, label, onPress }) {
+  return (
+    <TouchableOpacity style={styles.quickBtn} onPress={onPress}>
+      <Ionicons name={icon} size={15} color="#059669" />
+      <Text style={styles.quickText}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#059669', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
-  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, paddingVertical: 12 },
-  hero: { marginHorizontal: 16, marginTop: 16, borderRadius: 20, padding: 18 },
-  heroLabel: { fontSize: 10, fontFamily: 'Manrope-Bold', color: 'rgba(255,255,255,0.8)', letterSpacing: 0.5 },
-  heroValue: { fontSize: 24, fontFamily: 'Manrope-ExtraBold', color: '#fff', marginTop: 6 },
-  heroSub: { fontSize: 11, fontFamily: 'Manrope-Medium', color: 'rgba(255,255,255,0.85)', marginTop: 4 },
-  heroNote: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  heroNoteText: { fontSize: 10, fontFamily: 'Manrope-Medium', color: 'rgba(255,255,255,0.9)', marginLeft: 5 },
-  section: { paddingHorizontal: 16, marginTop: 20 },
-  sectionTitle: { fontSize: 14, fontFamily: 'Manrope-Bold', color: theme.colors.text, marginBottom: 12 },
-  campaignCard: { padding: 14, marginBottom: 10 },
-  campaignHeader: { flexDirection: 'row', alignItems: 'center' },
-  campaignIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  campaignHeaderBody: { flex: 1, marginLeft: 10 },
-  campaignName: { fontSize: 13, fontFamily: 'Manrope-Bold', color: theme.colors.text },
-  campaignMeta: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 2 },
-  campaignPct: { fontSize: 14, fontFamily: 'Manrope-ExtraBold' },
-  progressTrack: { height: 6, backgroundColor: theme.colors.border, borderRadius: 3, marginTop: 10 },
-  progressFill: { height: 6, borderRadius: 3 },
-  campaignFooter: { flexDirection: 'row', alignItems: 'baseline', marginTop: 8 },
-  campaignAmount: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
-  campaignRaised: { fontSize: 13, fontFamily: 'Manrope-ExtraBold', color: theme.colors.text },
-  campaignTarget: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginLeft: 4 },
-  shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 9, paddingVertical: 7, marginTop: 12 },
-  shareText: { fontSize: 11, fontFamily: 'Manrope-Bold', marginLeft: 5 },
-  donationCard: { flexDirection: 'row', alignItems: 'center', padding: 12, marginBottom: 8 },
-  donorAvatar: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
-  donorInitials: { fontSize: 12, fontFamily: 'Manrope-Bold' },
-  donationBody: { flex: 1, marginLeft: 10 },
-  donorName: { fontSize: 12, fontFamily: 'Manrope-Bold', color: theme.colors.text },
-  donationMeta: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, marginTop: 2 },
-  donationRight: { alignItems: 'flex-end' },
-  donationAmount: { fontSize: 12, fontFamily: 'Manrope-ExtraBold', color: theme.colors.text },
-  receivedChip: { backgroundColor: '#05966918', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, marginTop: 4 },
-  receivedText: { fontSize: 9, fontFamily: 'Manrope-Bold', color: '#059669' },
-  recordBtn: { backgroundColor: '#059669', borderRadius: 7, paddingHorizontal: 12, paddingVertical: 5, marginTop: 4 },
-  recordText: { fontSize: 10, fontFamily: 'Manrope-Bold', color: '#fff' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  errorText: { marginTop: 10, fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center' },
+  retry: { marginTop: 14, backgroundColor: '#059669', paddingHorizontal: 22, paddingVertical: 9, borderRadius: 10, alignSelf: 'center' },
+  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 12 },
+
+  hero: { padding: 18, paddingTop: 16 },
+  heroTop: { flexDirection: 'row', alignItems: 'flex-start' },
+  heroLabel: { fontSize: 10, fontFamily: 'Manrope-Bold', color: 'rgba(255,255,255,0.85)', letterSpacing: 0.5 },
+  heroValue: { fontSize: 25, fontFamily: 'Manrope-ExtraBold', color: '#fff', marginTop: 5 },
+  heroSub: { fontSize: 10, fontFamily: 'Manrope-Medium', color: 'rgba(255,255,255,0.9)', marginTop: 3 },
+  heroBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 11, marginTop: 13 },
+  heroBtnText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#047857' },
+
+  quickRow: { flexDirection: 'row', gap: 7, paddingHorizontal: 16, paddingTop: 12 },
+  quickBtn: { flex: 1, alignItems: 'center', gap: 4, backgroundColor: '#fff', borderWidth: 1, borderColor: theme.colors.border, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 4 },
+  quickText: { fontSize: 9, fontFamily: 'Manrope-Bold', color: theme.colors.text, textAlign: 'center' },
+
+  tabWrap: { flexGrow: 0, marginTop: 11 },
+  tabRow: { paddingHorizontal: 16, gap: 6 },
+  tab: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 13, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: 11, paddingVertical: 7 },
+  tabActive: { backgroundColor: '#059669', borderColor: '#059669' },
+  tabText: { fontSize: 11, fontFamily: 'Manrope-SemiBold', color: theme.colors.textMuted },
+  tabTextActive: { color: '#fff' },
+
+  list: { padding: 16, paddingBottom: 28 },
+  sectionTitle: { fontSize: 12, fontFamily: 'Manrope-Bold', color: theme.colors.text, marginTop: 14, marginBottom: 9 },
+  note: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, lineHeight: 16, marginBottom: 10 },
+  moreBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1, borderColor: '#a7f3d0', borderRadius: 11, paddingVertical: 10, marginTop: 4 },
+  moreText: { fontSize: 11, fontFamily: 'Manrope-Bold', color: '#059669' },
+  ctaBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 12, paddingVertical: 13, marginTop: 6 },
+  ctaText: { fontSize: 13, fontFamily: 'Manrope-Bold', color: '#fff' },
+  shareAllBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, marginTop: 6 },
+  shareAllText: { fontSize: 10, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
 });
