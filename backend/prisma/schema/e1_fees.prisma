@@ -8,11 +8,34 @@ model FeeStructure {
   institutionId  String
   programId      String
   academicYearId String
+  // The headline totals, DENORMALISED from the published version's components.
+  // `tuitionMinor` is the sum of every TUITION component, `otherMinor` every
+  // non-tuition component, `totalMinor` the whole published version. They are
+  // recomputed on publish, never edited by hand — three columns that the dues
+  // desk and the dashboard read on every request, and which used to be three
+  // numbers typed in by hand that silently disagreed with the breakdown printed
+  // beside them.
   tuitionMinor   Int
   otherMinor     Int      @default(0)
   totalMinor     Int
   status         String   @default("ACTIVE") // ACTIVE | REVISION_REQUESTED | REVISION_APPROVED
   requestedByUserId String? // scalar → users.id
+  // Effective window of the PUBLISHED version. A due raised on a date inside
+  // this window bills the version that was in force on THAT date, not the one
+  // in force today — a structure revised in November must not retroactively
+  // reprice a bill raised in July.
+  effectiveFrom  DateTime?
+  effectiveTo    DateTime?
+  // The published version the totals above were computed from. Null only for
+  // structures created before versioning existed (the seed backfills them).
+  publishedVersionId String? // scalar → fee_structure_versions.id
+  // DEFAULT instalment configuration offered when a bill is raised against this
+  // structure. The actual plan is still agreed per student (`InstallmentPlan`)
+  // — this is the menu, not the meal. `defaultInstallments: 1` means "pay it in
+  // one go", which is the default precisely because a plan is a concession.
+  defaultInstallments Int    @default(1)
+  defaultFrequency    String @default("ONE_TIME") // ONE_TIME | MONTHLY | QUARTERLY | TRIMESTER | SEMESTERLY
+  defaultFirstDueDays Int    @default(30) // days after the academic year starts that instalment 1 falls due
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -20,9 +43,139 @@ model FeeStructure {
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   dues         FeeDue[]
   lateFeeRules LateFeeRule[]
+  components   FeeComponent[]
+  versions     FeeStructureVersion[]
+  concessions  FeeConcession[]
   @@unique([programId, academicYearId])
   @@index([institutionId])
   @@map("fee_structures")
+}
+
+// ── Fee components ───────────────────────────────────────────
+// Docs: 06-accounts-finance.md §3.5.1
+//
+// A structure used to be three integers — tuition, other, total — which cannot
+// answer "what is the hostel charge", "does the exam fee differ by semester" or
+// "we waived the library charge, what is left". A component is one real charge
+// line: tuition for semester 3, the exam fee, the hostel rent, a one-off
+// admission charge. The totals are derived from these rows, never typed beside
+// them.
+model FeeComponent {
+  id             String   @id @default(cuid())
+  institutionId  String
+  feeStructureId String
+  // TUITION | EXAMINATION | HOSTEL | LIBRARY | ADMISSION | TRANSPORT | OTHER.
+  // Only TUITION and EXAMINATION are charges every student always pays; the
+  // rest are optional or resident-only, which is why `optional` exists and why
+  // a default plan has to be computed rather than assumed.
+  kind           String
+  label          String
+  amountMinor    Int
+  // 1..8. Semester-specific charges (semester 3 tuition is usually not the same
+  // as semester 1). `semester: 0` means the charge applies to EVERY semester of
+  // the year and is reported on the annual total.
+  semester       Int      @default(0)
+  // A charge a student can decline (hostel, transport). Included in the annual
+  // headline only when a plan says so; never silently added to what is owed.
+  optional       Boolean  @default(false)
+  // Applies to new admissions this year only (an admission charge, a one-time
+  // orientation fee). Kept so a structure can say "everyone pays this except
+  // second-years" without inventing a second program.
+  firstYearOnly  Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  feeStructure FeeStructure @relation(fields: [feeStructureId], references: [id])
+
+  @@index([feeStructureId, semester])
+  @@index([institutionId, kind])
+  @@map("fee_components")
+}
+
+// ── Version history ──────────────────────────────────────────
+// Docs: 06-accounts-finance.md §3.5.6
+//
+// A version is an IMMUTABLE snapshot of a structure's components plus its
+// effective window. Editing a published structure creates the NEXT version
+// rather than mutating the old one, so "what did semester 3 cost in 2024-25"
+// stays answerable after the 2026-27 rates are published. Snapshots the
+// components as JSON rather than referencing live rows precisely because
+// `FeeComponent` rows are mutable — a snapshot pointing at live rows would
+// rewrite its own history every time a rate changed.
+model FeeStructureVersion {
+  id             String   @id @default(cuid())
+  institutionId  String
+  feeStructureId String
+  // 1, 2, 3… within one structure. Unique per structure.
+  versionNo      Int
+  // DRAFT (editable, bills nothing) | PUBLISHED (in force) | SUPERSEDED (was in
+  // force, now replaced) | DRAFT_DISCARDED.
+  status         String   @default("DRAFT")
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  // [{kind,label,amountMinor,semester,optional,firstYearOnly}] at the moment
+  // this version was cut. This is the historical record.
+  componentsJson String
+  tuitionMinor   Int      @default(0)
+  otherMinor     Int      @default(0)
+  totalMinor     Int      @default(0)
+  // Why the rates moved. A version history with no reasons is a spreadsheet.
+  changeNote     String?
+  createdByUserId String? // scalar → users.id
+  publishedByUserId String? // scalar → users.id
+  publishedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  feeStructure FeeStructure @relation(fields: [feeStructureId], references: [id])
+
+  @@unique([feeStructureId, versionNo])
+  @@index([institutionId, status])
+  @@index([feeStructureId, effectiveFrom])
+  @@map("fee_structure_versions")
+}
+
+// ── Concession / scholarship rules ───────────────────────────
+// Docs: 06-accounts-finance.md §3.5.4
+//
+// `Scholarship` records who got money. THIS records what the institution's
+// POLICY is — "50% off tuition for the top 5% of each batch", "full waiver of
+// the exam fee for staff ward" — so that applying a concession is arithmetic
+// against a written rule rather than a judgement call made under pressure at
+// the counter. An award that does not name the rule it came from cannot be
+// defended at audit.
+model FeeConcession {
+  id             String   @id @default(cuid())
+  institutionId  String
+  feeStructureId String
+  name           String
+  // MERIT | NEED_BASED | SIBLING | STAFF_WARD | SCHOLARSHIP | OTHER
+  kind           String   @default("SCHOLARSHIP")
+  // PERCENT (valueBp basis points off the eligible charges) | FLAT (a fixed
+  // rupee amount off the eligible charges). NEVER a negative.
+  basis          String   @default("PERCENT")
+  valueBp        Int      @default(0)
+  amountMinor    Int      @default(0)
+  // Which charges the concession may touch: ALL | TUITION | EXAMINATION | HOSTEL
+  // | LIBRARY | ADMISSION | TRANSPORT | OTHER. Scoped because waiving 50% of
+  // "everything" quietly waives the hostel bill of a student who was not even
+  // living in the hostel.
+  appliesTo      String   @default("TUITION")
+  // 0 = every semester.
+  semester       Int      @default(0)
+  enabled        Boolean  @default(true)
+  note           String?
+  createdByUserId String? // scalar → users.id
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  feeStructure FeeStructure @relation(fields: [feeStructureId], references: [id])
+
+  @@index([feeStructureId, enabled])
+  @@index([institutionId, kind])
+  @@map("fee_concessions")
 }
 
 model FeeDue {

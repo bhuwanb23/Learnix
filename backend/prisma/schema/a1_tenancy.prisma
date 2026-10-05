@@ -48,6 +48,9 @@ model User {
   // relation error.
   sentConnections     AlumniConnection[] @relation("AlumniConnectionRequester")
   receivedConnections AlumniConnection[] @relation("AlumniConnectionRecipient")
+  // Chapter leadership (Domain J4) and initiative ownership.
+  chapterOfficerRoles    AlumniChapterOfficer[]
+  ownedInitiatives       AlumniChapterInitiative[] @relation("InitiativeOwner")
   donationsMade    Donation[]
   mentorshipsAsMentor MentorshipPair[]
   platformAdmin      PlatformAdmin?

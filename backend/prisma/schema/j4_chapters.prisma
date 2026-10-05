@@ -1,0 +1,99 @@
+// Domain J4 — Chapter leadership, initiatives.
+// Docs: 12-alumni-relations.md §3.6 (chapters, leadership, activities &
+// initiatives).
+//
+// ── Why officers are a table and not columns on AlumniChapter ──
+//
+// A chapter is run by a committee, and a committee CHANGES: a secretary steps
+// down, a treasurer is added mid-year, a president completes a term. With roles
+// as columns (presidentAlumniUserId, secretaryUserId, …) none of that history
+// survives — you can only see who holds the role now, never who held it before
+// or for how long, and a vacant role is indistinguishable from an unconfigured
+// one. Rows keep the term dates and make "every chapter this alumnus has led"
+// a single indexed query.
+//
+// AlumniChapter.presidentAlumniUserId is retained as a denormalised POINTER to
+// the current PRESIDENT so hot paths (chapter cards, announcement
+// authorisation) do not need a join. The officers table is authoritative and
+// the pointer has exactly two writers: assignOfficer() and the seed. That
+// invariant is asserted in getChapterDetail, which returns both and lets a
+// verification script compare them.
+
+// ─────────────────────────────────────────────────────────────
+// Leadership
+// ─────────────────────────────────────────────────────────────
+
+model AlumniChapterOfficer {
+  id             String    @id @default(cuid())
+  chapterId      String
+  alumniUserId   String // scalar → users.id
+  role           String // PRESIDENT | VICE_PRESIDENT | SECRETARY | TREASURER | COORDINATOR
+  since          DateTime  @default(now())
+  until          DateTime? // null = current
+  // Denormalised from `until` so "who is in office" is one indexed predicate
+  // instead of `until IS NULL` scattered through every authorization check.
+  // Maintained by the assign/resign service functions, never by hand.
+  isCurrent      Boolean   @default(true)
+  notes          String?
+  createdByUserId String? // scalar → users.id
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  chapter    AlumniChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  alumniUser User           @relation(fields: [alumniUserId], references: [id])
+
+  // One person may hold the same role once per chapter. Re-appointing someone
+  // who already served creates a NEW term row rather than editing the old one,
+  // so the history of who led the chapter is never overwritten.
+  @@unique([chapterId, alumniUserId, role])
+  @@index([chapterId, isCurrent])
+  @@index([chapterId, role, isCurrent])
+  @@index([alumniUserId, isCurrent])
+  @@map("alumni_chapter_officers")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Initiatives — a chapter's own projects
+// ─────────────────────────────────────────────────────────────
+
+// An initiative is a chapter-run activity ("mentor 50 students", "fund a
+// library shelf") with an owner, a status and a countable goal.
+//
+// It is deliberately NOT a FundraisingCampaign. A campaign raises money for the
+// INSTITUTION; an initiative is what a chapter DOES, which may involve money,
+// may not, and is usually measured in people ("40 of 50 students mentored")
+// rather than rupees. An initiative MAY link to a campaign when it does raise
+// money — but it stores no amount of its own, because a second money column
+// would immediately disagree with the campaign it points at.
+model AlumniChapterInitiative {
+  id             String    @id @default(cuid())
+  chapterId      String
+  title          String
+  description    String?
+  category       String    @default("SOCIAL") // MENTORSHIP | SCHOLARSHIP | OUTREACH | FUNDRAISING | SOCIAL
+  status         String    @default("PLANNED") // PLANNED | ACTIVE | COMPLETED | CANCELLED
+  // Countable goal and progress, e.g. 50 students / 40 achieved. NULL target
+  // means the initiative is open-ended ("run a mentoring hour each month"), so a
+  // progress bar must not be rendered for it.
+  targetCount    Int?
+  achievedCount  Int       @default(0)
+  startDate      DateTime?
+  targetDate     DateTime?
+  completedAt    DateTime?
+  // Optional link to an institution fundraising campaign. When set, money
+  // progress is DERIVED from campaign.raisedMinor — never duplicated here.
+  campaignId     String? // scalar → fundraising_campaigns.id
+  ownerAlumniUserId String? // scalar → users.id (chapter member accountable)
+  createdByUserId String? // scalar → users.id
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  chapter  AlumniChapter       @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  owner    User?                @relation("InitiativeOwner", fields: [ownerAlumniUserId], references: [id])
+  campaign FundraisingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([chapterId, status])
+  @@index([campaignId])
+  @@index([ownerAlumniUserId])
+  @@map("alumni_chapter_initiatives")
+}

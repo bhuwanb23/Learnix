@@ -43,16 +43,31 @@ model AlumniChapter {
   id                    String   @id @default(cuid())
   institutionId         String
   city                  String
+  // DENORMALISED POINTER to the current PRESIDENT row in
+  // AlumniChapterOfficer. The officers table is authoritative; this column is
+  // written only by assignOfficer()/resignOfficer() and by the seed. Retained
+  // so chapter cards and announcement authorisation do not each need a join.
   presidentAlumniUserId String // scalar → users.id
-  memberCount           Int      @default(0) // denorm
+  // A chapter is a CITY; region groups cities for the directory
+  // ("Karnataka → Bengaluru") and tier separates a local chapter from a large
+  // regional one. Flat, not a nested Region parent — see j4_chapters.prisma.
+  region                String?
+  tier                  String   @default("LOCAL") // LOCAL | REGIONAL
+  description           String?
+  foundedOn             DateTime?
+  meetingFrequency      String? // "Monthly", "Quarterly"
+  memberCount           Int      @default(0) // denorm — recomputed on every membership change
   nextEventAt           DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  members AlumniProfile[]
-  events  Event[]
+  members     AlumniProfile[]
+  events      Event[]
+  officers    AlumniChapterOfficer[]
+  initiatives AlumniChapterInitiative[]
 
   @@unique([institutionId, city])
   @@index([institutionId])
+  @@index([region])
   @@map("alumni_chapters")
 }

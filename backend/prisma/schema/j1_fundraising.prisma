@@ -18,6 +18,10 @@ model FundraisingCampaign {
   updatedAt     DateTime  @updatedAt
 
   donations Donation[]
+  // Chapter initiatives that raise money through this campaign. The initiative
+  // stores no amount of its own — it reads raisedMinor from here, so the two can
+  // never disagree.
+  chapterInitiatives AlumniChapterInitiative[]
 
   @@unique([institutionId, name])
   @@index([institutionId])
