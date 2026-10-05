@@ -26,8 +26,7 @@ function check(label: string, ok: boolean, detail = '') {
     console.log(`  x ${label} ${detail}`);
   }
 }
-const ok = (s: unknown) => ({ success: true as const, data: s as any });
-const bad = (s: unknown) => ({ success: false as const, error: { flatten: () => ({ formErrors: [String(s)] }) } as any });
+const ok = (res: unknown) => (res as { success?: boolean }).success === true;
 
 console.log('\n--- mentorship contract checks (no DB) ---');
 
