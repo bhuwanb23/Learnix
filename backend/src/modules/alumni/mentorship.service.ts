@@ -23,6 +23,8 @@
 import { prisma } from '../../db/prisma.js';
 import { conflict, forbidden, notFound, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { officeUserIds } from './directory.service.js';
+import { notify, notifyMany } from './notifications/notifications.delivery.js';
 import type { Viewer } from './directory.service.js';
 
 export const PAIR_STATUSES = ['PENDING', 'ACTIVE', 'DECLINED', 'COMPLETED'] as const;
@@ -561,6 +563,39 @@ export async function createRequest(
     after: { skills: request.requestedSkills, field: request.field },
   });
 
+  // The office is told a request arrived. This notification did not exist before:
+  // the only three writes in this file all pointed OUTWARD (decision → mentee,
+  // reminder → mentor), so the queue the office actually works from was silent. A
+  // mentee could have asked for help and nothing would have happened until somebody
+  // happened to open the Mentorship tab.
+  //
+  // `respectMutes: false` — this is work, not news. See notifications.delivery.ts.
+  const office = await officeUserIds(viewer.institutionId);
+  if (office.length > 0) {
+    // The name is read from `users`, not from the profile: a mentee is either an
+    // alumnus or a student, so there is no single profile table to join, and the
+    // office approving a queue needs to know who is asking.
+    const menteeUser = await prisma.user.findFirst({
+      where: { id: mentee.userId, institutionId: viewer.institutionId },
+      select: { fullName: true },
+    });
+
+    await notifyMany({
+      institutionId: viewer.institutionId,
+      recipientUserIds: office,
+      category: 'MENTORSHIP',
+      title: `New mentorship request${request.field ? ` for ${request.field}` : ''}`,
+      body:
+        `${menteeUser?.fullName ?? 'A mentee'} is asking for help` +
+        `${matchScore !== null ? ` (best match ${matchScore}%)` : ''}. ` +
+        'Open Mentorship → Requests to approve or decline.',
+      // Per request. If the same request is somehow re-notified, it does not double.
+      dedupeKey: `mentorship-request:${request.id}`,
+      data: { requestId: request.id, field: request.field, matchScore },
+      respectMutes: false,
+    });
+  }
+
   return {
     id: request.id,
     status: request.status,
@@ -677,15 +712,17 @@ export async function decideRequest(
         entityId: request.id,
         after: { reason: body.reason.trim() },
       }),
-      prisma.notification.create({
-        data: {
-          institutionId: viewer.institutionId,
-          recipientUserId: request.menteeUserId,
-          type: 'MENTORSHIP',
-          title: 'Mentorship request declined',
-          body: body.reason.trim(),
-          sourceModule: 'alumni-mentorship',
-        },
+      // Routed through delivery rather than written directly, so the mentee's
+      // "mentorship" mute applies. A decline is arguably not optional news — but it
+      // is still the mentee's own mail, and they asked for the setting.
+      notify({
+        institutionId: viewer.institutionId,
+        recipientUserId: request.menteeUserId,
+        category: 'MENTORSHIP',
+        title: 'Mentorship request declined',
+        body: body.reason.trim(),
+        dedupeKey: `mentorship-decline:${request.id}`,
+        data: { requestId: request.id },
       }),
     ]);
     return { id: updated.id, status: updated.status, declineReason: updated.declineReason };
@@ -766,15 +803,16 @@ export async function decideRequest(
       entityId: pair.id,
       after: { mentorUserId, field },
     }),
-    prisma.notification.create({
-      data: {
-        institutionId: viewer.institutionId,
-        recipientUserId: request.menteeUserId,
-        type: 'MENTORSHIP',
-        title: 'Mentorship request accepted',
-        body: `Your request for a mentor in ${field} has been accepted.`,
-        sourceModule: 'alumni-mentorship',
-      },
+    notify({
+      institutionId: viewer.institutionId,
+      recipientUserId: request.menteeUserId,
+      category: 'MENTORSHIP',
+      title: 'Mentorship request accepted',
+      body: `Your request for a mentor in ${field} has been accepted.`,
+      // Keyed on the PAIR, not the request: a request produces at most one pair, but
+      // the deep link has to land on the pair — that is where the sessions live.
+      dedupeKey: `mentorship-accept:${pair.id}`,
+      data: { requestId: request.id, pairId: pair.id, field },
     }),
   ]);
 
@@ -1064,17 +1102,25 @@ export async function remindMentor(viewer: Viewer, pairId: string) {
   }
 
   const menteeName = pair.menteeAlumniProfile?.user.fullName ?? pair.menteeStudentProfile?.user.fullName ?? 'your mentee';
-  await prisma.notification.create({
-    data: {
-      institutionId: viewer.institutionId,
-      recipientUserId: pair.mentorAlumniUserId,
-      type: 'MENTORSHIP',
-      title: 'Mentorship session reminder',
-      body: pair.nextSessionAt
-        ? `Your next session with ${menteeName} (${pair.field}) is ${new Date(pair.nextSessionAt).toDateString()}.`
-        : `Please schedule your next session with ${menteeName} (${pair.field}).`,
-      sourceModule: 'alumni-mentorship',
-    },
+  // Recipient is the MENTOR, and the authoriser is "the office or the mentor". That
+  // reads oddly — a mentor reminding themselves — but it is the pre-existing
+  // contract on this endpoint and changing the recipient is a behaviour change
+  // somebody has to decide, not a refactor. Flagged for the office; the send path
+  // itself is fixed either way.
+  await notify({
+    institutionId: viewer.institutionId,
+    recipientUserId: pair.mentorAlumniUserId,
+    category: 'MENTORSHIP',
+    title: 'Mentorship session reminder',
+    body: pair.nextSessionAt
+      ? `Your next session with ${menteeName} (${pair.field}) is ${new Date(pair.nextSessionAt).toDateString()}.`
+      : `Please schedule your next session with ${menteeName} (${pair.field}).`,
+    // Keyed on pair AND session date. Before this, pressing the button five times
+    // produced five identical rows in the mentor's inbox — this endpoint wrote
+    // directly, so nothing deduplicated it. Re-nudging is allowed once the session
+    // date itself moves, which is the case where a second row is actually wanted.
+    dedupeKey: `mentorship-session-reminder:${pair.id}:${pair.nextSessionAt ? new Date(pair.nextSessionAt).toISOString() : 'unscheduled'}`,
+    data: { pairId: pair.id },
   });
   return { id: pair.id, reminded: true };
 }

@@ -21,6 +21,7 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { notifyMany } from './notifications/notifications.delivery.js';
 import type { Viewer } from './directory.service.js';
 import { officerUserIds } from './leadership.service.js';
 
@@ -574,7 +575,11 @@ export async function announceToChapter(
     data: {
       institutionId: viewer.institutionId,
       senderUserId: viewer.userId,
-      audienceJson: JSON.stringify({ audience: 'CHAPTER', chapterId: chapter.id, city: chapter.city }),
+      // Same `{ kind, … }` shape the office broadcast uses, so
+      // `resolveAudience` can re-derive this audience later and the send history
+      // reads uniformly. It was a bespoke `{ audience: 'CHAPTER', … }` blob before,
+      // which nothing could parse.
+      audienceJson: JSON.stringify({ kind: 'CHAPTER_MEMBERS', chapterId: chapter.id, city: chapter.city }),
       templateKey: 'CHAPTER_ANNOUNCEMENT',
       title: body.title,
       body: body.body,
@@ -585,18 +590,21 @@ export async function announceToChapter(
 
   // Skip the sender — they wrote it, they have read it.
   const recipients = memberIds.filter((id) => id !== viewer.userId);
-  if (recipients.length > 0) {
-    await prisma.notification.createMany({
-      data: recipients.map((rid) => ({
-        institutionId: viewer.institutionId,
-        recipientUserId: rid,
-        type: 'BROADCAST',
-        title: body.title,
-        body: body.body,
-        sourceModule: 'alumni-chapter',
-      })),
-    });
-  }
+
+  // Typed `CHAPTER`, not `BROADCAST`. Chapter news used to be indistinguishable from
+  // an office-wide blast in the inbox, and muting "chapter news" would have muted
+  // both — so the preference list could not express what people actually want to
+  // silence. `chapterId` in the payload is what the deep link routes on.
+  const delivery = await notifyMany({
+    institutionId: viewer.institutionId,
+    recipientUserIds: recipients,
+    category: 'CHAPTER',
+    title: body.title,
+    body: body.body,
+    dedupeKey: `chapter-announcement:${broadcast.id}`,
+    data: { chapterId: chapter.id, city: chapter.city, broadcastId: broadcast.id },
+    sourceModule: 'alumni-chapters',
+  });
 
   await writeAudit({
     actorUserId: viewer.userId,
@@ -604,10 +612,25 @@ export async function announceToChapter(
     action: 'chapter.announce',
     entityType: 'Broadcast',
     entityId: broadcast.id,
-    after: { chapter: chapter.city, recipients: recipients.length },
+    after: {
+      chapter: chapter.city,
+      members: memberIds.length,
+      // Reported honestly: `delivered` is what landed, `muted` is how many members
+      // have chapter news switched off. The old code returned `recipients.length`
+      // as though everybody had been reached.
+      delivered: delivery.delivered,
+      muted: delivery.muted,
+    },
   });
 
-  return { id: broadcast.id, city: chapter.city, recipients: recipients.length, sentAt: broadcast.sentAt };
+  return {
+    id: broadcast.id,
+    city: chapter.city,
+    members: memberIds.length,
+    delivered: delivery.delivered,
+    muted: delivery.muted,
+    sentAt: broadcast.sentAt,
+  };
 }
 
 /** Create a chapter event. Reuses the shared Event table. */

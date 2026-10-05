@@ -21,6 +21,7 @@
 import { prisma } from '../../db/prisma.js';
 import { badRequest, conflict, forbidden, notFound, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { notify } from './notifications/notifications.delivery.js';
 import type { Viewer } from './directory.service.js';
 import { isOpenForRegistration, isPast } from './events.service.js';
 
@@ -116,6 +117,33 @@ export async function registerForEvent(viewer: Viewer, eventId: string) {
     after: { event: event.title, status: result.status },
   });
 
+  // Seat confirmed or waitlisted. This notification did not exist: registration was
+  // a silent transaction, so the only confirmation anybody got was the API response
+  // the screen happened to be showing. If they registered from a push or a
+  // deep-link and then closed the app, there was no record that they had a seat.
+  //
+  // Reuses the `EVENT_REG` type that already exists in the accounts registry for the
+  // transport module — one type, one meaning, rather than a second `REGISTRATION`
+  // that would need registering in two places.
+  await notify({
+    institutionId: viewer.institutionId,
+    recipientUserId: viewer.userId,
+    category: 'EVENT_REG',
+    title:
+      result.status === 'CONFIRMED'
+        ? `You are going to ${event.title}`
+        : `You are on the waitlist for ${event.title}`,
+    body:
+      result.status === 'CONFIRMED'
+        ? `Starts ${event.startDate.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}. Your QR pass is in Events → Registered.`
+        : `${event.title} is full. You will be confirmed automatically if a seat frees up.`,
+    // Per registration per outcome. Re-registering after cancelling is a NEW
+    // registration row (the old one is CANCELLED, not updated), so it gets its own
+    // notification — which is correct, it is news again.
+    dedupeKey: `event-registration:${result.row.id}:${result.status}`,
+    data: { eventId, registrationId: result.row.id },
+  });
+
   return {
     registrationId: result.row.id,
     eventId,
@@ -162,7 +190,7 @@ export async function cancelRegistration(viewer: Viewer, eventId: string) {
     });
 
     // A seat only frees up if the person leaving was actually holding one.
-    let promoted: { name: string } | null = null;
+    let promoted: { id: string; name: string } | null = null;
     if (existing.status === 'CONFIRMED') {
       const confirmed = await tx.eventRegistration.count({
         where: { eventId, status: 'CONFIRMED' },
@@ -178,7 +206,7 @@ export async function cancelRegistration(viewer: Viewer, eventId: string) {
             where: { id: next.id },
             data: { status: 'CONFIRMED' },
           });
-          promoted = { name: next.registrant.fullName };
+          promoted = { id: next.id, name: next.registrant.fullName };
         }
       }
     }
@@ -194,6 +222,35 @@ export async function cancelRegistration(viewer: Viewer, eventId: string) {
     before: { status: existing.status, event: event.title },
     after: { promoted: outcome.promoted?.name ?? null },
   });
+
+  // The promoted person has to be told.
+  //
+  // This is the third registration outcome and the only one that fires without
+  // them doing anything — they queued, somebody else left, and a seat appeared. They
+  // were PENDING with a QR payload already minted, so they had no way of knowing
+  // they now hold a seat, and the attendance report would count them without them
+  // ever having arrived.
+  //
+  // Deliberately sent AFTER the transaction: if the write fails the promotion does
+  // not happen, and a notification claiming a seat that does not exist is worse than
+  // silence.
+  if (outcome.promoted) {
+    const promotedRegistration = await prisma.eventRegistration.findUnique({
+      where: { id: outcome.promoted.id },
+      select: { registrantUserId: true },
+    });
+    if (promotedRegistration) {
+      await notify({
+        institutionId: viewer.institutionId,
+        recipientUserId: promotedRegistration.registrantUserId,
+        category: 'EVENT_REG',
+        title: `A seat opened up — you are going to ${event.title}`,
+        body: 'You have been moved off the waitlist and your seat is confirmed.',
+        dedupeKey: `event-registration:${outcome.promoted.id}:CONFIRMED`,
+        data: { eventId, registrationId: outcome.promoted.id },
+      });
+    }
+  }
 
   return {
     eventId,
@@ -356,6 +413,24 @@ export async function addAttendee(
     entityId: row.id,
     after: { attendee: person.fullName, status, event: event.title },
   });
+
+  // The office adding somebody by hand is the one registration path that is
+  // DEFINITELY not self-service, so it is the one where the attendee least expects
+  // to hear about it — they did not tap anything. Without this, being added to an
+  // event by the office produced no row in their inbox at all.
+  await notify({
+    institutionId: viewer.institutionId,
+    recipientUserId: body.userId,
+    category: 'EVENT_REG',
+    title: `You have been added to ${event.title}`,
+    body:
+      status === 'CONFIRMED'
+        ? 'The Alumni Relations Office registered you. Your QR pass is in Events → Registered.'
+        : `The Alumni Relations Office put you on the waitlist for this event.`,
+    dedupeKey: `event-registration:${row.id}:${status}:by-office`,
+    data: { eventId, registrationId: row.id },
+  });
+
   return { registrationId: row.id, attendee: person.fullName, status };
 }
 

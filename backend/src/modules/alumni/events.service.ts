@@ -23,6 +23,7 @@ import { prisma } from '../../db/prisma.js';
 import type { Prisma } from '@prisma/client';
 import { badRequest, forbidden, notFound } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { notify } from './notifications/notifications.delivery.js';
 import type { Viewer } from './directory.service.js';
 
 export const EVENT_TYPES = ['REUNION', 'NETWORKING', 'WORKSHOP', 'WEBINAR', 'MEETUP'] as const;
@@ -673,7 +674,7 @@ export async function decideRsvp(
 ) {
   const reg = await prisma.eventRegistration.findFirst({
     where: { id: registrationId, event: { institutionId } },
-    include: { event: { select: { title: true } } },
+    include: { event: { select: { id: true, title: true } } },
   });
   if (!reg) throw notFound('RSVP not found');
   if (reg.status === decision) return { id: reg.id, status: reg.status, changed: false };
@@ -693,15 +694,20 @@ export async function decideRsvp(
       before: { status: reg.status },
       after: { status: decision },
     }),
-    prisma.notification.create({
-      data: {
-        institutionId,
-        recipientUserId: reg.registrantUserId,
-        type: 'EVENT',
-        title: `RSVP ${decision === 'CONFIRMED' ? 'confirmed' : 'declined'}`,
-        body: `Your RSVP for "${reg.event.title}" was ${decision.toLowerCase()}.`,
-        sourceModule: 'alumni',
-      },
+    notify({
+      institutionId,
+      recipientUserId: reg.registrantUserId,
+      // `EVENT` is the RSVP-decision category, distinct from `EVENT_REG` (seat
+      // confirmed / waitlisted) and `EVENT_REMINDER` (the sweep's nudge). It is its
+      // own entry in notifications.rules.ts because the alumni app's TYPE_META had
+      // no `EVENT` key at all, so all 33 of these rendered as "System".
+      category: 'EVENT',
+      title: `RSVP ${decision === 'CONFIRMED' ? 'confirmed' : 'declined'}`,
+      body: `Your RSVP for "${reg.event.title}" was ${decision.toLowerCase()}.`,
+      // Per registration per decision. Flipping to CONFIRMED and back to PENDING is
+      // two real events worth two rows; the same decision twice is not.
+      dedupeKey: `rsvp:${reg.id}:${decision}`,
+      data: { eventId: reg.event.id, registrationId: reg.id },
     }),
   ]);
 

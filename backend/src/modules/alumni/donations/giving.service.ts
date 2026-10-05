@@ -23,6 +23,7 @@ import { conflict, forbidden, notFound, unprocessable } from '../../../lib/error
 import { writeAudit } from '../../../lib/audit.js';
 import { toRupees, toMinor, FUNDS, PAYMENT_METHODS, fundMeta } from './money.js';
 import { isOpen } from './campaigns.service.js';
+import { notify } from '../notifications/notifications.delivery.js';
 import type { Viewer } from '../directory.service.js';
 
 /**
@@ -208,16 +209,17 @@ export async function recordDonation(
       },
       ip,
     }),
-    prisma.notification.create({
-      data: {
-        institutionId: viewer.institutionId,
-        recipientUserId: donation.alumniUserId,
-        type: 'DONATION',
-        title: 'Donation received — thank you!',
-        body: `Your gift of ₹${toRupees(donation.amountMinor).toLocaleString('en-IN')} was recorded. Receipt ${result.receipt.receiptNo} is available to you now.`,
-        sourceModule: 'alumni',
-        dataJson: JSON.stringify({ module: 'alumni-donations', donationId: donation.id }),
-      },
+    notify({
+      institutionId: viewer.institutionId,
+      recipientUserId: donation.alumniUserId,
+      category: 'DONATION',
+      title: 'Donation received — thank you!',
+      body: `Your gift of ₹${toRupees(donation.amountMinor).toLocaleString('en-IN')} was recorded. Receipt ${result.receipt.receiptNo} is available to you now.`,
+      // A gift can only be recorded once — the ledger has no path back to PLEDGED
+      // after RECEIVED — but the key costs nothing and makes "recorded twice"
+      // impossible rather than merely unlikely.
+      dedupeKey: `donation-received:${donation.id}`,
+      data: { donationId: donation.id },
     }),
   ]);
 
