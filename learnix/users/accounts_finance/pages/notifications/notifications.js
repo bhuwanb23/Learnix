@@ -1,174 +1,220 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, RefreshControl,
-} from 'react-native';
+// F-10 Notifications — the notification desk hub (docs/users/06 §3.9).
+//
+// What this screen replaced: two tabs. "Inbox" listed the newest 50 rows of
+// ANY type the platform had ever written to this officer — a transport DELAY and
+// a hostel complaint sat above the fee reminders, every row wearing the same
+// blue bell — and tapping ANY row called markAllRead, so reading one message
+// meant declaring all of them read. "Broadcast" was a form with no history, so
+// an office could send a fee reminder and have no way to prove it.
+//
+// It is now a hub in the shape of the reports and scholarship desks:
+//
+//   · the seven categories, each with its LIVE unread count
+//   · the four system alerts, computed against the database on every load
+//   · compose, and a record of what has already been sent
+//
+// The category and alert lists are NOT hard-coded. They arrive from
+// `/notifications/catalogue` and `/notifications/alerts`, which is where the
+// server tells the app each one's id, label, colour and route.
+// `notificationsMeta.js` still mirrors the ids because the audit asserts the two
+// agree — a category added on one side alone would ship a chip the server
+// answers 422.
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { accountsApi } from '../../../../services/api';
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
+import { THEME, RED, GREEN, SLATE, MUTED } from './notificationsMeta';
+import {
+  AlertCard, NotificationEmpty, NotificationScreen, Section, useNotifications,
+} from './notificationsUi';
 
-const AUDIENCES = [
-  { id: 'ALL_STUDENTS', label: 'All Students' },
-  { id: 'DEFAULTERS', label: 'Defaulters' },
-  { id: 'ALL_STAFF', label: 'All Staff' },
-];
+export default function NotificationsModule({ navigation }) {
+  const [catalogueError, setCatalogueError] = useState(null);
 
-export default function NotificationsScreen({ navigation }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState('inbox');
-  const [form, setForm] = useState({ title: '', content: '', audience: 'ALL_STUDENTS' });
-
-  const fetchData = useCallback(async () => {
+  const loadCatalogue = useCallback(async () => {
     try {
-      setError(null);
-      const result = await accountsApi.notifications();
-      setData(result);
+      setCatalogueError(null);
+      return await accountsApi.notificationCatalogue();
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setCatalogueError(err.message);
+      return null;
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
-  const onRefresh = () => { setRefreshing(true); fetchData(); };
+  // One fetch for the catalogue and one for the alerts: both are cheap and both
+  // are needed for the hub, so they are not serialised.
+  const catalogue = useNotifications(loadCatalogue);
+  const alerts = useNotifications(() => accountsApi.notificationAlerts());
 
-  const markAllRead = async () => {
-    try { await accountsApi.markAllRead(); fetchData(); } catch (err) { Alert.alert('Error', err.message); }
-  };
+  const reload = useCallback(() => {
+    catalogue.reload();
+    alerts.reload();
+  }, [catalogue, alerts]);
 
-  const handleSend = async () => {
-    if (!form.title.trim() || !form.content.trim()) {
-      Alert.alert('Missing Fields', 'Please enter both a subject and message.');
-      return;
-    }
-    try {
-      await accountsApi.broadcast({ audience: form.audience, title: form.title.trim(), body: form.content.trim() });
-      Alert.alert('Broadcast Sent', `Notification delivered to ${AUDIENCES.find((a) => a.id === form.audience)?.label}.`);
-      setForm({ title: '', content: '', audience: 'ALL_STUDENTS' });
-      setTab('inbox');
-    } catch (err) {
-      Alert.alert('Error', err.message);
-    }
-  };
-
-  const notifications = data?.notifications || [];
-  const unreadCount = data?.unread ?? 0;
-
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" color="#2563eb" /><Text style={styles.loadingText}>Loading…</Text></View>;
-  }
-
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color="#dc2626" />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={fetchData}><Text style={styles.retryText}>Retry</Text></TouchableOpacity>
-      </View>
-    );
-  }
+  const categories = catalogue.data?.categories ?? [];
+  const audiences = catalogue.data?.audiences ?? [];
+  const alertList = alerts.data?.alerts ?? [];
+  const firing = alerts.data?.firing ?? 0;
+  const total = alerts.data?.total ?? 0;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.tabsRow}>
-        {[{ id: 'inbox', label: `Inbox${unreadCount ? ` (${unreadCount})` : ''}` }, { id: 'broadcast', label: 'Broadcast' }].map((t) => (
-          <TouchableOpacity key={t.id} style={[styles.tab, tab === t.id && styles.activeTab]} onPress={() => setTab(t.id)} activeOpacity={0.8}>
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
+    <NotificationScreen
+      loading={catalogue.loading && alerts.loading}
+      refreshing={catalogue.refreshing || alerts.refreshing}
+      error={catalogue.error ?? alerts.error ?? catalogueError}
+      onRetry={reload}
+      onRefresh={reload}
+    >
+      {/* The one number the officer opens this screen for. */}
+      <View style={styles.hero}>
+        <Text style={styles.heroLabel}>Unread messages</Text>
+        <Text style={styles.heroValue}>{catalogue.data ? 'Open the inbox' : '—'}</Text>
+        <Text style={styles.heroHint}>
+          Fee reminders, payment confirmations, receipts, scholarship decisions,
+          payroll, announcements and financial alerts — each in its own category.
+        </Text>
       </View>
 
-      {tab === 'inbox' ? (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#2563eb']} />}>
-          {unreadCount > 0 && (
-            <TouchableOpacity style={styles.markAllRow} onPress={markAllRead} activeOpacity={0.7}>
-              <Text style={styles.markAllText}>Mark all read</Text>
-            </TouchableOpacity>
-          )}
-          {notifications.length === 0 ? (
-            <View style={styles.emptyState}><Text style={styles.emptyText}>No notifications</Text></View>
-          ) : (
-            notifications.map((n) => (
-              <TouchableOpacity key={n.id} style={[styles.card, !n.read && styles.unreadCard]} onPress={markAllRead} activeOpacity={0.8}>
-                <View style={[styles.iconContainer, { backgroundColor: '#2563eb14' }]}>
-                  <Ionicons name="notifications-outline" size={18} color="#2563eb" />
+      {/* What needs attention, computed live. Zero is drawn with a tick: an alert
+          kind that is clear is a good result. */}
+      <Section
+        title="Financial alerts"
+        note={firing > 0 ? `${total} to look at` : 'All clear'}
+      >
+        {alertList.length === 0 ? (
+          <NotificationEmpty
+            icon="shield-checkmark-outline"
+            title="No alerts published"
+            subtitle="The server did not return any alert kinds."
+          />
+        ) : (
+          alertList.map((a) => (
+            <AlertCard
+              key={a.id}
+              alert={a}
+              onPress={() => navigation.openModule('NotificationAlerts', { kind: a.id })}
+            />
+          ))
+        )}
+      </Section>
+
+      {/* The seven kinds of message this desk answers for. The list comes from
+          the server so a new category cannot go missing here. */}
+      <Section title="Categories" note="Open the inbox filtered">
+        {categories.length === 0 ? (
+          <NotificationEmpty
+            icon="file-tray-outline"
+            title="No categories published"
+            subtitle="The server did not return a notification catalogue."
+          />
+        ) : (
+          <View style={styles.catGrid}>
+            {categories.map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                style={styles.catCard}
+                activeOpacity={0.8}
+                onPress={() => navigation.openModule('NotificationInbox', { category: c.id })}
+                accessibilityRole="button"
+                accessibilityLabel={c.label}
+              >
+                <View style={[styles.catIcon, { backgroundColor: `${c.color}14` }]}>
+                  <Ionicons name={c.icon} size={17} color={c.color} />
                 </View>
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>{n.title}</Text>
-                  <Text style={styles.cardDesc} numberOfLines={2}>{n.body}</Text>
-                  <Text style={styles.cardTime}>{n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-IN') : ''}</Text>
-                </View>
-                {!n.read && <View style={styles.unreadDot} />}
-              </TouchableOpacity>
-            ))
-          )}
-        </ScrollView>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.formHint}>Broadcast fee reminders, receipts, and updates to students and staff.</Text>
-          <Text style={styles.fieldLabel}>Subject</Text>
-          <View style={styles.inputContainer}><TextInput style={styles.input} value={form.title} onChangeText={(v) => setForm((p) => ({ ...p, title: v }))} placeholder="e.g. Semester 5 Fee Reminder" placeholderTextColor="#cbd5e1" /></View>
-          <Text style={styles.fieldLabel}>Message</Text>
-          <View style={[styles.inputContainer, styles.textAreaContainer]}><TextInput style={[styles.input, styles.textArea]} value={form.content} onChangeText={(v) => setForm((p) => ({ ...p, content: v }))} placeholder="Write your message..." placeholderTextColor="#cbd5e1" multiline /></View>
-          <Text style={styles.fieldLabel}>Audience</Text>
-          <View style={styles.audienceGrid}>
-            {AUDIENCES.map((a) => (
-              <TouchableOpacity key={a.id} style={[styles.audienceChip, form.audience === a.id && styles.audienceChipActive]} onPress={() => setForm((p) => ({ ...p, audience: a.id }))} activeOpacity={0.8}>
-                <Text style={[styles.audienceText, form.audience === a.id && styles.audienceTextActive]}>{a.label}</Text>
+                <Text style={styles.catLabel} numberOfLines={2}>{c.label}</Text>
+                <Text style={styles.catBlurb} numberOfLines={2}>{c.blurb}</Text>
               </TouchableOpacity>
             ))}
           </View>
-          <TouchableOpacity style={styles.sendBtn} onPress={handleSend} activeOpacity={0.85}>
-            <Ionicons name="send" size={16} color="#FFFFFF" />
-            <Text style={styles.sendBtnText}>Send Broadcast</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-    </View>
+        )}
+      </Section>
+
+      {/* Compose is here, not buried: an announcement IS an accounts action. */}
+      <Section title="Send an announcement" note="To a group you choose">
+        <TouchableOpacity
+          style={styles.actionCard}
+          activeOpacity={0.85}
+          onPress={() => navigation.openModule('NotificationCompose')}
+          accessibilityRole="button"
+        >
+          <View style={styles.actionIcon}>
+            <Ionicons name="megaphone-outline" size={18} color={THEME} />
+          </View>
+          <View style={styles.actionBody}>
+            <Text style={styles.actionLabel}>Compose a broadcast</Text>
+            <Text style={styles.actionBlurb}>
+              Fee reminders, deadline notices and office announcements.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionCard}
+          activeOpacity={0.85}
+          onPress={() => navigation.openModule('NotificationHistory')}
+          accessibilityRole="button"
+        >
+          <View style={styles.actionIcon}>
+            <Ionicons name="time-outline" size={18} color={SLATE} />
+          </View>
+          <View style={styles.actionBody}>
+            <Text style={styles.actionLabel}>Send history</Text>
+            <Text style={styles.actionBlurb}>
+              What this office has sent, to whom, and how many people it reached.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={MUTED} />
+        </TouchableOpacity>
+      </Section>
+
+      {/* The audience sizes are live and come from the server, so an officer sees
+          "Defaulters (24)" before composing rather than after sending to nobody. */}
+      {audiences.length > 0 ? (
+        <Text style={styles.footnote}>
+          {audiences.map((a) => `${a.label} (${a.recipientCount})`).join('  ·  ')}
+          {'\n'}Defaulters means a bill at least {catalogue.data?.defaulterMinDays ?? 7} days past its due
+          date, worked out from the due date itself rather than a stored counter that can drift.
+        </Text>
+      ) : null}
+
+      <Text style={styles.footnote}>
+        Messages from other modules — transport, hostel, grades — are not shown here.
+        They stay in their own screens, and the inbox reports how many were filtered out so a
+        message you remember is never simply lost.
+      </Text>
+    </NotificationScreen>
   );
 }
 
+export { RED, GREEN };
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f7f9' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f7f9', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
-  errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Medium', textAlign: 'center' },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  emptyState: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Medium' },
-  tabsRow: { flexDirection: 'row', backgroundColor: '#eef2f7', borderRadius: 12, padding: 4, margin: 24, marginBottom: 0 },
-  tab: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
-  activeTab: { backgroundColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#64748b', fontFamily: 'Manrope-SemiBold' },
-  activeTabText: { color: '#2563eb' },
-  scrollContent: { padding: 24, paddingBottom: 40 },
-  markAllRow: { alignSelf: 'flex-end', marginBottom: 12 },
-  markAllText: { fontSize: 12, color: '#2563eb', fontFamily: 'Manrope-SemiBold' },
-  card: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
-  unreadCard: { borderColor: '#bfdbfe', backgroundColor: '#f8faff' },
-  iconContainer: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  cardContent: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold', marginBottom: 2 },
-  cardDesc: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 17 },
-  cardTime: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Regular', marginTop: 4 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2563eb', marginLeft: 8, marginTop: 4 },
-  formHint: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 18, marginBottom: 16 },
-  fieldLabel: { fontSize: 12, fontWeight: '700', color: '#334155', fontFamily: 'Manrope-Bold', marginBottom: 6, marginTop: 4 },
-  inputContainer: { backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 14, marginBottom: 12 },
-  input: { height: 44, fontSize: 14, color: '#0f172a', fontFamily: 'Manrope-Regular' },
-  textAreaContainer: { paddingVertical: 8 },
-  textArea: { height: 96, textAlignVertical: 'top' },
-  audienceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  audienceChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0' },
-  audienceChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  audienceText: { fontSize: 12, color: '#475569', fontFamily: 'Manrope-Medium' },
-  audienceTextActive: { color: '#FFFFFF' },
-  sendBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14 },
-  sendBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope-Bold' },
-});
+  hero: {
+    backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#eef2f7',
+    padding: 16, marginBottom: 4,
+  },
+  heroLabel: { fontSize: 12, color: SLATE, fontWeight: '600' },
+  heroValue: { fontSize: 22, fontWeight: '800', color: '#0f172a', marginTop: 4 },
+  heroHint: { fontSize: 11, color: SLATE, lineHeight: 16, marginTop: 8 },
+
+  catGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
+  catCard: {
+    width: '48.5%', backgroundColor: '#fff', borderRadius: 12,
+    borderWidth: 1, borderColor: '#eef2f7', padding: 12,
+  },
+  catIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  catLabel: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
+  catBlurb: { fontSize: 10, color: SLATE, lineHeight: 14, marginTop: 3 },
+
+  actionCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: '#fff',
+    borderRadius: 12, borderWidth: 1, borderColor: '#eef2f7', padding: 13, marginBottom: 9,
+  },
+  actionIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: `${THEME}14`, alignItems: 'center', justifyContent: 'center' },
+  actionBody: { flex: 1 },
+  actionLabel: { fontSize: 13, fontWeight: '700', color: '#0f172a' },
+  actionBlurb: { fontSize: 11, color: SLATE, lineHeight: 15, marginTop: 2 },
+
+  footnote: { fontSize: 10, color: MUTED, lineHeight: 15, marginTop: 16 },
+});

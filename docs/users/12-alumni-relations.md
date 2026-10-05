@@ -107,15 +107,68 @@ FY collections hero (target progress), campaign cards (target/raised/donors/days
 **Entity `donation`**: id, alumniId, amount, fund, date, status (Pledged/Received).
 
 ### 3.5 Mentorship (module)
-Active Pairs / Requests tabs (with count badge), pair cards (mentor ↔ mentee, field, sessions, next session) with **Send Reminder**, **Approve / Decline** requests (moves pair live), recent sessions log.
+
+**The flow:** mentee requests → mentor accepts → pair becomes ACTIVE. A request is
+its own table because a pair must not exist until somebody has agreed to it; the
+previous implementation could only create a pair from an office-only endpoint that
+paired the mentor with "the first active student profile in the institution", which
+is why the Requests tab could never be filled by anything a user did.
+
+**Two mentee kinds.** The mentee is polymorphic: a **student**
+(`menteeStudentProfileId`) or **another alumnus** (`menteeAlumniProfileId`). Because
+both columns are nullable and SQLite treats NULLs as distinct in a unique index, the
+"one live pair per mentor/mentee" rule is enforced in the service layer, not by the
+database. A screen never branches on which side is set — the response always carries
+a `mentee.kind`.
+
+**Screens.** Hub (Active / Requests / History + programme stats) → mentor directory
+(browse, or *ranked* matches for your request, each with the reason it was chosen) →
+requests inbox (accept, decline-with-a-reason, withdraw) → pair detail (Overview /
+Sessions / Goals / Feedback). Student mentees get the same pair detail through
+`/student/mentorship`; the alumni router is gated to ALUMNI/ADMIN roles, so without
+that surface a student could be assigned a mentor and have no way to see it.
+
+**Why History exists:** the list used to return only ACTIVE and PENDING, so declining
+a pair made it vanish with no record and no way to reverse the decision.
+
+**Permissions** are resolved server-side per pair (`viewerContext`) and the UI renders
+from that — never by guessing from the data on screen. Feedback is participants-only
+and the office is explicitly *not* a participant: it sees the ratings, never the words.
 
 **Entity `mentorship_pair`**
 | Field | Type |
 |-------|------|
 | id | P1 |
-| mentorId, menteeId | FK (alumni, student) |
-| field, sessions, nextSession | string/number |
-| status | Active / Pending / Declined |
+| mentorAlumniUserId | FK → users.id |
+| menteeStudentProfileId | FK → student_profiles.id, nullable |
+| menteeAlumniProfileId | FK → alumni_profiles.id, nullable |
+| field | free text (Career Guidance, Higher Studies, …) |
+| status | PENDING / ACTIVE / DECLINED / COMPLETED |
+| requestedAt, approvedAt, completedAt, declinedReason | date / text |
+| nextSessionAt | denormalised pointer, written with every booking |
+| matchScore, matchReasons | explainable matching result |
+| sourceRequestId | the request this pair came from, if any |
+
+**Entity `mentorship_session`**: pairId, sessionDate, `planned` (true = booked, false
+= happened), mode (IN_PERSON | VIDEO | PHONE), durationMinutes, agenda, notes,
+outcome, cancelledAt. A held session carries the outcome; a booking carries the agenda.
+Only a booking can be cancelled, and cancelling marks it rather than deleting it.
+
+**Entity `mentorship_goal`**: pairId, title, detail, status
+(PENDING | IN_PROGRESS | ACHIEVED | DROPPED), `progressPct` 0–100, targetDate.
+Flat, not a tree — a milestone is a goal with a target date. Status and percentage are
+reconciled in the service (`ACHIEVED` forces 100%; 100% implies achieved) so a bar can
+never contradict its chip. Progress for a pair is **derived** from its goals, so there
+is no stored percentage to go stale.
+
+**Entity `mentorship_feedback`**: pairId, authorUserId, `mentorRating`, `menteeRating`,
+comment — two explicit columns so "their rating of you" and "your rating of them" can
+never be shown in the same widget. One review per person per pair, editable.
+
+**Entity `mentorship_request`**: institutionId, menteeUserId + either mentee profile,
+mentorAlumniUserId (null = open pool), requestedSkills, message, field, status
+(PENDING | ACCEPTED | DECLINED | WITHDRAWN), declineReason, pairId. One open request
+per person; a decline requires ≥5 characters of reason, and the mentee is notified.
 
 ### 3.6 Chapters (module)
 Regional/local chapter directory grouped by **region**, with per-chapter committee
@@ -309,8 +362,31 @@ GET  /alumni/events               + /{id}
 POST /alumni/rsvps/{id}/decide    { decision: CONFIRMED | DECLINED }
 GET  /alumni/donations            ?page=&pageSize=   (paged ledger + totals)
 POST /alumni/donations/{id}/record         → Payment + Receipt + DonationPayment
-GET  /alumni/mentorship
-POST /alumni/mentorship/{id}/approve | /decline | /remind
+GET  /alumni/mentorship            ?scope=active|pending|history|all
+GET  /alumni/mentorship/{id}       (+ viewerContext, session log, goals, feedback)
+POST /alumni/mentorship/{id}/complete | /remind
+POST /alumni/mentorship/{id}/approve | /decline       (legacy office action route)
+POST /alumni/mentorship/pairs      { mentorUserId, alumniProfileId|studentProfileId, field }
+GET  /alumni/mentorship/mentors    ?skill=           (directory; ?requestId= → ranked)
+GET  /alumni/mentorship/requests   ?status=          POST { requestedSkills, message, field, mentorUserId? }
+GET  /alumni/mentorship/requests/{id}/matches
+POST /alumni/mentorship/requests/{id}/decide   { action: accept|decline, reason? }
+DELETE /alumni/mentorship/requests/{id}
+POST /alumni/mentorship/{id}/sessions  { planned?, sessionDate, mode, durationMinutes?, agenda?, outcome? }
+PATCH|DELETE /alumni/mentorship/sessions/{id}   PATCH .../{id}/cancel { reason? }
+POST /alumni/mentorship/{id}/goals    PATCH|DELETE /alumni/mentorship/goals/{id}
+GET  /alumni/mentorship/{id}/progress
+GET|POST|DELETE /alumni/mentorship/{id}/feedback
+
+GET  /student/mentorship            same shapes, STUDENT role only (the alumni
+                                    router rejects STUDENT, so this is the only
+                                    surface a student mentee can reach)
+POST /student/mentorship/requests   GET .../mentors, .../requests, .../{id}, goals, sessions, feedback
+```
+
+`/{id}/progress` is participants + office only. It used to take a bare pairId with no
+authorisation at all, so any authenticated caller could read another mentorship's goal
+counts; the check is `assertPairReadable` in `mentorship.service.ts`.
 GET  /alumni/notifications        POST .../read-all
 POST /alumni/broadcasts           { audience, templateKey, title, body }
 POST /alumni/directory/{id}/invite | /add-mentor

@@ -625,7 +625,13 @@ export async function recordCollection(
             ? `We have received ₹${toRupees(input.amountMinor)}. This cleared: ${clearedTitles.join(', ')}.`
             : `We have received ₹${toRupees(input.amountMinor)}. It is held as an advance against your dues.`,
         sourceModule: 'accounts',
-        dataJson: JSON.stringify({ module: 'accounts', screen: 'Collections', referenceNo }),
+        // `paymentId` is what the collections screen keys on, so it travels with
+        // the message: a PAYMENT notice carrying only a reference number cannot
+        // be tapped through to the collection it describes.
+        dataJson: JSON.stringify({
+          module: 'accounts', screen: 'Collections',
+          paymentId: result.payment.id, referenceNo,
+        }),
       },
     });
     await prisma.notification.create({
@@ -638,7 +644,10 @@ export async function recordCollection(
           `₹${toRupees(input.amountMinor)} received from ${input.method}. `
           + `Receipt ${receiptNo}${referenceNo ? ` against ${referenceNo}` : ''}.`,
         sourceModule: 'accounts',
-        dataJson: JSON.stringify({ module: 'accounts', screen: 'Collections', referenceNo, receiptNo }),
+        dataJson: JSON.stringify({
+          module: 'accounts', screen: 'Collections',
+          paymentId: result.payment.id, receiptNo, referenceNo,
+        }),
       },
     });
   }

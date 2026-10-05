@@ -13,11 +13,11 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../../../constants/theme';
-import { alumniApi } from '../../../../../services/api';
-import { SearchBar, SkeletonCard } from '../../../../../components/ui';
-import { MentorCard, NoData } from '../../../components/MentorCard';
-import { MENTORSHIP_FIELDS } from '../../../mentorshipMeta';
+import { theme } from '../../../../../../constants/theme';
+import { alumniApi } from '../../../../../../services/api';
+import { SearchBar, SkeletonCard } from '../../../../../../components/ui';
+import { MentorCard, NoData } from '../../components/MentorCard';
+import { MENTORSHIP_FIELDS } from '../../mentorshipMeta';
 
 /**
  * The mentor directory.

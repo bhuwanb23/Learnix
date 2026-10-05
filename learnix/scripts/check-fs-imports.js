@@ -1,5 +1,5 @@
-// Static check that every named import in the Fee Structure, Payroll and
-// Scholarships screens resolves to a real export in the module it imports from.
+// Static check that every named import in the Fee Structure, Payroll, Scholarships
+// and Reports screens resolves to a real export in the module it imports from.
 //
 // A Babel parse sweep only proves the file is SYNTACTICALLY valid. A screen
 // importing `formatDay` from a meta module that does not export it parses
@@ -17,7 +17,10 @@ const API_FILE = path.resolve(__dirname, '..', 'services', 'api.js');
 
 // A meta module is a leaf — it imports nothing by design — so the
 // "has at least one relative import" check does not apply to it.
-const LEAF_META = new Set(['feeStructureMeta.js', 'payrollSalaryMeta.js', 'payrollMeta.js', 'scholarshipsMeta.js']);
+const LEAF_META = new Set([
+  'feeStructureMeta.js', 'payrollSalaryMeta.js', 'payrollMeta.js', 'scholarshipsMeta.js',
+  'reportsMeta.js',
+]);
 
 const files = [
   path.join(FS_DIR, 'fee_structure.js'),
@@ -39,6 +42,13 @@ const files = [
   ...['applications', 'application', 'apply', 'detail', 'documents', 'scheme_editor',
       'student_history', 'tracking']
     .map((d) => path.join(PAGES_DIR, 'scholarships', 'pages', d, `${d}.js`)),
+
+  // The reporting centre (docs/users/06 §3.8).
+  path.join(PAGES_DIR, 'reports', 'reports.js'),
+  path.join(PAGES_DIR, 'reports', 'reportsMeta.js'),
+  path.join(PAGES_DIR, 'reports', 'reportsUi.js'),
+  ...['collections', 'comparison', 'departments', 'dues', 'expenses', 'payroll', 'scholarships']
+    .map((d) => path.join(PAGES_DIR, 'reports', 'pages', d, `${d}.js`)),
 ];
 
 /** Every named export a module offers, plus its default. */

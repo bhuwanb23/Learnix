@@ -18,7 +18,9 @@ import {
 export default function ReportComparison({ route }) {
   // The comparison is a run of periods, so it has no MONTH/QUARTER/YEAR/ALL
   // selector of its own — it opens in the window the user last chose elsewhere
-  // and honours it, then offers the grouping the report actually varies.
+  // and honours it, then offers the grouping the report actually varies. The
+  // chips say how many bars each choice produces, because a control that silently
+  // re-scaled the chart would be indistinguishable from one that did nothing.
   const [period, setPeriod] = useState(route?.params?.period ?? 'MONTH');
   const [granularity, setGranularity] = useState('MONTH');
   const { data, loading, refreshing, error, reload, onRefresh } = useReport(
@@ -66,7 +68,8 @@ export default function ReportComparison({ route }) {
           })}
         </View>
         <Text style={styles.granularityHint}>
-          Always the last {data?.months ?? 12} months — this only changes how each bar is grouped.
+          Always the last {data?.months ?? 12} months, bucketed {GRANULARITIES.find((x) => x.id === granularity)?.hint ?? ''}
+          {' '}Grouping changes the bars, never the totals.
         </Text>
       </View>
 

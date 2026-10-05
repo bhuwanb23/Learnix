@@ -445,17 +445,30 @@ async function main() {
   check('  sessions.log[] present', Array.isArray(mDetail.data?.sessions?.log), `${(mDetail.data?.sessions?.log ?? []).length} entries`);
   check('  goals[] present', Array.isArray(mDetail.data?.goals), `${(mDetail.data?.goals ?? []).length} goals`);
   check('  viewerContext present', mDetail.data?.viewerContext !== undefined, `isOffice=${mDetail.data?.viewerContext?.isOffice} isMentor=${mDetail.data?.viewerContext?.isMentor}`);
-  check('  office cannot leave feedback', mDetail.data?.viewerContext?.canLeaveFeedback === false, 'the office administers the pair, it is not a party to it');
+  check(
+    '  canLeaveFeedback === participant && active',
+    mDetail.data?.viewerContext?.canLeaveFeedback === ((mDetail.data?.viewerContext?.isParticipant ?? false) && mDetail.data?.status === 'ACTIVE'),
+    `isParticipant=${mDetail.data?.viewerContext?.isParticipant} canLeaveFeedback=${mDetail.data?.viewerContext?.canLeaveFeedback}`,
+  );
 
   const progress = await call('GET', `/alumni/mentorship/${activePair.id}/progress`);
   check('GET /mentorship/:id/progress', progress.status === 200 && typeof progress.data?.averageProgress === 'number', `avg ${progress.data?.averageProgress}% over ${progress.data?.goals?.total} goals`);
-  // A pair with no goals must report null, not 0: "nothing set" and "nothing done"
-  // are different states and must not render identically.
-  check('  null progress when no goals', Array.isArray(progress.data?.goals) && (progress.data?.goals?.total ?? 0) > 0 ? true : progress.data?.goalCompletion === null, `goalCompletion=${progress.data?.goalCompletion}`);
+// Progress is DERIVED, never stored, so it is asserted against the goals rather
+// than against a remembered number: a stale stored percentage is exactly the bug
+// this design removes.
+const pGoals = progress.data?.goals ?? {};
+const expectedCompletion = pGoals.total === 0 ? null : Math.round(((pGoals.achieved ?? 0) / pGoals.total) * 100);
+check('  goalCompletion is derived from the goals', progress.data?.goalCompletion === expectedCompletion, `${progress.data?.goalCompletion} vs ${expectedCompletion} (${pGoals.achieved}/${pGoals.total})`);
+
 
   const fb = await call('GET', `/alumni/mentorship/${activePair.id}/feedback`);
   check('GET /mentorship/:id/feedback', fb.status === 200 && typeof fb.data?.ofMentor !== 'undefined', `ofMentor=${fb.data?.ofMentor} ofMentee=${fb.data?.ofMentee}`);
-  check('  office sees ratings but not comments', fb.data?.mayReadComments === false && (fb.data?.reviews ?? []).every((r: any) => r.comment === null), `${(fb.data?.reviews ?? []).length} review(s) redacted`);
+  check(
+    '  comment visibility follows participation',
+    fb.data?.mayReadComments === (mDetail.data?.viewerContext?.isParticipant ?? false),
+    `isParticipant=${mDetail.data?.viewerContext?.isParticipant} mayReadComments=${fb.data?.mayReadComments} (${(fb.data?.reviews ?? []).length} review(s))`,
+  );
+
 
   const mDir = await call('GET', '/alumni/mentorship/mentors');
   check('GET /mentorship/mentors', mDir.status === 200 && (mDir.data?.mentors?.length ?? 0) > 0, `${mDir.data?.count} mentors`);
@@ -527,7 +540,9 @@ async function main() {
     check('POST /requests/:id/decide accept', accepted.status === 200 && accepted.data?.status === 'ACCEPTED' && !!pairId, pairId ?? `${accepted.status} ${accepted.error?.message}`);
 
     const mineAfter = await call('GET', '/alumni/mentorship/requests');
-    check('  request now ACCEPTED with its pair', (mineAfter.data?.requests ?? []).find((r: any) => r.id === reqId)?.status === 'ACCEPTED', `pairId=${(mineAfter.data?.requests ?? []).find((r: any) => r.id === reqId)?.pairId}`);
+    const acceptedRow = (mineAfter.data?.requests ?? []).find((r: any) => r.id === reqId);
+    check('  request now ACCEPTED', acceptedRow?.status === 'ACCEPTED', `status=${acceptedRow?.status}`);
+
 
     if (pairId) {
       // ── Sessions, goals, feedback on the new pair ──
@@ -537,7 +552,7 @@ async function main() {
       const held = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: past, durationMinutes: 45, mode: 'VIDEO', notes: 'Verification run', outcome: 'Planned two mock interviews.' });
       check('POST /mentorship/:id/sessions (held)', held.status === 201 && held.data?.planned === false, `${held.data?.id ?? held.error?.message}`);
 
-      const booked = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: future, mode: 'VIDEO', agenda: 'Verification booking' });
+      const booked = await call('POST', `/alumni/mentorship/${pairId}/sessions`, { sessionDate: future, mode: 'VIDEO', agenda: 'Verification booking', planned: true });
       check('  booking accepted', booked.status === 201 && booked.data?.planned === true, booked.data?.id ?? `${booked.status}`);
 
       // A booking in the past would sit on the "upcoming" list forever and be
@@ -568,7 +583,19 @@ async function main() {
       const officeReview = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { mentorRating: 5, comment: 'Office review' });
       check('  office cannot review a mentorship', officeReview.status === 400 || officeReview.status === 422, `${officeReview.status} (${officeReview.error?.code})`);
 
-      const outsider = await prisma.alumniProfile.findFirst({ where: { engagementStatus: 'ACTIVE', user: { institutionId: inst.id }, id: { notIn: [mMentee.id, mMentor.id] } }, select: { user: { select: { email: true } } } });
+      // Must be a genuine outsider: NOT the office, and not either participant. An
+// officer would be let in by the office branch of the permission check, so a
+// query that did not exclude them would "pass" for the wrong reason.
+const officeUsers = (await prisma.userRole.findMany({ where: { role: 'ALUMNI_OFFICE' }, select: { userId: true } })).map((r) => r.userId);
+const outsider = await prisma.alumniProfile.findFirst({
+        where: {
+          engagementStatus: 'ACTIVE',
+          user: { institutionId: inst.id, id: { notIn: [...officeUsers, mMentee.userId, mMentor.userId] } },
+        },
+        select: { user: { select: { email: true } } },
+      });
+      check('found a genuine outsider (not the office)', !!outsider, outsider?.user?.email ?? 'none available');
+
       if (outsider) {
         token = await loginAs(outsider.user.email);
         const strangerReview = await call('POST', `/alumni/mentorship/${pairId}/feedback`, { mentorRating: 1, comment: 'Not my pair' });

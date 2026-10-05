@@ -44,13 +44,15 @@ export const EXPORT_FORMATS = [
 export const formatMeta = (id) => EXPORT_FORMATS.find((f) => f.id === id) ?? EXPORT_FORMATS[0];
 
 // ── Granularity (comparison report only) ──────────────────────────────────
-// Mirrors the server: the comparison window is always the last twelve months,
-// and the granularity chooses how each BAR is grouped — how many bars there
-// are is not a filter, and a control that implied it was would be a lie.
+// Mirrors the server. The comparison WINDOW is always the last twelve months —
+// that is what makes it a comparison. Granularity buckets those twelve months
+// into the bars that are drawn and exported: twelve month bars, four quarters, or
+// one or two calendar years. Grouping changes the shape of the series and never
+// its total, so the headline figures are the same whichever you pick.
 export const GRANULARITIES = [
-  { id: 'MONTH', label: 'By month' },
-  { id: 'QUARTER', label: 'By quarter' },
-  { id: 'YEAR', label: 'By year' },
+  { id: 'MONTH', label: 'By month', bars: 12, hint: 'Twelve bars, one per month.' },
+  { id: 'QUARTER', label: 'By quarter', bars: 4, hint: 'Four bars, three months each.' },
+  { id: 'YEAR', label: 'By year', bars: 2, hint: 'One or two bars, depending on where the twelve months fall.' },
 ];
 
 // ── Report ids ────────────────────────────────────────────────────────────

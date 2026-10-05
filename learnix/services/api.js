@@ -1056,10 +1056,24 @@ export const accountsApi = {
     api.get(`/accounts/reports/overview${reportQs({ period, anchor })}`),
   report: (id, { period, anchor, granularity } = {}) =>
     api.get(`/accounts/reports/${id}${reportQs({ period, anchor, granularity })}`),
-  exportReport: (id, { period, anchor, format } = {}) =>
-    api.get(`/accounts/reports/${id}/export${reportQs({ period, anchor, format })}`),
-  notifications: () => api.get('/accounts/notifications'),
+  exportReport: (id, { period, anchor, format, granularity } = {}) =>
+    api.get(`/accounts/reports/${id}/export${reportQs({ period, anchor, format, granularity })}`),
+  // F-10 Notifications (docs/users/06 §3.9). The old pair was
+  // `notifications()` and `broadcast()` only: an unfiltered top-50 of every type
+  // the platform writes, and one read control that marked ALL of them. The inbox
+  // is now filtered and paged, a single message can be read, and sending has a
+  // history.
+  notificationCatalogue: () => api.get('/accounts/notifications/catalogue'),
+  notificationAlerts: () => api.get('/accounts/notifications/alerts'),
+  notifications: ({ category, unreadOnly, take, skip } = {}) =>
+    api.get(`/accounts/notifications${reportQs({ category, unreadOnly, take, skip })}`),
+  /** Read ONE message. Scoped server-side to the recipient. */
+  markNotificationRead: (id) => api.post(`/accounts/notifications/${id}/read`),
+  /** Read or un-read, so the row menu can undo a tap. */
+  setNotificationRead: (id, read) => api.put(`/accounts/notifications/${id}/read`, { read }),
   markAllRead: () => api.post('/accounts/notifications/read-all'),
-  broadcast: (payload) => api.post('/accounts/broadcasts', payload),
+  broadcasts: ({ take } = {}) => api.get(`/accounts/notifications/broadcasts${reportQs({ take })}`),
+  // Moved from `/accounts/broadcasts`: it now sits beside the send history.
+  broadcast: (payload) => api.post('/accounts/notifications/broadcasts', payload),
   profile: () => api.get('/accounts/profile'),
 };

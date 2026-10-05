@@ -14,11 +14,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../../../constants/theme';
-import { alumniApi } from '../../../../../services/api';
-import { SearchBar, SkeletonCard } from '../../../../../components/ui';
-import { RequestCard, NoData } from '../../../components/MentorCard';
-import { fmtDateTime } from '../../../mentorshipMeta';
+import { theme } from '../../../../../../constants/theme';
+import { alumniApi } from '../../../../../../services/api';
+import { SearchBar, SkeletonCard } from '../../../../../../components/ui';
+import { RequestCard, NoData } from '../../components/MentorCard';
+import { fmtDateTime } from '../../mentorshipMeta';
 
 /**
  * The requests inbox.

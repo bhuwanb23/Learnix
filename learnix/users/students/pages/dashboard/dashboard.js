@@ -25,6 +25,8 @@ export default function Dashboard({ navigation }) {
           { id: 'assignments', label: 'Assignments', icon: 'assignment', color: '#702ae1' },
           { id: 'events', label: 'Events', icon: 'event', color: '#059669' },
           { id: 'profile', label: 'Profile', icon: 'person', color: '#a23800' },
+          // Sub-screen, not a bottom-nav tab — routed via SUB_SCREENS below.
+          { id: 'mentorship', label: 'Mentorship', icon: 'people', color: '#6d28d9' },
         ],
         attendance: data.attendance || { overallPct: 0, totalSessions: 0, present: 0, absent: 0, late: 0 },
         schedule: data.schedule || [],
@@ -42,6 +44,7 @@ export default function Dashboard({ navigation }) {
           { id: 'assignments', label: 'Assignments', icon: 'assignment', color: '#702ae1' },
           { id: 'events', label: 'Events', icon: 'event', color: '#059669' },
           { id: 'profile', label: 'Profile', icon: 'person', color: '#a23800' },
+          { id: 'mentorship', label: 'Mentorship', icon: 'people', color: '#6d28d9' },
         ],
         attendance: { overallPct: 0, totalSessions: 0, present: 0, absent: 0, late: 0 },
         schedule: [],
@@ -61,9 +64,20 @@ export default function Dashboard({ navigation }) {
     fetchData().finally(() => setRefreshing(false));
   };
 
-  const handleQuickAction = (actionId) => {
-    navigation?.navigate?.(actionId.charAt(0).toUpperCase() + actionId.slice(1));
-  };
+// Quick actions that are NOT bottom-nav tabs. They open a full screen instead,
+// and `navigation.navigate` would have set them as an unknown tab — landing the
+// student back on the dashboard, so the tap did nothing visible.
+const SUB_SCREENS = ['Mentorship'];
+
+const handleQuickAction = (actionId) => {
+  const screen = actionId.charAt(0).toUpperCase() + actionId.slice(1);
+  if (SUB_SCREENS.includes(screen)) {
+    navigation?.navigateToScreen?.(screen);
+    return;
+  }
+  navigation?.navigate?.(screen);
+};
+
 
   if (!dashboardData) return null;
 

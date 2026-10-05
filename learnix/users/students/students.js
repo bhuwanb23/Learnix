@@ -19,6 +19,7 @@ import JobDetailsPage from './pages/placement/pages/job_details';
 import JobApplyPage from './pages/placement/pages/jobs_apply/job_apply';
 import JobApplyDonePage from './pages/placement/pages/job_apply_done/job_apply_done';
 import NotificationsPage from './pages/notifications/notifications';
+import MentorshipPage from './pages/mentorship/mentorship';
 import { setDemoUser } from '../../services/api';
 
 // Import components
@@ -59,6 +60,9 @@ export default function StudentsScreen() {
   const renderContent = () => {
     if (currentScreen === 'Notifications') {
       return <NotificationsPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+    if (currentScreen === 'Mentorship') {
+      return <MentorshipPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;
@@ -104,7 +108,7 @@ export default function StudentsScreen() {
 
     switch (activeTab) {
       case 'Home':
-        return <Dashboard navigation={{ navigate: (tabName) => handleTabChange(tabName) }} />;
+        return <Dashboard navigation={{ navigate: (tabName) => handleTabChange(tabName), navigateToScreen }} />;
       case 'Classes':
         return <ClassPage />;
       case 'Assignments':

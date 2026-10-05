@@ -15,9 +15,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../../../../../constants/theme';
-import { alumniApi } from '../../../../../services/api';
-import { SkeletonCard } from '../../../../../components/ui';
+import { theme } from '../../../../../../constants/theme';
+import { alumniApi } from '../../../../../../services/api';
+import { SkeletonCard } from '../../../../../../components/ui';
 import {
   Avatar,
   StatusChip,
@@ -27,8 +27,8 @@ import {
   RatingRow,
   StarPicker,
   NoData,
-} from '../../../components/MentorCard';
-import { pairStatusMeta, fmtDate, fmtDateTime, fmtDuration, SESSION_MODES } from '../../../mentorshipMeta';
+} from '../../components/MentorCard';
+import { pairStatusMeta, fmtDate, fmtDateTime, fmtDuration, SESSION_MODES } from '../../mentorshipMeta';
 
 const TABS = [
   { id: 'overview', label: 'Overview', icon: 'information-circle-outline' },

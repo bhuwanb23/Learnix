@@ -137,6 +137,18 @@ export const DASHBOARD_DATA = {
       textColor: '#d97706',
       iconColor: '#d97706',
     },
+    // Not a bottom-nav tab: a full screen opened from here (see
+    // `SUB_SCREENS` in dashboard.js). Added because the student side of the
+    // mentorship programme previously had no reachable entry point at all.
+    {
+      id: 'mentorship',
+      label: 'Mentorship',
+      icon: 'people-outline',
+      bgColor: 'rgba(109, 40, 217, 0.15)',
+      hoverBg: 'rgba(109, 40, 217, 0.25)',
+      textColor: '#6d28d9',
+      iconColor: '#6d28d9',
+    },
   ],
 };
 
