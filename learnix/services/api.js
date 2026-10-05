@@ -183,9 +183,45 @@ export const alumniApi = {
     api.post('/alumni/connections', message ? { profileId, message } : { profileId }),
   respondToConnection: (id, action) => api.post(`/alumni/connections/${id}/${action}`),
 
-  events: () => api.get('/alumni/events'),
+  // ── Events ──
+  // `scope` is upcoming | past | mine (the "Registered events" tab). `type` is the
+  // alumni taxonomy (REUNION/NETWORKING/WORKSHOP/WEBINAR/MEETUP) — separate from
+  // the shared `category`, which the student and sports apps also filter on.
+  events: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/alumni/events${qs ? `?${qs}` : ''}`);
+  },
   eventDetail: (id) => api.get(`/alumni/events/${id}`),
+  myRegistrations: () => api.get('/alumni/events/my-registrations'),
+  myAttendance: () => api.get('/alumni/events/my-attendance'),
+  registerForEvent: (id) => api.post(`/alumni/events/${id}/register`),
+  cancelEventRegistration: (id) => api.post(`/alumni/events/${id}/cancel-registration`),
   decideRsvp: (rsvpId, decision) => api.post(`/alumni/rsvps/${rsvpId}/decide`, { decision }),
+  addEventAttendee: (id, payload) => api.post(`/alumni/events/${id}/attendees`, payload),
+  removeEventAttendee: (id, registrationId, reason) =>
+    api.post(`/alumni/events/${id}/attendees/${registrationId}/remove`, { reason }),
+  createEvent: (payload) => api.post('/alumni/events', payload),
+  updateEvent: (id, payload) => api.patch(`/alumni/events/${id}`, payload),
+  addEventScheduleItem: (id, payload) => api.post(`/alumni/events/${id}/schedule`, payload),
+  toggleEventScheduleItem: (itemId, isDone) => api.post(`/alumni/schedule-items/${itemId}/toggle`, { isDone }),
+  markAttendance: (id, registrationIds, method = 'MANUAL') =>
+    api.post(`/alumni/events/${id}/attendance`, { registrationIds, method }),
+  undoAttendance: (id, registrationIds) =>
+    api.post(`/alumni/events/${id}/attendance/undo`, { registrationIds }),
+  // Mock QR check-in — ⚠️ no camera scanner yet, the office enters/pastes the code.
+  qrCheckIn: (id, code) => api.post(`/alumni/events/${id}/checkin`, { code }),
+  eventFeedback: (id) => api.get(`/alumni/events/${id}/feedback`),
+  submitEventFeedback: (id, payload) => api.post(`/alumni/events/${id}/feedback`, payload),
+  deleteEventFeedback: (id) => api.delete(`/alumni/events/${id}/feedback`),
+  eventPhotos: (id) => api.get(`/alumni/events/${id}/photos`),
+  // Multipart: goes through api.upload, NOT api.post — the JSON helper sets
+  // Content-Type without a boundary and multer rejects the file.
+  uploadEventPhoto: (id, formData) => api.upload(`/alumni/events/${id}/photos`, formData),
+  captionEventPhoto: (id, photoId, caption) =>
+    api.patch(`/alumni/events/${id}/photos/${photoId}`, { caption }),
+  deleteEventPhoto: (id, photoId) => api.delete(`/alumni/events/${id}/photos/${photoId}`),
 
   donations: (params = {}) => {
     const qs = new URLSearchParams(
@@ -855,9 +891,52 @@ export const accountsApi = {
   },
   detachExpenseDocument: (expenseId, docId) =>
     api.delete(`/accounts/expenses/${expenseId}/documents/${docId}`),
-  scholarships: () => api.get('/accounts/scholarships'),
-  approveScholarship: (id) => api.post(`/accounts/scholarships/${id}/approve`),
-  disburseScholarship: (id) => api.post(`/accounts/scholarships/${id}/disburse`),
+  // F-08 Scholarships (docs/users/06 §3.7) — the whole desk.
+  //
+  // The old three calls (`scholarships`, `approveScholarship`,
+  // `disburseScholarship`) are gone rather than kept as aliases: they pointed at
+  // an award-shaped API whose `approve` was a no-op and whose `disburse` booked a
+  // Payment instead of crediting the student's dues. Nothing else in the app
+  // called them.
+  scholarshipCatalogue: () => api.get('/accounts/scholarships/catalogue'),
+  scholarships: (params) => {
+    const qs = new URLSearchParams();
+    if (params?.status && params.status !== 'ALL') qs.set('status', params.status);
+    if (params?.type) qs.set('type', params.type);
+    if (params?.q) qs.set('q', params.q);
+    const suffix = qs.toString();
+    return api.get(`/accounts/scholarships${suffix ? `?${suffix}` : ''}`);
+  },
+  saveScholarship: (payload) => (payload.id ? api.put(`/accounts/scholarships/${payload.id}`, payload) : api.post('/accounts/scholarships', payload)),
+  scholarshipDetail: (schemeId) => api.get(`/accounts/scholarships/${schemeId}`),
+  previewScholarship: (schemeId, studentProfileId) =>
+    api.get(`/accounts/scholarships/${schemeId}/preview/${studentProfileId}`),
+  scholarshipApplications: (params) => {
+    const qs = new URLSearchParams();
+    if (params?.status && params.status !== 'ALL') qs.set('status', params.status);
+    if (params?.schemeId) qs.set('schemeId', params.schemeId);
+    if (params?.studentProfileId) qs.set('studentProfileId', params.studentProfileId);
+    if (params?.q) qs.set('q', params.q);
+    const suffix = qs.toString();
+    return api.get(`/accounts/scholarships/applications${suffix ? `?${suffix}` : ''}`);
+  },
+  applicationDetail: (id) => api.get(`/accounts/scholarships/applications/${id}`),
+  applyScholarship: (payload) => api.post('/accounts/scholarships/applications', payload),
+  startReview: (id, note) => api.post(`/accounts/scholarships/applications/${id}/review`, { note: note ?? null }),
+  approveScholarship: (id, note) => api.post(`/accounts/scholarships/applications/${id}/approve`, { note: note ?? null }),
+  rejectScholarship: (id, reason) => api.post(`/accounts/scholarships/applications/${id}/reject`, { reason }),
+  withdrawScholarship: (id, note) => api.post(`/accounts/scholarships/applications/${id}/withdraw`, { note: note ?? null }),
+  disburseScholarship: (id, payload) => api.post(`/accounts/scholarships/applications/${id}/disburse`, payload ?? {}),
+  reverseDisbursement: (id, reason) => api.post(`/accounts/scholarships/applications/${id}/reverse`, { reason }),
+  markScholarshipDocument: (id, code, payload) => api.post(`/accounts/scholarships/applications/${id}/documents/${code}`, payload),
+  uploadScholarshipDocument: (id, code, formData) => {
+    const fd = new FormData();
+    fd.append('file', { uri: formData.uri, name: formData.name, type: formData.type });
+    return api.upload(`/accounts/scholarships/applications/${id}/documents/${code}/upload`, fd);
+  },
+  scholarshipTracking: () => api.get('/accounts/scholarships/tracking'),
+  studentScholarshipHistory: (studentProfileId) =>
+    api.get(`/accounts/scholarships/students/${studentProfileId}/history`),
   reports: () => api.get('/accounts/reports'),
   notifications: () => api.get('/accounts/notifications'),
   markAllRead: () => api.post('/accounts/notifications/read-all'),

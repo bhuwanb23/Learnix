@@ -64,6 +64,13 @@ import Vendors from './pages/expenses/pages/vendors/vendors';
 import DepartmentSpend from './pages/expenses/pages/department_spend/department_spend';
 import ExpenseTrends from './pages/expenses/pages/trends/trends';
 import ScholarshipsModule from './pages/scholarships/scholarships';
+import ScholarshipApplications from './pages/scholarships/pages/applications/applications';
+import ScholarshipApplication from './pages/scholarships/pages/application/application';
+import ScholarshipDetail from './pages/scholarships/pages/detail/detail';
+import ScholarshipDocuments from './pages/scholarships/pages/documents/documents';
+import ScholarshipTracking from './pages/scholarships/pages/tracking/tracking';
+import ScholarshipStudentHistory from './pages/scholarships/pages/student_history/student_history';
+import ScholarshipApply from './pages/scholarships/pages/apply/apply';
 import ReportsModule from './pages/reports/reports';
 import NotificationsScreen from './pages/notifications/notifications';
 
@@ -88,6 +95,15 @@ const FEATURE_MODULES = {
   FeeStructureConcessions: { title: 'Concession Rules', icon: 'ribbon-outline', component: FeeStructureConcessions },
   FeeStructureInstallments: { title: 'Instalment Plan', icon: 'calendar-outline', component: FeeStructureInstallments },
   FeeStructurePenalties: { title: 'Late Fee on Fees', icon: 'shield-checkmark-outline', component: FeeStructurePenalties },
+
+  // Scholarships sub-pages (docs §3.7)
+  ScholarshipApplications: { title: 'Applications', icon: 'document-text-outline', component: ScholarshipApplications },
+  ScholarshipApplication: { title: 'Application', icon: 'document-text-outline', component: ScholarshipApplication },
+  ScholarshipDetail: { title: 'Scheme', icon: 'ribbon-outline', component: ScholarshipDetail },
+  ScholarshipDocuments: { title: 'Document Desk', icon: 'folder-open-outline', component: ScholarshipDocuments },
+  ScholarshipTracking: { title: 'Scholarship Amounts', icon: 'stats-chart-outline', component: ScholarshipTracking },
+  ScholarshipStudentHistory: { title: 'Student Scholarships', icon: 'person-outline', component: ScholarshipStudentHistory },
+  ScholarshipApply: { title: 'Record Application', icon: 'add-circle-outline', component: ScholarshipApply },
 
   // Collections sub-pages
   CollectPayment: { title: 'Collect Payment', icon: 'add-circle-outline', component: CollectPayment },
