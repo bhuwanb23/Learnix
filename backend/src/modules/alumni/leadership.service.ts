@@ -355,8 +355,12 @@ export async function createInitiative(
 
   // Officers and the office own a chapter's initiatives; any member proposing
   // one is a different feature (proposals) and would need its own workflow.
-  if (!viewer.isOffice && !isOfficer(viewer, chapterId)) {
-    throw unprocessable('Only chapter officers can create an initiative');
+  //
+  // `await` is load-bearing here. isOfficer() is async, and `!promise` is always
+  // false — so without it this whole condition collapsed to `false` and the
+  // check silently permitted ANY graduate to create an initiative in ANY chapter.
+  if (!viewer.isOffice && !(await isOfficer(viewer, chapterId))) {
+    throw forbidden('Only chapter officers can create an initiative');
   }
 
   const ownerUserId = await resolveMemberUserId(viewer.institutionId, body.ownerProfileId);
@@ -410,8 +414,8 @@ export async function updateInitiative(
   });
   if (!chapter) throw notFound('Chapter not found');
 
-  if (!viewer.isOffice && !isOfficer(viewer, chapterId)) {
-    throw unprocessable('Only chapter officers can update an initiative');
+  if (!viewer.isOffice && !(await isOfficer(viewer, chapterId))) {
+    throw forbidden('Only chapter officers can update an initiative');
   }
 
   const existing = await prisma.alumniChapterInitiative.findFirst({
@@ -446,11 +450,24 @@ export async function updateInitiative(
     after: { status: updated.status, achievedCount: updated.achievedCount },
   });
 
+  // Returns the same computed fields the list endpoint returns for an item, so
+  // a client can render the updated card from the PATCH response alone. Returning
+  // a narrower shape here meant the UI had to re-fetch just to draw a progress
+  // bar it had already changed.
   return {
     id: updated.id,
+    title: updated.title,
+    category: updated.category,
     status: updated.status,
+    description: updated.description,
     achievedCount: updated.achievedCount,
     targetCount: updated.targetCount,
+    percent:
+      updated.targetCount && updated.targetCount > 0
+        ? Math.min(100, Math.round((updated.achievedCount / updated.targetCount) * 100))
+        : null,
+    startDate: updated.startDate,
+    targetDate: updated.targetDate,
     completedAt: updated.completedAt,
   };
 }

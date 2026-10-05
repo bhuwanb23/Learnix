@@ -28,8 +28,19 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable, badRequest } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
-import { computeSalary, daysInMonth, currentMonth, assertMonth } from './payroll.rules.js';
+import { daysInMonth, currentMonth, assertMonth } from './payroll.rules.js';
 import type { SalaryLine } from './payroll.rules.js';
+import { computeIncomeTax } from './payroll.tax.js';
+import {
+  computeFromComponents,
+  defaultComponents,
+  taxableOfLines,
+  tdsOfLines,
+  salaryInForce,
+  loanRecoveryDue,
+  lopDaysFor,
+  type ComponentSpec,
+} from './payroll.structure.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
 
@@ -64,6 +75,8 @@ const parseLines = (json: string): SalaryLine[] => {
 
 type EntryRow = {
   id: string;
+  salaryRecordId?: string | null;
+  payslip?: { id: string; originalName: string; mimeType: string; sizeBytes: number; storageKey: string } | null;
   payrollRunId: string;
   staffUserId: string;
   employeeNo: string | null;
@@ -105,6 +118,18 @@ const shapeEntry = (e: EntryRow, staffName: string, month?: string) => ({
   paidAt: e.paidAt,
   paidByUserId: e.paidByUserId,
   paymentRef: e.paymentRef,
+  salaryRecordId: e.salaryRecordId ?? null,
+  // A payslip is only "generated" if a File row exists AND bytes are on disk, so
+  // the desk can see which of these still need producing.
+  hasPayslip: !!e.payslip,
+  payslip: e.payslip
+    ? {
+        id: e.payslip.id,
+        originalName: e.payslip.originalName,
+        sizeBytes: e.payslip.sizeBytes,
+        url: `/uploads/${e.payslip.storageKey}`,
+      }
+    : null,
 });
 
 /**
@@ -181,7 +206,7 @@ export const PAYROLL_ACTIONS = {
 export async function listPayroll(institutionId: string) {
   const runs = (await prisma.payrollRun.findMany({
     where: { institutionId },
-    include: { entries: { orderBy: { netMinor: 'desc' } } },
+    include: { entries: { orderBy: { netMinor: 'desc' }, include: { payslip: true } } },
     orderBy: { month: 'desc' },
   })) as RunRow[];
 
@@ -311,11 +336,13 @@ export async function listPayroll(institutionId: string) {
   };
 }
 
+
+
 // ── Run detail ─────────────────────────────────────────────────────────────
 export async function getPayrollRun(institutionId: string, runId: string) {
   const run = (await prisma.payrollRun.findFirst({
     where: { id: runId, institutionId },
-    include: { entries: { orderBy: { netMinor: 'desc' } } },
+    include: { entries: { orderBy: { netMinor: 'desc' }, include: { payslip: true } } },
   })) as RunRow | null;
   if (!run) throw notFound('Payroll run not found');
 
@@ -398,11 +425,20 @@ export async function getPayrollRun(institutionId: string, runId: string) {
 export async function getPayslip(institutionId: string, entryId: string) {
   const entry = await prisma.payrollEntry.findFirst({
     where: { id: entryId, payrollRun: { institutionId } },
-    include: { payrollRun: true },
+    include: { payrollRun: true, payslip: true },
   });
   if (!entry) throw notFound('Payslip not found');
 
   const names = await staffNames([entry.staffUserId, entry.paidByUserId, entry.payrollRun.runByUserId].filter(Boolean) as string[]);
+  // The attendance the loss-of-pay line was actually derived from — the payslip
+  // must be able to say WHY, or the number is just an assertion.
+  const attendance = await lopDaysFor(institutionId, entry.staffUserId, entry.payrollRun.month);
+  const salary = entry.salaryRecordId
+    ? await prisma.staffSalaryRecord.findFirst({
+        where: { id: entry.salaryRecordId, institutionId },
+        include: { components: { orderBy: { sequence: 'asc' } } },
+      })
+    : null;
 
   // What this person has been paid, month by month — the number they actually
   // care about, and the one a payslip alone cannot tell them.
@@ -446,6 +482,20 @@ export async function getPayslip(institutionId: string, entryId: string) {
       paidRupees: toRupees(ytd.filter((h) => h.status === 'PAID').reduce((s, h) => s + h.netMinor, 0)),
       lopDays: ytd.reduce((s, h) => s + h.lopDays, 0),
     },
+    attendance: {
+      lopDays: entry.lopDays,
+      basis: attendance.basis,
+      source: attendance.source,
+    },
+    salary: salary
+      ? {
+          id: salary.id,
+          monthlyGrossRupees: toRupees(salary.monthlyGrossMinor),
+          effectiveFrom: salary.effectiveFrom.toISOString().slice(0, 10),
+          reason: salary.reason,
+          components: salary.components.map((c) => ({ code: c.code, label: c.label, kind: c.kind })),
+        }
+      : null,
   };
 }
 
@@ -477,29 +527,109 @@ export async function runPayroll(
     include: { user: { select: { id: true } } },
   });
   const deptNames = await departmentNames(staff.map((s) => s.departmentId));
-  const payable = staff.filter((s) => s.monthlyGrossMinor > 0);
-  if (!payable.length) {
-    throw unprocessable('No staff have a salary on record — set a monthly gross before running payroll');
-  }
-  const skipped = staff.length - payable.length;
+  const dim = daysInMonth(month);
 
-  const entries = payable.map((s) => {
-    const c = computeSalary(s.monthlyGrossMinor, month);
-    return {
+  // Every payable person is priced from the salary version IN FORCE this month.
+  // `StaffProfile.monthlyGrossMinor` is only a fallback for staff who predate the
+  // salary-record table, so a seeded institution keeps running while every new
+  // raise goes through the versioned record.
+  const priced: {
+    staffUserId: string;
+    employeeNo: string;
+    designation: string | null;
+    departmentName: string | null;
+    bankAccountLast4: string | null;
+    salaryRecordId: string | null;
+    grossMinor: number;
+    deductionsMinor: number;
+    netMinor: number;
+    lopDays: number;
+    earningsJson: string;
+    deductionsJson: string;
+  }[] = [];
+  let skipped = 0;
+
+  for (const s of staff) {
+    const record = await salaryInForce(institutionId, s.user.id, month);
+    const grossMinor = record?.monthlyGrossMinor ?? s.monthlyGrossMinor;
+    if (grossMinor <= 0) {
+      skipped += 1;
+      continue;
+    }
+    const specs: ComponentSpec[] = record
+      ? record.components.map((c) => ({
+          code: c.code,
+          label: c.label,
+          percentOf: (c.percentOf as ComponentSpec['percentOf']) ?? null,
+          percent: c.percent,
+          amountMinor: c.amountMinor,
+          isTaxable: c.isTaxable,
+          sequence: c.sequence,
+        }))
+      : defaultComponents(grossMinor);
+
+    // Loss of pay comes from the saved attendance summary, not a typed number.
+    const att = await lopDaysFor(institutionId, s.user.id, month);
+    // TDS is a YEAR-to-date liability, so it needs the months already collected.
+    const prior = await prisma.payrollEntry.findMany({
+      where: { staffUserId: s.user.id, payrollRun: { institutionId, month: { lte: month } } },
+      include: { payrollRun: { select: { month: true } } },
+      orderBy: { payrollRun: { month: 'asc' } },
+    });
+    const year = month.slice(0, 4);
+    const priorMonths = prior.filter((e) => e.payrollRun.month.startsWith(year) && e.payrollRun.month < month);
+    const ytdTdsMinor = priorMonths.reduce((sum, e) => sum + tdsOfLines(e.deductionsJson), 0);
+
+    // TDS is computed on income earned UP TO AND INCLUDING this month, not up to
+    // the month before. Using only prior months means the very first month an
+    // institution runs payroll through this module collects no tax at all, and
+    // the liability keeps one month behind for the whole year.
+    const untaxed = computeFromComponents({
+      grossMinor,
+      month,
+      components: specs,
+      daysInMonth: dim,
+      lopDays: att.lopDays,
+      taxMinor: 0,
+      loanMinor: 0,
+    });
+    const ytdTaxableMinor =
+      priorMonths.reduce((sum, e) => sum + taxableOfLines(e.earningsJson), 0) + untaxed.taxableMinor;
+    const tax = computeIncomeTax({ ytdGrossMinor: ytdTaxableMinor, ytdTdsMinor }, month);
+
+    const loans = await loanRecoveryDue(institutionId, s.user.id, month);
+    const loanMinor = loans.reduce((sum, l) => sum + l.amountMinor, 0);
+
+    const c = computeFromComponents({
+      grossMinor,
+      month,
+      components: specs,
+      daysInMonth: dim,
+      lopDays: att.lopDays,
+      taxMinor: tax.monthlyTdsMinor,
+      loanMinor,
+    });
+
+    priced.push({
       staffUserId: s.user.id,
       employeeNo: s.employeeNo,
       designation: s.designation,
       departmentName: deptNames.get(s.departmentId ?? '') ?? null,
       bankAccountLast4: s.bankAccountLast4,
+      salaryRecordId: record?.id ?? null,
       grossMinor: c.grossMinor,
       deductionsMinor: c.deductionsMinor,
       netMinor: c.netMinor,
-      lopDays: 0,
-      earningsJson: JSON.stringify(c.earnings),
-      deductionsJson: JSON.stringify(c.deductions),
-      status: 'PENDING',
-    };
-  });
+      lopDays: c.lopDays,
+      earningsJson: JSON.stringify(c.earnings.map((l) => ({ label: l.label, amountMinor: l.amountMinor }))),
+      deductionsJson: JSON.stringify(c.deductions.map((l) => ({ label: l.label, amountMinor: l.amountMinor }))),
+    });
+  }
+
+  if (!priced.length) {
+    throw unprocessable('No staff have a salary on record — set a monthly gross before running payroll');
+  }
+  const entries = priced;
 
   const run = await prisma.payrollRun.create({
     data: {
@@ -586,13 +716,82 @@ export async function adjustPayrollEntry(
     throw badRequest(`A month has at most ${daysInMonth(entry.payrollRun.month)} days`);
   }
 
+  const month = entry.payrollRun.month;
   const before = { grossMinor: entry.grossMinor, deductionsMinor: entry.deductionsMinor, netMinor: entry.netMinor, lopDays: entry.lopDays };
-  const c = computeSalary(entry.grossMinor, entry.payrollRun.month, lopDays);
+
+  // Re-price from the SAME components the run was built from, so an adjustment
+  // can never change the earnings lines — only the loss of pay. Repricing the
+  // whole salary here is how an approved-then-edited draft drifts away from what
+  // the approver saw.
+  const record = entry.salaryRecordId
+    ? await prisma.staffSalaryRecord.findFirst({
+        where: { id: entry.salaryRecordId, institutionId },
+        include: { components: { orderBy: { sequence: 'asc' } } },
+      })
+    : await salaryInForce(institutionId, entry.staffUserId, month);
+
+  const specs: ComponentSpec[] = record
+    ? record.components.map((c) => ({
+        code: c.code,
+        label: c.label,
+        percentOf: (c.percentOf as ComponentSpec['percentOf']) ?? null,
+        percent: c.percent,
+        amountMinor: c.amountMinor,
+        isTaxable: c.isTaxable,
+        sequence: c.sequence,
+      }))
+    : defaultComponents(entry.grossMinor);
+
+  const att = await lopDaysFor(institutionId, entry.staffUserId, month);
+  const loans = await loanRecoveryDue(institutionId, entry.staffUserId, month);
+  const loanMinor = loans.reduce((sum, l) => sum + l.amountMinor, 0);
+  const prior = await prisma.payrollEntry.findMany({
+    where: { staffUserId: entry.staffUserId, payrollRun: { institutionId, month: { lt: month } } },
+    include: { payrollRun: { select: { month: true } } },
+  });
+  const year = month.slice(0, 4);
+  const priorMonths = prior.filter((e) => e.payrollRun.month.startsWith(year));
+  // Same "including this month" rule as runPayroll, so an adjustment never
+  // re-prices the tax differently from the run it belongs to.
+  const untaxed = computeFromComponents({
+    grossMinor: entry.grossMinor,
+    month,
+    components: specs,
+    daysInMonth: daysInMonth(month),
+    lopDays,
+    taxMinor: 0,
+    loanMinor: 0,
+  });
+  const tax = computeIncomeTax(
+    {
+      ytdGrossMinor:
+        priorMonths.reduce((sum, e) => sum + taxableOfLines(e.earningsJson), 0) + untaxed.taxableMinor,
+      ytdTdsMinor: priorMonths.reduce((sum, e) => sum + tdsOfLines(e.deductionsJson), 0),
+    },
+    month,
+  );
+
+  const c = computeFromComponents({
+    grossMinor: entry.grossMinor,
+    month,
+    components: specs,
+    daysInMonth: daysInMonth(month),
+    lopDays,
+    taxMinor: tax.monthlyTdsMinor,
+    loanMinor,
+  });
   if (c.lopDays !== lopDays) {
     throw unprocessable(
       `Loss of pay capped at ${c.lopDays} days — beyond that the deductions would exceed the gross`,
     );
   }
+
+  // The entry keeps its payslip lines, but a LOAN line is only truthful once the
+  // recovery is actually posted — otherwise the slip claims a deduction that no
+  // loan table row backs.
+  const earningsJson = entry.earningsJson === '[]'
+    ? JSON.stringify(c.earnings.map((l) => ({ label: l.label, amountMinor: l.amountMinor })))
+    : entry.earningsJson;
 
   await prisma.payrollEntry.update({
     where: { id: entry.id },
@@ -600,8 +799,8 @@ export async function adjustPayrollEntry(
       lopDays,
       deductionsMinor: c.deductionsMinor,
       netMinor: c.netMinor,
-      earningsJson: JSON.stringify(c.earnings),
-      deductionsJson: JSON.stringify(c.deductions),
+      earningsJson,
+      deductionsJson: JSON.stringify(c.deductions.map((l) => ({ label: l.label, amountMinor: l.amountMinor }))),
       note: input.note === undefined ? entry.note : input.note?.trim() || null,
     },
   });
@@ -614,10 +813,25 @@ export async function adjustPayrollEntry(
     entityType: 'PayrollRun',
     entityId: entry.payrollRunId,
     before,
-    after: { lopDays, deductionsMinor: c.deductionsMinor, netMinor: c.netMinor, runNetMinor: totals.netMinor },
+    after: {
+      lopDays,
+      deductionsMinor: c.deductionsMinor,
+      netMinor: c.netMinor,
+      runNetMinor: totals.netMinor,
+      attendanceSource: att.source,
+      loanRecoveryMinor: loanMinor,
+    },
   });
 
-  return { id: entry.id, lopDays, deductionsMinor: c.deductionsMinor, netMinor: c.netMinor, runNetMinor: totals.netMinor };
+  return {
+    id: entry.id,
+    lopDays,
+    deductionsMinor: c.deductionsMinor,
+    netMinor: c.netMinor,
+    runNetMinor: totals.netMinor,
+    deductions: c.deductions.map((d) => ({ label: d.label, amountRupees: Math.round(d.amountMinor / 100) })),
+    warnings: c.warnings,
+  };
 }
 
 async function settleEntry(

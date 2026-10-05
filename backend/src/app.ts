@@ -1,5 +1,4 @@
 import express from 'express';
-import path from 'node:path';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
@@ -17,6 +16,8 @@ import hostelRoutes from './modules/hostel/hostel.routes.js';
 import libraryRoutes from './modules/library/library.routes.js';
 import accountsRoutes from './modules/accounts/accounts.routes.js';
 import feeStructureRoutes from './modules/accounts/feestructure.routes.js';
+import payrollStructureRoutes from './modules/accounts/payroll.structure.routes.js';
+import { UPLOAD_DIR } from './modules/accounts/expenses.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -49,12 +50,16 @@ export function createApp() {
 
   app.use(compression());
   app.use(express.json({ limit: '2mb' }));
-  // Expense receipts are served from here. In production this would be signed
-  // object-storage URLs; the `File.storageKey` → path mapping is the same either
-  // way, so only this line changes.
+  // Expense receipts and generated payslips are served from here. In production
+  // this would be signed object-storage URLs; the `File.storageKey` → path
+  // mapping is the same either way, so only this line changes.
+  //
+  // The directory is imported, not re-derived: the writers (expense uploads,
+  // payslip generation) and this reader must agree byte for byte, and two
+  // copies of the same `?? path.join(...)` default is exactly how they drift.
   app.use(
     '/uploads',
-    express.static(process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'uploads'), {
+    express.static(UPLOAD_DIR, {
       index: false,
       dotfiles: 'deny',
       maxAge: '1h',
@@ -111,12 +116,18 @@ export function createApp() {
   app.use('/api/v1/transport', transportRoutes);
   app.use('/api/v1/hostel', hostelRoutes);
   app.use('/api/v1/library', libraryRoutes);
-  app.use('/api/v1/accounts', accountsRoutes);
-  // Fee structure (docs §3.5) has its own router so its literal sub-resource
-  // paths stay ahead of `/fee-structures/:id`. Mounted AFTER accountsRoutes
-  // because its paths are more specific; it deliberately still answers the
-  // legacy singular `/fee-structure` alias.
+  // The payroll salary desk is mounted BEFORE accountsRoutes, and that ordering
+  // is load-bearing rather than cosmetic: accountsRoutes owns `/payroll/:id`,
+  // so if it ran first, `/payroll/alerts` would be read as a run with the id
+  // "alerts" and 404 — and so would `/payroll/components` and
+  // `/payroll/entries/:id/payslip`. Express matches by mount order, so the
+  // router with the literal sub-paths has to be registered first.
+  app.use('/api/v1/accounts', payrollStructureRoutes);
+  // Fee structure (docs §3.5) keeps the same shape for the same reason: its
+  // literal sub-resource paths must stay ahead of `/fee-structures/:id`, and
+  // it deliberately still answers the legacy singular `/fee-structure` alias.
   app.use('/api/v1/accounts', feeStructureRoutes);
+  app.use('/api/v1/accounts', accountsRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);

@@ -27,6 +27,7 @@ import {
   initiativesQuerySchema,
   officersQuerySchema,
   removeMemberSchema,
+  addMemberSchema,
 } from './alumni.schemas.js';
 import * as service from './alumni.service.js';
 import * as directory from './directory.service.js';
@@ -109,7 +110,11 @@ router.get(
   '/me',
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json({ data: await directory.getMyProfile(viewer) });
+    const profile = await directory.getMyProfile(viewer);
+    // The chapters screen needs to know, on its own landing, whether this
+    // graduate is already in a chapter and which one. Without this the Join
+    // button has to be discovered by opening every chapter in turn.
+    res.json({ data: { ...profile, chapterContext: await membership.getMyChapterContext(viewer) } });
   }),
 );
 
@@ -228,6 +233,23 @@ router.post(
     const viewer = await viewerFor(req);
     res.json({
       data: await membership.removeMember(
+        viewer,
+        String(req.params.id),
+        req.body.profileId,
+        req.body.reason,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/chapters/:id/members',
+  validate(idParamSchema, 'params'),
+  validate(addMemberSchema),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.status(201).json({
+      data: await membership.addMember(
         viewer,
         String(req.params.id),
         req.body.profileId,

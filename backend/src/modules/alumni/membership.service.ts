@@ -241,6 +241,72 @@ export async function joinChapter(viewer: Viewer, chapterId: string) {
   return { id: chapterId, city: chapter.city, joined: true, memberCount };
 }
 
+/**
+ * Office-side enrolment — the counterpart to removeMember.
+ *
+ * joinChapter() tells the office to "add members on their behalf", and
+ * removeMember() leaves a hole with no way to fill it, but no route existed for
+ * it: a graduate can only join a chapter they are already free to join, and the
+ * office cannot join at all. So a chapter could only ever be populated by
+ * graduates acting for themselves.
+ *
+ * Moving someone who already belongs to a chapter is REFUSED rather than done
+ * silently: both chapters' participation metrics are derived from membership, and
+ * a quiet move would leave the old chapter's numbers stale unless every consumer
+ * remembered to recompute. The office removes with a reason, then adds — two
+ * auditable steps.
+ */
+export async function addMember(
+  viewer: Viewer,
+  chapterId: string,
+  profileId: string,
+  reason?: string,
+) {
+  if (!viewer.isOffice) throw forbidden('Only the Alumni Relations Office can enrol a chapter member');
+
+  const chapter = await chapterOr404(viewer.institutionId, chapterId);
+  const member = await prisma.alumniProfile.findFirst({
+    where: { id: profileId, institutionId: viewer.institutionId },
+    select: {
+      id: true,
+      userId: true,
+      chapterId: true,
+      engagementStatus: true,
+      user: { select: { fullName: true } },
+    },
+  });
+  if (!member) throw notFound('Alumni profile not found');
+  if (member.engagementStatus !== 'ACTIVE') {
+    throw unprocessable(`${member.user.fullName} is not an active alumnus and cannot join a chapter`);
+  }
+  if (member.chapterId === chapterId) {
+    throw conflict(`${member.user.fullName} is already a member of the ${chapter.city} chapter`);
+  }
+  if (member.chapterId) {
+    const current = await prisma.alumniChapter.findFirst({
+      where: { id: member.chapterId, institutionId: viewer.institutionId },
+      select: { city: true },
+    });
+    throw conflict(
+      `${member.user.fullName} already belongs to the ${current?.city ?? 'another'} chapter — remove them there first`,
+    );
+  }
+
+  await prisma.alumniProfile.update({ where: { id: member.id }, data: { chapterId } });
+  const memberCount = await recomputeMemberCount(chapterId, viewer.institutionId);
+
+  await writeAudit({
+    actorUserId: viewer.userId,
+    institutionId: viewer.institutionId,
+    action: 'chapter.member.add',
+    entityType: 'AlumniChapter',
+    entityId: chapterId,
+    after: { member: member.user.fullName, chapter: chapter.city, reason: reason ?? null },
+  });
+
+  return { chapterId, chapter: chapter.city, member: member.user.fullName, memberCount };
+}
+
 export async function leaveChapter(viewer: Viewer, chapterId: string) {
   if (viewer.isOffice) throw unprocessable('The Alumni Relations Office is not a chapter member');
 
@@ -366,6 +432,8 @@ export async function getMyChapterContext(viewer: Viewer) {
     officerRoles: myOfficerRoles,
     // The office cannot join, so the UI must not offer it.
     canJoin: !viewer.isOffice && me.engagementStatus === 'ACTIVE' && chapter === null,
-    canLeave: !viewer.isOffice && chapter !== null && !myOfficerRoles.includes('PRESIDENT'),
+    // leaveChapter refuses every current officer, not just the president, so the
+    // button is withheld from all of them.
+    canLeave: !viewer.isOffice && chapter !== null && myOfficerRoles.length === 0,
   };
 }

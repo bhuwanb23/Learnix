@@ -8,6 +8,8 @@
 // a perfectly good screen — the exact bug the dues desk already had to be taught
 // twice.
 import { Router, type Request, type Response } from 'express';
+import { auth } from '../../middlewares/auth.js';
+import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   idParamSchema,
@@ -27,6 +29,11 @@ import {
 import * as fs from './feestructure.service.js';
 
 const router = Router();
+
+// Own auth, same reason as the payroll salary desk: this router is mounted as a
+// sibling of `accountsRoutes`, and anything that reorders those mounts must not
+// silently leave this one unauthenticated.
+router.use(auth, requireRole('ACCOUNTS', 'ADMIN'));
 
 const wrap =
   (fn: (req: Request, res: Response) => Promise<void>) =>

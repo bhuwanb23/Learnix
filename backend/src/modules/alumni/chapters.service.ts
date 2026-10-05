@@ -230,9 +230,11 @@ export async function getChapterDetail(institutionId: string, chapterId: string,
 
   // What the CALLER may do. Returned even when viewer is undefined (an internal
   // call), in which case everything privileged is false.
-  const myOfficerRow = viewer
-    ? officers.find((o) => o.alumniUserId === viewer.userId)
-    : undefined;
+  // The officers query is already scoped to isCurrent, so every row here is a
+  // live seat. One person can legitimately hold two seats (e.g. President and
+  // Treasurer), so collect all of them rather than the first match.
+  const myOfficerRows = viewer ? officers.filter((o) => o.alumniUserId === viewer.userId) : [];
+  const myOfficerRoles = myOfficerRows.map((o) => o.role);
   const myProfile = viewer
     ? await prisma.alumniProfile.findFirst({
         where: { userId: viewer.userId, institutionId },
@@ -243,22 +245,25 @@ export async function getChapterDetail(institutionId: string, chapterId: string,
   const viewerContext = {
     isOffice: viewer?.isOffice ?? false,
     isMember: myProfile?.chapterId === chapter.id,
-    isOfficer: !!myOfficerRow,
-    isPresident: myOfficerRow?.role === 'PRESIDENT',
-    officerRoles: myOfficerRow ? [myOfficerRow.role] : [],
+    isOfficer: myOfficerRoles.length > 0,
+    isPresident: myOfficerRoles.includes('PRESIDENT'),
+    officerRoles: myOfficerRoles,
     // The office cannot join a chapter, so it must never be offered the button.
     canJoin:
       !!viewer && !viewer.isOffice && myProfile?.engagementStatus === 'ACTIVE' && myProfile?.chapterId !== chapter.id,
-    // A president cannot leave: that would vacate the seat.
+    // leaveChapter rejects ANY current officer, because a member who still
+    // holds a seat cannot be removed from the roster. Offering the button to a
+    // secretary or treasurer and then returning 422 would read as a broken app,
+    // so the rule is mirrored here: resign first, then leave.
     canLeave:
       !!viewer &&
       !viewer.isOffice &&
       myProfile?.chapterId === chapter.id &&
-      myOfficerRow?.role !== 'PRESIDENT',
+      myOfficerRoles.length === 0,
     canPost:
-      !!viewer && (viewer.isOffice || officers.some((o) => o.alumniUserId === viewer.userId)),
+      !!viewer && (viewer.isOffice || myOfficerRoles.length > 0),
     canManageOfficers: viewer?.isOffice ?? false,
-    canManageInitiatives: !!viewer && (viewer.isOffice || !!myOfficerRow),
+    canManageInitiatives: !!viewer && (viewer.isOffice || myOfficerRoles.length > 0),
   };
 
   return {

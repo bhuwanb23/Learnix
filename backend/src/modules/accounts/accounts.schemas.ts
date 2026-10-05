@@ -456,3 +456,107 @@ export const versionParamSchema = z
 export const concessionParamSchema = z
   .object({ id: z.string().min(1).max(64), concessionId: z.string().min(1).max(64) })
   .strict();
+
+// ── F-06 Payroll, part 2: the salary desk ──────────────────────────────────
+//
+// Every WRITE schema here is `.strict()`. That is the same rule the dues and
+// expenses desks follow: a misnamed money field (`grossRupees` instead of
+// `monthlyGrossRupees`) must be a 400 the caller can read, not a silently
+// dropped key that leaves the salary at its old value and reports success.
+
+export const COMPONENT_KIND_ENUM = z.enum(['EARNING', 'DEDUCTION']);
+export const COMPONENT_BASE_ENUM = z.enum(['BASIC', 'GROSS']);
+export const LOAN_KIND_ENUM = z.enum(['LOAN', 'ADVANCE']);
+
+/** One allowance or deduction RULE — a percentage of a named base, or a flat sum. */
+export const payComponentSchema = z
+  .object({
+    code: z.string().trim().min(1).max(40),
+    label: z.string().trim().max(80).optional().nullable(),
+    percentOf: COMPONENT_BASE_ENUM.nullable().optional(),
+    percent: z.number().int().min(0).max(500).nullable().optional(),
+    amountRupees: z.number().int().min(0).max(100000000).nullable().optional(),
+    isTaxable: z.boolean().optional(),
+    sequence: z.number().int().min(0).max(50).optional(),
+  })
+  .strict()
+  .refine(
+    (c) => (c.percentOf && c.percent !== null && c.percent !== undefined) || c.amountRupees !== undefined || c.amountRupees === 0 || c.percent !== undefined,
+    { message: 'A component needs either a percentage of a base or a flat amount' },
+  );
+
+/** Raise or set a salary: opens the next version, closes the one in force. */
+export const saveSalaryRecordSchema = z
+  .object({
+    monthlyGrossRupees: z.number().int().min(1).max(100000000),
+    effectiveFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
+    reason: z.string().trim().max(120).optional().nullable(),
+    note: z.string().trim().max(400).optional().nullable(),
+    components: z.array(payComponentSchema).max(20).optional(),
+  })
+  .strict();
+
+export const replacePayComponentsSchema = z
+  .object({ components: z.array(payComponentSchema).min(1).max(20) })
+  .strict();
+
+export const salaryRecordParamSchema = z.object({ salaryRecordId: z.string().min(1).max(64) }).strict();
+export const staffParamSchema = z.object({ staffUserId: z.string().min(1).max(64) }).strict();
+export const loanParamSchema = z.object({ loanId: z.string().min(1).max(64) }).strict();
+
+export const grantLoanSchema = z
+  .object({
+    kind: LOAN_KIND_ENUM,
+    label: z.string().trim().min(2).max(80),
+    principalRupees: z.number().int().min(1).max(100000000),
+    installmentRupees: z.number().int().min(0).max(100000000).optional(),
+    grantedMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM'),
+    note: z.string().trim().max(300).optional().nullable(),
+  })
+  .strict();
+
+export const loanRecoverySchema = z
+  .object({
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM'),
+    amountRupees: z.number().int().min(1).max(100000000),
+    note: z.string().trim().max(300).optional().nullable(),
+  })
+  .strict();
+
+export const cancelLoanSchema = z
+  .object({ reason: z.string().trim().max(300).optional().nullable() })
+  .strict();
+
+export const attendanceSchema = z
+  .object({
+    workingDays: z.number().int().min(1).max(31),
+    presentDays: z.number().int().min(0).max(31).optional(),
+    paidLeaveDays: z.number().int().min(0).max(31).optional(),
+    unpaidLeaveDays: z.number().int().min(0).max(31).optional(),
+    lopDays: z.number().int().min(0).max(31).optional(),
+    note: z.string().trim().max(300).optional().nullable(),
+  })
+  .strict();
+
+export const attendanceQuerySchema = z
+  .object({
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM').optional(),
+    workingDays: z.coerce.number().int().min(1).max(31).optional(),
+  })
+  .strict();
+
+// The month travels as a query param on the attendance PUT so the body stays the
+// attendance itself, rather than mixing a routing field into the payload.
+export const attendanceMonthQuerySchema = z
+  .object({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM') })
+  .strict();
+
+export const staffMonthQuerySchema = z
+  .object({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM').optional() })
+  .strict();
+
+export const monthQuerySchema = z
+  .object({ month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Month must be YYYY-MM').optional() })
+  .strict();
+
+export const attachPayslipSchema = z.object({ fileId: z.string().min(1).max(64) }).strict();

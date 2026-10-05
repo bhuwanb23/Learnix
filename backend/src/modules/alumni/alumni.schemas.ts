@@ -147,6 +147,13 @@ export const removeMemberSchema = z.object({
   reason: z.string().trim().min(5).max(500),
 });
 
+/** Office-side enrolment. The reason is optional here — unlike a removal, adding
+ *  someone is not destructive — but recorded when given. */
+export const addMemberSchema = z.object({
+  profileId: z.string().trim().min(1).max(64),
+  reason: z.string().trim().max(500).optional(),
+});
+
 /**
  * Self-service profile update. Every field optional — a PATCH-like update where
  * an absent key means "leave it alone". That is why the service reads
