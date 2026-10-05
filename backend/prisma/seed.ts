@@ -17,6 +17,7 @@ import { splitAmount } from '../src/modules/accounts/dues.plans.js';
 import { fiscalYearOf } from '../src/modules/accounts/expenses.money.js';
 import { syncFeeStructures } from './syncFeeStructures.js';
 import { syncPayrollSalary, linkRunsToSalaryRecords } from './syncPayrollSalary.js';
+import { syncScholarships } from './syncScholarships.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -1101,24 +1102,11 @@ async function seedDomainE(institutionId: string): Promise<void> {
     });
   }
 
-  // Scholarship + award (APPROVED, 25% coverage)
-  const scholarship = await db.scholarship.upsert({
-    where: { institutionId_name_academicYearId: { institutionId, name: 'Merit Scholarship', academicYearId: ay.id } },
-    update: {},
-    create: { institutionId, name: 'Merit Scholarship', type: 'MERIT', coveragePercent: 25, academicYearId: ay.id },
-  });
-  await db.scholarshipAward.upsert({
-    where: { scholarshipId_studentProfileId: { scholarshipId: scholarship.id, studentProfileId: studentProfile.id } },
-    update: {},
-    create: { scholarshipId: scholarship.id, studentProfileId: studentProfile.id, amountMinor: 3375000, status: 'APPROVED' }, // 25% of ₹1,35,000
-  });
-
-  console.log('  ✓ fee structure ₹1.35L, tuition CLEARED (payment + RCP-2025-26-0001), exam fee UNPAID');
-  console.log(`  ✓ salary scale on ${allStaff.length} staff · payroll 2026-07 PAID, 2026-08 PAID, 2026-09 APPROVED (part-paid)`);
-  console.log(
-    `  ✓ salary records: ${salarySeed.records} opened, ${salarySeed.revisions} increments · attendance ${salarySeed.attendance} · loans ${salarySeed.loans} (+${salarySeed.recoveries} recoveries) · ${linkedEntries} runs linked to a salary version`,
-  );
-  console.log('  ✓ LABS budget+expense PENDING, merit scholarship APPROVED');
+  // F-08 Scholarships (docs 3.7) - the whole desk, in one idempotent module:
+  // four schemes with real rules and document checklists, and applications
+  // spread across every workflow state, including one whose money has actually
+  // been credited against a student's fee dues.
+  const scholarshipSeed = await syncScholarships(db, institutionId, ay.id, admin.id);
   await syncExpenses(
     institutionId,
     (await db.user.findFirst({ where: { email: 'accounts@learnix.dev', institutionId } }))?.id ?? admin.id,

@@ -34,7 +34,7 @@ model StudentProfile {
   feeDues           FeeDue[]
   payments          Payment[]
   transportFeeDues  TransportFeeDue[]
-  scholarshipAwards ScholarshipAward[]
+  scholarshipApplications ScholarshipApplication[]
   bookIssues        BookIssue[]
   bookRequests      BookRequest[]
   hostelAllocations HostelAllocation[]

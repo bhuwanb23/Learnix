@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Alumni Relations Seed Extension
  * ================================
  * Fills Domain J (alumni, fundraising, mentorship, chapters) with a realistic
@@ -32,6 +32,8 @@
  */
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 const db = new PrismaClient();
 const PASSWORD = 'Passw0rd!';
@@ -57,6 +59,48 @@ const intBetween = (min: number, max: number) => min + Math.floor(rng() * (max -
 const DAY = 24 * 60 * 60 * 1000;
 const daysFromNow = (d: number) => new Date(Date.now() + d * DAY);
 const daysAgo = (d: number) => new Date(Date.now() - d * DAY);
+
+/**
+ * An agenda slot: [day, title, startTime, endTime, speaker, location].
+ *
+ * The time is a separate field rather than part of the title. The original seed
+ * wrote "09:30 — Registration" as a single string, which put the clock time
+ * where it could not be sorted, styled, or reasoned about — and there was no
+ * column to put it in.
+ */
+type ScheduleSlot = [number, string, string | null, string | null, string | null, string | null];
+
+/**
+ * Stable 0–1 value derived from a registration id.
+ *
+ * Used instead of the registration's INDEX among the rows still needing work.
+ * That index is not stable: the first run stamps ~82% and leaves the rest, then
+ * the next run re-indexes only the leftovers starting again at 0 — where every
+ * roll is small — so it stamps those too and every past event converges to a
+ * fictional 100% attendance. Hashing the id means a row's fate is decided the
+ * same way on every run, so the ~18% who did not show up stay un-stamped.
+ */
+function stableRoll(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 100000;
+  return (h % 100) / 100;
+}
+
+/**
+ * Resolve a "HH:MM" slot time against the event's own start date.
+ *
+ * Day 1 is the event's start day; later days are offset by whole days so a
+ * two-day reunion's day-2 slots land on the second date. `extraMinutes` is used
+ * to derive a nominal end time where the spec did not give one.
+ */
+function slotTime(eventStart: Date, day: number, hhmm: string, extraMinutes?: number): Date {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date(eventStart);
+  d.setDate(d.getDate() + (day - 1));
+  d.setHours(h || 0, m || 0, 0, 0);
+  if (extraMinutes) d.setMinutes(d.getMinutes() + extraMinutes);
+  return d;
+}
 
 /**
  * Recompute a chapter's denormalised memberCount.
@@ -900,80 +944,110 @@ let pledgeCount = 0;
       title: 'Alumni Homecoming 2026',
       description:
         'The flagship homecoming for the Classes of 2015–2025: reunion dinners by cohort, a panel with senior alumni, and the annual scholarship announcement.',
+      eventType: 'REUNION',
       startOffset: 45,
       durationDays: 2,
       capacity: 300,
       venue: venueMain,
       status: 'PUBLISHED',
       schedule: [
-        [1, '09:30 — Registration & cohort meetups'],
-        [1, '11:00 — Panel: careers after campus'],
-        [1, '14:00 — Reunion lunch by graduating year'],
-        [2, '10:00 — Scholarship announcement'],
-        [2, '12:00 — Alumni awards & closing'],
+        [1, 'Registration & cohort meetups', '09:30', null, 'Alumni Relations', 'Main Auditorium'],
+        [1, 'Panel: careers after campus', '11:00', null, 'Neelima Menon', 'Main Auditorium'],
+        [1, 'Reunion lunch by graduating year', '14:00', null, null, 'Courtyard'],
+        [2, 'Scholarship announcement', '10:00', null, 'Dr. R. Iyer', 'Main Auditorium'],
+        [2, 'Alumni awards & closing', '12:00', null, null, 'Main Auditorium'],
       ],
     },
     {
       title: 'Alumni Tech Talk: AI in Production',
       description:
         'A virtual session on taking models from notebook to production, with two alumni speakers and an open Q&A.',
+      eventType: 'WEBINAR',
+      isOnline: true,
+      meetingUrl: 'https://meet.learnix.dev/alumni-tech-talk-2026',
       startOffset: 12,
       durationDays: 1,
       capacity: 200,
-      venue: venueSeminar,
+      venue: null,
       status: 'PUBLISHED',
       schedule: [
-        [1, '17:00 — Welcome & speaker intro'],
-        [1, '17:15 — Scaling inference on a budget'],
-        [1, '18:00 — Open Q&A'],
+        [1, 'Welcome & speaker intro', '17:00', null, 'Host', 'Online'],
+        [1, 'Scaling inference on a budget', '17:15', null, 'Arjun Nair', 'Online'],
+        [1, 'Open Q&A', '18:00', null, null, 'Online'],
       ],
     },
     {
       title: 'Bengaluru Chapter Meetup',
       description: 'An evening of food and conversation for alumni based in and around Bengaluru.',
+      eventType: 'MEETUP',
       startOffset: 20,
       durationDays: 1,
       capacity: 80,
       venue: venueSeminar,
       status: 'APPROVED',
       schedule: [
-        [1, '18:30 — Introductions'],
-        [1, '19:00 — Chapter updates & mentoring sign-up'],
+        [1, 'Introductions', '18:30', null, null, 'Seminar Hall'],
+        [1, 'Chapter updates & mentoring sign-up', '19:00', null, 'Bhavana Banerjee', 'Seminar Hall'],
       ],
     },
     {
       title: 'Global Alumni Reunion 2026',
       description:
         'A hybrid reunion for alumni across 14 countries, streamed to every chapter.',
+      eventType: 'REUNION',
       startOffset: 90,
       durationDays: 1,
       capacity: 500,
       venue: venueMain,
       status: 'APPROVED',
-      schedule: [[1, '18:00 — Global chapter roll-call'], [1, '18:45 — Keynote & livestream Q&A']],
+      schedule: [
+        [1, 'Global chapter roll-call', '18:00', null, null, 'Main Auditorium'],
+        [1, 'Keynote & livestream Q&A', '18:45', null, 'Sanjay Iyer', 'Main Auditorium'],
+      ],
     },
     {
       title: 'Alumni Mentorship Kickoff 2025',
       description: 'Launch of the 2025–26 mentorship cohort: 60 pairs, 8 fields.',
+      eventType: 'WORKSHOP',
       startOffset: -120,
       durationDays: 1,
       capacity: 150,
       venue: venueSeminar,
       status: 'COMPLETED',
       schedule: [
-        [1, '10:00 — Programme overview'],
-        [1, '11:00 — Mentor/mentee matching'],
+        [1, 'Programme overview', '10:00', null, null, 'Seminar Hall'],
+        [1, 'Mentor/mentee matching', '11:00', null, null, 'Seminar Hall'],
       ],
     },
     {
       title: 'Annual Alumni Awards 2025',
       description: 'Distinguished alumni awards across five categories, plus the batch medallion roll.',
+      eventType: 'NETWORKING',
       startOffset: -200,
       durationDays: 1,
       capacity: 250,
       venue: venueMain,
       status: 'COMPLETED',
-      schedule: [[1, '17:00 — Awards ceremony'], [1, '19:00 — Dinner']],
+      schedule: [
+        [1, 'Awards ceremony', '17:00', null, null, 'Main Auditorium'],
+        [1, 'Dinner', '19:00', null, null, 'Courtyard'],
+      ],
+    },
+    {
+      title: 'Alumni Design Workshop: Systems Thinking',
+      description:
+        'A hands-on half-day workshop on systems thinking for product and design leaders, capped at 40 for the exercise to work.',
+      eventType: 'WORKSHOP',
+      startOffset: 30,
+      durationDays: 1,
+      capacity: 40,
+      venue: venueSeminar,
+      status: 'PUBLISHED',
+      schedule: [
+        [1, 'Framing exercise', '10:00', null, 'Priya Nair', 'Seminar Hall'],
+        [1, 'Mapping the system', '11:30', null, 'Priya Nair', 'Seminar Hall'],
+        [1, 'Group presentations', '14:00', null, null, 'Seminar Hall'],
+      ],
     },
 
     // ── Adopted events ─────────────────────────────────────────
@@ -985,30 +1059,33 @@ let pledgeCount = 0;
     {
       title: 'Alumni Networking Meet 2026',
       description: 'Batch of 2026 meets alumni mentors.',
+      eventType: 'NETWORKING',
       adopt: true,
       schedule: [
-        [1, '09:00 — Registration'],
-        [1, '10:00 — Mentor introductions'],
-        [1, '12:00 — Networking lunch'],
+        [1, 'Registration', '09:00', null, null, 'Seminar Hall'],
+        [1, 'Mentor introductions', '10:00', null, null, 'Seminar Hall'],
+        [1, 'Networking lunch', '12:00', null, null, 'Courtyard'],
       ],
     },
     {
       title: 'Alumni Networking Meet',
       description: 'Batch of 2026 meets alumni mentors.',
+      eventType: 'NETWORKING',
       adopt: true,
       schedule: [
-        [1, '09:00 — Registration'],
-        [1, '10:00 — Mentor introductions'],
-        [1, '12:00 — Networking lunch'],
+        [1, 'Registration', '09:00', null, null, 'Seminar Hall'],
+        [1, 'Mentor introductions', '10:00', null, null, 'Seminar Hall'],
+        [1, 'Networking lunch', '12:00', null, null, 'Courtyard'],
       ],
     },
   ];
 
   /** Schedule for an adopted event that has none of its own. */
-  const FALLBACK_SCHEDULE: [number, string][] = [[1, 'Details to be announced']];
+  const FALLBACK_SCHEDULE: ScheduleSlot[] = [[1, 'Details to be announced', null, null, null, null]];
 
   let eventCount = 0;
   let rsvpCount = 0;
+  let attendanceCount = 0;
 
   for (const e of eventSpec) {
     let event = await db.event.findFirst({
@@ -1021,15 +1098,23 @@ let pledgeCount = 0;
           title: e.title,
           description: e.description,
           category: 'ALUMNI',
+          eventType: e.eventType,
+          isOnline: e.isOnline ?? false,
+          meetingUrl: e.meetingUrl ?? null,
           startDate: daysFromNow(e.startOffset),
           endDate: daysFromNow(e.startOffset + e.durationDays),
-          venueId: e.venue.id,
-          capacity: e.capacity,
+          venueId: e.isOnline ? null : e.venue?.id ?? null,
+          capacity: e.capacity ?? 100,
           organizerUserId: officer.id,
           status: e.status,
         },
       });
       eventCount++;
+    } else if (!event.eventType) {
+      // Adopted events predate the alumni taxonomy. Backfill the type so the
+      // filter chips are not full of gaps, without touching dates or status.
+      await db.event.update({ where: { id: event.id }, data: { eventType: e.eventType } });
+      event = { ...event, eventType: e.eventType };
     }
 
     // The schedule is ensured for EVERY alumni event, not just the ones created
@@ -1041,13 +1126,13 @@ let pledgeCount = 0;
     // duplicates items (the (eventId, day, order) unique would throw anyway).
     const scheduleRows = (await db.eventScheduleItem.count({ where: { eventId: event.id } }))
       ? []
-      : ((e.schedule ?? FALLBACK_SCHEDULE) as [number, string][]);
+      : (e.schedule ?? FALLBACK_SCHEDULE);
 
     // `order` is unique per (eventId, day), so it must count within the day
     // rather than across the whole schedule — otherwise day 2 starts at 101
     // and the timeline reads as if it had 100 empty slots.
     const orderWithinDay = new Map<number, number>();
-    for (const [day, item] of scheduleRows) {
+    for (const [day, item, time, , speaker, location] of scheduleRows) {
       const order = (orderWithinDay.get(day) ?? 0) + 1;
       orderWithinDay.set(day, order);
       await db.eventScheduleItem.create({
@@ -1057,6 +1142,13 @@ let pledgeCount = 0;
           order,
           item,
           isDone: e.status === 'COMPLETED',
+          // Times hang off the event's own start date so the agenda shows a real
+          // clock time instead of the old "09:30 — Registration" string, which
+          // put the time inside the title where it could not be sorted or styled.
+          startsAt: time ? slotTime(event.startDate, day, time) : null,
+          endsAt: time ? slotTime(event.startDate, day, time, 60) : null,
+          speaker: speaker ?? null,
+          location: location ?? null,
         },
       });
     }
@@ -1072,14 +1164,16 @@ let pledgeCount = 0;
     // Capacity, start date and status are read from the EVENT ROW, not the spec.
     // An adopted event has none of these in its spec entry, and reading them
     // from there produced `Math.min(undefined, n)` → NaN → zero RSVPs.
-    const isPast = event.startDate.getTime() < Date.now();
+    const isPastEvent = event.startDate.getTime() < Date.now();
     const eventIndex = eventSpec.indexOf(e);
-    const target = Math.min(event.capacity, 18 + ((eventIndex * 11) % 27));
+    // The capped workshop is seeded OVER capacity on purpose, so the waitlist is
+    // exercised: registering past capacity must land in PENDING, not be refused.
+    const target = event.capacity === 40 ? 47 : Math.min(event.capacity, 18 + ((eventIndex * 11) % 27));
     const pool = [...donors, ...alumni.filter((a) => a.engagement !== 'LOST')];
     for (let i = 0; i < target; i++) {
       const person = pool[(i * 3 + eventIndex) % pool.length];
       const roll = ((i * 7 + eventIndex * 13) % 100) / 100;
-      const status = isPast
+      const status = isPastEvent
         ? roll < 0.75 ? 'CONFIRMED' : 'DECLINED'
         : roll < 0.55 ? 'CONFIRMED' : roll < 0.72 ? 'PENDING' : roll < 0.88 ? 'APPROVED' : 'DECLINED';
 
@@ -1088,18 +1182,34 @@ let pledgeCount = 0;
       });
       if (existing) continue;
 
+      // ── Real attendance on past events ──
+      // Attendance used to be inferred from status='CONFIRMED', which made every
+      // past event look 100% full. Roughly 8 in 10 people who confirm actually
+      // turn up, so past events now carry genuine check-in rows and the chapter
+      // participation metrics have something true to count.
+      const attended = isPastEvent && status === 'CONFIRMED' && roll < 0.82;
+      const attendedAt = attended ? slotTime(event.startDate, 1, '09:15', 0) : null;
+
       await db.eventRegistration.create({
         data: {
           eventId: event.id,
           registrantUserId: person.userId,
           status,
-          qrPayload: JSON.stringify({ eventId: event.id, userId: person.userId }),
+          // A real, verifiable code — `qrPayload` used to be a JSON blob nothing
+          // ever read. The mock check-in endpoint verifies this exact value.
+          qrPayload: `EVT:${event.id.slice(-6).toUpperCase()}:${person.userId.slice(-6).toUpperCase()}:${(i + 1)
+            .toString(36)
+            .toUpperCase()
+            .padStart(4, '0')}`,
+          checkedInAt: attendedAt,
+          checkInMethod: attended ? (i % 3 === 0 ? 'QR' : 'MANUAL') : null,
         },
       });
       rsvpCount++;
+      if (attended) attendanceCount++;
     }
   }
-  console.log(`  ✓ ${eventCount} events, ${rsvpCount} RSVPs`);
+  console.log(`  ✓ ${eventCount} events, ${rsvpCount} RSVPs, ${attendanceCount} checked in`);
 
   // ── Step 10: chapter member counts ─────────────────────────
   console.log('\n📊 Step 10: Reconciling chapter counts...');
@@ -1603,6 +1713,226 @@ let pledgeCount = 0;
     }
   }
   console.log(`  ✓ ${officerCount} officer appointments`);
+
+  // ── Step 18b: event memories (photos) + attendee feedback ──
+  // Both belong to PAST events only. A photograph of an event that has not
+  // happened, or a review from someone who was not there, are the two things
+  // these features exist to prevent.
+  console.log('\n📸 Step 18b: Reconciling attendance, seeding memories & feedback...');
+
+  // ── Attendance backfill (here, not in step 9) ──────────────
+  // Placed AFTER step 17 so chapter events and their registrations already
+  // exist. Run any earlier and the chapter rows would sit at checkedInAt = NULL
+  // until the next run — which showed up as a second seed run reporting "7 past
+  // check-ins reconciled" instead of zero.
+  //
+  // The event loop in step 9 only stamps check-ins on registrations it CREATES,
+  // so a database seeded before attendance existed has none at all. This
+  // reconciles those rows: past events, CONFIRMED registrants, ~82% attendance.
+  // Deterministic, so re-running is a no-op.
+  const pastEvents = await db.event.findMany({
+    where: { institutionId: instId, startDate: { lt: new Date() } },
+    orderBy: { startDate: 'asc' },
+    select: { id: true },
+  });
+  let backfilled = 0;
+  for (const ev of pastEvents) {
+    const regs = await db.eventRegistration.findMany({
+      where: { eventId: ev.id, status: 'CONFIRMED', checkedInAt: null },
+      orderBy: { id: 'asc' },
+      select: { id: true },
+    });
+    for (const r of regs) {
+      if (stableRoll(r.id) >= 0.82) continue; // the ~18% who did not turn up
+      await db.eventRegistration.update({
+        where: { id: r.id },
+        data: {
+          checkedInAt: slotTime(new Date(), 1, '09:15', 0),
+          checkInMethod: r.id.charCodeAt(r.id.length - 1) % 3 === 0 ? 'QR' : 'MANUAL',
+        },
+      });
+      backfilled++;
+    }
+  }
+  console.log(`  ✓ ${backfilled} past check-ins reconciled`);
+
+  // ── Migrate legacy schedule titles ──────────────────────────
+  // Schedules seeded before the agenda columns existed stored the time INSIDE the
+  // title: "09:30 — Registration & cohort meetups". Without this, 60-odd agenda
+  // rows across the existing events would keep the time welded to the text where
+  // the UI cannot sort or style it, and the Agenda tab would look empty on almost
+  // every event. Splitting the legacy format into `startsAt` + a clean title is
+  // the migration, and it runs once because it only touches rows with no
+  // `startsAt`.
+  const legacySlots = await db.eventScheduleItem.findMany({
+    where: { startsAt: null },
+    include: { event: { select: { startDate: true } } },
+    orderBy: { id: 'asc' },
+  });
+  let migrated = 0;
+  for (const slot of legacySlots) {
+    const m = /^\s*(\d{1,2}:\d{2})\s*[—–-]\s*(.+)$/.exec(slot.item);
+    if (!m) continue;
+    await db.eventScheduleItem.update({
+      where: { id: slot.id },
+      data: {
+        startsAt: slotTime(slot.event.startDate, slot.day, m[1]),
+        endsAt: slotTime(slot.event.startDate, slot.day, m[1], 60),
+        item: m[2].trim(),
+      },
+    });
+    migrated++;
+  }
+  console.log(`  ✓ ${migrated} legacy agenda slots split into time + title`);
+
+  // ── Backfill the alumni type on events that predate it ──────
+  // Chapter events are created in step 17 and were never in `eventSpec`, so they
+  // arrive with a null type and vanish from every filter chip. Inferring from the
+  // title keeps the directory honest instead of leaving a fifth of events
+  // unclassifiable.
+  const untyped = await db.event.findMany({
+    where: { institutionId: instId, eventType: null },
+    select: { id: true, title: true, category: true },
+  });
+  let typed = 0;
+  for (const ev of untyped) {
+    const t = /reunion|homecoming/i.test(ev.title)
+      ? 'REUNION'
+      : /webinar|tech talk|virtual/i.test(ev.title)
+        ? 'WEBINAR'
+        : /workshop|masterclass|bootcamp/i.test(ev.title)
+          ? 'WORKSHOP'
+          : /meetup|networking|meet\b/i.test(ev.title)
+            ? 'NETWORKING'
+            : ev.category === 'ALUMNI'
+              ? 'MEETUP'
+              : null;
+    if (!t) continue;
+    await db.event.update({ where: { id: ev.id }, data: { eventType: t } });
+    typed++;
+  }
+  console.log(`  ✓ ${typed} legacy events classified`);
+
+  // ── Mark webinars as online ─────────────────────────────────
+  // The Tech Talk was created before `isOnline` existed, so backfilling only the
+  // type left it typed WEBINAR with a physical venue and no joining link — the
+  // one combination that makes no sense. Venue is cleared for online events so
+  // the two can never disagree.
+  const onlineFix = await db.event.findMany({
+    where: { institutionId: instId, eventType: 'WEBINAR', isOnline: false },
+    select: { id: true, meetingUrl: true },
+  });
+  for (const ev of onlineFix) {
+    await db.event.update({
+      where: { id: ev.id },
+      data: { isOnline: true, venueId: null, meetingUrl: ev.meetingUrl ?? 'https://meet.learnix.dev/alumni-webinar' },
+    });
+  }
+  if (onlineFix.length > 0) console.log(`  ✓ ${onlineFix.length} webinars set to online`);
+
+  const completedEvents = await db.event.findMany({
+    where: { institutionId: instId, startDate: { lt: new Date() }, category: 'ALUMNI' },
+    orderBy: { startDate: 'desc' },
+  });
+
+  let photoCount = 0;
+  let feedbackCount = 0;
+  const UPLOADS = path.join(process.cwd(), 'uploads');
+  mkdirSync(UPLOADS, { recursive: true });
+
+  /**
+   * Write a tiny valid PNG to disk and return its storage key.
+   *
+   * Generated rather than downloaded: a seed that fetches placeholder images
+   * over the network is non-deterministic and fails offline, and the point of
+   * these rows is to prove the gallery renders a real file through
+   * `/uploads/{storageKey}` — not to look pretty.
+   */
+  function placeholderPng(seedIndex: number, label: string): { key: string; bytes: number } {
+    // 1×1 PNG, tinted per index so the grid is not visibly uniform.
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    const key = `seed-event-${seedIndex}-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+    writeFileSync(path.join(UPLOADS, key), png);
+    return { key, bytes: png.length };
+  }
+
+  const COMMENT_TEMPLATES = [
+    'Excellent turnout and the mentor matching actually worked.',
+    'Great speakers, though the room was far too full.',
+    'Really useful session — the Q&A was the best part.',
+    'Well organised. Parking was a problem.',
+    'Good content, would attend again.',
+    'The schedule ran late but the panel was worth it.',
+  ];
+
+  for (const [evIdx, ev] of completedEvents.entries()) {
+    // Only people who ACTUALLY checked in may leave a review — the same gate the
+    // API enforces. Seeding feedback from non-attendees would contradict the one
+    // rule this feature is built around.
+    // EVERY checked-in attendee, not a slice. An earlier version took the first 8
+    // ordered by checkedInAt — but stamping more check-ins changes that ordering,
+    // so the "first 8" set shifted between runs and reviews kept appearing. A
+    // stable secondary sort on id keeps the selection identical run to run.
+    const attendees = await db.eventRegistration.findMany({
+      where: { eventId: ev.id, checkedInAt: { not: null }, status: { not: 'CANCELLED' } },
+      orderBy: [{ checkedInAt: 'asc' }, { id: 'asc' }],
+      select: { id: true, registrantUserId: true },
+    });
+
+    for (const [i, att] of attendees.entries()) {
+      const exists = await db.eventFeedback.findFirst({
+        where: { eventId: ev.id, authorUserId: att.registrantUserId },
+      });
+      if (exists) continue;
+      // Deterministic spread across 3–5 stars. Deterministic for the same reason
+      // as every other count in this file: a random rating made the average drift
+      // on each run.
+      const roll = ((i * 13 + evIdx * 7) % 100) / 100;
+      const rating = roll < 0.12 ? 3 : roll < 0.34 ? 4 : 5;
+      await db.eventFeedback.create({
+        data: {
+          eventId: ev.id,
+          authorUserId: att.registrantUserId,
+          rating,
+          comment: COMMENT_TEMPLATES[(i + evIdx) % COMMENT_TEMPLATES.length],
+        },
+      });
+      feedbackCount++;
+    }
+
+    if (evIdx >= 3) continue; // only the three most recent past events get photos
+    const existingPhotos = await db.eventPhoto.count({ where: { eventId: ev.id } });
+    if (existingPhotos > 0) continue;
+
+    const captions = [
+      'Cohort photo at the welcome desk',
+      'The keynote, mid-talk',
+      'Reunion dinner',
+      'Mentor and mentee pairs',
+    ];
+    for (const [pIdx, caption] of captions.entries()) {
+      const { key, bytes } = placeholderPng(evIdx, `p${pIdx}`);
+      const file = await db.file.create({
+        data: {
+          institutionId: instId,
+          uploaderUserId: officer.id,
+          purpose: 'EVENT_PHOTO',
+          mimeType: 'image/png',
+          sizeBytes: bytes,
+          storageKey: key,
+          originalName: caption.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png',
+        },
+      });
+      await db.eventPhoto.create({
+        data: { eventId: ev.id, fileId: file.id, caption, uploadedByUserId: officer.id },
+      });
+      photoCount++;
+    }
+  }
+  console.log(`  ✓ ${photoCount} photos, ${feedbackCount} reviews (attendees only)`);
 
   // ── Step 19: chapter initiatives ────────────────────────────
   console.log('\n🚀 Step 19: Seeding chapter initiatives...');

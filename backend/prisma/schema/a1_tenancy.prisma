@@ -40,6 +40,10 @@ model User {
   refreshTokens  RefreshToken[]
   passwordResets PasswordReset[]
   eventRegistrations EventRegistration[]
+  // Event memories and reviews. Named because EventPhoto also points at User
+  // (the uploader), and Prisma needs the disambiguator.
+  eventPhotos         EventPhoto[]     @relation("EventPhotoUploader")
+  eventFeedback       EventFeedback[]
   notifications   Notification[]
   pushTokens      PushToken[]
   aiInteractions  AiInteraction[]

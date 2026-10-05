@@ -221,6 +221,12 @@ model FeeDue {
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
   feeStructure   FeeStructure?  @relation(fields: [feeStructureId], references: [id])
   allocations    PaymentAllocation[]
+  // A scholarship disbursement credits a due through its OWN allocation table
+  // (scholarship_allocations) — never a Payment. The institution's money going
+  // out must not be recorded as a family paying a fee, or it inflates both
+  // collections and the ledger. Declared here so a due can be read together
+  // with everything credited against it.
+  scholarshipAllocations ScholarshipAllocation[]
   installmentPlan InstallmentPlan? @relation("InstallmentPlanChildren", fields: [installmentPlanId], references: [id])
 
   @@index([studentProfileId])

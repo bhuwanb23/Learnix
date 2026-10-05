@@ -1,39 +1,172 @@
 // Domain E4 — Scholarships. Docs: 06-accounts-finance.md §3.7
-// Award disbursement creates a payment (or a write-off via fee_dues.waived) —
-// service-layer concern; disbursedPaymentId is scalar until written.
+//
+// The scheme, the APPLICATION, and the award are three different things and the
+// old schema collapsed them into two, which is why approving was a no-op: an
+// award was created already APPROVED, so "approve" had nothing to approve.
+//
+// A DISBURSEMENT REDUCES THE STUDENT'S DUES. It does not create a payment. The
+// old code booked a Payment with the finance officer as `payerUserId` and
+// category MISC, which counted the institution's own outgoing money as income
+// in collections and the ledger, and left the family still owing the full
+// amount. The money moves by allocating against `fee_dues`; the allocation
+// rows are the audit trail.
+//
+// Money is integer paise throughout (ADR-04).
 
 model Scholarship {
   id              String   @id @default(cuid())
   institutionId   String
   name            String
-  type            String // MERIT | NEED_BASED
-  coveragePercent Int // 0–100
+  type            String // MERIT | NEED_BASED | EXCELLENCE | SPECIAL
+  coveragePercent Int // 0–100 — shown on the card; the money comes from amountMode
   academicYearId  String
+  // OPEN | CLOSED | DRAFT. A CLOSED scheme refuses new applications but keeps
+  // every existing one readable — closing a window must not erase its history.
+  status          String   @default("DRAFT")
+  description     String?
+  // What this scheme grants, as a RULE. `percent` is applied to the student's
+  // LIVE outstanding balance so a fee revision moves the award with it, rather
+  // than freezing last year's figure against this year's bill.
+  amountMode      String   @default("PERCENT_OF_DUE") // PERCENT_OF_DUE | FIXED
+  awardPercent    Int      @default(0) // whole percent, for PERCENT_OF_DUE
+  fixedAmountMinor Int     @default(0) // paise, for FIXED
+  // The fund ceiling, in paise. null = uncapped. The service refuses to grant
+  // more than the uncommitted headroom, so a scheme cannot overdraw itself.
+  budgetMinor     Int?
+  // Maximum awards this scheme may make. null = uncapped.
+  capacity        Int?
+  // Eligibility rules and required documents, stored as JSON so an institution
+  // can add a rule without a migration. Both are validated against a fixed
+  // operator/catalog set by scholarship.rules.ts — a rule the server cannot
+  // evaluate is rejected at save time rather than silently never firing.
+  rulesJson       String   @default("[]")
+  requiredDocumentsJson String @default("[]")
+  opensAt         DateTime?
+  closesAt        DateTime?
+  createdByUserId String? // scalar → users.id
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  academicYear AcademicYear       @relation(fields: [academicYearId], references: [id])
-  awards       ScholarshipAward[]
+  academicYear  AcademicYear            @relation(fields: [academicYearId], references: [id])
+  applications  ScholarshipApplication[]
 
   @@unique([institutionId, name, academicYearId])
   @@index([institutionId])
+  @@index([institutionId, status])
   @@map("scholarships")
 }
 
-model ScholarshipAward {
+model ScholarshipApplication {
   id                 String   @id @default(cuid())
+  institutionId      String
   scholarshipId      String
   studentProfileId   String
-  amountMinor        Int
-  status             String   @default("APPROVED") // APPROVED | DISBURSED | REJECTED
-  disbursedPaymentId String? // scalar → payments.id
+  // APPLIED | UNDER_REVIEW | APPROVED | REJECTED | WITHDRAWN | DISBURSED.
+  // The state machine lives in scholarship.rules.ts; nothing skips a state and
+  // DISBURSED is terminal, because the money has already moved.
+  status             String   @default("APPLIED")
+  // What the student asked for, and what was actually granted. They differ
+  // whenever the budget capped it, and only the granted figure is ever real.
+  requestedMinor     Int      @default(0)
+  grantedMinor       Int      @default(0)
+  // How much of the grant has actually been released against the student's
+  // dues. Never incremented blindly — recomputed from the allocations.
+  disbursedMinor     Int      @default(0)
+  // DECLARED on the application, verified by an officer against documents.
+  // Never presented to the desk as server-verified truth.
+  declaredAnnualIncomeMinor Int?
+  declaredGender     String?
+  statement          String?
+  // Snapshot of the rule-by-rule evaluation at the moment of the decision, so
+  // "why was this student approved" is answerable years later without
+  // re-running rules against data that has since changed.
+  eligibilityJson    String   @default("{}")
+  documentsJson      String   @default("{}")
+  reviewedAt         DateTime?
+  reviewedByUserId   String? // scalar → users.id
+  decisionReason     String?
+  rejectedReason     String?
+  approvedAt         DateTime?
+  approvedByUserId   String? // scalar → users.id
+  rejectedAt         DateTime?
+  rejectedByUserId   String? // scalar → users.id
+  disbursedAt        DateTime?
+  disbursedByUserId  String? // scalar → users.id
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  scholarship    Scholarship    @relation(fields: [scholarshipId], references: [id])
-  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  scholarship  Scholarship                 @relation(fields: [scholarshipId], references: [id])
+  studentProfile StudentProfile            @relation(fields: [studentProfileId], references: [id])
+  documents    ScholarshipApplicationDocument[]
+  events       ScholarshipApplicationEvent[]
+  allocations  ScholarshipAllocation[]
 
+  // One live application per student per scheme. A student who was rejected may
+  // apply again — the rejection stays in the history rather than blocking them.
   @@unique([scholarshipId, studentProfileId])
+  @@index([institutionId, status])
   @@index([studentProfileId])
-  @@map("scholarship_awards")
+  @@map("scholarship_applications")
 }
+
+model ScholarshipApplicationDocument {
+  id            String   @id @default(cuid())
+  applicationId String
+  code          String // a code from scholarship.rules.ts DOCUMENT_CATALOG
+  // PENDING | UPLOADED | VERIFIED | REJECTED. Only VERIFIED counts toward the
+  // checklist: an unverified scan is evidence, not a decision.
+  status        String   @default("PENDING")
+  // FK → files (Domain L). A real File row so the desk can open the scan.
+  fileId        String?
+  note          String?
+  verifiedByUserId String? // scalar → users.id
+  verifiedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  application ScholarshipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  file        File?                  @relation(fields: [fileId], references: [id])
+
+  @@unique([applicationId, code])
+  @@index([fileId])
+  @@map("scholarship_application_documents")
+}
+
+// What a disbursement actually did to the student's dues. This is the audit
+// trail for "the scholarship reduced my bill": without it, a reduced balance is
+// indistinguishable from a payment nobody recorded.
+model ScholarshipAllocation {
+  id            String   @id @default(cuid())
+  applicationId String
+  feeDueId      String
+  amountMinor   Int
+  // The balance left on that due AFTER this allocation, so a later reversal or
+  // fee revision cannot rewrite history.
+  balanceAfterMinor Int
+  createdAt     DateTime @default(now())
+
+  application ScholarshipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  feeDue      FeeDue                @relation(fields: [feeDueId], references: [id])
+
+  @@unique([applicationId, feeDueId])
+  @@index([feeDueId])
+  @@map("scholarship_allocations")
+}
+
+// The workflow history. "Who approved this and when, and what were the reasons"
+// must be answerable without replaying the audit log, so every state change
+// writes a row here as well.
+model ScholarshipApplicationEvent {
+  id            String   @id @default(cuid())
+  applicationId String
+  fromStatus    String?
+  toStatus      String
+  actorUserId   String? // scalar → users.id
+  note          String?
+  createdAt     DateTime @default(now())
+
+  application ScholarshipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("scholarship_application_events")
+}
