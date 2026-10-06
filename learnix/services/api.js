@@ -376,9 +376,49 @@ export const alumniApi = {
   createChapter: (payload) => api.post('/alumni/chapters', payload),
   updateChapter: (id, payload) => api.patch(`/alumni/chapters/${id}`, payload),
 
-  notifications: () => api.get('/alumni/notifications'),
+  // -- S-12 Notifications (docs/users/12 §3.7) ---------------------------------
+  // Replaces the three old methods below. The endpoint moved from an inline handler
+  // in alumni.routes.ts to the notifications sub-router, so the paths grew
+  // `/broadcasts` under `/notifications` and the inbox became filterable.
+  //
+  // `notifications()` now takes a query. `category` is a category id (not a raw
+  // `Notification.type`) because the server owns that mapping and the app has no
+  // business knowing which types a category happens to own.
+  notifications: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== false),
+    ).toString();
+    return api.get(`/alumni/notifications${qs ? `?${qs}` : ''}`);
+  },
+  // Category list with live unread counts, plus the rule metadata (icons, colours,
+  // blurbs) so the app does not keep a second copy of the vocabulary.
+  notificationCategories: () => api.get('/alumni/notifications/categories'),
+  notification: (id) => api.get(`/alumni/notifications/${id}`),
+  // Single-row read state. Previously impossible: tapping a row could only trigger
+  // read-all, which marked messages as seen without anyone having seen them.
+  setNotificationRead: (id, read) => api.patch(`/alumni/notifications/${id}/read`, { read }),
   markAllRead: () => api.post('/alumni/notifications/read-all'),
-  broadcast: (payload) => api.post('/alumni/broadcasts', payload),
+
+  // Preferences. Real rows, not local state — the profile screen used to show three
+  // switches that saved nothing.
+  notificationPreferences: () => api.get('/alumni/notifications/preferences'),
+  updateNotificationPreferences: (patch) => api.patch('/alumni/notifications/preferences', patch),
+
+  // Office only. `audience` is `{ kind, value? , chapterId? }` — the old contract
+  // pinned it to the literals 'BATCH_2024' and 'CITY_BENGALURU', so a graduate from
+  // any other year or city was unreachable by any broadcast.
+  broadcast: (payload) => api.post('/alumni/notifications/broadcasts', payload),
+  broadcastPreview: (audience) => api.post('/alumni/notifications/broadcasts/preview', { audience }),
+  // The real year/city/chapter lists, so the composer can target anyone rather than
+  // the two literals ('BATCH_2024', 'CITY_BENGALURU') the old contract allowed.
+  broadcastOptions: () => api.get('/alumni/notifications/broadcasts/options'),
+  broadcastHistory: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString();
+    return api.get(`/alumni/notifications/broadcasts${qs ? `?${qs}` : ''}`);
+  },
+  // Reminder sweep. `dryRun: true` reports what would be written without writing it.
+  runReminderSweep: (dryRun = false) => api.post('/alumni/notifications/reminders/sweep', { dryRun: String(dryRun) }),
+
   profile: () => api.get('/alumni/profile'),
 };
 
@@ -734,12 +774,40 @@ export const teacherApi = {
 // ── Exam Cell endpoints (docs/users/05 §4) ──
 export const examcellApi = {
   dashboard: () => api.get('/examcell/dashboard'),
-  exams: () => api.get('/examcell/timetable'),
-  createExam: (payload) => api.post('/examcell/timetable', payload),
-  addSlot: (examId, payload) => api.post(`/examcell/timetable/${examId}/slots`, payload),
-  rescheduleSlot: (slotId, payload) => api.post(`/examcell/slots/${slotId}/reschedule`, payload),
-  roomAllocations: (slotId) => api.get(`/examcell/slots/${slotId}/allocations`),
-  allocateRoom: (slotId, payload) => api.post(`/examcell/slots/${slotId}/allocations`, payload),
+  // ── X-02 Timetable (docs/users/05 §3.9) ──────────────────────────────
+  //
+  // These replace six methods that all pointed at endpoints this build
+  // REMOVED. `GET /examcell/timetable`, `POST /examcell/timetable`,
+  // `POST /examcell/timetable/:examId/slots`,
+  // `POST /examcell/slots/:id/reschedule`,
+  // `GET  /examcell/slots/:id/allocations` and
+  // `POST /examcell/slots/:id/allocations` are gone — not renamed, GONE. The
+  // old screen called them and got a 404 for every one.
+  //
+  // Note two deliberate changes of SHAPE, not just of path:
+  //   · `allocateVenue` sends `venueId`, NOT `roomId`. `Room` in the schema is a
+  //     HOSTEL room (capacity 2, hanging off a block) and `Venue` is the
+  //     institution-wide room master with real capacity.
+  //   · `rescheduleTimetableSlot` is a PATCH. A reschedule is an UPDATE of the
+  //     slot, so it can carry a partial change; the old route was a POST shaped
+  //     like a command, which made that impossible.
+  timetableCatalogue: () => api.get('/examcell/timetable/catalogue'),
+  timetableOverview: () => api.get('/examcell/timetable/overview'),
+  timetableBlock: (block, examId) =>
+    api.get(`/examcell/timetable/blocks/${block}${examId ? `?examId=${encodeURIComponent(examId)}` : ''}`),
+  timetableStudents: (studentProfileId) =>
+    api.get(`/examcell/timetable/students/${encodeURIComponent(studentProfileId)}`),
+  createTimetableExam: (payload) => api.post('/examcell/timetable/exams', payload),
+  updateTimetableExam: (id, payload) => api.patch(`/examcell/timetable/exams/${id}`, payload),
+  publishTimetableExam: (id) => api.post(`/examcell/timetable/exams/${id}/publish`),
+  addTimetableSlot: (examId, payload) => api.post(`/examcell/timetable/exams/${examId}/slots`, payload),
+  rescheduleTimetableSlot: (id, payload) => api.patch(`/examcell/timetable/slots/${id}`, payload),
+  deleteTimetableSlot: (id) => api.delete(`/examcell/timetable/slots/${id}`),
+  completeTimetableSlot: (id) => api.post(`/examcell/timetable/slots/${id}/complete`),
+  allocateVenue: (slotId, payload) => api.post(`/examcell/timetable/slots/${slotId}/venues`, payload),
+  assignInvigilator: (allocationId, invigilatorUserId) =>
+    api.put(`/examcell/timetable/allocations/${allocationId}/invigilator`, { invigilatorUserId }),
+
   hallTickets: (examId) => api.get(`/examcell/hall-tickets?examId=${examId}`),
   generateHallTickets: (examId) => api.post('/examcell/hall-tickets/generate', { examId }),
   evaluations: () => api.get('/examcell/evaluations'),

@@ -7,12 +7,20 @@ import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
 import { AnimatedCard, SkeletonCard } from '../../../../components/ui';
 
-const toggles = [
-  { id: 'T1', label: 'Event invites & RSVP alerts', icon: 'calendar-outline', color: '#2563eb', default: true },
-  { id: 'T2', label: 'Donation appeal notifications', icon: 'gift-outline', color: '#059669', default: true },
-  { id: 'T3', label: 'Chapter news & meetups', icon: 'location-outline', color: '#d97706', default: false },
-  { id: 'T4', label: 'Mentorship session reminders', icon: 'hand-left-outline', color: '#0891b2', default: true },
-];
+/**
+ * The four preference switches that used to live here are gone — see the
+ * `Notification` section below for why. Kept as a comment rather than deleted
+ * silently, because `docs/users/12-alumni-relations.md §3.8` still advertised them
+ * as a shipped feature and the next person to read the docs will look for them.
+ *
+ *   { id: 'T1', label: 'Event invites & RSVP alerts',    default: true  }
+ *   { id: 'T2', label: 'Donation appeal notifications',  default: true  }
+ *   { id: 'T3', label: 'Chapter news & meetups',          default: false }
+ *   { id: 'T4', label: 'Mentorship session reminders',   default: true  }
+ *
+ * The real vocabulary lives on the server:
+ * `backend/src/modules/alumni/notifications/notifications.rules.ts`.
+ */
 
 const menuItems = [
   { id: 'M1', label: 'Newsletter Archive', icon: 'mail-outline' },
@@ -26,9 +34,6 @@ export default function AlumniProfile({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [prefs, setPrefs] = useState(
-    toggles.reduce((acc, t) => ({ ...acc, [t.id]: t.default }), {}),
-  );
 
   const load = useCallback(async (showSpinner = true) => {
     try {
@@ -51,10 +56,6 @@ export default function AlumniProfile({ navigation }) {
   const onRefresh = () => {
     setRefreshing(true);
     load(false);
-  };
-
-  const togglePref = (id) => {
-    setPrefs((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const onLogout = () => {
@@ -148,26 +149,35 @@ export default function AlumniProfile({ navigation }) {
 
       <AnimatedCard delay={200}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Preferences</Text>
-        <View style={styles.prefCard}>
-          {toggles.map((t, idx) => (
-            <View
-              key={t.id}
-              style={[styles.prefRow, idx < toggles.length - 1 && styles.prefRowBorder]}
-            >
-              <View style={[styles.prefIcon, { backgroundColor: t.color + '1a' }]}>
-                <Ionicons name={t.icon} size={15} color={t.color} />
-              </View>
-              <Text style={styles.prefLabel}>{t.label}</Text>
-              <TouchableOpacity
-                style={[styles.switch, prefs[t.id] && styles.switchOn]}
-                onPress={() => togglePref(t.id)}
-              >
-                <View style={[styles.switchKnob, prefs[t.id] && styles.switchKnobOn]} />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+        <Text style={styles.sectionTitle}>Notifications</Text>
+        {/* The four switches that used to be here were seeded from a local
+            `useState({ T1: true, T2: true, T3: false, T4: true })` and never left the
+            device — no row was written, and no emitter consulted anything, because no
+            emitter could. They are replaced by a link to the real preference screen,
+            which reads and writes `notification_preferences` and is enforced at
+            delivery time.
+
+            A link beats four switches that look authoritative and do nothing: the
+            second option teaches people that settings here are not real. */}
+        <TouchableOpacity
+          style={styles.prefLink}
+          onPress={() => navigation?.navigate?.('Notifications')}
+          accessibilityRole="button"
+          accessibilityLabel="Notification preferences"
+          accessibilityHint="Choose which notifications you receive"
+        >
+          <View style={[styles.prefIcon, { backgroundColor: '#2563eb1a' }]}>
+            <Ionicons name="notifications-outline" size={15} color="#2563eb" />
+          </View>
+          <View style={styles.prefLinkBody}>
+            <Text style={styles.prefLabel}>What you hear about</Text>
+            <Text style={styles.prefHint}>
+              Event reminders, registrations, mentorship, chapter news, giving and office
+              broadcasts.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
+        </TouchableOpacity>
       </View>
       </AnimatedCard>
 
@@ -294,6 +304,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     paddingHorizontal: 14,
+  },
+  prefLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  prefLinkBody: {
+    flex: 1,
+    gap: 2,
+  },
+  prefHint: {
+    fontSize: 11.5,
+    lineHeight: 15,
+    color: theme.colors.textTertiary,
   },
   prefRow: {
     flexDirection: 'row',
