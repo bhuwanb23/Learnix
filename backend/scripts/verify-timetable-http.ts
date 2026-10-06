@@ -375,6 +375,35 @@ try {
     const after = await prisma.auditLog.count({ where: { entityType: 'Exam' } });
     eq(after, before, 'reading all ten timetable endpoints writes no audit row');
   }
+
+  // ══ 12. The shape the screens actually read ════════════════════════════════════════
+  //
+  // EXAMS, ALLOCATION and STUDENTS come back from the service as bare ARRAYS.
+  // The route builds its envelope with `{ block, ...result }`, and spreading an
+  // array into an object rewrites `[{ ... }]` as `{ "0": { ... } }`. Three
+  // screens read those blocks with `data ?? []` and then `.reduce`, so this is
+  // not cosmetic: the object form throws on RENDER, taking Exam Schedules,
+  // Course Allocation and Student Timetable down together while every other
+  // assertion in this file keeps passing. Caught by the end-to-end probe, not
+  // by a unit test, which is exactly why it is asserted at the wire.
+  section('12. Array blocks arrive as arrays the screens can reduce');
+  {
+    for (const b of ['EXAMS', 'ALLOCATION', 'STUDENTS']) {
+      const r = await call('GET', `/examcell/timetable/blocks/${b}`, { token });
+      eq(r.status, 200, `${b} is 200`);
+      const rows = (r.json?.data ?? {}) as any[];
+      ok(Array.isArray(rows), `${b} is an ARRAY, not {"0": ...} \u2014 \`data ?? []\` then \`.reduce\` must work`);
+      let threw = '';
+      try { rows.reduce((t: number, row: any) => t + (row ? 1 : 0), 0); } catch (e) { threw = (e as Error).message; }
+      ok(threw === '', `${b} survives the screen's reduce${threw ? ` \u2014 ${threw}` : ''}`);
+      ok(!('block' in (rows as any)), `${b} carries no block echo, because an array cannot carry one`);
+    }
+    // Object blocks keep the envelope, so the canonical echo still round-trips.
+    const r = await call('GET', '/examcell/timetable/blocks/CALENDAR', { token });
+    ok(!Array.isArray(r.json?.data), 'CALENDAR stays an object');
+    eq(r.json?.data?.block, 'CALENDAR', '  \u2026and still echoes its canonical block');
+    ok(Array.isArray(r.json?.data?.days), 'with its payload untouched');
+  }
 } finally {
   // Explicit order — none of these relations cascade.
   await prisma.examConflict.deleteMany({ where: { exam: { institutionId } } });

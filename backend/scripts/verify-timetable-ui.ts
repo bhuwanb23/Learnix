@@ -16,10 +16,8 @@
 // These helpers are load-bearing rather than decorative: `timeToMinutes` is what
 // turns "09:00" and "11:00" into a comparison, and `seatPhrase` is what tells a
 // controller a paper is 21 seats short.
-import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -44,7 +42,6 @@ const section = (n: string) => console.log(`\n-- ${n}`);
 
 console.log('X-02 Timetable — app-side helper behaviour');
 
-const require = createRequire(import.meta.url);
 const metaSrc = fs.readFileSync(path.join(TT, 'timetableMeta.js'), 'utf8');
 const rulesSrc = fs.readFileSync(RULES, 'utf8');
 

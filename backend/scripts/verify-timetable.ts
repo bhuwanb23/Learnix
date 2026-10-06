@@ -36,11 +36,17 @@ function ok(cond: unknown, label: string, detail = '') {
     console.log(`  FAIL ${label}${detail ? ` (${detail})` : ''}`);
   }
 }
-function eq(actual: unknown, expected: unknown, label: string) {
+// `detail` is only printed when the assertion FAILS — it carries the evidence
+// you need at 3am (which kinds were open, which routes were found). Dropping it
+// silently is worse than not passing it: the assertion still bites, but the
+// failure tells you nothing.
+function eq(actual: unknown, expected: unknown, label: string, detail = '') {
   ok(
     actual === expected,
     label,
-    actual === expected ? '' : `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+    actual === expected
+      ? ''
+      : `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}${detail ? ` — ${detail}` : ''}`,
   );
 }
 function throws422(fn: () => unknown, label: string, detail = '') {
