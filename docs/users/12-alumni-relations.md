@@ -314,17 +314,146 @@ recoverable, an accidental one to six thousand people is not. `publishedAt` is n
 on the approval path, which it never was.
 
 ### 3.8 Profile
-Director of Alumni Relations profile, program stats, and a link to **Notifications →
-Preferences**. The four switches this section previously described (event invites,
-donation appeals, chapter news, mentorship reminders) were local `useState` seeded from
-hardcoded defaults: no row was written, no emitter consulted anything, and the state was
-lost on reload. They were removed rather than left in place — a switch that looks
-authoritative and saves nothing teaches people that settings here are not real. The
-replacement reads and writes `notification_preferences` and is enforced at delivery time.
+
+A **self-service** profile. It was previously a read-only card showing the Director of
+Alumni Relations' name and three program counts, with no edit affordance, and four account
+menu items wired to `Alert.alert(label, 'Coming in a later phase.')`. The backend already
+exposed `GET/PUT /alumni/me` with skills, privacy, company and academic history — and no
+screen called it, so the profile was roughly 60% built and 0% wired.
+
+Sections, each independently saved:
+
+| Section | Fields |
+|---|---|
+| Personal | Display name, headline, bio, location, current role |
+| Academic | `graduationYear` only |
+| Work | Employer (registered company or free-text), sector |
+| Skills | Name + level; the list is **replaced**, not merged |
+| Career | A month-precision timeline with one current role |
+| Achievements | Self-declared claims, office-verified |
+| Links | LinkedIn, GitHub, website |
+| Privacy | Seven switches (§3.9) |
+| Security | Password change + session list |
+
+#### Two reads, on purpose
+
+`GET /alumni/profile` is **unredacted**. `GET /alumni/me` applies the owner's own privacy
+settings. They must not be merged: without the unredacted read you cannot see the email you
+chose to hide, which makes "hide my email" indistinguishable from "delete my email". The
+edit screen loads the first; directory previews use the second.
+
+#### What is deliberately not editable
+
+- **`batchId`** is registrar-owned. `graduationYear` is editable and the batch is not; when
+  they disagree the response flags `yearMismatch` and **the batch's year wins** for
+  filtering, so a member cannot make themselves a member of a different graduating class.
+- **Full name, email, phone** have no self-service path. Name and email belong to the
+  account; phone lives on the staff profile.
+
+#### Achievements are claims, not facts
+
+An alumnus adds a title, kind, issuer, year and URL. The claim is visible to the office as
+pending until somebody verifies it; verification stamps `verifiedBy`, `verifiedAt` and can
+be withdrawn. Editing the **title** of a verified claim demotes it back to unverified — the
+verifier agreed to that specific wording, not to whatever replaces it.
+
+#### Career invariants
+
+Month precision (`YYYY-MM`), never a day. At most one entry has `toMonth === null`; adding
+or promoting a role closes the outgoing one **at the new role's start month**, because that
+is what a CV shows. Opening or closing a role is one transaction — the demote and the update
+cannot half-apply, or the profile is left with zero current roles, which is the one state
+the invariant exists to prevent. The office may correct a timeline, and is held to the same
+invariant.
+
+#### Links are validated by scheme, not host
+
+Any absolute `http(s)` URL is accepted. A host allowlist would reject a valid personal site;
+a "must contain `linkedin.com`" rule would reject the website field. What matters is that
+the stored string is safe to render as a pressable link.
+
+#### Removing the summary card
+
+The old `GET /alumni/profile` returned `{ fullName, roles, programStats }` and is deleted.
+It had no caller outside its own route, its three counters filtered on `institutionId`
+alone — so school-wide totals sat under a key that read as "your activity" — and being a
+literal route it **shadowed the profile sub-router mounted below it**, which is why the
+self-service endpoint was unreachable over HTTP at all.
+
+#### Account security
+
+These live in `auth`, not `alumni`, and the profile screen is their only caller.
+
+`POST /auth/change-password` **revokes every other session** and keeps the caller's. This
+was a real gap, not a missing feature: `resetPassword` beside it in the same file already
+revoked all sessions and carried the comment "password change invalidates existing
+logins". Change your password because you think a device is compromised, and previously
+that device stayed signed in until its refresh token lapsed on its own.
+
+`GET /auth/sessions` lists live refresh tokens; `POST /auth/revoke-all-sessions` ends them
+all but the caller's. Sending no token revokes everything including the caller's — a
+documented fail-safe, not an oversight.
+
+Two limitations stated rather than hidden:
+
+- The refresh token travels in **`X-Refresh-Token`**, not the query string. It used to be
+  `?refreshToken=…`, which writes the one credential that can mint access tokens into
+  access logs, browser history and the next `Referer`. The query form is still accepted for
+  older installed clients.
+- **No device names.** `refresh_token` stores no user agent or IP, so a session can only be
+  identified by when it started. The response says so in a `note` field and the screen
+  displays it, rather than presenting a start time as if it identified a phone. Adding
+  `userAgent` is the real fix and touches every login path.
+
+### 3.9 Notification preferences
+
+Seven switches, one per `notification_category`, all defaulting **on**. A muted category
+writes **no row at all** rather than a `muted` row — so "muted" and "never configured"
+cannot drift apart, and enabling a category later cannot resurrect a stale preference.
+
+Enforced at **delivery time**, not at emit time: an event emitted while the recipient was
+muted is dropped, not queued and delivered when unmuted. Three deliveries deliberately
+bypass the mute:
+
+- **office mentorship-arrival alerts** — the office asked to be told
+- **chapter announcements** — you are in the chapter, the chapter is speaking to you
+- **the stale-queue digest** — an operations signal, not engagement
+
+The four switches this section previously described (event invites, donation appeals,
+chapter news, mentorship reminders) were local `useState` seeded from hardcoded defaults: no
+row was written, no emitter consulted anything, and the state was lost on reload. They were
+removed rather than left in place — a switch that looks authoritative and saves nothing
+teaches people that settings here are not real.
 
 ## 4. Backend API Surface
 
 All routes are mounted at `/api/v1/alumni` and gated by `requireRole('ALUMNI', 'ALUMNI_OFFICE', 'ADMIN')`.
+
+### Self-service profile
+
+```
+GET    /alumni/profile                       unredacted self view
+PUT    /alumni/profile                       partial patch; omit a field to leave it
+GET    /alumni/profile/career
+POST   /alumni/profile/career
+PUT    /alumni/profile/career/{id}
+PATCH  /alumni/profile/career/{id}/highlight
+DELETE /alumni/profile/career/{id}
+GET    /alumni/profile/achievements
+POST   /alumni/profile/achievements
+PUT    /alumni/profile/achievements/{id}
+DELETE /alumni/profile/achievements/{id}
+GET    /alumni/profile/achievements/queue       office only
+POST   /alumni/profile/achievements/{id}/verify office only
+```
+
+Skills, links, `graduationYear` and privacy all go through the single `PUT`, as a patch.
+**Partial privacy updates are genuinely partial** — the upsert's create branch supplies a
+default for every switch, so it is easy to assume those defaults also leak into the update
+branch. They do not: `PUT { privacy: { showLinks: false } }` leaves `showEmail`, `showPhone`
+and `visibleTo` alone. There is a regression test for exactly this, because getting it
+wrong would silently re-publish hidden contact details while the response confirms the
+change.
 
 ### Office vs graduate
 Two distinct actors share this app, separated by the **`ALUMNI_OFFICE`** role:
@@ -555,8 +684,11 @@ POST /alumni/notifications/broadcasts/preview    (office) { audience }
 POST /alumni/notifications/broadcasts            (office) { audience, title, body, isImportant }
 POST /alumni/notifications/reminders/sweep       (office) { dryRun }
 POST /alumni/directory/{id}/invite | /add-mentor
-GET  /alumni/profile              (office profile card)
 ```
+
+The old `GET /alumni/profile` (office profile card) was removed from this list along with
+its route and service function — see §3.8. `/alumni/profile/*` is documented separately
+above, because it is the self-service surface and not a card.
 
 ## 5. Data Model (Domain J)
 
@@ -565,7 +697,11 @@ GET  /alumni/profile              (office profile card)
 | `AlumniProfile` | + `headline`, `bio`; real relations to `batch` and `company` |
 | `AlumniSkill` | `(profileId, skill)` unique, `level`, `yearsExperience` — normalised so the directory can filter and the matcher can score in SQL |
 | `AlumniCareerEntry` | `title`, `companyId`, `fromMonth`, `toMonth` (null = current). A timeline, not a column |
-| `AlumniPrivacySettings` | 1:1 with the profile; the single place redaction is applied |
+| `AlumniPrivacySettings` | 1:1 with the profile; the single place redaction is applied. + `showLinks` |
+| `AlumniAchievement` | A self-declared claim: `title`, `kind`, `issuer`, `year`, `url`, `isVerified`, and the `verifiedBy`/`verifiedAt` stamp. Office-verified rather than self-certified, which is what makes it worth showing in a directory |
+| `NotificationPreference` | 1:1 per `(userId, category)`. **Absence means muted** — a muted category writes no row, so "muted" and "never configured" cannot drift apart |
+| `Notification` | + `dedupeKey` (unique, nullable) and `isImportant`. `dedupeKey` is what stops a sweep pressed eleven times writing eleven rows |
+| `Broadcast` | + `isImportant`. Important broadcasts use the `ALUMNI_BROADCAST` category; the legacy `BROADCAST` value stays readable |
 | `AlumniConnection` | `(requester, recipient)` unique, `status` PENDING/ACCEPTED/DECLINED/CANCELLED |
 | `AlumniChapter` | + `events` relation; `region`, `tier`, `description`, `meetingFrequency`. `presidentAlumniUserId` is a **denormalised pointer** to the current PRESIDENT, written only by `assignOfficer()` and the seed |
 | `AlumniChapterOfficer` | one row per **term**: `role`, `since`, `until`, `isCurrent`. `@@unique([chapterId, alumniUserId, role])` — re-appointment opens a new term instead of editing history |

@@ -823,9 +823,23 @@ router.use('/notifications', notificationsRoutes);
 // and an unredacted self-view that is deliberately DIFFERENT from `/alumni/me`.
 //
 // Ordering against the other two mounts does not matter - the prefixes are distinct.
-// The mount has no literal route above it any more: the old inline `GET /profile` was
-// deleted (see the bottom of this file) because it shadowed this mount, so this is now
-// reachable.
+//
+// There is deliberately NO literal `GET /profile` route anywhere in this file. There was
+// one at the bottom, and it made this entire sub-router unreachable: a literal route
+// declared after a `router.use` mount never runs, because the mount consumes the rest of
+// the path first. So `GET /alumni/profile` — the endpoint the client and the HTTP suite
+// both call — answered with that literal's four-field summary card instead of the
+// profile, and every service-level test still passed because they call the services
+// directly.
+//
+// The literal also was not a profile: its `programStats` counters filtered on
+// `institutionId` alone, so school-wide totals were presented as "your activity". Both
+// the route and its `getProfile` helper in `alumni.service.ts` are deleted rather than
+// renamed, because renaming would have preserved a misleading payload. Nothing read them:
+// the only screen that did is replaced by the self-service hub.
+//
+// `check-profile.ts` asserts all three facts at the source level, since no request-level
+// test can run without a server and the ordering is only visible here.
 router.use('/profile', profileRoutes);
 
 // ── AL-05 mentorship ────────────────────────────────────────
@@ -1107,23 +1121,5 @@ router.post(
 // was nowhere to put a category, a mute, or a dedupe key. They are deleted rather
 // than left shadowed, because two readers of `/alumni/notifications` in one file is
 // how the donations sub-router was nearly shipped alongside its own inline twin.
-
-// AL-08 profile
-//
-// The literal `GET /profile` that used to live here returned
-// `{ id, fullName, email, roles, programStats: { activeMentorships, sessionsLogged,
-// activeCampaigns } }` and is DELETED rather than kept under a new path. Two reasons:
-//
-// 1. It SHADOWED the feature. A literal route declared after `router.use('/profile', …)`
-//    is unreachable, and this one was, so `GET /alumni/profile` — the endpoint the new
-//    client and the HTTP suite both call — answered with a four-field summary card
-//    instead of the profile. The sub-router has owned this path since AL-08.
-//
-// 2. It was never a profile. `programStats` counted mentorship pairs, sessions and
-//    campaigns with `where: { user: { institutionId } }` and no user filter, so those
-//    three numbers were institution-wide totals presented as "your" activity. Renaming
-//    the route would have preserved a misleading payload; the screen that rendered it
-//    (the old profile.js) is replaced by the self-service hub, so nothing reads it.
-router.use('/profile', profileRoutes);
 
 export default router;

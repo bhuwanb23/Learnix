@@ -141,7 +141,15 @@ export async function addCareerEntry(viewer: Viewer, input: CareerEntryInput) {
       where: { alumniProfileId: profile.id, toMonth: null },
       select: { fromMonth: true },
     });
-    if (currentRole) assertOrdering(monthLabel(currentRole.fromMonth), input.fromMonth);
+    // `monthLabel` returns `string | null`, and `fromMonth` on the open role is typed as
+    // nullable because the column is. It is not in practice — `careerEntrySchema`
+    // requires it — but passing a possible null into `monthStart` would surface as
+    // `"null" is not a month`, which reads like a user error about a field they never
+    // touched. Skip the check when the value is genuinely absent instead.
+    if (currentRole) {
+      const openFrom = monthLabel(currentRole.fromMonth);
+      if (openFrom) assertOrdering(openFrom, input.fromMonth);
+    }
   }
 
   const created = await prisma.$transaction(async (tx) => {

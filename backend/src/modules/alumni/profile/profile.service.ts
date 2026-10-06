@@ -260,6 +260,11 @@ export async function getProfileSelf(viewer: Viewer) {
     headline: profile.headline,
     bio: profile.bio,
     location: profile.location,
+    // Was ACCEPTED by `updateProfile` but never returned by the read, so the field was
+    // write-only: the edit screen saved a job title, reloaded, and found the input empty
+    // with no error anywhere. Anything the patch schema accepts has to come back here,
+    // or a save silently loses data.
+    currentRole: profile.currentRole,
     engagementStatus: profile.engagementStatus,
     company: profile.company,
     chapter: profile.chapter,
