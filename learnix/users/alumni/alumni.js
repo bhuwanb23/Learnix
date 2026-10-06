@@ -143,7 +143,18 @@ export default function AlumniScreen({ navigation }) {
           />
         );
       case 'Profile':
-        return <AlumniProfile navigation={{ goBack: handleBackPress }} />;
+        // `navigate` was missing here, so every cross-link out of the profile screen
+        // was dead — including the notification-preferences row. The other ten cases all
+        // pass it; this one had only `goBack`.
+        return (
+          <AlumniProfile
+            navigation={{
+              navigate: (screen) => setCurrentScreen(screen),
+              goBack: handleBackPress,
+              openModule: (key) => setCurrentScreen(key),
+            }}
+          />
+        );
       case 'Dashboard':
       default:
         return (

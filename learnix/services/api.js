@@ -52,7 +52,7 @@ async function tryRefresh() {
   return true;
 }
 
-async function request(method, path, body) {
+async function request(method, path, body, extraHeaders) {
   if (!accessToken) {
     refreshPromise = refreshPromise || login().finally(() => (refreshPromise = null));
     await refreshPromise;
@@ -64,6 +64,7 @@ async function request(method, path, body) {
       headers: {
         'Content-Type': 'application/json',
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(extraHeaders || {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -94,6 +95,11 @@ export const api = {
   // DELETE may carry a body when the removal needs a recorded reason (a waived
   // late fine, for instance). Express reads it with the usual json parser.
   delete: (path, body) => request('DELETE', path, body),
+  // Extra headers, for the rare call that must send a credential the `request`
+  // helper has no other slot for — currently only `authApi.sessions`, which marks
+  // which row is "this device". A header keeps that token out of access logs, browser
+  // history and `Referer`, all of which a query string leaks into.
+  withHeaders: (method, path, body, headers) => request(method, path, body, headers),
   // Multipart POST, for a receipt upload. Deliberately NOT folded into
   // `request`: that helper sets Content-Type: application/json unconditionally,
   // and if you hand it a FormData body the server gets a JSON content type with
@@ -165,10 +171,12 @@ export const alumniApi = {
   inviteAlumni: (id) => api.post(`/alumni/directory/${id}/invite`),
   addMentor: (id) => api.post(`/alumni/directory/${id}/add-mentor`),
 
-  // Self-service profile + privacy (AL-02). `updateMyProfile` is a PATCH-style
-  // body: omit a field to leave it alone, so never send a whole object back.
-  myProfile: () => api.get('/alumni/me'),
-  updateMyProfile: (payload) => api.put('/alumni/me', payload),
+  // Self-service profile + privacy.
+//
+// The `myProfile` / `updateMyProfile` keys live in the AL-08 block further down, pointing
+// at `/alumni/profile`. An earlier AL-02 pair under these same names pointed at
+// `/alumni/me` (the privacy-applied read); it had no callers and was removed rather than
+// left shadowed, because two same-named keys in one object literal resolve last-wins.
 
   // Professional networking (AL-02)
   matches: (params = {}) => {
@@ -419,7 +427,38 @@ export const alumniApi = {
   // Reminder sweep. `dryRun: true` reports what would be written without writing it.
   runReminderSweep: (dryRun = false) => api.post('/alumni/notifications/reminders/sweep', { dryRun: String(dryRun) }),
 
-  profile: () => api.get('/alumni/profile'),
+  // -- AL-08 profile -------------------------------------------------------------
+  // `myProfile()` is the UNREDACTED self view. It is deliberately not the older
+  // `/alumni/me` read, which applies the OWNER'S own privacy settings: that is right
+  // for a directory view and wrong for an edit screen, because without the distinction
+  // "hide my email" is indistinguishable from "delete my email" — you could not see the
+  // value you had hidden.
+  //
+  // The AL-02 pair that used to sit under these same two keys (`/alumni/me`) is
+  // removed rather than kept as an alias: duplicate keys in one object literal silently
+  // resolve last-wins, so the AL-08 methods were quietly replacing them while both
+  // remained readable in the file. Nothing called the `/alumni/me` pair.
+  myProfile: () => api.get('/alumni/profile'),
+  updateMyProfile: (payload) => api.put('/alumni/profile', payload),
+
+  // Career milestones. `toMonth` is YYYY-MM; omitting it (or null) means "current".
+  career: () => api.get('/alumni/profile/career'),
+  addCareerEntry: (payload) => api.post('/alumni/profile/career', payload),
+  updateCareerEntry: (id, payload) => api.put(`/alumni/profile/career/${id}`, payload),
+  setCareerHighlight: (id, isHighlight) =>
+    api.patch(`/alumni/profile/career/${id}/highlight`, { isHighlight }),
+  removeCareerEntry: (id) => api.delete(`/alumni/profile/career/${id}`),
+
+  // Achievements. Self-declared; only the office can verify.
+  achievements: () => api.get('/alumni/profile/achievements'),
+  addAchievement: (payload) => api.post('/alumni/profile/achievements', payload),
+  updateAchievement: (id, payload) => api.put(`/alumni/profile/achievements/${id}`, payload),
+  removeAchievement: (id) => api.delete(`/alumni/profile/achievements/${id}`),
+  // Office only: the queue of unverified claims, oldest first.
+  achievementQueue: (limit) =>
+    api.get(`/alumni/profile/achievements/queue${limit ? `?limit=${limit}` : ''}`),
+  verifyAchievement: (id, verified) =>
+    api.post(`/alumni/profile/achievements/${id}/verify`, { verified }),
 };
 
 // ── Sports & Cultural endpoints (docs/users/10 §4) ──
@@ -643,8 +682,37 @@ export const libraryApi = {
 // ── Auth endpoints shared by every role app (docs/users/03-admin §3.15) ──
 export const authApi = {
   me: () => api.get('/auth/me'),
-  changePassword: (currentPassword, newPassword) =>
-    api.post('/auth/change-password', { currentPassword, newPassword }),
+
+  // Change password. The refresh token is sent so the server can keep THIS device
+  // signed in while revoking every other one - without it the caller is logged out of
+  // the device they just used, which is the opposite of what someone changing a
+  // password after suspecting a compromise wants.
+  changePassword: async (currentPassword, newPassword) => {
+    const refreshToken = await AsyncStorage.getItem('learnix.refreshToken');
+    return api.post('/auth/change-password', { currentPassword, newPassword, refreshToken });
+  },
+
+  // Active sessions. The raw refresh token is sent ONLY so the server can mark which row
+  // is "this device" — it is never stored by the response. It travels in a header rather
+  // than `?refreshToken=`: a query string lands in access logs, browser history, proxy
+  // logs and the next `Referer`, and this is the one credential that can mint fresh
+  // access tokens. The server still accepts the query form for older installed builds.
+  sessions: async () => {
+    const refreshToken = await AsyncStorage.getItem('learnix.refreshToken');
+    return api.withHeaders(
+      'GET',
+      '/auth/sessions',
+      undefined,
+      refreshToken ? { 'X-Refresh-Token': refreshToken } : undefined,
+    );
+  },
+
+  // Sign out of every OTHER device. Without a token the server revokes everything
+  // including the current session - documented fail-safe, not an oversight.
+  revokeAllSessions: async () => {
+    const refreshToken = await AsyncStorage.getItem('learnix.refreshToken');
+    return api.post('/auth/revoke-all-sessions', { refreshToken });
+  },
   logout: async () => {
     // Revoke the refresh token server-side so it cannot be replayed, then drop
     // local credentials. A failure here must still clear the device.

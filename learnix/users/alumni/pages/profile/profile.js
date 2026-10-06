@@ -1,46 +1,75 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { theme } from '../../../../constants/theme';
-import { alumniApi } from '../../../../services/api';
-import { AnimatedCard, SkeletonCard } from '../../../../components/ui';
-
 /**
- * The four preference switches that used to live here are gone — see the
- * `Notification` section below for why. Kept as a comment rather than deleted
- * silently, because `docs/users/12-alumni-relations.md §3.8` still advertised them
- * as a shipped feature and the next person to read the docs will look for them.
+ * AL-08 Profile — the hub (docs/users/12-alumni-relations.md §3.8).
  *
- *   { id: 'T1', label: 'Event invites & RSVP alerts',    default: true  }
- *   { id: 'T2', label: 'Donation appeal notifications',  default: true  }
- *   { id: 'T3', label: 'Chapter news & meetups',          default: false }
- *   { id: 'T4', label: 'Mentorship session reminders',   default: true  }
+ * WHAT THIS REPLACES
+ * ------------------
+ * A 419-line single file that called `GET /alumni/profile` — which returns
+ * `{ id, fullName, email, roles }` plus three institution-wide counts — and rendered a
+ * card for it. It had no edit affordance, no skills, no career, no achievements, no
+ * privacy controls and no security controls. Four of its account menu items were wired
+ * to `Alert.alert(label, 'Coming in a later phase.')`.
  *
- * The real vocabulary lives on the server:
- * `backend/src/modules/alumni/notifications/notifications.rules.ts`.
+ * The backend already had `GET/PUT /alumni/me` returning skills, privacy, company and
+ * academic history — and no screen called it. So the profile was ~60% built and 0%
+ * wired, and the screen that existed was showing the thinnest of the four endpoints.
+ *
+ * WHY THERE ARE TWO READS
+ * -----------------------
+ * `getProfileSelf` (`/alumni/profile`) is unredacted; `getMyProfile` (`/alumni/me`)
+ * applies the OWNER'S own privacy settings. They must not be merged: without the
+ * unredacted read you cannot see the email you chose to hide, which makes "hide my
+ * email" indistinguishable from "delete my email". The server documents the same split.
+ *
+ * SCOPE
+ * -----
+ * Career, achievements and privacy WRITE locally through their own endpoints, because
+ * each has its own rules the profile patch does not carry — one-current-role,
+ * verification stamps, and switches that must respect the `discoverable` clamp. Only
+ * the simple column edits go through `updateProfile`.
  */
-
-const menuItems = [
-  { id: 'M1', label: 'Newsletter Archive', icon: 'mail-outline' },
-  { id: 'M2', label: 'Alumni Badge & Certificates', icon: 'ribbon-outline' },
-  { id: 'M3', label: 'Help & Support', icon: 'help-circle-outline' },
-  { id: 'M4', label: 'About Learnix', icon: 'information-circle-outline' },
-];
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { theme } from '../../../../constants/theme';
+import { alumniApi, authApi } from '../../../../services/api';
+import { SkeletonCard } from '../../../../components/ui';
+import { initialsOf } from './profileMeta';
+import PersonalSection from './components/PersonalSection';
+import AcademicSection from './components/AcademicSection';
+import WorkSection from './components/WorkSection';
+import SkillsSection from './components/SkillsSection';
+import CareerSection from './components/CareerSection';
+import AchievementsSection from './components/AchievementsSection';
+import LinksSection from './components/LinksSection';
+import PrivacySection from './components/PrivacySection';
+import SecuritySection from './components/SecuritySection';
 
 export default function AlumniProfile({ navigation }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async (showSpinner = true) => {
+  // The links section ends with "hide them with the Professional links switch in
+  // Privacy". Recording where privacy sits in the scroll, rather than hardcoding an
+  // offset, keeps that link correct after the sections above it change height.
+  const scrollRef = useRef(null);
+  const privacyY = useRef(0);
+
+  const load = useCallback(async (spinner = true) => {
     try {
-      if (showSpinner) setLoading(true);
+      if (spinner) setLoading(true);
       setError(null);
-      const p = await alumniApi.profile();
-      setProfile(p);
+      setProfile(await alumniApi.myProfile());
     } catch (e) {
       setError(e.message);
     } finally {
@@ -49,36 +78,68 @@ export default function AlumniProfile({ navigation }) {
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     load();
   }, [load]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false);
-  };
+  /**
+   * The employers the work section offers, read from the directory facets rather than a
+   * new endpoint — the facets already carry every registered company with its sector.
+   *
+   * Loaded once on mount and handed to the section, so switching tabs does not re-fetch.
+   */
+  const loadCompanies = useCallback(async () => {
+    try {
+      const facets = await alumniApi.directoryFacets();
+      const list = facets?.companies ?? [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      // Non-fatal: the section renders an explanation instead of a picker, and the
+      // career timeline still accepts a free-text employer.
+      return [];
+    }
+  }, []);
+
+  /**
+   * A column-level profile patch.
+   *
+   * On success the server returns the whole reloaded profile, so the local copy is
+   * replaced rather than patched field-by-field — otherwise the screen and the server
+   * disagree the moment one of them normalises a value.
+   */
+  const save = useCallback(async (payload) => {
+    setSaving(true);
+    try {
+      const next = await alumniApi.updateMyProfile(payload);
+      setProfile(next);
+      return next;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  /** Career / achievements write through their own endpoints, then reload. */
+  const afterWrite = useCallback(async () => {
+    setProfile(await alumniApi.myProfile());
+  }, []);
 
   const onLogout = () => {
-    Alert.alert('Logout', 'Clear the session and re-login as the demo user?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.removeItem('learnix.refreshToken');
-          Alert.alert('Logged out', 'Session cleared. The app will re-authenticate on next load.');
-        },
-      },
-    ]);
+    authApi.logout().then(() => {
+      navigation?.setInitialScreen?.('main');
+    });
   };
+
+  const verifiedCount = useMemo(
+    () => (profile?.achievements ?? []).filter((a) => a.isVerified).length,
+    [profile],
+  );
 
   if (loading && !profile) {
     return (
       <View style={styles.center}>
-        <View style={{ backgroundColor: '#2563eb', height: 200, margin: 16, borderRadius: 20 }} />
-        <SkeletonCard style={{ marginHorizontal: 16 }} />
-        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
-        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 10 }} />
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </View>
     );
   }
@@ -86,334 +147,198 @@ export default function AlumniProfile({ navigation }) {
   if (error && !profile) {
     return (
       <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Ionicons name="cloud-offline-outline" size={38} color={theme.colors.textMuted} />
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+        <TouchableOpacity onPress={() => load()} accessibilityRole="button" style={styles.retryBtn}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const initials = profile.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2);
-  const ps = profile.programStats ?? {};
-  const statCards = [
-    { value: String(ps.activeMentorships ?? 0), label: 'Mentor Pairs' },
-    { value: String(ps.sessionsLogged ?? 0), label: 'Sessions' },
-    { value: String(ps.activeCampaigns ?? 0), label: 'Campaigns' },
-  ];
-
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {
+        setRefreshing(true);
+        load(false);
+      }} />}
     >
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+          <Text style={styles.avatarText}>{initialsOf(profile?.user?.fullName)}</Text>
         </View>
-        <Text style={styles.name}>{profile.fullName}</Text>
+        <Text style={styles.name}>{profile?.user?.fullName}</Text>
         <Text style={styles.role}>
-          {(profile.roles ?? []).includes('ADMIN') ? 'Director' : 'Staff'}, Alumni Relations
+          {profile?.currentRole || profile?.headline || 'Alumnus'}
         </Text>
         <View style={styles.badgeRow}>
-          {(profile.roles ?? []).map((r) => (
-            <View key={r} style={styles.badge}>
-              <Ionicons name="shield-checkmark-outline" size={11} color="#fff" />
-              <Text style={styles.badgeText}>{r}</Text>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>
+              {profile?.academic?.authoritativeYear ? `Class of ${profile.academic.authoritativeYear}` : 'Alumnus'}
+            </Text>
+          </View>
+          {profile?.chapter ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{profile.chapter.city}</Text>
             </View>
-          ))}
+          ) : null}
+          {profile?.company ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{profile.company.name}</Text>
+            </View>
+          ) : null}
         </View>
       </LinearGradient>
 
-      <View style={styles.statsRow}>
-        {statCards.map((s) => (
-          <View key={s.label} style={styles.statCard}>
-            <Text style={styles.statValue}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-          </View>
-        ))}
+      <PersonalSection profile={profile} saving={saving} onSave={save} />
+
+      <AcademicSection academic={profile?.academic} saving={saving} onSave={save} />
+
+      <WorkSection
+        profile={profile}
+        saving={saving}
+        onSave={save}
+        loadCompanies={fetchCompanies}
+      />
+
+      <SkillsSection skills={profile?.skills ?? []} saving={saving} onSave={(list) => save({ skills: list })} />
+
+      <CareerSection
+        career={profile?.career ?? []}
+        saving={saving}
+        onAdd={async (entry) => {
+          await alumniApi.addCareerEntry(entry);
+          await afterWrite();
+        }}
+        onUpdate={async (id, patch) => {
+          await alumniApi.updateCareerEntry(id, patch);
+          await afterWrite();
+        }}
+        onHighlight={async (id, isHighlight) => {
+          await alumniApi.setCareerHighlight(id, isHighlight);
+          await afterWrite();
+        }}
+        onRemove={async (id) => {
+          await alumniApi.removeCareerEntry(id);
+          await afterWrite();
+        }}
+      />
+
+      <AchievementsSection
+        achievements={profile?.achievements ?? []}
+        verifiedCount={verifiedCount}
+        onAdd={async (entry) => {
+          await alumniApi.addAchievement(entry);
+          await afterWrite();
+        }}
+        onRemove={async (id) => {
+          await alumniApi.removeAchievement(id);
+          await afterWrite();
+        }}
+      />
+
+      <LinksSection
+        links={profile?.links}
+        saving={saving}
+        onSave={(links) => save({ links })}
+        // The footer says "hide them with the Professional links switch in Privacy". That
+        // instruction has to be clickable or it is just advice the user cannot act on
+        // without scrolling past four sections to find the switch.
+        onGoToPrivacy={() => {
+          const y = privacyY.current;
+          scrollRef.current?.scrollTo?.({ y, animated: true });
+        }}
+      />
+
+      <View
+        onLayout={(e) => {
+          privacyY.current = e.nativeEvent.layout.y;
+        }}
+      >
+        <PrivacySection
+          privacy={profile?.privacy}
+          saving={saving}
+          onSave={(privacy) => save({ privacy })}
+        />
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Contact</Text>
-        <View style={styles.menuCard}>
-          <View style={styles.menuRow}>
-            <Ionicons name="mail-outline" size={17} color={theme.colors.textMuted} />
-            <Text style={styles.menuLabel}>Email</Text>
-            <Text style={styles.menuValue} numberOfLines={1}>{profile.email}</Text>
-          </View>
-        </View>
-      </View>
+      <SecuritySection authApi={authApi} />
 
-      <AnimatedCard delay={200}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notifications</Text>
-        {/* The four switches that used to be here were seeded from a local
-            `useState({ T1: true, T2: true, T3: false, T4: true })` and never left the
-            device — no row was written, and no emitter consulted anything, because no
-            emitter could. They are replaced by a link to the real preference screen,
-            which reads and writes `notification_preferences` and is enforced at
-            delivery time.
-
-            A link beats four switches that look authoritative and do nothing: the
-            second option teaches people that settings here are not real. */}
-        <TouchableOpacity
-          style={styles.prefLink}
-          onPress={() => navigation?.navigate?.('Notifications')}
-          accessibilityRole="button"
-          accessibilityLabel="Notification preferences"
-          accessibilityHint="Choose which notifications you receive"
-        >
-          <View style={[styles.prefIcon, { backgroundColor: '#2563eb1a' }]}>
-            <Ionicons name="notifications-outline" size={15} color="#2563eb" />
-          </View>
-          <View style={styles.prefLinkBody}>
-            <Text style={styles.prefLabel}>What you hear about</Text>
-            <Text style={styles.prefHint}>
-              Event reminders, registrations, mentorship, chapter news, giving and office
-              broadcasts.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color="#94a3b8" />
-        </TouchableOpacity>
-      </View>
-      </AnimatedCard>
-
-      <AnimatedCard delay={300}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <View style={styles.menuCard}>
-          {menuItems.map((m, idx) => (
-            <TouchableOpacity
-              key={m.id}
-              style={[styles.menuRow, idx < menuItems.length - 1 && styles.menuRowBorder]}
-              onPress={() => Alert.alert(m.label, 'Coming in a later phase.')}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={m.icon} size={17} color={theme.colors.textMuted} />
-              <Text style={styles.menuLabel}>{m.label}</Text>
-              <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-      </AnimatedCard>
-
-      <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-        <Ionicons name="log-out-outline" size={16} color="#dc2626" />
-        <Text style={styles.logoutText}>Logout</Text>
+      <TouchableOpacity
+        style={styles.logoutBtn}
+        onPress={onLogout}
+        accessibilityRole="button"
+        accessibilityLabel="Sign out"
+      >
+        <Ionicons name="log-out-outline" size={16} color={"#dc2626"} />
+        <Text style={styles.logoutText}>Sign out</Text>
       </TouchableOpacity>
+
+      <View style={styles.footerNote}>
+        <Ionicons name="heart-outline" size={11} color={theme.colors.textLight} />
+        <Text style={styles.footerText}>Your profile is visible per your privacy settings.</Text>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
-  hero: {
-    margin: 16,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-  },
+  center: { padding: 16, gap: 12, backgroundColor: theme.colors.background },
+  hero: { alignItems: 'center', paddingTop: 28, paddingBottom: 22, gap: 3 },
   avatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  avatarText: {
-    fontSize: 22,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-  },
-  name: {
-    fontSize: 19,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-  },
-  role: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Medium',
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 3,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    marginTop: 12,
-  },
+  avatarText: { color: '#fff', fontSize: 26, fontWeight: '800' },
+  name: { fontSize: 19, fontWeight: '800', color: '#fff' },
+  role: { fontSize: 12.5, color: 'rgba(255,255,255,0.86)' },
+  badgeRow: { flexDirection: 'row', gap: 6, marginTop: 9, flexWrap: 'wrap', justifyContent: 'center' },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginHorizontal: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  badgeText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-SemiBold',
-    color: '#fff',
-    marginLeft: 4,
+  badgeText: { fontSize: 10.5, fontWeight: '700', color: '#fff' },
+  errorText: { fontSize: 13, color: theme.colors.textMuted, textAlign: 'center' },
+  retryBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: theme.colors.primary,
+    alignSelf: 'center',
   },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 15,
-    fontFamily: 'Manrope-ExtraBold',
-    color: theme.colors.text,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 3,
-  },
-  section: { paddingHorizontal: 16, marginTop: 18 },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  prefCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 14,
-  },
-  prefLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 11,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  prefLinkBody: {
-    flex: 1,
-    gap: 2,
-  },
-  prefHint: {
-    fontSize: 11.5,
-    lineHeight: 15,
-    color: theme.colors.textTertiary,
-  },
-  prefRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  prefRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceMuted,
-  },
-  prefIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  prefLabel: {
-    flex: 1,
-    fontSize: 12,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.text,
-  },
-  switch: {
-    width: 42,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#cbd5e1',
-    padding: 3,
-  },
-  switchOn: {
-    backgroundColor: '#2563eb',
-  },
-  switchKnob: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#fff',
-  },
-  switchKnobOn: {
-    alignSelf: 'flex-end',
-  },
-  menuCard: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 14,
-  },
-  menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 13,
-  },
-  menuRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceMuted,
-  },
-  menuLabel: {
-    flex: 1,
-    fontSize: 13,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.text,
-    marginLeft: 12,
-  },
-  menuValue: {
-    fontSize: 12,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.textMuted,
-    maxWidth: '55%',
-    textAlign: 'right',
-  },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 12.5 },
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    paddingVertical: 13,
+    gap: 6,
     marginHorizontal: 16,
-    marginTop: 18,
-    marginBottom: 16,
+    marginTop: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
-  logoutText: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: '#dc2626',
-    marginLeft: 6,
+  logoutText: { fontSize: 13, fontWeight: '700', color: '#dc2626' },
+  footerNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 18,
   },
+  footerText: { fontSize: 10.5, color: theme.colors.textLight },
 });
+
