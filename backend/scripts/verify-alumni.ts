@@ -741,10 +741,15 @@ check('GET /chapters/:id/activity', ca.status === 200 && (ca.data?.activity?.len
   check('  unread now 0', notif2.data?.unread === 0, `unread=${notif2.data?.unread}`);
 
   // ── 9. Profile ──
+  // MOVED to `scripts/verify-profile-http.ts`. This used to assert that
+  // `GET /alumni/profile` returned `{ fullName, roles, programStats }` — the summary
+  // card that a literal route of the same name SHADOWED the real self-service profile
+  // sub-router with. Keeping the assertion would have kept asserting an endpoint that no
+  // longer exists, and it would have read as coverage of `/alumni/profile` while testing
+  // something the profile screens never call. The replacement suite asserts the actual
+  // self-service contract instead.
   console.log('\n\u2500\u2500 9. Profile');
-  const prof = await call('GET', '/alumni/profile');
-  check('GET /profile', prof.status === 200 && !!prof.data?.fullName, `${prof.data?.fullName} (${prof.data?.roles?.join(', ')})`);
-  check('  programStats block', !!prof.data?.programStats, JSON.stringify(prof.data?.programStats));
+  console.log('   (moved to verify-profile-http.ts — see the note in that file)');
 
 // ── 10. RBAC: a non-alumni role must be refused ──
   console.log('\n══ 10. Access control');

@@ -100,6 +100,25 @@ export class Actor {
   }
 }
 
+/**
+ * Log in as the office and assert the role is actually there.
+ *
+ * The old suites took whichever token happened to be ambient, which is how "the office
+ * is refused" ended up being asserted while running as a graduate. Every suite starts
+ * with this, and `isOffice` is checked rather than assumed — a seed change that quietly
+ * demotes the account should fail here, loudly, instead of making forty permission
+ * assertions pass for the wrong reason.
+ */
+export async function officeLogin(): Promise<Actor> {
+  const actor = await login(OFFICE_EMAIL);
+  if (!actor.isOffice) {
+    console.error(`\n  ${OFFICE_EMAIL} does not hold ALUMNI_OFFICE (roles: ${actor.roles.join(', ') || 'none'}).`);
+    console.error('  Office-only assertions would silently pass as a graduate. Fix the seed.\n');
+    process.exit(1);
+  }
+  return actor;
+}
+
 async function login(email: string): Promise<Actor> {
   const res = await fetch(`${BASE}/auth/login`, {
     method: 'POST',
@@ -173,6 +192,29 @@ export async function requireServer(): Promise<void> {
   } catch (e) {
     console.error(`\n  Cannot reach ${BASE}.\n  ${(e as Error).message}`);
     console.error('  Start the server first: npm run dev\n');
+    process.exit(1);
+  }
+}
+
+/**
+ * Every suite runs through this rather than calling `main()` itself.
+ *
+ * It closes the Prisma connection before exiting. Without it, a suite that ends in
+ * `tally.finish()` — which calls `process.exit` — leaves the connection pool open and
+ * the next suite in the same shell can inherit a stale pool. It also prints a pointer to
+ * the sibling suites, so someone who just ran one half of a split file finds the other
+ * half instead of assuming they have covered everything.
+ */
+export async function runSuite(title: string, main: () => Promise<void>): Promise<void> {
+  try {
+    await main();
+  } catch (e) {
+    // The title goes in the crash banner, not just the success banner. A stack trace
+    // with no suite name on it is the ambiguity this split exists to remove — half the
+    // point of separate files is knowing WHICH file threw.
+    console.error(`\n  ${title} threw:`);
+    console.error(e);
+    await prisma.$disconnect();
     process.exit(1);
   }
 }

@@ -16,12 +16,45 @@ model HallTicket {
 
   examSlot       ExamSlot       @relation(fields: [examSlotId], references: [id])
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  hallTicketRequests HallTicketRequest[]
 
   @@unique([examSlotId, studentProfileId])
   @@unique([examSlotId, seatNo])
   @@index([examSlotId])
   @@index([studentProfileId])
   @@map("hall_tickets")
+}
+
+// X-04 — correction and reissue requests. ONE table for both kinds, because the
+// queue, the decision and the audit trail are one workflow and two tables would
+// be two copies of it drifting apart. `field`/`requestedValue` are only
+// meaningful for a CORRECTION; a REISSUE regenerates seat + QR when completed.
+//
+// A student ASKS; only the exam cell decides. That asymmetry is why
+// `decidedByUserId` is stamped rather than trusted from the request body.
+model HallTicketRequest {
+  id               String    @id @default(cuid())
+  hallTicketId     String
+  studentProfileId String
+  kind             String // CORRECTION | REISSUE
+  field            String? // CORRECTION only: seatNo | rollNo | fullName
+  requestedValue   String? // CORRECTION only: what it should say instead
+  reason           String
+  status           String    @default("REQUESTED") // REQUESTED | APPROVED | REJECTED | COMPLETED
+  note             String? // decision note — what was approved, or why not
+  decidedByUserId  String? // scalar → users.id
+  decidedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  hallTicket     HallTicket     @relation(fields: [hallTicketId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([hallTicketId])
+  @@index([studentProfileId])
+  @@index([status])
+  @@map("hall_ticket_requests")
 }
 
 model Evaluation {

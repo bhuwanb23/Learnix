@@ -27,6 +27,7 @@ model StudentProfile {
   evaluationPapers  EvaluationPaper[]
   results           Result[]
   reEvaluations     ReEvaluationRequest[]
+  hallTicketRequests HallTicketRequest[]
   cheatingCases     CheatingCase[]
   jobApplications   JobApplication[]
   placementEligibility PlacementEligibility?

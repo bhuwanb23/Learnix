@@ -41,7 +41,6 @@ import {
 } from '../src/modules/alumni/profile/career.service.js';
 import {
   addAchievement,
-  listAchievements,
   removeAchievement,
   setVerified,
   verificationQueue,
@@ -200,12 +199,9 @@ async function build(): Promise<Fixtures> {
   const otherInst = await prisma.institution.create({
     data: { name: 'Foreign College', code: `${tag}-foreign`, address: '2 Other Road' },
   });
-  const foreignDept = await prisma.department.create({
-    data: { institutionId: otherInst.id, name: 'Foreign Dept', code: `${tag}-fdept` },
-  });
-  const foreignProg = await prisma.program.create({
-    data: { departmentId: foreignDept.id, name: 'Foreign Prog', code: `${tag}-fprog`, level: 'PG', durationYears: 2, totalSemesters: 4 },
-  });
+  // No department/program/batch on the foreign user: the point of this fixture is that a
+  // profile in ANOTHER institution cannot be reached, and unused rows would only slow the
+  // fixture teardown down.
   const foreign = await prisma.user.create({
     data: {
       institutionId: otherInst.id,
@@ -374,7 +370,39 @@ async function main() {
       },
     });
 
-    // ── Links ─────────────────────────────────────────────────────────────────
+    // ── Round trip ─────────────────────────────────────────────────────────
+    // Every field `updateProfileSchema` accepts must come back from the read that follows
+    // it. `currentRole` did not: it was writable and then absent from `getProfileSelf`, so
+    // the edit screen saved a job title, reloaded, and showed an empty input with no error
+    // anywhere. A write-only field is worse than a rejected one, because the user's only
+    // evidence it worked is the success toast.
+    section('patch fields survive the read');
+    const beforeRole = (await getProfileSelf(a)).currentRole;
+    const withRole = await updateProfile(a, { currentRole: 'Principal Engineer' });
+    ok(withRole.currentRole === 'Principal Engineer', 'currentRole is returned after being written');
+
+    // The same round-trip for the rest of the patch surface. Asserted as a group because
+    // the failure mode is identical for each: a 200, a success toast, and a field that is
+    // blank on reload.
+    const probe = await updateProfile(a, {
+      headline: 'Round-trip headline',
+      bio: 'Round-trip bio',
+      location: 'Round-trip location',
+      currentRole: 'Round-trip role',
+    });
+    ok(probe.headline === 'Round-trip headline', 'headline round-trips');
+    ok(probe.bio === 'Round-trip bio', 'bio round-trips');
+    ok(probe.location === 'Round-trip location', 'location round-trips');
+
+    await updateProfile(a, {
+      headline: 'Original headline',
+      currentRole: beforeRole ?? null,
+    });
+    ok(
+      (await getProfileSelf(a)).currentRole === (beforeRole ?? null),
+      `currentRole restored to its prior value (${beforeRole ?? 'null'})`,
+    );
+
     section('links');
     const linked = await updateProfile(a, {
       links: {
@@ -523,7 +551,7 @@ async function main() {
     let openNow = (await listCareer(a)).entries.filter((e) => e.isCurrent).length;
     ok(openNow === 1, 'exactly one current role before the office edit');
 
-    await officeUpdateCareerEntry(office, officeTimeline.id, { toMonth: null as unknown as string });
+    await officeUpdateCareerEntry(office, officeTimeline.id, { toMonth: null });
     openNow = (await listCareer(a)).entries.filter((e) => e.isCurrent).length;
     ok(openNow === 1, 're-opening a closed role via the office demotes the outgoing one');
 
@@ -663,8 +691,8 @@ async function main() {
       f!.tokenRows.push(row.id);
       return row;
     };
-    const s1 = await mkToken(f.aUserId);
-    const s2 = await mkToken(f.aUserId);
+    await mkToken(f.aUserId);
+    await mkToken(f.aUserId);
     const s3 = await mkToken(f.aUserId);
     ok((await prisma.refreshToken.count({ where: { userId: f.aUserId, revokedAt: null } })) === 3, 'three live sessions');
 

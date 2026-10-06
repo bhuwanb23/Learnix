@@ -336,6 +336,33 @@ section('route declaration order');
   }));
   ok(declared.length >= 13, `found the route declarations (${declared.length})`);
 
+  // The sub-router is mounted at `/alumni/profile` from `alumni.routes.ts`, and a LITERAL
+  // `GET /profile` route in the parent declared after that mount is unreachable — the
+  // mount consumes the rest of the path first. There was exactly such a route: it
+  // returned a `{ fullName, roles, programStats }` summary card and made the whole
+  // self-service feature unreachable over HTTP while every DB-free check below still
+  // passed, because those tests call the service directly.
+  //
+  // This is a source-level guard because that is the only place the ordering is visible.
+  // A request-level test would have caught it too, and does — `verify-alumni/profile-http.ts`
+  // calls `GET /alumni/profile` — but that suite needs a running server, whereas this one
+  // runs in CI with no server at all.
+  const parent = readFileSync(new URL('../src/modules/alumni/alumni.routes.ts', import.meta.url), 'utf8');
+  const mountAt = parent.indexOf("router.use('/profile'");
+  ok(mountAt >= 0, 'the profile sub-router is mounted');
+  const literalAfterMount = [...parent.matchAll(/router\.(get|post|put|patch|delete)\(\s*'\/profile'/g)]
+    .map((m) => m.index ?? -1)
+    .filter((i) => i > mountAt);
+  ok(
+    literalAfterMount.length === 0,
+    'no literal /profile route below the mount (one would shadow the whole feature)',
+  );
+  const serviceBody = readFileSync(new URL('../src/modules/alumni/alumni.service.ts', import.meta.url), 'utf8');
+  ok(
+    !/export async function getProfile\(/.test(serviceBody),
+    'the institution-wide getProfile summary helper is gone from alumni.service.ts',
+  );
+
   const careersList = declared.findIndex((r) => r.path === '/career');
   const careersItem = declared.findIndex((r) => r.path === '/career/:id');
   ok(careersList >= 0 && careersList < careersItem, 'GET /career is declared before /career/:id');

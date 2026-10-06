@@ -282,6 +282,19 @@ const ok = (c: boolean, m: string) => { if (c) { pass++; } else { fail++; consol
 
   // 10. mentorship digest
   console.log('[10] mentorship digest');
+  // The digest counts PENDING requests for the WHOLE institution — that is the feature
+  // ("summarise the office queue"), not a fixture scope. So this suite cannot assert an
+  // absolute count: seeded mentorship requests sit in the same institution and older
+  // than 24h, which made `stale === 1` fail with 5 on a correctly-seeded database.
+  //
+  // The baseline is captured immediately before the fixture row is inserted, and every
+  // assertion is relative to it. That tests the property actually under test — "my new
+  // stale row is counted, and only once" — without asserting anything about rows this
+  // file does not own.
+  const staleBeforeBaseline = new Date(now.getTime() - 24 * 3600 * 1000);
+  const baseline = await prisma.mentorshipRequest.count({
+    where: { institutionId: instId, status: 'PENDING', createdAt: { lte: staleBeforeBaseline } },
+  });
   const staleReq = await prisma.mentorshipRequest.create({
     data: {
       institutionId: instId, menteeUserId: b.userId, field: TAG,
@@ -289,19 +302,40 @@ const ok = (c: boolean, m: string) => { if (c) { pass++; } else { fail++; consol
     },
   });
   try {
+    const expectedStale = baseline + 1;
     const s1 = await runReminderSweep(officeViewer);
-    ok(s1.mentorshipDigest.stale === 1, 'stale request detected: ' + s1.mentorshipDigest.stale);
+    ok(s1.mentorshipDigest.stale === expectedStale,
+      `stale request counted: ${s1.mentorshipDigest.stale} (baseline ${baseline} + 1)`);
+    ok(s1.mentorshipDigest.stale > baseline, 'the new stale row raised the count above the baseline');
     ok(s1.mentorshipDigest.delivered >= 1, 'digest delivered to the office');
     const dKey = `mentorship-digest:${s1.mentorshipDigest.pending}:${staleReq.id}`;
     ok((await prisma.notification.count({ where: { dedupeKey: dKey } })) >= 1, 'digest row uses the queue-state key');
     const s2 = await runReminderSweep(officeViewer);
+    ok(s2.mentorshipDigest.stale === expectedStale, 'a repeat sweep does not double-count the stale row');
     ok(s2.mentorshipDigest.duplicates >= 1, 'unchanged queue -> duplicate, no new row');
     ok((await prisma.notification.count({ where: { dedupeKey: dKey } })) >= 1, 'still one digest row');
     // Office mute must NOT suppress it.
     await updatePreferences(instId, officeUserId, { MENTORSHIP: true });
     const s3 = await runReminderSweep(officeViewer);
-    ok(s3.mentorshipDigest.stale === 1, 'digest still computed when office mutes mentorship');
+    ok(s3.mentorshipDigest.stale === expectedStale, 'digest still computed when office mutes mentorship');
     await updatePreferences(instId, officeUserId, { MENTORSHIP: false });
+
+    // And a FRESH (non-stale) request must not be counted as stale. This is the part the
+    // absolute-count version could not express at all: without a control row there is no
+    // way to tell "correctly ignored the new row" from "counted everything".
+    const freshReq = await prisma.mentorshipRequest.create({
+      data: {
+        institutionId: instId, menteeUserId: a.userId, field: TAG,
+        status: 'PENDING', createdAt: now,
+      },
+    });
+    try {
+      const s4 = await runReminderSweep(officeViewer);
+      ok(s4.mentorshipDigest.stale === expectedStale,
+        `a request younger than 24h is not stale: ${s4.mentorshipDigest.stale} (want ${expectedStale})`);
+    } finally {
+      await prisma.mentorshipRequest.deleteMany({ where: { id: freshReq.id } });
+    }
   } finally {
     await prisma.mentorshipRequest.deleteMany({ where: { id: staleReq.id } });
   }

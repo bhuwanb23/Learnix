@@ -12,6 +12,13 @@ model Exam {
   name           String
   createdByUserId String // scalar → users.id
   status         String   @default("SCHEDULED") // SCHEDULED | ONGOING | COMPLETED | RESULTS_PUBLISHED
+  // X-04 hall-ticket publication. Deliberately its OWN gate rather than reusing
+  // `status`: the timetable going out and the hall tickets going out are two
+  // decisions taken on different days, and `status` is already spoken for by the
+  // results workflow. DRAFT → PUBLISHED → RECALLED.
+  hallTicketStatus            String    @default("DRAFT") // DRAFT | PUBLISHED | RECALLED
+  hallTicketPublishedAt       DateTime?
+  hallTicketPublishedByUserId String? // scalar → users.id
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
