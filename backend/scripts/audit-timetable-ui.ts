@@ -48,8 +48,14 @@ function ok(cond: unknown, label: string, detail = '') {
     failures.push(`${label}${detail ? ` — ${detail}` : ''}`);
   }
 }
-function eq(actual: unknown, expected: unknown, label: string) {
-  ok(actual === expected, label, `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+// `detail` is only printed on FAILURE — the evidence for a registry mismatch
+// (which keys were found) is the whole point of the assertion.
+function eq(actual: unknown, expected: unknown, label: string, detail = '') {
+  ok(
+    actual === expected,
+    label,
+    `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}${detail ? ` — ${detail}` : ''}`,
+  );
 }
 const section = (n: string) => console.log(`\n-- ${n}`);
 

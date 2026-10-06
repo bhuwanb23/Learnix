@@ -74,6 +74,50 @@ model AlumniCareerEntry {
   @@map("alumni_career_entries")
 }
 
+// An achievement is something a graduate declares about themselves that is NOT a job:
+// an award, a certification, a publication, a talk they gave, or volunteer work.
+//
+// WHY VERIFICATION EXISTS
+// -----------------------
+// Self-declared alone means every card can claim anything, and a directory of
+// unverifiable badges is worth less than one without. So a graduate writes their own
+// entries and the Alumni Relations Office verifies them, which sets `isVerified` plus
+// the stamp below. The UI shows unverified entries differently from verified ones
+// rather than hiding them — an unverified claim is still true as a claim, it is just
+// not endorsed.
+//
+// `verifiedByUserId` is a SCALAR, not a relation. That matches every other actor
+// stamp in this schema (Broadcast.senderUserId, Announcement.authorUserId,
+// AuditLog.actorUserId) and it means adding achievements does not touch the shared
+// `User` model, which five other modules also point at.
+model AlumniAchievement {
+  id               String   @id @default(cuid())
+  alumniProfileId  String
+  title            String   // "ACM Distinguished Speaker", "Kotlin Certified"
+  description      String?
+  // AWARD | CERTIFICATION | PUBLICATION | TALK | VOLUNTEER
+  kind             String   @default("AWARD")
+  // Who gave it. Free text, not an FK: awards come from bodies this schema has never
+  // heard of, and inventing an "issuing organisation" table to hold four rows would
+  // be worse than the string.
+  issuer           String?
+  year             Int?
+  url              String?
+  isVerified       Boolean  @default(false)
+  verifiedByUserId String?  // scalar → users.id
+  verifiedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  profile AlumniProfile @relation(fields: [alumniProfileId], references: [id], onDelete: Cascade)
+
+  // Unique on (profile, title, year) rather than title alone: the same talk can be
+  // given in 2023 and again in 2024, and two graduates obviously share titles.
+  @@unique([alumniProfileId, title, year])
+  @@index([alumniProfileId, kind])
+  @@map("alumni_achievements")
+}
+
 model AlumniPrivacySettings {
   id               String   @id @default(cuid())
   alumniProfileId  String   @unique
@@ -84,6 +128,12 @@ model AlumniPrivacySettings {
   showLocation     Boolean  @default(true)
   showCareer       Boolean  @default(true)
   showSkills       Boolean  @default(true)
+  // Professional links (LinkedIn/GitHub/website), same treatment as skills and
+  // career: ON by default, because these are what make a directory card worth
+  // clicking, and muteable because a personal URL is a way to be contacted outside
+  // the platform. Added alongside them rather than folded into one of them so a
+  // graduate can hide their employer history but keep their GitHub.
+  showLinks        Boolean  @default(true)
   // discoverable = may appear in directory search AND in match suggestions.
   // false hides the profile from browse but leaves a direct link working, so an
   // alumnus who unlists themselves is still reachable by someone who has their
