@@ -417,7 +417,7 @@ export const rsvpDecisionSchema = z.object({
 // `notifications/notifications.schemas.ts#broadcastCreateSchema`, which takes
 // `{ kind, value }` and validates that the value is present when the kind needs one.
 
-// �� AL-11 mentorship actions ����������������������������������
+// -- AL-11 mentorship actions --------------------------------------------------------
 export const mentorshipActionSchema = z.object({
   action: z.enum(['approve', 'decline', 'remind']).optional(),
 });

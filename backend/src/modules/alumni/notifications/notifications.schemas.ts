@@ -40,8 +40,10 @@ export const readStateSchema = z.object({
  * Preference patch.
  *
  * `.partial()` on a record of all eight, so any subset is legal and unknown keys are
- * stripped rather than rejected — a client built against a newer version that sends a
- * ninth key should degrade to "that one is ignored", not 400.
+ * STRIPPED rather than rejected — a client built against a newer version that sends a
+ * ninth key should degrade to "that one is ignored". The `refine` then rejects a patch
+ * that ends up carrying nothing the server recognises, which is a client bug worth a
+ * 400 rather than a silent no-op.
  */
 export const preferencePatchSchema = z
   .object(
@@ -58,7 +60,28 @@ export const preferencePatchSchema = z
 export const audienceSchema = z
   .object({
     kind: z.enum(AUDIENCE_KINDS),
-    value: z.union([z.coerce.number().int(), z.string()]).optional(),
+    /**
+     * Trimmed, and deliberately NOT coerced to a number.
+     *
+     * `z.coerce.number()` has two traps here, both hit while writing this:
+     *
+     *   `Number('   ')` is 0, and so is `Number('')` — neither is NaN. A blank city
+     *   therefore coerced to the NUMBER 0, passed validation, and resolved to the
+     *   city "0", which matched no chapter and reached nobody instead of being
+     *   rejected with a 400.
+     *
+     * So the union accepts a number or a non-empty string, and the numeric-string
+     * case is handled where it belongs: `resolveAudience` already does
+     * `Number(audience.value)` and range-checks the year, so there is nothing to gain
+     * by coercing here and a city whose name happens to be digits is still safe.
+     *
+     * `.optional()` sits AFTER the preprocess, not before: the preprocess has to see
+     * `undefined` and pass it through so ALL_ALUMNI and MENTORS still validate with no
+     * `value` at all.
+     */
+    value: z
+      .preprocess((v) => (typeof v === 'string' ? v.trim() : v), z.union([z.number(), z.string().min(1)]))
+      .optional(),
     chapterId: z.string().min(1).max(64).optional(),
   })
   .superRefine((v, ctx) => {

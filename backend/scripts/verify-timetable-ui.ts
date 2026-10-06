@@ -125,11 +125,18 @@ if (d) {
 
 // `new Date('2026-03-14')` is UTC midnight. In any timezone behind UTC that is
 // the 13th, which is the entire bug this function exists to prevent.
-const utcParsed = new Date('2026-03-14');
-ok(
-  meta.parseDayKey('2026-03-14')!.getDate() === 14,
-  'parses as a LOCAL date, so it cannot drift to the 13th',
-);
+// Asserted as LOCAL MIDNIGHT, not as "the day number is 14". The day number is
+// 14 under BOTH a UTC and a local parse in any timezone at or ahead of UTC, so
+// that weaker assertion let a `Date.UTC(...)` regression through — the teeth
+// proof found it. `getHours() === 0` holds only for a local-midnight
+// construction, in every timezone.
+for (const key of ['2026-03-14', '2026-11-02', '2027-01-01', '2028-02-29']) {
+  const d = meta.parseDayKey(key)!;
+  ok(d !== null && d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0,
+    `${key} parses to LOCAL midnight, not UTC midnight`,
+    `got ${d ? d.toString() : 'null'}`);
+}
+eq(meta.dayKey(meta.parseDayKey('2026-03-14')!), '2026-03-14', 'a local parse round-trips to the same key');
 
 eq(meta.parseDayKey('2026-02-30'), null, 'rejects 2026-02-30 rather than rolling into March');
 eq(meta.parseDayKey('2026-13-01'), null, 'rejects month 13');

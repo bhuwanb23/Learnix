@@ -399,6 +399,15 @@ const mkVenue = async (institution: string, name: string, capacity: number) =>
 const offeringA = await mkOffering(institutionId, ay.id, struct.section.id, teacherA.id, 'CS301', 'Data Structures');
 const offeringB = await mkOffering(institutionId, ay.id, struct.section.id, teacherB.id, 'CS302', 'Operating Systems');
 const offeringRival = await mkOffering(rival.id, rivalAy.id, rivalStruct.section.id, teacherB.id, 'CS999', 'Rival Subject');
+// A rival course running in OUR semester and OUR academic year. `academicYear` is
+// a plain scalar with no institution of its own, so this row is representable —
+// and it is the ONLY fixture that can tell the allocation block's institution
+// filter apart from its year filter. `offeringRival` alone is excluded by the
+// year filter even when the institution filter is gone, so it proves nothing
+// about the read path.
+const offeringRivalSameYear = await mkOffering(
+  rival.id, ay.id, rivalStruct.section.id, teacherB.id, 'CS998', 'Rival Subject In Our Year',
+);
 
 const student1 = await mkStudent(institutionId, `TT${stamp}-S1`);
 const student2 = await mkStudent(institutionId, `TT${stamp}-S2`);
@@ -663,6 +672,25 @@ ok(
   allocMine.missing.every((m) => !allocMine.allocated.some((a) => a.offeringId === m.offeringId)),
   'no offering is both allocated and missing',
 );
+// The `eligible` list is a read of every offering running this exam's semester
+// and year. Without the institution filter it lists ANOTHER COLLEGE'S course in
+// OUR year as a paper this controller still has to schedule — a tenant leak on a
+// READ path, which the write-path assertions above cannot see.
+ok(
+  allocMine.missing.every((m) => m.offeringId !== offeringRivalSameYear.id),
+  "the eligible list excludes another institution's offering, even in our own year",
+  `${allocMine.eligibleCount} eligible, rival same-year offering absent`,
+);
+ok(
+  allocMine.allocated.every((a) => a.offeringId !== offeringRivalSameYear.id),
+  'and so does the allocated list',
+);
+// The fixture check, so the two assertions above cannot pass for the wrong
+// reason: this row really does satisfy every OTHER condition of the query.
+const wouldMatchWithoutTheFilter = await prisma.courseOffering.count({
+  where: { id: offeringRivalSameYear.id, semester: exam.semester, academicYearId: exam.academicYearId },
+});
+eq(wouldMatchWithoutTheFilter, 1, 'the rival same-year offering really would match the semester and year filters');
 
 const slotsBlock = await svc.slotsBlock(institutionId);
 eq(slotsBlock.totals.slots, await prisma.examSlot.count({ where: { exam: { institutionId } } }), 'the slots block sees every slot');

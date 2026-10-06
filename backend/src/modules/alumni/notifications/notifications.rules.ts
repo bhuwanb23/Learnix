@@ -280,8 +280,22 @@ export const REMINDER_OFFSETS_H = [24, 2] as const;
  */
 export const REMINDER_SLACK_MIN = 30;
 
-/** How many rows one `createMany` may carry. SQLite caps a statement at 999 bound variables. */
-export const FANOUT_CHUNK = 250;
+/**
+ * How many rows one `createMany` may carry.
+ *
+ * SQLite caps a statement at 999 bound variables. A `notifications` row binds NINE
+ * of them (id is client-generated, but the other columns are not), so the ceiling is
+ * 999 / 9 = 111. This is set to 100 with margin.
+ *
+ * It was 250 while this was being written, which binds 2,250 variables and fails at
+ * the database on any broadcast wider than 111 people — in dev that is `ALL_ALUMNI`
+ * (863 recipients), so it would have passed every narrow test and failed the first
+ * real one. `check-notifications.ts` asserts the arithmetic so it cannot drift back.
+ */
+export const FANOUT_CHUNK = 100;
+
+/** Columns a `createMany` on `notifications` binds per row. See FANOUT_CHUNK. */
+export const NOTIFICATION_BOUND_COLUMNS = 9;
 
 /** Inbox page size ceiling, matching the other desks. */
 export const INBOX_MAX_LIMIT = 50;

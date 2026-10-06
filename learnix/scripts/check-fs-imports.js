@@ -15,11 +15,17 @@ const PAGES_DIR = path.resolve(__dirname, '..', 'users', 'accounts_finance', 'pa
 const FS_DIR = path.join(PAGES_DIR, 'fee_structure');
 const API_FILE = path.resolve(__dirname, '..', 'services', 'api.js');
 
+// The exam cell timetable desk (docs/users/05 §3.9). It lives under a different
+// user folder, so it gets its own root rather than being folded into PAGES_DIR.
+const EXAM_PAGES_DIR = path.resolve(__dirname, '..', 'users', 'exam_cell', 'pages');
+const TT_DIR = path.join(EXAM_PAGES_DIR, 'timetable');
+
 // A meta module is a leaf — it imports nothing by design — so the
 // "has at least one relative import" check does not apply to it.
 const LEAF_META = new Set([
   'feeStructureMeta.js', 'payrollSalaryMeta.js', 'payrollMeta.js', 'scholarshipsMeta.js',
   'reportsMeta.js', 'notificationsMeta.js', 'dashboardMeta.js',
+  'timetableMeta.js',
 ]);
 
 const files = [
@@ -66,6 +72,17 @@ const files = [
   path.join(PAGES_DIR, 'dashboard', 'dashboardUi.js'),
   ...['actions', 'alerts', 'collections', 'dues', 'expenses', 'payroll', 'scholarships']
     .map((d) => path.join(PAGES_DIR, 'dashboard', 'pages', d, `${d}.js`)),
+
+  // The exam cell timetable (docs/users/05 §3.9). Hub, meta, the shared Ui kit,
+  // and one sub-screen per block. The sub-screens sit two levels below the hub
+  // (`pages/timetable/pages/<block>/<block>.js`), so their relative imports have
+  // to climb FOUR levels to reach `services/api.js` — which is exactly the depth
+  // the Accounts F-11 build got wrong in all seven of its sub-screens.
+  path.join(TT_DIR, 'timetable.js'),
+  path.join(TT_DIR, 'timetableMeta.js'),
+  path.join(TT_DIR, 'timetableUi.js'),
+  ...['allocation', 'calendar', 'conflicts', 'duty', 'exams', 'rooms', 'slots', 'students']
+    .map((d) => path.join(TT_DIR, 'pages', d, `${d}.js`)),
 ];
 
 /** Every named export a module offers, plus its default. */

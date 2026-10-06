@@ -257,10 +257,70 @@ Chapter detail tabs: Overview, **Team**, Members, **Initiatives**, Events, Notic
 **Performance**, Activity.
 
 ### 3.7 Notifications (module)
-Inbox (event/donation/mentorship/chapter/newsletter types, unread dots, **mark all read**) + **Broadcast tab** (audience: All Alumni / Batch 2024 / Bengaluru / Mentors → Event Invite, Newsletter, Reunion, Donation Appeal templates pushed to student app).
+
+Eight message categories, one inbox, eight switches. Every category is delivered
+through a single function (`notifications.delivery.ts`) so a mute cannot be forgotten
+at an emitter, and the category vocabulary lives in one place
+(`notifications.rules.ts`) rather than being restated per screen.
+
+| Category | Type | Raised by | When |
+|----------|------|-----------|------|
+| Event reminders | `EVENT_REMINDER` | reminder sweep (office) | 24h and 2h before an event, to confirmed seats |
+| Registrations | `EVENT_REG` | registration service | seat confirmed / waitlisted / promoted / added by the office |
+| RSVP decisions | `EVENT` | events service | your answer on an event the office asked about |
+| Mentorship | `MENTORSHIP` | mentorship service | a request arrived, a decision was made, a session is due |
+| Chapter news | `CHAPTER` | chapters service | an announcement in a chapter you belong to |
+| Giving | `DONATION` | giving service | a gift was recorded, receipt issued |
+| Institutional | `ANNOUNCEMENT` | admin service | a college announcement was published |
+| Office broadcasts | `ALUMNI_BROADCAST` | notifications service | the Alumni Relations Office sent you something |
+
+**Inbox** — filter by category (with live unread counts), unread-only, important-only,
+paginated. One row can be marked read *or unread*; previously the only affordance was
+mark-all-read, so opening the inbox marked a pending mentorship approval as seen.
+
+**Important broadcasts** — the office can flag a broadcast important. An unread
+important row is pinned to the top of page 1. The pin requires `readAt: null`, so it
+unpins itself once read; a pin that never unpins is worse than no pin.
+
+**Preferences** — see §3.8. A muted category writes **no row at all**, rather than
+writing one and hiding it, so the unread badge only ever counts mail the recipient can
+actually see. The trade-off: the office cannot prove afterwards that it sent a
+suppressed message. The `Broadcast` row is the record, not the notification.
+
+**Broadcast (office)** — audience is now `{ kind, value? }`: all alumni, one graduation
+year, one chapter city, one chapter, or active mentors. The year and city lists come
+from `GET /notifications/broadcasts/options` and read the actual data; the previous
+contract accepted only the literals `BATCH_2024` and `CITY_BENGALURU`, so a 2019
+graduate or a Pune chapter member was unreachable by any broadcast. Every audience
+filters `deletedAt: null`. A live preview runs the same resolver as the send, and the
+send reports `delivered` and `muted` separately rather than claiming one number.
+
+**Reminder sweep (office)** — there is no scheduler anywhere in this backend, so
+reminders are produced by a button. `dryRun` runs the identical computation and writes
+nothing. Dedupe is per event per offset, so pressing it repeatedly cannot send twice,
+and the report distinguishes *delivered*, *muted* and *already sent*.
+
+Two things deliberately do **not** respect mutes: the mentorship request alert to the
+office, and the stale-queue digest. Both are the office's work, not news — muting
+"mentorship" must not be a way to lose a request somebody made for help.
+
+**Institutional announcements** — `Announcement` rows had an approval queue and a
+PUBLISHED transition that wrote zero `Notification` rows, so publishing reached nobody.
+Publishing now fans out. `audienceJson` holds two shapes in practice (a structured
+object from the seed, a bare token from the create endpoint); both are resolved, and an
+audience that cannot be interpreted delivers to **nobody** and is recorded in the audit
+log as skipped. Guessing would be the dangerous direction: a missing notice is
+recoverable, an accidental one to six thousand people is not. `publishedAt` is now set
+on the approval path, which it never was.
 
 ### 3.8 Profile
-Director of Alumni Relations profile, program stats, preference toggles (event invites, donation appeals, chapter news), account menu.
+Director of Alumni Relations profile, program stats, and a link to **Notifications →
+Preferences**. The four switches this section previously described (event invites,
+donation appeals, chapter news, mentorship reminders) were local `useState` seeded from
+hardcoded defaults: no row was written, no emitter consulted anything, and the state was
+lost on reload. They were removed rather than left in place — a switch that looks
+authoritative and saves nothing teaches people that settings here are not real. The
+replacement reads and writes `notification_preferences` and is enforced at delivery time.
 
 ## 4. Backend API Surface
 
@@ -485,8 +545,15 @@ POST /student/mentorship/requests   GET .../mentors, .../requests, .../{id}, goa
 `/{id}/progress` is participants + office only. It used to take a bare pairId with no
 authorisation at all, so any authenticated caller could read another mentorship's goal
 counts; the check is `assertPairReadable` in `mentorship.service.ts`.
-GET  /alumni/notifications        POST .../read-all
-POST /alumni/broadcasts           { audience, templateKey, title, body }
+GET  /alumni/notifications        ?category&unread&important&page&pageSize
+GET  /alumni/notifications/categories   POST .../read-all
+GET  /alumni/notifications/{id}   PATCH .../{id}/read   { read }
+GET/PATCH /alumni/notifications/preferences
+GET  /alumni/notifications/broadcasts            (office) send history
+GET  /alumni/notifications/broadcasts/options    (office) years + cities
+POST /alumni/notifications/broadcasts/preview    (office) { audience }
+POST /alumni/notifications/broadcasts            (office) { audience, title, body, isImportant }
+POST /alumni/notifications/reminders/sweep       (office) { dryRun }
 POST /alumni/directory/{id}/invite | /add-mentor
 GET  /alumni/profile              (office profile card)
 ```

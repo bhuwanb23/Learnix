@@ -172,9 +172,15 @@ try {
   // ══ 4. Creating, strictly ══════════════════════════════════════════════
   section('4. Creating an exam, strictly');
   {
-    const typo = await call('POST', '/examcell/timetable/exams', { token, body: { name: 'Typo Exam', typr: 'FINAL', semester: 3 } });
-    eq(typo.status, 400, 'a misspelled "type" is 400, not a silently-defaulted exam');
+    // The probe must be VALID APART from the misspelling. An earlier version
+    // sent `{ name, typr, semester }` with no `type` at all — which is 400 under
+    // ANY schema, strict or not, so it proved nothing about `.strict()`. The
+    // teeth case that removes `.strict()` passed straight through it.
+    const typo = await call('POST', '/examcell/timetable/exams', { token, body: { name: 'Typo Exam', type: 'FINAL', typr: 'MID_TERM', semester: 3 } });
+    eq(typo.status, 400, 'a misspelled "typr" alongside valid fields is 400 — the schema is genuinely .strict()');
     eq(await prisma.exam.count({ where: { name: 'Typo Exam' } }), 0, '  …and nothing was created');
+    const missing = await call('POST', '/examcell/timetable/exams', { token, body: { name: 'No Type', semester: 3 } });
+    eq(missing.status, 400, 'a missing "type" is 400 too, for the different reason');
   }
   {
     const bad = await call('POST', '/examcell/timetable/exams', { token, body: { name: 'Bad Type', type: 'NONSENSE', semester: 3 } });

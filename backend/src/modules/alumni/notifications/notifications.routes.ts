@@ -44,7 +44,7 @@ import {
 } from './notifications.inbox.service.js';
 import { listPreferences, updatePreferences } from './notifications.prefs.service.js';
 import { runReminderSweep } from './notifications.reminders.service.js';
-import { createBroadcast, previewAudience, listBroadcasts } from './notifications.broadcast.service.js';
+import { createBroadcast, previewAudience, listBroadcasts, audienceOptions } from './notifications.broadcast.service.js';
 import {
   broadcastCreateSchema,
   broadcastListQuerySchema,
@@ -173,18 +173,17 @@ router.patch(
   }),
 );
 
-router.get(
-  '/:id',
-  validate(notificationIdSchema, 'params'),
-  wrap(async (req, res) => {
-    const viewer = await viewerFor(req);
-    const out = await getNotification(viewer.institutionId, viewer.userId, String(req.params.id));
-    if (!out) throw notFound('Notification not found');
-    res.json({ notification: out });
-  }),
-);
-
 // ── Office ────────────────────────────────────────────────────────────────────
+//
+// BEFORE `/:id`, deliberately. `GET /broadcasts` is a single literal segment and
+// `GET /:id` is a single parameter segment, so if `/:id` were declared first it would
+// capture `/broadcasts` with `id = 'broadcasts'` and answer "Notification not found" —
+// a 404 about a missing row rather than a routing bug. This is the same trap
+// `donations.routes.ts` documents for `/impact`, and I shipped it here first and
+// caught it by reading the declaration order rather than by a test.
+//
+// `check-notifications.ts` now asserts the ordering statically, because a DB-backed
+// test cannot see it: the services all work, only the wiring is wrong.
 
 router.get(
   '/broadcasts',
@@ -206,6 +205,23 @@ router.post(
   }),
 );
 
+/**
+ * The year/city/chapter lists the composer offers.
+ *
+ * Static-path route, so it sits above `/:id` with the other literals. Office-only
+ * because it is only useful for composing, and it is one grouped query plus one
+ * chapter list — cheap, but not something an ordinary graduate needs to be able to
+ * enumerate their cohort sizes for.
+ */
+router.get(
+  '/broadcasts/options',
+  requireOffice(),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    res.json(await audienceOptions(viewer.institutionId));
+  }),
+);
+
 router.post(
   '/broadcasts',
   requireOffice(),
@@ -223,6 +239,17 @@ router.post(
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
     res.json(await runReminderSweep(viewer, { dryRun: req.body?.dryRun === 'true' }));
+  }),
+);
+
+router.get(
+  '/:id',
+  validate(notificationIdSchema, 'params'),
+  wrap(async (req, res) => {
+    const viewer = await viewerFor(req);
+    const out = await getNotification(viewer.institutionId, viewer.userId, String(req.params.id));
+    if (!out) throw notFound('Notification not found');
+    res.json({ notification: out });
   }),
 );
 
