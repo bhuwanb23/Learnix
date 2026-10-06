@@ -290,24 +290,16 @@ export async function recordDonation(institutionId: string, donationId: string, 
 // a service there - is how two inboxes end up reading one table differently.
 
 // -- AL-08 Profile --------------------------------------------------------------------
-export async function getProfile(userId: string, institutionId: string) {
-  const user = await prisma.user.findFirst({
-    where: { id: userId, institutionId },
-    include: { roles: true },
-  });
-  if (!user) throw notFound('User not found');
-
-  const [activePairs, sessions, campaigns] = await Promise.all([
-    prisma.mentorshipPair.count({ where: { menteeStudentProfile: { user: { institutionId } }, status: 'ACTIVE' } }),
-    prisma.mentorshipSession.count({ where: { pair: { menteeStudentProfile: { user: { institutionId } } } } }),
-    prisma.fundraisingCampaign.count({ where: { institutionId, status: 'ACTIVE' } }),
-  ]);
-
-  return {
-    id: user.id,
-    fullName: user.fullName,
-    email: user.email,
-    roles: user.roles.map((r) => r.role),
-    programStats: { activeMentorships: activePairs, sessionsLogged: sessions, activeCampaigns: campaigns },
-  };
-}
+//
+// `getProfile(userId, institutionId)` is deleted, along with the literal
+// `GET /alumni/profile` route that called it. It returned identity plus three
+// `programStats` counters and no editable profile data, it had no caller outside its own
+// route, and its counters filtered on `institutionId` alone — so they were school-wide
+// totals sitting under the key `programStats`. Worse, being a literal route it shadowed
+// the `profile` sub-router mounted in `alumni.routes.ts`, which meant the real
+// self-service profile was unreachable over HTTP.
+//
+// Self-service profile reads and writes now live in `./profile/` and are mounted at
+// `/alumni/profile`. The directory-facing view of someone else's profile is
+// `directory.getProfileDetail`, which is a different function with a different
+// contract.

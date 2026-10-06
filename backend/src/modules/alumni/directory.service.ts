@@ -89,22 +89,29 @@ export function visibilityFor(
       showLocation: boolean;
       showCareer: boolean;
       showSkills: boolean;
+      // Optional because a row written before showLinks existed has no value for it,
+      // and `undefined` must not be read as `false` — an alumni who never touched the
+      // switch should see their links, since the column default is true.
+      showLinks?: boolean;
       discoverable: boolean;
       visibleTo: string;
     } | null;
   },
 ) {
   if (viewer.isOffice) {
-    return { email: true, phone: true, location: true, career: true, skills: true, reason: 'OFFICE' as const };
+    return { email: true, phone: true, location: true, career: true, skills: true, links: true, achievements: true, reason: 'OFFICE' as const };
   }
   if (target.userId === viewer.userId) {
     // Your own data is always fully visible to you — otherwise you could not
     // edit what you are not allowed to see.
-    return { email: true, phone: true, location: true, career: true, skills: true, reason: 'SELF' as const };
+    return { email: true, phone: true, location: true, career: true, skills: true, links: true, achievements: true, reason: 'SELF' as const };
   }
   const p = target.privacy;
   if (!p) {
-    return { email: false, phone: false, location: false, career: false, skills: false, reason: 'NO_SETTINGS' as const };
+    // No privacy row means nothing has been consented to. `links` and `achievements`
+    // default to hidden here for the same reason showEmail does: a profile created
+    // before the settings row existed must not leak a contact surface by default.
+    return { email: false, phone: false, location: false, career: false, skills: false, links: false, achievements: false, reason: 'NO_SETTINGS' as const };
   }
 
   const isConnected = viewer.connectedUserIds.includes(target.userId);
@@ -116,6 +123,17 @@ export function visibilityFor(
     location: p.showLocation,
     career: p.showCareer,
     skills: p.showSkills,
+    // Links are gated on `showLinks` alone, NOT on `scopeAllows`. Deliberate: a
+    // professional URL is a public identifier, not a way to contact somebody. Folding
+    // it into `scopeAllows` meant a graduate who set visibleTo=CONNECTIONS could never
+    // show their GitHub to a prospective collaborator who was not connected yet, and
+    // the `showLinks` switch became the only control that governs it.
+    links: p.showLinks ?? true,
+    // Achievements follow `showSkills` rather than having their own switch: an
+    // achievement is a credential, and someone who hides their skills wants their
+    // credentials hidden. A separate switch would be one more thing to explain and
+    // would almost always be set to the same value.
+    achievements: p.showSkills,
     reason: isConnected ? ('CONNECTED' as const) : (p.visibleTo as string),
   };
 }
@@ -204,7 +222,12 @@ export async function listDirectory(viewer: Viewer, query: DirectoryQuery) {
         company: { select: { id: true, name: true, sector: true } },
         batch: { select: { id: true, name: true, program: { select: { id: true, code: true, name: true, department: { select: { id: true, code: true, name: true } } } } } },
         skills: { orderBy: { level: 'desc' }, take: 6 },
-        _count: { select: { skills: true } },
+        // Full achievements are loaded here even though the card only shows a few,
+        // because `verifiedAchievementCount` needs the whole set to count rather than
+        // to display. A directory page is 20 rows and achievements are a handful each,
+        // so the join is cheaper than a second grouped query per page.
+        achievements: { orderBy: [{ isVerified: 'desc' }, { year: 'desc' }, { createdAt: 'desc' }] },
+        _count: { select: { skills: true, achievements: true } },
         privacy: true,
       },
       orderBy,
@@ -264,6 +287,32 @@ export async function listDirectory(viewer: Viewer, query: DirectoryQuery) {
         // The card shows at most 6 skills; the count is the real total, so the
         // UI can say "+3 more" without loading every row.
         skillCount: p._count.skills,
+        // Links are one field or absent — never a partial object, so a client can
+        // test `if (links.linkedinUrl)` without first checking whether links exists.
+        // Redacted to null rather than `{}` so "hidden" and "set to none" stay
+        // distinguishable on the client.
+        links: vis.links
+          ? {
+              linkedinUrl: p.linkedinUrl,
+              githubUrl: p.githubUrl,
+              websiteUrl: p.websiteUrl,
+            }
+          : null,
+        // Achievements are shown unverified-but-present: a claim is still a claim, and
+        // hiding unverified entries would make the section look empty for most of the
+        // alumni body since most entries are never office-verified.
+        achievements: vis.achievements
+          ? p.achievements.map((a) => ({
+              id: a.id,
+              title: a.title,
+              kind: a.kind,
+              issuer: a.issuer,
+              year: a.year,
+              isVerified: a.isVerified,
+            }))
+          : [],
+        achievementCount: vis.achievements ? p._count.achievements : 0,
+        verifiedAchievementCount: vis.achievements ? p.achievements.filter((a) => a.isVerified).length : 0,
         connectionStatus: connectionByUser.get(p.userId) ?? null,
         isSelf: p.userId === viewer.userId,
         contactVisible: vis.email || vis.phone,
@@ -402,6 +451,10 @@ export async function getProfileDetail(viewer: Viewer, profileId: string) {
       },
       skills: { orderBy: [{ level: 'desc' }, { skill: 'asc' }] },
       career: { orderBy: { fromMonth: 'desc' }, include: { company: { select: { name: true, sector: true } } } },
+      // Verified first: an office-endorsed award is the reason somebody reads this
+      // section, so it must not sort below an unverified claim added later.
+      achievements: { orderBy: [{ isVerified: 'desc' }, { year: 'desc' }, { createdAt: 'desc' }] },
+      _count: { select: { skills: true, achievements: true } },
       privacy: true,
     },
   });
@@ -579,6 +632,7 @@ type UpdateMyProfileInput = {
     showLocation?: boolean;
     showCareer?: boolean;
     showSkills?: boolean;
+    showLinks?: boolean;
     discoverable?: boolean;
     visibleTo?: 'ANYONE' | 'CONNECTIONS' | 'OFFICE';
   };
@@ -657,6 +711,7 @@ export async function updateMyProfile(viewer: Viewer, input: UpdateMyProfileInpu
         showLocation: input.privacy.showLocation ?? true,
         showCareer: input.privacy.showCareer ?? true,
         showSkills: input.privacy.showSkills ?? true,
+        showLinks: input.privacy.showLinks ?? true,
         discoverable: input.privacy.discoverable ?? true,
         visibleTo: input.privacy.visibleTo ?? 'CONNECTIONS',
       },
@@ -666,6 +721,7 @@ export async function updateMyProfile(viewer: Viewer, input: UpdateMyProfileInpu
         ...(input.privacy.showLocation !== undefined ? { showLocation: input.privacy.showLocation } : {}),
         ...(input.privacy.showCareer !== undefined ? { showCareer: input.privacy.showCareer } : {}),
         ...(input.privacy.showSkills !== undefined ? { showSkills: input.privacy.showSkills } : {}),
+        ...(input.privacy.showLinks !== undefined ? { showLinks: input.privacy.showLinks } : {}),
         ...(input.privacy.discoverable !== undefined ? { discoverable: input.privacy.discoverable } : {}),
         ...(input.privacy.visibleTo !== undefined ? { visibleTo: input.privacy.visibleTo } : {}),
       },

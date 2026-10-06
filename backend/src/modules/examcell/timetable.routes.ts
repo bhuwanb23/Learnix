@@ -96,7 +96,14 @@ router.get(
   validate(timetableBlockQuerySchema, 'query'),
   wrap(async (req, res) => {
     const block = assertBlock(req.params.block);
-    res.json({ data: { block, ...(await svc.timetableBlock(inst(req), block)) } });
+    const result = await svc.timetableBlock(inst(req), block);
+    // EXAMS, ALLOCATION and STUDENTS return a bare ARRAY. Spreading an array
+    // into this envelope rewrites `[{ ... }]` as `{ "0": { ... } }`, and the
+    // three screens that read those blocks do `data ?? []` and then `.reduce`
+    // — which throws on an object, taking Exam Schedules, Course Allocation and
+    // Student Timetable down on render. Arrays pass through untouched; objects
+    // keep the canonical `block` echo the HTTP suite asserts.
+    res.json({ data: Array.isArray(result) ? result : { block, ...result } });
   }),
 );
 

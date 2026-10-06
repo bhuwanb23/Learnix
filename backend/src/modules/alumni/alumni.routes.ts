@@ -75,6 +75,7 @@ import * as mentorshipFeedback from './feedback.service.js';
 // kept validating a payload the new service cannot use.
 import donationsRoutes from './donations/donations.routes.js';
 import notificationsRoutes from './notifications/notifications.routes.js';
+import profileRoutes from './profile/profile.routes.js';
 
 // Alumni Relations module — mounted at /api/v1/alumni (docs/users/12 §4)
 const router = Router();
@@ -816,6 +817,16 @@ router.use('/donations', donationsRoutes);
 // The sub-router inherits `auth` + `requireRole('ALUMNI','ADMIN')`, so a STUDENT is
 // refused every notification route exactly as before.
 router.use('/notifications', notificationsRoutes);
+// -- AL-08 profile ---------------------------------------------------------------
+// Split for the same reason as donations and notifications: the self-service profile
+// needs career CRUD, achievement CRUD, an office verification queue, link handling,
+// and an unredacted self-view that is deliberately DIFFERENT from `/alumni/me`.
+//
+// Ordering against the other two mounts does not matter - the prefixes are distinct.
+// The mount has no literal route above it any more: the old inline `GET /profile` was
+// deleted (see the bottom of this file) because it shadowed this mount, so this is now
+// reachable.
+router.use('/profile', profileRoutes);
 
 // ── AL-05 mentorship ────────────────────────────────────────
 // Literal paths come BEFORE `/mentorship/:id`, or Express matches "requests" and
@@ -1098,11 +1109,21 @@ router.post(
 // how the donations sub-router was nearly shipped alongside its own inline twin.
 
 // AL-08 profile
-router.get(
-  '/profile',
-  wrap(async (req, res) => {
-    res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
-  }),
-);
+//
+// The literal `GET /profile` that used to live here returned
+// `{ id, fullName, email, roles, programStats: { activeMentorships, sessionsLogged,
+// activeCampaigns } }` and is DELETED rather than kept under a new path. Two reasons:
+//
+// 1. It SHADOWED the feature. A literal route declared after `router.use('/profile', …)`
+//    is unreachable, and this one was, so `GET /alumni/profile` — the endpoint the new
+//    client and the HTTP suite both call — answered with a four-field summary card
+//    instead of the profile. The sub-router has owned this path since AL-08.
+//
+// 2. It was never a profile. `programStats` counted mentorship pairs, sessions and
+//    campaigns with `where: { user: { institutionId } }` and no user filter, so those
+//    three numbers were institution-wide totals presented as "your" activity. Renaming
+//    the route would have preserved a misleading payload; the screen that rendered it
+//    (the old profile.js) is replaced by the self-service hub, so nothing reads it.
+router.use('/profile', profileRoutes);
 
 export default router;
