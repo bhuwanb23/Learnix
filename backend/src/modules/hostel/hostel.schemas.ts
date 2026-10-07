@@ -18,6 +18,18 @@ export const bedParamSchema = z.object({
 // ── Rooms (docs/users/08-hostel.md §3.2) ────────────────────────────────────
 
 /**
+ * Room path parameter.
+ *
+ * Its OWN schema, not `idParamSchema`. That one validates a param literally named `id`, which
+ * is what the residents routes declare (`:id`) — but the room routes use `:roomId`, so reusing
+ * it made `validate` reject EVERY room detail read with a 400 before the service was ever
+ * reached. A shared schema that only works for one route's param name is not shared.
+ */
+export const roomIdParamSchema = z.object({
+  roomId: z.string().min(1).max(64),
+});
+
+/**
  * Room directory filters.
  *
  * `q` is one free-text box over room number, block name, bed label and OCCUPANT NAME. Bed

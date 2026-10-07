@@ -15,6 +15,7 @@ import {
   residentQuerySchema,
   contactSchema,
   roomQuerySchema,
+  roomIdParamSchema,
   bedMaintenanceSchema,
 } from './hostel.schemas.js';
 import * as service from './hostel.service.js';
@@ -61,7 +62,7 @@ router.get(
 // wrong room's occupants.
 router.get(
   '/rooms/:roomId',
-  validate(idParamSchema, 'params'),
+  validate(roomIdParamSchema, 'params'),
   wrap(async (req, res) => {
     res.json({
       data: await service.getRoomDetail(req.auth!.institutionId, String(req.params.roomId)),
@@ -73,7 +74,7 @@ router.get(
 // allocation rows the resident timeline reads — the data was always written, never read.
 router.get(
   '/rooms/:roomId/history',
-  validate(idParamSchema, 'params'),
+  validate(roomIdParamSchema, 'params'),
   wrap(async (req, res) => {
     res.json({
       data: await service.listRoomHistory(req.auth!.institutionId, String(req.params.roomId)),

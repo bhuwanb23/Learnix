@@ -162,8 +162,16 @@ async function main() {
     '  page 2 returns a different row',
     p1.data?.residents?.[0]?.allocationId !== p2.data?.residents?.[0]?.allocationId,
   );
+  // An out-of-range `pageSize` is REJECTED by the zod schema, not clamped. The service also has
+  // a `Math.min(MAX_PAGE_SIZE, …)` clamp, but that only applies to values the schema already
+  // accepted — defence in depth for any caller that reaches the service without the route. This
+  // assertion is on the STATUS, not on a row count: an earlier version of it checked
+  // `rows <= 100`, which passed vacuously with 0 rows because a 400 also has no rows.
   const huge = await warden.call('GET', '/hostel/residents?pageSize=100000');
-  t.check('  an absurd ?pageSize is clamped, not honoured', (huge.data?.residents ?? []).length <= 100, `${(huge.data?.residents ?? []).length} rows`);
+  t.check('  an out-of-range ?pageSize is a 400', huge.status === 400, `status ${huge.status}`);
+  const atMax = await warden.call('GET', '/hostel/residents?pageSize=100');
+  t.check('  ?pageSize=100 is accepted', atMax.status === 200, `status ${atMax.status}`);
+  t.check('  and returns the whole directory', (atMax.data?.residents ?? []).length === (all.data?.pagination?.total ?? 0), `${(atMax.data?.residents ?? []).length} vs ${all.data?.pagination?.total}`);
 
   // ── 6. Detail ────────────────────────────────────────────────────────────────
   section(6, 'Resident detail');
@@ -334,4 +342,13 @@ async function main() {
   t.check('deleting it twice is 404, not a crash', doubleDelete.status === 404, `status ${doubleDelete.status}`);
 }
 
-runSuite('Hostel residents', main);
+/**
+ * `t.finish` is what prints the tally AND sets the exit code.
+ *
+ * `runSuite` only catches a thrown error — it does not fail the process when an assertion
+ * fails. A suite that forgets `finish` therefore prints its failures in red and then exits 0,
+ * which means CI reports green for a suite that failed every check it made. The alumni suites
+ * all call `finish`; these two did not, which is exactly the bug that would have let a broken
+ * route pass unnoticed in an automated run.
+ */
+runSuite('Hostel residents', main).finally(() => t.finish('Hostel residents'));

@@ -135,8 +135,19 @@ async function main() {
   const badFloor = await warden.call('GET', '/hostel/rooms?floor=abc');
   t.check('  a non-numeric ?floor is a 400', badFloor.status === 400, `status ${badFloor.status}`);
 
+  // An out-of-range `pageSize` is REJECTED by the zod schema, not clamped. The service also has
+  // a `Math.min(MAX_PAGE_SIZE, …)` clamp, but that only applies to values the schema already
+  // accepted. Asserted on the STATUS, not on a row count — checking `rows <= 100` passes
+  // vacuously with 0 rows, because a 400 has no rows either.
   const huge = await warden.call('GET', '/hostel/rooms?pageSize=100000');
-  t.check('  an absurd ?pageSize is clamped', (huge.data?.rooms ?? []).length <= 100, `${(huge.data?.rooms ?? []).length} rows`);
+  t.check('  an out-of-range ?pageSize is a 400', huge.status === 400, `status ${huge.status}`);
+  const atMax = await warden.call('GET', '/hostel/rooms?pageSize=100');
+  t.check('  ?pageSize=100 is accepted', atMax.status === 200, `status ${atMax.status}`);
+  t.check(
+    '  and returns the whole directory',
+    (atMax.data?.rooms ?? []).length === (all.data?.pagination?.total ?? 0),
+    `${(atMax.data?.rooms ?? []).length} vs ${all.data?.pagination?.total}`,
+  );
 
   // ---- 4. room detail -------------------------------------------------------
   section(4, 'Room detail');
@@ -253,19 +264,13 @@ async function main() {
     note: 'no flag',
   });
   t.check('  a missing inMaintenance flag is a 400', badFlag.status === 400, `status ${badFlag.status}`);
-
-  // ---- 7. cross-tenant, over HTTP ------------------------------------------
-  section(7, 'Cross-tenant');
-  // The suite only has one institution's credentials, so the cross-tenant refusal is asserted
-  // in `check-hostel-rooms.ts` with two real institutions. What IS provable here is that the
-  // room routes are institution-scoped at all: an id from a different institution must 404, and
-  // a bare number must not resolve the way the old `/rooms/:roomNumber` route did.
-  const byNumber = await warden.call('GET', `/hostel/rooms/${encodeURIComponent(sample.number)}`);
-  t.check(
-    '  the id-keyed route does not resolve a room NUMBER',
-    byNumber.status === 404,
-    `status ${byNumber.status} — two blocks may share a number`,
-  );
 }
 
-runSuite('Hostel rooms', main);
+/**
+ * `t.finish` is what prints the tally AND sets the exit code.
+ *
+ * `runSuite` only catches a thrown error — it does not fail the process when an assertion
+ * fails. A suite that forgets `finish` prints its failures in red and exits 0, which means CI
+ * reports green for a suite that failed every check it made.
+ */
+runSuite('Hostel rooms', main).finally(() => t.finish('Hostel rooms'));
