@@ -558,11 +558,29 @@ export const hodApi = {
 // ── Hostel endpoints (docs/users/08 §4) ──
 export const hostelApi = {
   dashboard: () => api.get('/hostel/dashboard'),
-  rooms: () => api.get('/hostel/rooms'),
-  roomDetail: (roomNumber) => api.get(`/hostel/rooms/${roomNumber}`),
+  // Rooms. Filtered and paged on the SERVER, not in JS: the old screen fetched every room in the
+  // institution and then `.filter()`ed, so a search term could only ever match rows the browser
+  // already held. `q` covers room number, block name, bed label and occupant name — a warden
+  // reading off a physical door has "A-101-2" in their hand, not "101".
+  rooms: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/rooms${qs ? `?${qs}` : ''}`);
+  },
+  // Keyed by room ID, not room number. `Room.number` is unique only WITHIN a block, so two
+  // blocks may hold the same number — resolving by number would serve the wrong room.
+  roomDetail: (roomId) => api.get(`/hostel/rooms/${roomId}`),
+  // Who has stayed in this room and when they moved in and out.
+  roomHistory: (roomId) => api.get(`/hostel/rooms/${roomId}/history`),
   allocate: (rollNo, roomNumber) => api.post('/hostel/allocations', { rollNo, roomNumber }),
   vacateBed: (bedId) => api.post(`/hostel/beds/${bedId}/vacate`),
   transferBed: (bedId, toRoomNumber) => api.post(`/hostel/beds/${bedId}/transfer`, { toRoomNumber }),
+  // Withdraw a bed for maintenance, or return it to service. A note is required on the way IN —
+  // "under maintenance" on its own is not actionable, since a warden cannot tell a broken fan
+  // from an electrical job.
+  setBedMaintenance: (bedId, inMaintenance, note) =>
+    api.post(`/hostel/beds/${bedId}/maintenance`, { inMaintenance, note: note ?? null }),
   // Residents. The directory is filtered on the SERVER, not in JS: the old client fetched
   // every resident and then `.filter()`ed, so the search box could only ever match rows the
   // browser already happened to have. `q` covers name, roll number, room and bed, which is
