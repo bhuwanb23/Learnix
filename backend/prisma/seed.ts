@@ -1685,6 +1685,19 @@ async function seedDomainG(institutionId: string): Promise<void> {
 
   // ensureResident: idempotently place a student in their demo bed (moves them
   // back if an e2e test transferred/vacated them) — keeps bed + occupancy in sync
+  //
+  // WHY THIS CHECKS THE BED AND NOT JUST THE STUDENT
+  // -----------------------------------------------
+  // It used to return early only when THIS STUDENT already had an active allocation in the
+  // target room, and otherwise allocate the target bed unconditionally. On a database that
+  // already held the bulk 2025 cohort (29 students already allocated to beds), that placed
+  // Sneha into A-101 bed 2 while Rohan Gupta already held it, and incremented A-101's counter
+  // for a bed that was never free. Two beds ended up double-booked and two room counters
+  // exceeded capacity — invisible in the UI, because the room screen renders one row per bed
+  // and keeps whichever allocation it reads last. `scripts/repair-hostel-inventory.ts`
+  // repairs the data; this check stops it coming back.
+  //
+  // The bed is therefore taken only if it is genuinely free, or already this student's.
   const ensureResident = async (
     u: { id: string } | null | undefined,
     roomNo: string,
@@ -1696,11 +1709,30 @@ async function seedDomainG(institutionId: string): Promise<void> {
     const room = roomsByNumber[roomNo];
     const bed = await db.bed.findFirst({ where: { roomId: room.id, bedNo } });
     if (!bed) return;
+
+    // Already in the right bed: nothing to do. Checked BEFORE the holder query so a
+    // healthy re-run does not vacate this student in order to re-allocate them.
     const active = await db.hostelAllocation.findFirst({
       where: { studentProfileId: prof.id, status: 'ACTIVE' },
       include: { bed: { include: { room: true } } },
     });
-    if (active && active.bed.room.number === roomNo) return;
+    if (active && active.bed.id === bed.id) return;
+
+    // Somebody else holds this bed. Vacating a real resident to make room for a demo fixture
+    // would be worse than skipping the fixture, so the bed is left alone and the caller is
+    // told nothing happened. `repair-hostel-inventory.ts` is the right tool for genuine
+    // double-bookings; the seed must not silently resolve them by eviction.
+    const holder = await db.hostelAllocation.findFirst({
+      where: { bedId: bed.id, status: 'ACTIVE' },
+      include: { studentProfile: { include: { user: { select: { fullName: true } } } } },
+    });
+    if (holder) {
+      console.warn(
+        `  ! seed: skipping ${roomNo} bed ${bedNo} for demo resident — already held by ${holder.studentProfile.user.fullName}`,
+      );
+      return;
+    }
+
     if (active) {
       await db.hostelAllocation.update({
         where: { id: active.id },
@@ -1716,22 +1748,44 @@ async function seedDomainG(institutionId: string): Promise<void> {
     await db.room.update({ where: { id: room.id }, data: { occupiedCount: { increment: 1 } } });
   };
 
+  /**
+   * Recompute every room's denormalised `occupiedCount` from bed status.
+   *
+   * Run at the end of the hostel section so the seed is self-correcting rather than merely
+   * incrementing a counter: any drift from an earlier run, an interrupted run, or a test that
+   * wrote allocations directly is corrected here. Nothing in the hostel module reads this
+   * column for occupancy — see `hostel-rooms.service.ts` — but reporting and exports do, so
+   * leaving it wrong is leaving a known falsehood in the database.
+   */
+  const recomputeOccupancy = async (): Promise<void> => {
+    const all = await db.room.findMany({ include: { beds: { select: { status: true } } } });
+    for (const r of all) {
+      const truth = r.beds.filter((b) => b.status === 'ALLOCATED').length;
+      if (r.occupiedCount !== truth) {
+        await db.room.update({ where: { id: r.id }, data: { occupiedCount: truth } });
+      }
+    }
+  };
+
   // Two more residents: Sneha (A-101 bed 2) + Vikram (B-204 bed 1)
   const sneha = await db.user.findFirst({ where: { email: 'sneha.patel@learnix.dev', institutionId } });
   const vikram = await db.user.findFirst({ where: { email: 'vikram.nair@learnix.dev', institutionId } });
   await ensureResident(sneha, 'A-101', 2);
   await ensureResident(vikram, 'B-204', 1);
 
-  const activeAllocation = await db.hostelAllocation.findFirst({
-    where: { studentProfileId: studentProfile.id, status: 'ACTIVE' },
-  });
-  if (!activeAllocation) {
-    await db.hostelAllocation.create({
-      data: { studentProfileId: studentProfile.id, bedId: bed1.id, fromDate: new Date('2026-07-01'), status: 'ACTIVE' },
-    });
-    await db.bed.update({ where: { id: bed1.id }, data: { status: 'ALLOCATED' } });
-    await db.room.update({ where: { id: room101.id }, data: { occupiedCount: { increment: 1 } } });
-  }
+  // The primary demo resident goes into A-101 bed 1 by the same guarded path as the others,
+  // so a database that already holds a 2025-cohort student in bed 1 cannot be double-booked.
+  await ensureResident(
+    { id: (await db.user.findFirstOrThrow({ where: { email: 'student@learnix.dev', institutionId } })).id },
+    'A-101',
+    1,
+  );
+  void bed1;
+  void room101;
+
+  // Self-correct the denormalised counter from bed status before anything reads it. Cheap,
+  // and it means a drifted counter can never survive a reseed.
+  await recomputeOccupancy();
 
   // ── Rent dues for ALL ACTIVE allocations (each resident Jul+Aug UNPAID) ──
   const activeAllocations = await db.hostelAllocation.findMany({

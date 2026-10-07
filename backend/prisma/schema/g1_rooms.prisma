@@ -20,12 +20,17 @@ model HostelBlock {
 }
 
 model Room {
-  id            String   @id @default(cuid())
-  blockId       String
-  floor         Int
-  number        String
-  capacity      Int      @default(2)
-  occupiedCount Int      @default(0) // denorm — kept ≤ capacity by service layer
+  id     String @id @default(cuid())
+  blockId String
+  floor  Int
+  number String
+  capacity Int      @default(2)
+  // DENORMALISED, and no longer read for occupancy. See the `Bed` comment: it drifted
+  // because three write paths each maintained it by hand, and `listRooms`/`getRoomDetail`
+  // were the only readers. Those now count `Bed.status = 'ALLOCATED'`. The column is still
+  // written so that anything outside this module (reporting, exports) keeps working, and it
+  // must NOT become the basis of a new feature — recompute it from bed statuses instead.
+  occupiedCount Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -37,19 +42,33 @@ model Room {
   @@map("rooms")
 }
 
+// Bed-level inventory state.
+//
+// `status` is the ONLY truth about whether a bed can take a resident. `Room.occupiedCount`
+// is a denormalised counter kept in step by the allocate/vacate/transfer paths, but it is NOT
+// read to decide occupancy — the room directory counts `status = 'ALLOCATED'` directly. It
+// already drifted in 2 of 20 rooms (the UI rendered "3/2 beds" and badged a 2-bed room
+// "Full"), which is what a hand-maintained counter is for.
+//
+// `MAINTENANCE` withdrew the bed from allocation without deleting it. It needs a NOTE:
+// "under maintenance" on its own is not actionable, because a warden cannot tell a broken
+// fan from an electrical job, and the whole point of withdrawing a bed is that someone goes
+// and fixes it. The note is nullable so an ad-hoc withdrawal needs no explanation.
 model Bed {
-  id        String   @id @default(cuid())
-  roomId    String
-  bedNo     Int
-  status    String   @default("VACANT") // VACANT | ALLOCATED | MAINTENANCE
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  roomId          String
+  bedNo           Int
+  status          String   @default("VACANT") // VACANT | ALLOCATED | MAINTENANCE
+  maintenanceNote String? // why the bed is withdrawn; cleared when it returns to VACANT
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   room        Room               @relation(fields: [roomId], references: [id])
   allocations HostelAllocation[]
 
   @@unique([roomId, bedNo])
   @@index([roomId])
+  @@index([status])
   @@map("beds")
 }
 
