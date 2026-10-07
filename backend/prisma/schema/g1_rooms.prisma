@@ -72,3 +72,48 @@ model HostelAllocation {
   @@index([status])
   @@map("hostel_allocations")
 }
+
+// Domain G1 — Residents' emergency contacts. Docs: 08-hostel.md §3.3
+//
+// WHY A TABLE AND NOT COLUMNS ON StudentProfile
+// ---------------------------------------------
+// A student has two guardians AND two emergency contacts, each with a name, a relation
+// and a phone. Modelling that as `guardian1Name`, `guardian2Name`, `emergency1Phone`…
+// gives eight nullable columns for data that is inherently a list, and every read has to
+// know how many are set. `kind` is the discriminator instead.
+//
+// WHY `kind` AND NOT TWO TABLES
+// -----------------------------
+// Guardian and emergency contact are the same SHAPE with different intent, they are always
+// read together on one screen, and a warden treating them as "people who must be reachable
+// about this student" does not benefit from them being in different tables. One table with
+// an index on (studentProfileId, kind) serves both reads.
+//
+// WHY THERE IS NO PARTIAL UNIQUE INDEX ON isPrimary
+// -----------------------------------------------
+// The rule "at most one primary per student PER KIND" is enforced in the service, for the
+// same reason the active-allocation-per-bed rule is: SQLite via Prisma cannot express a
+// partial unique index, and a plain `@@unique([studentProfileId, kind, isPrimary])` would be
+// wrong — it would also forbid two non-primary contacts of the same kind, which is the
+// normal case.
+model HostelResidentContact {
+  id               String   @id @default(cuid())
+  studentProfileId String
+  kind             String // GUARDIAN | EMERGENCY
+  name             String
+  relation         String // "Father", "Mother", "Sibling", "Friend" …
+  phone            String
+  alternatePhone   String? // secondary number for the same person
+  email            String?
+  // The number printed on a call sheet. Exactly one per (student, kind) is enforced by
+  // `upsertContact`, which demotes the sibling rather than rejecting the write.
+  isPrimary        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([studentProfileId])
+  @@index([studentProfileId, kind])
+  @@map("hostel_resident_contacts")
+}

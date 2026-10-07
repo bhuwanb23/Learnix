@@ -39,6 +39,7 @@ model StudentProfile {
   bookIssues        BookIssue[]
   bookRequests      BookRequest[]
   hostelAllocations HostelAllocation[]
+  hostelContacts   HostelResidentContact[]
   mealAttendances   MealAttendance[]
   messFeedback      MessFeedback[]
   gatePasses        GatePass[]
