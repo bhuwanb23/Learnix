@@ -132,84 +132,37 @@ export async function getDashboard(institutionId: string) {
 //                          and never checked the invigilator for a double booking.
 
 // ─────────────────────────────────────────────────────────────
-// X-04 — Hall tickets
-// ─────────────────────────────────────────────────────────────
-export async function listHallTickets(institutionId: string, examId: string) {
-  const tickets = await prisma.hallTicket.findMany({
-    where: { examSlot: { exam: { id: examId, institutionId } } },
-    include: {
-      studentProfile: { include: { user: { select: { fullName: true, email: true } } } },
-      examSlot: { include: { offering: { include: { course: true } } } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+// X-04 — Hall tickets: MOVED to `./hallticket.service.ts`.
+//
+// The two functions that used to sit here were removed rather than re-pointed,
+// because what they did was not merely thin but UNSAFE in ways the replacement
+// is not:
+//
+//   listHallTickets(institutionId, examId)  took examId straight off the query
+//                                            string with no schema at all, so
+//                                            `?examId=` (empty) queried a scope
+//                                            nobody meant, and every result was
+//                                            reported as `stats` beside it.
+//
+//   generateHallTickets(…)                  issued a ticket for every active
+//                                            enrolment and returned only
+//                                            `{ generated, totalSlots }` — no
+//                                            eligibility view, no way to see
+//                                            WHICH students were warned about,
+//                                            and a `seatCounter` that restarted
+//                                            at 1 per slot without consulting
+//                                            seats already handed out. Two
+//                                            batch runs, or a deleted ticket
+//                                            followed by a re-run, could collide
+//                                            on the unique (examSlotId, seatNo)
+//                                            constraint and abort halfway.
+//
+// Replaced by `hallticket.service.ts`: `generateBulk` takes its seat numbers
+// from `nextSeatNo(taken)` where `taken` grows as the run writes, and returns
+// the warnings alongside the count. `examcellApi.hallTickets` and
+// `examcellApi.generateHallTickets` on the client pointed at the two removed
+// routes and were replaced with the X-04 surface.
 
-  const stats = {
-    total: tickets.length,
-    generated: tickets.filter((t) => t.status === 'GENERATED').length,
-    downloaded: tickets.filter((t) => t.status === 'DOWNLOADED').length,
-  };
-
-  return {
-    stats,
-    tickets: tickets.map((t) => ({
-      id: t.id,
-      studentName: t.studentProfile.user.fullName,
-      rollNo: t.studentProfile.rollNo,
-      seatNo: t.seatNo,
-      course: t.examSlot.offering.course.name,
-      courseCode: t.examSlot.offering.course.code,
-      date: t.examSlot.date,
-      startTime: t.examSlot.startTime,
-      room: t.examSlot.room,
-      status: t.status,
-      generatedAt: t.generatedAt,
-    })),
-  };
-}
-
-export async function generateHallTickets(
-  institutionId: string,
-  userId: string,
-  examId: string,
-) {
-  const exam = await prisma.exam.findFirst({ where: { id: examId, institutionId } });
-  if (!exam) throw notFound('Exam not found');
-
-  const slots = await prisma.examSlot.findMany({
-    where: { examId },
-    include: { offering: { include: { enrollments: { include: { studentProfile: true } } } } },
-  });
-
-  let generated = 0;
-  for (const slot of slots) {
-    const enrolled = slot.offering.enrollments.filter((e) => e.status === 'ACTIVE');
-    let seatCounter = 1;
-
-    for (const enrollment of enrolled) {
-      const existing = await prisma.hallTicket.findFirst({
-        where: { examSlotId: slot.id, studentProfileId: enrollment.studentProfileId },
-      });
-      if (!existing) {
-        const seatNo = `A-${seatCounter}`;
-        await prisma.hallTicket.create({
-          data: {
-            examSlotId: slot.id,
-            studentProfileId: enrollment.studentProfileId,
-            seatNo,
-            qrPayload: JSON.stringify({ slotId: slot.id, seat: seatNo }),
-            status: 'GENERATED',
-          },
-        });
-        generated++;
-        seatCounter++;
-      }
-    }
-  }
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'HALL_TICKETS_GENERATED', entityType: 'HallTicket', entityId: examId });
-  return { generated, totalSlots: slots.length };
-}
 
 // ─────────────────────────────────────────────────────────────
 // X-05 — Evaluations

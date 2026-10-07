@@ -5,7 +5,6 @@ import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   idParamSchema,
-  generateHallTicketsSchema,
   assignEvaluatorSchema,
   publishResultsSchema,
   enterResultSchema,
@@ -60,25 +59,25 @@ router.get(
 // The replacements live in one service with one conflict engine, and every
 // schema they use is `.strict()`.
 
-// X-04 hall tickets — list for exam
-router.get(
-  '/hall-tickets',
-  wrap(async (req, res) => {
-    const examId = String(req.query.examId || '');
-    res.json({ data: await service.listHallTickets(req.auth!.institutionId, examId) });
-  }),
-);
-
-// X-04 hall tickets — batch generate
-router.post(
-  '/hall-tickets/generate',
-  validate(generateHallTicketsSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.generateHallTickets(req.auth!.institutionId, req.auth!.userId, req.body.examId),
-    });
-  }),
-);
+// ── X-04 hall tickets ────────────────────────────────────────────────────
+// MOVED to `./hallticket.routes.ts`, which is mounted BEFORE this router.
+//
+// The two endpoints that used to live here were removed rather than
+// re-pointed, for the reason X-02's were:
+//
+//   GET  /hall-tickets?examId=       took the exam id as an UNVALIDATED query
+//                                    string — no `.strict()`, no required
+//                                    value, and an empty examId silently
+//                                    matched an empty scope.
+//   POST /hall-tickets/generate      took `{ examId }` through a schema that
+//                                    was not `.strict()`, so any typo'd field
+//                                    rode along unnoticed, and it issued a
+//                                    ticket for every active enrolment with
+//                                    no eligibility view at all.
+//
+// Both are superseded by `/hall-tickets/blocks/:block` and
+// `/hall-tickets/exams/:examId/generate`. A caller still holding the old path
+// gets a 404 rather than a quietly different shape.
 
 // X-05 evaluations — list
 router.get(

@@ -38,9 +38,11 @@ export const allocateRoomSchema = z.object({
 });
 
 // X-04 Hall tickets — batch generate
-export const generateHallTicketsSchema = z.object({
-  examId: z.string().min(1).max(64),
-});
+// `generateHallTicketsSchema` (X-04, `{ examId }`) was removed with the two
+// `/hall-tickets` endpoints it served. It was not `.strict()`, so a typo'd
+// field rode along unnoticed; its replacement is
+// `hallTicketExamParamSchema` — a strict PARAMS schema, because the exam id now
+// arrives in the path.
 
 // X-05 Evaluations — assign evaluator
 export const assignEvaluatorSchema = z.object({
@@ -179,3 +181,63 @@ export const assignInvigilatorSchema = z
 export const publishTimetableExamSchema = z.object({}).strict();
 
 export const completeTimetableSlotSchema = z.object({}).strict();
+
+// ───────────────────────────────────────────────────────────────────
+// X-04 — Hall tickets (docs/users/05 §3.5)
+// ───────────────────────────────────────────────────────────────────
+//
+// The bodies are deliberately PERMISSIVE about every value that is a CHOICE
+// FROM A PUBLISHED LIST — `kind`, `field`, `decision`, `action`. Those are
+// rejected by the `assert*` helpers in `hallticket.rules.ts`, which answer 422
+// and carry the `allowed` list; Zod would answer 400 with a flatten that does
+// not say what IS allowed. One source of truth for each list, and it lives in
+// the rules module so the app reads the same one.
+
+export const hallTicketCatalogueQuerySchema = z.object({}).strict();
+
+export const hallTicketOverviewQuerySchema = z.object({}).strict();
+
+export const hallTicketBlockQuerySchema = z
+  .object({ examId: z.string().min(1).max(64).optional() })
+  .strict();
+
+export const hallTicketExamParamSchema = z
+  .object({ examId: z.string().min(1).max(64) })
+  .strict();
+
+export const hallTicketSlotParamSchema = z
+  .object({
+    slotId: z.string().min(1).max(64),
+    studentProfileId: z.string().min(1).max(64),
+  })
+  .strict();
+
+export const hallTicketIdParamSchema = z.object({ id: z.string().min(1).max(64) }).strict();
+
+export const hallTicketRequestIdParamSchema = z
+  .object({ id: z.string().min(1).max(64) })
+  .strict();
+
+export const createHallTicketRequestSchema = z
+  .object({
+    hallTicketId: z.string().min(1).max(64),
+    kind: z.string().min(1).max(32),
+    // Present only for a CORRECTION, and required then — checked in the service
+    // so the 422 can name the field it wanted. A reissue that arrives with one
+    // is refused there too, rather than silently ignoring it.
+    field: z.string().min(1).max(32).nullable().optional(),
+    requestedValue: z.string().max(120).nullable().optional(),
+    reason: z.string().trim().min(3).max(500),
+  })
+  .strict();
+
+export const decideHallTicketRequestSchema = z
+  .object({
+    decision: z.string().min(1).max(32),
+    note: z.string().trim().max(500).nullable().optional(),
+  })
+  .strict();
+
+export const publishHallTicketsSchema = z
+  .object({ action: z.string().min(1).max(16) })
+  .strict();

@@ -425,22 +425,34 @@ export async function getExamSchedule(userId: string, institutionId: string) {
   const examSlots = await prisma.examSlot.findMany({
     where: { offeringId: { in: offeringIds } },
     include: {
-      exam: { select: { id: true, name: true, type: true, semester: true, status: true } },
+      exam: {
+        select: {
+          id: true, name: true, type: true, semester: true, status: true,
+          // X-04: hall tickets are behind their OWN gate, not the exam's.
+          hallTicketStatus: true,
+        },
+      },
       offering: { select: { course: { select: { code: true, name: true } } } },
       hallTickets: { where: { studentProfileId: student.id } },
     },
     orderBy: { date: 'asc' },
+  });  return examSlots.map(slot => {
+    // The ticket row existing is NOT the same as the student being allowed to
+    // see it. Until the exam cell publishes, a ticket is a draft — and handing
+    // it over early turns "not published yet" into "you have been assigned a
+    // seat in a hall we have not announced". Recalled is the same as unpublished.
+    const visible = slot.exam.hallTicketStatus === 'PUBLISHED' && slot.hallTickets[0];
+    return {
+      id: slot.id,
+      examName: slot.exam.name, examType: slot.exam.type, examStatus: slot.exam.status,
+      courseCode: slot.offering.course.code, courseName: slot.offering.course.name,
+      date: slot.date, startTime: slot.startTime, endTime: slot.endTime, room: slot.room,
+      hallTicket: visible ? {
+        id: slot.hallTickets[0].id, seatNo: slot.hallTickets[0].seatNo,
+        qrPayload: slot.hallTickets[0].qrPayload, status: slot.hallTickets[0].status,
+      } : null,
+    };
   });
-
-  return examSlots.map(slot => ({
-    id: slot.id, examName: slot.exam.name, examType: slot.exam.type, examStatus: slot.exam.status,
-    courseCode: slot.offering.course.code, courseName: slot.offering.course.name,
-    date: slot.date, startTime: slot.startTime, endTime: slot.endTime, room: slot.room,
-    hallTicket: slot.hallTickets[0] ? {
-      id: slot.hallTickets[0].id, seatNo: slot.hallTickets[0].seatNo,
-      qrPayload: slot.hallTickets[0].qrPayload, status: slot.hallTickets[0].status,
-    } : null,
-  }));
 }
 
 // ── S-09 Results + Re-evaluation ───────────────────────────
