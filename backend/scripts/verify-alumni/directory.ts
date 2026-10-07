@@ -47,18 +47,22 @@ async function run() {
   const office = await officeLogin();
   t.check('auth/login (office)', !!office.token, office.email);
 
-  // ── 1. Dashboard ─────────────────────────────────────────────────────────────
-  section(1, 'Dashboard');
+  // ── 1. Dashboard: only the transport-level assertion stays here ──────────────
+  //
+  // The seven payload assertions below were REMOVED, not relocated blindly. They asserted
+  // `engagement.totalAlumni`, `engagement.percentage`, `stats.donationsReceivedRupees`,
+  // `stats.activeMentorships`, `stats.pendingMentorships`, `upcomingEvents[]` and
+  // `campaigns[]` — the office engagement view. That payload is gone from the endpoint:
+  // `/alumni/dashboard` is now a per-user graduate summary (docs §3.1).
+  //
+  // Every one of those figures was an institution-wide aggregate, so the coverage they
+  // provided was real but of the wrong thing. What they were checking — that the summary
+  // carries its sections, that mentorship and giving are scoped to the CALLER rather than
+  // the tenant — lives in `verify-alumni/dashboard.ts`, where the scoping property can
+  // actually be tested by comparing two users' responses.
+  section(1, 'Dashboard (transport)');
   const dash = await office.call('GET', '/alumni/dashboard');
-  const d = dash.data;
-  t.check('GET /dashboard', dash.status === 200 && !!d, `status ${dash.status}`);
-  t.check('  engagement.totalAlumni', (d?.engagement?.totalAlumni ?? 0) > 10, `${d?.engagement?.totalAlumni} alumni`);
-  t.check('  engagement.percentage', d?.engagement?.percentage > 0, `${d?.engagement?.percentage}% active`);
-  t.check('  stats.donationsReceivedRupees', (d?.stats?.donationsReceivedRupees ?? 0) > 0, `Rs ${d?.stats?.donationsReceivedRupees}`);
-  t.check('  stats.activeMentorships', (d?.stats?.activeMentorships ?? 0) > 0, `${d?.stats?.activeMentorships}`);
-  t.check('  stats.pendingMentorships', (d?.stats?.pendingMentorships ?? 0) > 0, `${d?.stats?.pendingMentorships}`);
-  t.check('  upcomingEvents[]', (d?.upcomingEvents?.length ?? 0) > 0, `${d?.upcomingEvents?.length} events`);
-  t.check('  campaigns[]', (d?.campaigns?.length ?? 0) > 0, `${d?.campaigns?.length} campaigns`);
+  t.check('GET /dashboard', dash.status === 200 && !!dash.data, `status ${dash.status}`);
 
   // ── 2. Directory ─────────────────────────────────────────────────────────────
   section(2, 'Alumni network (directory)');

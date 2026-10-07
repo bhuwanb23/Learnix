@@ -146,6 +146,55 @@ eq(ELIGIBILITY_REASONS.length, 6, 'six eligibility reasons');
 eq(THRESHOLDS.eligibilityPolicy.blocksGeneration, false, 'the published policy says warnings never block generation');
 await fails422WithAllowed(() => Promise.reject(assertPublicationAction('DESTROY') as never), 'an unknown publication action is 422');
 
+/**
+ * The full FK-safe cascade for a set of suite institutions, in dependency
+ * order. Needed at BOTH ends of a run: at the end it is the promise that
+ * nothing this suite created remains; at the START it clears whatever a
+ * previous run that was KILLED mid-suite (dead terminal, Ctrl-C) left on the
+ * books. Without the opening sweep the global request count at the very
+ * bottom fails THIS run for somebody else's leak — which also makes every
+ * later teeth case "bite" on debris instead of on what it broke.
+ */
+const purgeFixture = async (institutionIds: string[], userIds: string[]) => {
+  if (!institutionIds.length) return;
+  const ids = { in: institutionIds };
+  await prisma.hallTicketRequest.deleteMany({ where: { hallTicket: { examSlot: { exam: { institutionId: ids } } } } });
+  await prisma.examRoomAllocation.deleteMany({ where: { examSlot: { exam: { institutionId: ids } } } });
+  await prisma.hallTicket.deleteMany({ where: { examSlot: { exam: { institutionId: ids } } } });
+  await prisma.examSlot.deleteMany({ where: { exam: { institutionId: ids } } });
+  await prisma.examConflict.deleteMany({ where: { exam: { institutionId: ids } } });
+  await prisma.exam.deleteMany({ where: { institutionId: ids } });
+  await prisma.feeDue.deleteMany({ where: { studentProfile: { institutionId: ids } } });
+  await prisma.enrollment.deleteMany({ where: { studentProfile: { institutionId: ids } } });
+  await prisma.venue.deleteMany({ where: { institutionId: ids } });
+  await prisma.courseOffering.deleteMany({ where: { course: { institutionId: ids } } });
+  await prisma.course.deleteMany({ where: { institutionId: ids } });
+  await prisma.section.deleteMany({ where: { program: { department: { institutionId: ids } } } });
+  await prisma.batch.deleteMany({ where: { program: { department: { institutionId: ids } } } });
+  await prisma.program.deleteMany({ where: { department: { institutionId: ids } } });
+  await prisma.department.deleteMany({ where: { institutionId: ids } });
+  await prisma.academicYear.deleteMany({ where: { institutionId: ids } });
+  await prisma.studentProfile.deleteMany({ where: { institutionId: ids } });
+  await prisma.userRole.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.auditLog.deleteMany({ where: { actorUserId: { in: userIds } } });
+  await prisma.auditLog.deleteMany({ where: { institutionId: ids } });
+  await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+  await prisma.institution.deleteMany({ where: { id: ids } });
+};
+
+// Sweep whatever a killed run left behind — the two names this suite and the
+// HTTP suite give their fixtures. The HTTP suite cleans up in a `finally`, so
+// this only ever finds casualties of a kill, not of a failure.
+const stale = await prisma.institution.findMany({
+  where: { name: { in: ['HallTicket Verify', 'HallTicket Rival', 'HallTicket HTTP', 'HallTicket HTTP Rival'] } },
+  select: { id: true },
+});
+if (stale.length) {
+  const staleIds = stale.map((s) => s.id);
+  const staleUsers = (await prisma.user.findMany({ where: { institutionId: { in: staleIds } }, select: { id: true } })).map((u) => u.id);
+  await purgeFixture(staleIds, staleUsers);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 section('2. Fixtures');
 
@@ -237,7 +286,7 @@ const offeringSecond = await mkOffering(
 const offeringUnscheduled = await mkOffering(
   institutionId, ay.id, struct.section.id, teacherA.id, 'HT303', 'Unscheduled Paper', struct.dept.id,
 );
-const offeringRival = await mkOffering(
+await mkOffering(
   rival.id, rivalAy.id, rivalStruct.section.id, teacherB.id, 'HT999', 'Rival Paper', rivalStruct.dept.id,
 );
 
@@ -436,7 +485,7 @@ section('6. The preview and the run must agree');
 
 {
   const preview = (await svc.hallTicketBlock('GENERATION', institutionId, examMain.id)) as {
-    totals: { wouldIssue: number; alreadyIssued: number; noScheduledPaper: number; slots: number };
+    totals: { wouldIssue: number; wouldIssueTickets: number; alreadyIssued: number; noScheduledPaper: number; slots: number };
     students: Array<{ studentProfileId: string; wouldIssue: boolean; reasons: string[] }>;
   };
   eq(preview.totals.slots, 2, 'the exam has two scheduled papers');
@@ -846,8 +895,11 @@ await failsWith(
   // Put it back so the publication block can be read in its published state.
   await svc.setPublication(institutionId, controller.id, examMain.id, 'publish');
 
-  const block = (await svc.hallTicketBlock('PUBLICATION', institutionId)) as {
-    totals: { exams: number; published: number; tickets: number; publishable: number };
+  // `hallTicketBlock` returns a 7-way union; this is the PUBLICATION branch,
+  // so the cast goes through `unknown` — the same idiom line 786 uses — and the
+  // fields below are the ones this section actually reads.
+  const block = (await svc.hallTicketBlock('PUBLICATION', institutionId)) as unknown as {
+    totals: { exams: number; tickets: number; publishable: number; DRAFT: number; PUBLISHED: number; RECALLED: number };
     exams: Array<{ id: string; hallTicketStatus: string; tickets: number; publishable: boolean; generated: number; downloaded: number }>;
   };
   // `byStatus` is keyed by the PUBLISHED STATUS IDS, so the totals carry
@@ -925,33 +977,36 @@ section('16. Tenant scoping, on the read paths too');
   eq(rivalCat.exams.filter((e) => e.id === examMain.id).length, 0, 'our exam does not appear in the rival’s catalogue');
   const rivalPub = (await svc.hallTicketBlock('PUBLICATION', rival.id)) as { totals: { exams: number } };
   eq(rivalPub.totals.exams, 1, 'the rival’s publication block shows only its own exam');
+
+  // A row whose LINKS cross the institution line. `CourseOffering` carries no
+  // institutionId of its own — the anchor is `Course.institutionId` — so an
+  // offering whose course belongs to the rival can be wired into OUR section
+  // and academic year by one bad write. Nothing in the app creates this; what
+  // makes it safe is that the cohort restates the scope instead of trusting
+  // the links it was handed. This is the only place that scope is observable:
+  // every other read goes through `requireExam` first and 404s long before a
+  // cohort is computed.
+  const before = (await svc.hallTicketBlock('ELIGIBILITY', institutionId, examMain.id)) as {
+    totals: { students: number };
+    students: Array<{ studentProfileId: string }>;
+  };
+  const crossCourse = await prisma.course.create({
+    data: { departmentId: rivalStruct.dept.id, institutionId: rival.id, code: `X${stamp}`.slice(0, 12), name: 'Cross-linked Paper', semester: 3 },
+  });
+  const crossOffering = await prisma.courseOffering.create({
+    data: { courseId: crossCourse.id, sectionId: struct.section.id, teacherUserId: rivalController.id, semester: 3, academicYearId: ay.id },
+  });
+  const crossStudent = await mkStudent(rival.id, `HV-X${stamp}`);
+  await enroll(crossStudent.id, crossOffering.id);
+  const after = (await svc.hallTicketBlock('ELIGIBILITY', institutionId, examMain.id)) as typeof before;
+  eq(after.totals.students, before.totals.students, 'a rival course cross-linked into our section never enters the cohort');
+  ok(!after.students.some((s) => s.studentProfileId === crossStudent.id), '…and its student is not listed');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 section('17. Cleanup — nothing from this suite remains');
 
-await prisma.hallTicketRequest.deleteMany({ where: { hallTicket: { examSlot: { exam: { institutionId: { in: [institutionId, rival.id] } } } } } });
-await prisma.examRoomAllocation.deleteMany({ where: { examSlot: { exam: { institutionId: { in: [institutionId, rival.id] } } } } });
-await prisma.hallTicket.deleteMany({ where: { examSlot: { exam: { institutionId: { in: [institutionId, rival.id] } } } } });
-await prisma.examSlot.deleteMany({ where: { exam: { institutionId: { in: [institutionId, rival.id] } } } });
-await prisma.examConflict.deleteMany({ where: { exam: { institutionId: { in: [institutionId, rival.id] } } } });
-await prisma.exam.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
-await prisma.feeDue.deleteMany({ where: { studentProfile: { institutionId: { in: [institutionId, rival.id] } } } });
-await prisma.enrollment.deleteMany({ where: { studentProfile: { institutionId: { in: [institutionId, rival.id] } } } });
-await prisma.venue.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
-await prisma.courseOffering.deleteMany({ where: { course: { institutionId: { in: [institutionId, rival.id] } } } });
-await prisma.course.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
-await prisma.section.deleteMany({ where: { program: { department: { institutionId: { in: [institutionId, rival.id] } } } } });
-await prisma.batch.deleteMany({ where: { program: { department: { institutionId: { in: [institutionId, rival.id] } } } } });
-await prisma.program.deleteMany({ where: { department: { institutionId: { in: [institutionId, rival.id] } } } });
-await prisma.department.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
-await prisma.academicYear.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
-await prisma.studentProfile.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
-await prisma.userRole.deleteMany({ where: { userId: { in: createdUserIds } } });
-await prisma.auditLog.deleteMany({ where: { actorUserId: { in: createdUserIds } } });
-await prisma.auditLog.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
-await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });
-await prisma.institution.deleteMany({ where: { id: { in: [institutionId, rival.id] } } });
+await purgeFixture([institutionId, rival.id], createdUserIds);
 
 eq(await prisma.hallTicketRequest.count(), 0, 'no hall ticket request from this suite remains');
 eq(await prisma.hallTicket.count({ where: { examSlot: { exam: { institutionId: { in: [institutionId, rival.id] } } } } }), 0, 'no ticket from this suite remains');

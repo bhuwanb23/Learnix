@@ -407,8 +407,11 @@ ok(schemasSrc.includes('venueId: z.string().min(1).max(64)'),
 ok(!/allocateVenueSchema[\s\S]{0,300}\broomId:/.test(schemasSrc),
   'and the allocation schema does NOT accept a roomId');
 
-// The six superseded endpoints must be gone from BOTH sides.
-for (const [label, src] of [['api.js', apiSrc], ['timetable.routes.ts', routesSrc]] as const) {
+// The six superseded endpoints must be gone from BOTH sides. Comments are
+// stripped first: prose that DOCUMENTS a removal is not code calling it —
+// X-04's note in api.js names `examcellApi.exams()` exactly, and a source
+// assertion tripped by its own changelog teaches people to delete comments.
+for (const [label, src] of [['api.js', stripComments(apiSrc)], ['timetable.routes.ts', stripComments(routesSrc)]] as const) {
   ok(!/examcellApi\.exams\(|api\.get\('\/examcell\/timetable'\)/.test(src), `${label}: the old timetable list is gone`);
 }
 ok(!/exams:\s*\(\)\s*=>\s*api\.get\('\/examcell\/timetable'\)/.test(apiSrc),

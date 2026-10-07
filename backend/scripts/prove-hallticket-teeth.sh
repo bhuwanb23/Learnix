@@ -237,11 +237,16 @@ teeth "the superseded GET /hall-tickets served again" \
   "import io;p='$ROUTES';s=io.open(p,encoding='utf-8').read();a=\"router.use(auth, requireRole('EXAMCELL', 'ADMIN'));\";assert a in s,'the auth line moved';s=s.replace(a,a+chr(10)+chr(10)+\"router.get('/hall-tickets', wrap(async (_req, res) => { res.json({ data: [] }); }));\",1);io.open(p,'w',encoding='utf-8',newline='\n').write(s)"
 
 # ═══ 18. The router stops applying its own auth ═══════════════════════════
-# This router is mounted BEFORE `examcellRoutes`, so it inherits nothing from
-# it. A sibling relying on someone else's `router.use(auth, ...)` is one reorder
-# away from serving the whole prefix to anybody.
+# This runs the UI AUDIT, not the HTTP suite, for the same MEASURED reason
+# X-02's identical case does. `timetableRoutes` is mounted first on
+# `/api/v1/examcell` and runs its own `use(auth, requireRole(...))` for a
+# request it then fails to MATCH — and Express runs `use` for non-matching
+# paths too — so the first sibling answers 401/403 for the whole prefix before
+# this router is reached and an HTTP probe cannot see the difference. What the
+# line changes is the router's own guarantee: safe on its own versus safe only
+# by an accident of mount order.
 teeth "the hall-ticket router stops applying its own auth" \
-  "$ROUTES" "$H" \
+  "$ROUTES" "$A" \
   "import io;p='$ROUTES';s=io.open(p,encoding='utf-8').read();a=\"router.use(auth, requireRole('EXAMCELL', 'ADMIN'));\";assert s.count(a)==1,'the auth line moved';s=s.replace(a,'');io.open(p,'w',encoding='utf-8',newline='\n').write(s)"
 
 # ═══ 19. Route order ══════════════════════════════════════════════════════
@@ -359,4 +364,17 @@ echo
 echo "================================================================"
 echo "$PASS cases bite, $FAIL do not"
 [ "$FAIL" -eq 0 ] || exit 1
-echo "ok prove-hallticket-teeth: every hall-ticket assertion can fail"
+
+# ── The other half of the proof ──────────────────────────────────────────────
+# Every case above only shows the suite CAN fail. If it were failing all along
+# for an unrelated reason, all 33 would "bite" and none of it would mean
+# anything — so the last run is with every file restored, and it must be green.
+# The suite also sweeps any fixture a killed case left on the books at its own
+# start, so this run doubles as the debris check.
+if npx tsx "$V" > /tmp/hallticket-teeth-suite.log 2>&1; then
+  echo "ok prove-hallticket-teeth: every hall-ticket assertion can fail, and the restored suite is green"
+else
+  echo "FAIL prove-hallticket-teeth: the restored suite does NOT pass — every case above is suspect"
+  tail -25 /tmp/hallticket-teeth-suite.log
+  exit 1
+fi

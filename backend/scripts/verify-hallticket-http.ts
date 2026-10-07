@@ -59,8 +59,6 @@ const day = (n: number) => {
   d.setDate(d.getDate() + n);
   return d;
 };
-const dateStr = (n: number) =>
-  `${day(n).getFullYear()}-${String(day(n).getMonth() + 1).padStart(2, '0')}-${String(day(n).getDate()).padStart(2, '0')}`;
 
 async function call(method: string, path: string, opts: { token?: string; body?: unknown } = {}) {
   const res = await fetch(`${base}${path}`, {
@@ -175,7 +173,7 @@ const examEmpty = await prisma.exam.create({
 const slot = await prisma.examSlot.create({
   data: { examId: exam.id, offeringId: offering.id, date: day(5), startTime: '09:00', endTime: '11:00', seats: 30 },
 });
-const venue = await prisma.venue.create({ data: { institutionId, name: `HT Hall ${stamp}`, capacity: 50 } });
+await prisma.venue.create({ data: { institutionId, name: `HT Hall ${stamp}`, capacity: 50 } });
 
 try {
   // ══ 1. The gate ═══════════════════════════════════════════════════════════
