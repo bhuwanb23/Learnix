@@ -1,40 +1,41 @@
 /**
- * HTTP verification for the Hostel residents feature (docs/users/08-hostel.md 3.3).
+ * Suite: the resident directory and the resident profile, over HTTP.
+ * Docs: 08-hostel.md §3.3
  *
- *   npx tsx scripts/verify-hostel-http.ts
+ * Split from one 700-line file into `verify-hostel/rooms.ts` and this one, mirroring
+ * `verify-alumni/`. The original reason was size, but the real reason is that the two halves
+ * want different kinds of fixture: this suite writes CONTACTS and puts them back, while the
+ * rooms suite allocates, transfers, withdraws beds and restores occupancy. Interleaving them
+ * in one file meant a failure halfway through could leave the hostel in a state the next
+ * section's assertions could not interpret.
  *
  * Requires the server on :4000. It exits with a "cannot reach" message rather than a
  * `fetch failed` stack trace if the server is not up.
  *
- * WHY THIS SUITE ALONGSIDE `check-hostel-residents.ts`
- * -----------------------------------------------------
- * The DB suite proves the queries are scoped and the invariants hold. It cannot prove that
- * the ROUTES are wired, that the SCHEMAS accept and reject the right shapes, or that the
- * status codes are what a client actually receives. Those are transport facts, and this file
- * is where they live.
- *
- * WHY IT MUTATES SEEDED ROWS AND PUTS THEM BACK
+ * WHY THIS ALONGSIDE `check-hostel-residents.ts`
  * ---------------------------------------------
- * Contact create/update/delete cannot be exercised over HTTP without writing. The suite
- * creates its OWN contacts on a seeded resident and deletes exactly those, then ASSERTS the
- * deletion — the alumni suites' rule, and the reason this file can be re-run without
- * drifting the seed a little further each time.
+ * The DB suite proves the queries are scoped and the invariants hold. It cannot prove the
+ * ROUTES are wired, that the SCHEMAS accept and reject the right shapes, or that the status
+ * codes are what a client receives. Those are transport facts, and this file is where they live.
  *
  * WHAT IS ASSERTED AND WHY IT IS NOT OBVIOUS
  * ------------------------------------------
- *   - `/residents/facets` is declared BEFORE `/residents/:id`. If the order is ever
- *     flipped, `facets` is swallowed by the `:id` route and returns a 404 on a valid
- *     request. The suite calls it by name precisely so that swap fails.
- *   - `?feeStatus=CLEAR` and `?feeStatus=DUE` partition the directory: the sum of their
- *     totals equals the unfiltered total. That is stronger than asserting either one
- *     individually, because it fails if a filter silently matches nothing.
- *   - `?q=` matching a roll number is the regression this feature fixed. The old list query
- *     did not select the column, so no search term could match it over HTTP.
- *   - A 400 on a contact with no `relation`, and a 400 on an unknown `kind`, prove the
- *     zod schema and the service agree rather than the service catching its own typo.
- *   - An unknown contact id on a valid resident is 404, NOT a silent create. `POST` decides
- *     create-vs-update on the presence of `id`, and a stale id from another resident must not
- *     re-parent that contact.
+ *   - `/residents/facets` is declared BEFORE `/residents/:id`. If the order is ever flipped,
+ *     `facets` is swallowed by the `:id` route and returns a 404 on a valid request.
+ *   - `?feeStatus=CLEAR` and `?feeStatus=DUE` partition the directory: their totals sum to the
+ *     unfiltered total. Stronger than asserting either one, because it fails if a filter
+ *     silently matches nothing.
+ *   - `?q=` matching a roll number is the regression this feature fixed. The old list query did
+ *     not select the column, so no search term could match it.
+ *   - A 400 on a contact with no `relation`, and on an unknown `kind`, proves the zod schema
+ *     and the service agree rather than the service catching its own typo.
+ *   - An unknown contact id on a valid resident is 404, NOT a silent create.
+ *
+ * MUTATES SEEDED ROWS AND PUTS THEM BACK
+ * --------------------------------------
+ * Contact create/update/delete cannot be exercised over HTTP without writing. This creates its
+ * OWN contacts on a seeded resident and deletes exactly those, then ASSERTS the deletion — the
+ * alumni suites' rule, and the reason this file can be re-run without drifting the seed.
  */
 import {
   Tally,
@@ -43,7 +44,7 @@ import {
   requireServer,
   runSuite,
   section,
-} from './alumni-harness.js';
+} from '../alumni-harness.js';
 
 const t = new Tally();
 

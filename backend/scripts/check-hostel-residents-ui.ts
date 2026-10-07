@@ -58,6 +58,18 @@ const FILES = [
 
 const read = (rel: string) => readFileSync(resolve(LEARNIX, rel), 'utf8');
 
+/**
+ * Strip comments before asserting on "is this code still here".
+ *
+ * Without this, `!/BLOCK_COLORS/` fails because a COMMENT explains that `BLOCK_COLORS` was
+ * removed and why. Asserting against prose makes the suite punish its own documentation.
+ */
+function code(rel: string): string {
+  return read(rel)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
 // ---- 1. Parse -----------------------------------------------------------------
 console.log('\nparse');
 for (const rel of FILES) {
@@ -150,7 +162,7 @@ ok('the directory sends `block` to the server', /hostelApi\.residents\(\{[^}]*bl
 ok('the directory sends `feeStatus` to the server', /hostelApi\.residents\(\{[^}]*feeStatus\b/s.test(dir));
 ok(
   'no client-side .filter() over the resident list remains',
-  !/\.(filter)\(\s*\(?\s*r\s*\)?\s*=>/.test(dir),
+  !/\.(filter)\(\s*\(?\s*r\s*\)?\s*=>/.test(code('users/hostel/pages/residents/residents.js')),
   'a leftover client filter is the bug this change exists to fix',
 );
 ok('the directory paginates rather than fetching everything', /totalPages/.test(dir));
@@ -161,7 +173,7 @@ ok('search is debounced', /setTimeout/.test(dir));
 console.log('\nblock colours');
 ok(
   'the hardcoded Block A/B/C colour map is gone',
-  !/BLOCK_COLORS/.test(dir),
+  !/BLOCK_COLORS/.test(code('users/hostel/pages/residents/residents.js')),
   'a fourth block would render in the fallback colour with no way to tell',
 );
 ok('block colour is derived from the block name instead', /function blockColor/.test(dir));

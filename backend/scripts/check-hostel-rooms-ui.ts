@@ -58,6 +58,19 @@ const FILES = [
 
 const read = (rel: string) => readFileSync(resolve(LEARNIX, rel), 'utf8');
 
+/**
+ * Strip comments before asserting on "is this code still here".
+ *
+ * Without this, a check like `!/BLOCK_COLORS/` fails because a COMMENT explains that
+ * `BLOCK_COLORS` was removed and why. Asserting against prose makes the suite punish its own
+ * documentation, and the fix — deleting the explanation — is the wrong fix.
+ */
+function code(rel: string): string {
+  return read(rel)
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
 // ---- 1. Parse -----------------------------------------------------------------
 console.log('\nparse');
 for (const rel of FILES) {
@@ -157,8 +170,12 @@ ok('block chips carry a live count', /\{b\.rooms\}/.test(rooms));
 console.log('\nblock colour');
 ok(
   'the positional BLOCK_COLORS array is gone',
-  !/BLOCK_COLORS/.test(rooms),
+  !/BLOCK_COLORS/.test(code('users/hostel/pages/rooms/rooms.js')),
   'colour came from the chip INDEX, so tapping a different tab changed the block colour',
+);
+ok(
+  'nothing indexes a colour array by block position',
+  !/\w+\[\s*(blockIdx|i|idx)\s*\]/.test(code('users/hostel/pages/rooms/rooms.js')),
 );
 ok('block colour is hashed from the block name', /function blockColor/.test(rooms));
 
