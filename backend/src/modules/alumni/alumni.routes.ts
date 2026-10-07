@@ -55,6 +55,7 @@ import {
   mentorshipFeedbackSchema,
 } from './alumni.schemas.js';
 import * as service from './alumni.service.js';
+import { getGraduateDashboard } from './dashboard.service.js';
 import * as directory from './directory.service.js';
 import * as connections from './connections.service.js';
 import * as chapterSvc from './chapters.service.js';
@@ -107,13 +108,16 @@ async function viewerFor(req: Request) {
 router.use(auth, requireRole('ALUMNI', 'ADMIN'));
 
 // AL-01 dashboard
+//
+// Takes a VIEWER, not a raw `(institutionId, userId)` pair. The dashboard is per-user by
+// construction — my batch, my mentorship pairs, my giving — and the previous signature made
+// it trivially easy to drop another institution-wide aggregate in here by accident, which
+// is exactly what the version it replaced did.
 router.get(
   '/dashboard',
   wrap(async (req, res) => {
-    // userId is required: the unread badge is personal, not institution-wide.
-    res.json({
-      data: await service.getDashboard(req.auth!.institutionId, req.auth!.userId),
-    });
+    const viewer = await viewerFor(req);
+    res.json({ data: await getGraduateDashboard(viewer) });
   }),
 );
 

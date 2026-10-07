@@ -6,80 +6,16 @@ import { writeAudit } from '../../lib/audit.js';
 
 const toRupees = (paise: number) => Math.round(paise / 100);
 
-// ── AL-01 Dashboard ──────────────────────────────────────────
-export async function getDashboard(institutionId: string, userId: string) {
-  const [totalAlumni, activeAlumni, upcomingEvents, receivedDonations, pledgedDonations, activePairs, pendingPairs, notifications] =
-    await Promise.all([
-      prisma.alumniProfile.count({ where: { institutionId } }),
-      prisma.alumniProfile.count({ where: { institutionId, engagementStatus: 'ACTIVE' } }),
-      prisma.event.findMany({
-        where: { institutionId, category: 'ALUMNI', status: { in: ['APPROVED', 'PUBLISHED'] }, startDate: { gte: new Date() } },
-        orderBy: { startDate: 'asc' },
-        take: 5,
-        include: { venue: { select: { name: true } }, _count: { select: { registrations: true } } },
-      }),
-      prisma.payment.aggregate({
-        where: { institutionId, category: 'DONATION', status: 'CLEARED' },
-        _sum: { amountMinor: true },
-      }),
-      prisma.donation.aggregate({
-        where: { institutionId, status: 'PLEDGED' },
-        _sum: { amountMinor: true },
-      }),
-      prisma.mentorshipPair.count({ where: { menteeStudentProfile: { user: { institutionId } }, status: 'ACTIVE' } }),
-      prisma.mentorshipPair.count({ where: { menteeStudentProfile: { user: { institutionId } }, status: 'PENDING' } }),
-      // Scoped to the REQUESTING USER, not the whole institution. Counting every
-      // unread notification for the tenant put a badge reading "349 unread" on
-      // an officer whose own inbox was empty — the number counted other people's
-      // mail. It read as plausible only because the demo had one user.
-      prisma.notification.count({ where: { institutionId, recipientUserId: userId, readAt: null } }),
-    ]);
-
-  const campaigns = await prisma.fundraisingCampaign.findMany({
-    where: { institutionId, status: 'ACTIVE' },
-    select: { name: true, targetMinor: true, raisedMinor: true },
-    take: 5,
-  });
-
-  const engagementPct = totalAlumni === 0 ? 0 : Math.round((activeAlumni / totalAlumni) * 100);
-
-  return {
-    engagement: { totalAlumni, activeAlumni, percentage: engagementPct },
-    stats: {
-      alumni: totalAlumni,
-      upcomingEvents: upcomingEvents.length,
-      donationsReceivedRupees: toRupees(receivedDonations._sum.amountMinor ?? 0),
-      donationsPledgedRupees: toRupees(pledgedDonations._sum.amountMinor ?? 0),
-      activeMentorships: activePairs,
-      pendingMentorships: pendingPairs,
-    },
-    alerts: [
-      ...(pendingPairs > 0
-        ? [{ type: 'MENTORSHIP', message: `${pendingPairs} mentorship request(s) awaiting decision` }]
-        : []),
-      ...(upcomingEvents.length === 0
-        ? [{ type: 'EVENTS', message: 'No upcoming alumni events scheduled' }]
-        : []),
-    ],
-    upcomingEvents: upcomingEvents.map((e) => ({
-      id: e.id,
-      title: e.title,
-      startDate: e.startDate,
-      venue: e.venue?.name ?? null,
-      rsvps: e._count.registrations,
-      capacity: e.capacity,
-    })),
-    campaigns: campaigns.map((c) => ({
-      name: c.name,
-      targetRupees: toRupees(c.targetMinor),
-      raisedRupees: toRupees(c.raisedMinor),
-      percent: c.targetMinor === 0 ? 0 : Math.round((c.raisedMinor / c.targetMinor) * 100),
-    })),
-    unreadNotifications: notifications,
-  };
-}
-
-
+// AL-01 Dashboard has MOVED to dashboard.service.ts as getGraduateDashboard.
+//
+// getDashboard(institutionId, userId) is deleted. It returned an OFFICE engagement view:
+// total alumni, an engagement percentage, donations RECEIVED BY THE SCHOOL, and the count
+// of mentorship pairs awaiting the office's decision. Every figure was an institution-wide
+// aggregate, on the screen a graduate opens expecting their own batch and their own giving.
+//
+// The replacement takes a Viewer rather than a raw (institutionId, userId) pair, so it is
+// per-user by construction and another institution-wide query cannot be added to it by
+// accident.
 
 // AL-02 actions: invite (notification) + add-mentor (creates PENDING pair)
 export async function inviteAlumni(institutionId: string, profileId: string, actorUserId: string) {

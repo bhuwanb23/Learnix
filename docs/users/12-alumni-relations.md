@@ -13,7 +13,83 @@ The alumni relations office bridges the college and its graduates: maintains the
 ## 3. Modules & Data Entities
 
 ### 3.1 Dashboard
-Hero (FY engagement, 12,450 alumni), stats (alumni/events/donations/mentors), upcoming events with RSVP progress (incl. Alumni Networking Meet), office alerts (pending mentorship requests, RSVP shortfall), quick-tool launcher, activity feed.
+
+A **personal** overview — the graduate's own batch, career, events, mentorships, giving and
+network. Seven sections, one request.
+
+This section previously described an **office** engagement report: a hero reading "FY
+engagement, 12,450 alumni", institution-wide stat tiles, office alerts about mentorship
+requests awaiting a decision, and a quick-tool launcher. Every figure was an
+`institutionId` aggregate.
+
+That view was deleted rather than kept on a second screen, and the reason is worth
+recording: a dashboard is the first thing a graduate opens, and they open it to find out
+about *themselves*. Answering that with the school's donation total is not a smaller
+version of the right answer — it is a different and misleading one. "₹2.07 Cr received"
+sitting above a heading that says "My giving" reads as the reader's own figure, and
+nothing on the screen distinguishes the two.
+
+| Section | Contents | Source |
+|--------|----------|--------|
+| **Alumni Snapshot** | Batch, department, location, organisation, plus what is still missing | `AlumniProfile` |
+| **Career Overview** | Current role, employer, industry, derived years of experience | `AlumniCareerEntry` |
+| **Upcoming Events** | Next 3 alumni events; per-row "registered" for the caller; seats left; RSVP bar | `Event`, `EventRegistration` |
+| **Mentorship Activity** | Active/pending pairs **the caller is in**, split as mentor vs mentee, next session | `MentorshipPair` |
+| **Donation Summary** | The caller's own received and pledged totals, kept separate, plus campaigns they supported | `Donation`, `FundraisingCampaign` |
+| **Network Highlights** | Recently joined alumni + scored suggestions with their `reasons` | `AlumniProfile`, `AlumniConnection` |
+| **Quick Actions** | Join Event · Find Mentor · Connect · Donate | navigation only |
+
+#### Why per-user scoping had to be written, not derived
+
+`GET /alumni/mentorship` returns **every** pair in the institution and
+`GET /alumni/donations` returns **every** donation. Neither is scoped to the caller. A
+dashboard assembled from them would show a graduate a stranger's charitable giving and a
+stranger's mentorship pairing, and it would look entirely normal — which is why the HTTP
+suite compares two users' responses against each other and against the database rather
+than asserting absolute counts.
+
+The queries in `dashboard.service.ts` therefore target the caller directly:
+
+- **Mentorship** matches all three predicates a pair can satisfy: `mentorAlumniUserId`,
+  `menteeAlumniProfile.userId`, and `menteeStudentProfile.userId`. The mentee side is
+  polymorphic and was made so after the table already had rows, so a pair created before
+  the change has `menteeStudentProfileId` set and `menteeAlumniProfileId` null — filtering
+  on the alumni mentee alone hides every pre-existing pair. `listMentorship` documents the
+  same trap and corrects it with the same `OR`.
+- **Giving** aggregates on `Donation.alumniUserId`. **Received and pledged are never summed
+  together**: a card reading "₹5.25 L given" for money the bank has not cleared would be a
+  figure the donor cannot reconcile against their own statement.
+- **Mentor and mentee counts are separate.** Mentoring somebody is work; being mentored is
+  something you receive. One "mentorships: 4" number cannot say which.
+
+#### "Experience" is derived, never stored
+
+Whole years since the earliest career entry, floored on the **month** so somebody who
+started this month reads 0 rather than rounding up on the 31st. It is a span, not a sum of
+durations — a career with a two-year gap is longer than the time spent working, and
+pretending otherwise would be the flattering lie.
+
+#### A missing profile is not an error
+
+`getProfileSelf` throws 404 when a user has no `AlumniProfile`. The dashboard returns empty
+sections with `hasProfile: false` instead, because the screen people open first should not
+fail wholesale over one incomplete record — and because the Alumni Relations Office
+account, which the app signs in as, genuinely has no batch and no employer.
+
+#### Empty states name the absence
+
+Absent fields render as **"Not added yet"** (`dashboardMeta.MISSING`), never as `None` or
+`0`. A graduate with an unfilled batch and a graduate with an empty batch are different
+people, and the snapshot's `missing[]` array is the one place that distinction is visible.
+This matters in the demo precisely because the office profile is sparse: the honest
+rendering says "here is something you could add", while `0` would be a claim about a career
+or an employer that does not exist.
+
+#### `GET /alumni/dashboard`
+
+Returns `{ snapshot, career, events, mentorship, giving, network, unreadNotifications }`.
+The retired `engagement` and `stats` blocks are gone rather than left alongside, so there
+is one contract on the path; `check-alumni-dashboard.ts` asserts their absence.
 
 ### 3.2 Alumni (tab)
 Directory stats (registered/employed/entrepreneurs/higher ed), search + batch filter chips → **alumni detail**: profile card, employment info, **Message / Invite / Add Mentor** actions, engagement & contributions history.

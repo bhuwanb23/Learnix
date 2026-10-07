@@ -23,6 +23,18 @@ The exam cell plans and runs all examinations: builds the exam timetable, genera
 
 The eight block ids, labels, icons and colours are owned by the backend (`timetable.rules.ts` `BLOCKS`) and read from `GET /api/examcell/timetable/catalogue` — the app never invents them.
 
+The **Hall Tickets hub (X-04)** opens the same way — the `HallTickets` feature module is a hub of **7 sub-screens**, and the block ids, labels and routes are owned by the backend (`hallticket.rules.ts` `BLOCKS`) and read from `GET /api/examcell/hall-tickets/catalogue` — the app never invents them:
+
+| `FEATURE_MODULES` key | Title | Block id |
+|------------------------|--------------------------|----------------|
+| `HallTicketsEligibility` | Student Eligibility | `ELIGIBILITY` |
+| `HallTicketsGeneration` | Generate Hall Tickets | `GENERATION` |
+| `HallTicketsList` | Tickets & Printing | `TICKETS` |
+| `HallTicketsSchedule` | Exam Subjects & Schedule | `SCHEDULE` |
+| `HallTicketsCentre` | Examination Centre | `VENUE` |
+| `HallTicketsRequests` | Corrections & Reissues | `REQUESTS` |
+| `HallTicketsPublication` | Hall Ticket Publication | `PUBLICATION` |
+
 ## 3. Modules & Data Entities
 
 ### 3.1 Dashboard
@@ -44,9 +56,11 @@ Result list per exam (published/unpublished), class-wise pass %, topper, grade d
 **Entity `result`**: examId, student, marks, grade, pass/fail, published flag.
 
 ### 3.5 Hall Tickets (module)
-Hall ticket generation per exam: student, roll no, exam, date/time, room, seat number, QR. Statuses: Generated / Downloaded / Not Generated. Actions: generate batch, reprint, notify.
+X-04: one hall ticket **per student, per paper**, with the exam cell in control of who may see it. The tab opens a **hub** (publication hero + the seven blocks listed in §2); every block is its own sub-screen. Four screens are scoped to one exam through their own picker (`ELIGIBILITY`, `GENERATION`, `TICKETS`, `SCHEDULE`); three are institution-wide (`VENUE`, `REQUESTS`, `PUBLICATION`). The ten requirements it implements are mapped in §3.10.
 
-**Entity `hall_ticket`**: id, studentId, examId, room, seat, qrCode, generatedAt.
+**Entities**: `hall_ticket` (examSlot, studentProfile, `seatNo`, `qrPayload`, status `GENERATED`/`DOWNLOADED`, `generatedAt`; unique per slot+student and per slot+seat) · `hall_ticket_request` (kind `CORRECTION`/`REISSUE`, status `REQUESTED`/`APPROVED`/`REJECTED`/`COMPLETED`, `field`/`requestedValue` for corrections only, `reason`, `decidedByUserId`, `completedAt`) · `exam.hallTicketStatus` (`DRAFT`/`PUBLISHED`/`RECALLED`), `hallTicketPublishedAt`, `hallTicketPublishedByUserId`.
+
+Student photo: `User.avatarFileId` is published on the ticket, and the tile renders initials (or a person icon) rather than inventing an image URL — no file-serving route exists yet, so nothing is shipped that would 404.
 
 ### 3.6 Cheating Cases (module)
 Cases from AI detection (timing analysis, answer similarity) with risk levels (High/Medium/Low), evidence, status (Under Review / Confirmed / Dismissed). Actions: **Confirm / Dismiss**, escalate to admin, notify student.
@@ -78,6 +92,25 @@ Exam controller profile, exam stats, preference toggles, account menu.
 
 **Policy (confirmed):** hard clashes blocked with 422 · soft clashes recorded, never blocked · room capacity shortfall is `MEDIUM` and never blocks · publishing is refused while any HIGH clash is unresolved.
 
+### 3.10 Hall Tickets (X-04) — the ten requirements
+
+| # | Requirement | Where it lives | Endpoint |
+|---|-------------|----------------|----------|
+| 1 | Student eligibility | `ELIGIBILITY` — per-student warnings over 6 reasons; **warn-only**: `blocksGeneration: false`, reported alongside, never enforced | `GET /hall-tickets/blocks/ELIGIBILITY?examId=` |
+| 2 | Hall-ticket generation | `GENERATION` — one student, one paper, next free seat; a paper added after the batch is issued singly | `POST /hall-tickets/slots/:slotId/students/:studentProfileId` |
+| 3 | Student photo & details | `TICKETS` — avatar with an honest initials fallback, roll no., seat, QR payload, per-paper rows | `GET /hall-tickets/blocks/TICKETS?examId=` |
+| 4 | Exam subjects & schedule | `SCHEDULE` — every paper with date, time, duration, centre and seat (per-exam, or the whole season with no `examId`) | `GET /hall-tickets/blocks/SCHEDULE?examId=` |
+| 5 | Examination-centre info | `VENUE` — centre, room, capacity against seats allocated, invigilator (institution-wide) | `GET /hall-tickets/blocks/VENUE` |
+| 6 | Download / print | `TICKETS` — marks the ticket `DOWNLOADED`; idempotent, a second print reports `alreadyDownloaded` | `POST /hall-tickets/:id/download` |
+| 7 | Bulk generation | `GENERATION` — the preview and the run share ONE predicate: the run issues exactly what the preview promised, a second run issues nothing | `POST /hall-tickets/exams/:examId/generate` |
+| 8 | Correction requests | `REQUESTS` — one `hall_ticket_request` row, `kind: CORRECTION`; only `seatNo`/`rollNo`/`fullName` are correctable, and a roll-no. correction rebuilds the QR | `POST /hall-tickets/requests` · `PATCH /hall-tickets/requests/:id` · `POST /hall-tickets/requests/:id/complete` |
+| 9 | Reissue management | `REQUESTS` — the same table, `kind: REISSUE`; completion seats the student again (new seat + new QR) and a reissue never carries a field | the same three request routes |
+| 10 | Publication status | `PUBLICATION` — per-exam publish / recall; publishing an exam with zero tickets is 422; recall hides tickets from students without deleting them | `PUT /hall-tickets/exams/:examId/publication` |
+
+The hub reads everything it renders in one round trip: `GET /hall-tickets/catalogue` (blocks, statuses, policies, exams for the picker) and `GET /hall-tickets/overview` (hero + totals); each sub-screen then fetches only its own block through `GET /hall-tickets/blocks/:block`.
+
+**Policy (confirmed):** eligibility warnings **never block** generation — they are shown alongside the result · corrections and reissues share ONE `hall_ticket_request` table, two kinds · publication is **per exam**, there is no institution-wide switch · an exam with no generated ticket cannot be published (422) · one open request per ticket (a second is 409) · completing a reissue takes a NEW seat and a rebuilt QR · recall gates the student side: `student.service.ts` hands the `hallTicket` to the student only while the exam is `PUBLISHED`, and re-publishing restores the same seat.
+
 ## 4. Backend API Surface
 
 Legacy exam-cell surface:
@@ -85,7 +118,6 @@ Legacy exam-cell surface:
 GET  /api/examcell/dashboard
 GET  /api/examcell/evaluations            (+ /{id}/assign, /{id}/complete)
 GET  /api/examcell/results                (+ /{id}/publish, re-evaluation)
-GET/POST /api/examcell/hall-tickets       (generate batch, reprint)
 GET/POST /api/examcell/cheating-cases     (+ /{id}/confirm|dismiss)
 GET  /api/examcell/notifications
 POST /api/examcell/broadcasts
@@ -108,6 +140,20 @@ POST   /api/examcell/timetable/slots/:id/venues             allocate centre/room
 PUT    /api/examcell/timetable/allocations/:id/invigilator  assign invigilator
 ```
 
+The old `GET/POST /api/examcell/hall-tickets` (+ `/generate`) handlers were **removed** in X-04 and replaced by the 10 hall-ticket routes below (`hallticket.routes.ts`, mounted **before** `examcellRoutes` with its own auth; every literal is registered before any parameterised path, and `/:id/download` last):
+```
+GET    /api/examcell/hall-tickets/catalogue                      blocks, statuses, policies, exams for the picker
+GET    /api/examcell/hall-tickets/overview                       hub overview + hero publication state
+GET    /api/examcell/hall-tickets/blocks/:block                  one of the 7 blocks (422 on unknown block)
+POST   /api/examcell/hall-tickets/exams/:examId/generate         bulk generation (201; issues what the preview promised)
+PUT    /api/examcell/hall-tickets/exams/:examId/publication      publish | recall (422 when there are no tickets)
+POST   /api/examcell/hall-tickets/slots/:slotId/students/:studentProfileId  one ticket, one student, one paper (201)
+POST   /api/examcell/hall-tickets/requests                       raise a correction or a reissue (201)
+PATCH  /api/examcell/hall-tickets/requests/:id                   approve | reject
+POST   /api/examcell/hall-tickets/requests/:id/complete          seat + QR on an approved request
+POST   /api/examcell/hall-tickets/:id/download                   mark printed (idempotent; registered last)
+```
+
 ## 5. Cross-App Dependencies
 - Writes → **Student**: timetable visibility, hall tickets, published results.
 - Writes → **Admin**: evaluation progress, cheating cases (institution view), result approval.
@@ -117,8 +163,8 @@ PUT    /api/examcell/timetable/allocations/:id/invigilator  assign invigilator
 
 ## 6. Wiring Status
 
-Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02
-Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens wired to live API)
+Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04
+Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens, all wired to live API)
 
 | Endpoint | Method | Status |
 |----------|--------|--------|
@@ -136,8 +182,16 @@ Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens wired to liv
 | `/examcell/timetable/slots/:id/complete` | POST | ✅ wired |
 | `/examcell/timetable/slots/:id/venues` | POST | ✅ wired |
 | `/examcell/timetable/allocations/:id/invigilator` | PUT | ✅ wired |
-| `/examcell/hall-tickets` | GET | ✅ wired |
-| `/examcell/hall-tickets/generate` | POST | ✅ wired |
+| `/examcell/hall-tickets/catalogue` | GET | ✅ wired |
+| `/examcell/hall-tickets/overview` | GET | ✅ wired |
+| `/examcell/hall-tickets/blocks/:block` | GET | ✅ wired ×7 blocks |
+| `/examcell/hall-tickets/exams/:examId/generate` | POST | ✅ wired |
+| `/examcell/hall-tickets/exams/:examId/publication` | PUT | ✅ wired |
+| `/examcell/hall-tickets/slots/:slotId/students/:id` | POST | ✅ wired |
+| `/examcell/hall-tickets/requests` | POST | ✅ wired |
+| `/examcell/hall-tickets/requests/:id` | PATCH | ✅ wired |
+| `/examcell/hall-tickets/requests/:id/complete` | POST | ✅ wired |
+| `/examcell/hall-tickets/:id/download` | POST | ✅ wired |
 | `/examcell/evaluations` | GET | ✅ wired |
 | `/examcell/evaluations/:id/assign` | POST | ✅ wired |
 | `/examcell/evaluations/:id/complete` | POST | ✅ wired |
@@ -166,7 +220,9 @@ Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens wired to liv
 - **Clashes & publishing**: live API (8 conflict kinds, severities, publish gate)
 - Evaluations: live API (progress, deadlines, mark complete)
 - Results: live API (pending/published, publish, re-evaluation decide)
-- Hall Tickets: live API (exam selector, generate batch, search)
+- **Hall Tickets hub**: live API (catalogue, overview, publication hero); block cards route through `goToRoute`
+- **Eligibility / Generation / Tickets / Schedule**: live API — each owns its exam picker; warnings are shown, never enforced; the run issues exactly what the preview promised; printing marks downloaded
+- **Centre / Requests / Publication**: live API — institution-wide centre, approve/reject/complete requests, publish or recall
 - Cheating Cases: live API (risk filters, confirm/dismiss/escalate)
 - Notifications: live API (inbox, mark all read, broadcast)
 - Profile: live API (name, stats, preferences, menu)

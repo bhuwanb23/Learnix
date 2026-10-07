@@ -5,6 +5,16 @@
 // router relying on someone else's `router.use(auth, ...)` is one reorder away
 // from serving the whole prefix to anybody.
 //
+// A NOTE ON WHAT THE 401s DO AND DO NOT PROVE — measured, not assumed, exactly
+// as X-02 measured it. `timetableRoutes` is mounted first on this prefix and
+// runs its `use(auth, requireRole(...))` for a request it then fails to MATCH,
+// and Express runs `use` for non-matching paths too, so the first sibling
+// answers 401/403 for EVERY path under `/api/v1/examcell` before this router is
+// reached. The HTTP suite's gate assertions therefore prove the prefix is
+// guarded, not that this router guards itself. What guards this router is the
+// line below; `audit-hallticket-ui.ts` asserts it at source level, and
+// `prove-hallticket-teeth.sh` proves that assertion bites.
+//
 // ROUTE ORDER IS LOAD-BEARING. Everything under `/hall-tickets` shares the
 // first two segments, so every LITERAL is registered before any parameterised
 // path. `/:id/download` is registered last of all, because it is the only route
