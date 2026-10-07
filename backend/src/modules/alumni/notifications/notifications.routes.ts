@@ -66,11 +66,21 @@ const wrap =
     fn(req, res).catch(next);
   };
 
-/** Same, for middleware that never writes a response. */
+/**
+ * Same, for middleware that never writes a response itself.
+ *
+ * `next()` MUST be called when the guard passes. This did not — it was `fn(req).catch(next)`
+ * — so a satisfied guard resolved and the request hung with no response. The bug is silent
+ * and one-sided: the refusal path still produced a correct 403, because `fn` rejects and
+ * `.catch(next)` handles it, so "is this blocked?" assertions passed while every
+ * legitimate call to the guarded route timed out.
+ *
+ * The same defect existed in `profile.routes.ts` and was fixed identically.
+ */
 const guard =
   (fn: (req: Request) => Promise<void>) =>
   (req: Request, _res: Response, next: NextFunction) => {
-    fn(req).catch(next);
+    fn(req).then(() => next(), next);
   };
 
 async function viewerFor(req: Request) {

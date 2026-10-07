@@ -23,6 +23,7 @@ import feeStructureRoutes from './modules/accounts/feestructure.routes.js';
 import payrollStructureRoutes from './modules/accounts/payroll.structure.routes.js';
 import { UPLOAD_DIR } from './modules/accounts/expenses.routes.js';
 import timetableRoutes from './modules/examcell/timetable.routes.js';
+import hallticketRoutes from './modules/examcell/hallticket.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -155,6 +156,11 @@ export function createApp() {
   // auth. Mounted after, it would be answering only for paths the sibling
   // did not claim, and the sibling's 401 would be doing the protecting.
   app.use('/api/v1/examcell', timetableRoutes);
+  // X-04 hall tickets owns every `/hall-tickets/*` path now, and those two
+  // endpoints used to be declared in examcellRoutes. It is mounted before it
+  // for the same reason the timetable router is: it applies its own auth, and
+  // Express matches by mount order.
+  app.use('/api/v1/examcell', hallticketRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);

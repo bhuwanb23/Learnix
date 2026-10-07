@@ -63,11 +63,23 @@ const wrap =
     fn(req, res).catch(next);
   };
 
-/** Same as `wrap`, for middleware that never writes a response. */
+/**
+ * Same as `wrap`, for middleware that never writes a response itself.
+ *
+ * `next()` MUST be called when the guard passes. This version did not: it was
+ * `fn(req).catch(next)`, so a satisfied guard resolved and the request sat there
+ * forever with no response. The failure is silent and one-sided — the unauthorised path
+ * looks correct because `fn` rejects and `.catch(next)` turns it into a proper 403, so
+ * every "is this refused?" assertion passes while every legitimate office request hangs.
+ *
+ * That is exactly what happened: `GET /alumni/profile/achievements/queue` timed out for
+ * the office while returning a clean 403 for a graduate, and the HTTP suite hung on the
+ * first office-only call it made.
+ */
 const guard =
   (fn: (req: Request) => Promise<void>) =>
   (req: Request, _res: Response, next: NextFunction) => {
-    fn(req).catch(next);
+    fn(req).then(() => next(), next);
   };
 
 async function viewerFor(req: Request) {

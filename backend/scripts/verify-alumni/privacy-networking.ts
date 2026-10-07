@@ -191,7 +191,10 @@ async function run() {
   t.check('GET /me', mine.status === 200 && !!mine.data?.name, `${mine.data?.name}`);
 
   const newHeadline = `Verification headline ${Date.now() % 100000}`;
+  // Captured BEFORE the write below, because `PUT /me` replaces the whole skills list and
+  // the restore can only put back what was read out first.
   const previousHeadline = mine.data?.headline;
+  const previousSkills = (mine.data?.skills ?? []).map((s: any) => ({ skill: s.skill, level: s.level }));
   const updated = await viewer.call('PUT', '/alumni/me', {
     headline: newHeadline,
     skills: [
@@ -217,23 +220,28 @@ async function run() {
   t.check('  invalid body rejected', badSkill.status === 400, `${badSkill.status} (${badSkill.error?.code})`);
 
   // The old suite left this headline and these two skills behind on a seeded graduate on
-  // every run, so re-running it drifted the seed each time. Restored explicitly, and the
-  // restore is asserted rather than assumed.
-  if (previousHeadline === undefined || previousHeadline === null) {
-    await viewer.call('PUT', '/alumni/me', { headline: '' });
-  } else {
-    await viewer.call('PUT', '/alumni/me', { headline: previousHeadline });
-  }
+  // every run, so re-running it drifted the seed each time. Both are restored explicitly,
+  // and BOTH restores are asserted.
+  //
+  // The skills restore was previously missing while its assertion was present, which is
+  // worse than having neither: the suite reported the drift it was causing. `PUT /me`
+  // REPLACES the skills list, so the prior list has to be captured before the write and
+  // sent back verbatim.
+  await viewer.call('PUT', '/alumni/me', { headline: previousHeadline ?? '' });
+  await viewer.call('PUT', '/alumni/me', { skills: previousSkills });
+
   const restored = await viewer.call('GET', '/alumni/me');
   t.check(
     '  headline restored',
     (restored.data?.headline ?? '') === (previousHeadline ?? ''),
     `"${restored.data?.headline ?? ''}"`,
   );
+  const restoredSkills = (restored.data?.skills ?? []).map((s: any) => s.skill).sort();
+  const expectedSkills = previousSkills.map((s: any) => s.skill).sort();
   t.check(
-    '  skills reduced back to seed state',
-    (restored.data?.skills ?? []).length !== 2 || !restored.data?.skills?.some((s: any) => s.skill === 'Kubernetes'),
-    `now: ${(restored.data?.skills ?? []).map((s: any) => s.skill).join(',') || 'none'}`,
+    '  skills restored to seed state',
+    restoredSkills.join(',') === expectedSkills.join(','),
+    `expected ${expectedSkills.join(',') || 'none'}, got ${restoredSkills.join(',') || 'none'}`,
   );
 
   void instId;

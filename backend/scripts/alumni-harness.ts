@@ -54,6 +54,8 @@ export class Actor {
     readonly email: string,
     readonly token: string,
     readonly roles: string[],
+    /** Kept so session-revocation can be asserted by replay, which is the only real proof. */
+    readonly refreshToken?: string,
   ) {}
 
   get isOffice(): boolean {
@@ -126,11 +128,16 @@ async function login(email: string): Promise<Actor> {
     body: JSON.stringify({ email, password: PASSWORD }),
   });
   const json = (await res.json().catch(() => ({}))) as {
-    data?: { accessToken?: string; user?: { roles?: string[] } };
+    data?: { accessToken?: string; refreshToken?: string; user?: { roles?: string[] } };
   };
   const token = json.data?.accessToken;
   if (!token) throw new Error(`login failed for ${email} — is the server on ${BASE}?`);
-  return new Actor(email, token, json.data?.user?.roles ?? []);
+  // The refresh token is kept on the Actor because session-revocation assertions need it.
+  // Revoking a session cannot be observed through the access token — a JWT that has already
+  // been issued stays valid until it expires — so "was this session really killed?" can only
+  // be answered by replaying the refresh token. Discarding it at login made that untestable,
+  // and it was tested wrongly instead (by asserting the next access-token call returned 401).
+  return new Actor(email, token, json.data?.user?.roles ?? [], json.data?.refreshToken);
 }
 
 export { login as loginAs };

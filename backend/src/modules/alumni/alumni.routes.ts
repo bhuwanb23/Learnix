@@ -62,12 +62,15 @@ import * as leadership from './leadership.service.js';
 import * as membership from './membership.service.js';
 import * as eventSvc from './events.service.js';
 import * as registration from './registration.service.js';
-import * as feedback from './feedback.service.js';
+import * as feedback from './eventFeedback.service.js';
 import * as memories from './memories.service.js';
 import * as mentorship from './mentorship.service.js';
 import * as matching from './matching.service.js';
 import * as sessions from './sessions.service.js';
 import * as goals from './goals.service.js';
+// `feedback.service.js` is the MENTORSHIP service (`pairId`, mentorRating/menteeRating) and
+// is imported separately under an explicit alias. It used to be this file's event feedback
+// too, until 7d39113 overwrote it — see `eventFeedback.service.ts` for what that broke.
 import * as mentorshipFeedback from './feedback.service.js';
 // `broadcastSchema` is no longer imported: the broadcast contract moved into
 // notifications/notifications.schemas.ts and now takes a structured audience

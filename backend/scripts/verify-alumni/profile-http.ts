@@ -39,6 +39,7 @@ import {
   requireServer,
   loginAs,
   prisma,
+  BASE,
   OFFICE_EMAIL,
   GRADUATE_EMAIL,
   OTHER_GRADUATE_EMAIL,
@@ -50,9 +51,49 @@ const t = new Tally();
 const createdCareer: string[] = [];
 const createdAchievements: string[] = [];
 
+/**
+ * Every marker value this suite writes, so a pre-flight sweep can find its own leftovers
+ * without touching anything a human or the seed owns. Kept in one place because the
+ * sweep and the assertions must agree on the list — a label added to a POST but not here
+ * is a row that survives the crash and poisons the next run.
+ */
+const SWEEP_LABELS = ['Verification Co', 'Elsewhere Inc', 'Verification Body'];
+
 async function main() {
   await requireServer();
   banner('Alumni Profile — HTTP verification');
+
+  // PRE-FLIGHT: sweep anything a previous run left behind.
+  //
+  // A run that was interrupted — a Ctrl-C, a killed process, an assertion that threw —
+  // never reaches `cleanup()`. Because the career section adds an OPEN-ENDED role, and
+  // adding one closes whatever was current, the leftover row becomes the graduate's
+  // current role with a start month later than this suite's hardcoded `fromMonth`. The
+  // next run then gets a legitimate 400 from `addCareerEntry` ("a role must end after it
+  // started"), because the role it is adding would begin before the current one.
+  //
+  // That is correct server behaviour being punished by a dirty fixture, which is the
+  // worst possible failure mode: the suite reports a product bug that is not there.
+  // `check-notifications-db.ts` had the identical problem and was fixed the same way.
+  // `sweptProfile`, not `p` — `p` is the self-view response a few lines below, and
+  // shadowing it here would have made every later `p.user` a type error.
+  const sweptProfile = await prisma.alumniProfile.findFirst({
+    where: { user: { email: GRADUATE_EMAIL } },
+    select: { id: true },
+  });
+  if (sweptProfile) {
+    const swept = await prisma.alumniCareerEntry.deleteMany({
+      where: { alumniProfileId: sweptProfile.id, employerLabel: { in: SWEEP_LABELS } },
+    });
+    const sweptAch = await prisma.alumniAchievement.deleteMany({
+      where: { profile: { id: sweptProfile.id }, issuer: { in: SWEEP_LABELS } },
+    });
+    if (swept.count || sweptAch.count) {
+      console.log(
+        `  (swept ${swept.count} career / ${sweptAch.count} achievement leftovers from a previous run)`,
+      );
+    }
+  }
 
   const office = await loginAs(OFFICE_EMAIL);
   const grad = await loginAs(GRADUATE_EMAIL);
@@ -216,10 +257,25 @@ async function main() {
     isHighlight: true,
   });
   t.check('POST /career (open-ended)', openEnded.status === 201, `${openEnded.status}`);
-  if (openEnded.status === 201) createdCareer.push(openEnded.data.id);
+
+  // Every assertion below is conditional on the POST having succeeded. They used to run
+  // unconditionally and read `openEnded.data.id`, so a rejected POST threw
+  // `Cannot read properties of undefined` and the suite died — which took `cleanup()`
+  // with it and left this run's own rows behind for the next one to trip over. A failed
+  // prerequisite has to report the failure and stop, not crash the reporter.
+  if (openEnded.status !== 201) {
+    t.check(
+      'POST /career (open-ended) — prerequisites met',
+      false,
+      'cannot continue: the career assertions depend on this row existing',
+    );
+    await cleanup();
+    t.finish('Alumni Profile — HTTP verification');
+  }
+  createdCareer.push(openEnded.data.id);
 
   const listed = await grad.call('GET', '/alumni/profile/career');
-  const fresh = listed.data?.entries?.find((e: any) => e.id === openEnded.data?.id);
+  const fresh = listed.data?.entries?.find((e: any) => e.id === openEnded.data.id);
   t.check('  stored as current', fresh?.isCurrent === true, `toMonth=${fresh?.toMonth ?? 'null'}`);
   t.check('  month precision preserved', fresh?.fromMonth === '2025-01', `fromMonth=${fresh?.fromMonth}`);
   t.check('  highlight flag kept', fresh?.isHighlight === true, `${fresh?.isHighlight}`);
@@ -261,8 +317,19 @@ async function main() {
     url: `https://example.com/award/${tag}`,
   });
   t.check('POST /achievements', added.status === 201, `${added.status}`);
-  if (added.status === 201) createdAchievements.push(added.data.id);
-  t.check('  new entries start unverified', added.data?.isVerified === false, `${added.data?.isVerified}`);
+  // Same guard as the career section: eleven assertions below interpolate this id, so a
+  // rejected POST turns the rest of the suite into `POST /undefined/verify` noise.
+  if (added.status !== 201) {
+    t.check(
+      'POST /achievements — prerequisites met',
+      false,
+      'cannot continue: the verification assertions depend on this row existing',
+    );
+    await cleanup();
+    t.finish('Alumni Profile — HTTP verification');
+  }
+  createdAchievements.push(added.data.id);
+  t.check('  new entries start unverified', added.data.isVerified === false, `${added.data.isVerified}`);
 
   const selfVerify = await grad.call('POST', `/alumni/profile/achievements/${added.data?.id}/verify`, { verified: true });
   t.check('a graduate cannot verify their own entry', selfVerify.status === 403, `${selfVerify.status}`);
@@ -316,26 +383,56 @@ async function main() {
     links: { linkedinUrl: `https://linkedin.com/in/verify-${tag}`, githubUrl: `https://github.com/verify-${tag}` },
   });
 
+  // Re-seed the links first. Section 5 deliberately clears them, so by the time this
+  // section ran the graduate had no links at all — `githubUrl` was null before `showLinks`
+  // was ever switched off, which made "showLinks=false redacts links" pass or fail for a
+  // reason that had nothing to do with the switch. A privacy assertion needs the data
+  // present to be hidden, or it is testing an empty set.
+  await grad.call('PUT', '/alumni/profile', {
+    links: {
+      linkedinUrl: `https://linkedin.com/in/verify-${tag}`,
+      githubUrl: `https://github.com/verify-${tag}`,
+      websiteUrl: `https://example.com/verify-${tag}`,
+    },
+  });
+
   const linksOff = await grad.call('PUT', '/alumni/profile', { privacy: { showLinks: false } });
   t.check('showLinks is settable', linksOff.status === 200, `${linksOff.status}`);
 
-  const strangerNoLinks = await other.call('GET', `/alumni/directory/${profileId}`);
+  // Asserted against the LIST projection, which is the only one that returns links.
+  //
+  // The three assertions here used to target `/directory/{id}`, and failed for a reason
+  // that has nothing to do with the switch: the DETAIL card does not return a `links`
+  // field at all, for the office or for anyone else. Probed directly — `links` is
+  // `undefined` on both. So `showLinks=false` cannot "fail to redact" a value the response
+  // never carried, and `showLinks=true` cannot "fail to restore" one either.
+  //
+  // That is worth knowing on its own (see the note above the section), but the privacy
+  // property has to be tested where the data exists.
+  const listOff = await other.call('GET', '/alumni/directory?pageSize=50');
+  const rowOff = (listOff.data?.alumni ?? []).find((a: any) => a.id === profileId);
   t.check(
     'showLinks=false redacts links to null',
-    strangerNoLinks.data?.links === null,
-    JSON.stringify(strangerNoLinks.data?.links ?? null),
+    rowOff?.links === null,
+    `links=${JSON.stringify(rowOff?.links ?? null)}`,
   );
 
-  const officeSeesLinks = await office.call('GET', `/alumni/directory/${profileId}`);
-  t.check('the office still sees links', officeSeesLinks.data?.links?.githubUrl != null, 'office unredacted');
+  const officeListOff = await office.call('GET', '/alumni/directory?pageSize=50');
+  const officeRow = (officeListOff.data?.alumni ?? []).find((a: any) => a.id === profileId);
+  t.check(
+    'the office still sees links',
+    officeRow?.links?.githubUrl === `https://github.com/verify-${tag}`,
+    `office githubUrl=${officeRow?.links?.githubUrl ?? 'null'}`,
+  );
 
   const linksOn = await grad.call('PUT', '/alumni/profile', { privacy: { showLinks: true } });
   t.check('showLinks is settable back', linksOn.status === 200, `${linksOn.status}`);
-  const strangerLinks = await other.call('GET', `/alumni/directory/${profileId}`);
+  const listOn = await other.call('GET', '/alumni/directory?pageSize=50');
+  const rowOn = (listOn.data?.alumni ?? []).find((a: any) => a.id === profileId);
   t.check(
     'showLinks=true restores them',
-    strangerLinks.data?.links?.githubUrl === `https://github.com/verify-${tag}`,
-    strangerLinks.data?.links?.githubUrl ?? 'null',
+    rowOn?.links?.githubUrl === `https://github.com/verify-${tag}`,
+    rowOn?.links?.githubUrl ?? 'null',
   );
 
   const skillsOff = await grad.call('PUT', '/alumni/profile', { privacy: { showSkills: false } });
@@ -344,12 +441,25 @@ async function main() {
   t.check(
     'achievements follow showSkills',
     (noAchievements.data?.achievements ?? []).length === 0,
-    `${(noAchievements.data?.achievements ?? []).length} achievements, count=${noAchievements.data?.achievementCount}`,
+    `${(noAchievements.data?.achievements ?? []).length} achievements`,
   );
+
+  // The DETAIL card does not return `achievementCount` at all — only the LIST projection
+  // carries it. So the leak that matters is there: a hidden achievements block whose COUNT
+  // still reads "3" tells a stranger exactly how many claims are being withheld. Asserted
+  // against the list, and asserted as "zeroed or absent" rather than "== 0", because
+  // absent is an equally valid way to withhold a number and `detail` already does that.
+  await grad.call('PUT', '/alumni/profile', { privacy: { showSkills: true } });
+  const achListOn = await other.call('GET', '/alumni/directory?pageSize=50');
+  const achRowOn = (achListOn.data?.alumni ?? []).find((a: any) => a.id === profileId);
+  const countBefore = achRowOn?.achievementCount ?? 0;
+  await grad.call('PUT', '/alumni/profile', { privacy: { showSkills: false } });
+  const achListOff = await other.call('GET', '/alumni/directory?pageSize=50');
+  const achRowOff = (achListOff.data?.alumni ?? []).find((a: any) => a.id === profileId);
   t.check(
-    '  and the count is zeroed, not leaked',
-    (noAchievements.data?.achievementCount ?? -1) === 0,
-    `achievementCount=${noAchievements.data?.achievementCount}`,
+    '  the list count is zeroed, not leaked',
+    countBefore > 0 && achRowOff?.achievementCount === 0,
+    `visible=${countBefore} hidden=${achRowOff?.achievementCount}`,
   );
   await grad.call('PUT', '/alumni/profile', { privacy: { showSkills: true } });
 
@@ -400,11 +510,24 @@ async function main() {
     `${revokeAll.status}, revoked=${revokeAll.data?.revoked}`,
   );
 
-  const meStill = await grad.call('GET', '/alumni/profile');
+  // With no token supplied, EVERY session is revoked — including the caller's. The caller
+  // is still holding a live ACCESS token, and revoking refresh tokens cannot retract a JWT
+  // that has already been issued, so this suite must NOT assert that the next request 401s.
+  // It did, and it passed for the wrong reason earlier: the suite had just signed in
+  // again to obtain a fresh access token.
+  //
+  // What can be asserted, and is what the feature actually promises, is that the caller's
+  // REFRESH token is dead — so the session cannot be renewed or replayed, which is where a
+  // stolen token does its damage. That is asserted here.
+  const refreshProbe = await fetch(`${BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: grad.refreshToken }),
+  });
   t.check(
-    'revoke-all with no token signs the caller out too',
-    meStill.status === 401,
-    `${meStill.status} (documented fail-safe: keepCurrentSession false)`,
+    '  the caller refresh token is revoked too',
+    refreshProbe.status >= 400,
+    `${refreshProbe.status} (no token supplied, so the caller's session was revoked as documented)`,
   );
 
   // `finish` never returns, so teardown runs before it rather than after.
