@@ -39,6 +39,24 @@ import TimetableDuty from './pages/timetable/pages/duty/duty';
 import TimetableStudents from './pages/timetable/pages/students/students';
 import TimetableConflicts from './pages/timetable/pages/conflicts/conflicts';
 
+// X-04 Hall tickets sub-screens (docs/users/05 §3.5). The hub is
+// `./pages/hall_tickets/hall_tickets`, reached through the dashboard; these
+// seven are its blocks, and each `route` in `hallTicketMeta.js` names one of
+// them.
+//
+// Registering them HERE is load-bearing and its failure is silent, exactly as
+// for the timetable eight: `renderContent` looks the key up in FEATURE_MODULES,
+// finds nothing, falls through to the tab switcher and puts the controller
+// back on the hub with no error anywhere. `audit-hallticket-ui.ts` asserts all
+// seven are present and point at their own component.
+import HallTicketsEligibility from './pages/hall_tickets/pages/eligibility/eligibility';
+import HallTicketsGeneration from './pages/hall_tickets/pages/generation/generation';
+import HallTicketsList from './pages/hall_tickets/pages/tickets/tickets';
+import HallTicketsSchedule from './pages/hall_tickets/pages/schedule/schedule';
+import HallTicketsCentre from './pages/hall_tickets/pages/centre/centre';
+import HallTicketsRequests from './pages/hall_tickets/pages/requests/requests';
+import HallTicketsPublication from './pages/hall_tickets/pages/publication/publication';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 import { setDemoUser } from '../../services/api';
@@ -59,6 +77,13 @@ const FEATURE_MODULES = {
   TimetableDuty: { title: 'Invigilator Duty', icon: 'people-outline', component: TimetableDuty },
   TimetableStudents: { title: 'Student Timetable', icon: 'person-outline', component: TimetableStudents },
   TimetableConflicts: { title: 'Clashes & Publishing', icon: 'warning-outline', component: TimetableConflicts },
+  HallTicketsEligibility: { title: 'Student Eligibility', icon: 'checkbox-outline', component: HallTicketsEligibility },
+  HallTicketsGeneration: { title: 'Generate Hall Tickets', icon: 'flash-outline', component: HallTicketsGeneration },
+  HallTicketsList: { title: 'Tickets & Printing', icon: 'print-outline', component: HallTicketsList },
+  HallTicketsSchedule: { title: 'Exam Subjects & Schedule', icon: 'time-outline', component: HallTicketsSchedule },
+  HallTicketsCentre: { title: 'Examination Centre', icon: 'business-outline', component: HallTicketsCentre },
+  HallTicketsRequests: { title: 'Corrections & Reissues', icon: 'swap-horizontal-outline', component: HallTicketsRequests },
+  HallTicketsPublication: { title: 'Hall Ticket Publication', icon: 'megaphone-outline', component: HallTicketsPublication },
 };
 
 const TAB_TITLES = {

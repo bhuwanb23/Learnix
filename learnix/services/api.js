@@ -876,8 +876,32 @@ export const examcellApi = {
   assignInvigilator: (allocationId, invigilatorUserId) =>
     api.put(`/examcell/timetable/allocations/${allocationId}/invigilator`, { invigilatorUserId }),
 
-  hallTickets: (examId) => api.get(`/examcell/hall-tickets?examId=${examId}`),
-  generateHallTickets: (examId) => api.post('/examcell/hall-tickets/generate', { examId }),
+  // ── X-04 Hall tickets (docs/users/05 §3.5) ────────────────────────────
+  //
+  // Two methods used to live here — `GET /hall-tickets?examId=` and
+  // `POST /hall-tickets/generate {examId}`. Both are GONE, not renamed: the
+  // router superseded them. The old screen's exam picker additionally called
+  // `examcellApi.exams()`, a method that has never existed on this API object
+  // (it lives on the STUDENT api), so it threw before the first render.
+  //
+  // Everything now hangs off `/hall-tickets`, and the catalogue carries the
+  // exam list precisely so no screen needs a second call to build a picker.
+  hallTicketCatalogue: () => api.get('/examcell/hall-tickets/catalogue'),
+  hallTicketOverview: () => api.get('/examcell/hall-tickets/overview'),
+  hallTicketBlock: (block, examId) =>
+    api.get(`/examcell/hall-tickets/blocks/${encodeURIComponent(block)}${examId ? `?examId=${encodeURIComponent(examId)}` : ''}`),
+  generateHallTicketBulk: (examId) =>
+    api.post(`/examcell/hall-tickets/exams/${encodeURIComponent(examId)}/generate`),
+  setHallTicketPublication: (examId, action) =>
+    api.put(`/examcell/hall-tickets/exams/${encodeURIComponent(examId)}/publication`, { action }),
+  generateHallTicket: (slotId, studentProfileId) =>
+    api.post(
+      `/examcell/hall-tickets/slots/${encodeURIComponent(slotId)}/students/${encodeURIComponent(studentProfileId)}`,
+    ),
+  createHallTicketRequest: (payload) => api.post('/examcell/hall-tickets/requests', payload),
+  decideHallTicketRequest: (id, payload) => api.patch(`/examcell/hall-tickets/requests/${encodeURIComponent(id)}`, payload),
+  completeHallTicketRequest: (id) => api.post(`/examcell/hall-tickets/requests/${encodeURIComponent(id)}/complete`),
+  markHallTicketDownloaded: (id) => api.post(`/examcell/hall-tickets/${encodeURIComponent(id)}/download`),
   evaluations: () => api.get('/examcell/evaluations'),
   assignEvaluator: (evalId, evaluatorUserId) => api.post(`/examcell/evaluations/${evalId}/assign`, { evaluatorUserId }),
   completeEvaluation: (evalId) => api.post(`/examcell/evaluations/${evalId}/complete`),
