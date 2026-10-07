@@ -14,6 +14,8 @@ import {
   broadcastSchema,
   residentQuerySchema,
   contactSchema,
+  roomQuerySchema,
+  bedMaintenanceSchema,
 } from './hostel.schemas.js';
 import * as service from './hostel.service.js';
 import {
@@ -43,19 +45,38 @@ router.get(
   }),
 );
 
-// H-02 rooms + detail
+// ── Rooms (docs/users/08-hostel.md §3.2) ───────────────────────────────────────
+
 router.get(
   '/rooms',
+  validate(roomQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listRooms(req.auth!.institutionId) });
+    res.json({ data: await service.listRooms(req.auth!.institutionId, req.query) });
   }),
 );
 
+// Keyed by room ID, not room number. `Room.number` is unique only WITHIN a block
+// (`@@unique([blockId, number])`), so two blocks may both hold "A-101" — and the old
+// `findFirst({ where: { number } })` would then serve one of them arbitrarily, showing the
+// wrong room's occupants.
 router.get(
-  '/rooms/:roomNumber',
+  '/rooms/:roomId',
+  validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
     res.json({
-      data: await service.getRoomDetail(req.auth!.institutionId, String(req.params.roomNumber)),
+      data: await service.getRoomDetail(req.auth!.institutionId, String(req.params.roomId)),
+    });
+  }),
+);
+
+// Who has stayed in this room, and when they moved in and out. Derived from the same
+// allocation rows the resident timeline reads — the data was always written, never read.
+router.get(
+  '/rooms/:roomId/history',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.listRoomHistory(req.auth!.institutionId, String(req.params.roomId)),
     });
   }),
 );
@@ -92,6 +113,27 @@ router.post(
         req.auth!.institutionId,
         String(req.params.bedId),
         req.body.toRoomNumber,
+      ),
+    });
+  }),
+);
+
+// Withdraw a bed for maintenance, or return it to service.
+//
+// A bed STATE transition, not inventory CRUD — there is no create or delete of blocks, rooms
+// or beds anywhere in this module; the inventory is seed-defined.
+router.post(
+  '/beds/:bedId/maintenance',
+  validate(bedParamSchema, 'params'),
+  validate(bedMaintenanceSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.setBedMaintenance(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        String(req.params.bedId),
+        req.body.inMaintenance === true,
+        req.body.note,
       ),
     });
   }),

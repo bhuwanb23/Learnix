@@ -1,6 +1,30 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { HOSTEL_RENT_MONTHLY_MINOR } from './hostel.constants.js';
+
+// The reads over room inventory live in `hostel-rooms.service.ts`, and the residents surface in
+// `hostel-residents.service.ts` / `hostel-contacts.service.ts`. Re-exported here so the routes
+// keep a single import site, but the implementations are no longer interleaved with the write
+// paths below — which is what let `listRooms` drift away from the allocation logic it was
+// reporting on (it read `Room.occupiedCount` while the dashboard counted bed statuses, and the
+// two disagreed on screen).
+export {
+  listRooms,
+  getRoomDetail,
+  listRoomHistory,
+  setBedMaintenance,
+} from './hostel-rooms.service.js';
+
+export {
+  listResidents,
+  getResidentDetail,
+  getResidentFacets,
+  listResidenceHistory,
+  listAbsence,
+} from './hostel-residents.service.js';
+
+export { listContacts, upsertContact, deleteContact } from './hostel-contacts.service.js';
 
 // ── helpers ──────────────────────────────────────────────────
 const rupees = (minor: number) => Math.round(minor / 100);
@@ -121,81 +145,43 @@ export async function getDashboard(institutionId: string) {
   };
 }
 
-// ── H-02 Rooms grid + detail ─────────────────────────────────
-export async function listRooms(institutionId: string) {
-  const blocks = await prisma.hostelBlock.findMany({
-    where: { institutionId },
-    include: { rooms: { include: { beds: true }, orderBy: { number: 'asc' } } },
-    orderBy: { name: 'asc' },
-  });
-  return {
-    blocks: blocks.map((b) => {
-      const beds = b.rooms.reduce((n, r) => n + r.beds.length, 0);
-      const occ = b.rooms.reduce((n, r) => n + r.beds.filter((x) => x.status === 'ALLOCATED').length, 0);
-      return {
-        id: b.id,
-        name: b.name,
-        rooms: b.rooms.length,
-        capacity: beds,
-        occupied: occ,
-        occupancyPct: beds === 0 ? 0 : Math.round((occ / beds) * 100),
-        roomList: b.rooms.map((r) => ({
-          id: r.id,
-          number: r.number,
-          floor: r.floor,
-          capacity: r.capacity,
-          occupied: r.occupiedCount,
-          status:
-            r.occupiedCount === 0 ? 'Vacant' : r.occupiedCount >= r.capacity ? 'Full' : 'Partial',
-        })),
-      };
-    }),
-  };
-}
-
-export async function getRoomDetail(institutionId: string, roomNumber: string) {
-  const room = await prisma.room.findFirst({
-    where: { number: roomNumber, block: { institutionId } },
-    include: {
-      block: { select: { id: true, name: true } },
-      beds: { orderBy: { bedNo: 'asc' } },
-    },
-  });
-  if (!room) throw notFound('Room not found');
-
-  const allocations = await prisma.hostelAllocation.findMany({
-    where: { status: 'ACTIVE', bed: { roomId: room.id } },
-    include: {
-      studentProfile: {
-        include: {
-          user: { select: { id: true, fullName: true, phone: true } },
-        },
-      },
-      bed: { select: { id: true, bedNo: true } },
-    },
-  });
-
-  return {
-    id: room.id,
-    number: room.number,
-    block: room.block.name,
-    floor: room.floor,
-    capacity: room.capacity,
-    occupied: room.occupiedCount,
-    rentPerMonth: 3500000, // ₹35,000 — matches seeded dues
-    beds: room.beds.map((b) => ({ id: b.id, bedNo: b.bedNo, status: b.status })),
-    residents: allocations.map((a) => ({
-      allocationId: a.id,
-      bedId: a.bed.id,
-      bedLabel: `${room.number}-${a.bed.bedNo}`,
-      studentProfileId: a.studentProfile.id,
-      name: a.studentProfile.user.fullName,
-      phone: a.studentProfile.user.phone,
-    })),
-  };
-}
-
 // ── H-03 Allocations ─────────────────────────────────────────
+/**
+ * The next `count` rent months as 'YYYY-MM', starting from this month.
+ *
+ * The original inline arithmetic was
+ * `${y}-${m + 2 > 12 ? 1 : m + 2}` — which returns month `1` but keeps the SAME year. In
+ * December it produced '2026-01', a due dated thirteen months in the past, and the resident was
+ * billed for January twice. Rolling the year forward is not optional once the month wraps.
+ */
+export function upcomingRentMonths(count: number, from = new Date()): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(from.getFullYear(), from.getMonth() + i, 1);
+    out.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return out;
+}
+
+/**
+ * Allocate the first vacant bed in a room to a student, identified by roll number.
+ *
+ * Roll number rather than a name because that is what a warden has in front of them; the
+ * allocation form asks for it precisely because it is the one string guaranteed to be on the
+ * slip in front of them.
+ *
+ * TRANSACTIONAL
+ * -------------
+ * Creating the allocation, marking the bed ALLOCATED, incrementing the counter and raising
+ * two months of rent are five writes. As four separate awaits they could half-apply: a bed
+ * marked ALLOCATED with no allocation behind it is un-reallocatable forever, because every
+ * allocation path looks for a VACANT bed. All five commit together, and the re-check of the
+ * student's existing allocation happens INSIDE the transaction so two concurrent requests for
+ * the same student cannot both pass it.
+ *
+ * MAINTENANCE BEDS ARE SKIPPED, not counted as free: the `.find(status === 'VACANT')` already
+ * excludes them, which is why a withdrawn bed cannot receive a resident.
+ */
 export async function allocateBed(
   userId: string,
   institutionId: string,
@@ -219,30 +205,56 @@ export async function allocateBed(
   if (already) throw conflict('Student already has an active allocation');
 
   const freeBed = room.beds
+    .slice()
     .sort((a, b) => a.bedNo - b.bedNo)
     .find((b) => b.status === 'VACANT');
-  if (!freeBed) throw unprocessable('Room is full — no vacant bed');
-
-  const allocation = await prisma.hostelAllocation.create({
-    data: { studentProfileId: profile.id, bedId: freeBed.id, fromDate: new Date(), status: 'ACTIVE' },
-  });
-  await prisma.bed.update({ where: { id: freeBed.id }, data: { status: 'ALLOCATED' } });
-  await prisma.room.update({ where: { id: room.id }, data: { occupiedCount: { increment: 1 } } });
-
-  // rent dues for current + next month
-  const now = new Date();
-  const months = [
-    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
-    `${now.getFullYear()}-${String(now.getMonth() + 2 > 12 ? 1 : now.getMonth() + 2).padStart(2, '0')}`,
-  ];
-  for (const month of months) {
-    const exists = await prisma.hostelRentDue.findFirst({ where: { allocationId: allocation.id, month } });
-    if (!exists) {
-      await prisma.hostelRentDue.create({
-        data: { allocationId: allocation.id, month, amountMinor: 3500000, status: 'UNPAID' },
-      });
-    }
+  if (!freeBed) {
+    const hasMaintenance = room.beds.some((b) => b.status === 'MAINTENANCE');
+    throw unprocessable(
+      hasMaintenance
+        ? 'No bed in this room is available — some beds are under maintenance'
+        : 'Room is full — no vacant bed',
+    );
   }
+
+  const now = new Date();
+  const months = upcomingRentMonths(2, now);
+
+  const [allocation] = await prisma.$transaction(async (tx) => {
+    // Re-checked inside the transaction. The read above is outside it, so two concurrent
+    // requests for the same student could both see "no active allocation" and both write.
+    const recheck = await tx.hostelAllocation.findFirst({
+      where: { studentProfileId: profile.id, status: 'ACTIVE' },
+    });
+    if (recheck) throw conflict('Student already has an active allocation');
+
+    const created = await tx.hostelAllocation.create({
+      data: { studentProfileId: profile.id, bedId: freeBed.id, fromDate: now, status: 'ACTIVE' },
+    });
+    await tx.bed.update({ where: { id: freeBed.id }, data: { status: 'ALLOCATED' } });
+    await tx.room.update({
+      where: { id: room.id },
+      data: { occupiedCount: { increment: 1 } },
+    });
+    // Two months of rent up front, so the dues desk has something to chase immediately
+    // rather than waiting for a monthly job that does not exist.
+    for (const month of months) {
+      const exists = await tx.hostelRentDue.findFirst({
+        where: { allocationId: created.id, month },
+      });
+      if (!exists) {
+        await tx.hostelRentDue.create({
+          data: {
+            allocationId: created.id,
+            month,
+            amountMinor: HOSTEL_RENT_MONTHLY_MINOR,
+            status: 'UNPAID',
+          },
+        });
+      }
+    }
+    return [created];
+  });
 
   await prisma.notification.create({
     data: {
@@ -270,12 +282,32 @@ export async function allocateBed(
     room: room.number,
     bedNo: freeBed.bedNo,
     bedLabel: `${room.number}-${freeBed.bedNo}`,
+    duesRaisedFor: months,
   };
 }
 
+/**
+ * Check out a resident.
+ *
+ * SCOPED BY INSTITUTION — THIS WAS A CROSS-TENANT HOLE
+ * ----------------------------------------------------
+ * The lookup used to be `findFirst({ where: { bedId, status: 'ACTIVE' } })` with
+ * `institutionId` accepted as a parameter and never used. A warden at one college who
+ * held a `bedId` belonging to another could therefore close that college's allocation and
+ * decrement its room counter. `bedId` is not a secret: `GET /rooms/:id` and
+ * `GET /residents/:id` both return it. The fix is the same `bed -> room -> block ->
+ * institutionId` chain every read in this module already uses.
+ *
+ * TRANSACTIONAL, BECAUSE THREE ROWS MUST AGREE
+ * ----------------------------------------------
+ * Closing the allocation, freeing the bed and decrementing the counter were three separate
+ * awaits. A failure between them left an allocation VACATED with the bed still ALLOCATED —
+ * a bed that could never be re-allocated, because every allocation path looks for VACANT.
+ * All three now commit together or not at all.
+ */
 export async function vacateBed(userId: string, institutionId: string, bedId: string) {
   const allocation = await prisma.hostelAllocation.findFirst({
-    where: { bedId, status: 'ACTIVE' },
+    where: { bedId, status: 'ACTIVE', bed: { room: { block: { institutionId } } } },
     include: {
       studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
       bed: { include: { room: true } },
@@ -283,15 +315,20 @@ export async function vacateBed(userId: string, institutionId: string, bedId: st
   });
   if (!allocation) throw notFound('No active allocation on this bed');
 
-  await prisma.hostelAllocation.update({
-    where: { id: allocation.id },
-    data: { status: 'VACATED', toDate: new Date() },
-  });
-  await prisma.bed.update({ where: { id: bedId }, data: { status: 'VACANT' } });
-  await prisma.room.update({
-    where: { id: allocation.bed.room.id },
-    data: { occupiedCount: { decrement: 1 } },
-  });
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.hostelAllocation.update({
+      where: { id: allocation.id },
+      data: { status: 'VACATED', toDate: now },
+    }),
+    prisma.bed.update({ where: { id: bedId }, data: { status: 'VACANT' } }),
+    // Counter only. It is no longer read for occupancy (see hostel-rooms.service.ts), but it
+    // is still maintained so reporting and exports outside this module stay correct.
+    prisma.room.update({
+      where: { id: allocation.bed.room.id },
+      data: { occupiedCount: { decrement: 1 } },
+    }),
+  ]);
 
   await prisma.notification.create({
     data: {
@@ -322,8 +359,12 @@ export async function transferResident(
   bedId: string,
   toRoomNumber: string,
 ) {
+  // The source allocation is looked up through `bed -> room -> block -> institutionId`. It used
+  // to be scoped by `bedId` alone, with `institutionId` accepted and never used — so a warden
+  // at one college could transfer a resident OUT of another college's bed into their own,
+  // given that college's bedId. See `vacateBed` for the same hole on the checkout path.
   const current = await prisma.hostelAllocation.findFirst({
-    where: { bedId, status: 'ACTIVE' },
+    where: { bedId, status: 'ACTIVE', bed: { room: { block: { institutionId } } } },
     include: {
       studentProfile: { include: { user: { select: { id: true, fullName: true } } } },
       bed: { include: { room: true } },
@@ -338,24 +379,53 @@ export async function transferResident(
   if (!target) throw notFound('Target room not found');
   if (target.id === current.bed.room.id) throw conflict('Resident is already in that room');
 
+  // MAINTENANCE beds are excluded implicitly by requiring VACANT — a withdrawn bed must not
+  // receive a resident, which is the entire point of withdrawing it.
   const freeBed = target.beds.sort((a, b) => a.bedNo - b.bedNo).find((b) => b.status === 'VACANT');
-  if (!freeBed) throw unprocessable('Target room is full');
+  if (!freeBed) {
+    const hasMaintenance = target.beds.some((b) => b.status === 'MAINTENANCE');
+    throw unprocessable(
+      hasMaintenance
+        ? 'No bed in the target room is available — some beds are under maintenance'
+        : 'Target room is full',
+    );
+  }
 
-  await prisma.hostelAllocation.update({
-    where: { id: current.id },
-    data: { status: 'TRANSFERRED', toDate: new Date() },
-  });
-  await prisma.bed.update({ where: { id: current.bedId }, data: { status: 'VACANT' } });
-  await prisma.room.update({
-    where: { id: current.bed.room.id },
-    data: { occupiedCount: { decrement: 1 } },
-  });
-
-  const allocation = await prisma.hostelAllocation.create({
-    data: { studentProfileId: current.studentProfileId, bedId: freeBed.id, fromDate: new Date(), status: 'ACTIVE' },
-  });
-  await prisma.bed.update({ where: { id: freeBed.id }, data: { status: 'ALLOCATED' } });
-  await prisma.room.update({ where: { id: target.id }, data: { occupiedCount: { increment: 1 } } });
+  // SIX ROWS, ONE TRANSACTION
+  // -------------------------
+  // A transfer is six writes across three tables: close the old allocation, free the old
+  // bed, decrement the old room, open a new allocation, allocate the new bed, increment the
+  // new room. They were six sequential awaits, so any failure mid-sequence left a resident
+  // with no active allocation while both beds still claimed them, or a bed marked ALLOCATED
+  // with no allocation behind it. All six now commit together.
+  const now = new Date();
+  // `prisma.$transaction` resolves the array to results IN THE SAME ORDER, so the NEW
+  // allocation is index 3 — not index 0, which is the old row being closed. Taking index 0
+  // would have returned the id of an allocation that is no longer active.
+  const [, , , allocation] = await prisma.$transaction([
+    prisma.hostelAllocation.update({
+      where: { id: current.id },
+      data: { status: 'TRANSFERRED', toDate: now },
+    }),
+    prisma.bed.update({ where: { id: current.bedId }, data: { status: 'VACANT' } }),
+    prisma.room.update({
+      where: { id: current.bed.room.id },
+      data: { occupiedCount: { decrement: 1 } },
+    }),
+    prisma.hostelAllocation.create({
+      data: {
+        studentProfileId: current.studentProfileId,
+        bedId: freeBed.id,
+        fromDate: now,
+        status: 'ACTIVE',
+      },
+    }),
+    prisma.bed.update({ where: { id: freeBed.id }, data: { status: 'ALLOCATED' } }),
+    prisma.room.update({
+      where: { id: target.id },
+      data: { occupiedCount: { increment: 1 } },
+    }),
+  ]);
 
   await prisma.notification.create({
     data: {
@@ -385,24 +455,6 @@ export async function transferResident(
     bedLabel: `${target.number}-${freeBed.bedNo}`,
   };
 }
-
-// ── H-04 Residents ─────────────────────────────────────────────────────────────
-//
-// The directory, the enriched profile, the residence timeline and the absence list now
-// live in `hostel-residents.service.ts`; contacts live in `hostel-contacts.service.ts`.
-// They are re-exported here so the routes keep one import site and the HTTP suite keeps
-// one path, but the implementations are no longer interleaved with the allocation and
-// rent-write code below — the old inline versions had drifted to a thin projection that
-// omitted roll number, which is the field the allocation flow asks a warden to type.
-export {
-  listResidents,
-  getResidentDetail,
-  getResidentFacets,
-  listResidenceHistory,
-  listAbsence,
-} from './hostel-residents.service.js';
-
-export { listContacts, upsertContact, deleteContact } from './hostel-contacts.service.js';
 
 // ── H-09 Rent dues → unified payment write-through ──────────
 export async function markRentPaid(
