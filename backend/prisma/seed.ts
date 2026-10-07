@@ -1968,7 +1968,93 @@ async function seedDomainG(institutionId: string): Promise<void> {
     }
   }
 
-  console.log(`  ✓ Blocks A+B → 5 rooms, 3 residents allocated, rent dues Jul+Aug, mess menu/attendance/feedback, 3 gate passes, 3 complaints, 3 visitors`);
+// ── Resident emergency contacts ──────────────────────────────────────────────
+  // Two guardians and one emergency contact per seeded resident.
+  //
+  // Idempotent by (studentProfileId, kind, relation) rather than by name: a re-run must
+  // not create a second "Father" row for a student who already has one, but a genuine
+  // second guardian (Mother) is a different key and SHOULD be created.
+  //
+  // Phone numbers are synthetic and in the reserved +91 90000xxxxx block. Real contact
+  // data must never enter a seeded database — this one gets pushed to git.
+  const contactSeed: {
+    email: string | null;
+    guardian: { name: string; relation: string; phone: string; alternatePhone?: string; email?: string };
+    guardian2?: { name: string; relation: string; phone: string };
+    emergency: { name: string; relation: string; phone: string };
+  }[] = [
+    {
+      email: 'student@learnix.dev',
+      guardian: {
+        name: 'Ramesh Iyer',
+        relation: 'Father',
+        phone: '+919000000001',
+        alternatePhone: '+919000000011',
+        email: 'ramesh.iyer@example.test',
+      },
+      guardian2: { name: 'Lakshmi Iyer', relation: 'Mother', phone: '+919000000002' },
+      emergency: { name: 'Karthik Iyer', relation: 'Brother', phone: '+919000000003' },
+    },
+    {
+      email: 'sneha.patel@learnix.dev',
+      guardian: {
+        name: 'Rakesh Patel',
+        relation: 'Father',
+        phone: '+919000000004',
+        email: 'rakesh.patel@example.test',
+      },
+      guardian2: { name: 'Meera Patel', relation: 'Mother', phone: '+919000000005' },
+      emergency: { name: 'Anjali Desai', relation: 'Friend', phone: '+919000000006' },
+    },
+    {
+      email: 'vikram.nair@learnix.dev',
+      guardian: { name: 'Suresh Nair', relation: 'Father', phone: '+919000000007' },
+      emergency: { name: 'Dr. Priya Menon', relation: 'Family doctor', phone: '+919000000008' },
+    },
+  ];
+
+  let contactsSeeded = 0;
+  for (const entry of contactSeed) {
+    const u = entry.email
+      ? await db.user.findFirst({ where: { email: entry.email, institutionId } })
+      : null;
+    if (!u) continue;
+    const prof = await db.studentProfile.findFirst({ where: { userId: u.id } });
+    if (!prof) continue;
+
+    const rows = [
+      { ...entry.guardian, kind: 'GUARDIAN' as const, isPrimary: true },
+      ...(entry.guardian2
+        ? [{ ...entry.guardian2, kind: 'GUARDIAN' as const, isPrimary: false }]
+        : []),
+      { ...entry.emergency, kind: 'EMERGENCY' as const, isPrimary: true },
+    ];
+
+    for (const row of rows) {
+      const exists = await db.hostelResidentContact.findFirst({
+        where: { studentProfileId: prof.id, kind: row.kind, relation: row.relation },
+      });
+      if (exists) continue;
+      await db.hostelResidentContact.create({
+        data: {
+          studentProfileId: prof.id,
+          kind: row.kind,
+          name: row.name,
+          relation: row.relation,
+          phone: row.phone,
+          alternatePhone: row.alternatePhone ?? null,
+          email: row.email ?? null,
+          isPrimary: row.isPrimary,
+        },
+      });
+      contactsSeeded++;
+    }
+  }
+
+  console.log(
+    `  Hostel seeded: 5 rooms, 3 residents allocated, rent dues Jul+Aug, mess menu/attendance/feedback,
+    3 gate passes, 3 complaints, 3 visitors, ${contactsSeeded} resident contacts`,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────

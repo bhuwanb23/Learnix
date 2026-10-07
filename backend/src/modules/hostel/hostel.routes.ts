@@ -12,8 +12,15 @@ import {
   complaintSchema,
   visitorCheckinSchema,
   broadcastSchema,
+  residentQuerySchema,
+  contactSchema,
 } from './hostel.schemas.js';
 import * as service from './hostel.service.js';
+import {
+  listContacts,
+  upsertContact,
+  deleteContact,
+} from './hostel-contacts.service.js';
 
 const roomTargetSchema = z.object({ toRoomNumber: z.string().trim().min(3).max(16) });
 
@@ -90,11 +97,24 @@ router.post(
   }),
 );
 
-// H-04 residents + detail
+// ── Residents (docs/users/08-hostel.md §3.3) ────────────────────────────────────
+//
+// Ordering matters here: `/residents/:id` would otherwise swallow `/residents/search`,
+// `/residents/facets` and the sub-resource paths. The static segments are declared first
+// so Express matches them before the parameterised one.
+
 router.get(
   '/residents',
+  validate(residentQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listResidents(req.auth!.institutionId) });
+    res.json({ data: await service.listResidents(req.auth!.institutionId, req.query) });
+  }),
+);
+
+router.get(
+  '/residents/facets',
+  wrap(async (req, res) => {
+    res.json({ data: await service.getResidentFacets(req.auth!.institutionId) });
   }),
 );
 
@@ -104,6 +124,89 @@ router.get(
   wrap(async (req, res) => {
     res.json({
       data: await service.getResidentDetail(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+// Residential move-in/move-out timeline. Derived from `HostelAllocation.fromDate`/`toDate`,
+// which `allocateBed` already populates on transfer and vacate.
+router.get(
+  '/residents/:id/history',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.listResidenceHistory(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+// Guardians + emergency contacts, in their own service because a contact row is the one
+// record in this module with no block in its ancestry — hence its own tenant guard.
+router.get(
+  '/residents/:id/contacts',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await listContacts(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.post(
+  '/residents/:id/contacts',
+  validate(idParamSchema, 'params'),
+  validate(contactSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await upsertContact(
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body,
+        req.auth!.userId,
+      ),
+    });
+  }),
+);
+
+router.put(
+  '/residents/:id/contacts/:contactId',
+  validate(idParamSchema, 'params'),
+  validate(contactSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await upsertContact(
+        req.auth!.institutionId,
+        String(req.params.id),
+        { ...req.body, id: String(req.params.contactId) },
+        req.auth!.userId,
+      ),
+    });
+  }),
+);
+
+router.delete(
+  '/residents/:id/contacts/:contactId',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await deleteContact(
+        req.auth!.institutionId,
+        String(req.params.id),
+        String(req.params.contactId),
+        req.auth!.userId,
+      ),
+    });
+  }),
+);
+
+// Leave/absence history. `GatePass` already recorded `outAt`, `expectedInAt` and
+// `actualInAt`; this surfaces it on the resident's own page instead of the warden inbox.
+router.get(
+  '/residents/:id/absence',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.listAbsence(req.auth!.institutionId, String(req.params.id)),
     });
   }),
 );

@@ -386,84 +386,23 @@ export async function transferResident(
   };
 }
 
-// ── H-04 Residents ───────────────────────────────────────────
-export async function listResidents(institutionId: string) {
-  const allocations = await residentsOfBlock(institutionId);
-  const profIds = allocations.map((a) => a.studentProfileId);
+// ── H-04 Residents ─────────────────────────────────────────────────────────────
+//
+// The directory, the enriched profile, the residence timeline and the absence list now
+// live in `hostel-residents.service.ts`; contacts live in `hostel-contacts.service.ts`.
+// They are re-exported here so the routes keep one import site and the HTTP suite keeps
+// one path, but the implementations are no longer interleaved with the allocation and
+// rent-write code below — the old inline versions had drifted to a thin projection that
+// omitted roll number, which is the field the allocation flow asks a warden to type.
+export {
+  listResidents,
+  getResidentDetail,
+  getResidentFacets,
+  listResidenceHistory,
+  listAbsence,
+} from './hostel-residents.service.js';
 
-  const dues = await prisma.hostelRentDue.findMany({
-    where: { allocation: { studentProfileId: { in: profIds } } },
-  });
-
-  return allocations.map((a) => {
-    const myDues = dues.filter((d) => d.allocationId === a.id);
-    const outstanding = myDues
-      .filter((d) => d.status !== 'PAID')
-      .reduce((n, d) => n + d.amountMinor, 0);
-    return {
-      allocationId: a.id,
-      studentProfileId: a.studentProfile.id,
-      name: a.studentProfile.user.fullName,
-      phone: a.studentProfile.user.phone,
-      room: a.bed.room.number,
-      block: a.bed.room.block.name,
-      bedLabel: `${a.bed.room.number}-${a.bed.bedNo}`,
-      bedId: a.bedId,
-      outstandingMinor: outstanding,
-      duesCount: myDues.filter((d) => d.status !== 'PAID').length,
-    };
-  });
-}
-
-export async function getResidentDetail(institutionId: string, studentProfileId: string) {
-  const allocation = await prisma.hostelAllocation.findFirst({
-    where: { studentProfileId, status: 'ACTIVE', bed: { room: { block: { institutionId } } } },
-    include: {
-      studentProfile: { include: { user: { select: { id: true, fullName: true, phone: true } } } },
-      bed: { include: { room: { include: { block: { select: { name: true } } } } } },
-    },
-  });
-  if (!allocation) throw notFound('Resident not found');
-
-  const [dues, complaints] = await Promise.all([
-    prisma.hostelRentDue.findMany({ where: { allocationId: allocation.id }, orderBy: { month: 'asc' } }),
-    prisma.hostelComplaint.findMany({
-      where: { studentProfileId },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }),
-  ]);
-
-  const outstanding = dues.filter((d) => d.status !== 'PAID').reduce((n, d) => n + d.amountMinor, 0);
-
-  return {
-    studentProfileId: allocation.studentProfile.id,
-    userId: allocation.studentProfile.user.id,
-    name: allocation.studentProfile.user.fullName,
-    phone: allocation.studentProfile.user.phone,
-    room: allocation.bed.room.number,
-    block: allocation.bed.room.block.name,
-    bedLabel: `${allocation.bed.room.number}-${allocation.bed.bedNo}`,
-    bedId: allocation.bedId,
-    fromDate: allocation.fromDate,
-    outstandingMinor: outstanding,
-    dues: dues.map((d) => ({
-      id: d.id,
-      month: d.month,
-      amountMinor: d.amountMinor,
-      status: d.status,
-      paid: d.paymentId !== null,
-    })),
-    complaints: complaints.map((c) => ({
-      id: c.id,
-      category: c.category,
-      description: c.description,
-      severity: c.severity,
-      status: c.status,
-      createdAt: c.createdAt,
-    })),
-  };
-}
+export { listContacts, upsertContact, deleteContact } from './hostel-contacts.service.js';
 
 // ── H-09 Rent dues → unified payment write-through ──────────
 export async function markRentPaid(
