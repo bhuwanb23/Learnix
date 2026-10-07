@@ -563,8 +563,36 @@ export const hostelApi = {
   allocate: (rollNo, roomNumber) => api.post('/hostel/allocations', { rollNo, roomNumber }),
   vacateBed: (bedId) => api.post(`/hostel/beds/${bedId}/vacate`),
   transferBed: (bedId, toRoomNumber) => api.post(`/hostel/beds/${bedId}/transfer`, { toRoomNumber }),
-  residents: () => api.get('/hostel/residents'),
+  // Residents. The directory is filtered on the SERVER, not in JS: the old client fetched
+  // every resident and then `.filter()`ed, so the search box could only ever match rows the
+  // browser already happened to have. `q` covers name, roll number, room and bed, which is
+  // whichever of those the warden happens to know. Empty values are dropped rather than sent
+  // as `?q=`, matching `alumniApi.directory`.
+  residents: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/residents${qs ? `?${qs}` : ''}`);
+  },
+  // Block chips are built from what exists rather than hardcoded "Block A/B/C", so a fourth
+  // block shows up on its own instead of rendering in a fallback colour.
+  residentFacets: () => api.get('/hostel/residents/facets'),
   residentDetail: (studentProfileId) => api.get(`/hostel/residents/${studentProfileId}`),
+  // Residential move-in/move-out timeline. The schema already recorded fromDate/toDate on
+  // every allocation; this is the reader for it.
+  residentHistory: (studentProfileId) => api.get(`/hostel/residents/${studentProfileId}/history`),
+  // Leave/absence, derived from the existing gate-pass records.
+  residentAbsence: (studentProfileId) => api.get(`/hostel/residents/${studentProfileId}/absence`),
+  residentContacts: (studentProfileId) => api.get(`/hostel/residents/${studentProfileId}/contacts`),
+  // One entry point for create and edit. `isPrimary` is enforced server-side: promoting one
+  // contact demotes its sibling of the same kind, because guardian and emergency primaries
+  // are independent of each other.
+  saveResidentContact: (studentProfileId, payload) =>
+    payload.id
+      ? api.put(`/hostel/residents/${studentProfileId}/contacts/${payload.id}`, payload)
+      : api.post(`/hostel/residents/${studentProfileId}/contacts`, payload),
+  deleteResidentContact: (studentProfileId, contactId) =>
+    api.delete(`/hostel/residents/${studentProfileId}/contacts/${contactId}`),
   collectRent: (dueId, method) => api.post(`/hostel/rent/${dueId}/collect`, { method }),
   mess: () => api.get('/hostel/mess'),
   updateMenu: (dayOfWeek, meal, items) => api.put('/hostel/mess/menu', { dayOfWeek, meal, items }),

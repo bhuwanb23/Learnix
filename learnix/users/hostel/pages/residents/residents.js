@@ -1,70 +1,165 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hostelApi } from '../../../../services/api';
-import { AnimatedCard, SearchBar, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
+import { AnimatedCard, SearchBar, EmptyState, SkeletonCard } from '../../../../components/ui';
 import ResidentDetail from './pages/resident_detail/resident_detail';
 
-const BLOCK_COLORS = { 'Block A': '#2563eb', 'Block B': '#0891b2', 'Block C': '#059669' };
+/**
+ * The resident directory.
+ *
+ * WHY FILTERING MOVED TO THE SERVER
+ * ---------------------------------
+ * This screen used to fetch every resident and then `.filter()` in JS. That is wrong twice
+ * over: it only ever searched the rows the browser already had, and it silently ignored
+ * every resident past the first page. Worse, `listResidents` was fetching ALL rent dues for
+ * ALL residents on every load so the client could sum them. At 32 residents that is fine;
+ * a hostel with a few thousand beds is the normal case, not the exception.
+ *
+ * So each filter is a query parameter, they combine with AND, and "Load more" APPENDS
+ * pages. Changing a filter resets to page 1 — appending to a filtered-out list would leave
+ * rows on screen that no longer match.
+ *
+ * WHY ROLL NUMBER IS IN THE SEARCH BOX
+ * ------------------------------------
+ * Roll number is the identifier `allocateBed` asks a warden to type, so it is the thing
+ * they are most likely to have in hand when someone knocks on the office door. The old
+ * inline query did not even select the column, so no search term could match it.
+ */
 
-export default function ResidentsModule({ navigation }) {
-  const [data, setData] = useState(null);
+const PAGE_SIZE = 20;
+
+/**
+ * A stable colour per block name, hashed rather than looked up.
+ *
+ * The previous version mapped 'Block A'/'Block B'/'Block C' explicitly and fell back to one
+ * colour for everything else. A fourth block would have looked identical to Block A with no
+ * way to tell, and adding a real block would have meant editing this file.
+ */
+function blockColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return ['#2563eb', '#0891b2', '#059669', '#b45309', '#7c3aed', '#be123c'][h % 6];
+}
+
+const rupees = (minor) =>
+  `₹${Math.round((minor ?? 0) / 100).toLocaleString('en-IN')}`;
+
+function formatDate(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-IN');
+}
+
+export default function ResidentsModule() {
+  const [items, setItems] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [facets, setFacets] = useState(null);
+
+  const [query, setQuery] = useState('');
+  const [block, setBlock] = useState(undefined);
+  const [feeStatus, setFeeStatus] = useState(undefined);
+
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState('');
-  const [blockFilter, setBlockFilter] = useState('All');
-  const [selectedResident, setSelectedResident] = useState(null);
+  const [selected, setSelected] = useState(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  /**
+   * Facets come from their own endpoint rather than being scraped out of the current page:
+   * a block whose residents are all on page 2 would otherwise vanish from the chips.
+   *
+   * A failure here is swallowed on purpose. The chips are an enhancement — the directory
+   * still works without them, and an error screen over a working list would be worse than
+   * no chips at all.
+   */
+  const loadFacets = useCallback(async () => {
     try {
-      setData(await hostelApi.residents());
-    } catch (e) {
-      setError(e.message || 'Failed to load residents');
-    } finally {
-      setLoading(false);
+      setFacets(await hostelApi.residentFacets());
+    } catch {
+      setFacets(null);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const fetchPage = useCallback(
+    async (targetPage, mode) => {
+      try {
+        if (mode === 'append') setLoadingMore(true);
+        else if (mode === 'refresh') setRefreshing(true);
+        else setLoading(true);
+        setError(null);
 
-  const blockNames = useMemo(
-    () => ['All', ...new Set((data ?? []).map((r) => r.block))],
-    [data],
+        const res = await hostelApi.residents({
+          q: query || undefined,
+          block,
+          feeStatus,
+          page: targetPage,
+          pageSize: PAGE_SIZE,
+        });
+
+        setPagination(res.pagination ?? null);
+        setItems((prev) => (mode === 'append' ? [...prev, ...(res.residents ?? [])] : res.residents ?? []));
+      } catch (e) {
+        setError(e.message || 'Failed to load residents');
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+        setRefreshing(false);
+      }
+    },
+    [query, block, feeStatus],
   );
 
-  if (selectedResident) {
+  useEffect(() => {
+    loadFacets();
+  }, [loadFacets]);
+
+  // Debounced. `SearchBar` already debounces `onSearch`, but each keystroke still restarts a
+  // timer per character and this is a round trip — 300ms collapses a typed word into one
+  // request. An empty box fires immediately, because clearing the filter should feel free.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPage(1);
+      fetchPage(1, 'replace');
+    }, query ? 300 : 0);
+    return () => clearTimeout(t);
+  }, [query, block, feeStatus, fetchPage]);
+
+  const loadMore = () => {
+    if (!pagination || page >= pagination.totalPages) return;
+    const next = page + 1;
+    setPage(next);
+    fetchPage(next, 'append');
+  };
+
+  /** Every block that currently has residents, plus its live count. */
+  const blocks = useMemo(() => facets?.blocks ?? [], [facets]);
+
+  // Tapping the active chip clears that filter, so a chip row is its own off switch.
+  const setBlockFilter = useCallback((v) => setBlock((prev) => (prev === v ? undefined : v)), []);
+  const setFeeFilter = useCallback((v) => setFeeStatus((prev) => (prev === v ? undefined : v)), []);
+
+  if (selected) {
     return (
       <ResidentDetail
-        studentProfileId={selectedResident.studentProfileId}
+        studentProfileId={selected.studentProfileId}
         onBack={() => {
-          setSelectedResident(null);
-          load();
+          setSelected(null);
+          // The resident may have been transferred or vacated from the detail screen, so
+          // the list is re-read rather than assumed current.
+          fetchPage(1, 'replace');
+          loadFacets();
         }}
       />
     );
   }
 
-  const filtered = (data ?? []).filter((r) => {
-    const q = search.toLowerCase();
-    const matchesSearch =
-      !q ||
-      r.name.toLowerCase().includes(q) ||
-      r.room.toLowerCase().includes(q) ||
-      r.bedLabel.toLowerCase().includes(q);
-    const matchesBlock = blockFilter === 'All' || r.block === blockFilter;
-    return matchesSearch && matchesBlock;
-  });
-
-  // Skeleton loading
-  if (loading && !data) {
+  if (loading && items.length === 0) {
     return (
       <View style={styles.container}>
-        <SkeletonStatRow style={{ marginTop: 16 }} />
         <View style={{ marginTop: 16 }}>
           {[1, 2, 3, 4].map((i) => (
             <SkeletonCard key={i} style={{ marginBottom: 8 }} />
@@ -74,45 +169,102 @@ export default function ResidentsModule({ navigation }) {
     );
   }
 
+  const canLoadMore = pagination && page < pagination.totalPages;
+
   return (
     <View style={styles.container}>
       <View style={{ marginTop: 14 }}>
-        <SearchBar placeholder="Search name, room or bed…" onSearch={setSearch} />
+        <SearchBar
+          placeholder="Search name, roll no, room or bed…"
+          onSearch={setQuery}
+        />
       </View>
+
       <View style={styles.filterRow}>
-        {blockNames.map((b) => (
-          <TouchableOpacity
-            key={b}
-            style={[styles.filterChip, blockFilter === b && styles.filterChipActive]}
-            onPress={() => setBlockFilter(b)}
-          >
-            <Text style={[styles.filterText, blockFilter === b && styles.filterTextActive]}>
-              {b === 'All' ? 'All Blocks' : b}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {blocks.map((b) => {
+          const active = block === b.name;
+          const color = blockColor(b.name);
+          return (
+            <TouchableOpacity
+              key={b.name}
+              style={[styles.filterChip, active && { backgroundColor: color }]}
+              onPress={() => setBlockFilter(b.name)}
+            >
+              <Text style={[styles.filterText, active && styles.filterTextActive]}>
+                {b.name} · {b.count}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
+
+      <View style={styles.filterRow}>
+        {[
+          { key: 'DUE', label: 'Fee due' },
+          { key: 'CLEAR', label: 'Fee clear' },
+        ].map((f) => {
+          const active = feeStatus === f.key;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.filterChip, active && styles.filterChipActive]}
+              onPress={() => setFeeFilter(f.key)}
+            >
+              <Text style={[styles.filterText, active && styles.filterTextActive]}>{f.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+        {(block || feeStatus || query) && (
+          <TouchableOpacity
+            style={styles.clearChip}
+            onPress={() => {
+              setQuery('');
+              setBlock(undefined);
+              setFeeStatus(undefined);
+            }}
+          >
+            <Ionicons name="close" size={12} color={theme.colors.textMuted} />
+            <Text style={styles.clearChipText}>Clear</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {pagination && (
+        <Text style={styles.countLine}>
+          {pagination.total} resident{pagination.total === 1 ? '' : 's'}
+          {query ? ` matching “${query}”` : ''}
+        </Text>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => fetchPage(1, 'replace')}
+          />
+        }
+        onScrollToEndFailed={loadMore}
       >
-        {error && !data && <Text style={styles.errorText}>{error}</Text>}
-        {data && filtered.length === 0 && (
+        {error && items.length === 0 && <Text style={styles.errorText}>{error}</Text>}
+
+        {items.length === 0 && !error && (
           <EmptyState
             icon="people-outline"
             title="No residents match"
-            subtitle="Try a different search or block filter"
+            subtitle="Try a different search term or clear the filters"
             color="#0891b2"
           />
         )}
-        {filtered.map((r, idx) => {
-          const color = BLOCK_COLORS[r.block] ?? '#2563eb';
+
+        {items.map((r, idx) => {
+          const color = blockColor(r.block);
           return (
             <AnimatedCard
               key={r.allocationId}
-              onPress={() => setSelectedResident(r)}
-              delay={idx * 40}
+              onPress={() => setSelected(r)}
+              delay={Math.min(idx, 10) * 40}
               style={styles.card}
             >
               <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
@@ -120,17 +272,16 @@ export default function ResidentsModule({ navigation }) {
               </View>
               <View style={styles.cardBody}>
                 <Text style={styles.name}>{r.name}</Text>
-                <Text style={styles.meta}>{r.phone || 'No phone on file'}</Text>
+                {/* Roll number is the field a warden scans for, so it leads the meta line. */}
+                <Text style={styles.meta}>{r.rollNo}</Text>
                 <View style={styles.roomChip}>
                   <Ionicons name="bed-outline" size={11} color={color} />
-                  <Text style={[styles.roomText, { color }]}>
-                    {r.room} · Bed {r.bedLabel}
-                  </Text>
+                  <Text style={[styles.roomText, { color }]}>{r.bedLabel}</Text>
                 </View>
               </View>
               {r.duesCount > 0 ? (
                 <View style={styles.dueChip}>
-                  <Text style={styles.dueText}>₹{Math.round(r.outstandingMinor / 100).toLocaleString('en-IN')} due</Text>
+                  <Text style={styles.dueText}>{rupees(r.outstandingMinor)} due</Text>
                 </View>
               ) : (
                 <View style={styles.clearChip}>
@@ -142,6 +293,16 @@ export default function ResidentsModule({ navigation }) {
             </AnimatedCard>
           );
         })}
+
+        {canLoadMore && (
+          <TouchableOpacity style={styles.loadMore} onPress={loadMore} disabled={loadingMore}>
+            <Text style={styles.loadMoreText}>
+              {loadingMore
+                ? 'Loading…'
+                : `Load more (${pagination.total - items.length} remaining)`}
+            </Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -149,7 +310,7 @@ export default function ResidentsModule({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, alignItems: 'center' },
   filterChip: {
     paddingHorizontal: 12,
     paddingVertical: 7,
@@ -165,15 +326,31 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
   },
   filterTextActive: { color: '#fff' },
-  list: { paddingBottom: 24, paddingTop: 12 },
-  muted: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted },
-  errorText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: '#dc2626' },
-  card: {
+  clearChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginBottom: 6,
   },
+  clearChipText: {
+    fontSize: 12,
+    fontFamily: 'Manrope-SemiBold',
+    color: theme.colors.textMuted,
+    marginLeft: 3,
+  },
+  countLine: {
+    fontSize: 11,
+    fontFamily: 'Manrope-Medium',
+    color: theme.colors.textMuted,
+    marginTop: 4,
+  },
+  list: { paddingBottom: 24, paddingTop: 8 },
+  errorText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: '#dc2626' },
+  card: { flexDirection: 'row', alignItems: 'center', padding: 12, marginBottom: 8 },
   avatar: {
     width: 44,
     height: 44,
@@ -182,16 +359,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  avatarText: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-  },
+  avatarText: { fontSize: 15, fontFamily: 'Manrope-Bold' },
   cardBody: { flex: 1 },
-  name: {
-    fontSize: 14,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
+  name: { fontSize: 14, fontFamily: 'Manrope-Bold', color: theme.colors.text },
   meta: {
     fontSize: 11,
     fontFamily: 'Manrope-Medium',
@@ -208,11 +378,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     marginTop: 5,
   },
-  roomText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-SemiBold',
-    marginLeft: 4,
-  },
+  roomText: { fontSize: 10, fontFamily: 'Manrope-SemiBold', marginLeft: 4 },
   dueChip: {
     backgroundColor: '#fee2e2',
     borderRadius: 8,
@@ -231,4 +397,6 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   clearText: { fontSize: 10, fontFamily: 'Manrope-Bold', color: '#059669', marginLeft: 2 },
+  loadMore: { alignItems: 'center', paddingVertical: 14 },
+  loadMoreText: { fontSize: 13, fontFamily: 'Manrope-SemiBold', color: theme.colors.primary },
 });
