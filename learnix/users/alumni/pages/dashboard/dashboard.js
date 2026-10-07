@@ -1,22 +1,49 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+/**
+ * AL-01 Dashboard — the graduate overview (docs/users/12-alumni-relations.md §3.1).
+ *
+ * WHAT THIS REPLACES
+ * ------------------
+ * A 436-line screen that rendered an office engagement report: "ALUMNI RELATIONS OFFICE",
+ * a progress bar reading "42% engagement · 56 alumni", donations RECEIVED BY THE SCHOOL,
+ * and the count of mentorship requests awaiting the office's decision. Seven modules
+ * consumed one `GET /alumni/dashboard` whose every figure was an `institutionId` aggregate.
+ *
+ * Nobody opens a dashboard to be told what their college achieved. They open it to see their
+ * own batch, their job, their events, their mentorships and what they have given — so the
+ * endpoint is now per-user (`dashboard.service.ts`) and the screen renders seven sections
+ * that are all about the person reading it.
+ *
+ * ONE REQUEST, NOT SEVEN
+ * ----------------------
+ * Each card could have called its own endpoint, but that is a seven-request waterfall on the
+ * screen people open first, with seven independent loading and error states to reconcile
+ * into one page. The server assembles the whole summary so the dashboard is a single
+ * round trip with a single spinner.
+ *
+ * THE EMPTY STATES ARE THE POINT, NOT AN AFTERTHOUGHT
+ * ----------------------------------------------------
+ * The app signs in as the Alumni Relations Office, whose own `AlumniProfile` has no batch,
+ * no employer and no career entries. Two of the seven sections are therefore genuinely
+ * sparse in the demo, and that is a true statement about the data rather than a rendering
+ * failure. Every card distinguishes "you have not added this yet" from "this is zero",
+ * because those are different claims and conflating them is how a profile screen teaches
+ * people that its numbers are fiction.
+ */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { alumniApi } from '../../../../services/api';
-import { AnimatedCard, StatusChip, SkeletonStatRow, SkeletonCard } from '../../../../components/ui';
-
-const fmt = (n) => {
-  if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)} Cr`;
-  if (n >= 100000) return `₹${(n / 100000).toFixed(1)} L`;
-  return `₹${n.toLocaleString('en-IN')}`;
-};
-
-const modules = [
-  { id: 'Mentorship', title: 'Mentorship', icon: 'hand-left-outline', color: '#2563eb' },
-  { id: 'Chapters', title: 'Chapters', icon: 'location-outline', color: '#059669' },
-  { id: 'Notifications', title: 'Notify', icon: 'megaphone-outline', color: '#d97706' },
-];
+import { SkeletonCard } from '../../../../components/ui';
+import { initialsOf } from '../profile/profileMeta';
+import SnapshotCard from './components/SnapshotCard';
+import CareerCard from './components/CareerCard';
+import EventsCard from './components/EventsCard';
+import MentorshipCard from './components/MentorshipCard';
+import GivingCard from './components/GivingCard';
+import NetworkCard from './components/NetworkCard';
+import QuickActions from './components/QuickActions';
 
 export default function AlumniDashboard({ navigation }) {
   const [data, setData] = useState(null);
@@ -28,8 +55,7 @@ export default function AlumniDashboard({ navigation }) {
     try {
       if (showSpinner) setLoading(true);
       setError(null);
-      const d = await alumniApi.dashboard();
-      setData(d);
+      setData(await alumniApi.dashboard());
     } catch (e) {
       setError(e.message);
     } finally {
@@ -38,27 +64,51 @@ export default function AlumniDashboard({ navigation }) {
     }
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     load();
   }, [load]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false);
-  };
+  /**
+   * Tab and module switching are resolved once, here, so no card has to know the shape of
+   * the navigation prop — which genuinely differs per screen in this app. The old
+   * dashboard called `navigation.switchTab` from a card that only received
+   * `openModule`, so "View all events" was a silent no-op.
+   */
+  const go = useMemo(
+    () => ({
+      tab: (name) => {
+        if (typeof navigation?.switchTab === 'function') navigation.switchTab(name);
+        else if (typeof navigation?.navigate === 'function') navigation.navigate(name);
+      },
+      module: (name) => {
+        if (typeof navigation?.openModule === 'function') navigation.openModule(name);
+        else if (typeof navigation?.navigate === 'function') navigation.navigate(name);
+      },
+    }),
+    [navigation],
+  );
+
+  const handlers = useMemo(
+    () => ({
+      onEditProfile: () => go.tab('Profile'),
+      onOpenProfile: () => go.tab('Profile'),
+      onOpenEvents: () => go.tab('Events'),
+      onOpenMentorship: () => go.module('Mentorship'),
+      onOpenAlumni: () => go.tab('Alumni'),
+      onGive: () => go.tab('Donations'),
+      onOpenCampaign: () => go.tab('Donations'),
+      onConnect: () => go.tab('Alumni'),
+    }),
+    [go],
+  );
 
   if (loading && !data) {
     return (
-      <View style={styles.skeletonContainer}>
-        <View style={styles.skeletonHero}>
-          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: 120, height: 10, borderRadius: 4 }} />
-          <View style={{ backgroundColor: 'rgba(255,255,255,0.25)', width: 180, height: 22, borderRadius: 4, marginTop: 8 }} />
-          <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', width: '100%', height: 6, borderRadius: 3, marginTop: 14 }} />
-        </View>
-        <SkeletonStatRow count={2} style={{ marginTop: 14, paddingHorizontal: 16 }} />
-        <SkeletonStatRow count={2} style={{ marginTop: 0, paddingHorizontal: 16 }} />
-        <SkeletonCard style={{ marginHorizontal: 16, marginTop: 14 }} />
-        <SkeletonCard style={{ marginHorizontal: 16 }} />
+      <View style={styles.skeletonWrap}>
+        <View style={styles.skeletonHero} />
+        <SkeletonCard style={styles.skeletonCard} />
+        <SkeletonCard style={styles.skeletonCard} />
+        <SkeletonCard style={styles.skeletonCard} />
       </View>
     );
   }
@@ -66,371 +116,178 @@ export default function AlumniDashboard({ navigation }) {
   if (error && !data) {
     return (
       <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
+        <Ionicons name="cloud-offline-outline" size={38} color={theme.colors.textMuted} />
         <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
+        <TouchableOpacity
+          onPress={() => load()}
+          accessibilityRole="button"
+          accessibilityLabel="Retry loading the dashboard"
+          style={styles.retryBtn}
+        >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const engagement = data?.engagement ?? { totalAlumni: 0, activeAlumni: 0, percentage: 0 };
-  const stats = data?.stats ?? {};
-  const events = data?.upcomingEvents ?? [];
-  const alerts = data?.alerts ?? [];
-  const campaigns = data?.campaigns ?? [];
-
-  const statCards = [
-    { label: 'Registered', value: String(stats.alumni ?? 0), sub: `${engagement.activeAlumni} active`, color: '#2563eb', icon: 'people-outline' },
-    { label: 'Events', value: String(stats.upcomingEvents ?? 0), sub: 'upcoming', color: '#059669', icon: 'calendar-outline' },
-    { label: 'Donations', value: fmt(stats.donationsReceivedRupees ?? 0), sub: 'received FY', color: '#d97706', icon: 'gift-outline' },
-    { label: 'Mentors', value: String(stats.activeMentorships ?? 0), sub: `${stats.pendingMentorships ?? 0} pending`, color: '#0891b2', icon: 'hand-left-outline' },
-  ];
+  const unread = data?.unreadNotifications ?? 0;
 
   return (
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            setRefreshing(true);
+            load(false);
+          }}
+        />
+      }
     >
+      {/*
+        The hero is the only place the person's own name appears at size. It deliberately
+        does NOT carry the engagement percentage the old one showed: that number was
+        computed over the whole institution and sat directly under the graduate's own name,
+        which is how a school-wide ratio came to look like a personal achievement.
+      */}
       <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.hero}>
-        <Text style={styles.heroLabel}>ALUMNI RELATIONS OFFICE</Text>
-        <Text style={styles.heroTitle}>Engagement Overview</Text>
-        <View style={styles.heroProgress}>
-          <View style={[styles.heroProgressFill, { width: `${engagement.percentage}%` }]} />
+        <View style={styles.heroAvatar}>
+          <Text style={styles.heroAvatarText}>
+            {initialsOf(data?.snapshot?.name)}
+          </Text>
         </View>
+        <Text style={styles.heroName} numberOfLines={1}>
+          {data?.snapshot?.name ?? 'Welcome back'}
+        </Text>
+        <Text style={styles.heroSub} numberOfLines={1}>
+          {data?.career?.role ?? data?.snapshot?.companyName ?? 'Alumnus'}
+        </Text>
         <View style={styles.heroRow}>
-          <View>
-            <Text style={styles.heroValue}>{engagement.percentage}%</Text>
-            <Text style={styles.heroSub}>engagement · {engagement.totalAlumni} alumni</Text>
-          </View>
-          {(data?.unreadNotifications ?? 0) > 0 && (
-            <View style={styles.heroBadge}>
-              <Ionicons name="notifications-outline" size={14} color="#fff" />
-              <Text style={styles.heroBadgeText}>{data.unreadNotifications} unread</Text>
+          {data?.snapshot?.graduationYear ? (
+            <View style={styles.heroPill}>
+              <Text style={styles.heroPillText}>Class of {data.snapshot.graduationYear}</Text>
             </View>
-          )}
+          ) : null}
+          {unread > 0 ? (
+            <View style={styles.heroPill}>
+              <Ionicons name="notifications-outline" size={11} color="#fff" />
+              <Text style={styles.heroPillText}>{unread} unread</Text>
+            </View>
+          ) : null}
         </View>
       </LinearGradient>
 
-      <View style={styles.statsGrid}>
-        {statCards.map((s) => (
-          <View key={s.label} style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: s.color + '1a' }]}>
-              <Ionicons name={s.icon} size={16} color={s.color} />
-            </View>
-            <Text style={styles.statValue} numberOfLines={1}>{s.value}</Text>
-            <Text style={styles.statLabel}>{s.label}</Text>
-            <Text style={[styles.statSub, { color: s.color }]}>{s.sub}</Text>
-          </View>
-        ))}
-      </View>
+      <View style={styles.body}>
+        <QuickActions navigation={navigation} />
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Upcoming Events</Text>
-          <TouchableOpacity onPress={() => navigation.switchTab('Events')}>
-            <Text style={styles.seeAll}>View all</Text>
-          </TouchableOpacity>
-        </View>
-        {events.map((e, idx) => {
-          const pct = e.capacity > 0 ? Math.min(Math.round((e.rsvps / e.capacity) * 100), 100) : 0;
-          return (
-            <AnimatedCard key={e.id} delay={idx * 60} style={styles.listCard}>
-              <View style={styles.listRow}>
-                <View style={[styles.typeIcon, { backgroundColor: '#0891b21a' }]}>
-                  <Ionicons name="calendar-outline" size={16} color="#0891b2" />
-                </View>
-                <View style={styles.listBody}>
-                  <Text style={styles.listTitle} numberOfLines={1}>{e.title}</Text>
-                  <Text style={styles.listSub}>{new Date(e.startDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}{e.venue ? ` · ${e.venue}` : ''}</Text>
-                  <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: '#0891b2' }]} />
-                  </View>
-                  <Text style={[styles.rsvpText, { color: '#0891b2' }]}>{e.rsvps}/{e.capacity} RSVPs</Text>
-                </View>
-              </View>
-            </AnimatedCard>
-          );
-        })}
-        {events.length === 0 && <Text style={styles.emptyText}>No upcoming events scheduled.</Text>}
-      </View>
+        <Text style={styles.sectionHeading}>Your overview</Text>
 
-      {alerts.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Office Alerts</Text>
-          {alerts.map((a, idx) => (
-            <View key={idx} style={styles.alertCard}>
-              <View style={styles.alertIcon}>
-                <Ionicons name="warning-outline" size={16} color="#d97706" />
-              </View>
-              <View style={styles.listBody}>
-                <Text style={styles.listTitle}>{a.message}</Text>
-                <Text style={styles.listSub}>{a.type}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
+        <SnapshotCard snapshot={data?.snapshot} onEditProfile={handlers.onEditProfile} />
 
-      {campaigns.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fundraising Campaigns</Text>
-          {campaigns.map((c, idx) => (
-            <View key={c.name} style={styles.listCard}>
-              <View style={[styles.typeIcon, { backgroundColor: '#d977061a' }]}>
-                <Ionicons name="gift-outline" size={16} color="#d97706" />
-              </View>
-              <View style={styles.listBody}>
-                <Text style={styles.listTitle} numberOfLines={1}>{c.name}</Text>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${Math.min(c.percent, 100)}%`, backgroundColor: '#d97706' }]} />
-                </View>
-                <Text style={[styles.rsvpText, { color: '#d97706' }]}>
-                  {fmt(c.raisedRupees)} of {fmt(c.targetRupees)} · {c.percent}%
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      )}
+        <CareerCard
+          career={data?.career}
+          onEditProfile={handlers.onEditProfile}
+          onOpenMentorship={handlers.onOpenMentorship}
+        />
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Tools</Text>
-        <View style={styles.moduleGrid}>
-          {modules.map((m, idx) => (
-            <AnimatedCard key={m.id} delay={idx * 60} onPress={() => navigation.openModule(m.id)} style={styles.moduleCard}>
-              <View style={[styles.moduleIcon, { backgroundColor: m.color + '1a' }]}>
-                <Ionicons name={m.icon} size={20} color={m.color} />
-              </View>
-              <Text style={styles.moduleTitle}>{m.title}</Text>
-            </AnimatedCard>
-          ))}
-        </View>
+        <EventsCard
+          events={data?.events}
+          onOpenEvents={handlers.onOpenEvents}
+          onOpenEvent={handlers.onOpenEvents}
+        />
+
+        <MentorshipCard
+          mentorship={data?.mentorship}
+          onOpenMentorship={handlers.onOpenMentorship}
+        />
+
+        <GivingCard
+          giving={data?.giving}
+          onGive={handlers.onGive}
+          onOpenCampaign={handlers.onOpenCampaign}
+        />
+
+        <NetworkCard
+          network={data?.network}
+          onOpenAlumni={handlers.onOpenAlumni}
+          onConnect={handlers.onConnect}
+        />
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 0 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  skeletonContainer: { flex: 1, backgroundColor: theme.colors.background },
-  skeletonHero: { marginHorizontal: 16, marginTop: 16, borderRadius: 20, padding: 18, backgroundColor: '#7c3aed' },
-  listRow: { flexDirection: 'row', alignItems: 'center' },
-  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#2563eb', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
-  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, paddingVertical: 8 },
-  hero: {
-    marginHorizontal: 16,
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: theme.colors.background,
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 13,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+  },
+  retryBtn: {
     marginTop: 16,
-    borderRadius: 20,
-    padding: 18,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 22,
+    paddingVertical: 9,
+    borderRadius: 10,
   },
-  heroLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-    color: 'rgba(255,255,255,0.8)',
-    letterSpacing: 1,
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 12.5 },
+  hero: {
+    alignItems: 'center',
+    paddingTop: 24,
+    paddingBottom: 20,
+    gap: 3,
   },
-  heroTitle: {
-    fontSize: 22,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-    marginTop: 4,
+  heroAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  heroProgress: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    marginTop: 14,
-    overflow: 'hidden',
-  },
-  heroProgressFill: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#fff',
-  },
+  heroAvatarText: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  heroName: { fontSize: 18, fontWeight: '800', color: '#fff' },
+  heroSub: { fontSize: 12, color: 'rgba(255,255,255,0.85)' },
   heroRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 14,
-  },
-  heroValue: {
-    fontSize: 26,
-    fontFamily: 'Manrope-ExtraBold',
-    color: '#fff',
-  },
-  heroSub: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  heroBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  heroBadgeText: {
-    fontSize: 11,
-    fontFamily: 'Manrope-SemiBold',
-    color: '#fff',
-    marginLeft: 5,
-  },
-  statsGrid: {
-    flexDirection: 'row',
+    gap: 6,
+    marginTop: 9,
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginTop: 14,
-  },
-  statCard: {
-    width: '48.5%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-    marginBottom: 10,
-  },
-  statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
   },
-  statValue: {
-    fontSize: 17,
-    fontFamily: 'Manrope-ExtraBold',
-    color: theme.colors.text,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  statSub: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Bold',
-    marginTop: 4,
-  },
-  section: { paddingHorizontal: 16, marginTop: 18 },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  seeAll: {
-    fontSize: 12,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.primary,
-  },
-  listCard: {
+  heroPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
-  },
-  typeIcon: {
-    width: 38,
-    height: 38,
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
-  alertIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    backgroundColor: '#fef3c7',
-  },
-  listBody: { flex: 1, marginRight: 8 },
-  listTitle: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  listSub: {
+  heroPillText: { fontSize: 10, fontWeight: '700', color: '#fff' },
+  body: { paddingHorizontal: 16, paddingTop: 14 },
+  sectionHeading: {
     fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: theme.colors.surfaceMuted,
-    marginTop: 8,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 4,
-    borderRadius: 2,
-  },
-  rsvpText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-    marginTop: 4,
-  },
-  alertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    marginBottom: 8,
-  },
-  moduleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  moduleCard: {
-    width: '48.5%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 16,
+    fontWeight: '700',
+    color: theme.colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: 18,
     marginBottom: 10,
   },
-  moduleIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 11,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  moduleTitle: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
+  skeletonWrap: { flex: 1, backgroundColor: theme.colors.background, padding: 16, gap: 12 },
+  skeletonHero: { height: 140, borderRadius: 20, backgroundColor: theme.colors.surfaceMuted },
+  skeletonCard: {},
 });

@@ -36,7 +36,12 @@ const FEATURE_MODULES = {
 };
 
 const TAB_TITLES = {
-  Dashboard: 'Alumni Relations Office',
+  // Was 'Alumni Relations Office'. The dashboard it named no longer exists: it rendered an
+  // institution-wide engagement report for the office, and the screen now shows the
+  // signed-in graduate their own batch, career, events, mentorships and giving. The header
+  // kept saying "Office" above a page of personal facts, which is the kind of mismatch
+  // that makes people stop trusting a screen.
+  Dashboard: 'Overview',
   Alumni: 'Alumni Directory',
   Events: 'Alumni Events',
   Donations: 'Donations & Fundraising',
