@@ -18,14 +18,15 @@ import * as mentorshipFeedback from '../alumni/feedback.service.js';
 // the service by module would put the derivation in two places and let the student's list drift
 // from the warden's inbox.
 import * as gatePasses from '../hostel/hostel-gate-passes.service.js';
-import { gatePassRequestSchema } from '../hostel/hostel.schemas.js';
+import * as visitorService from '../hostel/hostel-visitors.service.js';
+import { gatePassRequestSchema, visitorAuthoriseSchema } from '../hostel/hostel.schemas.js';
 import type { Viewer } from '../alumni/directory.service.js';
 import {
   mentorshipRequestSchema, mentorshipSessionSchema, updateSessionSchema,
   cancelSessionSchema, goalSchema, updateGoalSchema, mentorshipFeedbackSchema,
 } from '../alumni/alumni.schemas.js';
 
-// Student module — mounted at /api/v1/student (docs/users/01 §4)
+// Student module â€” mounted at /api/v1/student (docs/users/01 Â§4)
 const router = Router();
 
 const wrap =
@@ -186,7 +187,7 @@ router.get('/profile', wrap(async (req, res) => {
  * programme the alumni router could never serve: a STUDENT role is rejected by
  * `requireRole('ALUMNI','ADMIN')` on the alumni router, so students could be a
  * mentor's mentee in the database and had no way to see it. Nothing is
- * reimplemented here — every rule (one open request, decline needs a reason,
+ * reimplemented here â€” every rule (one open request, decline needs a reason,
  * participants-only feedback) lives in the shared services, so there is one
  * implementation of each rather than two that drift.
  *
@@ -291,11 +292,11 @@ router.delete('/mentorship/:id/feedback', validate(idParamSchema, 'params'), wra
   res.json({ data: await mentorshipFeedback.deleteMyFeedback(studentViewer(req), String(req.params.id)) });
 }));
 
-// ── Gate passes (docs/users/08-hostel.md §3.5 · 01-students) ────────────────
+// â”€â”€ Gate passes (docs/users/08-hostel.md Â§3.5 Â· 01-students) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //
 // The STUDENT half of the gate-pass flow. It lives here rather than in the hostel router
 // because this file is already behind `requireRole('STUDENT')`, and because a create route in
-// the hostel module would sit behind `requireRole('HOSTEL','ADMIN')` — which is exactly the
+// the hostel module would sit behind `requireRole('HOSTEL','ADMIN')` â€” which is exactly the
 // role that must not be able to mint its own approvals.
 //
 // The service is the hostel module's, so the lifecycle derivation stays in ONE place and the
@@ -319,7 +320,7 @@ router.post(
   }),
 );
 
-// Withdrawal. Allowed only while PENDING — cancelling an APPROVED pass is a return, and it has
+// Withdrawal. Allowed only while PENDING â€” cancelling an APPROVED pass is a return, and it has
 // to go through the gate so there is a record of when the student came back.
 router.post(
   '/gate-passes/:id/cancel',
@@ -327,6 +328,48 @@ router.post(
   wrap(async (req, res) => {
     res.json({
       data: await gatePasses.cancelGatePass(req.auth!.userId, String(req.params.id)),
+    });
+  }),
+);
+
+// â”€â”€ Visitors (H-08) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//
+// The resident SIDE of a visit, which is the mirror of the warden's. The split is deliberate and
+// the same one gate passes use:
+//
+//   THIS router  - authorise a visitor, see who is expected, withdraw while it is still PENDING.
+//   WARDEN router - approve/reject, record entry and exit, maintain the barred list, edit policy.
+//
+// A resident therefore CANNOT approve their own visitor and CANNOT record entry, and there is no
+// resident-facing route that could mint either. `registerVisitor` also re-derives the resident
+// from the authenticated user rather than trusting `visitingStudentProfileId` in the body, so the
+// caller cannot authorise a visitor for somebody else's room.
+router.get(
+  '/visitors',
+  wrap(async (req, res) => {
+    res.json({ data: await visitorService.listMyVisitors(req.auth!.userId) });
+  }),
+);
+
+router.post(
+  '/visitors',
+  validate(visitorAuthoriseSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      // No `institutionId` argument exists on this call - it is resolved from the caller's own
+      // profile inside the service, so there is nothing for this router to get wrong and no way
+      // to point a resident route at another institution.
+      data: await visitorService.authoriseVisitorByResident(req.auth!.userId, req.body as any),
+    });
+  }),
+);
+
+router.post(
+  '/visitors/:id/cancel',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitorService.cancelMyVisitor(req.auth!.userId, String(req.params.id)),
     });
   }),
 );

@@ -73,6 +73,8 @@ function shapePass(p: any, now: Date) {
     idVerified: p.verifiedAt !== null && p.verifiedAt !== undefined,
     verifiedAt: p.verifiedAt ?? null,
     decisionNote: p.decisionNote ?? null,
+    /** When the warden decided. Null while PENDING, and for a withdrawal (see `cancelledAt`). */
+    decidedAt: p.decidedAt ?? null,
     cancelledAt: p.cancelledAt ?? null,
     decidedByUserId: p.decidedByUserId ?? null,
     minutesLate: minutesLate(p, now),
@@ -289,7 +291,13 @@ export async function requestGatePass(
 
   // The warden is told a request is waiting. Emergency requests say so explicitly, because
   // "someone thinks they are having an emergency tonight" is worth surfacing above the queue.
-  const wardens = await prisma.userRole.findMany({ where: { role: 'HOSTEL' }, select: { userId: true } });
+  // `UserRole` carries no `institutionId` of its own — tenancy lives on the user — so this has
+  // to be filtered THROUGH the user relation. Filtering on `role` alone would page every ward
+  // in every institution, which is both a privacy leak and a notification-volume problem.
+  const wardens = await prisma.userRole.findMany({
+    where: { role: 'HOSTEL', user: { institutionId } },
+    select: { userId: true },
+  });
   if (wardens.length) {
     await prisma.notification.createMany({
       data: wardens.map((w) => ({
@@ -299,6 +307,8 @@ export async function requestGatePass(
         title: pass.isEmergency ? 'EMERGENCY gate pass request' : 'Gate pass requested',
         body: `${profile.user.fullName} requested a pass to ${body.destination?.trim() || 'unspecified destination'}${pass.isEmergency ? ' (marked emergency)' : ''}.`,
         sourceModule: 'hostel',
+        // Without a deep link the warden's only move is to open the inbox and hunt for the row.
+        dataJson: JSON.stringify({ module: 'hostel', screen: 'GatePasses', passId: pass.id }),
       })),
     });
   }
@@ -365,7 +375,9 @@ export async function cancelGatePass(userId: string, passId: string) {
     after: { reason: pass.reason },
   });
 
-  return { id: pass.id, status: 'CANCELLED', cancelled: true };
+  // Returned as a full shaped pass, like every other mutation here. A three-field stub meant
+  // the student who withdrew had to refetch to learn the withdrawal's own timestamp.
+  return getGatePass(pass.studentProfile.user.institutionId, pass.id);
 }
 
 /**
@@ -403,6 +415,7 @@ export async function decideGatePass(
     data: {
       status: decision,
       decidedByUserId: userId,
+      decidedAt: new Date(),
       decisionNote: note,
       // Only an APPROVED pass carries an identity check. Rejecting is not verifying anyone.
       verifiedAt: decision === 'APPROVED' && opts.verified === true ? new Date() : null,
@@ -420,6 +433,7 @@ export async function decideGatePass(
           ? `Your outpass for "${pass.reason}" was approved${pass.isEmergency ? ' (emergency)' : ''}. Show this at the gate.`
           : `Your outpass for "${pass.reason}" was refused: ${note}`,
       sourceModule: 'hostel',
+      dataJson: JSON.stringify({ module: 'hostel', screen: 'GatePasses', passId: pass.id }),
     },
   });
 
@@ -432,7 +446,11 @@ export async function decideGatePass(
     after: { student: pass.studentProfile.user.fullName, decision, note, verified: !!opts.verified },
   });
 
-  return { id: pass.id, student: pass.studentProfile.user.fullName, status: decision, idVerified: opts.verified === true };
+  // The full shaped pass, like every read and like `cancelGatePass`. A four-field stub meant a
+// client that trusted the mutation's response got no `lifecycle` and no `decidedAt`, so the UI
+// could not render the result of the action it had just performed without a second round trip -
+// and the stub's `idVerified` could silently disagree with the stored `verifiedAt`.
+  return getGatePass(institutionId, pass.id);
 }
 
 /**
@@ -474,6 +492,7 @@ export async function recordGateExit(
       title: 'Checked out of the hostel',
       body: `You were marked out at ${when.toLocaleString('en-IN')}. Expected back ${pass.expectedInAt.toLocaleString('en-IN')}.`,
       sourceModule: 'hostel',
+      dataJson: JSON.stringify({ module: 'hostel', screen: 'GatePasses', passId: pass.id }),
     },
   });
 
@@ -486,7 +505,9 @@ export async function recordGateExit(
     after: { student: pass.studentProfile.user.fullName, actualOutAt: when.toISOString() },
   });
 
-  return { id: pass.id, actualOutAt: when, status: pass.status };
+  // Shaped, for the same reason as the decision above: the row's new lifecycle is the whole
+  // point of the call, so it belongs in the response.
+  return getGatePass(institutionId, pass.id);
 }
 
 /**
@@ -530,6 +551,7 @@ export async function recordGateReturn(
         ? `You were marked back in at ${when.toLocaleString('en-IN')}, after your expected return of ${pass.expectedInAt.toLocaleString('en-IN')}.`
         : `You were marked back in at ${when.toLocaleString('en-IN')}.`,
       sourceModule: 'hostel',
+      dataJson: JSON.stringify({ module: 'hostel', screen: 'GatePasses', passId: pass.id }),
     },
   });
 
@@ -542,7 +564,11 @@ export async function recordGateReturn(
     after: { student: pass.studentProfile.user.fullName, actualInAt: when.toISOString(), late },
   });
 
-  return { id: pass.id, actualInAt: when, late, status: pass.status };
+// Shaped, and `late` is on the shaped row too (`minutesLate`), so this no longer has to carry a
+  // field the rest of the API computes differently. The explicit `late` boolean stays for callers
+  // that want the yes/no form without doing arithmetic.
+  const shaped = await getGatePass(institutionId, pass.id);
+  return { ...shaped, late };
 }
 
 /**

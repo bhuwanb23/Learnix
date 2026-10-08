@@ -10,7 +10,6 @@ import {
   allocateSchema,
   menuSchema,
   complaintSchema,
-  visitorCheckinSchema,
   broadcastSchema,
   residentQuerySchema,
   contactSchema,
@@ -20,8 +19,16 @@ import {
   gatePassQuerySchema,
   gatePassDecisionSchema,
   gatePassStampSchema,
+  visitorQuerySchema,
+  frequentVisitorQuerySchema,
+  visitorRegisterSchema,
+  visitorDecisionSchema,
+  visitorStampSchema,
+  barredVisitorSchema,
+  visitorPolicySchema,
 } from './hostel.schemas.js';
 import * as service from './hostel.service.js';
+import * as visitors from './hostel-visitors.service.js';
 import {
   listContacts,
   upsertContact,
@@ -419,30 +426,186 @@ router.post(
   }),
 );
 
-// H-08 visitors
+// ── H-08 visitors ────────────────────────────────────────────────────────────────
+//
+// ROUTE ORDER IS LOAD-BEARING HERE, twice over.
+//
+//  1. Every static segment below (`/visitors/policy`, `/visitors/frequent`,
+//     `/visitors/barred`) is declared BEFORE `/visitors/:id`. Declare them after and `:id`
+//     swallows them - `/visitors/policy` then resolves as a visitor id and 404s a perfectly
+//     valid request. This is the same trap as `/residents/facets` and `/rooms/:roomId`.
+//
+//  2. There is deliberately NO direct "check a visitor in" route any more. The old
+//     `POST /visitors/checkin` created an on-campus row directly, with no authorisation and no
+//     planned window - which is exactly what the approval workflow exists to prevent. Entry is
+//     now `POST /visitors/:id/entry`, reachable only from `APPROVED`, and it re-checks the barred
+//     list at the gate.
+//
+// CREATION is not warden-only in spirit: a warden may register a walk-in, but a resident's
+// authorisation is what normally starts a visit. `POST /visitors` here always produces `PENDING`.
+
 router.get(
-  '/visitors',
+  '/visitors/policy',
   wrap(async (req, res) => {
-    res.json({ data: await service.listVisitors(req.auth!.institutionId) });
+    res.json({ data: await visitors.getVisitorPolicy(req.auth!.institutionId) });
+  }),
+);
+
+router.put(
+  '/visitors/policy',
+  validate(visitorPolicySchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.updateVisitorPolicy(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/visitors/frequent',
+  validate(frequentVisitorQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.frequentVisitors(req.auth!.institutionId, req.query as any),
+    });
+  }),
+);
+
+router.get(
+  '/visitors/barred',
+  wrap(async (req, res) => {
+    res.json({ data: await visitors.listBarredVisitors(req.auth!.institutionId) });
   }),
 );
 
 router.post(
-  '/visitors/checkin',
-  validate(visitorCheckinSchema),
+  '/visitors/barred',
+  validate(barredVisitorSchema),
   wrap(async (req, res) => {
     res.status(201).json({
-      data: await service.checkInVisitor(req.auth!.userId, req.auth!.institutionId, req.body),
+      data: await visitors.addBarredVisitor(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body as any,
+      ),
+    });
+  }),
+);
+
+router.delete(
+  '/visitors/barred/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.removeBarredVisitor(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/visitors',
+  validate(visitorQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.listVisitors(req.auth!.institutionId, req.query as any),
     });
   }),
 );
 
 router.post(
-  '/visitors/:id/checkout',
+  '/visitors',
+  validate(visitorRegisterSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await visitors.registerVisitorByWarden(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body as any,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/visitors/:id',
   validate(idParamSchema, 'params'),
   wrap(async (req, res) => {
     res.json({
-      data: await service.checkOutVisitor(req.auth!.userId, req.auth!.institutionId, String(req.params.id)),
+      data: await visitors.getVisitor(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
+router.post(
+  '/visitors/:id/approve',
+  validate(idParamSchema, 'params'),
+  validate(visitorDecisionSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.decideVisitor(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        'APPROVED',
+        req.body.note ?? null,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/visitors/:id/reject',
+  validate(idParamSchema, 'params'),
+  validate(visitorDecisionSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.decideVisitor(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        'REJECTED',
+        req.body.note ?? null,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/visitors/:id/entry',
+  validate(idParamSchema, 'params'),
+  validate(visitorStampSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.recordVisitorEntry(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body.at ?? null,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/visitors/:id/exit',
+  validate(idParamSchema, 'params'),
+  validate(visitorStampSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await visitors.recordVisitorExit(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body.at ?? null,
+      ),
     });
   }),
 );

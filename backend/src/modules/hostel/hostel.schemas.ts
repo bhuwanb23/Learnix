@@ -191,11 +191,138 @@ export const complaintSchema = z.object({
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH']),
 });
 
-export const visitorCheckinSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  studentProfileId: z.string().min(1).max(64),
-  relation: z.string().trim().min(2).max(40),
+
+// ── Visitors (H-08) ───────────────────────────────────────────────────────────────
+
+/**
+ * Visitor query.
+ *
+ * `status` is a stored status, so it is enumerated. `alerts` and `needsAction` are DERIVED and
+ * therefore applied after shaping - they arrive as `'true'`/`'false'` strings because they come
+ * off a query string.
+ */
+export const visitorQuerySchema = z.object({
+  q: z.string().trim().min(1).max(80).optional(),
+  status: z
+    .enum(['PENDING', 'APPROVED', 'IN', 'OUT', 'REJECTED', 'CANCELLED', 'NO_SHOW'])
+    .optional(),
+  alerts: z.enum(['true', 'false']).optional(),
+  needsAction: z.enum(['true', 'false']).optional(),
+  /** ISO date; keeps only visitors expected on that local day. */
+  date: z.string().trim().min(6).max(30).optional(),
+  page: z.coerce.number().int().min(1).max(500).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
 });
+
+export const frequentVisitorQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  withinDays: z.coerce.number().int().min(1).max(3650).optional(),
+});
+
+/**
+ * Registering a visitor.
+ *
+ * Dates are LOOSE strings, validated in the service. zod's `.datetime()` would reject a locally
+ * formatted timestamp with a path-dump error, whereas the service can say "expected departure must
+ * be after the expected arrival" - which is a message a person can act on. `.strict()` so a typo'd
+ * key is a 400 rather than a field that silently does nothing.
+ */
+/**
+ * The fields both callers supply.
+ *
+ * `visitingStudentProfileId` is OPTIONAL here and required only on the WARDEN router's schema
+ * below. It used to be required on both, which made `POST /student/visitors` unreachable: a
+ * resident authorises a visitor for themselves, and the server derives their profile from the
+ * token - so the field had nothing for them to send and every request 400'd on "Required".
+ * Requiring a field the caller is forbidden from choosing would be worse than not asking for it.
+ */
+const visitorRegisterBase = z.object({
+  name: z.string().trim().min(2).max(80),
+  relation: z.string().trim().min(2).max(40),
+  phone: z.string().trim().max(24).nullish(),
+  purpose: z.string().trim().max(200).nullish(),
+  idType: z.string().trim().max(30).nullish(),
+  idNumber: z.string().trim().max(60).nullish(),
+  expectedInAt: z.string().trim().max(40).nullish(),
+  expectedOutAt: z.string().trim().max(40).nullish(),
+});
+
+/** Warden-registered: a warden picks the resident from the directory, so it is required. */
+export const visitorRegisterSchema = visitorRegisterBase
+  .extend({ visitingStudentProfileId: z.string().trim().min(1).max(64) })
+  .strict();
+
+/**
+ * Resident-authored: the resident is derived from the token, and `visitingStudentProfileId` is
+ * not accepted at all rather than accepted-and-ignored. `.strict()` turns a client that tries to
+ * name somebody else into a 400 naming the offending key, which is a better answer than silently
+ * registering the visit against the caller and leaving the caller to believe otherwise.
+ */
+export const visitorAuthoriseSchema = visitorRegisterBase.strict();
+
+/** A warden's confirmation or refusal. The decision itself is in the path. */
+export const visitorDecisionSchema = z
+  .object({
+    note: z.string().trim().max(300).nullish(),
+  })
+  .strict();
+
+/**
+ * Gate stamps. `at` lets a warden correct a mis-keyed time; the service checks it is a real
+ * date and that it does not precede the opposite stamp.
+ */
+export const visitorStampSchema = z
+  .object({
+    at: z.string().trim().max(40).nullish(),
+  })
+  .strict();
+
+export const barredVisitorSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    phone: z.string().trim().max(24).nullish(),
+    reason: z.string().trim().min(2).max(200),
+  })
+  .strict();
+
+/**
+ * The visitor policy a warden can edit.
+ *
+ * Every field is OPTIONAL and `.partial()`-by-omission on purpose: the service overlays this onto
+ * the stored defaults and clamps every value, so sending one field changes one rule and omits the
+ * rest rather than blanking them. `visitingHours` uses a `HH:MM` regex rather than a number so a
+ * settings form can send what a human typed; the policy module converts and clamps it.
+ */
+const hhmm = z.string().trim().regex(/^\d{1,2}:\d{2}$/, 'Expected HH:MM, e.g. 08:00');
+
+export const visitorPolicySchema = z
+  .object({
+    requireWardenApproval: z.boolean().optional(),
+    requireResidentAuthorisation: z.boolean().optional(),
+    dayVisitsOnly: z.boolean().optional(),
+    maxAdvanceDays: z.number().int().min(0).max(365).optional(),
+    requirePurpose: z.boolean().optional(),
+    requireIdProof: z.boolean().optional(),
+    barredCheck: z.boolean().optional(),
+    visitingHours: z
+      .object({
+        start: hhmm.optional(),
+        end: hhmm.optional(),
+        enabled: z.boolean().optional(),
+      })
+      .strict()
+      .optional(),
+    repeatAlert: z
+      .object({
+        enabled: z.boolean().optional(),
+        count: z.number().int().min(2).max(500).optional(),
+        withinDays: z.number().int().min(1).max(3650).optional(),
+      })
+      .strict()
+      .optional(),
+    utcOffsetMinutes: z.number().int().min(-720).max(840).optional(),
+  })
+  .strict();
 
 export const broadcastSchema = z.object({
   audience: z.enum(['ALL_RESIDENTS', 'BLOCK_A', 'BLOCK_B', 'BLOCK_C', 'MESS_MEMBERS']),
