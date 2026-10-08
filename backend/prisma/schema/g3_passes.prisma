@@ -45,6 +45,11 @@ model GatePass {
   verifiedAt       DateTime? // warden confirms the student's ID; null = approved without it
   decisionNote     String? // why a request was rejected — the student is told this
   decidedByUserId  String? // scalar → users.id
+  // WHEN the decision was made. Not derivable from anything else already here: `verifiedAt` is
+  // only set when the warden ALSO ticked the ID box, and `updatedAt` moves again on every
+  // later gate stamp (exit, return). Without this, the timeline has to date an approval by the
+  // request time, which quietly erases how long the student waited. Mirrors `cancelledAt`.
+  decidedAt        DateTime?
   cancelledAt      DateTime? // set when the STUDENT withdraws a pending request
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
@@ -79,15 +84,64 @@ model HostelComplaint {
   @@map("hostel_complaints")
 }
 
+// WHY EVERY ADDED FIELD IS OPTIONAL
+// -------------------------------
+// This model predates the visitor workflow and already holds rows, so every column added for the
+// workflow is NULLABLE. A visitor recorded before the feature existed has no purpose, no planned
+// window and no identity proof, and it must stay readable and checkable-out rather than becoming
+// unloadable. The code treats a missing field as "not recorded", never as an error - see
+// `hostel-visitors.rules.ts`, where an absent window suppresses the hours alert instead of
+// raising one.
+//
+// `phone` IS THE IDENTITY KEY. A name is not an identity: "Suresh Kumar" matches a dozen people,
+// and a barred list keyed on a name would bar the wrong visitor. Match prefers an exact phone
+// match and only falls back to a normalised name when the institution recorded no phone at all.
+// `normalisedName` is stored (not computed at query time) so the fallback is indexable.
 model Visitor {
   id                      String    @id @default(cuid())
   institutionId           String
   name                    String
   visitingStudentProfileId String
   relation                String
-  checkInAt               DateTime  @default(now())
+
+  // ---- Identity, beyond a name -------------------------------------------------
+  phone                   String?
+  phoneDigits             String?   // digits only, so "(98450) 12345" and "9845012345" match
+  idType                  String?   // AADHAAR | PASSPORT | DRIVING_LICENCE | STUDENT_ID | OTHER
+  idNumber                String?
+
+  // ---- Purpose -----------------------------------------------------------------
+  purpose                 String?
+
+  // ---- PLANNED window, chosen by the resident when authorising ------------------
+  // Distinct from the ACTUAL stamps below, exactly as with a gate pass. `expectedInAt` and
+  // `expectedOutAt` drive "who should be here" and "who is overstaying"; `checkInAt` and
+  // `checkOutAt` are what actually happened at the gate.
+  expectedInAt            DateTime?
+  expectedOutAt           DateTime?
+
+  // ---- ACTUAL stamps at the gate -----------------------------------------------
+  // `checkInAt` is nullable now (it used to default to now), because a RESIDENT-AUTHORISED
+  // visitor has been promised for 6pm and has not arrived. Defaulting it to creation time
+  // would make every approved-but-absent visitor look like they were already on campus.
+  checkInAt               DateTime?
   checkOutAt              DateTime?
-  status                  String    @default("IN") // IN | OUT
+
+  // PENDING     resident authorised, warden has not confirmed
+  // APPROVED    warden confirmed, not yet on campus
+  // IN          on campus
+  // OUT         left
+  // REJECTED    warden refused
+  // CANCELLED   resident withdrew the authorisation
+  // NO_SHOW     the window passed and they never arrived
+  status                  String    @default("PENDING")
+
+  // ---- Workflow stamps. Mirrors GatePass's decidedBy / decidedAt / decisionNote ----
+  requestedByUserId       String?   // the RESIDENT who authorised, distinct from the warden
+  approvedByUserId        String?
+  approvedAt              DateTime?
+  decisionNote            String?
+
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -95,5 +149,38 @@ model Visitor {
 
   @@index([visitingStudentProfileId])
   @@index([status])
+  // The warden's inbox reads "awaiting confirmation, soonest arrival first" and "still on
+  // campus past their expected departure"; the composite serves both better than status alone.
+  @@index([status, expectedInAt])
+  @@index([status, expectedOutAt])
+  // Backs the barred-list lookup and the repeat-frequency count.
+  @@index([institutionId, phoneDigits])
+  @@index([visitingStudentProfileId, checkInAt])
   @@map("visitors")
+}
+
+// A person this institution does not admit, whatever the resident says.
+//
+// Deliberately NOT a flag on Visitor. A bar has to outlive the visit that provoked it: a resident
+// can withdraw an authorisation and the visitor row disappears, but "this person is not admitted"
+// is a standing fact about the institution, not a property of one booking. Keyed on
+// institutionId so two colleges in the same deployment have independent lists.
+//
+// `phoneDigits` is what a check matches on. `normalisedName` exists for the fallback when no
+// phone was ever recorded, and is stored rather than computed so the lookup stays indexable.
+model BarredVisitor {
+  id              String   @id @default(cuid())
+  institutionId   String
+  name            String
+  phone           String?
+  phoneDigits     String?
+  normalisedName  String
+  reason          String
+  barredByUserId  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([institutionId, phoneDigits])
+  @@index([institutionId, normalisedName])
+  @@map("barred_visitors")
 }

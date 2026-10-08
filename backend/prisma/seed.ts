@@ -1875,6 +1875,27 @@ async function seedDomainG(institutionId: string): Promise<void> {
     if (!existing) await db.gatePass.create({ data: { studentProfileId: profileId, ...data } });
   };
 
+  // BACKFILL, self-healing and idempotent. `ensureGatePass` above deliberately does NOT update
+  // an existing row - overwriting live demo state on every re-seed is the worse bug - which means
+  // rows created before a column existed never gain it. This closes that gap instead:
+  //   1. A decided pass with no decision time gets one.
+  //   2. A REJECTED pass with `verifiedAt` set is repaired. Rejecting does not verify anyone, so
+  //      the field is meaningless there and its presence is drift, not data.
+  // Runs on every seed, is a no-op once the data is already correct, and is what makes the
+  // seed's own lifecycle coverage assertable rather than aspirational.
+  await db.gatePass.updateMany({
+    where: { status: { in: ['APPROVED', 'REJECTED'] }, decidedAt: null },
+    data: { decidedAt: new Date(nowMs - 20 * H) },
+  });
+  await db.gatePass.updateMany({
+    where: { status: { not: 'APPROVED' }, verifiedAt: { not: null } },
+    data: { verifiedAt: null },
+  });
+  await db.gatePass.updateMany({
+    where: { status: { not: 'CANCELLED' }, cancelledAt: { not: null } },
+    data: { cancelledAt: null },
+  });
+
   // AWAITING APPROVAL — the ordinary case.
   await ensureGatePass(studentProfile.id, {
     reason: 'Weekend home visit',
@@ -1905,6 +1926,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     expectedInAt: new Date(nowMs + 10 * H),
     status: 'APPROVED',
     decidedByUserId: wardenId,
+    decidedAt: new Date(nowMs - 20 * H),
     verifiedAt: new Date(nowMs - H),
   });
 
@@ -1917,6 +1939,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     actualOutAt: new Date(nowMs - 5 * H + 4 * 60000),
     status: 'APPROVED',
     decidedByUserId: wardenId,
+    decidedAt: new Date(nowMs - 20 * H),
     verifiedAt: new Date(nowMs - 6 * H),
   });
 
@@ -1929,6 +1952,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     actualOutAt: new Date(nowMs - 30 * H + 10 * 60000),
     status: 'APPROVED',
     decidedByUserId: wardenId,
+    decidedAt: new Date(nowMs - 20 * H),
     verifiedAt: new Date(nowMs - 31 * H),
   });
 
@@ -1942,6 +1966,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     decidedByUserId: wardenId,
     // Deliberately NOT verified: an approved pass with no ID check is a real case, and the
     // inbox has to be able to say so.
+    decidedAt: new Date(nowMs - 20 * H),
   });
 
   // RETURNED ON TIME — closed cleanly, with both stamps present.
@@ -1954,6 +1979,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     actualInAt: new Date(nowMs - 28 * H - 12 * 60000),
     status: 'APPROVED',
     decidedByUserId: wardenId,
+    decidedAt: new Date(nowMs - 20 * H),
     verifiedAt: new Date(nowMs - 41 * H),
   });
 
@@ -1967,6 +1993,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     actualInAt: new Date(nowMs - 46 * H),
     status: 'APPROVED',
     decidedByUserId: wardenId,
+    decidedAt: new Date(nowMs - 20 * H),
     verifiedAt: new Date(nowMs - 71 * H),
   });
 
@@ -1979,6 +2006,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     expectedInAt: new Date(nowMs + 30 * H),
     status: 'REJECTED',
     decidedByUserId: wardenId,
+    decidedAt: new Date(nowMs - 20 * H),
     decisionNote: 'Outside the permitted weekend window — please re-request for Saturday.',
   });
 
@@ -1992,6 +2020,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     expectedInAt: new Date(nowMs + 40 * H),
     status: 'REJECTED',
     decidedByUserId: wardenId,
+    decidedAt: new Date(nowMs - 20 * H),
   });
   // Complaints: Arjun OPEN (NETWORK), Sneha OPEN (PLUMBING, HIGH), Vikram ASSIGNED (MAINTENANCE)
   const complaintExists = await db.hostelComplaint.findFirst({ where: { studentProfileId: studentProfile.id, category: 'NETWORK' } });
@@ -2017,68 +2046,443 @@ async function seedDomainG(institutionId: string): Promise<void> {
     }
   }
 
-  // Visitors: Arjun's father IN + Sneha's mother IN + Vikram's brother OUT
-  const visitorExists = await db.visitor.findFirst({ where: { visitingStudentProfileId: studentProfile.id, status: 'IN' } });
-  if (!visitorExists) {
-    await db.visitor.create({
-      data: { institutionId, name: 'Suresh Kumar', visitingStudentProfileId: studentProfile.id, relation: 'Father', status: 'IN' },
-    });
-  }
-  if (snehaProf) {
-    const v2 = await db.visitor.findFirst({ where: { visitingStudentProfileId: snehaProf.id, relation: 'Mother' } });
-    if (!v2) {
-      await db.visitor.create({
-        data: { institutionId, name: 'Meena Patel', visitingStudentProfileId: snehaProf.id, relation: 'Mother', status: 'IN' },
-      });
-    }
-  }
-  if (vikramProf) {
-    const v3 = await db.visitor.findFirst({ where: { visitingStudentProfileId: vikramProf.id, relation: 'Brother' } });
-    if (!v3) {
-      await db.visitor.create({
-        data: {
-          institutionId, name: 'Vijay Nair', visitingStudentProfileId: vikramProf.id, relation: 'Brother', status: 'OUT',
-          checkInAt: new Date(Date.now() - 6 * 60 * 60 * 1000), checkOutAt: new Date(Date.now() - 3 * 60 * 60 * 1000),
-        },
-      });
-    }
+
+  // ── Visitors (H-08) ──────────────────────────────────────────────────────────────
+// Replaces three ad-hoc `db.visitor.create` calls. Two reasons it is not the same shape:
+//
+//   1. The rows now need a PLANNED window and a phone, because that is what the alerts read.
+//      A visitor with no window cannot be checked against visiting hours, so a seeded row without
+//      one would be unable to demonstrate the rule it exists to demonstrate.
+//   2. Coverage is by LIFECYCLE STATE, not by "three nice names". Every state the derivation can
+//      produce has a row, so the warden's screen, the filters and the alerts are all exercised by
+//      the demo data rather than by one lucky record.
+//
+// `ensureVisitor` is create-if-absent, matching `ensureGatePass`. It deliberately does NOT update
+// an existing row - overwriting live demo state on every re-seed is the worse bug - so the
+// backfill below is what brings rows created before these columns existed up to date.
+// `ensureVisitor` is create-if-absent, matching `ensureGatePass`, with ONE addition that the
+// gate-pass helper does not need: a legacy-repair step.
+//
+// The reason is the dedupe key. Matching on (name, relation) is too coarse here, because a
+// frequent visitor is SUPPOSED to appear several times - the repeat-frequency alert is measured by
+// counting them, so five rows for one person are the fixture, not a bug. Matching on purpose makes
+// each fixture row distinct while staying idempotent.
+//
+// And the three visitor rows that predate this feature have no purpose at all, so they would
+// shadow the new fixtures forever: `ensureVisitor` would find the row, skip, and the seeded state
+// would silently keep the old shape. So a row with the same name and relation but no purpose is
+// treated as a legacy row and UPGRADED into the fixture rather than left to block it.
+const ensureVisitor = async (profileId: string, data: Record<string, unknown>): Promise<void> => {
+  const name = String(data.name);
+  const relation = String(data.relation);
+  const purpose = data.purpose == null ? null : String(data.purpose);
+
+  const existing = await db.visitor.findFirst({
+    where: { visitingStudentProfileId: profileId, name, relation, purpose },
+  });
+  if (existing) return;
+
+  // Legacy row from the pre-workflow seed: same person, same relation, but none of the new
+  // columns. Upgrade it in place so the fixture set is what the demo screen shows.
+  const legacy = await db.visitor.findFirst({
+    where: { visitingStudentProfileId: profileId, name, relation, purpose: null },
+  });
+  if (legacy) {
+    await db.visitor.update({ where: { id: legacy.id }, data: { ...data, purpose } });
+    return;
   }
 
-  // ── Restore demo state on re-seed (undoes e2e actions) ──
+  await db.visitor.create({ data: { institutionId, visitingStudentProfileId: profileId, ...data } });
+};
+
+// The policy is seeded as a CONFIG ROW so the warden's settings screen opens onto something real,
+// and so the "everything configurable" claim is visible in the demo data.
+//
+// The write is deliberately CONDITIONAL, and the condition is not "does the row exist".
+//
+// `update: {}` everywhere else in this seed means "a value somebody set by hand survives a
+// re-seed", which is the right default and this row follows it. But it has a consequence worth
+// being explicit about: changing a seeded default does nothing to a database that already holds
+// the old one, so a demo that ships 08:00-19:00 keeps showing 08:00-19:00 forever after the seed is
+// changed to 06:00-23:00 - which is how this row ended up disagreeing with its own default.
+//
+// So the rule here is narrower and stated in full: overwrite ONLY when the stored value is
+// byte-identical to the SEED's previous default, i.e. nobody has ever edited it. The moment a
+// warden saves anything, `policyJson` stops matching and every later re-seed leaves it alone.
+const VISITOR_POLICY_PREV_SEED_DEFAULT = JSON.stringify({
+  requireWardenApproval: true,
+  requireResidentAuthorisation: true,
+  dayVisitsOnly: true,
+  maxAdvanceDays: 14,
+  requirePurpose: false,
+  requireIdProof: false,
+  barredCheck: true,
+  visitingHours: { start: '08:00', end: '19:00', enabled: true },
+  repeatAlert: { enabled: true, count: 4, withinDays: 30 },
+  utcOffsetMinutes: 330,
+});
+
+// Key ORDER is not compared. A JSON string comparison is the obvious implementation and it is
+// wrong: the stored value was produced by a different `JSON.stringify` call whose keys happen to
+// come out in a different order, so a byte comparison reports "edited" for a row nobody touched
+// and the seeded default silently never upgrades. Comparing the PARSED values fixes that, and the
+// `sortKeys` makes nested objects comparable too.
+const samePolicyValue = (a: string, b: string): boolean => {
+  try {
+    const norm = (s: string) =>
+      JSON.stringify(JSON.parse(s), (_k, v) =>
+        v && typeof v === 'object' && !Array.isArray(v)
+          ? Object.fromEntries(Object.entries(v).sort(([x], [y]) => x.localeCompare(y)))
+          : v,
+      );
+    return norm(a) === norm(b);
+  } catch {
+    // Unparseable stored config is not "the previous default" - leave it and let the policy
+    // module fall back to its built-in defaults at read time.
+    return false;
+  }
+};
+
+const policyJson = JSON.stringify({
+  requireWardenApproval: true,
+  requireResidentAuthorisation: true,
+  dayVisitsOnly: true,
+  maxAdvanceDays: 14,
+  requirePurpose: false,
+  requireIdProof: false,
+  barredCheck: true,
+      // 06:00-23:00, deliberately WIDER than the module's built-in default of 08:00-19:00.
+  //
+  // This is not cosmetic. With doors closing at 19:00, "on campus right now" and "inside visiting
+  // hours" become mutually exclusive after 19:00 - every visitor still in the building at 8pm is
+  // an overrun, so the demo had nobody healthily on campus and the after-hours rule fired on
+  // ordinary visits. A generous window lets the demo show BOTH the healthy case (here now, in
+  // hours) and the overrun (still here, past their own departure) without either being a
+  // timing artefact of when the seed happened to run.
+  //
+  // It is also the configurability claim made concrete: this value differs from DEFAULT_POLICY,
+  // and the rules honour the stored value without a code change.
+  visitingHours: { start: '06:00', end: '23:00', enabled: true },
+  repeatAlert: { enabled: true, count: 4, withinDays: 30 },
+  utcOffsetMinutes: 330,
+});
+
+// `findFirst` with a plain where, NOT the `institutionId_key` compound shorthand. That shorthand
+// is only accepted by findUnique / upsert / update, and passing it to findFirst throws a
+// PrismaClientValidationError at runtime - which aborted the rest of the hostel block silently
+// for several runs, leaving the visitor fixtures frozen at whatever an earlier run had written.
+const existingPolicy = await db.systemConfig.findFirst({
+  where: { institutionId, key: 'hostel.visitorPolicy' },
+});
+if (!existingPolicy) {
+  await db.systemConfig.create({ data: { institutionId, key: 'hostel.visitorPolicy', valueJson: policyJson } });
+} else if (samePolicyValue(existingPolicy.valueJson, VISITOR_POLICY_PREV_SEED_DEFAULT)) {
+  // Untouched since seeding - safe to bring it up to the current demo default.
+  await db.systemConfig.update({
+    where: { institutionId_key: { institutionId, key: 'hostel.visitorPolicy' } },
+    data: { valueJson: policyJson },
+  });
+}
+// else: a warden has edited it. Leave it exactly as it is.
+
+// TIME ZONES, NOT OFFSETS FROM "NOW"
+// ------------------------------------
+// This first looked like a bug in the alert rule and was not: the rule was right and the SEED was
+// wrong. `V(-30)` means "30 hours ago" in UTC arithmetic, but the visiting-hours window is
+// compared in LOCAL time (the policy carries `utcOffsetMinutes`), so a visit three days ago at a
+// perfectly ordinary afternoon UTC can land at 22:00 local and raise a legitimate after-hours
+// alert. Twelve of thirteen demo visitors were flagged and the interesting signals disappeared
+// behind noise.
+//
+// `localAt(dayOffset, localHour)` asks for a WALL-CLOCK hour instead, which is what "visiting
+// hours 08:00-19:00" is actually about. Keep the policy offset and this offset in step - they are
+// both 330 for this deployment, deliberately, so the conversion round-trips.
+const VISITOR_TZ_OFFSET_MINUTES = 330;
+const TZ_MS = VISITOR_TZ_OFFSET_MINUTES * 60_000;
+
+/** An instant whose LOCAL wall-clock hour is `localHour`, `dayOffset` days from today. */
+const localAt = (dayOffset: number, localHour: number): Date => {
+  const shifted = nowMs + dayOffset * 86400000 + TZ_MS;
+  const d = new Date(shifted);
+  const asUtcWallClock = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), localHour, 0, 0, 0);
+  return new Date(asUtcWallClock - TZ_MS);
+};
+
+/** A plain "n hours from now" instant, for the OVERDUE fixtures where the point is lateness. */
+const V = (offsetHours: number) => new Date(nowMs + offsetHours * 60 * 60 * 1000);
+
+if (studentProfile) {
+  // ON CAMPUS, inside the window, ordinary. The healthy case. Stays until 21:00 local, which
+    // is inside the deliberately wider seeded visiting hours.
+    await ensureVisitor(studentProfile.id, {
+    name: 'Suresh Kumar',
+    phone: '9845012345',
+    relation: 'Father',
+    purpose: 'Dropped off for the weekend',
+    status: 'IN',
+    expectedInAt: localAt(0, 15),
+    expectedOutAt: localAt(0, 21),
+    checkInAt: localAt(0, 15),
+  });
+
+  // ON CAMPUS but past their expected departure -> `visit_overdue`. The alert that matters most.
+  await ensureVisitor(studentProfile.id, {
+    name: 'Ramesh Iyer',
+    phone: '9812345678',
+    relation: 'Uncle',
+    purpose: 'Wedding function in town',
+    status: 'IN',
+    expectedInAt: localAt(0, 11),
+    expectedOutAt: localAt(0, 13),
+    checkInAt: localAt(0, 11),
+  });
+
+  // AWAITING THE WARDEN's confirmation.
+  await ensureVisitor(studentProfile.id, {
+    name: 'Kavya Menon',
+    phone: '9745090909',
+    relation: 'Sister',
+    purpose: 'Collecting my books',
+    status: 'PENDING',
+    expectedInAt: localAt(0, 17),
+    expectedOutAt: localAt(0, 18),
+  });
+
+  // PLANNED AT 2AM — the one fixture that is DELIBERATELY outside visiting hours, so the
+  // after-hours alert is demonstrable from the demo data rather than only from a test. Nothing
+  // else in the seed is meant to raise it; see the note on `localAt` about why that was not
+  // automatic.
+  await ensureVisitor(studentProfile.id, {
+    name: 'Ganesh Iyer',
+    phone: '9447711223',
+    relation: 'Relative',
+    purpose: 'Flight lands very late',
+    status: 'PENDING',
+    expectedInAt: localAt(0, 2),
+    expectedOutAt: localAt(0, 3),
+  });
+
+  // CONFIRMED, expected THIS EVENING but not yet arrived -> `approved`, and the gate has work to do.
+  await ensureVisitor(studentProfile.id, {
+    name: 'Nandhini Rajan',
+    phone: '9876511223',
+    relation: 'Friend',
+    purpose: 'Project work',
+    status: 'APPROVED',
+    expectedInAt: localAt(0, 17),
+    expectedOutAt: localAt(0, 18),
+    approvedByUserId: wardenId,
+    approvedAt: V(-1),
+  });
+}
+
+if (snehaProf) {
+  // REFUSED, with a reason the resident is shown.
+  await ensureVisitor(snehaProf.id, {
+    name: 'Prakash Pillai',
+    phone: '9000011111',
+    relation: 'Relative',
+    purpose: 'Not stated',
+    status: 'REJECTED',
+    expectedInAt: localAt(1, 16),
+    expectedOutAt: localAt(1, 18),
+    approvedByUserId: wardenId,
+    approvedAt: V(-2),
+    decisionNote: 'Not on the visitor list for this block. Ask Sneha to register them first.',
+  });
+
+  // WITHDRAWN by the resident before the warden acted.
+  await ensureVisitor(snehaProf.id, {
+    name: 'Deepa Nair',
+    phone: '9000022222',
+    relation: 'Friend',
+    purpose: 'Evening plans',
+    status: 'CANCELLED',
+    expectedInAt: localAt(1, 16),
+    expectedOutAt: localAt(1, 18),
+  });
+
+  // VISITED AND LEFT, on time. History.
+  await ensureVisitor(snehaProf.id, {
+    name: 'Suresh Kumar',
+    phone: '9845012345',
+    relation: 'Father',
+    purpose: 'Picked me up for a clinic visit',
+    status: 'OUT',
+    expectedInAt: localAt(-2, 15),
+    expectedOutAt: localAt(-2, 17),
+    checkInAt: localAt(-2, 15),
+    checkOutAt: localAt(-2, 17),
+    approvedByUserId: wardenId,
+    approvedAt: V(-32),
+  });
+}
+
+if (vikramProf) {
+  // EXPECTED ARRIVAL PASSED, never came, still APPROVED -> `departure_overdue`.
+  await ensureVisitor(vikramProf.id, {
+    name: 'Vijay Nair',
+    phone: '9898912321',
+    relation: 'Brother',
+    purpose: 'Bringing my laptop charger',
+    status: 'APPROVED',
+    expectedInAt: localAt(-1, 16),
+    expectedOutAt: localAt(0, 18),
+    approvedByUserId: wardenId,
+    approvedAt: V(-6),
+  });
+
+  // VISITED AND LEFT, LATE. Kept because "how long overstayed" is worth keeping in the history.
+  await ensureVisitor(vikramProf.id, {
+    name: 'Lakshmi Menon',
+    phone: '9745090909',
+    relation: 'Aunt',
+    purpose: 'Birthday visit',
+    status: 'OUT',
+    expectedInAt: localAt(-3, 15),
+    expectedOutAt: localAt(-3, 17),
+    checkInAt: localAt(-3, 15),
+    checkOutAt: localAt(-3, 13),
+    approvedByUserId: wardenId,
+    approvedAt: V(-54),
+  });
+}
+
+// A FREQUENT visitor, so the repeat-frequency alert has something real to fire on.
+// "Suresh Kumar" appears as Arjun's father above AND here, four more times inside the 30-day
+// window, so his identity crosses the threshold and the badge is earned rather than asserted.
+if (studentProfile) {
+  for (let i = 1; i <= 4; i++) {
+    await ensureVisitor(studentProfile.id, {
+      name: 'Suresh Kumar',
+      phone: '9845012345',
+      relation: 'Father',
+      purpose: `Visit ${i}`,
+      status: 'OUT',
+      expectedInAt: localAt(-(i * 7 + 3), 15),
+      expectedOutAt: localAt(-(i * 7 + 3), 17),
+      checkInAt: localAt(-(i * 7 + 3), 15),
+      checkOutAt: localAt(-(i * 7 + 3), 17),
+      approvedByUserId: wardenId,
+      approvedAt: V(-(i * 7 * 24 + 5)),
+    });
+  }
+}
+
+// A barred person, so the denylist is populated. Phone is set, which means matching is by
+// PHONE rather than by name - see `classifyAlerts`, where a name-only match is a deliberate
+// last resort because it would otherwise bar the wrong person.
+const ensureBarred = async (name: string, phone: string | null, reason: string) => {
+  const digits = phone ? phone.replace(/\D/g, '') : null;
+  const norm = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const existing = await db.barredVisitor.findFirst({
+    where: { institutionId, OR: digits ? [{ phoneDigits: digits }] : [{ normalisedName: norm }] },
+  });
+  if (existing) return;
+  await db.barredVisitor.create({
+    data: { institutionId, name, phone, phoneDigits: digits, normalisedName: norm, reason, barredByUserId: wardenId },
+  });
+};
+
+await ensureBarred('Sunil Kamble', '9769112233', 'Removed by security in 2025. Do not admit without the warden knowing.');
+await ensureBarred('Unknown - no phone recorded', null, 'Reported by a resident as coercive. Matched by name only.');
+
+// BACKFILL, self-healing and idempotent, for the same reason the gate-pass block has one. The
+// three original visitor rows predate the workflow columns and have no planned window, so they
+// would be unclassifiable against visiting hours forever. This gives them a window instead.
+//
+// 1. An `IN` row with no departure gets one, so it is not permanently "visit_overdue".
+// 2. A terminal status with no decision stamp gets one.
+// 3. A rejected row carrying a phone but a REJECTED status keeps its phone - but a status that is
+//    neither APPROVED nor IN may not keep a verification-like field. (There is none on Visitor
+//    today; the clause is here so the invariant has a home if one is added.)
+// 4. Rows from before the workflow cannot be `IN` with no window AND no entry stamp.
+await db.visitor.updateMany({
+  where: { institutionId, status: 'IN', checkOutAt: null, expectedOutAt: null },
+  data: { expectedOutAt: new Date(nowMs + 6 * 60 * 60 * 1000) },
+});
+await db.visitor.updateMany({
+  where: { institutionId, status: 'IN', checkOutAt: null, expectedInAt: null },
+  data: { expectedInAt: new Date(nowMs - 3 * 60 * 60 * 1000) },
+});
+await db.visitor.updateMany({
+  where: { institutionId, status: { in: ['APPROVED', 'REJECTED'] }, approvedAt: null },
+  data: { approvedAt: new Date(nowMs - 24 * 60 * 60 * 1000) },
+});
+// `phoneDigits` is derived, so a row written by hand (or by an older seed) may be missing it even
+// though it has a phone. That column is what the barred lookup and the repeat count key on, so an
+// inconsistent value would make both silently miss this visitor.
+for (const v of await db.visitor.findMany({
+  where: { institutionId, phone: { not: null } },
+  select: { id: true, phone: true, phoneDigits: true },
+})) {
+  const digits = String(v.phone).replace(/\D/g, '');
+  const want = digits.length === 12 && digits.startsWith('91') ? digits.slice(2) : digits;
+  if (v.phoneDigits !== want) {
+    await db.visitor.update({ where: { id: v.id }, data: { phoneDigits: want || null } });
+  }
+}
   await ensureResident(sneha, 'A-101', 2);
   await ensureResident(vikram, 'B-204', 1);
   if (studentProfile) {
     await db.gatePass.updateMany({
       where: { studentProfileId: studentProfile.id, reason: 'Weekend home visit' },
-      data: { status: 'PENDING', decidedByUserId: null },
+      data: { status: 'PENDING', decidedByUserId: null, decidedAt: null, verifiedAt: null },
     });
     await db.hostelComplaint.updateMany({
       where: { studentProfileId: studentProfile.id, category: 'NETWORK' },
       data: { status: 'OPEN', assignedToUserId: null, resolvedAt: null },
     });
     await db.visitor.updateMany({
-      where: { visitingStudentProfileId: studentProfile.id, relation: 'Father' },
+      where: { visitingStudentProfileId: studentProfile.id, relation: 'Father', purpose: 'Dropped off for the weekend' },
+      data: { status: 'IN', checkOutAt: null },
+    });
+    // The other three visitor rows this profile owns are re-pinned by lifecycle, so an e2e run
+    // that approved or checked somebody in does not leave the demo screen showing the wrong state.
+    await db.visitor.updateMany({
+      where: { visitingStudentProfileId: studentProfile.id, relation: 'Sister' },
+      data: { status: 'PENDING', approvedByUserId: null, approvedAt: null, decisionNote: null },
+    });
+    await db.visitor.updateMany({
+      where: { visitingStudentProfileId: studentProfile.id, relation: 'Friend' },
+      data: { status: 'APPROVED', approvedByUserId: wardenId, approvedAt: new Date(nowMs - 1 * H), checkInAt: null, checkOutAt: null },
+    });
+    await db.visitor.updateMany({
+      where: { visitingStudentProfileId: studentProfile.id, relation: 'Uncle' },
       data: { status: 'IN', checkOutAt: null },
     });
   }
   if (snehaProf) {
     await db.gatePass.updateMany({
       where: { studentProfileId: snehaProf.id, reason: 'Medical appointment' },
-      data: { status: 'APPROVED', decidedByUserId: wardenId },
+      data: { status: 'APPROVED', decidedByUserId: wardenId, decidedAt: new Date(nowMs - 20 * H) },
     });
     await db.hostelComplaint.updateMany({
       where: { studentProfileId: snehaProf.id, category: 'PLUMBING' },
       data: { status: 'OPEN', assignedToUserId: null, resolvedAt: null },
     });
     await db.visitor.updateMany({
-      where: { visitingStudentProfileId: snehaProf.id, relation: 'Mother' },
-      data: { status: 'IN', checkOutAt: null },
+      where: { visitingStudentProfileId: snehaProf.id, relation: 'Relative' },
+      data: {
+        status: 'REJECTED',
+        approvedByUserId: wardenId,
+        approvedAt: new Date(nowMs - 2 * H),
+        decisionNote: 'Not on the visitor list for this block. Ask Sneha to register them first.',
+      },
+    });
+    await db.visitor.updateMany({
+      where: { visitingStudentProfileId: snehaProf.id, relation: 'Friend' },
+      data: { status: 'CANCELLED', approvedByUserId: null, approvedAt: null, decisionNote: null },
     });
   }
   if (vikramProf) {
     await db.gatePass.updateMany({
       where: { studentProfileId: vikramProf.id, reason: 'Sibling visiting from Delhi' },
-      data: { status: 'REJECTED', decidedByUserId: wardenId },
+      data: { status: 'REJECTED', decidedByUserId: wardenId, decidedAt: new Date(nowMs - 20 * H) },
     });
     await db.hostelComplaint.updateMany({
       where: { studentProfileId: vikramProf.id, category: 'MAINTENANCE' },
@@ -2086,7 +2490,7 @@ async function seedDomainG(institutionId: string): Promise<void> {
     });
     await db.visitor.updateMany({
       where: { visitingStudentProfileId: vikramProf.id, relation: 'Brother' },
-      data: { status: 'OUT', checkOutAt: new Date(Date.now() - 3 * 60 * 60 * 1000) },
+      data: { status: 'APPROVED', checkInAt: null, checkOutAt: null, approvedByUserId: wardenId, approvedAt: new Date(nowMs - 6 * H) },
     });
   }
   // rent dues back to UNPAID (undoes e2e collections)
@@ -2202,9 +2606,19 @@ async function seedDomainG(institutionId: string): Promise<void> {
     }
   }
 
+  // Counted, not hardcoded. The old literal "3 gate passes" had been wrong since the lifecycle
+// fixtures grew, and a summary line that lies about its own module is worse than no line.
+const gatePassCount = await db.gatePass.count();
+
+  // Counted, not hardcoded. The old literal said "3 visitors" and had been wrong since the
+// lifecycle fixtures grew.
+const visitorCount = await db.visitor.count({ where: { institutionId } });
+
+  const barredCount = await db.barredVisitor.count({ where: { institutionId } });
+
   console.log(
     `  Hostel seeded: 5 rooms, 3 residents allocated, rent dues Jul+Aug, mess menu/attendance/feedback,
-    3 gate passes, 3 complaints, 3 visitors, ${contactsSeeded} resident contacts`,
+    ${gatePassCount} gate passes, 3 complaints, ${visitorCount} visitors, ${barredCount} visitors registered as barred, ${contactsSeeded} resident contacts`,
   );
 }
 
