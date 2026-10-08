@@ -22,6 +22,7 @@ import NotificationsPage from './pages/notifications/notifications';
 import MentorshipPage from './pages/mentorship/mentorship';
 import GatePassesPage from './pages/gate_passes/gate_passes';
 import VisitorsPage from './pages/visitors/visitors';
+import MessPage from './pages/mess/mess';
 import { setDemoUser } from '../../services/api';
 
 // Import components
@@ -78,6 +79,17 @@ export default function StudentsScreen() {
     // The warden owns approval and entry - this screen only authorises and withdraws.
     if (currentScreen === 'Visitors') {
       return <VisitorsPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+    // The STUDENT half of the mess: today's menu and a rating per meal. Reached from the profile
+    // quick-actions grid for the same reason as gate passes and visitors - a resident checks what is
+    // cooking and rates it often enough to want a first-class screen, but not often enough to earn
+    // a bottom-nav tab.
+    //
+    // It is READ plus ONE write (a rating). The roll is NOT here: meal attendance is called by mess
+    // staff, and adding a student-side write would turn the kitchen's provisioning number into a
+    // self-reported claim.
+    if (currentScreen === 'Mess') {
+      return <MessPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;

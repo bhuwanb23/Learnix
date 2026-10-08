@@ -53,6 +53,10 @@ export default function QuickActions({ categories, honors, navigation }) {
       // Same routing as gate passes, and for the same reason: it is a screen in the STUDENTS
       // module, not a profile sub-view, so the back gesture has to return to Profile.
       navigation.navigate('Visitors');
+    } else if (category.id === 'mess') {
+      // Same again. The resident reads the day's menu and rates a meal here; the roll is NOT on
+      // this screen, because attendance is called by mess staff rather than claimed by residents.
+      navigation.navigate('Mess');
     }
   };
 

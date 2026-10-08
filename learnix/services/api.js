@@ -612,9 +612,60 @@ export const hostelApi = {
   deleteResidentContact: (studentProfileId, contactId) =>
     api.delete(`/hostel/residents/${studentProfileId}/contacts/${contactId}`),
   collectRent: (dueId, method) => api.post(`/hostel/rent/${dueId}/collect`, { method }),
+  // ── Mess (H-05) ─────────────────────────────────────────────────────────────────
+  // Every screen reads its numbers from here. There is no local fallback data anywhere in the mess
+  // pages: the previous version of this screen was 386 lines of module-level constants
+  // (1,182 / 1,248 served, a four-star "weekly rating", a ₹3.4L budget) that had no relationship to
+  // the database, and the three methods below were never called by any screen.
   mess: () => api.get('/hostel/mess'),
-  updateMenu: (dayOfWeek, meal, items) => api.put('/hostel/mess/menu', { dayOfWeek, meal, items }),
-  sendMessSurvey: () => api.post('/hostel/mess/survey'),
+  messMenu: () => api.get('/hostel/mess/menu'),
+  updateMenu: (dayOfWeek, meal, items, isVeg = true) =>
+    api.put('/hostel/mess/menu', { dayOfWeek, meal, items, isVeg }),
+  /** The roll: every resident, who ate, and the participation rate for that meal. */
+  messRoll: (meal, date) => {
+    const qs = new URLSearchParams(
+      Object.entries({ meal, date }).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/mess/roll${qs ? `?${qs}` : ''}`);
+  },
+  /** Authoritative mark. Replaces the whole meal, so it is safe to retry or re-mark. */
+  markMessAttendance: (meal, presentStudentProfileIds, date) =>
+    api.post('/hostel/mess/attendance', { meal, presentStudentProfileIds, date }),
+  messAttendanceLog: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/mess/attendance${qs ? `?${qs}` : ''}`);
+  },
+  messAbsent: (meal, date) => {
+    const qs = new URLSearchParams(
+      Object.entries({ meal, date }).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/mess/absent${qs ? `?${qs}` : ''}`);
+  },
+  messAnalytics: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/mess/analytics${qs ? `?${qs}` : ''}`);
+  },
+  messFeedback: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/mess/feedback${qs ? `?${qs}` : ''}`);
+  },
+  sendMessSurvey: (meal) => api.post('/hostel/mess/survey', meal ? { meal } : {}),
+  // Mess money. These two are behind `hostel.mess.expenses` on the server, so a role without that
+  // grant gets a 403 rather than empty data — the screen surfaces that message instead of showing
+  // a misleading ₹0.
+  messExpenses: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/mess/expenses${qs ? `?${qs}` : ''}`);
+  },
+  raiseMessExpense: (payload) => api.post('/hostel/mess/expenses', payload),
   // Gate passes. Filtered and paged on the SERVER, sorted there by URGENCY rather than by
   // creation date — an overdue return and an emergency request come first, because that is the
   // work order for someone answering a gate.
@@ -844,6 +895,23 @@ export const studentApi = {
   // Withdrawal, allowed only while the pass is still PENDING. Cancelling an approved pass is a
   // RETURN, and has to go through the gate so the time is recorded.
   cancelGatePass: (id) => api.post(`/student/gate-passes/${id}/cancel`),
+
+  // ---- Mess: the resident's side of the kitchen ---------------------------------
+  // Read the menu and rate a meal. Nothing else — there is deliberately no student-side attendance
+  // write, because the roll is called by mess staff and a self-reported count would make the
+  // kitchen's provisioning numbers a guess.
+  //
+  // `date` is optional and means today. Passing it is how the rating screen shows yesterday's
+  // menu, which is the common case for a student complaining about last night's dinner.
+  myMess: (date) => {
+    const qs = new URLSearchParams(
+      Object.entries({ date }).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/student/mess${qs ? `?${qs}` : ''}`);
+  },
+  // An UPSERT, not a create: re-rating the same meal replaces the earlier rating. The screen
+  // therefore shows "you rated this 3" with an Edit affordance rather than an empty form.
+  rateMeal: (payload) => api.post('/student/mess/feedback', payload),
 
   // ---- Visitors: the resident's side of a visit --------------------------------
   // Returns `{ expected, history, policy }` - split rather than filtered, because "who is coming"

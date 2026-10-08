@@ -35,6 +35,9 @@ export const CATEGORIES = [
   // "tell the hostel you are going somewhere, or expecting somebody" and a resident looking for
   // one looks in the other place first.
   { id: 'visitors', title: 'My Visitors', icon: 'people-outline', color: '#0891b2', bgColor: 'rgba(8, 145, 178, 0.15)' },
+  // `restaurant` is a MATERIAL icon, not an Ionicons one — this grid renders with MaterialIcons
+  // (`QuickActions.js`), so an Ionicons name like `restaurant-outline` would draw as a tofu box.
+  { id: 'mess', title: "Today's Menu", icon: 'restaurant', color: '#db2777', bgColor: 'rgba(219, 39, 119, 0.15)' },
 ];
 
 export const HONORS = [

@@ -91,6 +91,13 @@ export default function Profile({ onNavigate, onOpenModule, currentView: parentC
         // ordering reason spelled out above.
         if (typeof onOpenModule === 'function') onOpenModule('Visitors');
         else if (typeof onNavigate === 'function') onNavigate('Visitors');
+      } else if (screen === 'mess') {
+        // Same shape as Visitors, and for the same reason. The tile id in `profileData.js` is
+        // lower-case (`mess`, like `visitors` and `gate_passes` are all snake/lowercase ids) while
+        // the screen name in the STUDENTS module's map is `Mess`, so the two are bridged here
+        // rather than renaming either one.
+        if (typeof onOpenModule === 'function') onOpenModule('Mess');
+        else if (typeof onNavigate === 'function') onNavigate('Mess');
       }
     },
     goBack: handleBack,
