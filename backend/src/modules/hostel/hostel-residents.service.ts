@@ -40,6 +40,7 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound } from '../../lib/errors.js';
 import { listContacts } from './hostel-contacts.service.js';
+import { deriveLifecycle, minutesLate } from './hostel-gate-passes.rules.js';
 
 const MAX_PAGE_SIZE = 100;
 const DEFAULT_PAGE_SIZE = 25;
@@ -311,19 +312,33 @@ export async function listAbsence(institutionId: string, studentProfileId: strin
     take: 20,
   });
 
-  const now = Date.now();
-  return rows.map((g) => ({
-    id: g.id,
-    reason: g.reason,
-    outAt: g.outAt,
-    expectedInAt: g.expectedInAt,
-    actualInAt: g.actualInAt,
-    status: g.status,
-    // A pass approved and not yet returned is an absence in progress. This is the fact the
-    // warden is actually asking about, so it is computed rather than left to the reader.
-    isOut: g.status === 'APPROVED' && g.actualInAt === null && g.expectedInAt.getTime() > now,
-    isOverdue: g.status === 'APPROVED' && g.actualInAt === null && g.expectedInAt.getTime() < now,
-  }));
+  const now = new Date();
+  return rows.map((g) => {
+    const lifecycle = deriveLifecycle(g, now);
+    return {
+      id: g.id,
+      reason: g.reason,
+      destination: g.destination ?? null,
+      // Planned vs actual, kept separate all the way to the screen. The old shape reported only
+      // `outAt`/`expectedInAt` as if they were what happened.
+      outAt: g.outAt,
+      expectedInAt: g.expectedInAt,
+      actualOutAt: g.actualOutAt ?? null,
+      actualInAt: g.actualInAt ?? null,
+      status: g.status,
+      isEmergency: g.isEmergency === true,
+      // The SAME derivation the warden's inbox uses. This used to be computed here as
+      // `status === 'APPROVED' && actualInAt === null && expectedInAt > now`, which marked a
+      // student "out" from the moment of APPROVAL — a pass booked for next month read as out
+      // today — and collapsed "didn't leave" together with "didn't come back".
+      lifecycle,
+      isOut: lifecycle === 'out',
+      isOverdue: lifecycle === 'return_overdue',
+      // Distinct from `isOverdue`: the student was due to leave and did not.
+      isDepartureOverdue: lifecycle === 'departure_overdue',
+      minutesLate: minutesLate(g, now),
+    };
+  });
 }
 
 // ── Guards ─────────────────────────────────────────────────────────────────────────

@@ -14,6 +14,11 @@ import * as matching from '../alumni/matching.service.js';
 import * as sessions from '../alumni/sessions.service.js';
 import * as goals from '../alumni/goals.service.js';
 import * as mentorshipFeedback from '../alumni/feedback.service.js';
+// The hostel module owns the gate-pass lifecycle; this file only owns WHO may call it. Splitting
+// the service by module would put the derivation in two places and let the student's list drift
+// from the warden's inbox.
+import * as gatePasses from '../hostel/hostel-gate-passes.service.js';
+import { gatePassRequestSchema } from '../hostel/hostel.schemas.js';
 import type { Viewer } from '../alumni/directory.service.js';
 import {
   mentorshipRequestSchema, mentorshipSessionSchema, updateSessionSchema,
@@ -285,5 +290,45 @@ router.post('/mentorship/:id/feedback', validate(idParamSchema, 'params'), valid
 router.delete('/mentorship/:id/feedback', validate(idParamSchema, 'params'), wrap(async (req, res) => {
   res.json({ data: await mentorshipFeedback.deleteMyFeedback(studentViewer(req), String(req.params.id)) });
 }));
+
+// ── Gate passes (docs/users/08-hostel.md §3.5 · 01-students) ────────────────
+//
+// The STUDENT half of the gate-pass flow. It lives here rather than in the hostel router
+// because this file is already behind `requireRole('STUDENT')`, and because a create route in
+// the hostel module would sit behind `requireRole('HOSTEL','ADMIN')` — which is exactly the
+// role that must not be able to mint its own approvals.
+//
+// The service is the hostel module's, so the lifecycle derivation stays in ONE place and the
+// student's list and the warden's inbox cannot disagree. This file already imports the alumni
+// services directly, so calling across module boundaries is the established pattern here.
+
+router.get(
+  '/gate-passes',
+  wrap(async (req, res) => {
+    res.json({ data: await gatePasses.listMyGatePasses(req.auth!.userId) });
+  }),
+);
+
+router.post(
+  '/gate-passes',
+  validate(gatePassRequestSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await gatePasses.requestGatePass(req.auth!.userId, req.body),
+    });
+  }),
+);
+
+// Withdrawal. Allowed only while PENDING — cancelling an APPROVED pass is a return, and it has
+// to go through the gate so there is a record of when the student came back.
+router.post(
+  '/gate-passes/:id/cancel',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await gatePasses.cancelGatePass(req.auth!.userId, String(req.params.id)),
+    });
+  }),
+);
 
 export default router;

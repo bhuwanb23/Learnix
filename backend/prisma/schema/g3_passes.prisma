@@ -2,15 +2,50 @@
 // Docs: 08-hostel.md §3.5–3.7 · 05-state-machines.md
 // decidedByUserId / assignedToUserId scalar actor-stamps.
 
+// A student's request to leave the hostel, and the warden's decision on it.
+//
+// REQUEST vs TRAVEL ARE TWO DIFFERENT CLOCKS
+// ------------------------------------------
+// `outAt` / `expectedInAt` are what the student PLANNED. `actualOutAt` / `actualInAt` are what
+// the gate actually recorded. The gap between them is the whole point of the feature: it is
+// what "left on time" and "came back on time" are measured against.
+//
+// Only `actualInAt` existed before, so "entry/exit history" had half an entry — a return with
+// no matching departure, and no way to tell a student who left from one who never did.
+//
+// WHY `isEmergency` DOES NOT BYPASS APPROVAL
+// ------------------------------------------
+// It is a PRIORITY flag: it sorts to the top of the warden's queue and is filterable. Nothing
+// here auto-approves anything. A student who could self-authorise a gate exit by ticking a
+// checkbox would not be a gate pass system, and a genuine 2am emergency is exactly the case
+// where a phone call to the warden is the right control anyway.
+//
+// WHY `verifiedAt` IS SEPARATE FROM `decidedByUserId`
+// ---------------------------------------------------
+// Approving a pass records who decided. It does NOT record that anyone looked at the student's
+// face. Those are different acts, and the useful case is the second one being ABSENT: an
+// approved pass with `verifiedAt = null` is one a warden approved on the basis of a name on a
+// slip. Making it an explicit, default-false claim is what gives the field meaning — storing
+// the same user id twice would tell nobody anything the decision row does not already say.
 model GatePass {
   id               String    @id @default(cuid())
   studentProfileId String
   reason           String
+  // Where they are going. Distinct from `reason`: "medical" is why, "Rajiv Gandhi Hospital,
+  // Chennai" is where. A warden deciding whether to approve a night out needs the where.
+  destination      String?
+  // PLANNED departure and return, chosen by the student when requesting.
   outAt            DateTime
   expectedInAt     DateTime
+  // ACTUAL, stamped by the warden at the gate.
+  actualOutAt      DateTime?
   actualInAt       DateTime?
-  status           String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  status           String    @default("PENDING") // PENDING | APPROVED | REJECTED | CANCELLED
+  isEmergency      Boolean   @default(false) // priority flag; never auto-approved
+  verifiedAt       DateTime? // warden confirms the student's ID; null = approved without it
+  decisionNote     String? // why a request was rejected — the student is told this
   decidedByUserId  String? // scalar → users.id
+  cancelledAt      DateTime? // set when the STUDENT withdraws a pending request
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -18,6 +53,10 @@ model GatePass {
 
   @@index([studentProfileId])
   @@index([status])
+  // The warden's inbox reads "pending, oldest departure first" and "overdue returns", so the
+  // composite matters more than either column alone.
+  @@index([status, outAt])
+  @@index([status, expectedInAt])
   @@map("gate_passes")
 }
 

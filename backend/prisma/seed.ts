@@ -1852,50 +1852,147 @@ async function seedDomainG(institutionId: string): Promise<void> {
     }
   }
 
-  // Gate passes: Arjun PENDING + Sneha APPROVED + Vikram REJECTED
-  const gpExists = await db.gatePass.findFirst({ where: { studentProfileId: studentProfile.id, status: 'PENDING' } });
-  if (!gpExists) {
-    await db.gatePass.create({
-      data: {
-        studentProfileId: studentProfile.id,
-        reason: 'Weekend home visit',
-        outAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        expectedInAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-        status: 'PENDING',
-      },
-    });
-  }
-  if (snehaProf) {
-    const gp2 = await db.gatePass.findFirst({ where: { studentProfileId: snehaProf.id, reason: 'Medical appointment' } });
-    if (!gp2) {
-      await db.gatePass.create({
-        data: {
-          studentProfileId: snehaProf.id,
-          reason: 'Medical appointment',
-          outAt: new Date(Date.now() + 5 * 60 * 60 * 1000),
-          expectedInAt: new Date(Date.now() + 9 * 60 * 60 * 1000),
-          status: 'APPROVED',
-          decidedByUserId: wardenId,
-        },
-      });
-    }
-  }
-  if (vikramProf) {
-    const gp3 = await db.gatePass.findFirst({ where: { studentProfileId: vikramProf.id, reason: 'Sibling visiting from Delhi' } });
-    if (!gp3) {
-      await db.gatePass.create({
-        data: {
-          studentProfileId: vikramProf.id,
-          reason: 'Sibling visiting from Delhi',
-          outAt: new Date(Date.now() + 6 * 60 * 60 * 1000),
-          expectedInAt: new Date(Date.now() + 10 * 60 * 60 * 1000),
-          status: 'REJECTED',
-          decidedByUserId: wardenId,
-        },
-      });
-    }
-  }
+  // Gate passes — one row per LIFECYCLE STATE, so the warden's inbox has something real to sort,
+  // filter and alert on. Every row is keyed by (student, reason) and guarded, so a reseed
+  // refreshes rather than duplicates.
+  //
+  // The states that matter are the two overruns, because they are what the inbox sorts by and
+  // what an alert is FOR:
+  //   - a pass overdue for RETURN  (out, never came back)  -> `return_overdue`
+  //   - a pass overdue to DEPART   (approved, never left) -> `departure_overdue`
+  // Those were indistinguishable before `actualOutAt` existed, and both read as "approved".
+  const nowMs = Date.now();
+  const H = 60 * 60 * 1000;
 
+  const ensureGatePass = async (
+    profileId: string,
+    data: Record<string, unknown>,
+  ): Promise<void> => {
+    const reason = String(data.reason);
+    const existing = await db.gatePass.findFirst({
+      where: { studentProfileId: profileId, reason },
+    });
+    if (!existing) await db.gatePass.create({ data: { studentProfileId: profileId, ...data } });
+  };
+
+  // AWAITING APPROVAL — the ordinary case.
+  await ensureGatePass(studentProfile.id, {
+    reason: 'Weekend home visit',
+    destination: 'Mysuru, Karnataka',
+    outAt: new Date(nowMs + 24 * H),
+    expectedInAt: new Date(nowMs + 3 * 24 * H),
+    status: 'PENDING',
+  });
+
+  // EMERGENCY + AWAITING APPROVAL — must sort to the very top of the queue.
+  await ensureGatePass(snehaProf!.id, {
+    reason: 'Hospital admission — emergency',
+    destination: 'City Hospital, emergency department',
+    outAt: new Date(nowMs + H),
+    expectedInAt: new Date(nowMs + 4 * H),
+    status: 'PENDING',
+    isEmergency: true,
+  });
+
+  // APPROVED, NOT YET DUE TO LEAVE — approved but still in the hostel.
+  // A distinct reason from 'Sibling visiting from Delhi', which the "restore demo state on
+  // re-seed" block below pins to REJECTED. Reusing it here would mean the two blocks fought
+  // over the same row on every reseed.
+  await ensureGatePass(vikramProf!.id, {
+    reason: 'Farewell dinner with cousins',
+    destination: 'Coimbatore',
+    outAt: new Date(nowMs + 6 * H),
+    expectedInAt: new Date(nowMs + 10 * H),
+    status: 'APPROVED',
+    decidedByUserId: wardenId,
+    verifiedAt: new Date(nowMs - H),
+  });
+
+  // OUT, ON TIME — the healthy case, and the one that proves `actualOutAt` is respected.
+  await ensureGatePass(snehaProf!.id, {
+    reason: 'Medical appointment',
+    destination: 'Rajiv Gandhi Hospital, Chennai',
+    outAt: new Date(nowMs - 5 * H),
+    expectedInAt: new Date(nowMs + 2 * H),
+    actualOutAt: new Date(nowMs - 5 * H + 4 * 60000),
+    status: 'APPROVED',
+    decidedByUserId: wardenId,
+    verifiedAt: new Date(nowMs - 6 * H),
+  });
+
+  // RETURN OVERDUE — out, gone past the expected return. The headline alert case.
+  await ensureGatePass(vikramProf!.id, {
+    reason: 'Competitive exam coaching',
+    destination: 'Coimbatore',
+    outAt: new Date(nowMs - 30 * H),
+    expectedInAt: new Date(nowMs - 6 * H),
+    actualOutAt: new Date(nowMs - 30 * H + 10 * 60000),
+    status: 'APPROVED',
+    decidedByUserId: wardenId,
+    verifiedAt: new Date(nowMs - 31 * H),
+  });
+
+  // DEPARTURE OVERDUE — approved and due to have left hours ago, but no exit recorded.
+  await ensureGatePass(studentProfile.id, {
+    reason: 'Bank document verification',
+    destination: 'SBI branch, campus road',
+    outAt: new Date(nowMs - 7 * H),
+    expectedInAt: new Date(nowMs + 3 * H),
+    status: 'APPROVED',
+    decidedByUserId: wardenId,
+    // Deliberately NOT verified: an approved pass with no ID check is a real case, and the
+    // inbox has to be able to say so.
+  });
+
+  // RETURNED ON TIME — closed cleanly, with both stamps present.
+  await ensureGatePass(snehaProf!.id, {
+    reason: 'Library document verification',
+    destination: 'Central Library',
+    outAt: new Date(nowMs - 40 * H),
+    expectedInAt: new Date(nowMs - 28 * H),
+    actualOutAt: new Date(nowMs - 40 * H + 6 * 60000),
+    actualInAt: new Date(nowMs - 28 * H - 12 * 60000),
+    status: 'APPROVED',
+    decidedByUserId: wardenId,
+    verifiedAt: new Date(nowMs - 41 * H),
+  });
+
+  // RETURNED LATE — closed, but the lateness is still worth showing in the history.
+  await ensureGatePass(vikramProf!.id, {
+    reason: 'Family function',
+    destination: 'Coimbatore',
+    outAt: new Date(nowMs - 70 * H),
+    expectedInAt: new Date(nowMs - 50 * H),
+    actualOutAt: new Date(nowMs - 70 * H + 3 * 60000),
+    actualInAt: new Date(nowMs - 46 * H),
+    status: 'APPROVED',
+    decidedByUserId: wardenId,
+    verifiedAt: new Date(nowMs - 71 * H),
+  });
+
+  // REJECTED — with a reason, because the student is told this and "contact the office" is
+  // not an answer to a request made in good faith.
+  await ensureGatePass(studentProfile.id, {
+    reason: 'Concert outside campus',
+    destination: 'Chennai',
+    outAt: new Date(nowMs + 20 * H),
+    expectedInAt: new Date(nowMs + 30 * H),
+    status: 'REJECTED',
+    decidedByUserId: wardenId,
+    decisionNote: 'Outside the permitted weekend window — please re-request for Saturday.',
+  });
+
+  // REJECTED with no reason given — kept because the inbox has to cope with one: a pass that
+  // was refused without explanation is a real gap in a warden's record-keeping, and the UI
+  // must not crash or invent one.
+  await ensureGatePass(vikramProf!.id, {
+    reason: 'Sibling visiting from Delhi',
+    destination: 'New Delhi',
+    outAt: new Date(nowMs + 26 * H),
+    expectedInAt: new Date(nowMs + 40 * H),
+    status: 'REJECTED',
+    decidedByUserId: wardenId,
+  });
   // Complaints: Arjun OPEN (NETWORK), Sneha OPEN (PLUMBING, HIGH), Vikram ASSIGNED (MAINTENANCE)
   const complaintExists = await db.hostelComplaint.findFirst({ where: { studentProfileId: studentProfile.id, category: 'NETWORK' } });
   if (!complaintExists) {

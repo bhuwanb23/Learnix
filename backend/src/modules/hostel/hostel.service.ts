@@ -16,6 +16,20 @@ export {
   setBedMaintenance,
 } from './hostel-rooms.service.js';
 
+// Gate passes get their own service because the lifecycle derivation is the interesting part
+// and it belongs next to the rules that define it — see `hostel-gate-passes.rules.ts`.
+export {
+  listGatePasses,
+  getGatePass,
+  decideGatePass,
+  recordGateExit,
+  recordGateReturn,
+  listOverduePasses,
+  requestGatePass,
+  listMyGatePasses,
+  cancelGatePass,
+} from './hostel-gate-passes.service.js';
+
 export {
   listResidents,
   getResidentDetail,
@@ -645,79 +659,6 @@ export async function sendMessSurvey(userId: string, institutionId: string) {
     after: { recipients: recipients.length },
   });
   return { recipients: recipients.length };
-}
-
-// ── H-06 Gate passes ─────────────────────────────────────────
-export async function listGatePasses(institutionId: string) {
-  const passes = await prisma.gatePass.findMany({
-    where: { studentProfile: { user: { institutionId } } },
-    include: {
-      studentProfile: {
-        include: { user: { select: { fullName: true } } },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  // room labels for the resident list
-  const residents = await residentsOfBlock(institutionId);
-  const roomByProfile = new Map(residents.map((r) => [r.studentProfileId, r.bed.room.number]));
-
-  return passes.map((p) => ({
-    id: p.id,
-    student: p.studentProfile.user.fullName,
-    studentProfileId: p.studentProfileId,
-    room: roomByProfile.get(p.studentProfileId) ?? '—',
-    reason: p.reason,
-    outAt: p.outAt,
-    expectedInAt: p.expectedInAt,
-    status: p.status,
-    createdAt: p.createdAt,
-  }));
-}
-
-export async function decideGatePass(
-  userId: string,
-  institutionId: string,
-  passId: string,
-  decision: 'APPROVED' | 'REJECTED',
-) {
-  const pass = await prisma.gatePass.findFirst({
-    where: { id: passId, studentProfile: { user: { institutionId } } },
-    include: { studentProfile: { include: { user: { select: { id: true, fullName: true } } } } },
-  });
-  if (!pass) throw notFound('Gate pass not found');
-  if (pass.status !== 'PENDING') throw conflict(`Pass already ${pass.status.toLowerCase()}`);
-
-  await prisma.gatePass.update({
-    where: { id: pass.id },
-    data: { status: decision, decidedByUserId: userId },
-  });
-
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: pass.studentProfile.user.id,
-      type: 'HOSTEL',
-      title: `Gate pass ${decision.toLowerCase()}`,
-      body:
-        decision === 'APPROVED'
-          ? `Your outpass "${pass.reason}" has been approved by the warden.`
-          : `Your outpass "${pass.reason}" was rejected. Contact the warden's office.`,
-      sourceModule: 'hostel',
-    },
-  });
-
-  await writeAudit({
-    actorUserId: userId,
-    institutionId,
-    action: `hostel.pass.${decision.toLowerCase()}`,
-    entityType: 'GatePass',
-    entityId: pass.id,
-    after: { student: pass.studentProfile.user.fullName, decision },
-  });
-
-  return { id: pass.id, student: pass.studentProfile.user.fullName, status: decision };
 }
 
 // ── H-07 Complaints ──────────────────────────────────────────

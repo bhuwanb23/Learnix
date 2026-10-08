@@ -15,8 +15,78 @@ export const bedParamSchema = z.object({
   bedId: z.string().min(1).max(64),
 });
 
-// ── Rooms (docs/users/08-hostel.md §3.2) ────────────────────────────────────
+// ── Gate passes (docs/users/08-hostel.md 3.5) ─────────────────────────────
 
+/**
+ * The warden's inbox filters.
+ *
+ * `needsAction` is the one that matters operationally: it collapses "awaiting a decision",
+ * "should have left and did not" and "should have returned and has not" into the single
+ * question a warden opens this screen to answer. `emergency` narrows to the priority flag.
+ */
+export const gatePassQuerySchema = z.object({
+  q: z.string().trim().min(1).max(80).optional(),
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']).optional(),
+  emergency: z.enum(['true', 'false']).optional(),
+  needsAction: z.enum(['true', 'false']).optional(),
+  page: z.coerce.number().int().min(1).max(500).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+});
+
+/**
+ * A student's request for a gate pass.
+ *
+ * `destination` is separate from `reason` on purpose: "medical" is why, "Rajiv Gandhi
+ * Hospital, Chennai" is where, and a warden deciding whether to approve a night out needs the
+ * where. It is OPTIONAL — a student going home may legitimately not care to name the village.
+ *
+ * `isEmergency` is a priority flag and nothing more. It never bypasses approval; a student who
+ * could self-authorise a gate exit by ticking a box would not be a gate pass system.
+ *
+ * The route-level cross-field checks (return after departure, departure not in the past, 30-day
+ * ceiling) live in the service rather than here, because they need `Date.now()` and produce
+ * messages aimed at a student rather than at a developer.
+ */
+export const gatePassRequestSchema = z
+  .object({
+    reason: z.string().trim().min(3).max(200),
+    destination: z.string().trim().max(160).nullish(),
+    outAt: z.string().datetime({ offset: true }).or(z.string().min(10)),
+    expectedInAt: z.string().datetime({ offset: true }).or(z.string().min(10)),
+    isEmergency: z.boolean().optional(),
+  })
+  .strict();
+
+/**
+ * A warden's decision.
+ *
+ * `verified` is an explicit claim that the student's ID was checked, and it DEFAULTS TO FALSE.
+ * Approving a pass records who decided; it does not record that anyone looked at the student's
+ * face. Making the claim deliberate is what lets an approved-but-unverified pass mean something,
+ * rather than storing the same user id twice.
+ *
+ * `note` is required when rejecting — enforced in the service, because only the service knows
+ * the decision being made.
+ */
+export const gatePassDecisionSchema = z
+  .object({
+    decision: z.enum(['APPROVED', 'REJECTED']),
+    verified: z.boolean().optional(),
+    note: z.string().trim().max(300).nullish(),
+  })
+  .strict();
+
+/**
+ * Exit / return recording. `at` lets a warden correct a mis-keyed time; it must be a parseable
+ * date, which the service checks rather than trusting zod's loose string form here.
+ */
+export const gatePassStampSchema = z
+  .object({
+    at: z.string().trim().max(40).nullish(),
+  })
+  .strict();
+
+// ── Rooms (docs/users/08-hostel.md §3.2) ────────────────────────────────────────────────────
 /**
  * Room path parameter.
  *

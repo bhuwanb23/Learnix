@@ -17,6 +17,9 @@ import {
   roomQuerySchema,
   roomIdParamSchema,
   bedMaintenanceSchema,
+  gatePassQuerySchema,
+  gatePassDecisionSchema,
+  gatePassStampSchema,
 } from './hostel.schemas.js';
 import * as service from './hostel.service.js';
 import {
@@ -291,30 +294,88 @@ router.post(
   }),
 );
 
-// H-06 gate passes
+// ── Gate passes (docs/users/08-hostel.md §3.5) ─────────────────────────────
+//
+// Creation is NOT here. A pass is requested by the STUDENT, from `/api/v1/student/gate-passes`
+// — putting a create route in this router would put it behind `requireRole('HOSTEL','ADMIN')`,
+// which is precisely the role that must not be able to mint its own approvals.
+
 router.get(
   '/gate-passes',
+  validate(gatePassQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listGatePasses(req.auth!.institutionId) });
+    res.json({
+      data: await service.listGatePasses(req.auth!.institutionId, req.query),
+    });
   }),
 );
 
-const PASS_DECISIONS = ['APPROVED', 'REJECTED'] as const;
+// Sorted by urgency rather than createdAt: an overdue return and an emergency request outrank
+// anything already sitting in the queue.
+router.get(
+  '/gate-passes/overdue',
+  wrap(async (req, res) => {
+    res.json({ data: await service.listOverduePasses(req.auth!.institutionId) });
+  }),
+);
+
+router.get(
+  '/gate-passes/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.getGatePass(req.auth!.institutionId, String(req.params.id)),
+    });
+  }),
+);
+
 router.post(
   '/gate-passes/:id/decide',
   validate(idParamSchema, 'params'),
+  validate(gatePassDecisionSchema),
   wrap(async (req, res) => {
-    const decision = String(req.body?.decision ?? '').toUpperCase();
-    if (!PASS_DECISIONS.includes(decision as never)) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'decision must be APPROVED or REJECTED' } });
-      return;
-    }
     res.json({
       data: await service.decideGatePass(
         req.auth!.userId,
         req.auth!.institutionId,
         String(req.params.id),
-        decision as 'APPROVED' | 'REJECTED',
+        req.body.decision,
+        { verified: req.body.verified, note: req.body.note },
+      ),
+    });
+  }),
+);
+
+// Recording the gate. `/exit` and `/return` are separate verbs rather than one `stamp` with a
+// flag, because they are different facts with different preconditions — a return requires a
+// recorded exit, and a generic endpoint would have to re-derive which one was meant.
+router.post(
+  '/gate-passes/:id/exit',
+  validate(idParamSchema, 'params'),
+  validate(gatePassStampSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.recordGateExit(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body.at,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/gate-passes/:id/return',
+  validate(idParamSchema, 'params'),
+  validate(gatePassStampSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.recordGateReturn(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body.at,
       ),
     });
   }),
