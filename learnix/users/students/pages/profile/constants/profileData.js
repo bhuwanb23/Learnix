@@ -27,6 +27,10 @@ export const CATEGORIES = [
   { id: 'my_applications', title: 'My Applications', icon: 'notifications', color: '#4f46e5', bgColor: 'rgba(79, 70, 229, 0.15)' },
   { id: 'settings', title: 'Settings', icon: 'settings', color: '#475569', bgColor: 'rgba(71, 85, 105, 0.15)' },
   { id: 'certifications', title: 'Certifications', icon: 'military-tech', color: '#9333ea', bgColor: 'rgba(147, 51, 234, 0.15)' },
+  // Requesting a gate pass to leave the hostel. Only meaningful for residential students, but
+  // the grid is static and there is no per-student "is residential" flag in the profile payload
+  // yet — the screen itself handles a student with no hostel by showing an empty list.
+  { id: 'gate_passes', title: 'Gate Passes', icon: 'exit-outline', color: '#2563eb', bgColor: 'rgba(37, 99, 235, 0.15)' },
 ];
 
 export const HONORS = [

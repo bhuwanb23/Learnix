@@ -32,7 +32,7 @@ import {
   WALLET_INFO,
 } from './constants/profileData';
 
-export default function Profile({ onNavigate, currentView: parentCurrentView }) {
+export default function Profile({ onNavigate, onOpenModule, currentView: parentCurrentView }) {
   const [localCurrentView, setLocalCurrentView] = useState('profile');
   
   // Use parent view if provided, otherwise use local state
@@ -74,6 +74,16 @@ export default function Profile({ onNavigate, currentView: parentCurrentView }) 
         handleNavigate('my_registration');
       } else if (screen === 'Certifications') {
         handleNavigate('certifications');
+      } else if (screen === 'GatePasses') {
+        // Gate passes live in the STUDENTS module's screen map, not in the profile's sub-view
+        // map, because the screen needs its own back stack and its own API client. Handed to the
+        // parent via `onOpenModule`, which the app wires to `navigateToScreen`.
+        //
+        // `onOpenModule` MUST be tested first. `onNavigate` is always supplied by this component's
+        // own caller, so testing it first would swallow every gate-pass tap and set
+        // `profileView` to a screen this file has no case for — a dead end.
+        if (typeof onOpenModule === 'function') onOpenModule('GatePasses');
+        else if (typeof onNavigate === 'function') onNavigate('GatePasses');
       }
     },
     goBack: handleBack,

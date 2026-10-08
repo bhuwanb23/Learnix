@@ -20,6 +20,7 @@ import JobApplyPage from './pages/placement/pages/jobs_apply/job_apply';
 import JobApplyDonePage from './pages/placement/pages/job_apply_done/job_apply_done';
 import NotificationsPage from './pages/notifications/notifications';
 import MentorshipPage from './pages/mentorship/mentorship';
+import GatePassesPage from './pages/gate_passes/gate_passes';
 import { setDemoUser } from '../../services/api';
 
 // Import components
@@ -63,6 +64,13 @@ export default function StudentsScreen() {
     }
     if (currentScreen === 'Mentorship') {
       return <MentorshipPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+    // The STUDENT half of the gate-pass flow. Reached from the profile quick-actions grid
+    // (`profileData.js`), because a student requests passes rarely enough that it does not
+    // warrant a bottom-nav tab, but often enough that burying it under Profile > Activity would
+    // mean nobody uses it.
+    if (currentScreen === 'GatePasses') {
+      return <GatePassesPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;
@@ -118,7 +126,13 @@ export default function StudentsScreen() {
       case 'Placement':
         return <PlacementPage navigation={{ navigate: navigateToScreen }} />;
       case 'Profile':
-        return <ProfilePage onNavigate={handleProfileNavigation} currentView={profileView} />;
+        return <ProfilePage
+          onNavigate={handleProfileNavigation}
+          // Gate passes are a whole screen in this module rather than a profile sub-view, so
+          // they need the app's own screen map rather than the profile's view state.
+          onOpenModule={navigateToScreen}
+          currentView={profileView}
+        />;
       default:
         return <Dashboard />;
     }

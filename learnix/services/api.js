@@ -615,8 +615,32 @@ export const hostelApi = {
   mess: () => api.get('/hostel/mess'),
   updateMenu: (dayOfWeek, meal, items) => api.put('/hostel/mess/menu', { dayOfWeek, meal, items }),
   sendMessSurvey: () => api.post('/hostel/mess/survey'),
-  gatePasses: () => api.get('/hostel/gate-passes'),
-  decideGatePass: (id, decision) => api.post(`/hostel/gate-passes/${id}/decide`, { decision }),
+  // Gate passes. Filtered and paged on the SERVER, sorted there by URGENCY rather than by
+  // creation date — an overdue return and an emergency request come first, because that is the
+  // work order for someone answering a gate.
+  gatePasses: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/gate-passes${qs ? `?${qs}` : ''}`);
+  },
+  gatePass: (id) => api.get(`/hostel/gate-passes/${id}`),
+  // No `overdueGatePasses` helper. `/hostel/gate-passes/overdue` exists as an endpoint, but the
+  // inbox gets the overdue COUNT from `stats.overdue` and the overdue LIST from
+  // `gatePasses({ needsAction: 'true' })`. A third way to ask the same question, called by
+  // nothing, is just surface area.
+  // `verified` is an explicit claim that the student's ID was checked, and it is NOT implied by
+  // approving. The server defaults it to false, so a pass can be approved without identity
+  // having been confirmed — and the inbox says so.
+  gatePassDecide: (id, decision, opts = {}) =>
+    api.post(`/hostel/gate-passes/${id}/decide`, {
+      decision,
+      verified: opts.verified === true,
+      note: opts.note ?? null,
+    }),
+  // Recording the gate. `at` lets a warden correct a mis-keyed time.
+  gatePassExit: (id, at) => api.post(`/hostel/gate-passes/${id}/exit`, { at: at ?? null }),
+  gatePassReturn: (id, at) => api.post(`/hostel/gate-passes/${id}/return`, { at: at ?? null }),
   complaints: () => api.get('/hostel/complaints'),
   createComplaint: (payload) => api.post('/hostel/complaints', payload),
   assignComplaint: (id) => api.post(`/hostel/complaints/${id}/assign`),
@@ -778,6 +802,17 @@ export const authApi = {
 
 // ── Student endpoints (docs/users/01 §4) ──
 export const studentApi = {
+  // Gate passes — the STUDENT half of the flow (docs/users/08-hostel.md §3.5). The warden half
+  // is on `hostelApi`; both are served by the same lifecycle rules, so the two lists cannot
+  // disagree about whether a student is out.
+  //
+  // `isEmergency` is a priority flag. It never bypasses approval, and it is NOT the same as
+  // "urgent" in the UI sense — a student ticking it does not self-authorise a gate exit.
+  myGatePasses: () => api.get('/student/gate-passes'),
+  requestGatePass: (payload) => api.post('/student/gate-passes', payload),
+  // Withdrawal, allowed only while the pass is still PENDING. Cancelling an approved pass is a
+  // RETURN, and has to go through the gate so the time is recorded.
+  cancelGatePass: (id) => api.post(`/student/gate-passes/${id}/cancel`),
   dashboard: () => api.get('/student/dashboard'),
   classes: () => api.get('/student/classes'),
   syllabus: (offeringId) => api.get(`/student/syllabus/${offeringId}`),

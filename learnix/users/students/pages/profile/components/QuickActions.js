@@ -45,6 +45,10 @@ export default function QuickActions({ categories, honors, navigation }) {
       navigation.navigate('MyRegistration');
     } else if (category.id === 'certifications') {
       navigation.navigate('Certifications');
+    } else if (category.id === 'gate_passes') {
+      // Requesting a gate pass. Routed through the student's own screen map in
+      // `students.js`, so the back gesture returns to Profile rather than to the Main tab.
+      navigation.navigate('GatePasses');
     }
   };
 
