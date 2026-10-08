@@ -21,6 +21,7 @@ import JobApplyDonePage from './pages/placement/pages/job_apply_done/job_apply_d
 import NotificationsPage from './pages/notifications/notifications';
 import MentorshipPage from './pages/mentorship/mentorship';
 import GatePassesPage from './pages/gate_passes/gate_passes';
+import VisitorsPage from './pages/visitors/visitors';
 import { setDemoUser } from '../../services/api';
 
 // Import components
@@ -71,6 +72,12 @@ export default function StudentsScreen() {
     // mean nobody uses it.
     if (currentScreen === 'GatePasses') {
       return <GatePassesPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+    // The STUDENT half of a visit. Same reasoning as gate passes: a resident tells the hostel who
+    // is coming often enough to be a first-class screen, but not often enough to earn a nav tab.
+    // The warden owns approval and entry - this screen only authorises and withdraws.
+    if (currentScreen === 'Visitors') {
+      return <VisitorsPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
     }
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;

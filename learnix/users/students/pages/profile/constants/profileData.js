@@ -31,6 +31,10 @@ export const CATEGORIES = [
   // the grid is static and there is no per-student "is residential" flag in the profile payload
   // yet — the screen itself handles a student with no hostel by showing an empty list.
   { id: 'gate_passes', title: 'Gate Passes', icon: 'exit-outline', color: '#2563eb', bgColor: 'rgba(37, 99, 235, 0.15)' },
+  // The resident half of the visitor workflow. Placed next to Gate Passes deliberately: both are
+  // "tell the hostel you are going somewhere, or expecting somebody" and a resident looking for
+  // one looks in the other place first.
+  { id: 'visitors', title: 'My Visitors', icon: 'people-outline', color: '#0891b2', bgColor: 'rgba(8, 145, 178, 0.15)' },
 ];
 
 export const HONORS = [

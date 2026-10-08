@@ -84,6 +84,13 @@ export default function Profile({ onNavigate, onOpenModule, currentView: parentC
         // `profileView` to a screen this file has no case for — a dead end.
         if (typeof onOpenModule === 'function') onOpenModule('GatePasses');
         else if (typeof onNavigate === 'function') onNavigate('GatePasses');
+      } else if (screen === 'Visitors') {
+        // Same shape as Gate Passes and for the same reason: the resident half of a visit needs
+        // its own back stack and its own API client, so it lives in the STUDENTS module's screen
+        // map rather than the profile's sub-view map. `onOpenModule` first, for the same
+        // ordering reason spelled out above.
+        if (typeof onOpenModule === 'function') onOpenModule('Visitors');
+        else if (typeof onNavigate === 'function') onNavigate('Visitors');
       }
     },
     goBack: handleBack,

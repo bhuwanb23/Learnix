@@ -49,6 +49,10 @@ export default function QuickActions({ categories, honors, navigation }) {
       // Requesting a gate pass. Routed through the student's own screen map in
       // `students.js`, so the back gesture returns to Profile rather than to the Main tab.
       navigation.navigate('GatePasses');
+    } else if (category.id === 'visitors') {
+      // Same routing as gate passes, and for the same reason: it is a screen in the STUDENTS
+      // module, not a profile sub-view, so the back gesture has to return to Profile.
+      navigation.navigate('Visitors');
     }
   };
 
