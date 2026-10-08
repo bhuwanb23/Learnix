@@ -645,93 +645,124 @@ export const hostelApi = {
   createComplaint: (payload) => api.post('/hostel/complaints', payload),
   assignComplaint: (id) => api.post(`/hostel/complaints/${id}/assign`),
   resolveComplaint: (id) => api.post(`/hostel/complaints/${id}/resolve`),
-  visitors: () => api.get('/hostel/visitors'),
-  checkInVisitor: (name, studentProfileId, relation) =>
-    api.post('/hostel/visitors/checkin', { name, studentProfileId, relation }),
-  checkOutVisitor: (id) => api.post(`/hostel/visitors/${id}/checkout`),
+  // ---- Visitors -------------------------------------------------------------------
+  // Query strings are built inline, matching `gatePasses` and the alumni directory, rather than
+  // through a shared helper that does not exist in this file. `undefined`/`null`/`''` are filtered
+  // out so an empty search box does not become `?q=`.
+  //
+  // Every visitor list call passes a plain object and gets back
+  // `{ passes, stats, facets, pagination }` - never a bare array - so the screen can render stats
+  // and status facets without a second request.
+  visitors: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/visitors${qs ? `?${qs}` : ''}`);
+  },
+  visitor: (id) => api.get(`/hostel/visitors/${id}`),
+  // Registers a walk-in. Always lands in `PENDING`: the warden confirms separately. There is
+  // deliberately no `checkInVisitor` any more - a direct check-in created an on-campus row with no
+  // authorisation and no planned window, which is what the approval workflow exists to prevent.
+  registerVisitor: (payload) => api.post('/hostel/visitors', payload),
+  approveVisitor: (id, note) => api.post(`/hostel/visitors/${id}/approve`, { note }),
+  rejectVisitor: (id, note) => api.post(`/hostel/visitors/${id}/reject`, { note }),
+  // `at` corrects a mis-keyed gate time; omit it to stamp "now".
+  visitorEntry: (id, at) => api.post(`/hostel/visitors/${id}/entry`, { at }),
+  visitorExit: (id, at) => api.post(`/hostel/visitors/${id}/exit`, { at }),
+  frequentVisitors: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/visitors/frequent${qs ? `?${qs}` : ''}`);
+  },
+  barredVisitors: () => api.get('/hostel/visitors/barred'),
+  barVisitor: (payload) => api.post('/hostel/visitors/barred', payload),
+  unbarVisitor: (id) => api.delete(`/hostel/visitors/barred/${id}`),
+  visitorPolicy: () => api.get('/hostel/visitors/policy'),
+  updateVisitorPolicy: (policy) => api.put('/hostel/visitors/policy', policy),
   notifications: () => api.get('/hostel/notifications'),
-  markAllRead: () => api.post('/hostel/notifications/read-all'),
-  broadcast: (payload) => api.post('/hostel/broadcasts', payload),
-  profile: () => api.get('/hostel/profile'),
-};
+    markAllRead: () => api.post('/hostel/notifications/read-all'),
+    broadcast: (payload) => api.post('/hostel/broadcasts', payload),
+    profile: () => api.get('/hostel/profile'),
+  };
 
-// ── Library Staff endpoints (docs/users/07 §4) ──
-export const libraryApi = {
-  dashboard: () => api.get('/library/dashboard'),
-  catalog: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
-    ).toString();
-    return api.get(`/library/catalog${qs ? `?${qs}` : ''}`);
-  },
-  bookDetail: (id) => api.get(`/library/catalog/${id}`),
-  addBook: (payload) => api.post('/library/catalog', payload),
-  updateBook: (id, payload) => api.put(`/library/catalog/${id}`, payload),
-  issueBook: (rollNo, bookId, dueDays) =>
-    api.post('/library/circulation/issue', { rollNo, bookId, dueDays }),
-  returnBook: (issueId) => api.post('/library/circulation/return', { issueId }),
-  loans: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
-    ).toString();
-    return api.get(`/library/circulation/loans${qs ? `?${qs}` : ''}`);
-  },
-  loanDetail: (id) => api.get(`/library/circulation/loans/${id}`),
-  renewLoan: (id, days) => api.post(`/library/circulation/loans/${id}/renew`, { days }),
-  loanHistory: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
-    ).toString();
-    return api.get(`/library/circulation/history${qs ? `?${qs}` : ''}`);
-  },
-  searchStudents: (q) => api.get(`/library/circulation/students?q=${encodeURIComponent(q)}`),
-  studentBorrowingProfile: (id) => api.get(`/library/circulation/students/${id}`),
-  fines: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
-    ).toString();
-    return api.get(`/library/fines${qs ? `?${qs}` : ''}`);
-  },
-  fineDetail: (id) => api.get(`/library/fines/${id}`),
-  collectFine: (id, method) => api.post(`/library/fines/${id}/collect`, { method }),
-  waiveFine: (id, reason) => api.post(`/library/fines/${id}/waive`, { reason }),
-  extendFine: (id, days) => api.post(`/library/fines/${id}/extend`, { days }),
-  bulkSettleFines: (payload) => api.post('/library/fines/settle', payload),
-  studentFines: (studentId) => api.get(`/library/fines/students/${studentId}`),
-  requests: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'ALL'),
-    ).toString();
-    return api.get(`/library/requests${qs ? `?${qs}` : ''}`);
-  },
-  request: (id) => api.get(`/library/requests/${id}`),
-  decideRequest: (id, decision, note) =>
-    api.post(`/library/requests/${id}/decide`, { decision, note }),
-  procurements: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'ALL'),
-    ).toString();
-    return api.get(`/library/procurements${qs ? `?${qs}` : ''}`);
-  },
-  procurement: (id) => api.get(`/library/procurements/${id}`),
-  advanceProcurement: (id, payload) => api.post(`/library/procurements/${id}/advance`, payload),
-  digitalResources: (params = {}) => {
-    const qs = new URLSearchParams(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
-    ).toString();
-    return api.get(`/library/digital${qs ? `?${qs}` : ''}`);
-  },
-  digitalResource: (id) => api.get(`/library/digital/${id}`),
-  addDigitalResource: (payload) => api.post('/library/digital', payload),
-  updateDigitalResource: (id, payload) => api.put(`/library/digital/${id}`, payload),
-  deleteDigitalResource: (id) => api.delete(`/library/digital/${id}`),
-  grantAccess: (resourceId, payload) => api.post(`/library/digital/${resourceId}/grant-access`, payload),
-  revokeAccess: (resourceId, grantId) =>
-    api.delete(`/library/digital/${resourceId}/grants/${grantId}`),
-  recordAccess: (resourceId, payload = {}) =>
-    api.post(`/library/digital/${resourceId}/access`, payload),
-  digitalAudiences: () => api.get('/library/digital/audiences'),
-  digitalUsage: () => api.get('/library/digital/usage'),
+  // ── Library Staff endpoints (docs/users/07 §4) ──
+  export const libraryApi = {
+    dashboard: () => api.get('/library/dashboard'),
+    catalog: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+      ).toString();
+      return api.get(`/library/catalog${qs ? `?${qs}` : ''}`);
+    },
+    bookDetail: (id) => api.get(`/library/catalog/${id}`),
+    addBook: (payload) => api.post('/library/catalog', payload),
+    updateBook: (id, payload) => api.put(`/library/catalog/${id}`, payload),
+    issueBook: (rollNo, bookId, dueDays) =>
+      api.post('/library/circulation/issue', { rollNo, bookId, dueDays }),
+    returnBook: (issueId) => api.post('/library/circulation/return', { issueId }),
+    loans: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+      ).toString();
+      return api.get(`/library/circulation/loans${qs ? `?${qs}` : ''}`);
+    },
+    loanDetail: (id) => api.get(`/library/circulation/loans/${id}`),
+    renewLoan: (id, days) => api.post(`/library/circulation/loans/${id}/renew`, { days }),
+    loanHistory: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+      ).toString();
+      return api.get(`/library/circulation/history${qs ? `?${qs}` : ''}`);
+    },
+    searchStudents: (q) => api.get(`/library/circulation/students?q=${encodeURIComponent(q)}`),
+    studentBorrowingProfile: (id) => api.get(`/library/circulation/students/${id}`),
+    fines: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+      ).toString();
+      return api.get(`/library/fines${qs ? `?${qs}` : ''}`);
+    },
+    fineDetail: (id) => api.get(`/library/fines/${id}`),
+    collectFine: (id, method) => api.post(`/library/fines/${id}/collect`, { method }),
+    waiveFine: (id, reason) => api.post(`/library/fines/${id}/waive`, { reason }),
+    extendFine: (id, days) => api.post(`/library/fines/${id}/extend`, { days }),
+    bulkSettleFines: (payload) => api.post('/library/fines/settle', payload),
+    studentFines: (studentId) => api.get(`/library/fines/students/${studentId}`),
+    requests: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'ALL'),
+      ).toString();
+      return api.get(`/library/requests${qs ? `?${qs}` : ''}`);
+    },
+    request: (id) => api.get(`/library/requests/${id}`),
+    decideRequest: (id, decision, note) =>
+      api.post(`/library/requests/${id}/decide`, { decision, note }),
+    procurements: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'ALL'),
+      ).toString();
+      return api.get(`/library/procurements${qs ? `?${qs}` : ''}`);
+    },
+    procurement: (id) => api.get(`/library/procurements/${id}`),
+    advanceProcurement: (id, payload) => api.post(`/library/procurements/${id}/advance`, payload),
+    digitalResources: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== ''),
+      ).toString();
+      return api.get(`/library/digital${qs ? `?${qs}` : ''}`);
+    },
+    digitalResource: (id) => api.get(`/library/digital/${id}`),
+    addDigitalResource: (payload) => api.post('/library/digital', payload),
+    updateDigitalResource: (id, payload) => api.put(`/library/digital/${id}`, payload),
+    deleteDigitalResource: (id) => api.delete(`/library/digital/${id}`),
+    grantAccess: (resourceId, payload) => api.post(`/library/digital/${resourceId}/grant-access`, payload),
+    revokeAccess: (resourceId, grantId) =>
+      api.delete(`/library/digital/${resourceId}/grants/${grantId}`),
+    recordAccess: (resourceId, payload = {}) =>
+      api.post(`/library/digital/${resourceId}/access`, payload),
+    digitalAudiences: () => api.get('/library/digital/audiences'),
+    digitalUsage: () => api.get('/library/digital/usage'),
   notifications: () => api.get('/library/notifications/activity'),
   notificationActivity: (limit) =>
     api.get(`/library/notifications/activity${limit ? `?limit=${limit}` : ''}`),
@@ -813,6 +844,20 @@ export const studentApi = {
   // Withdrawal, allowed only while the pass is still PENDING. Cancelling an approved pass is a
   // RETURN, and has to go through the gate so the time is recorded.
   cancelGatePass: (id) => api.post(`/student/gate-passes/${id}/cancel`),
+
+  // ---- Visitors: the resident's side of a visit --------------------------------
+  // Returns `{ expected, history, policy }` - split rather than filtered, because "who is coming"
+  // and "who came" are different questions and a resident does not want their expected visitors
+  // buried under last month's log. `policy` travels with it so the screen can explain a refusal
+  // ("this hostel only allows day visits") instead of just offering the form and failing.
+  myVisitors: () => api.get('/student/visitors'),
+  // The resident is NOT sent a `visitingStudentProfileId` and cannot name another resident: the
+  // server derives both from the authenticated user. Sending it here would be a field the client
+  // controls but the server ignores, which is worse than not sending it.
+  authoriseVisitor: (payload) => api.post('/student/visitors', payload),
+  // Withdrawal, allowed only while the visitor is still awaiting the warden. Once confirmed,
+  // cancelling is a check-out, and it has to go through the gate so the time is recorded.
+  cancelVisitor: (id) => api.post(`/student/visitors/${id}/cancel`),
   dashboard: () => api.get('/student/dashboard'),
   classes: () => api.get('/student/classes'),
   syllabus: (offeringId) => api.get(`/student/syllabus/${offeringId}`),
@@ -983,9 +1028,35 @@ export const examcellApi = {
   decideHallTicketRequest: (id, payload) => api.patch(`/examcell/hall-tickets/requests/${encodeURIComponent(id)}`, payload),
   completeHallTicketRequest: (id) => api.post(`/examcell/hall-tickets/requests/${encodeURIComponent(id)}/complete`),
   markHallTicketDownloaded: (id) => api.post(`/examcell/hall-tickets/${encodeURIComponent(id)}/download`),
-  evaluations: () => api.get('/examcell/evaluations'),
-  assignEvaluator: (evalId, evaluatorUserId) => api.post(`/examcell/evaluations/${evalId}/assign`, { evaluatorUserId }),
-  completeEvaluation: (evalId) => api.post(`/examcell/evaluations/${evalId}/complete`),
+  // ── X-05 Evaluations (docs/users/05 §3.3) ───────────────────────────
+  //
+  // Three methods used to live here — `GET /examcell/evaluations`,
+  // `POST /examcell/evaluations/:id/assign` and `…/complete`. All three
+  // endpoints are GONE, not renamed: the assign route accepted any TEACHER
+  // id with no institution check, and `complete` force-marked every paper
+  // graded without reading one. The new surface reads blocks and derives
+  // completion from the rows.
+  evaluationCatalogue: () => api.get('/examcell/evaluations/catalogue'),
+  evaluationOverview: () => api.get('/examcell/evaluations/overview'),
+  evaluationBlock: (block, examId) =>
+    api.get(`/examcell/evaluations/blocks/${encodeURIComponent(block)}${examId ? `?examId=${encodeURIComponent(examId)}` : ''}`),
+  evaluationPublicationGate: (slotId) =>
+    api.get(`/examcell/evaluations/slots/${encodeURIComponent(slotId)}/publication-gate`),
+  receiveScripts: (evalId) => api.post(`/examcell/evaluations/${encodeURIComponent(evalId)}/scripts/receive`),
+  moveScript: (paperId, status) =>
+    api.post(`/examcell/evaluations/papers/${encodeURIComponent(paperId)}/script`, { status }),
+  allocateEvaluator: (evalId, evaluatorUserId) =>
+    api.post(`/examcell/evaluations/${encodeURIComponent(evalId)}/allocate`, { evaluatorUserId }),
+  enterMarks: (paperId, internalMarks, externalMarks) =>
+    api.post(`/examcell/evaluations/papers/${encodeURIComponent(paperId)}/marks`, { internalMarks, externalMarks }),
+  setEvaluationDeadline: (examId, dueAt) =>
+    api.post(`/examcell/evaluations/exams/${encodeURIComponent(examId)}/deadline`, { dueAt }),
+  remindEvaluationDeadline: (examId) =>
+    api.post(`/examcell/evaluations/exams/${encodeURIComponent(examId)}/deadline/remind`),
+  requestModeration: (evalId) =>
+    api.post(`/examcell/evaluations/${encodeURIComponent(evalId)}/moderation/request`),
+  decideModeration: (evalId, decision, note) =>
+    api.post(`/examcell/evaluations/${encodeURIComponent(evalId)}/moderation/decide`, { decision, note }),
   results: () => api.get('/examcell/results'),
   enterResult: (payload) => api.post('/examcell/results', payload),
   publishResults: (examSlotId) => api.post('/examcell/results/publish', { examSlotId }),

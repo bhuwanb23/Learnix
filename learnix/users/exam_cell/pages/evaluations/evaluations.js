@@ -1,201 +1,175 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+// X-05 Evaluations — the exam controller's hub (docs/users/05 §3.3).
+//
+// The screen this replaces was a single list fed by `GET /examcell/evaluations`
+// — a flat row dump with counters straight off the table — plus a
+// `constants/evaluationsData.js` fixture nobody had deleted. The endpoint is
+// GONE (see api.js): its assign route took any TEACHER id with no institution
+// check, and its complete route marked every paper graded without reading one.
+//
+// It is now eight blocks, each answering one question:
+//
+//   1. Evaluation progress  — how much of the season is marked
+//   2. Answer scripts       — which papers arrived, which are missing
+//   3. Evaluator allocation — who is marking what, and what nobody took
+//   4. Subject-wise         — every subject with its counts and status
+//   5. Marks entry          — internal + external, against the 40/60 bound
+//   6. Deadlines            — when grading is due, what is past it
+//   7. Missing marks        — the unmarked list that blocks publication
+//   8. Moderation           — second look before results go out
+//
+// EVERYTHING COMES FROM TWO CALLS, and the block list is NOT hard-coded here.
+// It arrives from `/evaluations/catalogue` with each block's id, label, icon,
+// colour and route, so a block added on the server draws itself.
+// `evaluationMeta.js` still mirrors the ids because the eight sub-screens are
+// separate modules that must exist at build time, and `audit-evaluations-ui.ts`
+// asserts the two agree.
+//
+// THE HERO ANSWERS THE ONE QUESTION THIS DESK EXISTS TO ANSWER: how much is
+// marked, and is the deadline near. It says the percent rather than going
+// grey for no stated reason, and the badge on each block card is the live
+// number that block exists to report — so the controller can see WHICH of the
+// eight is wrong without opening any of them.
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
 import { examcellApi } from '../../../../services/api';
-
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
-const STATUS_META = {
-  PENDING: { color: '#2563eb', label: 'Pending' },
-  IN_PROGRESS: { color: '#d97706', label: 'In Progress' },
-  COMPLETED: { color: '#059669', label: 'Completed' },
-};
+import { THEME, RED, GREEN, AMBER, SLATE, MUTED, BLOCKS, plural } from './evaluationMeta';
+import { EvaluationScreen, StatGrid, BlockCard, goToRoute, useEvaluation } from './evaluationUi';
 
 export default function EvaluationsModule({ navigation }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const catalogue = useEvaluation(() => examcellApi.evaluationCatalogue());
+  const overview = useEvaluation(() => examcellApi.evaluationOverview());
 
-  const fetchData = useCallback(async () => {
-    try {
-      setError(null);
-      const res = await examcellApi.evaluations();
-      setData(res);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const reload = useCallback(() => {
+    catalogue.reload();
+    overview.reload();
+  }, [catalogue, overview]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // The block list comes from the server. The mirror in evaluationMeta.js is
+  // the FALLBACK for the frame before the catalogue lands, and nothing more.
+  const blocks = catalogue.data?.blocks?.length ? catalogue.data.blocks : BLOCKS;
+  const s = overview.data?.stats;
+  const hero = overview.data?.hero;
 
-  const onRefresh = () => { setRefreshing(true); fetchData(); };
-
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.loadingText}>Loading evaluations…</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color="#94a3b8" />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={fetchData} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const evals = data?.evaluations ?? [];
-  const completed = evals.reduce((a, e) => a + e.completedPapers, 0);
-  const total = evals.reduce((a, e) => a + e.totalPapers, 0);
-  const pending = evals.filter((e) => e.status === 'PENDING').length;
-  const inProgress = evals.filter((e) => e.status === 'IN_PROGRESS').length;
-  const overallPct = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  const handleComplete = async (evalId) => {
-    try {
-      await examcellApi.completeEvaluation(evalId);
-      Alert.alert('Evaluation Marked Complete');
-      fetchData();
-    } catch (e) {
-      Alert.alert('Error', e.message);
+  // Every block card carries the live number that block exists to report.
+  // A badge of 0 is NOT drawn — an eight-row list of zeroes is noise.
+  //
+  // Four blocks carry no single figure on purpose: allocation's problem is
+  // spread across subjects (it has its own screen for that), the deadline's
+  // is the countdown in the hero, progress is the hero itself, and marks
+  // entry is per-paper on that screen.
+  const badgeFor = (id) => {
+    if (!s) return undefined;
+    switch (id) {
+      case 'SCRIPTS': return s.scriptsReceived > 0 ? s.scriptsReceived : undefined;
+      case 'SUBJECTS': return s.evaluations;
+      case 'MISSING': return s.missingMarks;
+      case 'MODERATION': return (s.moderationPending ?? 0) + (s.moderationFlagged ?? 0);
+      default: return undefined;
     }
   };
 
-  const stats = [
-    { id: 'completed', label: 'Completed', value: completed.toString(), icon: 'checkmark-done', color: '#059669' },
-    { id: 'inProgress', label: 'In Progress', value: inProgress.toString(), icon: 'time', color: '#d97706' },
-    { id: 'pending', label: 'Pending', value: pending.toString(), icon: 'clipboard', color: '#2563eb' },
-    { id: 'total', label: 'Total Papers', value: total.toString(), icon: 'document-text', color: '#0284c7' },
-  ];
+  const marked = hero?.marked ?? 0;
+  const total = hero?.total ?? 0;
+  const pct = hero?.percent ?? 0;
+  const noData = total === 0;
+  const overdue = hero?.dueAt ? new Date(hero.dueAt).getTime() < Date.now() : false;
+  const heroColor = noData ? SLATE : overdue || (hero?.daysLeft !== null && hero?.daysLeft !== undefined && hero.daysLeft <= 2) ? RED : pct === 100 ? GREEN : AMBER;
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
+    <EvaluationScreen
+      title="Evaluations"
+      subtitle="Track scripts, allocate evaluators, enter marks and clear them for publication."
+      loading={catalogue.loading && overview.loading}
+      refreshing={catalogue.refreshing || overview.refreshing}
+      error={catalogue.error ?? overview.error}
+      onRetry={reload}
+      onRefresh={reload}
     >
-      <View style={styles.statsRow}>
-        {stats.map((stat) => (
-          <View key={stat.id} style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: stat.color + '14' }]}>
-              <Ionicons name={stat.icon} size={18} color={stat.color} />
-            </View>
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
+      {/* ── The one question this desk exists to answer ── */}
+      <View style={[styles.hero, { backgroundColor: heroColor }]}>
+        <View style={styles.heroTop}>
+          <Ionicons
+            name={noData ? 'information-circle' : pct === 100 ? 'checkmark-circle' : 'stats-chart'}
+            size={22}
+            color="rgba(255,255,255,0.95)"
+          />
+          <Text style={styles.heroStamp}>
+            {noData ? 'Nothing to mark' : pct === 100 ? 'All marked' : `${pct}% marked`}
+          </Text>
+        </View>
+        <Text style={styles.heroValue}>
+          {noData
+            ? 'No papers in this institution yet'
+            : `${marked} of ${total} papers have marks`}
+        </Text>
+        <View style={styles.heroRule} />
+        <View style={styles.heroRow}>
+          <View style={styles.heroCell}>
+            <Text style={styles.heroCellValue}>{hero?.dueAt ? new Date(hero.dueAt).toLocaleDateString() : '—'}</Text>
+            <Text style={styles.heroCellLabel}>Grading due</Text>
           </View>
-        ))}
+          <View style={styles.heroCell}>
+            <Text style={styles.heroCellValue}>
+              {hero?.daysLeft === null || hero?.daysLeft === undefined ? '—' : hero.daysLeft}
+            </Text>
+            <Text style={styles.heroCellLabel}>Days left</Text>
+          </View>
+          <View style={styles.heroCell}>
+            <Text style={styles.heroCellValue}>{s?.missingMarks ?? 0}</Text>
+            <Text style={styles.heroCellLabel}>Unmarked</Text>
+          </View>
+        </View>
       </View>
 
-      <View style={styles.progressCard}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressTitle}>Overall Grading Progress</Text>
-          <Text style={styles.progressPct}>{overallPct}%</Text>
+      {/* ── Alerts — what needs the controller today ── */}
+      {(overview.data?.alerts ?? []).map((a) => (
+        <View key={a} style={styles.alert}>
+          <Ionicons name="warning-outline" size={14} color={AMBER} />
+          <Text style={styles.alertText}>{a}</Text>
         </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${overallPct}%` }]} />
-        </View>
-        <Text style={styles.progressNote}>{completed} of {total} papers graded • {pending} evaluation(s) pending</Text>
-      </View>
+      ))}
 
-      {data?.deadline && (
-        <View style={styles.deadlineCard}>
-          <Ionicons name="time-outline" size={16} color="#d97706" />
-          <Text style={styles.deadlineText}>Grading deadline: {new Date(data.deadline).toLocaleDateString()}</Text>
-        </View>
-      )}
+      {/* ── Season stats ── */}
+      <StatGrid
+        items={[
+          { id: 'total', label: 'Subjects', value: s?.evaluations ?? 0, icon: 'library-outline', color: THEME },
+          { id: 'done', label: 'Completed', value: s?.COMPLETED ?? 0, icon: 'checkmark-done', color: GREEN },
+          { id: 'prog', label: 'In progress', value: s?.IN_PROGRESS ?? 0, icon: 'time', color: AMBER },
+          { id: 'miss', label: 'Missing marks', value: s?.missingMarks ?? 0, icon: 'alert-circle', color: RED },
+        ]}
+      />
 
-      <Text style={styles.sectionLabel}>Evaluation Subjects</Text>
-      {evals.map((ev) => {
-        const pct = ev.totalPapers > 0 ? Math.round((ev.completedPapers / ev.totalPapers) * 100) : 0;
-        const meta = STATUS_META[ev.status] || STATUS_META.PENDING;
-        return (
-          <View key={ev.id} style={styles.subjectCard}>
-            <View style={styles.subjectHeader}>
-              <View style={styles.subjectInfo}>
-                <Text style={styles.subjectName}>{ev.course}</Text>
-                <Text style={styles.subjectMeta}>{ev.courseCode} • {ev.examName}</Text>
-              </View>
-              <View style={[styles.statusChip, { backgroundColor: meta.color + '1A' }]}>
-                <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
-              </View>
-            </View>
-            <View style={styles.subjectTrack}>
-              <View style={[styles.subjectFill, { width: `${pct}%`, backgroundColor: meta.color }]} />
-            </View>
-            <View style={styles.subjectFooter}>
-              <Text style={styles.subjectCount}>{ev.completedPapers}/{ev.totalPapers} graded • {pct}%</Text>
-              {ev.status !== 'COMPLETED' && (
-                <TouchableOpacity style={styles.completeBtn} onPress={() => handleComplete(ev.id)} activeOpacity={0.7}>
-                  <Ionicons name="checkmark-circle-outline" size={13} color="#059669" />
-                  <Text style={styles.completeText}>Complete</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        );
-      })}
-      {evals.length === 0 && <Text style={styles.emptyText}>No evaluations found.</Text>}
-    </ScrollView>
+      {/* ── The eight blocks ── */}
+      <Text style={styles.blockLabel}>Work through the desk</Text>
+      {blocks.map((b) => (
+        <BlockCard
+          key={b.id}
+          block={b}
+          badge={badgeFor(b.id)}
+          onPress={() => goToRoute(navigation, b.route, b.isTab)}
+        />
+      ))}
+
+      <Text style={styles.footNote}>
+        {plural(blocks.length, 'block')} · completion is derived: a subject is complete exactly when every paper is marked.
+      </Text>
+    </EvaluationScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f7f9' },
-  content: { padding: 24, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Regular' },
-  errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Regular', textAlign: 'center' },
-  retryBtn: { marginTop: 12, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
-  retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  emptyText: { fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope-Regular', textAlign: 'center', marginTop: 20 },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  statCard: { flex: 1, backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14 },
-  statIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  statValue: { fontSize: 20, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
-  progressCard: { backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 16, marginBottom: 16 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progressTitle: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  progressPct: { fontSize: 18, fontWeight: '800', color: '#2563eb', fontFamily: 'PlusJakartaSans-Bold' },
-  progressTrack: { height: 8, borderRadius: 4, backgroundColor: '#eef2f7', marginTop: 10, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4, backgroundColor: '#2563eb' },
-  progressNote: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 8 },
-  deadlineCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fffbeb', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#fde68a', padding: 12, marginBottom: 16, gap: 8 },
-  deadlineText: { fontSize: 12, color: '#d97706', fontFamily: 'Manrope-SemiBold' },
-  sectionLabel: { fontSize: 15, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginBottom: 10 },
-  subjectCard: { backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
-  subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  subjectInfo: { flex: 1 },
-  subjectName: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  subjectMeta: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },
-  statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  statusText: { fontSize: 10, fontWeight: '700', fontFamily: 'Manrope-Bold' },
-  subjectTrack: { height: 6, borderRadius: 3, backgroundColor: '#eef2f7', marginTop: 10, overflow: 'hidden' },
-  subjectFill: { height: '100%', borderRadius: 3 },
-  subjectFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  subjectCount: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular' },
-  completeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f0fdf4', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  completeText: { fontSize: 11, fontWeight: '700', color: '#059669', fontFamily: 'Manrope-Bold' },
+  hero: { borderRadius: 16, padding: 18, marginBottom: 14 },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  heroStamp: { color: 'rgba(255,255,255,0.95)', fontSize: 12, fontWeight: '700', fontFamily: 'Manrope-Bold', textTransform: 'uppercase', letterSpacing: 0.6 },
+  heroValue: { color: '#fff', fontSize: 17, fontWeight: '800', fontFamily: 'PlusJakartaSans-Bold', marginTop: 8, letterSpacing: -0.3 },
+  heroRule: { height: 1, backgroundColor: 'rgba(255,255,255,0.25)', marginVertical: 12 },
+  heroRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  heroCell: { alignItems: 'flex-start' },
+  heroCellValue: { color: '#fff', fontSize: 14, fontWeight: '700', fontFamily: 'Manrope-Bold' },
+  heroCellLabel: { color: 'rgba(255,255,255,0.85)', fontSize: 10, fontFamily: 'Manrope-Regular', marginTop: 2 },
+  alert: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: `${AMBER}12`, borderWidth: 1, borderColor: `${AMBER}44`, borderRadius: 10, padding: 10, marginBottom: 8 },
+  alertText: { flex: 1, fontSize: 12, color: '#92400e', fontFamily: 'Manrope-SemiBold' },
+  blockLabel: { fontSize: 14, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginBottom: 10, marginTop: 4 },
+  footNote: { fontSize: 11, color: MUTED, fontFamily: 'Manrope-Regular', marginTop: 8, textAlign: 'center' },
 });
