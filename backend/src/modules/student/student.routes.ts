@@ -19,7 +19,19 @@ import * as mentorshipFeedback from '../alumni/feedback.service.js';
 // from the warden's inbox.
 import * as gatePasses from '../hostel/hostel-gate-passes.service.js';
 import * as visitorService from '../hostel/hostel-visitors.service.js';
-import { gatePassRequestSchema, visitorAuthoriseSchema } from '../hostel/hostel.schemas.js';
+import * as mess from '../hostel/hostel-mess.service.js';
+// The mess schemas live with the rest of the mess feature rather than being duplicated here, so a
+// change to what a valid rating looks like cannot be made in one module and missed in the other.
+import {
+  gatePassRequestSchema,
+  visitorAuthoriseSchema,
+  messFeedbackSchema,
+  daySchema,
+} from '../hostel/hostel.schemas.js';
+import { z } from 'zod';
+
+/** The student's own mess view: an optional day, defaulting to today server-side. */
+const messStudentQuerySchema = z.object({ date: daySchema.optional() });
 import type { Viewer } from '../alumni/directory.service.js';
 import {
   mentorshipRequestSchema, mentorshipSessionSchema, updateSessionSchema,
@@ -370,6 +382,45 @@ router.post(
   wrap(async (req, res) => {
     res.json({
       data: await visitorService.cancelMyVisitor(req.auth!.userId, String(req.params.id)),
+    });
+  }),
+);
+
+// ── Mess (docs/users/08-hostel.md §3.4, docs/users/01-students.md §3.9) ───────────
+//
+// A resident can READ the menu and RATE a meal. Nothing else.
+//
+// The roll is deliberately NOT here. Meal attendance is mess staff calling the roll at the counter,
+// so there is no student-side write for it - see `markMealAttendance`. Had it been added here, the
+// attendance figures the kitchen sizes its provisions from would become self-reported, and a
+// resident forgetting to tap would look identical to a resident not eating.
+//
+// Identity comes from `req.auth`, never from a body field, so a student can only ever rate as
+// themselves. Both handlers resolve the student profile from the authenticated user server-side,
+// which is also why neither takes an `institutionId` argument.
+router.get(
+  '/mess',
+  validate(messStudentQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await mess.getStudentMess(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.query.date as string | undefined,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/mess/feedback',
+  validate(messFeedbackSchema),
+  wrap(async (req, res) => {
+    // 200 not 201: this is an upsert, and a student correcting their own rating is the same
+    // request as the first one. Answering 201 every time would tell them a duplicate was created
+    // when in fact their rating was replaced.
+    res.json({
+      data: await mess.rateMeal(req.auth!.userId, req.auth!.institutionId, req.body),
     });
   }),
 );

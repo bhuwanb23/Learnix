@@ -71,6 +71,30 @@ export function normaliseVendor(name: string | null | undefined): string | null 
   return collapsed || null;
 }
 
+/**
+ * The key vendor rows are GROUPED under, as opposed to the string that is stored and displayed.
+ *
+ * WHY THIS IS SEPARATE FROM `normaliseVendor`
+ * -------------------------------------------
+ * `normaliseVendor` collapses whitespace but preserves case, on purpose - the stored value is
+ * what a human reads on the claim ("Acme Cold Storage"), so lowercasing it would degrade the
+ * screen in order to tidy a query.
+ *
+ * The cost of that choice fell on grouping. `vendorSpend` used the normalised STRING as the
+ * Map key, so "Fresh Basket Traders" and "fresh basket traders" - two spellings of one supplier,
+ * the exact scenario `Expense.vendor`'s own schema comment describes ("the same vendor is spelled
+ * differently by three different departments") - became two rows on the vendor screen with two
+ * separate totals. Each row looked correct; the total next to it was half the real figure.
+ *
+ * Grouping therefore needs a key that is case-INSENSITIVE, while display still wants the original
+ * casing. So: fold for the key, keep the first spelling seen for the label.
+ */
+export function vendorGroupKey(name: string | null | undefined): string | null {
+  const normalised = normaliseVendor(name);
+  if (!normalised) return null;
+  return normalised.toLowerCase();
+}
+
 /** Round paise that came back from SQLite into whole rupees for the UI. */
 const userMap = async (ids: string[]) => {
   const users = ids.length
@@ -827,13 +851,27 @@ export async function departmentSpend(institutionId: string, fiscalYear?: string
 
 // ── 7. Vendor / payment records ─────────────────────────────
 
-export async function vendorSpend(institutionId: string, fiscalYear?: string) {
+/**
+ * Vendor totals for a fiscal year.
+ *
+ * `category` is OPTIONAL and additive: omitting it preserves the original all-categories
+ * behaviour exactly, so the Accounts vendor screen is unaffected. It exists because the mess
+ * screen needs the vendors who supply the KITCHEN - provisioners, a caterer - and reusing this
+ * function is what stops a second, subtly different vendor aggregation being written inside the
+ * hostel module. Same grouping, same `normaliseVendor` handling of legacy rows, one place.
+ */
+export async function vendorSpend(institutionId: string, fiscalYear?: string, category?: string) {
   const year = fiscalYear ?? currentFiscalYear();
   const { start, end } = fiscalYearRange(year);
 
   const [expenses, departments] = await Promise.all([
     prisma.expense.findMany({
-      where: { institutionId, date: { gte: start, lte: end }, vendor: { not: null } },
+      where: {
+        institutionId,
+        date: { gte: start, lte: end },
+        vendor: { not: null },
+        ...(category ? { category } : {}),
+      },
       select: {
         id: true, vendor: true, amountMinor: true, status: true, category: true,
         paymentMethod: true, paymentReference: true, departmentId: true, date: true,
@@ -846,13 +884,16 @@ export async function vendorSpend(institutionId: string, fiscalYear?: string) {
   const groups = new Map<string, any>();
 
   for (const e of expenses) {
-    // Normalised on the way in by `normaliseVendor`; normalised again here so
-    // rows seeded before that rule existed still group correctly.
-    const key = normaliseVendor(e.vendor);
+    // Folded CASE-INSENSITIVELY for grouping (see `vendorGroupKey`) so one supplier written two ways
+    // is one row with one total. Re-folded here as well as normalised on write, so rows that predate
+    // either rule still group correctly.
+    const key = vendorGroupKey(e.vendor);
     if (!key) continue;
     if (!groups.has(key)) {
       groups.set(key, {
-        vendor: key,
+        // Display keeps the first spelling seen, so the vendor name is not shouted into lower case
+        // on a screen an accounts clerk reads.
+        vendor: normaliseVendor(e.vendor),
         totalMinor: 0, approvedMinor: 0, pendingMinor: 0,
         claimCount: 0, approvedCount: 0, lastPaidAt: null,
         categories: new Map<string, number>(),

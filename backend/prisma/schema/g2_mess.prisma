@@ -1,5 +1,22 @@
 // Domain G2 — Mess: weekly menu, meal attendance, feedback.
 // Docs: 08-hostel.md §3.4. itemsJson = ["Chapati","Paneer Curry",…].
+//
+// `date` and `mealDate` ARE CALENDAR DAYS, NOT INSTANTS
+// ---------------------------------------------------
+// Both columns are used as a date key — "attendance for 4 Oct, lunch" — and both are compared
+// against a day. That makes the stored value an arbitrary representative instant of a local day,
+// so nothing may ever be matched with `===` or `getTime()` equality. Two shapes of bug come out
+// of getting that wrong, and both shipped in this file before (see `getMess` and the
+// `MESS_MEMBERS` broadcast audience):
+//
+//   1. rows written at 08:05 never match a midnight boundary, so a day's roll silently reads 0
+//   2. it only looks correct because the seeder happened to write midnight and the server
+//      happened to share the institution's timezone
+//
+// Every read therefore filters by RANGE (gte the local day start, lt the next day's start) via
+// the `dayRange` helper in `hostel-mess.service.ts`, and every write normalises to the local
+// midnight first. `institutionId` being present on both tables is what makes the range filter
+// tenant-scoped as well.
 
 model MessMenuItem {
   id         String   @id @default(cuid())
@@ -19,25 +36,39 @@ model MessMenuItem {
 model MealAttendance {
   id               String   @id @default(cuid())
   institutionId    String
-  date             DateTime
+  date             DateTime // a local calendar day, normalised to local midnight on write
   meal             String // BREAKFAST | LUNCH | DINNER
   studentProfileId String
+  /// One resident having one meal. Kept as a counter because the column predates the roll
+  /// workflow and may carry portion counts; nothing reads it as an aggregate, so the roll
+  /// treats it as presence. See `docs/users/08-hostel.md` §3.4.
   count            Int      @default(1)
+  /// Who marked the roll. A meal sheet with no author cannot be audited or disputed.
+  markedByUserId   String? // scalar → users.id
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
 
-  @@unique([date, meal, studentProfileId])
+  // `institutionId` leads the unique key deliberately. The original `[date, meal,
+  // studentProfileId]` looks tenant-safe because a student profile belongs to one institution —
+  /// but it makes "did this student eat lunch on day X" a global uniqueness claim, so the
+  /// database, not the application, would be the thing preventing two institutions from ever
+  /// recording the same student id. Asserted by `check-hostel-mess.ts`.
+  @@unique([institutionId, date, meal, studentProfileId])
+  @@index([institutionId, date, meal])
   @@index([studentProfileId])
   @@map("meal_attendance")
 }
 
 model MessFeedback {
   id               String   @id @default(cuid())
+  /// Present so the table can be scanned by institution like every sibling. Reachability still
+  /// goes through `studentProfile`, so this is never the only authority on who may read a row.
+  institutionId    String
   studentProfileId String
-  mealDate         DateTime
-  meal             String
+  mealDate         DateTime // a local calendar day
+  meal             String // BREAKFAST | LUNCH | DINNER
   rating           Int // 1–5
   comment          String?
   createdAt        DateTime @default(now())
@@ -45,7 +76,11 @@ model MessFeedback {
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
 
-  @@unique([mealDate, meal, studentProfileId])
+  // The student is the author and the only permitted editor, so a second rating for the same
+  /// meal on the same day is an UPDATE rather than a second opinion. Rated meal is keyed the same
+  /// way as attendance for the same reason.
+  @@unique([institutionId, mealDate, meal, studentProfileId])
+  @@index([institutionId, mealDate])
   @@index([studentProfileId])
   @@map("mess_feedback")
 }

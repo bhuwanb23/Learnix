@@ -3,12 +3,18 @@ import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
+import { requirePermission } from '../../middlewares/requirePermission.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   idParamSchema,
   bedParamSchema,
   allocateSchema,
   menuSchema,
+  messMarkSchema,
+  messRollQuerySchema,
+  messWindowQuerySchema,
+  messSurveySchema,
+  messExpenseSchema,
   complaintSchema,
   broadcastSchema,
   residentQuerySchema,
@@ -276,11 +282,30 @@ router.post(
   }),
 );
 
-// H-05 mess
+// ── H-05 Mess (docs/users/08-hostel.md §3.4) ───────────────────────────────
+//
+// ROUTE ORDER MATTERS HERE. Every path below is a static sibling under `/mess`, and none of them
+// is a `:param`, so none can be shadowed - but `roll` and `absent` are single segments and must be
+// declared BEFORE anything that could match them, so they are all literal-first by construction and
+// `verify-hostel/mess.ts` asserts each one individually by name.
+//
+// THE TWO SIDES OF THE MESS
+// -------------------------
+// The roll, the menu editor, the log and the analytics are warden-side and sit on this router
+// behind `requireRole('HOSTEL','ADMIN')`. A student's rating does NOT live here: it is on
+// `/student/mess`, because a resident must never be able to reach a write that belongs to mess
+// staff, and because creating it on this router would put it behind the HOSTEL role gate.
 router.get(
   '/mess',
   wrap(async (req, res) => {
     res.json({ data: await service.getMess(req.auth!.institutionId) });
+  }),
+);
+
+router.get(
+  '/mess/menu',
+  wrap(async (req, res) => {
+    res.json({ data: await service.getMessMenu(req.auth!.institutionId) });
   }),
 );
 
@@ -289,15 +314,146 @@ router.put(
   validate(menuSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.upsertMenuItem(req.auth!.userId, req.auth!.institutionId, req.body),
+      data: await service.setMessMenu(req.auth!.userId, req.auth!.institutionId, req.body),
+    });
+  }),
+);
+
+// The roll: who is here, who already ate, and who to chase.
+router.get(
+  '/mess/roll',
+  validate(messRollQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.getRoll(
+        req.auth!.institutionId,
+        req.query.date as string | undefined,
+        req.query.meal as any,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/mess/attendance',
+  validate(messMarkSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.markMealAttendance(req.auth!.userId, req.auth!.institutionId, req.body),
+    });
+  }),
+);
+
+router.get(
+  '/mess/attendance',
+  validate(messWindowQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.getAttendanceLog(
+        req.auth!.institutionId,
+        req.query.from as string | undefined,
+        req.query.to as string | undefined,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/mess/absent',
+  validate(messRollQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.getAbsent(
+        req.auth!.institutionId,
+        req.query.date as string | undefined,
+        req.query.meal as any,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/mess/analytics',
+  validate(messWindowQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.getMessAnalytics(
+        req.auth!.institutionId,
+        req.query.from as string | undefined,
+        req.query.to as string | undefined,
+      ),
+    });
+  }),
+);
+
+router.get(
+  '/mess/feedback',
+  validate(messWindowQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.listMessFeedback(
+        req.auth!.institutionId,
+        req.query.from as string | undefined,
+        req.query.to as string | undefined,
+      ),
     });
   }),
 );
 
 router.post(
   '/mess/survey',
+  validate(messSurveySchema),
   wrap(async (req, res) => {
-    res.json({ data: await service.sendMessSurvey(req.auth!.userId, req.auth!.institutionId) });
+    res.json({
+      data: await service.sendMessSurvey(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body?.meal,
+      ),
+    });
+  }),
+);
+
+// ── Mess money ─────────────────────────────────────────────────────────────────
+//
+// GUARDED BY A CAPABILITY, NOT BY A ROLE. These two routes read and write `Expense`, which is the
+// institution's financial ledger. Every other route to that table is behind
+// `requireRole('ACCOUNTS','ADMIN')` on the Accounts router, and a warden has only the HOSTEL role,
+// so without this they could not see a rupee of mess spend.
+//
+// The alternative - giving the warden the ACCOUNTS role - was rejected deliberately: it would also
+// hand over `payroll.run`, `fees.waive`, scholarships and every financial report. A narrow,
+// audited, admin-editable permission is the smallest thing that opens exactly this one door.
+//
+// It is also the first route in the platform to actually ENFORCE `RolePermission`, which until now
+// was modelled, seeded, displayed on the user's profile, administered through
+// `/platform/roles/:role/permissions` and audited - but never checked. See
+// `middlewares/requirePermission.ts` for what that means and what it does not.
+//
+// A raised claim is PENDING and is approved by the accounts desk, not by its own author.
+router.get(
+  '/mess/expenses',
+  requirePermission('hostel.mess.expenses'),
+  validate(messWindowQuerySchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.getMessExpenses(
+        req.auth!.institutionId,
+        req.query.from as string | undefined,
+        req.query.to as string | undefined,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/mess/expenses',
+  requirePermission('hostel.mess.expenses'),
+  validate(messExpenseSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await service.raiseMessExpense(req.auth!.userId, req.auth!.institutionId, req.body),
+    });
   }),
 );
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CATEGORY_IDS, type ExpenseCategoryId } from './expenses.money.js';
 
 // Accounts & Finance module request schemas (docs/users/06 §4)
 
@@ -140,7 +141,17 @@ export const payrollEntryParamSchema = z.object({
 // The category list is the single source of truth shared with `expenses.money.ts`
 // and the entry form, so a category can never exist in the app but not in the
 // database (or vice versa) — which would silently create an unbudgeted bucket.
-export const EXPENSE_CATEGORY_ENUM = z.enum(['LABS', 'EVENTS', 'MAINTENANCE', 'UTILITIES', 'MISC']);
+//
+// DERIVED, NOT REPEATED. This used to be a second literal list of the same five
+// names with a comment claiming the two were shared. They were not — they were two
+// copies that happened to agree. Adding `MESS` here and forgetting `expenses.money.ts`
+// (or the reverse) produces a category the API accepts but no budget covers, which is
+// precisely the failure the comment claims to prevent. `CATEGORY_IDS` is built from the
+// same array the UI is served, so a category cannot exist on one side only.
+// `z.enum` needs a non-empty tuple; `CATEGORY_IDS` is a plain array, hence the cast.
+export const EXPENSE_CATEGORY_ENUM = z.enum(
+  CATEGORY_IDS as [ExpenseCategoryId, ...ExpenseCategoryId[]],
+);
 export const PAYMENT_METHOD_ENUM = z.enum(['BANK_TRANSFER', 'UPI', 'CHEQUE', 'CARD', 'CASH']);
 export const EXPENSE_STATUS_ENUM = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
 export const DOC_KIND_ENUM = z.enum(['RECEIPT', 'INVOICE', 'QUOTATION']);

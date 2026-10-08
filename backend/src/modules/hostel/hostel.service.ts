@@ -2,6 +2,9 @@ import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { HOSTEL_RENT_MONTHLY_MINOR } from './hostel.constants.js';
+// The day arithmetic is owned by the mess rules module. Imported here so the broadcast audience
+// below resolves "today" the same way the mess screen does, rather than each rolling its own.
+import { dayRange, localToday } from './hostel-mess.rules.js';
 
 // The reads over room inventory live in `hostel-rooms.service.ts`, and the residents surface in
 // `hostel-residents.service.ts` / `hostel-contacts.service.ts`. Re-exported here so the routes
@@ -90,7 +93,10 @@ export async function getDashboard(institutionId: string) {
       where: { status: { not: 'RESOLVED' }, studentProfile: { user: { institutionId } } },
     }),
     prisma.messFeedback.aggregate({
-      where: { studentProfile: { user: { institutionId } } },
+      // Scoped by `institutionId` directly now that the column exists. Previously this had to walk
+      // `studentProfile.user.institutionId`, which is correct but scans a join for every dashboard
+      // load and made the table unscannable by tenant.
+      where: { institutionId },
       _avg: { rating: true },
     }),
   ]);
@@ -550,116 +556,30 @@ export async function markRentPaid(
   };
 }
 
-// ── H-05 Mess ────────────────────────────────────────────────
-export async function getMess(institutionId: string) {
-  const [menu, attendance, feedback] = await Promise.all([
-    prisma.messMenuItem.findMany({ where: { institutionId }, orderBy: [{ dayOfWeek: 'asc' }, { meal: 'asc' }] }),
-    prisma.mealAttendance.findMany({
-      where: { studentProfile: { user: { institutionId } } },
-      select: { meal: true, date: true, studentProfileId: true },
-    }),
-    prisma.messFeedback.findMany({
-      where: { studentProfile: { user: { institutionId } } },
-      include: { studentProfile: { include: { user: { select: { fullName: true } } } } },
-      orderBy: { mealDate: 'desc' },
-      take: 15,
-    }),
-  ]);
+// ── H-05 Mess ────────────────────────────────────────────────────
+//
+// The whole feature now lives in `hostel-mess.service.ts`, next to the day arithmetic in
+// `hostel-mess.rules.ts`. It used to be the `getMess` below, which compared a calendar day to
+// an instant (`a.date.getTime() === today.setHours(0,0,0,0)`), reported residents as
+// `attendance.length > 0 ? residentsOfBlock().length : 0`, and called an average of the last 15
+// feedback rows "weekly rating". Re-exported here so the routes keep one import site.
+export {
+  getMess,
+  getMessMenu,
+  setMessMenu,
+  getRoll,
+  markMealAttendance,
+  getAttendanceLog,
+  getAbsent,
+  getMessAnalytics,
+  listMessFeedback,
+  sendMessSurvey,
+  getMessExpenses,
+  raiseMessExpense,
+  getStudentMess,
+  rateMeal,
+} from './hostel-mess.service.js';
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayAtt = attendance.filter((a) => a.date.getTime() === today.getTime());
-  const meals = ['BREAKFAST', 'LUNCH', 'DINNER'] as const;
-  const attendanceToday = meals.map((meal) => ({
-    meal,
-    count: todayAtt.filter((a) => a.meal === meal).length,
-  }));
-
-  const avg =
-    feedback.length === 0
-      ? null
-      : Math.round((feedback.reduce((n, f) => n + f.rating, 0) / feedback.length) * 10) / 10;
-
-  return {
-    menu: menu.map((m) => ({
-      id: m.id,
-      dayOfWeek: m.dayOfWeek,
-      meal: m.meal,
-      items: JSON.parse(m.itemsJson) as string[],
-      isVeg: m.isVeg,
-    })),
-    residents: attendance.length > 0 ? (await residentsOfBlock(institutionId)).length : 0,
-    attendanceToday,
-    avgRating: avg,
-    feedback: feedback.map((f) => ({
-      id: f.id,
-      student: f.studentProfile.user.fullName,
-      meal: f.meal,
-      mealDate: f.mealDate,
-      rating: f.rating,
-      comment: f.comment,
-    })),
-  };
-}
-
-export async function upsertMenuItem(
-  userId: string,
-  institutionId: string,
-  body: { dayOfWeek: number; meal: 'BREAKFAST' | 'LUNCH' | 'DINNER'; items: string[] },
-) {
-  const existing = await prisma.messMenuItem.findFirst({
-    where: { institutionId, dayOfWeek: body.dayOfWeek, meal: body.meal },
-  });
-  const row = existing
-    ? await prisma.messMenuItem.update({
-        where: { id: existing.id },
-        data: { itemsJson: JSON.stringify(body.items) },
-      })
-    : await prisma.messMenuItem.create({
-        data: {
-          institutionId,
-          dayOfWeek: body.dayOfWeek,
-          meal: body.meal,
-          itemsJson: JSON.stringify(body.items),
-        },
-      });
-
-  await writeAudit({
-    actorUserId: userId,
-    institutionId,
-    action: 'hostel.menu.update',
-    entityType: 'MessMenuItem',
-    entityId: row.id,
-    after: { dayOfWeek: body.dayOfWeek, meal: body.meal, items: body.items },
-  });
-
-  return { id: row.id, dayOfWeek: row.dayOfWeek, meal: row.meal, items: body.items };
-}
-
-export async function sendMessSurvey(userId: string, institutionId: string) {
-  const allocations = await residentsOfBlock(institutionId);
-  const recipients = allocations.map((a) => a.studentProfile.user.id);
-  if (recipients.length > 0) {
-    await prisma.notification.createMany({
-      data: recipients.map((rid) => ({
-        institutionId,
-        recipientUserId: rid,
-        type: 'HOSTEL',
-        title: 'Mess feedback survey',
-        body: 'Rate today\'s meals in the mess section — your feedback shapes the weekly menu.',
-        sourceModule: 'hostel',
-      })),
-    });
-  }
-  await writeAudit({
-    actorUserId: userId,
-    institutionId,
-    action: 'hostel.mess.survey',
-    entityType: 'Notification',
-    after: { recipients: recipients.length },
-  });
-  return { recipients: recipients.length };
-}
 
 // ── H-07 Complaints ──────────────────────────────────────────
 export async function listComplaints(institutionId: string) {
@@ -845,10 +765,13 @@ export async function createBroadcast(
       .filter((a) => a.bed.room.block.name === name)
       .map((a) => a.studentProfile.user.id);
   } else if (body.audience === 'MESS_MEMBERS') {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // RANGE, not `date: today` equality. This was the THIRD place a calendar day was compared as
+    // an instant, and the effect was that a broadcast to mess members resolved to zero recipients
+    // whenever the day's roll had not been written at exactly midnight - silently, with a 201 and
+    // a recipient count of 0. Same fix as `getMess`, and it shares the same helper.
+    const range = dayRange(localToday());
     const att = await prisma.mealAttendance.findMany({
-      where: { date: today, studentProfile: { user: { institutionId } } },
+      where: { institutionId, date: { gte: range.gte, lt: range.lt } },
       select: { studentProfile: { select: { userId: true } } },
     });
     recipientIds = [...new Set(att.map((a) => a.studentProfile.userId))];

@@ -1805,50 +1805,189 @@ async function seedDomainG(institutionId: string): Promise<void> {
     }
   }
 
-  // Mess menu Mon–Sun × 3 meals for Monday (representative) — fill all 7 days
-  const menuExists = await db.messMenuItem.findFirst({ where: { institutionId } });
-  if (!menuExists) {
-    const meals = [
+  // ── Mess (H-05) ─────────────────────────────────────────────────────────────────
+  //
+  // Three things this seed deliberately does that the old one did not.
+  //
+  // 1. A REAL WEEK. The previous menu wrote the SAME three vegetarian meals to all 7 days with
+  //    isVeg=true everywhere, which left the vegetarian flag untestable and gave the menu screen
+  //    nothing real to show. A hostel week varies and is not all-veg, so this one does both.
+  //
+  // 2. HISTORY, NOT ONE DAY. Analytics only mean something over a window, so attendance covers six
+  //    weeks and ratings four. With a single day of rows every rate and average on the screen is
+  //    either 0% or 100% and the feature reads as broken.
+  //
+  // 3. EVERY RESIDENT, NOT THREE. The old seed marked lunch for one student and all three meals
+  //    for another, which made participation out of 30 look like a failing mess. The residents are
+  //    read from the live allocations, so the denominator is the real one.
+  //
+  // day 0 = Sunday, matching `MessMenuItem.dayOfWeek`.
+  const messVariants: Record<number, Array<{ meal: string; items: string[]; isVeg: boolean }>> = {
+    0: [
+      { meal: 'BREAKFAST', items: ['Poha', 'Boiled Egg', 'Onion'], isVeg: false },
+      { meal: 'LUNCH', items: ['Rice', 'Sambar', 'Veg Pulao', 'Papad'], isVeg: true },
+      { meal: 'DINNER', items: ['Roti', 'Chole', 'Rice', 'Curd'], isVeg: true },
+    ],
+    1: [
+      { meal: 'BREAKFAST', items: ['Dosa', 'Coconut Chutney', 'Filter Coffee'], isVeg: true },
+      { meal: 'LUNCH', items: ['Rice', 'Rajma', 'Jeera Aloo', 'Salad'], isVeg: true },
+      { meal: 'DINNER', items: ['Chapati', 'Butter Chicken', 'Rice'], isVeg: false },
+    ],
+    2: [
+      { meal: 'BREAKFAST', items: ['Upma', 'Medu Vada', 'Banana'], isVeg: true },
+      { meal: 'LUNCH', items: ['Rice', 'Chole', 'Curd', 'Buttermilk'], isVeg: true },
+      { meal: 'DINNER', items: ['Roti', 'Dal Tadka', 'Rice'], isVeg: true },
+    ],
+    3: [
       { meal: 'BREAKFAST', items: ['Idli', 'Sambar', 'Coconut Chutney'], isVeg: true },
-      { meal: 'LUNCH', items: ['Rice', 'Dal Tadka', 'Beans Poriyal', 'Curd'], isVeg: true },
-      { meal: 'DINNER', items: ['Chapati', 'Paneer Butter Masala', 'Salad'], isVeg: true },
-    ] as const;
-    for (let day = 0; day < 7; day++) {
-      for (const m of meals) {
-        await db.messMenuItem.create({
-          data: { institutionId, dayOfWeek: day, meal: m.meal, itemsJson: JSON.stringify(m.items), isVeg: m.isVeg },
+      { meal: 'LUNCH', items: ['Rice', 'Fish Curry', 'Curd', 'Salad'], isVeg: false },
+      { meal: 'DINNER', items: ['Chapati', 'Mixed Veg', 'Rice'], isVeg: true },
+    ],
+    4: [
+      { meal: 'BREAKFAST', items: ['Aloo Paratha', 'Curd', 'Butter'], isVeg: true },
+      { meal: 'LUNCH', items: ['Rice', 'Dal Fry', 'Cabbage Poriyal', 'Curd'], isVeg: true },
+      { meal: 'DINNER', items: ['Roti', 'Paneer Tikka', 'Rice'], isVeg: true },
+    ],
+    5: [
+      { meal: 'BREAKFAST', items: ['Puri Bhaji', 'Ladoo'], isVeg: true },
+      { meal: 'LUNCH', items: ['Veg Biryani', 'Raita', 'Salad'], isVeg: true },
+      { meal: 'DINNER', items: ['Chapati', 'Egg Curry', 'Rice'], isVeg: false },
+    ],
+    6: [
+      { meal: 'BREAKFAST', items: ['Idli', 'Sambar', 'Coconut Chutney'], isVeg: true },
+      { meal: 'LUNCH', items: ['Rice', 'Sambar', 'Veg Pulao'], isVeg: true },
+      { meal: 'DINNER', items: ['Chapati', 'Dal Tadka', 'Rice'], isVeg: true },
+    ],
+  };
+
+  for (let day = 0; day < 7; day++) {
+    for (const m of messVariants[day]) {
+      // Guarded PER SLOT, not once for the whole table. The old seed did `if (!menuExists) create
+      // all 21`, so a menu missing one meal could never be repaired by a reseed: it saw "some menu
+      // exists" and left the gap in place forever.
+      await db.messMenuItem.upsert({
+        where: { institutionId_dayOfWeek_meal: { institutionId, dayOfWeek: day, meal: m.meal } },
+        update: { itemsJson: JSON.stringify(m.items), isVeg: m.isVeg },
+        create: {
+          institutionId,
+          dayOfWeek: day,
+          meal: m.meal,
+          itemsJson: JSON.stringify(m.items),
+          isVeg: m.isVeg,
+        },
+      });
+    }
+  }
+
+  // Residents are the denominator of every participation number, so read them from the live
+  // allocations rather than hardcoding three names.
+  const messResidentIds = (
+    await db.hostelAllocation.findMany({
+      where: { status: 'ACTIVE', bed: { room: { block: { institutionId } } } },
+      select: { studentProfileId: true },
+      orderBy: { studentProfileId: 'asc' },
+    })
+  ).map((r) => r.studentProfileId);
+
+  // Resolved once here and reused by the gate-pass, complaint and visitor fixtures below.
+  const snehaProf = sneha ? await db.studentProfile.findFirst({ where: { userId: sneha.id } }) : null;
+  const vikramProf = vikram ? await db.studentProfile.findFirst({ where: { userId: vikram.id } }) : null;
+
+  // Deterministic pseudo-random, so a reseed reproduces the SAME six weeks. Real RNG would rewrite
+  // the history every run and make "did my change affect the data" unanswerable.
+  const messRng = (seed: number) => {
+    let s = seed >>> 0;
+    return () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+  };
+
+  // Local midnight, matching what `markMealAttendance` normalises every write to. Both agree only
+  // because the server shares the institution's zone, which is the same assumption the old
+  // date-equality bug was quietly relying on - here it is stated instead of being implicit.
+  const messToday = new Date();
+  messToday.setHours(0, 0, 0, 0);
+  const messDay = (back: number) => new Date(messToday.getTime() - back * 86400000);
+  const messMarkedBy = warden?.id ?? null;
+
+  // Six weeks of attendance. Not everyone eats every meal on every day, which is the whole point of
+  // a participation rate: a synthetic 100% would make the number meaningless.
+  for (let back = 41; back >= 0; back--) {
+    const day = messDay(back);
+    const rng = messRng(back * 977 + 13);
+    for (const meal of ['BREAKFAST', 'LUNCH', 'DINNER']) {
+      // Breakfast is the least popular and lunch the most, as a real hostel shows.
+      const base = meal === 'BREAKFAST' ? 0.62 : meal === 'LUNCH' ? 0.88 : 0.79;
+      for (let i = 0; i < messResidentIds.length; i++) {
+        const profileId = messResidentIds[i];
+        // Per-resident jitter, so one student is not present every single day.
+        if (rng() >= base - (i % 5) * 0.03) continue;
+        await db.mealAttendance.upsert({
+          where: {
+            institutionId_date_meal_studentProfileId: {
+              institutionId,
+              date: day,
+              meal,
+              studentProfileId: profileId,
+            },
+          },
+          update: {},
+          create: {
+            institutionId,
+            date: day,
+            meal,
+            studentProfileId: profileId,
+            count: 1,
+            markedByUserId: messMarkedBy,
+          },
         });
       }
     }
   }
 
-  // Meal attendance today (Arjun lunch; Sneha breakfast+lunch; Vikram all 3)
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const attendanceSeed: [typeof studentProfile, string][] = [];
-  const snehaProf = sneha ? await db.studentProfile.findFirst({ where: { userId: sneha.id } }) : null;
-  const vikramProf = vikram ? await db.studentProfile.findFirst({ where: { userId: vikram.id } }) : null;
-  if (studentProfile) attendanceSeed.push([studentProfile, 'LUNCH']);
-  if (snehaProf) attendanceSeed.push([snehaProf, 'BREAKFAST'], [snehaProf, 'LUNCH']);
-  if (vikramProf) attendanceSeed.push([vikramProf, 'BREAKFAST'], [vikramProf, 'LUNCH'], [vikramProf, 'DINNER']);
-  for (const [prof, meal] of attendanceSeed) {
-    const attExists = await db.mealAttendance.findFirst({ where: { date: today, meal, studentProfileId: prof.id } });
-    if (!attExists) {
-      await db.mealAttendance.create({ data: { institutionId, date: today, meal, studentProfileId: prof.id, count: 1 } });
-    }
-  }
-
-  // Feedback from all three residents
-  const feedbackSeed: { prof: typeof studentProfile; meal: string; rating: number; comment: string }[] = [];
-  if (studentProfile) feedbackSeed.push({ prof: studentProfile, meal: 'LUNCH', rating: 4, comment: 'Dal was good, rice slightly cold' });
-  if (snehaProf) feedbackSeed.push({ prof: snehaProf, meal: 'DINNER', rating: 5, comment: 'Paneer butter masala was excellent' });
-  if (vikramProf) feedbackSeed.push({ prof: vikramProf, meal: 'BREAKFAST', rating: 3, comment: 'Idli batter needs more fermentation' });
-  for (const f of feedbackSeed) {
-    const fbExists = await db.messFeedback.findFirst({ where: { mealDate: today, meal: f.meal, studentProfileId: f.prof.id } });
-    if (!fbExists) {
-      await db.messFeedback.create({
-        data: { studentProfileId: f.prof.id, mealDate: today, meal: f.meal, rating: f.rating, comment: f.comment },
-      });
+  // Four weeks of ratings. Comments come from a small set so the feedback screen has recognisable
+  // kitchen complaints in it rather than placeholder text.
+  const messComments = [
+    'Dal was good but the rice was served cold.',
+    'Paneer curry was excellent, portions have improved.',
+    'Idli batter needs more fermentation.',
+    'Vegetables were fresh and the oil was not too much.',
+    'Roti was slightly hard today.',
+    'Chole was bland, needs more tadka.',
+    'Curds were fresh, keep it up.',
+    'Fish curry was good but the portion looked small.',
+  ];
+  for (let back = 27; back >= 0; back--) {
+    const day = messDay(back);
+    const rng = messRng(back * 613 + 7);
+    for (const meal of ['BREAKFAST', 'LUNCH', 'DINNER']) {
+      // Roughly a quarter to a half respond, which is honest about response rate and keeps the
+      // rating's sample size visibly different from the resident count.
+      const count = Math.max(1, Math.round(messResidentIds.length * (0.25 + rng() * 0.2)));
+      const shuffled = [...messResidentIds].sort(() => rng() - 0.5).slice(0, count);
+      for (const profileId of shuffled) {
+        const rating = 3 + Math.floor(rng() * 3); // a 3-5 spread, so an average is a real average
+        await db.messFeedback.upsert({
+          where: {
+            institutionId_mealDate_meal_studentProfileId: {
+              institutionId,
+              mealDate: day,
+              meal,
+              studentProfileId: profileId,
+            },
+          },
+          update: {},
+          create: {
+            institutionId,
+            studentProfileId: profileId,
+            mealDate: day,
+            meal,
+            rating,
+            comment: rng() < 0.6 ? messComments[Math.floor(rng() * messComments.length)] : null,
+          },
+        });
+      }
     }
   }
 
@@ -2042,6 +2181,23 @@ async function seedDomainG(institutionId: string): Promise<void> {
     if (!c3) {
       await db.hostelComplaint.create({
         data: { studentProfileId: vikramProf.id, category: 'MAINTENANCE', description: 'Broken window grill in B-204', severity: 'LOW', status: 'ASSIGNED', assignedToUserId: wardenId },
+      });
+    }
+  }
+  // A food-quality complaint, so the new `FOOD` category has a row and the warden's complaint inbox
+  // shows the mess version of the same workflow. OPEN, because a kitchen problem that has been
+  // assigned is a kitchen problem somebody is already on.
+  if (studentProfile) {
+    const c4 = await db.hostelComplaint.findFirst({ where: { studentProfileId: studentProfile.id, category: 'FOOD' } });
+    if (!c4) {
+      await db.hostelComplaint.create({
+        data: {
+          studentProfileId: studentProfile.id,
+          category: 'FOOD',
+          description: 'Found a hair in the dal at dinner yesterday. Please check the kitchen.',
+          severity: 'HIGH',
+          status: 'OPEN',
+        },
       });
     }
   }
@@ -3246,6 +3402,13 @@ async function seedDomainL(institutionId: string): Promise<void> {
     { key: 'library.circulate', name: 'Issue/return books', category: 'LIBRARY' },
     { key: 'library.manage', name: 'Manage catalog', category: 'LIBRARY' },
     { key: 'hostel.manage', name: 'Manage hostel', category: 'HOSTEL' },
+    // The mess capability split. `hostel.mess.manage` covers the operational half - menu, roll,
+    // log, analytics, feedback. `hostel.mess.expenses` is SEPARATE and deliberately not implied by
+    // the first, because it is the one that reaches `Expense`, the financial ledger. Keeping them
+    // apart means a college can hand a deputy warden the roll and the menu while the spend stays
+    // with the chief warden, by editing the role in the app rather than by writing a new role.
+    { key: 'hostel.mess.manage', name: 'Manage mess menu, meals and feedback', category: 'HOSTEL' },
+    { key: 'hostel.mess.expenses', name: 'View and raise mess expenses', category: 'HOSTEL' },
     { key: 'transport.manage', name: 'Manage transport', category: 'TRANSPORT' },
     { key: 'placement.manage', name: 'Manage placements', category: 'PLACEMENT' },
     { key: 'sports.manage', name: 'Manage sports', category: 'SPORTS' },
@@ -3280,7 +3443,7 @@ async function seedDomainL(institutionId: string): Promise<void> {
       'payroll.run', 'audit.read',
     ],
     LIBRARY: ['students.read', 'library.circulate', 'library.manage'],
-    HOSTEL: ['students.read', 'hostel.manage', 'fees.read'],
+    HOSTEL: ['students.read', 'hostel.manage', 'hostel.mess.manage', 'hostel.mess.expenses', 'fees.read'],
     TRANSPORT: ['students.read', 'transport.manage', 'fees.read'],
     PLACEMENT: ['students.read', 'placement.manage'],
     SPORTS: ['students.read', 'sports.manage'],
@@ -3405,6 +3568,10 @@ async function syncExpenses(institutionId: string, actorUserId: string) {
     { category: 'EVENTS', dept: null, minor: 80000000, note: 'Institute-wide events' },
     { category: 'MAINTENANCE', dept: deptOf(2), minor: 90000000, note: 'Civil and electrical upkeep' },
     { category: 'UTILITIES', dept: null, minor: 150000000, note: 'Electricity, water, internet' },
+    // Mess gets a real line rather than sharing MISC. It is the one budget a warden is measured
+    // against every month, and a mess claim with no budget is a claim no one is tracking against a
+    // number. Institution-wide (dept: null), because the kitchen feeds all three blocks.
+    { category: 'MESS', dept: null, minor: 180000000, note: 'Mess provisions, fuel and kitchen equipment' },
     { category: 'MISC', dept: null, minor: 40000000, note: 'Contingency' },
   ];
 
@@ -3494,6 +3661,18 @@ async function syncExpenses(institutionId: string, actorUserId: string) {
     // Five months back — the deliberate gap at four.
     { key: 'lab-chairs', category: 'LABS', title: 'Lab stools ×20', vendor: 'FurnitureMart', amountMinor: 1800000, taxMinor: 306000, departmentId: pick(departments[1]?.name ?? ''), budgetCategory: 'LABS', method: 'BANK_TRANSFER', reference: 'UTR3610', date: monthsAgo(5, 16), status: 'APPROVED' },
     { key: 'evt-sem', category: 'EVENTS', title: 'Seminar hall booking', vendor: 'VenueHire', amountMinor: 520000, departmentId: departments[0]?.id ?? null, budgetCategory: 'EVENTS', method: 'UPI', reference: 'UPI85011', date: monthsAgo(5, 23), status: 'APPROVED' },
+
+    // ── Mess (H-05) ────────────────────────────────────────────────────────────────
+    // Groceries and kitchen running costs, on several vendors and with a PENDING claim in the
+    // current month. The pending one is the point: it is what a warden-raised claim looks like
+    // before the accounts desk has approved it, so the mess screen's "awaiting approval" figure is
+    // a real number rather than a column that is always zero.
+    { key: 'mess-groc', category: 'MESS', title: 'Weekly provisions — vegetables and dairy', subcategory: 'Groceries', vendor: 'Fresh Basket Traders', amountMinor: 2860000, departmentId: null, budgetCategory: 'MESS', method: 'UPI', reference: 'UPI91004', date: monthsAgo(0, 5), status: 'APPROVED', note: 'Six weeks of menu shown on the mess screen were costed against this order.' },
+    { key: 'mess-flour', category: 'MESS', title: 'Rice, atta and cooking oil — bulk', subcategory: 'Staples', vendor: 'Anand Provisions', amountMinor: 4120000, taxMinor: 274000, departmentId: null, budgetCategory: 'MESS', method: 'BANK_TRANSFER', reference: 'UTR4461', date: monthsAgo(0, 7), status: 'PENDING', note: 'Raised by the warden from the mess screen.' },
+    { key: 'mess-chicken', category: 'MESS', title: 'Non-veg supplies for the week', subcategory: 'Non-veg', vendor: '  fresh basket traders  ', amountMinor: 940000, departmentId: null, budgetCategory: 'MESS', method: 'CASH', reference: 'UPI91022', date: monthsAgo(0, 9), status: 'PENDING', note: 'Vendor deliberately written with stray spaces and a different capitalisation to "Fresh Basket Traders" - `normaliseVendor` collapses whitespace on read, so these two still aggregate as one vendor. That is the behaviour under test, not a typo.' },
+    { key: 'mess-gas', category: 'MESS', title: 'Commercial LPG cylinder refill', subcategory: 'Fuel', vendor: 'Bharat Gas Co', amountMinor: 1180000, departmentId: null, budgetCategory: 'MESS', method: 'CHEQUE', reference: 'CHQ0142', date: monthsAgo(1, 14), status: 'APPROVED' },
+    { key: 'mess-crockery', category: 'MESS', title: 'Steel plates and serving spoons ×60', subcategory: 'Equipment', vendor: 'Hotel Supply India', amountMinor: 2240000, taxMinor: 158000, departmentId: null, budgetCategory: 'MESS', method: 'BANK_TRANSFER', reference: 'UTR4330', date: monthsAgo(2, 11), status: 'APPROVED' },
+    { key: 'mess-cater', category: 'MESS', title: 'Caterer for the hostel annual dinner', subcategory: 'Catering', vendor: 'Spice Route Caterers', amountMinor: 3650000, taxMinor: 243000, departmentId: null, budgetCategory: 'MESS', method: 'BANK_TRANSFER', reference: 'UTR4055', date: monthsAgo(3, 20), status: 'APPROVED' },
   ];
 
   const createdIds: string[] = [];

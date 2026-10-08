@@ -25,6 +25,7 @@ export type ExpenseCategoryId =
   | 'EVENTS'
   | 'MAINTENANCE'
   | 'UTILITIES'
+  | 'MESS'
   | 'MISC';
 
 export const EXPENSE_CATEGORIES: Array<{
@@ -39,7 +40,13 @@ export const EXPENSE_CATEGORIES: Array<{
   { id: 'EVENTS', label: 'Events & hosting', color: '#7c3aed', icon: 'sparkles-outline', hint: 'Fests, seminars, guest travel, catering' },
   { id: 'MAINTENANCE', label: 'Maintenance', color: '#d97706', icon: 'construct-outline', hint: 'Repairs, AMC, plumbing, electrical, furniture' },
   { id: 'UTILITIES', label: 'Utilities', color: '#0891b2', icon: 'flash-outline', hint: 'Electricity, water, gas, internet' },
-  { id: 'MISC', label: 'Miscellaneous', color: '#64748b', icon: 'ellipsis-horizontal-outline', hint: 'Anything that does not fit above — always say more in the note' },
+  // Mess is its own category because it is the only spend with a resident-facing consequence:
+  // a hostel warden raises it from the mess screen and the kitchen sized off it. Buried in MISC
+  // it would be indistinguishable from a stationery purchase, which is how a mess budget quietly
+  // disappears into a general one. Raised by the warden under `hostel.mess.expenses`, approved by
+  // ACCOUNTS like every other claim - see `docs/users/08-hostel.md` 3.4.
+  { id: 'MESS', label: 'Mess & kitchen', color: '#db2777', icon: 'restaurant-outline', hint: 'Provisions, groceries, kitchen equipment, caterer bills' },
+  { id: 'MISC', label: 'Miscellaneous', color: '#64748b', icon: 'ellipsis-horizontal-outline', hint: 'Anything that does not fit above - always say more in the note' },
 ];
 
 export const CATEGORY_IDS = EXPENSE_CATEGORIES.map((c) => c.id);

@@ -68,7 +68,7 @@ model GatePass {
 model HostelComplaint {
   id               String    @id @default(cuid())
   studentProfileId String
-  category         String // PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE
+  category         String // PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE | FOOD
   description      String
   severity         String // LOW | MEDIUM | HIGH
   status           String    @default("OPEN") // OPEN | ASSIGNED | RESOLVED

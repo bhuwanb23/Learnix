@@ -182,11 +182,69 @@ export const menuSchema = z.object({
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   meal: z.enum(['BREAKFAST', 'LUNCH', 'DINNER']),
   items: z.array(z.string().trim().min(1).max(60)).min(1).max(12),
+  // Now actually persisted. It was accepted by no schema and written by no query before, so the
+  // vegetarian flag on the menu was whatever the seeder happened to say and could never be
+  // corrected from the app.
+  isVeg: z.boolean().default(true),
+});
+
+export const MEAL_ENUM = z.enum(['BREAKFAST', 'LUNCH', 'DINNER']);
+
+/** `YYYY-MM-DD`. Shape only - whether it is a REAL date (2026-02-30 is not) is `parseDay`'s job. */
+export const daySchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+
+export const messMarkSchema = z.object({
+  // Omit to mean today. Never defaulted with `z.coerce` on a number, which would turn an absent
+  // field into a valid instant somewhere in 1970.
+  date: daySchema.optional(),
+  meal: MEAL_ENUM,
+  presentStudentProfileIds: z.array(z.string().min(1).max(64)).max(500),
+});
+
+export const messRollQuerySchema = z.object({
+  date: daySchema.optional(),
+  meal: MEAL_ENUM,
+});
+
+export const messWindowQuerySchema = z.object({
+  from: daySchema.optional(),
+  to: daySchema.optional(),
+});
+
+export const messSurveySchema = z.object({
+  meal: MEAL_ENUM.optional(),
+});
+
+export const messFeedbackSchema = z.object({
+  mealDate: daySchema.optional(),
+  meal: MEAL_ENUM,
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().max(400).optional(),
+});
+
+/**
+ * A mess claim. `category` is absent BY DESIGN - it is pinned to `MESS` in the service, so a warden
+ * raising a grocery bill cannot talk this endpoint into creating a `LABS` or `PAYROLL` claim. The
+ * amount is in paise (ADR-04), like every other amount in the system.
+ */
+export const messExpenseSchema = z.object({
+  amountMinor: z.number().int().min(1),
+  title: z.string().trim().min(1).max(160),
+  vendor: z.string().trim().max(120).optional(),
+  note: z.string().trim().max(500).optional(),
+  paymentMethod: z.enum(['BANK_TRANSFER', 'UPI', 'CHEQUE', 'CARD', 'CASH']).optional(),
+  date: daySchema.optional(),
 });
 
 export const complaintSchema = z.object({
   studentProfileId: z.string().min(1).max(64),
-  category: z.enum(['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE']),
+  // `FOOD` is a food-quality complaint - the mess version of the same workflow. It reuses
+  // OPEN → ASSIGNED → RESOLVED rather than getting a second lifecycle, because a resident who
+  // found hair in the dal wants it fixed and tracked, not routed into a different queue.
+  category: z.enum(['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE', 'FOOD']),
   description: z.string().trim().min(5).max(500),
   severity: z.enum(['LOW', 'MEDIUM', 'HIGH']),
 });

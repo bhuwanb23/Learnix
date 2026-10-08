@@ -94,7 +94,7 @@ export const BED_STATUS = ['VACANT', 'ALLOCATED', 'MAINTENANCE'] as const;
 export const ALLOCATION_STATUS = ['ACTIVE', 'TRANSFERRED', 'VACATED'] as const;
 export const MEAL = ['BREAKFAST', 'LUNCH', 'DINNER'] as const;
 export const GATE_PASS_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
-export const COMPLAINT_CATEGORY = ['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE'] as const;
+export const COMPLAINT_CATEGORY = ['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE', 'FOOD'] as const;
 export const COMPLAINT_STATUS = ['OPEN', 'ASSIGNED', 'RESOLVED'] as const;
 export const VISITOR_STATUS = ['IN', 'OUT'] as const;
 
