@@ -5,7 +5,6 @@ import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   idParamSchema,
-  assignEvaluatorSchema,
   publishResultsSchema,
   enterResultSchema,
   decideRevalSchema,
@@ -79,45 +78,28 @@ router.get(
 // `/hall-tickets/exams/:examId/generate`. A caller still holding the old path
 // gets a 404 rather than a quietly different shape.
 
-// X-05 evaluations — list
-router.get(
-  '/evaluations',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listEvaluations(req.auth!.institutionId) });
-  }),
-);
-
-// X-05 evaluations — assign evaluator
-router.post(
-  '/evaluations/:id/assign',
-  validate(idParamSchema, 'params'),
-  validate(assignEvaluatorSchema),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.assignEvaluator(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-        req.body.evaluatorUserId,
-      ),
-    });
-  }),
-);
-
-// X-05 evaluations — mark complete
-router.post(
-  '/evaluations/:id/complete',
-  validate(idParamSchema, 'params'),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.completeEvaluation(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-      ),
-    });
-  }),
-);
+// ── X-05 evaluations ────────────────────────────────────────────────────
+// MOVED to `./evaluation.routes.ts`, which is mounted BEFORE this router.
+//
+// The three endpoints that used to live here were removed rather than
+// re-pointed, for the reason X-02's and X-04's were:
+//
+//   GET  /evaluations            a flat list with no tenant-safe block
+//                                structure and no way to see WHICH papers a
+//                                count was missing.
+//   POST /evaluations/:id/assign accepted any userId that had a TEACHER role
+//                                ANYWHERE — no institution check — so another
+//                                college's teacher could be allocated to
+//                                grade our papers.
+//   POST /evaluations/:id/complete force-set completedPapers = totalPapers
+//                                with NO look at the papers themselves. A
+//                                screen could report 40/40 graded while half
+//                                the papers had no marks at all.
+//
+// Replaced by `/evaluations/blocks/:block` (eight blocks),
+// `/evaluations/:id/allocate` (institution-checked) and marks entry that
+// recomputes every counter from the rows. Completion is now DERIVED: an
+// evaluation is COMPLETED exactly when every paper is marked.
 
 // X-06 results — list
 router.get(

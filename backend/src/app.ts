@@ -24,6 +24,7 @@ import payrollStructureRoutes from './modules/accounts/payroll.structure.routes.
 import { UPLOAD_DIR } from './modules/accounts/expenses.routes.js';
 import timetableRoutes from './modules/examcell/timetable.routes.js';
 import hallticketRoutes from './modules/examcell/hallticket.routes.js';
+import evaluationRoutes from './modules/examcell/evaluation.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -161,6 +162,11 @@ export function createApp() {
   // for the same reason the timetable router is: it applies its own auth, and
   // Express matches by mount order.
   app.use('/api/v1/examcell', hallticketRoutes);
+  // X-05 evaluations owns every `/evaluations/*` path now, and three of those
+  // endpoints used to be declared in examcellRoutes. Mounted before it for the
+  // same reason the others are: it applies its own auth, and Express matches
+  // by mount order.
+  app.use('/api/v1/examcell', evaluationRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);

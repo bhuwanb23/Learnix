@@ -66,6 +66,10 @@ model Evaluation {
   inProgressPapers  Int      @default(0)
   evaluatorUserId   String? // scalar → users.id
   status            String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED
+  moderationStatus  String   @default("NOT_REQUESTED") // NOT_REQUESTED | PENDING | APPROVED | FLAGGED
+  moderatedByUserId String? // scalar → users.id
+  moderatedAt       DateTime?
+  moderationNote    String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -85,6 +89,9 @@ model EvaluationPaper {
   studentProfileId String
   evaluatorUserId  String? // scalar → users.id
   marksEntered     Int?
+  internalMarks    Int? // marksEntered = internalMarks + externalMarks (policy: 0..40 / 0..60)
+  externalMarks    Int?
+  scriptStatus     String    @default("NOT_RECEIVED") // NOT_RECEIVED | RECEIVED | VERIFIED
   status           String    @default("PENDING") // PENDING | EVALUATING | DONE
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt

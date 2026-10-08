@@ -241,3 +241,58 @@ export const decideHallTicketRequestSchema = z
 export const publishHallTicketsSchema = z
   .object({ action: z.string().min(1).max(16) })
   .strict();
+
+// ───────────────────────────────────────────────────────────────────
+// X-05 — Evaluations (docs/users/05 §3.3)
+// ───────────────────────────────────────────────────────────────────
+//
+// Same rule as X-04: bodies are permissive about values that are a CHOICE
+// FROM A PUBLISHED LIST (`scriptStatus`, `decision`) — those are rejected by
+// the `assert*` helpers in `evaluation.rules.ts`, which answer 422 and carry
+// `allowed`. Everything else is `.strict()`, so a typo'd field is a 400 rather
+// than a silently ignored field.
+
+export const evaluationCatalogueQuerySchema = z.object({}).strict();
+
+export const evaluationOverviewQuerySchema = z.object({}).strict();
+
+export const evaluationBlockQuerySchema = z
+  .object({ examId: z.string().min(1).max(64).optional() })
+  .strict();
+
+export const evaluationIdParamSchema = z.object({ id: z.string().min(1).max(64) }).strict();
+
+export const evaluationPaperIdParamSchema = z.object({ paperId: z.string().min(1).max(64) }).strict();
+
+export const evaluationExamParamSchema = z.object({ examId: z.string().min(1).max(64) }).strict();
+
+/** Requirement 1 — move one paper's script in its custody chain. */
+export const scriptStatusSchema = z
+  .object({ status: z.string().min(1).max(32) })
+  .strict();
+
+/** Requirement 2 — allocate an evaluator to one subject's evaluation. */
+export const allocateEvaluatorSchema = z
+  .object({ evaluatorUserId: z.string().min(1).max(64) })
+  .strict();
+
+/** Requirements 4+5 — internal/external split for one paper. */
+export const enterMarksBodySchema = z
+  .object({
+    internalMarks: z.number().int(),
+    externalMarks: z.number().int(),
+  })
+  .strict();
+
+/** Requirement 6 — set or move an exam's grading deadline. */
+export const setDeadlineSchema = z
+  .object({ dueAt: z.string().min(4).max(64) })
+  .strict();
+
+/** Requirement 8 — moderation decision (+ optional note). */
+export const moderationDecisionSchema = z
+  .object({
+    decision: z.string().min(1).max(32),
+    note: z.string().trim().max(500).optional(),
+  })
+  .strict();

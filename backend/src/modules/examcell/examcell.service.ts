@@ -165,92 +165,28 @@ export async function getDashboard(institutionId: string) {
 
 
 // ─────────────────────────────────────────────────────────────
-// X-05 — Evaluations
-// ─────────────────────────────────────────────────────────────
-export async function listEvaluations(institutionId: string) {
-  const evaluations = await prisma.evaluation.findMany({
-    where: { examSlot: { exam: { institutionId } } },
-    include: {
-      examSlot: { include: { exam: true, offering: { include: { course: true } } } },
-      subjectOffering: { include: { course: true } },
-      papers: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const gradingDeadline = await prisma.gradingDeadline.findFirst({
-    where: { exam: { institutionId } },
-    orderBy: { dueAt: 'asc' },
-  });
-
-  return {
-    deadline: gradingDeadline?.dueAt ?? null,
-    evaluations: evaluations.map((e) => ({
-      id: e.id,
-      examName: e.examSlot.exam.name,
-      course: e.subjectOffering.course.name,
-      courseCode: e.subjectOffering.course.code,
-      totalPapers: e.totalPapers,
-      completedPapers: e.completedPapers,
-      inProgressPapers: e.inProgressPapers,
-      pendingPapers: e.totalPapers - e.completedPapers - e.inProgressPapers,
-      evaluatorUserId: e.evaluatorUserId,
-      status: e.status,
-    })),
-  };
-}
-
-export async function assignEvaluator(
-  institutionId: string,
-  userId: string,
-  evaluationId: string,
-  evaluatorUserId: string,
-) {
-  const evaluation = await prisma.evaluation.findFirst({
-    where: { id: evaluationId, examSlot: { exam: { institutionId } } },
-  });
-  if (!evaluation) throw notFound('Evaluation not found');
-
-  // Verify evaluator is a teacher/HOD
-  const evaluator = await prisma.userRole.findFirst({
-    where: { userId: evaluatorUserId, role: { in: ['TEACHER', 'HOD'] } },
-  });
-  if (!evaluator) throw badRequest('Evaluator must be a teacher or HOD');
-
-  const updated = await prisma.evaluation.update({
-    where: { id: evaluationId },
-    data: {
-      evaluatorUserId,
-      status: evaluation.status === 'PENDING' ? 'IN_PROGRESS' : evaluation.status,
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'EVALUATOR_ASSIGNED', entityType: 'Evaluation', entityId: evaluationId });
-  return updated;
-}
-
-export async function completeEvaluation(
-  institutionId: string,
-  userId: string,
-  evaluationId: string,
-) {
-  const evaluation = await prisma.evaluation.findFirst({
-    where: { id: evaluationId, examSlot: { exam: { institutionId } } },
-  });
-  if (!evaluation) throw notFound('Evaluation not found');
-
-  const updated = await prisma.evaluation.update({
-    where: { id: evaluationId },
-    data: {
-      status: 'COMPLETED',
-      completedPapers: evaluation.totalPapers,
-      inProgressPapers: 0,
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'EVALUATION_COMPLETED', entityType: 'Evaluation', entityId: evaluationId });
-  return updated;
-}
+// X-05 — Evaluations: MOVED to `./evaluation.service.ts`.
+//
+// Three functions used to live here and were deleted rather than re-pointed:
+//
+//   listEvaluations(institutionId)   returned denormalised counters straight
+//                                    off the row with no look at the papers —
+//                                    the same counters `completeEvaluation`
+//                                    fabricated, so the screen and the truth
+//                                    agreed only as long as nobody lied.
+//   assignEvaluator(…)               checked that the userId had a TEACHER or
+//                                    HOD role — with NO institution filter,
+//                                    so another college's teacher could be
+//                                    allocated to grade our papers.
+//   completeEvaluation(…)            set completedPapers = totalPapers and
+//                                    status COMPLETED unconditionally, without
+//                                    reading a single paper. It was the lie
+//                                    the whole module was built on.
+//
+// Replaced by `evaluation.service.ts`, where completion is DERIVED from the
+// rows (an evaluation is COMPLETED exactly when every paper is marked),
+// allocation is institution-checked, and every counter is recomputed in the
+// same transaction as the write.
 
 // ─────────────────────────────────────────────────────────────
 // X-06 — Results
