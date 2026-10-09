@@ -145,8 +145,20 @@ async function eligibleStaff(institutionId: string, category: string, policy: Co
         reason: privileged ? 'triage' : matched ? 'designation' : null,
       };
     })
-    .filter((c) => c.eligible)
-    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+    // NOT filtered to the eligible ones. The `.filter((c) => c.eligible)` that used to sit here made the
+    // `eligible` and `reason` fields on every row above unreachable — the response only ever contained
+    // people who were eligible, so a client could not show "Suresh Kumar — wrong trade" and could only
+    // silently omit him. A warden who does not know who the plumber is needs to see the roster AND why
+    // someone is not a candidate; hiding them makes the absence look like the person not existing.
+    //
+    // The assign endpoint still REFUSES an ineligible pick (see `assignComplaint`), so listing them is a
+    // presentational choice, not a permission one.
+    .sort((a, b) => {
+      // Eligible first, then alphabetical within each band, so the ones you can actually pick are at
+      // the top and the greyed-out remainder is not interspersed with them.
+      if (a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+      return a.fullName.localeCompare(b.fullName);
+    });
 }
 
 type ComplaintRow = {
@@ -415,10 +427,28 @@ export async function listComplaints(
   if (params.category && params.category !== 'ALL') {
     // A GROUP filter matches every category in it, so "maintenance" shows plumbing and electrical
     // together rather than making the warden click four chips.
-    where.category = Object.entries(CATEGORY_GROUP)
-      .filter(([, g]) => g === params.category)
+    //
+    // The comparison is case-insensitive AND tries the value as a raw category first. It did neither,
+    // and the failure was silent rather than loud: a client sending the obvious `?category=security`
+    // matched no group, so `where.category` came back empty, the guard below substituted
+    // `'__none__'`, and the warden was shown an EMPTY queue for a filter that reads as "show me the
+    // security complaints". A filter that silently drops every row is worse than one that errors.
+        const raw = params.category;
+    const wanted = raw.toUpperCase();
+    const asGroup = Object.entries(CATEGORY_GROUP)
+      .filter(([, g]) => g.toUpperCase() === wanted)
       .map(([c]) => c);
-    if (where.category.length === 0) where.category = '__none__';
+    // A raw category (`?category=PLUMBING`) is matched directly, so the same parameter serves both
+    // the group chips and the per-category ones.
+    const categories = (raw.toUpperCase() in CATEGORY_GROUP) ? [raw.toUpperCase()] : asGroup;
+    // `{ in: [...] }`, NOT a bare array. Prisma rejects a bare array for a scalar field, and this
+    // only became visible when the query above started honouring `where` — the previous version
+    // discarded it, so this clause was dead code that had never been executed by anything.
+    where.category = { in: categories };
+    // An unrecognised value yields an empty list rather than an error, but it must NOT silently
+    // become the whole queue: an empty `in` is truthy-shaped and would otherwise match nothing at all
+    // with no way to tell that apart from "no complaints match".
+    if (categories.length === 0) where.category = { in: ['__none__'] };
   }
   if (params.severity && params.severity !== 'ALL') where.severity = params.severity;
   if (params.assignedToUserId) where.assignedToUserId = params.assignedToUserId;
@@ -432,28 +462,57 @@ export async function listComplaints(
     ];
   }
 
-  const all = (await prisma.hostelComplaint.findMany({
-    where: { institutionId },
+  // The filtered page. `where` is what the filters above BUILT, and this is the query that USES it.
+//
+// It used to be `where: { institutionId }` with every other clause discarded, and the filtering was
+// then redone in JS for `escalated` and `status` only. So `category`, `severity`, `q` and
+// `assignedToUserId` were silently IGNORED: `GET /hostel/complaints?category=security` returned the
+// whole queue. A filter that appears to work and returns everything is the worst kind of bug — the
+// warden narrows to "security complaints" and reads the plumbing ones too, with nothing on screen to
+// say so.
+//
+// This set carries the relations (`studentProfile`, `feedback`), so it is what the PAGE ROWS are made
+// from. `unfiltered` below is the counters-only set.
+const all = (await prisma.hostelComplaint.findMany({
+    where,
     include: complaintInclude,
   })) as unknown as ComplaintRow[];
 
-  // `escalated` is a DERIVED predicate, so it cannot live in the Prisma `where` - it depends on
-  // `createdAt`, `severity` and the policy. Filtered here, after the policy has been read.
-  const shapedAll = all.map((c) => shape(c, policy, now));
-  const afterEscalated =
-    params.escalated === undefined || params.escalated === 'ALL'
-      ? shapedAll
-      : params.escalated === 'true'
-        ? shapedAll.filter((c) => c.escalated)
-        : shapedAll.filter((c) => !c.escalated);
-
-  const filtered = afterEscalated.filter((c) => {
-    if (params.status && params.status !== 'ALL') {
-      if (params.status === 'OPEN_LIKE') return c.status === 'OPEN' || c.status === 'ASSIGNED';
-      return c.status === params.status;
-    }
-    return true;
+  // The UNFILTERED set, lean. Stats and facets must be counted from this, not from `all`, or every
+  // chip would read 0 the moment you tapped it and there would be no way back — which is the whole
+  // reason a facets block exists. Only the five columns the counts need are read.
+  const unfiltered = await prisma.hostelComplaint.findMany({
+    where: { institutionId },
+    select: { status: true, severity: true, category: true, assignedToUserId: true, createdAt: true },
   });
+
+  // Two independent shapes, and conflating them is a bug either way:
+  //   `shapedAll` — UNFILTERED, so the counters and chips describe the whole queue.
+  //   `rows`      — FILTERED, so the list describes what the warden asked for.
+  const shapedAll = unfiltered.map((c) => shape(c as unknown as ComplaintRow, policy, now));
+  const rows = all.map((c) => shape(c, policy, now));
+
+  // `escalated` is a DERIVED predicate, so it cannot live in the Prisma `where` - it depends on
+  // `createdAt`, the severity and the policy. Applied here, after shaping.
+  const matchesEscalated = (c: { escalated: boolean }) =>
+    params.escalated === undefined || params.escalated === 'ALL'
+      ? true
+      : params.escalated === 'true'
+        ? c.escalated
+        : !c.escalated;
+
+  // `status` was applied in the SQL as well, but is repeated here because `OPEN_LIKE` is a derived
+  // bucket (`OPEN` + `ASSIGNED`) rather than a stored value, and because it must be applied to the
+  // COUNTERS too — otherwise the screen could show "3 escalated" above a list filtered to one status,
+  // and nobody could reconcile the two numbers.
+  const matchesStatus = (c: { status: string }) => {
+    if (!params.status || params.status === 'ALL') return true;
+    if (params.status === 'OPEN_LIKE') return c.status === 'OPEN' || c.status === 'ASSIGNED';
+    return c.status === params.status;
+  };
+
+  const inScope = shapedAll.filter((c) => matchesEscalated(c) && matchesStatus(c));
+  const filtered = rows.filter((c) => matchesEscalated(c) && matchesStatus(c));
 
   const sorted = filtered.sort(
     (a, b) => b.priority - a.priority || new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
@@ -470,15 +529,22 @@ export async function listComplaints(
       ...c,
       assignedToName: c.assignedToUserId ? (names.get(c.assignedToUserId) ?? null) : null,
     })),
+    // Counted from `inScope` — the set narrowed by STATUS and ESCALATION, but not by category,
+    // severity or the search term. So the header tiles answer "how much of the work I am looking at is
+    // unresolved, unassigned, overdue", and they change when you switch status chip. They do NOT change
+    // when you type in the search box, because a counter that moved under the words you were typing
+    // would be unreadable.
     stats: {
-      total: shapedAll.length,
-      open: shapedAll.filter((c) => c.status === 'OPEN').length,
-      assigned: shapedAll.filter((c) => c.status === 'ASSIGNED').length,
-      resolved: shapedAll.filter((c) => c.status === 'RESOLVED').length,
-      escalated: shapedAll.filter((c) => c.escalated).length,
-      unassigned: shapedAll.filter((c) => !c.assignedToUserId && c.status !== 'RESOLVED').length,
+      total: inScope.length,
+      open: inScope.filter((c) => c.status === 'OPEN').length,
+      assigned: inScope.filter((c) => c.status === 'ASSIGNED').length,
+      resolved: inScope.filter((c) => c.status === 'RESOLVED').length,
+      escalated: inScope.filter((c) => c.escalated).length,
+      unassigned: inScope.filter((c) => !c.assignedToUserId && c.status !== 'RESOLVED').length,
     },
-    // Counted from the UNFILTERED set, so a chip never reads zero because you tapped it.
+    // Counted from the UNFILTERED set, so a chip never reads zero because you tapped it. This is
+    // deliberately a DIFFERENT population from `stats`: the facets are the warden's way back out of a
+    // filter, so they have to keep showing the whole picture while the stats describe the current view.
     facets: {
       status: Object.fromEntries(STATUSES.map((s) => [s, shapedAll.filter((c) => c.status === s).length])),
       severity: Object.fromEntries(SEVERITIES.map((s) => [s, shapedAll.filter((c) => c.severity === s).length])),
@@ -515,7 +581,7 @@ export async function getComplaint(institutionId: string, id: string) {
   const [events, names] = await Promise.all([
     prisma.hostelComplaintEvent.findMany({
       where: { complaintId: id, institutionId },
-      include: { actor: { select: { fullName: true } } } as any,
+      include: { actor: { select: { fullName: true } } },
       orderBy: { createdAt: 'asc' },
     }),
     assigneeName(institutionId),
@@ -538,15 +604,20 @@ export async function getComplaint(institutionId: string, id: string) {
 
 /** The timeline alone - the resident's own view of their complaint. */
 export async function listEvents(institutionId: string, complaintId: string) {
+  // No `as any` here any more. The `actor` include used to be force-cast because `HostelComplaintEvent`
+  // had no relation to back it, so Prisma threw at runtime and every "add a note" 500'd. The schema
+  // now declares `actor User? @relation("HostelComplaintEventActor", …)` and this is type-checked, so
+  // a future rename breaks the build instead of the request.
   const events = await prisma.hostelComplaintEvent.findMany({
     where: { complaintId, institutionId },
-    include: { actor: { select: { fullName: true } } } as any,
+    include: { actor: { select: { fullName: true } } },
     orderBy: { createdAt: 'asc' },
   });
-  return events.map((e: any) => ({
+  return events.map((e) => ({
     id: e.id,
     type: e.type,
     note: e.note,
+    // Null for a DERIVED event (a complaint that escalated by getting old has nobody to attribute).
     actor: e.actor?.fullName ?? null,
     createdAt: e.createdAt,
   }));
@@ -776,6 +847,9 @@ export async function resolveComplaint(
   id: string,
   body: { resolutionNote?: string },
 ) {
+  // Read up front so the shaped return below carries the derived fields (escalated, priority) rather
+  // than a bare status stub.
+  const policy = await loadPolicy(institutionId);
   const complaint = await prisma.hostelComplaint.findFirst({
     where: { id, institutionId },
     include: complaintInclude,
@@ -834,7 +908,20 @@ export async function resolveComplaint(
     after: { resolutionNote: note },
   });
 
-  return { id, status: 'RESOLVED', resolvedAt: new Date() };
+  // The SHAPED complaint, not a hand-built stub. This used to return
+  // `{ id, status, resolvedAt }`, which meant the response to "mark this fixed" carried neither the
+  // resolution note that was just written nor the derived fields — so the caller's list stayed stale
+  // and the warden screen could not show what had been done without re-fetching. Every other write in
+  // this module returns `shape(...)`; this one now does too.
+  const fresh = await prisma.hostelComplaint.findUnique({
+    where: { id },
+    include: complaintInclude,
+  });
+  const names = await assigneeName(institutionId);
+  const out = fresh as unknown as ComplaintRow | null;
+  return out
+    ? { ...shape(out, policy, new Date()), assignedToName: out.assignedToUserId ? (names.get(out.assignedToUserId) ?? null) : null }
+    : { id, status: 'RESOLVED', resolvedAt: new Date() };
 }
 
 // ── reopening ───────────────────────────────────────────────────

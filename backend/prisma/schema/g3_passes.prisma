@@ -142,11 +142,17 @@ model HostelComplaintEvent {
   type         String
   /// Null when the event was DERIVED rather than performed - a student rating a resolution, or a
   /// complaint being escalated by getting old. Recorded, but not attributable to a person.
-  actorUserId  String? // scalar → users.id
-  note         String?
-  createdAt    DateTime @default(now())
-
-  complaint HostelComplaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+actorUserId  String? // scalar → users.id
+note         String?
+createdAt    DateTime @default(now())
+complaint HostelComplaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+// WHO DID IT. This was a bare scalar with no relation, and the timeline reader was reaching for an
+// `actor` include that Prisma has no relation to satisfy — so listing a complaint's events threw a
+// validation error, which surfaced as a 500 on every note a resident added. Modelled on
+// `EventPhoto.uploader`, which is the same shape: a nullable scalar plus a NAMED relation, so a
+// soft-deleted or absent user does not break the row that recorded them.
+// Named because User has several complaint-adjacent relations; unnamed would collide.
+actor User? @relation("HostelComplaintEventActor", fields: [actorUserId], references: [id])
 
   @@index([complaintId, createdAt])
   @@index([institutionId, createdAt])

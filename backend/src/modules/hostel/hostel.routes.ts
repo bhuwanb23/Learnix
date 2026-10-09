@@ -22,6 +22,7 @@ import {
   complaintReopenSchema,
   complaintQuerySchema,
   complaintPolicySchema,
+  complaintAssigneeQuerySchema,
   broadcastSchema,
   residentQuerySchema,
   contactSchema,
@@ -606,14 +607,20 @@ router.put(
 
 // Who may be assigned a complaint in this category. Feeds the assigner's picker so it never offers
 // somebody who will be refused.
+//
+// The query key is `category`, and it is validated as one. It was previously read off `req.query.id`
+// via `idParamSchema` and passed to `getEligibleAssignees` as if it were a category — so the only
+// key that satisfied validation was one named `id`, and a caller sending the obvious `?category=`
+// was refused with a validation error. The param name and its meaning have to agree, or the route
+// only works for whoever read the handler instead of the docs.
 router.get(
   '/complaints/assignees',
-  validate(idParamSchema, 'query'),
+  validate(complaintAssigneeQuerySchema, 'query'),
   wrap(async (req, res) => {
     res.json({
       data: await complaints.getEligibleAssignees(
         req.auth!.institutionId,
-        String(req.query.id ?? ''),
+        String(req.query.category ?? ''),
       ),
     });
   }),

@@ -44,6 +44,9 @@ model User {
   // (the uploader), and Prisma needs the disambiguator.
   eventPhotos         EventPhoto[]     @relation("EventPhotoUploader")
   eventFeedback       EventFeedback[]
+  // Complaint timeline authors. Named for the same reason as `eventPhotos`: the forward relation is
+  // NAMED, so the back-relation has to be too.
+  complaintEvents   HostelComplaintEvent[] @relation("HostelComplaintEventActor")
   notifications   Notification[]
   notificationPreferences NotificationPreference[]
   pushTokens      PushToken[]

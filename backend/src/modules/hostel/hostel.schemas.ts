@@ -360,6 +360,18 @@ export const complaintQuerySchema = z.object({
 /** The policy is an open-ended map: unknown keys are clamped away rather than rejected outright. */
 export const complaintPolicySchema = z.record(z.unknown());
 
+/**
+ * Who may be assigned a complaint, for ONE category.
+ *
+ * Deliberately a free-form string rather than `COMPLAINT_CATEGORY_ENUM`. The service resolves a
+ * group name or a raw category and falls back to the whole institution when it recognises neither, so
+ * an unknown value is not an error — it just yields every candidate. Pinning it to the enum would make
+ * the picker unable to ask "who handles a group?" in one call.
+ */
+export const complaintAssigneeQuerySchema = z.object({
+  category: z.string().trim().max(40).optional(),
+});
+
 
 // ── Visitors (H-08) ───────────────────────────────────────────────────────────────
 
