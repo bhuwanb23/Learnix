@@ -144,7 +144,7 @@
 | H-04 | Residents list | G allocations → students | ✅ (1) |
 | H-05 | Mess: weekly menu CRUD, meal attendance (staff roll), feedback review, insights, mess spend | G mess_menu_items/meal_attendance/mess_feedback, E expenses | ✅ wired · 6wk attendance + 4wk ratings seeded · 2 permissions |
 | H-06 | Gate passes: student request, approve/reject, exit/return stamps, computed overdue | G gate_passes | wired (8 lifecycle states seeded) |
-| H-07 | Complaints: assign, resolve | G hostel_complaints | ✅ OPEN |
+| H-07 | Complaints: report, triage, route by trade, assign, note, resolve, derived escalation, poor-rating reopen | G hostel_complaints + complaint_events/feedback, L system_config | ✅ 3 routers, 6 lifecycle states seeded |
 | H-08 | Visitors: resident authorisation, warden confirm, entry/exit, computed overdue, barred list, frequent-visitor history, editable house rules | G visitors/barred_visitors, L system_config | wired (9 lifecycle states seeded) |
 | H-09 | Rent dues tracking → payments write-through | E hostel_rent_dues | ✅ Jul+Aug |
 | H-10 | Notifications + profile | K, A | ✅ |

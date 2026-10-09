@@ -376,9 +376,49 @@ barredByUserId. A bar **outlives the visit** that provoked it — it is a standi
 institution, not a flag on one booking.
 
 ### 3.7 Complaints (module)
-Stats + tabs (Open/Resolved) + category chips (Plumbing/Electrical/Network/Maintenance), severity badges. Actions: **Assign** (staff), **Resolve**, **New Complaint** (create on behalf).
+**One queue, three sides.** A resident reports; a warden triages and assigns; support staff do the
+work. Each side has its own router and its own gate.
 
-**Entity `complaint`**: id, residentId, category, description, severity, status (Open/Assigned/Resolved), assignedTo.
+| Side | Base path | Roles | Can |
+|---|---|---|---|
+| Warden | `/hostel/complaints` | `HOSTEL`, `ADMIN` | list, read, file on a resident's behalf, assign, note, resolve, reopen, edit policy |
+| Resident | `/student/complaints` | `STUDENT` | list own, report own, add detail, rate a fix |
+| Support | `/staff-complaints` | `MAINTENANCE`, `HOSTEL`, `ADMIN` | own inbox, note, resolve **assigned to them** |
+
+**Why support staff get their own mount.** The hostel router is gated `HOSTEL`/`ADMIN`, so widening it
+to `MAINTENANCE` would hand a plumber the room-allocation table, every resident profile, the
+gate-pass register and the visitor register — all of which are about residents' *movements*.
+`/staff-complaints` is a three-route surface gated on its own role, and that is the whole reason it is
+separate. Asserted from every direction in `verify-hostel/complaints.ts`.
+
+**Screen.** Live queue sorted by derived priority. Stat tiles (open / assigned / unassigned / escalated),
+a search box, status chips (**Needs attention** = OPEN+ASSIGNED, All, New, Assigned, Resolved), an
+**Escalated** chip and severity chips. Tapping a row expands the detail: student, room, assignee,
+timeline, resolution, feedback. Actions: **Assign** (with an eligibility-reasoned picker), **Note**,
+**Resolve** (note required), **Reopen**. Also **New Complaint** to file on a resident's behalf.
+
+**Entity `HostelComplaint`**: id, institutionId, studentProfileId, category, description, severity,
+status (`OPEN | ASSIGNED | RESOLVED`), roomNumber (snapshotted at filing), locationNote,
+assignedToUserId, assignedByUserId, resolvedAt, resolvedByUserId, resolutionNote, firstResponseAt,
+reopenedCount. Plus `HostelComplaintEvent` (the timeline) and `HostelComplaintFeedback` (one rating
+per complaint).
+
+**Escalation is DERIVED, never stored.** There is no `escalatedAt` column and no `ESCALATED` status. A
+complaint escalates when its age exceeds the policy's threshold for its severity and it is not resolved
+— a fact about `createdAt`, `severity` and the live policy. Default ladder: HIGH 24h, MEDIUM 72h,
+LOW 168h, editable per institution at `SystemConfig` key `hostel.complaintPolicy`.
+
+**Severity is the reporter's, with one floor.** `SECURITY` is raised to at least `MEDIUM` and the
+response says so in `severityRaised`, so a resident whose "low" became "medium" is told why instead of
+wondering. Every other category is stored as filed.
+
+**Poor feedback reopens.** A rating at or below `reopenRatingThreshold` (default 3) puts the complaint
+back on the board and writes a `REOPENED` event, clearing the stale resolution stamp. The cap is 4, not
+5: at 5 a five-star rating would reopen the thing it just praised.
+
+**Category groups** drive routing and the picker: `MAINTENANCE` (plumbing, electrical, network,
+maintenance), `MESS` (food), `SECURITY`. A group name and a raw category are both accepted in
+`?category=`; a **group wins** when the value is both.
 
 ### 3.8 Notifications (module)
 Inbox (mess/maintenance/pass/complaint types) + **Broadcast tab** (audience: All Residents / Block A/B/C / Mess Members → pushes to student app).
@@ -453,7 +493,10 @@ POST /gate-passes/:id/decide                 { decision, verified?, note? }
 POST /gate-passes/:id/exit                   { at? }
 POST /gate-passes/:id/return                 { at? }
 
-GET/POST /complaints                        (+ /:id/assign, /:id/resolve)
+GET/POST /complaints                        (+ /complaints/:id, /:id/assign, /:id/notes,
+                                             /:id/resolve, /:id/reopen,
+                                             GET/PUT /complaints/policy,
+                                             GET /complaints/assignees?category=)
 GET  /visitors                              (+ POST /visitors/checkin, /visitors/:id/checkout)
 GET  /notifications                         (+ POST /notifications/read-all)
 POST /broadcasts

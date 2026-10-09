@@ -428,19 +428,28 @@ export async function listComplaints(
     // A GROUP filter matches every category in it, so "maintenance" shows plumbing and electrical
     // together rather than making the warden click four chips.
     //
-    // The comparison is case-insensitive AND tries the value as a raw category first. It did neither,
-    // and the failure was silent rather than loud: a client sending the obvious `?category=security`
-    // matched no group, so `where.category` came back empty, the guard below substituted
-    // `'__none__'`, and the warden was shown an EMPTY queue for a filter that reads as "show me the
-    // security complaints". A filter that silently drops every row is worse than one that errors.
-        const raw = params.category;
+    // The comparison is case-insensitive. It was not, and the failure was silent rather than loud: a
+    // client sending the obvious `?category=security` matched no group, so `where.category` came back
+    // empty, the guard below substituted a sentinel, and the warden saw an EMPTY queue for a filter
+    // that reads as "show me the security complaints". A filter that silently drops every row is worse
+    // than one that errors.
+    const raw = params.category;
     const wanted = raw.toUpperCase();
-    const asGroup = Object.entries(CATEGORY_GROUP)
+    // A GROUP name wins over a bare category of the same name. `MAINTENANCE` is BOTH a category key and
+    // the name of the group that category belongs to, and the raw-category branch was checked first —
+// so `?category=maintenance` (the group chip the UI actually sends) was silently narrowed to the single
+    // `MAINTENANCE` category instead of the four-category group. `facets.group` correctly counted four
+    // while the filter returned one, which is the exact disagreement a warden cannot resolve.
+    //
+    // The GROUP is checked first deliberately. It is also the more useful reading of an ambiguous
+    // value: a warden tapping "Maintenance" wants the trade's whole queue, and the single MAINTENANCE
+    // category is inside it anyway, so nothing is lost by the broader interpretation.
+const asGroup = Object.entries(CATEGORY_GROUP)
       .filter(([, g]) => g.toUpperCase() === wanted)
       .map(([c]) => c);
     // A raw category (`?category=PLUMBING`) is matched directly, so the same parameter serves both
     // the group chips and the per-category ones.
-    const categories = (raw.toUpperCase() in CATEGORY_GROUP) ? [raw.toUpperCase()] : asGroup;
+    const categories = asGroup.length > 0 ? asGroup : (wanted in CATEGORY_GROUP ? [wanted] : []);
     // `{ in: [...] }`, NOT a bare array. Prisma rejects a bare array for a scalar field, and this
     // only became visible when the query above started honouring `where` — the previous version
     // discarded it, so this clause was dead code that had never been executed by anything.

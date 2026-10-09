@@ -241,10 +241,11 @@ async function main() {
 
     const fresh = (await warden.call('GET', '/hostel/complaints?status=ALL&pageSize=100')).data!;
     const mine = fresh.complaints.filter((c: any) => c.description.startsWith(mark));
-    // 5 filings exist by this point (PLUMBING, NETWORK, ELECTRICAL, SECURITY, PLUMBING-LOW). The queue is
-    // paged, so this asserts the SUITE's count against what it filed rather than a hardcoded number that
-    // would drift the moment a fixture is added.
-    t.check('the queue returns every complaint filed so far', mine.length === 5, `${mine.length} found, expected 5`);
+    // 4 filings exist by this point: PLUMBING (dripping tap), NETWORK (weak wifi), SECURITY (odd noise)
+    // and PLUMBING (loose handle). Counted from the calls above rather than hardcoded from memory — the
+    // previous value was left over from when an ELECTRICAL filing sat in this section, and a count that
+    // is wrong by one is a test that fails for a reason no reader could reconstruct.
+    t.check('the queue returns every complaint filed so far', mine.length === 4, `${mine.length} found, expected 4`);
 
     const justFiled = mine.find((c: any) => c.id === complaintId);
     t.check('a brand-new complaint is not escalated', justFiled?.escalated === false, `escalated = ${justFiled?.escalated}`);

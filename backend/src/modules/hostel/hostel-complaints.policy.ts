@@ -188,7 +188,11 @@ export function resolvePolicy(raw?: unknown): ComplaintPolicy {
   return {
     utcOffsetMinutes: clampInt(src.utcOffsetMinutes, -840, 840, base.utcOffsetMinutes),
     escalationHours: hours,
-    reopenRatingThreshold: clampInt(src.reopenRatingThreshold, 1, 5, base.reopenRatingThreshold),
+    // Capped at 4, not 5. At 5 the rule inverts on itself: a resident who rates the repair five stars
+    // — the clearest possible "yes, this is fixed" — would have the complaint thrown back onto the
+    // board. A threshold is meant to catch "that did not work", so 4 is the most permissive value that
+    // still means that, and the cap stops an admin from configuring a policy that contradicts itself.
+    reopenRatingThreshold: clampInt(src.reopenRatingThreshold, 1, 4, base.reopenRatingThreshold),
     maxWindowDays: clampInt(src.maxWindowDays, 7, 3650, base.maxWindowDays),
     eligibleDesignations: {
       MAINTENANCE: asStringArray(rawGroups.MAINTENANCE, base.eligibleDesignations.MAINTENANCE),

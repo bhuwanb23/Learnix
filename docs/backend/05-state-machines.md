@@ -193,12 +193,41 @@ Rules worth stating because they are the ones that were wrong:
   fallback only when no phone was ever recorded — a name alone would bar the wrong person.
 
 ### 6.4 Complaint
-`OPEN → ASSIGNED → RESOLVED` (assign to staff user → notification).
+`OPEN → ASSIGNED → RESOLVED`, with one edge back: **`RESOLVED → ASSIGNED|OPEN`** on a poor rating or a
+warden reopening. Assigning raises a notification to the assignee; resolving raises one to the resident
+("Was it fixed?").
 
-The category set is `PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE | FOOD`. **`FOOD` is a mess
-complaint and it deliberately reuses this lifecycle** rather than getting a second queue: a resident
-who found hair in the dal wants it fixed and tracked, not routed somewhere different, and two
+The category set is `PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE | FOOD | SECURITY`. **`FOOD` is a
+mess complaint and it deliberately reuses this lifecycle** rather than getting a second queue: a
+resident who found hair in the dal wants it fixed and tracked, not routed somewhere different, and two
 complaint workflows would drift apart.
+
+#### The reopen edge, and why it is not a downgrade
+
+A rating at or below `reopenRatingThreshold` (default 3, **capped at 4**) does not merely record a bad
+score — it puts the work back on the board:
+
+```
+RESOLVED --(rating <= threshold)--> ASSIGNED (if assigned) | OPEN (if not)
+         --  clears resolvedAt, resolvedByUserId, resolutionNote
+         --  increments reopenedCount
+         --  writes a REOPENED event, after FEEDBACK_GIVEN
+```
+
+The stale resolution stamp is cleared deliberately. A reopened complaint that keeps its old
+`resolvedAt` displays the date of the fix that did not hold, which is precisely the reading that makes
+the queue untrustworthy.
+
+#### Escalation is derived, not a state
+
+There is **no `ESCALATED` status and no `escalatedAt` column.** Escalation is a predicate over
+`createdAt`, the severity and the live policy — so it changes when a warden edits the thresholds,
+without anything rewriting a row. `age > threshold` and not `RESOLVED`. The comparison is strict, so a
+complaint exactly on the line has crossed. `hoursToEscalation` is the remaining hours, or `null` once
+crossed — never negative, because a client would render "escalates in −14h".
+
+Priority is `severityWeight + min(1, age / threshold) × 40`, so the age term **saturates** at the
+threshold: an ancient LOW complaint cannot sit above every urgent HIGH one forever.
 
 ### 6.4a Meal attendance — no states, and that is the point
 

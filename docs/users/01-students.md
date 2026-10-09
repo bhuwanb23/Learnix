@@ -176,7 +176,42 @@ staff. If residents could tap in themselves, the number the kitchen provisions a
 claim rather than a count, and forgetting to tap would be indistinguishable from not eating.
 
 **Report a problem** opens a hostel complaint with category `FOOD`, reusing the existing
-`OPEN → ASSIGNED → RESOLVED` workflow.
+`OPEN → ASSIGNED → RESOLVED` workflow. The button passes the category, so the form opens on **Food**
+rather than asking the resident to pick it again. It also alerts if the complaint screen is
+unreachable, rather than swallowing the tap — a report button that silently does nothing is worse than
+one that says it is unavailable.
+
+### 3.11 My Complaints
+
+Report a problem with the room, the plumbing, the WiFi, the food or a security concern, then watch it
+get dealt with.
+
+- **My complaints** — every complaint you filed, with the category, severity, status, who it is with,
+  and how long ago you raised it. Reached from the profile quick-actions grid, from the mess meal card,
+  or by reporting a fresh one.
+- **Report a problem** — category, severity, description, and an optional location note ("outside the
+  bathroom door", which a room number cannot express). Your room is snapshotted from your own bed, so a
+  complaint about a room you have since left still says where it was raised.
+- **Add detail** — a dated entry in the timeline on an open complaint. Both the warden and the person
+  doing the work read it, so it is not a comment thread.
+- **Rate the fix** — one to five stars on a resolved complaint you have not yet rated. Re-rating
+  replaces your earlier rating rather than filing a second opinion.
+
+**Three things this screen is explicit about, because each one is a rule a resident cannot see:**
+
+1. **`SECURITY` is never treated as minor.** If you pick "Minor" for a security concern it is raised to
+   Medium by policy, and the confirmation says so rather than quietly overriding your choice.
+2. **A poor rating reopens the complaint.** At 3 stars or below it goes back on the board, the old
+   "fixed on" date is cleared, and the timeline shows why. The screen states this before you tap,
+   because a rating that appeared to do nothing would be indistinguishable from one being ignored.
+3. **An overdue complaint is shown as overdue.** Escalation is derived from how long it has been open,
+   and a complaint past the warden's threshold says so — including how long it has been. "We are working
+   on it" is not something the app can claim honestly when it has slipped past that.
+
+**You can only see your own.** `GET /student/complaints` takes no identifier and derives yours from the
+token, and the write routes have no `studentProfileId` field at all — so there is nothing to tamper
+with. Rating somebody else's complaint returns **404, not 403**, deliberately: a 403 would confirm it
+exists.
 
 ### 3.10 Notifications (top-level screen)
 List with unread count, mark all read, per-item read on tap. Same shape as staff apps' inbox.
@@ -205,6 +240,12 @@ GET  /api/student/mess                         ?dayOffset= — menu + this stude
 POST /api/student/mess/feedback                { meal, rating, comment?, mealDate? } — an upsert
 GET  /api/student/notifications
 POST /api/student/notifications/read-all
+GET  /api/student/complaints                     own complaints, with derived priority/escalation
+POST /api/student/complaints                     { category, severity, description, locationNote? }
+                                                — no studentProfileId: identity comes from the token
+POST /api/student/complaints/{id}/notes          { note }   — a timeline entry on your own
+POST /api/student/complaints/{id}/feedback       { rating, comment? }
+                                                — <= threshold reopens; 404 on anyone else's
 ```
 
 Gate passes, visitors and mess are the only hostel routes mounted here. Creation exists **only** on this

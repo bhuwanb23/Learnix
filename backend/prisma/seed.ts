@@ -2252,6 +2252,11 @@ const existing = await db.hostelComplaint.findFirst({
           reopenedCount: data.reopenedCount ?? 0,
           roomNumber: data.roomNumber ?? null,
           locationNote: data.locationNote ?? null,
+          // `createdAt` is REPAIRED, not just set on insert. Escalation is derived from it, so a row
+          // seeded nine days ago as MEDIUM has since aged past the 72-hour threshold on its own and
+          // now reads escalated. Without refreshing the date on every reseed, the fixture would decay
+          // the moment it was written and no number of reseeds would put it back inside the window.
+          ...(data.createdAt ? { createdAt: data.createdAt } : {}),
         },
       });
       return existing.id;
@@ -2313,9 +2318,31 @@ const roomOf = async (profId: string | null | undefined) => {
   const securityUser = await db.user.findFirst({ where: { email: 'security@learnix.dev' } });
   const messUser = await db.user.findFirst({ where: { email: 'mess@learnix.dev' } });
 
+  // ── THE ESCALATION FIXTURES AND WHY THE AGES ARE WHAT THEY ARE ─────────────────────────
+  //
+  // Escalation is DERIVED from `createdAt` against the policy's per-severity ladder
+  // (HIGH 24h, MEDIUM 72h, LOW 168h), which means a complaint ages in REAL time. A fixture filed at
+  // "9 days ago" does not stay 9 days old: within three days of seeding it has crossed a 72-hour
+  // threshold, and within 24 hours a HIGH one is overdue. The demo therefore went stale on its own —
+  // every open complaint in the queue was escalated, so the "not escalated yet" case that the warden's
+  // screen also has to handle had no row at all.
+  //
+  // So each open fixture is placed INSIDE its own window with room to spare, and one is deliberately
+  // left outside. Ages are fractions of a day, not whole days, so the intent is legible:
+  //
+  //   NETWORK  MEDIUM  6h   inside 72h  → not escalated
+  //   FOOD     HIGH    4h   inside 24h  → not escalated
+  //   PLUMBING HIGH    60h   outside 24h → ESCALATED (the badge the queue exists to show)
+  //   SECURITY HIGH    2h    inside 24h  → not escalated
+  //   ELECTRICAL MEDIUM 9d   outside 72h → ESCALATED, and reopened once already
+  //
+  // "6 hours ago" is stable for a week of demo use; "2 days ago" for a HIGH complaint is not.
+  const HOURS_AGO = (h: number) => new Date(nowMs2 - h * 3600000);
+
   if (studentProfile) {
     const roomA = await roomOf(studentProfile.id);
-    // OPEN, and old enough to be ESCALATED at MEDIUM (72h) - the badge the warden's queue is for.
+    // OPEN and INSIDE the MEDIUM window (72h), so the queue has a fresh complaint that is not yet
+    // overdue. This is the common case, and without it every open row reads as escalated.
     await ensureComplaint(studentProfile.id, {
       category: 'NETWORK',
       description: 'WiFi drops every evening in the room',
@@ -2323,9 +2350,9 @@ const roomOf = async (profId: string | null | undefined) => {
       status: 'OPEN',
       roomNumber: roomA,
       locationNote: 'router by the study desk',
-      createdAt: daysAgo2(9),
+      createdAt: HOURS_AGO(6),
     });
-    // FOOD, routed to the mess steward rather than the technician.
+    // FOOD, routed to the mess steward rather than the technician, and also inside its window.
     await ensureComplaint(studentProfile.id, {
       category: 'FOOD',
       description: 'Found a hair in the dal at dinner. Please check the kitchen.',
@@ -2333,24 +2360,27 @@ const roomOf = async (profId: string | null | undefined) => {
       status: 'ASSIGNED',
       roomNumber: roomA,
       locationNote: 'mess hall',
-      createdAt: daysAgo2(2),
+      createdAt: HOURS_AGO(4),
       assignedToUserId: messUser?.id ?? null,
     });
   }
 
   if (snehaProf) {
     const roomS = await roomOf(snehaProf.id);
+    // HIGH, and deliberately PAST the 24-hour ladder. This is the escalated row the warden's queue
+    // needs in order to demonstrate the badge, the countdown and the "escalates in…" copy at all.
     await ensureComplaint(snehaProf.id, {
       category: 'PLUMBING',
       description: 'Water leaking above the bathroom ceiling',
       severity: 'HIGH',
       status: 'ASSIGNED',
       roomNumber: roomS,
-      createdAt: daysAgo2(5),
+      createdAt: HOURS_AGO(60),
       assignedToUserId: maintenanceUser?.id ?? null,
     });
     // SECURITY. Filed HIGH; the policy's MEDIUM floor for this group means even a LOW filing would
-    // have been raised. Routed to the security officer, never to maintenance.
+    // have been raised. Routed to the security officer, never to maintenance, and filed hours ago so
+    // it stays inside the window for the whole week.
     await ensureComplaint(snehaProf.id, {
       category: 'SECURITY',
       description: 'Stranger waited in the corridor after curfew',
@@ -2358,7 +2388,7 @@ const roomOf = async (profId: string | null | undefined) => {
       status: 'OPEN',
       roomNumber: roomS,
       locationNote: 'second-floor corridor',
-      createdAt: daysAgo2(1),
+      createdAt: HOURS_AGO(2),
     });
   }
 

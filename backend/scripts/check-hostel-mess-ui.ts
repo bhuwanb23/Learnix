@@ -171,10 +171,25 @@ console.log('\nthe four bugs stay fixed');
 console.log('\nthe roll is warden-side and the only write');
 {
   const api = code('services/api.js');
-  ok('hostelApi can mark a roll', /markMessAttendance/.test(api));
-  ok('studentApi can rate a meal', /rateMeal/.test(api));
-  ok('studentApi has NO attendance write', !/markAttendance|markMessAttendance/.test(api.split('export const studentApi')[1] ?? ''));
-  ok('studentApi has no menu write', !/updateMenu|setMenu/.test(api.split('export const studentApi')[1] ?? ''));
+ok('hostelApi can mark a roll', /markMessAttendance/.test(api));
+ok('studentApi can rate a meal', /rateMeal/.test(api));
+// Scoped to the studentApi OBJECT, not to "everything after the word studentApi". Splitting on the
+// name alone swallows every later export in the file, so `teacherApi.markAttendance` and
+// `adminApi.attendance` matched and this failed whenever they were declared below studentApi — which
+// says nothing about the student surface. The claim is about what a STUDENT can do, so the slice has
+// to end at the next top-level export.
+const studentApiBlock = (() => {
+  const start = api.indexOf('export const studentApi');
+  if (start < 0) return '';
+  const rest = api.slice(start + 'export const studentApi'.length);
+  const next = rest.search(/\nexport const /);
+  return next < 0 ? rest : rest.slice(0, next);
+})();
+ok('the studentApi block was located', studentApiBlock.length > 0);
+ok('studentApi has NO attendance write', !/markAttendance|markMessAttendance/.test(studentApiBlock));
+ok('studentApi has no menu write', !/updateMenu|setMenu/.test(studentApiBlock));
+ok('studentApi has no complaint triage', !/assignComplaint|resolveComplaint|reopenComplaint/.test(studentApiBlock),
+  'triage is the warden\'s, not the resident\'s');
 
   const roll = roll2();
   ok('the roll sheet marks through the endpoint', /markMessAttendance/.test(roll));
