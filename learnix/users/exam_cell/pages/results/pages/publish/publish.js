@@ -23,7 +23,6 @@ import {
   ResultScreen,
   ExamPicker,
   Card,
-  Chip,
   StatGrid,
   ProblemStrip,
   useResult,

@@ -21,7 +21,6 @@ import {
   ExamPicker,
   Card,
   Chip,
-  StatGrid,
   useResult,
   useExamPicker,
 } from '../../resultsUi';

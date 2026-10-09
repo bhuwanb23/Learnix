@@ -12,7 +12,7 @@
 // THE CONTENT IS SHARED THROUGH THE OS SHARE SHEET — this app runs where
 // there is no browser download, so "export" means handing the CSV text to
 // whatever handles files on this device.
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { examcellApi } from '../../../../../../services/api';

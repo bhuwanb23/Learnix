@@ -40,7 +40,7 @@ import React, { useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { examcellApi } from '../../../../services/api';
-import { THEME, RED, GREEN, AMBER, SLATE, MUTED, BLOCKS, plural } from './resultsMeta';
+import { THEME, GREEN, AMBER, SLATE, MUTED, BLOCKS, plural } from './resultsMeta';
 import { ResultScreen, StatGrid, BlockCard, goToRoute, useResult } from './resultsUi';
 
 export default function ResultsModule({ navigation }) {
