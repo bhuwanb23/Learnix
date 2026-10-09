@@ -55,25 +55,26 @@ export const enterMarksSchema = z.object({
   maxMarks: z.number().int().min(1),
 });
 
-// X-06 Results — publish
-export const publishResultsSchema = z.object({
-  examSlotId: z.string().min(1).max(64),
-});
-
-// X-06 Results — enter result
-export const enterResultSchema = z.object({
-  studentProfileId: z.string().min(1).max(64),
-  examSlotId: z.string().min(1).max(64),
-  marksObtained: z.number().int().min(0),
-  maxMarks: z.number().int().min(1),
-  grade: z.string().trim().min(1).max(10),
-  isPass: z.boolean(),
-});
+// X-06 Results — `publishResultsSchema` and `enterResultSchema` were removed
+// with the three `/results` endpoints they served. `enterResult` accepted a
+// CLIENT-SUPPLIED grade and isPass — the screen decided who passed — and
+// `publishResults` skipped verification and approval entirely. Their
+// replacement derives grade/pass from marks in `result.rules.ts` and walks
+// DRAFT → VERIFIED → APPROVED → PUBLISHED.
 
 // X-07 Re-evaluation — decide
-export const decideRevalSchema = z.object({
-  decision: z.enum(['APPROVED', 'REJECTED', 'COMPLETED']),
-});
+// The decision value is deliberately PERMISSIVE (a choice from a published
+// list): `assertRevaluationDecision` answers 422 and carries `allowed`, while
+// Zod would answer 400 with a flatten that does not say what IS allowed.
+// `revisedMarks` is only meaningful for a COMPLETED decision and is bounded
+// against the result's own maxMarks in the service, so the 422 can name it.
+export const decideRevalSchema = z
+  .object({
+    decision: z.string().min(1).max(32),
+    revisedMarks: z.number().int().min(0).max(1000).optional(),
+    note: z.string().trim().max(500).optional(),
+  })
+  .strict();
 
 // X-08 Cheating cases — decide
 export const decideCheatingSchema = z.object({
@@ -296,3 +297,46 @@ export const moderationDecisionSchema = z
     note: z.string().trim().max(500).optional(),
   })
   .strict();
+
+// ───────────────────────────────────────────────────────────────────
+// X-06 — Results (docs/users/05 §3.4)
+// ───────────────────────────────────────────────────────────────────
+//
+// Same rule as X-04/X-05: EVERYTHING is `.strict()`, so a typo'd field or
+// query param is a 400 rather than a silently ignored field — the old
+// `/results` surface had neither strictness nor an institution check on its
+// `examSlotId`. There are no choice-valued bodies here at all: the workflow
+// moves are parameterless (the CURRENT status decides what is legal), so
+// every choice is answered by an `assert*` helper carrying `allowed`.
+
+export const resultCatalogueQuerySchema = z.object({}).strict();
+
+export const resultOverviewQuerySchema = z.object({}).strict();
+
+export const resultBlockQuerySchema = z
+  .object({ examId: z.string().min(1).max(64).optional() })
+  .strict();
+
+export const resultSlotParamSchema = z.object({ slotId: z.string().min(1).max(64) }).strict();
+
+export const resultIdParamSchema = z.object({ id: z.string().min(1).max(64) }).strict();
+
+export const resultStudentParamSchema = z
+  .object({ studentProfileId: z.string().min(1).max(64) })
+  .strict();
+
+/** Marksheet scope: one exam (required, the block cannot render without it). */
+export const marksheetQuerySchema = z
+  .object({ examId: z.string().min(1).max(64) })
+  .strict();
+
+/** Export scope: one exam, and the caller may name the columns it wants. */
+export const resultExportQuerySchema = z
+  .object({
+    examId: z.string().min(1).max(64),
+    format: z.string().min(1).max(16).optional(),
+  })
+  .strict();
+
+/** Workflow moves: slot-scoped, no body — the row's status is the authority. */
+export const emptyBodySchema = z.object({}).strict();

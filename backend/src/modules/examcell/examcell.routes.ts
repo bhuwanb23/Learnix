@@ -5,9 +5,6 @@ import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   idParamSchema,
-  publishResultsSchema,
-  enterResultSchema,
-  decideRevalSchema,
   decideCheatingSchema,
   examcellBroadcastSchema,
 } from './examcell.schemas.js';
@@ -101,56 +98,28 @@ router.get(
 // recomputes every counter from the rows. Completion is now DERIVED: an
 // evaluation is COMPLETED exactly when every paper is marked.
 
-// X-06 results — list
-router.get(
-  '/results',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listResults(req.auth!.institutionId) });
-  }),
-);
-
-// X-06 results — enter result
-router.post(
-  '/results',
-  validate(enterResultSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.enterResult(req.auth!.institutionId, req.auth!.userId, req.body),
-    });
-  }),
-);
-
-// X-06 results — publish
-router.post(
-  '/results/publish',
-  validate(publishResultsSchema),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.publishResults(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        req.body.examSlotId,
-      ),
-    });
-  }),
-);
-
-// X-07 re-evaluation — decide
-router.post(
-  '/re-evaluations/:id/decide',
-  validate(idParamSchema, 'params'),
-  validate(decideRevalSchema),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.decideReevaluation(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-        req.body.decision,
-      ),
-    });
-  }),
-);
+// X-06 results + X-07 re-evaluation decide — MOVED to `./result.routes.ts`,
+// which is mounted BEFORE this router.
+//
+// The four endpoints that used to live here were removed, not re-pointed:
+//
+//   GET  /results            a flat list with no institution filter on its
+//                            read path worth trusting and no workflow: every
+//                            result was "published" or not, nothing between.
+//   POST /results            `enterResult` accepted a CLIENT-SUPPLIED grade
+//                            and isPass — the screen decided who passed — and
+//                            no institution check on examSlotId, so another
+//                            college's slot could receive a row.
+//   POST /results/publish    skipped verification and approval entirely and
+//                            published every row of a slot regardless of how
+//                            it got there.
+//   POST /re-evaluations/:id/decide  accepted no revisedMarks/note, so a
+//                            COMPLETED decision could not rewrite the marks
+//                            it was completing — the whole point of the step.
+//
+// The replacements derive grade/pass from marks in `result.rules.ts`, walk
+// DRAFT → VERIFIED → APPROVED → PUBLISHED with the row's own status as the
+// guard, and gate publication on every paper being marked.
 
 // X-08 cheating cases — list
 router.get(

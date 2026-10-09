@@ -189,183 +189,25 @@ export async function getDashboard(institutionId: string) {
 // same transaction as the write.
 
 // ─────────────────────────────────────────────────────────────
-// X-06 — Results
+// X-06 Results + X-07 re-evaluation — MOVED to `result.service.ts`.
+//
+// `listResults`, `enterResult`, `publishResults` and `decideReevaluation`
+// were removed, not re-pointed:
+//
+//   listResults        a flat pending/published view with no workflow — it
+//                      could not tell DRAFT from APPROVED because neither
+//                      status existed yet.
+//   enterResult        accepted a CLIENT-SUPPLIED grade and isPass: the
+//                      screen decided who passed.
+//   publishResults     stamped publishedAt on every row of a slot, skipping
+//                      verification and approval entirely.
+//   decideReevaluation accepted no revisedMarks, so a COMPLETED decision
+//                      could not rewrite the marks it was completing.
+//
+// The replacement derives grade/pass from marks in `result.rules.ts` and
+// walks DRAFT → VERIFIED → APPROVED → PUBLISHED with the row's own status as
+// the guard. See `result.service.ts` and `result.routes.ts`.
 // ─────────────────────────────────────────────────────────────
-export async function listResults(institutionId: string) {
-  const exams = await prisma.exam.findMany({
-    where: { institutionId },
-    include: {
-      examSlots: {
-      include: {
-        results: true,
-        offering: { include: { course: true, enrollments: { include: { studentProfile: true } } } },
-      },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const pendingPublish: any[] = [];
-  const published: any[] = [];
-
-  for (const exam of exams) {
-    for (const slot of exam.examSlots) {
-      const totalResults = slot.results.length;
-      const publishedCount = slot.results.filter((r) => r.publishedAt !== null).length;
-
-      if (publishedCount === totalResults && totalResults > 0) {
-        published.push({
-          examId: exam.id,
-          examName: exam.name,
-          slotId: slot.id,
-          course: slot.offering.course.name,
-          courseCode: slot.offering.course.code,
-          totalStudents: totalResults,
-          publishedCount,
-          passRate: totalResults > 0
-            ? Math.round((slot.results.filter((r) => r.isPass).length / totalResults) * 100)
-            : 0,
-          publishedAt: slot.results[0]?.publishedAt,
-        });
-      } else if (totalResults > 0) {
-        pendingPublish.push({
-          examId: exam.id,
-          examName: exam.name,
-          slotId: slot.id,
-          course: slot.offering.course.name,
-          courseCode: slot.offering.course.code,
-          totalStudents: totalResults,
-          graded: publishedCount,
-          publishedCount,
-        });
-      }
-    }
-  }
-
-  // Re-evaluation requests
-  const reevalRequests = await prisma.reEvaluationRequest.findMany({
-    where: { result: { examSlot: { exam: { institutionId } } } },
-    include: {
-      studentProfile: { include: { user: { select: { fullName: true } } } },
-      result: { include: { examSlot: { include: { offering: { include: { course: true } } } } } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return {
-    pendingPublish,
-    published,
-    reevalRequests: reevalRequests.map((r) => ({
-      id: r.id,
-      studentName: r.studentProfile.user.fullName,
-      rollNo: r.studentProfile.rollNo,
-      course: r.result.examSlot.offering.course.name,
-      courseCode: r.result.examSlot.offering.course.code,
-      reason: r.reason,
-      status: r.status,
-      createdAt: r.createdAt,
-    })),
-  };
-}
-
-export async function enterResult(
-  institutionId: string,
-  userId: string,
-  body: { studentProfileId: string; examSlotId: string; marksObtained: number; maxMarks: number; grade: string; isPass: boolean },
-) {
-  const slot = await prisma.examSlot.findFirst({
-    where: { id: body.examSlotId, exam: { institutionId } },
-  });
-  if (!slot) throw notFound('Exam slot not found');
-
-  const student = await prisma.studentProfile.findFirst({ where: { id: body.studentProfileId } });
-  if (!student) throw notFound('Student not found');
-
-  const existing = await prisma.result.findFirst({
-    where: { examSlotId: body.examSlotId, studentProfileId: body.studentProfileId },
-  });
-
-  if (existing) {
-    const updated = await prisma.result.update({
-      where: { id: existing.id },
-      data: {
-        marksObtained: body.marksObtained,
-        maxMarks: body.maxMarks,
-        grade: body.grade,
-        isPass: body.isPass,
-      },
-    });
-    return updated;
-  }
-
-  const result = await prisma.result.create({
-    data: {
-      examSlotId: body.examSlotId,
-      studentProfileId: body.studentProfileId,
-      marksObtained: body.marksObtained,
-      maxMarks: body.maxMarks,
-      grade: body.grade,
-      isPass: body.isPass,
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'RESULT_ENTERED', entityType: 'Result', entityId: result.id });
-  return result;
-}
-
-export async function publishResults(
-  institutionId: string,
-  userId: string,
-  examSlotId: string,
-) {
-  const slot = await prisma.examSlot.findFirst({
-    where: { id: examSlotId, exam: { institutionId } },
-  });
-  if (!slot) throw notFound('Exam slot not found');
-
-  // Check exam allows publishing (COMPLETED or ONGOING)
-  const exam = await prisma.exam.findFirst({ where: { id: slot.examId } });
-  if (!exam) throw notFound('Exam not found');
-  if (exam.status === 'SCHEDULED') throw badRequest('Cannot publish results for an exam that hasn\'t started');
-
-  const res = await prisma.result.updateMany({
-    where: { examSlotId, publishedAt: null },
-    data: { publishedAt: new Date(), publishedByUserId: userId },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: 'RESULTS_PUBLISHED', entityType: 'Result', entityId: examSlotId });
-  return { published: res.count };
-}
-
-// ─────────────────────────────────────────────────────────────
-// X-07 — Re-evaluation
-// ─────────────────────────────────────────────────────────────
-export async function decideReevaluation(
-  institutionId: string,
-  userId: string,
-  reevalId: string,
-  decision: string,
-) {
-  const request = await prisma.reEvaluationRequest.findFirst({
-    where: { id: reevalId, result: { examSlot: { exam: { institutionId } } } },
-  });
-  if (!request) throw notFound('Re-evaluation request not found');
-  if (request.status !== 'REQUESTED' && request.status !== 'APPROVED') {
-    throw badRequest('This request has already been decided');
-  }
-
-  const updated = await prisma.reEvaluationRequest.update({
-    where: { id: reevalId },
-    data: {
-      status: decision,
-      decidedByUserId: userId,
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: `REVAL_${decision}`, entityType: 'ReEvaluationRequest', entityId: reevalId });
-  return updated;
-}
-
 // ─────────────────────────────────────────────────────────────
 // X-08 — Cheating cases
 // ─────────────────────────────────────────────────────────────
