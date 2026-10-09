@@ -23,6 +23,7 @@ import MentorshipPage from './pages/mentorship/mentorship';
 import GatePassesPage from './pages/gate_passes/gate_passes';
 import VisitorsPage from './pages/visitors/visitors';
 import MessPage from './pages/mess/mess';
+import ComplaintsPage from './pages/complaints/complaints';
 import { setDemoUser } from '../../services/api';
 
 // Import components
@@ -90,6 +91,25 @@ export default function StudentsScreen() {
     // self-reported claim.
     if (currentScreen === 'Mess') {
       return <MessPage navigation={{ goBack: () => setCurrentScreen('Main') }} />;
+    }
+    // Complaints. This case did not exist, which is why the "Report a problem" button on every meal
+    // card did nothing: `mess.js` called `navigation.navigate('Complaints', …)`, and this shell is a
+    // `currentScreen` switch rather than a navigator, so the call had nowhere to land and the resident
+    // got silence on the one control aimed at a bad meal.
+    //
+    // It gets a `navigate`, not just a `goBack`, so the screen can hand a resident somewhere else if
+    // it ever needs to — and `route` carries the params, which is how the mess button arrives with the
+    // FOOD category already chosen.
+    if (currentScreen === 'Complaints') {
+      return (
+        <ComplaintsPage
+          navigation={{
+            goBack: () => { setCurrentScreen('Main'); setScreenParams({}); },
+            navigate: navigateToScreen,
+          }}
+          route={{ params: screenParams }}
+        />
+      );
     }
     if (currentScreen === 'BrowseJobs') {
       return <BrowseJobsPage navigation={{ goBack: () => setCurrentScreen('Main'), navigate: navigateToScreen }} />;

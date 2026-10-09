@@ -98,6 +98,14 @@ export default function Profile({ onNavigate, onOpenModule, currentView: parentC
         // rather than renaming either one.
         if (typeof onOpenModule === 'function') onOpenModule('Mess');
         else if (typeof onNavigate === 'function') onNavigate('Mess');
+      } else if (screen === 'complaints') {
+        // Same bridging as `mess` and `visitors`: the tile id here is lower-case (`complaints`,
+        // matching the snake/lower-case convention of the other tiles) while the screen name in the
+        // STUDENTS module's map is `Complaints`. `onOpenModule` is tested FIRST for the same reason
+        // as Gate Passes — it is the hook that actually opens the module, and checking `onNavigate`
+        // first would route every complaint tap into a sub-view this file has no case for.
+        if (typeof onOpenModule === 'function') onOpenModule('Complaints');
+        else if (typeof onNavigate === 'function') onNavigate('Complaints');
       }
     },
     goBack: handleBack,

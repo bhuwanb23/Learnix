@@ -38,6 +38,12 @@ export const CATEGORIES = [
   // `restaurant` is a MATERIAL icon, not an Ionicons one — this grid renders with MaterialIcons
   // (`QuickActions.js`), so an Ionicons name like `restaurant-outline` would draw as a tofu box.
   { id: 'mess', title: "Today's Menu", icon: 'restaurant', color: '#db2777', bgColor: 'rgba(219, 39, 119, 0.15)' },
+  // Reporting a problem with the room or the mess. Sits beside Today's Menu on purpose: a resident
+  // who has just read the menu and wants to complain about last night's dinner has both in reach,
+  // and the tile also carries the plumbing and electrical reports that have nothing to do with food.
+  // `report-problem` is a MATERIAL icon like `restaurant` above — this grid renders with
+  // MaterialIcons, so an Ionicons name here would draw as a tofu box.
+  { id: 'complaints', title: 'Report a Problem', icon: 'report-problem', color: '#dc2626', bgColor: 'rgba(220, 38, 38, 0.15)' },
 ];
 
 export const HONORS = [

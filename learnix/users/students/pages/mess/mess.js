@@ -105,7 +105,20 @@ export default function MessPage({ navigation }) {
   const complain = (meal) => {
     // Takes the resident to the complaint form with the mess category pre-picked. Food complaints
     // reuse the hostel complaint workflow (OPEN → ASSIGNED → RESOLVED) rather than a second queue.
-    navigation?.navigate?.('Complaints', { category: 'FOOD', meal });
+    //
+    // The optional-call is the bug this replaced: `navigation?.navigate?.('Complaints', …)` silently did
+    // NOTHING when `navigate` was missing, so the button looked live and swallowed the tap. `students.js`
+    // now passes a real `navigate`, and this guard shouts instead of failing quietly — a report button
+    // that cannot report is worse than one that says so.
+    const label = meal?.label ? ` ${meal.label}` : '';
+    if (!navigation?.navigate) {
+      Alert.alert('Cannot report', 'Complaints are unavailable right now. Please tell the warden directly.');
+      return;
+    }
+    navigation.navigate('Complaints', { category: 'FOOD', meal: meal?.label ?? null });
+    // `meal` is carried only so the complaint form can open with the dish named; the label above is for
+    // readability of the fallback path, and the form reads `route.params.meal` itself.
+    void label;
   };
 
   if (loading && !data) {

@@ -692,10 +692,49 @@ export const hostelApi = {
   // Recording the gate. `at` lets a warden correct a mis-keyed time.
   gatePassExit: (id, at) => api.post(`/hostel/gate-passes/${id}/exit`, { at: at ?? null }),
   gatePassReturn: (id, at) => api.post(`/hostel/gate-passes/${id}/return`, { at: at ?? null }),
-  complaints: () => api.get('/hostel/complaints'),
+  // ---- Complaints (H-07, docs/users/08-hostel.md §3.7) --------------------------
+  //
+  // Filtered and paged ON THE SERVER, like `rooms` and `residents` above: the derived fields —
+  // `escalated`, `priority`, `hoursToEscalation` — depend on the stored `createdAt` and the live
+  // policy, so filtering them client-side would mean fetching every complaint to compute a badge the
+  // server already computed. Returns `{ complaints, stats, facets, pagination }`, never a bare array,
+  // so the queue header can render counts and chips without a second request.
+  //
+  // `category` accepts either a raw category or a GROUP name ('maintenance' shows plumbing and
+  // electrical together), and `status: 'OPEN_LIKE'` is the "needs attention" bucket — both server-side.
+  complaints: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/complaints${qs ? `?${qs}` : ''}`);
+  },
+  complaint: (id) => api.get(`/hostel/complaints/${id}`),
+  // The thresholds escalation is derived from, read by the warden's policy editor. Written as a
+  // whole object rather than field by field: the service clamps and sorts it, so sending one key
+  // would silently reset the others.
+  complaintPolicy: () => api.get('/hostel/complaints/policy'),
+  saveComplaintPolicy: (policy) => api.put('/hostel/complaints/policy', policy),
+  // Who may take this category. Returns every staff member with an `eligible` flag and a `reason`,
+  // so the picker can show an ineligible person greyed out with "wrong trade" rather than hiding
+  // them — a warden who does not know Suresh is the plumber needs to see WHY he can be picked.
+  complaintAssignees: (category) =>
+    api.get(`/hostel/complaints/assignees${category ? `?category=${encodeURIComponent(category)}` : ''}`),
+  // Filing ON SOMEONE'S BEHALF — a phone call, or a resident at the desk. `studentProfileId` is
+  // REQUIRED here and is deliberately absent from the resident's own method below.
   createComplaint: (payload) => api.post('/hostel/complaints', payload),
-  assignComplaint: (id) => api.post(`/hostel/complaints/${id}/assign`),
-  resolveComplaint: (id) => api.post(`/hostel/complaints/${id}/resolve`),
+  // `assigneeUserId` is REQUIRED. The previous version took no body at all and assigned the
+  // complaint to whoever called the route, which made the warden's screen promise "assign to staff"
+  // while quietly assigning to the warden.
+  assignComplaint: (id, assigneeUserId, note) =>
+    api.post(`/hostel/complaints/${id}/assign`, { assigneeUserId, note: note ?? undefined }),
+  // `resolutionNote` is REQUIRED (min 5 chars). A complaint closed without one is how something gets
+  // closed unfixed, so the server refuses it rather than storing a blank.
+  resolveComplaint: (id, resolutionNote) =>
+    api.post(`/hostel/complaints/${id}/resolve`, { resolutionNote }),
+  addComplaintNote: (id, note) => api.post(`/hostel/complaints/${id}/notes`, { note }),
+  // The warden's manual reopen, for a complaint closed in error. A resident's poor rating reopens
+  // through `studentApi.submitComplaintFeedback` instead — same state change, different door.
+  reopenComplaint: (id, reason) => api.post(`/hostel/complaints/${id}/reopen`, { reason: reason ?? undefined }),
   // ---- Visitors -------------------------------------------------------------------
   // Query strings are built inline, matching `gatePasses` and the alumni directory, rather than
   // through a shared helper that does not exist in this file. `undefined`/`null`/`''` are filtered
@@ -895,6 +934,27 @@ export const studentApi = {
   // Withdrawal, allowed only while the pass is still PENDING. Cancelling an approved pass is a
   // RETURN, and has to go through the gate so the time is recorded.
   cancelGatePass: (id) => api.post(`/student/gate-passes/${id}/cancel`),
+  // ---- Complaints (the resident's own) ----------------------------------------
+  // Identity comes from the token: `myComplaintSchema` has NO `studentProfileId`, so a resident
+  // cannot file as somebody else even by editing the request. That is why this is a separate object
+  // from `hostelApi.createComplaint` rather than the same method behind a flag.
+  //
+  // The list carries the same derived fields as the warden's (priority, escalated,
+  // hoursToEscalation) so the resident can see why their complaint is flagged, rather than being
+  // told "submitted" and left to guess.
+  myComplaints: () => api.get('/student/complaints'),
+  // `severity` is what the RESIDENT thinks. For SECURITY the server applies a MEDIUM floor and
+  // returns `severityRaised`, so the screen can say "raised to Medium because of the security
+  // policy" instead of silently overriding what they picked.
+  reportComplaint: (payload) => api.post('/student/complaints', payload),
+  // Following up on an open complaint. Not a comment thread — a dated entry in the timeline the
+  // support worker and the warden both read.
+  addComplaintNote: (id, note) => api.post(`/student/complaints/${id}/notes`, { note }),
+  // Only legal on a RESOLVED complaint, and only by the resident who filed it. `rating` at or below
+  // the policy threshold (default 3) REOPENS it rather than being recorded as a bad score — a
+  // satisfaction number that swallows an unresolved repair is the failure this closes.
+  submitComplaintFeedback: (id, rating, comment) =>
+    api.post(`/student/complaints/${id}/feedback`, { rating, comment: comment ?? undefined }),
 
   // ---- Mess: the resident's side of the kitchen ---------------------------------
   // Read the menu and rate a meal. Nothing else — there is deliberately no student-side attendance
@@ -997,6 +1057,31 @@ export const studentApi = {
   // honest one keeps the request readable in logs.
   submitMentorshipFeedback: (pairId, payload) => api.post(`/student/mentorship/${pairId}/feedback`, payload),
   deleteMentorshipFeedback: (pairId) => api.delete(`/student/mentorship/${pairId}/feedback`),
+};
+
+/**
+ * Support-staff complaints — the technician's and security officer's side (docs/users/08-hostel.md §3.7).
+ *
+ * ITS OWN BASE PATH, and that is the whole point. There is deliberately no `/hostel/complaints`
+ * prefix here: the hostel router is gated on `HOSTEL`/`ADMIN`, and putting these calls under it would
+ * require widening that gate to `MAINTENANCE`, which hands a plumber the room-allocation table, every
+ * resident profile, the gate-pass register and the visitor register. Those are all about residents'
+ * MOVEMENTS — precisely what a technician has no business browsing. The server mounts this surface at
+ * `/staff-complaints` for the same reason this object is separate.
+ *
+ * Consequence worth knowing before writing a screen against it: a technician CANNOT triage. There is
+ * no assign method here, because deciding who gets the job is the warden's call. The inbox is
+ * "assigned to me, plus unassigned work in a category group my designation covers".
+ */
+export const staffComplaintsApi = {
+  // Returns `{ me, complaints, stats }`. `me.groups` is what the server decided this worker can see,
+  // derived from their designation — so the screen should NOT filter the returned list a second time
+  // on its own guess about categories, or it will hide rows the server thinks they should see.
+  inbox: () => api.get('/staff-complaints/complaints'),
+  // Closing the job. The server only accepts this from the ASSIGNEE, a warden or an admin — enforced
+  // against the data, not just by role, so one technician cannot close a colleague's work.
+  resolve: (id, resolutionNote) => api.post(`/staff-complaints/complaints/${id}/resolve`, { resolutionNote }),
+  addNote: (id, note) => api.post(`/staff-complaints/complaints/${id}/notes`, { note }),
 };
 
 // ── Teacher endpoints (docs/users/02 §4) ──
