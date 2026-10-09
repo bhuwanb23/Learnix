@@ -2232,11 +2232,30 @@ async function seedDomainG(institutionId: string): Promise<void> {
       reopenedCount?: number;
     },
   ) => {
-    const existing = await db.hostelComplaint.findFirst({
+const existing = await db.hostelComplaint.findFirst({
       where: { studentProfileId: profId, description: data.description },
       select: { id: true },
     });
-    if (existing) return existing.id;
+    if (existing) {
+      // REPAIR, not just skip. The state fields are asserted below rather than assumed: an earlier
+      // seed (or a test run that resolved this complaint) leaves the row at the wrong status, and a
+      // create-if-absent that returned early would carry that wrongness forward forever. Without this,
+      // removing the old blanket `updateMany` reset would have stranded the RESOLVED fixture at ASSIGNED
+      // permanently, because nothing else ever wrote to it again.
+      await db.hostelComplaint.update({
+        where: { id: existing.id },
+        data: {
+          status: data.status ?? 'OPEN',
+          assignedToUserId: data.assignedToUserId ?? null,
+          resolvedAt: data.resolvedAt ?? null,
+          resolutionNote: data.resolutionNote ?? null,
+          reopenedCount: data.reopenedCount ?? 0,
+          roomNumber: data.roomNumber ?? null,
+          locationNote: data.locationNote ?? null,
+        },
+      });
+      return existing.id;
+    }
     const created = await db.hostelComplaint.create({
       data: {
         institutionId,
@@ -2275,13 +2294,19 @@ async function seedDomainG(institutionId: string): Promise<void> {
     return created.id;
   };
 
-  const roomOf = async (profId: string | null | undefined) => {
+const roomOf = async (profId: string | null | undefined) => {
     if (!profId) return null;
-    const a = await db.hostelAllocation.findFirst({
-      where: { studentProfileId: profId, status: 'ACTIVE' },
-      select: { bed: { select: { room: { select: { number: true } } } } },
+    // Prefer the ACTIVE allocation, but FALL BACK to the most recent one regardless of status.
+    // Filtering on ACTIVE alone silently returned null for two of the three seeded residents, whose
+    // allocations are VACATED - so their complaints showed no room. A student files a complaint about
+    // the room they lived in, which is exactly the room they no longer hold an ACTIVE bed in.
+    const all = await db.hostelAllocation.findMany({
+      where: { studentProfileId: profId },
+      select: { status: true, fromDate: true, bed: { select: { room: { select: { number: true } } } } },
+      orderBy: { fromDate: 'desc' },
     });
-    return a?.bed.room.number ?? null;
+    const active = all.find((a) => a.status === 'ACTIVE') ?? all[0];
+    return active?.bed.room.number ?? null;
   };
 
   const maintenanceUser = await db.user.findFirst({ where: { email: 'maintenance@learnix.dev' } });

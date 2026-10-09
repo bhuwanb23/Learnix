@@ -405,8 +405,13 @@ eq(cat.defaulterMinDays, DEFAULTER_MIN_DAYS, 'the defaulter threshold is publish
 
 // The audience counts are LIVE — the officer can see who they are about to
 // write to before they send, which is the whole point of showing them.
-const students = await prisma.studentProfile.count({ where: { institutionId } });
-const staff = await prisma.staffProfile.count({ where: { institutionId } });
+// Filtered THROUGH `user`, because StudentProfile has no `institutionId` scalar of its own. Writing
+// `{ institutionId }` here looks right and is silently a no-op: Prisma drops the unknown field, so the
+// count returns every profile in the DATABASE rather than this institution's. That over-counted the
+// roll by the number of rival-institution profiles left behind by interrupted dashboard runs, and it
+// failed against a service that was correct all along.
+const students = await prisma.studentProfile.count({ where: { user: { institutionId } } });
+const staff = await prisma.staffProfile.count({ where: { user: { institutionId } } });
 const allStudents = cat.audiences.find((a) => a.id === 'ALL_STUDENTS')!;
 const allStaff = cat.audiences.find((a) => a.id === 'ALL_STAFF')!;
 eq(allStudents.recipientCount, students, 'the all-students count is the real student roll');

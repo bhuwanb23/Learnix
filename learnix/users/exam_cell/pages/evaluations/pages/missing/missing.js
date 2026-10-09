@@ -10,7 +10,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { examcellApi } from '../../../../../../services/api';
 import { SCRIPT_STATUS_META, RED, AMBER, GREEN, plural } from '../../evaluationMeta';
-import { EvaluationScreen, Card, Chip, Avatar, EmptyNote, StatGrid, useEvaluation } from '../../evaluationUi';
+import { EvaluationScreen, Card, Chip, Avatar, StatGrid, useEvaluation } from '../../evaluationUi';
 
 export default function EvaluationsMissing() {
   const { data, loading, refreshing, error, reload, onRefresh } = useEvaluation(() =>

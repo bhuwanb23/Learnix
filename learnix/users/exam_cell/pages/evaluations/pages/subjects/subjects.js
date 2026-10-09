@@ -5,7 +5,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { examcellApi } from '../../../../../../services/api';
 import { EVALUATION_STATUS_META, MODERATION_STATUS_META, AMBER, GREEN, RED, plural } from '../../evaluationMeta';
-import { EvaluationScreen, ExamPicker, Card, Chip, Progress, EmptyNote, useEvaluation, useExamPicker } from '../../evaluationUi';
+import { EvaluationScreen, ExamPicker, Card, Chip, Progress, useEvaluation, useExamPicker } from '../../evaluationUi';
 
 export default function EvaluationsSubjects() {
   const picker = useExamPicker();
