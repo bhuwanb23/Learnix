@@ -115,6 +115,15 @@ model Result {
   isPass           Boolean   @default(false)
   publishedAt      DateTime?
   publishedByUserId String? // scalar → users.id
+  // X-06 workflow: DRAFT (consolidated) → VERIFIED → APPROVED → PUBLISHED.
+  // Every move is stamped; grade/isPass are DERIVED at consolidation from the
+  // scale in result.rules.ts, never supplied by a client.
+  status            String    @default("DRAFT") // DRAFT | VERIFIED | APPROVED | PUBLISHED
+  verifiedByUserId  String? // scalar → users.id
+  verifiedAt        DateTime?
+  approvedByUserId  String? // scalar → users.id
+  approvedAt        DateTime?
+  revision          Int       @default(0) // bumped when a re-evaluation revises the marks
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -135,6 +144,9 @@ model ReEvaluationRequest {
   reason           String
   status           String    @default("REQUESTED") // REQUESTED | APPROVED | COMPLETED | REJECTED
   decidedByUserId  String? // scalar → users.id
+  decidedAt        DateTime?
+  revisedMarks     Int? // COMPLETED with a change: the new marksObtained (0..result.maxMarks)
+  note             String? // why the request was completed/rejected
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

@@ -8,6 +8,10 @@
  */
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+// The ONE grade calculation (X-06). The seed must not hand-roll bands: a
+// seeded grade that disagrees with the published scale would show up as a
+// "drift" row the moment the Grade calculation block is opened.
+import { gradeFor } from '../src/modules/examcell/result.rules.js';
 
 const db = new PrismaClient();
 const PASSWORD = 'Passw0rd!';
@@ -660,19 +664,28 @@ async function main() {
 
     for (const e of enrolled) {
       const marks = 55 + Math.floor(Math.random() * 35); // 55-89 out of 100
-      const grade = marks >= 85 ? 'A+' : marks >= 75 ? 'A' : marks >= 65 ? 'B+' : marks >= 55 ? 'B' : 'C';
-      const isPass = marks >= 40;
+      const derived = gradeFor(marks, 100);
 
+      // These results went out (publishedAt stamped), so they are PUBLISHED
+      // in the workflow too — status and publishedAt must tell the same story
+      // or the backfill script would have work to do on a fresh database.
       await db.result.upsert({
         where: { examSlotId_studentProfileId: { examSlotId: slot.id, studentProfileId: e.studentProfileId } },
-        update: { marksObtained: marks, grade, isPass, publishedAt: new Date() },
+        update: {
+          marksObtained: marks,
+          grade: derived.grade,
+          isPass: derived.isPass,
+          status: 'PUBLISHED',
+          publishedAt: new Date(),
+        },
         create: {
           examSlotId: slot.id,
           studentProfileId: e.studentProfileId,
           marksObtained: marks,
           maxMarks: 100,
-          grade,
-          isPass,
+          grade: derived.grade,
+          isPass: derived.isPass,
+          status: 'PUBLISHED',
           publishedAt: new Date(),
           publishedByUserId: facultyUsers['teacher@learnix.dev'],
         },
