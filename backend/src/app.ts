@@ -13,6 +13,10 @@ import hodRoutes from './modules/hod/hod.routes.js';
 import sportsRoutes from './modules/sports/sports.routes.js';
 import transportRoutes from './modules/transport/transport.routes.js';
 import hostelRoutes from './modules/hostel/hostel.routes.js';
+// The support-staff complaint surface. Its OWN mount point, not a route inside the hostel router:
+// that router is gated `requireRole('HOSTEL','ADMIN')`, and adding MAINTENANCE to that list would
+// hand a technician room allocations, resident profiles, gate passes and the visitor register.
+import staffComplaintsRoutes from './modules/hostel/hostel-staff-complaints.routes.js';
 import libraryRoutes from './modules/library/library.routes.js';
 import accountsRoutes from './modules/accounts/accounts.routes.js';
 import reportsRoutes from './modules/accounts/reports.routes.js';
@@ -122,6 +126,7 @@ export function createApp() {
   app.use('/api/v1/sports', sportsRoutes);
   app.use('/api/v1/transport', transportRoutes);
   app.use('/api/v1/hostel', hostelRoutes);
+app.use('/api/v1/staff-complaints', staffComplaintsRoutes);
   app.use('/api/v1/library', libraryRoutes);
 // The scholarship desk (docs §3.7) is mounted BEFORE accountsRoutes for the
   // same reason as the routers below: its literal paths (`/scholarships/catalogue`,

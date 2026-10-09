@@ -136,9 +136,12 @@ teeth "the mirror's MISSING route renamed" \
 # ═══ 8. The stale fixture coming back ═══════════════════════════════════
 # The fixture held invented stats one import away from a screen that would
 # show them as fact. Recreate it; the audit must fail on its existence.
+# The edit also touches the watched file (checksum sees the change) and
+# removes the created directory on the way out (fifth argument).
 teeth "the constants/evaluationsData.js fixture recreated" \
   "$EV/evaluationMeta.js" "$A" \
-  "import io,os;p='$EV/evaluationMeta.js';s=io.open(p,encoding='utf-8').read();assert 'export const' in s,'meta not readable';d=os.path.join('$EV','constants');os.makedirs(d,exist_ok=True);io.open(os.path.join(d,'evaluationsData.js'),'w',encoding='utf-8',newline='\n').write('export const EVALUATION_STATS = [];\n')"
+  "import io,os;p='$EV/evaluationMeta.js';s=io.open(p,encoding='utf-8').read();d=os.path.join('$EV','constants');os.makedirs(d,exist_ok=True);io.open(os.path.join(d,'evaluationsData.js'),'w',encoding='utf-8',newline='\n').write('export const EVALUATION_STATS = [];\n');io.open(p,'w',encoding='utf-8',newline='\n').write(s+'\n')"\
+  "$EV/constants"
 
 # ═══ 9. The superseded endpoint returning ═══════════════════════════════
 # The old flat list is gone because its counters trusted the column. Call it

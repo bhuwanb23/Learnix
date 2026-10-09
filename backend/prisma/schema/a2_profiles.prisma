@@ -44,6 +44,7 @@ model StudentProfile {
   messFeedback      MessFeedback[]
   gatePasses        GatePass[]
   hostelComplaints  HostelComplaint[]
+  complaintFeedback HostelComplaintFeedback[]
   visitorsHosted    Visitor[]
   routeEnrollments  RouteEnrollment[]
   eventVolunteering EventVolunteer[]

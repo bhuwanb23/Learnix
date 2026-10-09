@@ -23,6 +23,19 @@ export const ROLES = [
   // visible — so it is modelled as a role rather than a boolean flag on the
   // profile.
   'ALUMNI_OFFICE',
+  // Hostel support staff: the maintenance technician, the security officer, the mess steward.
+  //
+  // A ROLE rather than a HOSTEL permission because these people cannot sit inside the hostel
+  // module. `hostel.routes.ts` is gated `requireRole('HOSTEL','ADMIN')`, and giving a technician
+  // that role would hand them room allocation, resident profiles, gate passes and the visitor
+  // register - all of which are about residents' whereabouts, which is precisely what a maintenance
+  // worker has no business browsing.
+  //
+  // So they get a role that reaches ONE small router (`/api/v1/staff-complaints`), and eligibility to
+  // be ASSIGNED a complaint is decided separately by category group in
+  // `hostel-complaints.policy.ts`. The role says "this person does support work"; the policy says
+  // "which kind". Two questions, deliberately not merged into one flag.
+  'MAINTENANCE',
   'PLATFORM_ADMIN',
 ] as const;
 
@@ -94,7 +107,23 @@ export const BED_STATUS = ['VACANT', 'ALLOCATED', 'MAINTENANCE'] as const;
 export const ALLOCATION_STATUS = ['ACTIVE', 'TRANSFERRED', 'VACATED'] as const;
 export const MEAL = ['BREAKFAST', 'LUNCH', 'DINNER'] as const;
 export const GATE_PASS_STATUS = ['PENDING', 'APPROVED', 'REJECTED'] as const;
-export const COMPLAINT_CATEGORY = ['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE', 'FOOD'] as const;
+/// PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE | FOOD | SECURITY
+///
+/// The six fall into three GROUPS, which is what decides who can be assigned the complaint and who
+/// may see it. The grouping lives in `hostel-complaints.policy.ts` as data rather than as branches
+/// here, because which desk handles a dripping tap is a local decision, not a type-level fact.
+export const COMPLAINT_CATEGORY = [
+  'PLUMBING',
+  'ELECTRICAL',
+  'NETWORK',
+  'MAINTENANCE',
+  'FOOD',
+  'SECURITY',
+] as const;
+
+/// `severity` is what the REPORTER thinks. "Priority" is a separate, DERIVED thing - age plus
+/// severity - so a resident cannot talk their way up the queue by writing a more dramatic sentence,
+/// and a two-week-old LOW complaint still outranks yesterday's LOW one.
 export const COMPLAINT_STATUS = ['OPEN', 'ASSIGNED', 'RESOLVED'] as const;
 export const VISITOR_STATUS = ['IN', 'OUT'] as const;
 

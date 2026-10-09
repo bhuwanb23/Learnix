@@ -20,6 +20,9 @@ import { syncPayrollSalary, linkRunsToSalaryRecords } from './syncPayrollSalary.
 import { syncScholarships } from './syncScholarships.js';
 import { syncReportHistory } from './syncReportHistory.js';
 import { syncNotifications } from './syncNotifications.js';
+// The complaint policy is seeded THROUGH the resolver, so the stored row is the clamped, sorted
+// policy the service will apply rather than a hand-typed blob that quietly drifts from the defaults.
+import { resolvePolicy } from '../src/modules/hostel/hostel-complaints.policy.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -145,6 +148,34 @@ const USERS: SeedUser[] = [
     fullName: 'Dr. R. Nandakumar',
     roles: ['HOSTEL'],
     staff: { employeeNo: 'EMP-0009', designation: 'Chief Warden' },
+  },
+  // ── Hostel support staff (H-07) ────────────────────────────────────────────────
+  //
+  // Complaint assignment needs people to assign TO. Before these existed, `assignComplaint` had
+  // nowhere to point and quietly assigned the complaint to the warden making the call - which is why
+  // the warden's screen could promise "assign to staff" and deliver "assign to yourself".
+  //
+  // The `designation` strings are load-BEARING, not decoration. `hostel-complaints.policy.ts` matches
+  // them as case-insensitive SUBSTRINGS against configured patterns ("maintenance", "mess",
+  // "security"), so renaming one to "Facilities Engineer" would silently make this person ineligible
+  // for every complaint. The tests assert the linkage rather than trusting the string to stay put.
+  {
+    email: 'maintenance@learnix.dev',
+    fullName: 'Suresh Kumar',
+    roles: ['MAINTENANCE'],
+    staff: { employeeNo: 'EMP-0021', designation: 'Maintenance Technician' },
+  },
+  {
+    email: 'security@learnix.dev',
+    fullName: 'Iqbal Sheikh',
+    roles: ['MAINTENANCE'],
+    staff: { employeeNo: 'EMP-0022', designation: 'Security Officer' },
+  },
+  {
+    email: 'mess@learnix.dev',
+    fullName: 'Lakshmi Prasad',
+    roles: ['MAINTENANCE'],
+    staff: { employeeNo: 'EMP-0023', designation: 'Mess Steward' },
   },
   {
     email: 'library@learnix.dev',
@@ -2161,47 +2192,229 @@ async function seedDomainG(institutionId: string): Promise<void> {
     decidedByUserId: wardenId,
     decidedAt: new Date(nowMs - 20 * H),
   });
-  // Complaints: Arjun OPEN (NETWORK), Sneha OPEN (PLUMBING, HIGH), Vikram ASSIGNED (MAINTENANCE)
-  const complaintExists = await db.hostelComplaint.findFirst({ where: { studentProfileId: studentProfile.id, category: 'NETWORK' } });
-  if (!complaintExists) {
-    await db.hostelComplaint.create({
-      data: { studentProfileId: studentProfile.id, category: 'NETWORK', description: 'WiFi drops every evening in A-101', severity: 'MEDIUM', status: 'OPEN' },
+  // ── Complaints (H-07) ────────────────────────────────────────────────────
+  //
+  // Replaces four ad-hoc `db.hostelComplaint.create` calls. Coverage is by LIFECYCLE STATE, not by
+  // "three nice names", for the same reason the visitor fixtures work that way: every state the
+  // derivation can produce has a row, so the warden's queue, the staff inbox, the filters and the
+  // escalation badge are all exercised by the demo data rather than by one lucky record.
+  //
+  // WHAT IS DELIBERATELY DIFFERENT FROM BEFORE
+  // -------------------------------------------
+  //   · assignment now points at a REAL support technician or security officer, because
+  //     `assignComplaint` used to set `assignedToUserId` to whoever called it
+  //   · `roomNumber` is snapshotted, so a complaint filed about A-101 keeps saying A-101
+  //   · the ages SPAN THE ESCALATION TIERS, because escalation is derived from age and four
+  //     same-day rows would all read "not escalated" and prove nothing
+  //   · one complaint is RESOLVED WITH FEEDBACK and one was REOPENED by a poor rating, so the
+  //     loop the whole feature turns on has something in it
+  //   · one is SECURITY, which cannot be filed below MEDIUM and routes away from maintenance
+  //
+  // `ensureComplaint` is create-if-absent and keyed on (student, category, description-slug), so a
+  // reseed refreshes the demo rather than duplicating it and leaves genuinely new complaints alone.
+  const nowMs2 = Date.now();
+  const DAY2 = 86400000;
+  const daysAgo2 = (d: number) => new Date(nowMs2 - d * DAY2);
+
+  const ensureComplaint = async (
+    profId: string,
+    data: {
+      category: string;
+      description: string;
+      severity: string;
+      status?: string;
+      roomNumber?: string | null;
+      locationNote?: string | null;
+      createdAt?: Date;
+      assignedToUserId?: string | null;
+      resolvedAt?: Date | null;
+      resolutionNote?: string | null;
+      reopenedCount?: number;
+    },
+  ) => {
+    const existing = await db.hostelComplaint.findFirst({
+      where: { studentProfileId: profId, description: data.description },
+      select: { id: true },
+    });
+    if (existing) return existing.id;
+    const created = await db.hostelComplaint.create({
+      data: {
+        institutionId,
+        studentProfileId: profId,
+        category: data.category,
+        description: data.description,
+        severity: data.severity,
+        status: data.status ?? 'OPEN',
+        roomNumber: data.roomNumber ?? null,
+        locationNote: data.locationNote ?? null,
+        createdAt: data.createdAt ?? new Date(),
+        assignedToUserId: data.assignedToUserId ?? null,
+        assignedByUserId: data.assignedToUserId ?? null,
+        resolvedAt: data.resolvedAt ?? null,
+        resolvedByUserId: data.resolvedAt ? (data.assignedToUserId ?? wardenId) : null,
+        resolutionNote: data.resolutionNote ?? null,
+        firstResponseAt: data.assignedToUserId ? (data.createdAt ?? new Date()) : null,
+        reopenedCount: data.reopenedCount ?? 0,
+      },
+      select: { id: true },
+    });
+    // A CREATED event, so every seeded complaint opens with a real timeline rather than an empty one.
+    await db.hostelComplaintEvent.create({
+      data: { institutionId, complaintId: created.id, type: 'CREATED', actorUserId: wardenId, note: null, createdAt: data.createdAt ?? new Date() },
+    });
+    if (data.assignedToUserId) {
+      await db.hostelComplaintEvent.create({
+        data: { institutionId, complaintId: created.id, type: 'ASSIGNED', actorUserId: wardenId, note: null, createdAt: new Date((data.createdAt ?? new Date()).getTime() + 3600000) },
+      });
+    }
+    if (data.resolvedAt) {
+      await db.hostelComplaintEvent.create({
+        data: { institutionId, complaintId: created.id, type: 'RESOLVED', actorUserId: data.assignedToUserId ?? wardenId, note: data.resolutionNote ?? null, createdAt: data.resolvedAt },
+      });
+    }
+    return created.id;
+  };
+
+  const roomOf = async (profId: string | null | undefined) => {
+    if (!profId) return null;
+    const a = await db.hostelAllocation.findFirst({
+      where: { studentProfileId: profId, status: 'ACTIVE' },
+      select: { bed: { select: { room: { select: { number: true } } } } },
+    });
+    return a?.bed.room.number ?? null;
+  };
+
+  const maintenanceUser = await db.user.findFirst({ where: { email: 'maintenance@learnix.dev' } });
+  const securityUser = await db.user.findFirst({ where: { email: 'security@learnix.dev' } });
+  const messUser = await db.user.findFirst({ where: { email: 'mess@learnix.dev' } });
+
+  if (studentProfile) {
+    const roomA = await roomOf(studentProfile.id);
+    // OPEN, and old enough to be ESCALATED at MEDIUM (72h) - the badge the warden's queue is for.
+    await ensureComplaint(studentProfile.id, {
+      category: 'NETWORK',
+      description: 'WiFi drops every evening in the room',
+      severity: 'MEDIUM',
+      status: 'OPEN',
+      roomNumber: roomA,
+      locationNote: 'router by the study desk',
+      createdAt: daysAgo2(9),
+    });
+    // FOOD, routed to the mess steward rather than the technician.
+    await ensureComplaint(studentProfile.id, {
+      category: 'FOOD',
+      description: 'Found a hair in the dal at dinner. Please check the kitchen.',
+      severity: 'HIGH',
+      status: 'ASSIGNED',
+      roomNumber: roomA,
+      locationNote: 'mess hall',
+      createdAt: daysAgo2(2),
+      assignedToUserId: messUser?.id ?? null,
     });
   }
+
   if (snehaProf) {
-    const c2 = await db.hostelComplaint.findFirst({ where: { studentProfileId: snehaProf.id, category: 'PLUMBING' } });
-    if (!c2) {
-      await db.hostelComplaint.create({
-        data: { studentProfileId: snehaProf.id, category: 'PLUMBING', description: 'Water leakage in A-101 bathroom', severity: 'HIGH', status: 'OPEN' },
-      });
-    }
+    const roomS = await roomOf(snehaProf.id);
+    await ensureComplaint(snehaProf.id, {
+      category: 'PLUMBING',
+      description: 'Water leaking above the bathroom ceiling',
+      severity: 'HIGH',
+      status: 'ASSIGNED',
+      roomNumber: roomS,
+      createdAt: daysAgo2(5),
+      assignedToUserId: maintenanceUser?.id ?? null,
+    });
+    // SECURITY. Filed HIGH; the policy's MEDIUM floor for this group means even a LOW filing would
+    // have been raised. Routed to the security officer, never to maintenance.
+    await ensureComplaint(snehaProf.id, {
+      category: 'SECURITY',
+      description: 'Stranger waited in the corridor after curfew',
+      severity: 'HIGH',
+      status: 'OPEN',
+      roomNumber: roomS,
+      locationNote: 'second-floor corridor',
+      createdAt: daysAgo2(1),
+    });
   }
+
   if (vikramProf) {
-    const c3 = await db.hostelComplaint.findFirst({ where: { studentProfileId: vikramProf.id, category: 'MAINTENANCE' } });
-    if (!c3) {
-      await db.hostelComplaint.create({
-        data: { studentProfileId: vikramProf.id, category: 'MAINTENANCE', description: 'Broken window grill in B-204', severity: 'LOW', status: 'ASSIGNED', assignedToUserId: wardenId },
-      });
+    const roomV = await roomOf(vikramProf.id);
+    // RESOLVED WITH POSITIVE FEEDBACK - the loop closed the good way.
+    const resolvedId = await ensureComplaint(vikramProf.id, {
+      category: 'MAINTENANCE',
+      description: 'Broken window grill in the room',
+      severity: 'LOW',
+      status: 'RESOLVED',
+      roomNumber: roomV,
+      createdAt: daysAgo2(14),
+      assignedToUserId: maintenanceUser?.id ?? null,
+      resolvedAt: daysAgo2(12),
+      resolutionNote: 'Grill re-welded and repainted.',
+    });
+    if (resolvedId) {
+      const fb = await db.hostelComplaintFeedback.findFirst({ where: { complaintId: resolvedId } });
+      if (!fb) {
+        await db.hostelComplaintFeedback.create({
+          data: {
+            institutionId,
+            complaintId: resolvedId,
+            studentProfileId: vikramProf.id,
+            rating: 5,
+            comment: 'Fixed the same day, thank you.',
+          },
+        });
+        await db.hostelComplaintEvent.create({
+          data: { institutionId, complaintId: resolvedId, type: 'FEEDBACK_GIVEN', actorUserId: vikram?.id ?? null, note: 'Fixed the same day, thank you.', createdAt: daysAgo2(11) },
+        });
+      }
     }
-  }
-  // A food-quality complaint, so the new `FOOD` category has a row and the warden's complaint inbox
-  // shows the mess version of the same workflow. OPEN, because a kitchen problem that has been
-  // assigned is a kitchen problem somebody is already on.
-  if (studentProfile) {
-    const c4 = await db.hostelComplaint.findFirst({ where: { studentProfileId: studentProfile.id, category: 'FOOD' } });
-    if (!c4) {
-      await db.hostelComplaint.create({
-        data: {
-          studentProfileId: studentProfile.id,
-          category: 'FOOD',
-          description: 'Found a hair in the dal at dinner yesterday. Please check the kitchen.',
-          severity: 'HIGH',
-          status: 'OPEN',
-        },
-      });
+    // REOPENED BY A POOR RATING - the loop closed the other way, and this is the case that proves
+    // "not fixed" puts work back on the board rather than disappearing into a satisfaction number.
+    const reopenedId = await ensureComplaint(vikramProf.id, {
+      category: 'ELECTRICAL',
+      description: 'Tube light flickering in the room',
+      severity: 'MEDIUM',
+      status: 'ASSIGNED',
+      roomNumber: roomV,
+      createdAt: daysAgo2(20),
+      assignedToUserId: maintenanceUser?.id ?? null,
+      reopenedCount: 1,
+    });
+    if (reopenedId) {
+      const rf = await db.hostelComplaintFeedback.findFirst({ where: { complaintId: reopenedId } });
+      if (!rf) {
+        await db.hostelComplaintFeedback.create({
+          data: { institutionId, complaintId: reopenedId, studentProfileId: vikramProf.id, rating: 2, comment: 'Still flickering. This is the second visit.' },
+        });
+        await db.hostelComplaintEvent.create({
+          data: { institutionId, complaintId: reopenedId, type: 'FEEDBACK_GIVEN', actorUserId: vikram?.id ?? null, note: 'Still flickering. This is the second visit.', createdAt: daysAgo2(3) },
+        });
+        await db.hostelComplaintEvent.create({
+          data: { institutionId, complaintId: reopenedId, type: 'REOPENED', actorUserId: vikram?.id ?? null, note: 'Rated 2/5, at or below the 3 threshold. Put back on the board.', createdAt: daysAgo2(3) },
+        });
+}
     }
   }
 
+  // The complaint policy, written so a warden has thresholds to edit from day one. Written THROUGH
+  // `resolvePolicy` rather than hand-typed, so the stored row is the clamped, sorted, complete policy
+  // the service will actually apply - not a JSON blob that happens to match today and stops matching
+  // the moment a default changes.
+  const COMPLAINT_POLICY_KEY = 'hostel.complaintPolicy';
+  const complaintPolicyJson = JSON.stringify(
+    resolvePolicy({
+      escalationHours: { LOW: 168, MEDIUM: 72, HIGH: 24 },
+      reopenRatingThreshold: 3,
+    }),
+  );
+  const existingComplaintPolicy = await db.systemConfig.findFirst({
+    where: { institutionId, key: COMPLAINT_POLICY_KEY },
+  });
+  if (!existingComplaintPolicy) {
+    await db.systemConfig.create({
+      data: { institutionId, key: COMPLAINT_POLICY_KEY, valueJson: complaintPolicyJson },
+    });
+  }
 
   // ── Visitors (H-08) ──────────────────────────────────────────────────────────────
 // Replaces three ad-hoc `db.visitor.create` calls. Two reasons it is not the same shape:
@@ -2589,10 +2802,6 @@ for (const v of await db.visitor.findMany({
       where: { studentProfileId: studentProfile.id, reason: 'Weekend home visit' },
       data: { status: 'PENDING', decidedByUserId: null, decidedAt: null, verifiedAt: null },
     });
-    await db.hostelComplaint.updateMany({
-      where: { studentProfileId: studentProfile.id, category: 'NETWORK' },
-      data: { status: 'OPEN', assignedToUserId: null, resolvedAt: null },
-    });
     await db.visitor.updateMany({
       where: { visitingStudentProfileId: studentProfile.id, relation: 'Father', purpose: 'Dropped off for the weekend' },
       data: { status: 'IN', checkOutAt: null },
@@ -2617,10 +2826,6 @@ for (const v of await db.visitor.findMany({
       where: { studentProfileId: snehaProf.id, reason: 'Medical appointment' },
       data: { status: 'APPROVED', decidedByUserId: wardenId, decidedAt: new Date(nowMs - 20 * H) },
     });
-    await db.hostelComplaint.updateMany({
-      where: { studentProfileId: snehaProf.id, category: 'PLUMBING' },
-      data: { status: 'OPEN', assignedToUserId: null, resolvedAt: null },
-    });
     await db.visitor.updateMany({
       where: { visitingStudentProfileId: snehaProf.id, relation: 'Relative' },
       data: {
@@ -2640,10 +2845,10 @@ for (const v of await db.visitor.findMany({
       where: { studentProfileId: vikramProf.id, reason: 'Sibling visiting from Delhi' },
       data: { status: 'REJECTED', decidedByUserId: wardenId, decidedAt: new Date(nowMs - 20 * H) },
     });
-    await db.hostelComplaint.updateMany({
-      where: { studentProfileId: vikramProf.id, category: 'MAINTENANCE' },
-      data: { status: 'ASSIGNED', resolvedAt: null },
-    });
+    // Complaint states are NOT reset here. They used to be, keyed on (student, category) - but that is a
+    // CATEGORY-wide filter, and the fixtures above deliberately place several lifecycle states in one
+    // category. The reset silently flattened the staged RESOLVED complaint back to ASSIGNED, so the
+    // demo lost the very state the feature exists to show. `ensureComplaint` owns complaint state.
     await db.visitor.updateMany({
       where: { visitingStudentProfileId: vikramProf.id, relation: 'Brother' },
       data: { status: 'APPROVED', checkInAt: null, checkOutAt: null, approvedByUserId: wardenId, approvedAt: new Date(nowMs - 6 * H) },
@@ -3409,6 +3614,15 @@ async function seedDomainL(institutionId: string): Promise<void> {
     // with the chief warden, by editing the role in the app rather than by writing a new role.
     { key: 'hostel.mess.manage', name: 'Manage mess menu, meals and feedback', category: 'HOSTEL' },
     { key: 'hostel.mess.expenses', name: 'View and raise mess expenses', category: 'HOSTEL' },
+    // Complaints is split three ways rather than given one "manage" key, because the three jobs are
+    // genuinely different and a college will want to separate them:
+    //   .triage    — a warden: sees the whole queue, assigns, reopens, escalates by re-assigning
+    //   .work      — support staff: sees what is assigned to them, adds notes, resolves
+    //   .assign    — choosing WHO gets a complaint, which is a scheduling decision, not a fix
+    // A deputy warden with .triage + .work can run the desk without deciding assignments.
+    { key: 'hostel.complaints.triage', name: 'Triage the hostel complaint queue', category: 'HOSTEL' },
+    { key: 'hostel.complaints.work', name: 'Work and resolve assigned complaints', category: 'HOSTEL' },
+    { key: 'hostel.complaints.assign', name: 'Assign complaints to staff', category: 'HOSTEL' },
     { key: 'transport.manage', name: 'Manage transport', category: 'TRANSPORT' },
     { key: 'placement.manage', name: 'Manage placements', category: 'PLACEMENT' },
     { key: 'sports.manage', name: 'Manage sports', category: 'SPORTS' },
@@ -3443,7 +3657,11 @@ async function seedDomainL(institutionId: string): Promise<void> {
       'payroll.run', 'audit.read',
     ],
     LIBRARY: ['students.read', 'library.circulate', 'library.manage'],
-    HOSTEL: ['students.read', 'hostel.manage', 'hostel.mess.manage', 'hostel.mess.expenses', 'fees.read'],
+    HOSTEL: ['students.read', 'hostel.manage', 'hostel.mess.manage', 'hostel.mess.expenses', 'hostel.complaints.triage', 'hostel.complaints.work', 'hostel.complaints.assign', 'fees.read'],
+    // Support staff. `.work` lets them pick up and resolve what is assigned to them; they are NOT
+    // given `.triage` or `.assign`, because deciding the queue and choosing who works it are the
+    // warden's calls. See the MAINTENANCE role note in `src/lib/enums.ts`.
+    MAINTENANCE: ['hostel.complaints.work'],
     TRANSPORT: ['students.read', 'transport.manage', 'fees.read'],
     PLACEMENT: ['students.read', 'placement.manage'],
     SPORTS: ['students.read', 'sports.manage'],

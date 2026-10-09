@@ -228,11 +228,17 @@ section('4. api.js surface matches the server routes');
 
   // The three superseded endpoints are gone FROM THE CLIENT too — a client
   // that still calls them gets a 404 in production and blames the network.
-  const apiNoComments = stripComments(api);
-  ok(!/^\s{2}evaluations:\s*\(\)\s*=>\s*api\.get\('\/examcell\/evaluations'\)/m.test(apiNoComments),
+  //
+  // Checked against RAW source, not comment-stripped: api.js contains `/*`
+  // inside line-comment prose (`/student/*`), so its /* count exceeds */ and
+  // stripComments fabricates a giant block comment that swallows this whole
+  // section — an assertion reading a region that no longer exists is exactly
+  // the vacuous kind this audit exists to prevent. The patterns below are
+  // code-shaped (`evaluations: () => ...`); a comment cannot match them.
+  ok(!/^\s{2}evaluations:\s*\(\)\s*=>\s*api\.get\('\/examcell\/evaluations'\)/m.test(api),
     'the old flat GET /examcell/evaluations method is gone');
-  ok(!/\/examcell\/evaluations\/\$\{[^}]+\}\/assign/.test(apiNoComments), 'the old assign method is gone');
-  ok(!/\/examcell\/evaluations\/\$\{[^}]+\}\/complete/.test(apiNoComments), 'the old complete method is gone');
+  ok(!/\/examcell\/evaluations\/\$\{[^}]+\}\/assign/.test(api), 'the old assign method is gone');
+  ok(!/\/examcell\/evaluations\/\$\{[^}]+\}\/complete/.test(api), 'the old complete method is gone');
 }
 
 // ═══ 5. The router order and the auth gate, at source ═══════════════════
@@ -295,9 +301,12 @@ section('6. Every screen shows the error in place of the content');
     if (file === 'evaluationMeta.js' || file === 'evaluationUi.js') continue;
     ok(/error=\{/.test(clean), `${file}: passes error to the shell`);
   }
-  // The shell itself renders the panel instead of the content.
+  // The shell itself renders the panel instead of the content. The branch is
+  // `if (error) {` with a BRACE — ExamPicker has its own `if (error) return`
+  // for picker errors, and matching that too would make this check pass even
+  // with the shell's panel branch deleted.
   const shell = stripComments(uiSrc);
-  ok(/if \(error\)/.test(shell), 'the shell short-circuits on error');
+  ok(/if \(error\) \{/.test(shell), 'the shell short-circuits on error');
   ok(/Could not load this screen/.test(shell), '…with a visible message');
   ok(!/return.*0 items/.test(shell), 'and never a zero-state in its place');
 }

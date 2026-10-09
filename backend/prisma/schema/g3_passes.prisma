@@ -67,21 +67,117 @@ model GatePass {
 
 model HostelComplaint {
   id               String    @id @default(cuid())
+  /// Present so the table can be scanned by institution like every sibling. Reachability still goes
+  /// through `studentProfile`, so this is never the only authority on who may read a row.
+  ///
+  /// Added as NULLABLE in the migration, backfilled from the complainant's own user, and only then
+  /// made REQUIRED - because a required column on a table with existing rows backfills as an empty
+  /// string, which looks like a real institution id in every query and silently matches nothing.
+  institutionId    String
   studentProfileId String
-  category         String // PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE | FOOD
+  /// PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE | FOOD | SECURITY
+  ///
+  /// SECURITY is not a peer of the rest. The other five are "something in the building is wrong";
+  /// this one is "somebody did something", so it routes to wardens rather than to maintenance and
+  /// cannot be filed below MEDIUM. Both rules live in `hostel-complaints.policy.ts`.
+  category         String
   description      String
-  severity         String // LOW | MEDIUM | HIGH
+  severity         String // LOW | MEDIUM | HIGH — what the REPORTER thinks
   status           String    @default("OPEN") // OPEN | ASSIGNED | RESOLVED
   assignedToUserId String? // scalar → users.id
+
+  /// WHERE, snapshotted at the moment of filing.
+  ///
+  /// Previously `room` was derived on read from the student's CURRENT bed, which meant a complaint
+  /// about the room they have since left displayed the room they are in now, and a student with no
+  /// active allocation displayed "—". A complaint record is a historical document: where it was
+  /// raised has to stay where it was raised.
+  roomNumber       String?
+  /// Free text for the part a room number cannot express: "outside the bathroom door", "stairwell
+  /// between floors 2 and 3", "the mess hall queue". Kept separate from `roomNumber` because a
+  /// location and a description of the fault are different facts.
+  locationNote     String?
+
+  /// Who assigned it. `assignedToUserId` used to be set to the ASSIGNING user, which made the two
+  /// fields indistinguishable and meant "assign to staff" assigned the complaint to the warden
+  /// standing at the desk.
+  assignedByUserId String? // scalar → users.id
+
   resolvedAt       DateTime?
+  resolvedByUserId String? // scalar → users.id
+  /// What was actually done. Required by the service, not merely permitted: a complaint closed
+  /// without a word about the fix is how something gets closed without being fixed.
+  resolutionNote   String?
+  /// When someone first acted on it. Distinct from `assignedAt` in spirit - this is the clock the
+  /// resident is actually experiencing, from filing to the first person touching it.
+  firstResponseAt  DateTime?
+  /// How many times poor feedback bounced this back. A complaint reopened four times is a different
+  /// problem from one reopened once, and the count is what says so.
+  reopenedCount    Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+  feedback       HostelComplaintFeedback?
+  events         HostelComplaintEvent[]
 
+  @@index([institutionId, status, createdAt])
+  @@index([institutionId, category])
   @@index([studentProfileId])
   @@index([status])
   @@map("hostel_complaints")
+}
+
+// THE TIMELINE
+// -----------
+// A complaint's history is not `createdAt` / `updatedAt` / `resolvedAt`. Those three say a thing
+// happened and give no order to the four things that happened between them. Every state change and
+// every human note lands here, which is what makes "what did you actually do about it" answerable.
+model HostelComplaintEvent {
+  id           String   @id @default(cuid())
+  institutionId String
+  complaintId  String
+  /// CREATED | ASSIGNED | REASSIGNED | NOTE_ADDED | RESOLVED | REOPENED | REOPEN_REQUESTED |
+  /// FEEDBACK_GIVEN
+  type         String
+  /// Null when the event was DERIVED rather than performed - a student rating a resolution, or a
+  /// complaint being escalated by getting old. Recorded, but not attributable to a person.
+  actorUserId  String? // scalar → users.id
+  note         String?
+  createdAt    DateTime @default(now())
+
+  complaint HostelComplaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  @@index([complaintId, createdAt])
+  @@index([institutionId, createdAt])
+  @@map("hostel_complaint_events")
+}
+
+// THE STUDENT'S VERDICT ON THE FIX
+// ------------------------------
+// Mirrors `EventFeedback` exactly: one rating per person per subject, but EDITABLE, because a
+// resident who rates 1 star on day one and 5 on day three has given two useful pieces of
+// information and should be able to say so.
+//
+// `@@unique([complaintId])` rather than per-student: a complaint has exactly one complainant, so a
+// second rate from anyone else is not a second opinion, it is somebody else's.
+model HostelComplaintFeedback {
+  id               String   @id @default(cuid())
+  institutionId    String
+  complaintId      String   @unique
+  studentProfileId String
+  /// 1–5. At or below the policy's `reopenRatingThreshold` this REOPENS the complaint rather than
+  /// sitting on a resolved one as a quiet grievance.
+  rating           Int
+  comment          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  complaint     HostelComplaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([studentProfileId])
+  @@map("hostel_complaint_feedback")
 }
 
 // WHY EVERY ADDED FIELD IS OPTIONAL
