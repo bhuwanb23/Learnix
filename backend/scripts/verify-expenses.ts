@@ -13,7 +13,7 @@ import { mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import {
   toRupees, fiscalYearOf, fiscalYearRange, monthKey, lastNMonths, utilisation,
-  currentFiscalYear, CATEGORY_IDS, EXPENSE_CATEGORIES, PAYMENT_METHOD_IDS,
+  currentFiscalYear, CATEGORY_IDS, EXPENSE_CATEGORIES, PAYMENT_METHOD_IDS, categoryMeta,
 } from '../src/modules/accounts/expenses.money.js';
 import {
   listExpenses, getExpense, createExpense, approveExpense, rejectExpense, reopenExpense,
@@ -103,8 +103,20 @@ async function run() {
     check('a zero budget with spend reads as 100%', utilisation(0, 500).percent === 100);
     check('a zero budget with nothing reads as 0%', utilisation(0, 0).percent === 0);
 
-    check('categories and payment methods are non-empty',
-      EXPENSE_CATEGORIES.length === 5 && PAYMENT_METHOD_IDS.length === 5);
+    // These used to assert a hardcoded count of 5, which broke the moment `MESS` was added as a sixth
+    // category - a test that fails when you add a feature is a test asserting an accident of history.
+    // What actually matters is that the taxonomy is USABLE: non-empty, unique, and every row
+    // carrying the metadata the entry form needs to render a picker a person can choose from.
+    check('payment methods are non-empty and unique',
+      PAYMENT_METHOD_IDS.length > 0 && new Set(PAYMENT_METHOD_IDS).size === PAYMENT_METHOD_IDS.length);
+    check('expense categories are non-empty and unique',
+      EXPENSE_CATEGORIES.length > 0 && new Set(EXPENSE_CATEGORIES.map((c) => c.id)).size === EXPENSE_CATEGORIES.length);
+    check('every category carries a label, a colour, an icon and a hint',
+      EXPENSE_CATEGORIES.every((c) => c.label && c.color && c.icon && c.hint));
+    check('every category id is one the service will accept',
+      EXPENSE_CATEGORIES.every((c) => CATEGORY_IDS.includes(c.id)));
+    check('a category resolves to its own metadata rather than the MISC fallback',
+      EXPENSE_CATEGORIES.every((c) => categoryMeta(c.id).id === c.id));
 
     // ══ 2. Budget setup ══════════════════════════════════════
     console.log('\nbudget lines');
@@ -499,7 +511,11 @@ async function run() {
     check('stats split approved / pending / rejected',
       all.stats.approvedRupees > 0 && all.stats.pendingCount > 0, JSON.stringify(all.stats));
     check('the list returns departments for the filter', Array.isArray(all.departments));
-    check('the list returns categories for the entry form', all.categories.length === 5);
+    // The list must serve the SAME taxonomy the entry form validates against, or a claim could be filed
+    // against a category the form never offered. Asserted by equality rather than by count.
+    check('the list returns categories for the entry form',
+      all.categories.length === EXPENSE_CATEGORIES.length &&
+      all.categories.every((c) => EXPENSE_CATEGORIES.some((e) => e.id === c.id)));
     check('every row carries its derived status',
       all.expenses.every((e) => ['PENDING', 'APPROVED', 'REJECTED'].includes(e.status)));
     check('no row has a negative amount', all.expenses.every((e) => e.amountRupees > 0));

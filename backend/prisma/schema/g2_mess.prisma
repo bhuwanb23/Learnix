@@ -50,11 +50,13 @@ model MealAttendance {
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
 
-  // `institutionId` leads the unique key deliberately. The original `[date, meal,
-  // studentProfileId]` looks tenant-safe because a student profile belongs to one institution —
-  /// but it makes "did this student eat lunch on day X" a global uniqueness claim, so the
-  /// database, not the application, would be the thing preventing two institutions from ever
-  /// recording the same student id. Asserted by `check-hostel-mess.ts`.
+// `institutionId` leads the unique key. To be precise about what this buys: it is NOT closing an
+  // active cross-tenant bug, because a `studentProfileId` is globally unique and already implies one
+  // institution, so the old `[date, meal, studentProfileId]` could not in practice collide across
+  // colleges either. What it does is make the row's own tenant part of its identity, so the key
+  // states what the row actually is and a future refactor that widens the relationship cannot
+  // quietly turn a per-student constraint into a global one. Every other tenant-scoped table here
+  // leads its unique keys with `institutionId`; this one now matches.
   @@unique([institutionId, date, meal, studentProfileId])
   @@index([institutionId, date, meal])
   @@index([studentProfileId])
@@ -76,9 +78,11 @@ model MessFeedback {
 
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
 
-  // The student is the author and the only permitted editor, so a second rating for the same
-  /// meal on the same day is an UPDATE rather than a second opinion. Rated meal is keyed the same
-  /// way as attendance for the same reason.
+// The student is the author and the only permitted editor, so a second rating for the same
+  // meal on the same day is an UPDATE rather than a second opinion. This is a REAL behaviour change:
+  // `listMessFeedback` previously took `take: 15` and then averaged THOSE rows, so the reported
+  // rating moved depending on how many opinions happened to arrive last. The unique key is what
+  // makes a re-rate an upsert instead of a duplicate row.
   @@unique([institutionId, mealDate, meal, studentProfileId])
   @@index([institutionId, mealDate])
   @@index([studentProfileId])
