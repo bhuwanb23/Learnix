@@ -1209,10 +1209,34 @@ export const examcellApi = {
     api.post(`/examcell/evaluations/${encodeURIComponent(evalId)}/moderation/request`),
   decideModeration: (evalId, decision, note) =>
     api.post(`/examcell/evaluations/${encodeURIComponent(evalId)}/moderation/decide`, { decision, note }),
-  results: () => api.get('/examcell/results'),
-  enterResult: (payload) => api.post('/examcell/results', payload),
-  publishResults: (examSlotId) => api.post('/examcell/results/publish', { examSlotId }),
-  decideReevaluation: (id, decision) => api.post(`/examcell/re-evaluations/${id}/decide`, { decision }),
+  // ── X-06 Results (docs/users/05 §3.4) ────────────────────────────────
+  //
+  // Three methods used to live here — `GET /examcell/results`,
+  // `POST /examcell/results {…, grade, isPass}` and
+  // `POST /examcell/results/publish {examSlotId}`. All three are GONE, not
+  // renamed: `enterResult` let the screen decide who passed (it accepted a
+  // grade and a pass flag from the client), and publish skipped verification
+  // and approval entirely. The replacement is a pipeline — consolidate,
+  // verify, approve, publish — where grade/pass derive from marks server-side
+  // and each move is a slot-scoped, parameterless POST.
+  resultCatalogue: () => api.get('/examcell/results/catalogue'),
+  resultOverview: () => api.get('/examcell/results/overview'),
+  resultBlock: (block, examId) =>
+    api.get(`/examcell/results/blocks/${encodeURIComponent(block)}${examId ? `?examId=${encodeURIComponent(examId)}` : ''}`),
+  resultMarksheet: (studentProfileId, examId) =>
+    api.get(`/examcell/results/marksheets/${encodeURIComponent(studentProfileId)}?examId=${encodeURIComponent(examId)}`),
+  resultExport: (examId, format) =>
+    api.get(`/examcell/results/export?examId=${encodeURIComponent(examId)}${format ? `&format=${encodeURIComponent(format)}` : ''}`),
+  consolidateResults: (slotId) => api.post(`/examcell/results/slots/${encodeURIComponent(slotId)}/consolidate`),
+  verifyResults: (slotId) => api.post(`/examcell/results/slots/${encodeURIComponent(slotId)}/verify`),
+  approveResults: (slotId) => api.post(`/examcell/results/slots/${encodeURIComponent(slotId)}/approve`),
+  publishResults: (slotId) => api.post(`/examcell/results/slots/${encodeURIComponent(slotId)}/publish`),
+  // Same path as before, richer body: COMPLETED carries `revisedMarks` (the
+  // new marks, bounded against the result's own maxMarks) and every decision
+  // may carry a `note`. The screen passes the whole payload, never a bare
+  // string the server has to guess the shape of.
+  decideReevaluation: (id, payload) =>
+    api.post(`/examcell/re-evaluations/${encodeURIComponent(id)}/decide`, payload),
   cheatingCases: () => api.get('/examcell/cheating-cases'),
   decideCheatingCase: (id, decision) => api.post(`/examcell/cheating-cases/${id}/decide`, { decision }),
   notifications: () => api.get('/examcell/notifications'),

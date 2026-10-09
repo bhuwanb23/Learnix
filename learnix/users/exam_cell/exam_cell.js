@@ -73,6 +73,24 @@ import EvaluationsMissing from './pages/evaluations/pages/missing/missing';
 import EvaluationsModeration from './pages/evaluations/pages/moderation/moderation';
 import EvaluationsRevaluation from './pages/evaluations/pages/revaluation/revaluation';
 
+// X-06 results: the hub plus its eleven block sub-screens, reached through
+// the Results tab. Same contract as the timetable, hall-ticket and evaluation
+// sets: each `route` in `resultsMeta.BLOCKS` must have a key here, and a
+// missing key fails SILENTLY — `renderContent` finds nothing and drops the
+// controller back on the hub with no error. `audit-results-ui.ts` asserts
+// every block route has a registry entry.
+import ResultsConsolidate from './pages/results/pages/consolidate/consolidate';
+import ResultsGrades from './pages/results/pages/grades/grades';
+import ResultsCgpa from './pages/results/pages/cgpa/cgpa';
+import ResultsPassFail from './pages/results/pages/passfail/passfail';
+import ResultsVerify from './pages/results/pages/verify/verify';
+import ResultsApproval from './pages/results/pages/approval/approval';
+import ResultsPublish from './pages/results/pages/publish/publish';
+import ResultsMarksheet from './pages/results/pages/marksheet/marksheet';
+import ResultsRevaluation from './pages/results/pages/revaluation/revaluation';
+import ResultsAnalytics from './pages/results/pages/analytics/analytics';
+import ResultsExport from './pages/results/pages/export/export';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 import { setDemoUser } from '../../services/api';
@@ -109,6 +127,17 @@ const FEATURE_MODULES = {
   EvaluationsMissing: { title: 'Missing Marks', icon: 'alert-circle-outline', component: EvaluationsMissing },
   EvaluationsModeration: { title: 'Moderation', icon: 'checkmark-done-outline', component: EvaluationsModeration },
   EvaluationsRevaluation: { title: 'Revaluation Requests', icon: 'refresh-circle-outline', component: EvaluationsRevaluation },
+  ResultsConsolidate: { title: 'Marks Consolidation', icon: 'git-merge-outline', component: ResultsConsolidate },
+  ResultsGrades: { title: 'Grade Calculation', icon: 'ribbon-outline', component: ResultsGrades },
+  ResultsCgpa: { title: 'SGPA / CGPA', icon: 'calculator-outline', component: ResultsCgpa },
+  ResultsPassFail: { title: 'Pass / Fail Processing', icon: 'account-check-outline', component: ResultsPassFail },
+  ResultsVerify: { title: 'Result Verification', icon: 'checkmark-done-outline', component: ResultsVerify },
+  ResultsApproval: { title: 'Result Approval', icon: 'checkbox-outline', component: ResultsApproval },
+  ResultsPublish: { title: 'Result Publication', icon: 'megaphone-outline', component: ResultsPublish },
+  ResultsMarksheet: { title: 'Marksheet', icon: 'document-text-outline', component: ResultsMarksheet },
+  ResultsRevaluation: { title: 'Revaluation Updates', icon: 'refresh-circle-outline', component: ResultsRevaluation },
+  ResultsAnalytics: { title: 'Result Analytics', icon: 'stats-chart-outline', component: ResultsAnalytics },
+  ResultsExport: { title: 'Export Results', icon: 'download-outline', component: ResultsExport },
 };
 
 const TAB_TITLES = {

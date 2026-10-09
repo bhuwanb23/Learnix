@@ -28,7 +28,12 @@ export default function EvaluationsRevaluation() {
   const decided = items.filter((i) => i.status !== 'REQUESTED');
   const requested = items.filter((i) => i.status === 'REQUESTED');
 
-  const decide = (id, decision) => action.run(() => examcellApi.decideReevaluation(id, decision));
+  // The endpoint's body is a payload now, not a bare string: the server
+  // takes `{ decision, revisedMarks?, note? }` and a COMPLETED decision must
+  // carry the revised marks (X-06). This queue only approves/rejects, so it
+  // sends just the decision — completing with marks lives on the Results
+  // revaluation screen, where the input for it also lives.
+  const decide = (id, decision) => action.run(() => examcellApi.decideReevaluation(id, { decision }));
 
   const Row = ({ it }) => {
     const meta = REVALUATION_STATUS_META[it.status] || REVALUATION_STATUS_META.REQUESTED;
