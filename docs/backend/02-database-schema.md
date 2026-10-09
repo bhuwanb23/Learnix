@@ -68,8 +68,8 @@
 | `exam_slots` | examId, offeringId, date, startTime, endTime, room, seats, status(SCHEDULED/COMPLETED/RESCHEDULED) | 05 §3.2 timetable |
 | `exam_room_allocations` | examSlotId, roomId, invigilatorUserId? | Conflict detection input (03 §3.6) |
 | `hall_tickets` | examSlotId, studentProfileId, seatNo, qrPayload, status(GENERATED/DOWNLOADED/NOT_GENERATED), generatedAt | 05 §3.5 |
-| `evaluations` | examSlotId, subjectOfferingId, totalPapers, completedPapers, inProgressPapers, evaluatorUserId?, status(PENDING/IN_PROGRESS/COMPLETED) | 05 §3.3 |
-| `evaluation_papers` | evaluationId, studentProfileId, evaluatorUserId?, marksEntered?, status(PENDING/EVALUATING/DONE) | Paper-level granularity |
+| `evaluations` | examSlotId, subjectOfferingId, totalPapers, completedPapers, inProgressPapers, evaluatorUserId?, status(PENDING/IN_PROGRESS/COMPLETED), moderationStatus(NOT_REQUESTED/PENDING/APPROVED/FLAGGED), moderatedByUserId?, moderatedAt?, moderationNote? | 05 §3.3 |
+| `evaluation_papers` | evaluationId, studentProfileId, evaluatorUserId?, marksEntered?, internalMarks?(0..40), externalMarks?(0..60), scriptStatus(NOT_RECEIVED/RECEIVED/VERIFIED), status(PENDING/EVALUATING/DONE) | Paper-level granularity; marks split is the 40/60 policy |
 | `results` | examSlotId, studentProfileId, marksObtained, maxMarks, grade, isPass, publishedAt?, publishedByUserId? | 05 §3.4 → student app; publishing gated by exam status |
 | `re_evaluation_requests` | resultId, studentProfileId, reason, status(REQUESTED/APPROVED/COMPLETED/REJECTED), decidedByUserId? | 05 §3.4 · window from system_config |
 | `cheating_cases` | examSlotId, studentProfileId, issue, riskLevel(HIGH/MEDIUM/LOW), evidenceJson, source(AI/INVIGILATOR), status(UNDER_REVIEW/CONFIRMED/DISMISSSED/ESCALATED), reviewedByUserId? | 05 §3.6 · 03 §3.6 (AI detection feeds same table) |

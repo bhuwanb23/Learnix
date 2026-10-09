@@ -261,15 +261,104 @@ export const messExpenseSchema = z
   })
   .strict();
 
-export const complaintSchema = z.object({
-  studentProfileId: z.string().min(1).max(64),
-  // `FOOD` is a food-quality complaint - the mess version of the same workflow. It reuses
-  // OPEN → ASSIGNED → RESOLVED rather than getting a second lifecycle, because a resident who
-  // found hair in the dal wants it fixed and tracked, not routed into a different queue.
-  category: z.enum(['PLUMBING', 'ELECTRICAL', 'NETWORK', 'MAINTENANCE', 'FOOD']),
-  description: z.string().trim().min(5).max(500),
-  severity: z.enum(['LOW', 'MEDIUM', 'HIGH']),
+/**
+ * Complaint categories.
+ *
+ * `SECURITY` is the one that is not "something in the building is wrong" - it is "somebody did
+ * something", which routes to wardens rather than maintenance and cannot be filed below MEDIUM. Both
+ * rules live in `hostel-complaints.policy.ts` so a college can change them without a deploy; the
+ * category itself is structural, so it is an enum here.
+ *
+ * `FOOD` reuses this same workflow (OPEN → ASSIGNED → RESOLVED) rather than getting a second
+ * lifecycle, because a resident who found hair in the dal wants it fixed and tracked, not routed into
+ * a different queue.
+ */
+export const COMPLAINT_CATEGORY_ENUM = z.enum([
+  'PLUMBING',
+  'ELECTRICAL',
+  'NETWORK',
+  'MAINTENANCE',
+  'FOOD',
+  'SECURITY',
+]);
+
+export const COMPLAINT_SEVERITY_ENUM = z.enum(['LOW', 'MEDIUM', 'HIGH']);
+
+/** Filing on behalf of a resident - the WARDEN's route. The resident's own has no such field. */
+export const complaintSchema = z
+  .object({
+    studentProfileId: z.string().min(1).max(64),
+    category: COMPLAINT_CATEGORY_ENUM,
+    description: z.string().trim().min(5).max(500),
+    severity: COMPLAINT_SEVERITY_ENUM,
+    // The part of the location a room number cannot express: "outside the bathroom door",
+    // "stairwell between floors 2 and 3". The room itself is snapshotted from the resident's bed.
+    locationNote: z.string().trim().max(160).optional(),
+  })
+  .strict();
+
+/**
+ * Filing as yourself - the RESIDENT's route. No `studentProfileId`: identity comes from the token,
+ * and a field the client can set is a field the client can get wrong.
+ */
+export const myComplaintSchema = z
+  .object({
+    category: COMPLAINT_CATEGORY_ENUM,
+    description: z.string().trim().min(5).max(500),
+    severity: COMPLAINT_SEVERITY_ENUM,
+    locationNote: z.string().trim().max(160).optional(),
+  })
+  .strict();
+
+export const complaintAssignSchema = z
+  .object({
+    // REQUIRED. The old route took no body at all and assigned the complaint to whoever called it.
+    assigneeUserId: z.string().min(1).max(64),
+    note: z.string().trim().max(300).optional(),
+  })
+  .strict();
+
+/** Resolution REQUIRES a note. A complaint closed without one is how something gets closed unfixed. */
+export const complaintResolveSchema = z
+  .object({
+    resolutionNote: z.string().trim().min(5).max(500),
+  })
+  .strict();
+
+export const complaintNoteSchema = z
+  .object({
+    note: z.string().trim().min(1).max(500),
+  })
+  .strict();
+
+export const complaintReopenSchema = z
+  .object({
+    reason: z.string().trim().max(300).optional(),
+  })
+  .strict();
+
+export const complaintFeedbackSchema = z
+  .object({
+    rating: z.number().int().min(1).max(5),
+    comment: z.string().trim().max(400).optional(),
+  })
+  .strict();
+
+export const complaintQuerySchema = z.object({
+  status: z.enum(['ALL', 'OPEN', 'ASSIGNED', 'RESOLVED', 'OPEN_LIKE']).optional(),
+  // A group name is accepted alongside the raw categories, so "maintenance" shows plumbing and
+  // electrical together rather than making the warden click four chips.
+  category: z.string().trim().max(40).optional(),
+  severity: z.enum(['ALL', 'LOW', 'MEDIUM', 'HIGH']).optional(),
+  escalated: z.enum(['true', 'false']).optional(),
+  q: z.string().trim().max(120).optional(),
+  assignedToUserId: z.string().trim().max(64).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
 });
+
+/** The policy is an open-ended map: unknown keys are clamped away rather than rejected outright. */
+export const complaintPolicySchema = z.record(z.unknown());
 
 
 // ── Visitors (H-08) ───────────────────────────────────────────────────────────────

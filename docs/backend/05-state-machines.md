@@ -30,6 +30,17 @@
 ### 2.2 Evaluation
 `PENDING → IN_PROGRESS → COMPLETED` (paper-level `PENDING → EVALUATING → DONE`); assign evaluator → notification.
 
+Status is **derived, never set**: `recomputeCounts` recomputes total/marked/status from `evaluation_papers` in the same transaction as every write. A subject is `COMPLETED` exactly when every paper has both marks in bounds (`isMarked`, 0..40 + 0..60).
+
+**Answer-script custody** (paper-level, one-way): `NOT_RECEIVED → RECEIVED → VERIFIED`. No skipping (`NOT_RECEIVED → VERIFIED` is 422) and no rewind (`VERIFIED → RECEIVED` is 422); every move carries `allowed` on refusal.
+
+**Moderation** (evaluation-level): `NOT_REQUESTED → PENDING → APPROVED | FLAGGED`.
+- Request only from `COMPLETED` (422 naming the statuses that would work).
+- Decide only from `PENDING` (422 otherwise); re-requesting while `PENDING` is idempotent.
+- `APPROVED` **locks** marks entry (further `enterMarks` is 422); `FLAGGED` **reopens** it.
+
+**Publication gate** (05-state-machines §2.1): results may go out for a slot only when every paper is marked and no evaluation is `FLAGGED` — the gate returns the reasons, not just a boolean.
+
 ### 2.3 Cheating case
 `UNDER_REVIEW → CONFIRMED | DISMISSED | ESCALATED` (escalate → admin institution view + notification).
 

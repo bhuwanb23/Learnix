@@ -16,6 +16,12 @@ import {
   messSurveySchema,
   messExpenseSchema,
   complaintSchema,
+  complaintAssignSchema,
+  complaintResolveSchema,
+  complaintNoteSchema,
+  complaintReopenSchema,
+  complaintQuerySchema,
+  complaintPolicySchema,
   broadcastSchema,
   residentQuerySchema,
   contactSchema,
@@ -35,6 +41,7 @@ import {
 } from './hostel.schemas.js';
 import * as service from './hostel.service.js';
 import * as visitors from './hostel-visitors.service.js';
+import * as complaints from './hostel-complaints.service.js';
 import {
   listContacts,
   upsertContact,
@@ -548,11 +555,67 @@ router.post(
   }),
 );
 
-// H-07 complaints
+// ── H-07 Complaints (docs/users/08-hostel.md §3.7) ───────────────────────────────
+//
+// THE THREE SIDES, ON THREE ROUTERS
+// ---------------------------------
+// The warden is here, on `/hostel/complaints`. The resident is on `/student/complaints`, because a
+// resident must not be able to reach a write that belongs to the desk. Support staff are on a
+// SEPARATE `/api/v1/staff-complaints` router, because adding the MAINTENANCE role to this router's
+// `requireRole('HOSTEL','ADMIN')` would hand a technician room allocations, resident profiles, gate
+// passes and the visitor register.
+//
+// Every path below is a literal except `:id`, and the literals are declared first so nothing can
+// swallow them.
 router.get(
   '/complaints',
+  validate(complaintQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listComplaints(req.auth!.institutionId) });
+    res.json({
+      data: await complaints.listComplaints(req.auth!.institutionId, {
+        status: req.query.status as string | undefined,
+        category: req.query.category as string | undefined,
+        severity: req.query.severity as string | undefined,
+        escalated: req.query.escalated as string | undefined,
+        q: req.query.q as string | undefined,
+        assignedToUserId: req.query.assignedToUserId as string | undefined,
+        page: req.query.page ? Number(req.query.page) : undefined,
+        pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
+      }),
+    });
+  }),
+);
+
+// The editable policy - thresholds a warden can change without a deploy.
+router.get(
+  '/complaints/policy',
+  wrap(async (req, res) => {
+    res.json({ data: await complaints.loadPolicy(req.auth!.institutionId) });
+  }),
+);
+
+router.put(
+  '/complaints/policy',
+  validate(complaintPolicySchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await complaints.savePolicy(req.auth!.userId, req.auth!.institutionId, req.body),
+    });
+  }),
+);
+
+// Who may be assigned a complaint in this category. Feeds the assigner's picker so it never offers
+// somebody who will be refused.
+router.get(
+  '/complaints/assignees',
+  validate(idParamSchema, 'query'),
+  wrap(async (req, res) => {
+    res.json({
+      data: await complaints.getEligibleAssignees(
+        req.auth!.institutionId,
+        String(req.query.id ?? ''),
+      ),
+    });
   }),
 );
 
@@ -561,17 +624,53 @@ router.post(
   validate(complaintSchema),
   wrap(async (req, res) => {
     res.status(201).json({
-      data: await service.createComplaint(req.auth!.userId, req.auth!.institutionId, req.body),
+      data: await complaints.registerComplaintFor(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body,
+      ),
     });
+  }),
+);
+
+// Static-then-`:id`, in this order, and asserted individually by `verify-hostel/complaints.ts`.
+router.get(
+  '/complaints/:id',
+  validate(idParamSchema, 'params'),
+  wrap(async (req, res) => {
+    res.json({ data: await complaints.getComplaint(req.auth!.institutionId, String(req.params.id)) });
   }),
 );
 
 router.post(
   '/complaints/:id/assign',
   validate(idParamSchema, 'params'),
+  validate(complaintAssignSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.assignComplaint(req.auth!.userId, req.auth!.institutionId, String(req.params.id)),
+      data: await complaints.assignComplaint(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/complaints/:id/notes',
+  validate(idParamSchema, 'params'),
+  validate(complaintNoteSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await complaints.addNote(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body,
+        'staff',
+      ),
     });
   }),
 );
@@ -579,9 +678,31 @@ router.post(
 router.post(
   '/complaints/:id/resolve',
   validate(idParamSchema, 'params'),
+  validate(complaintResolveSchema),
   wrap(async (req, res) => {
     res.json({
-      data: await service.resolveComplaint(req.auth!.userId, req.auth!.institutionId, String(req.params.id)),
+      data: await complaints.resolveComplaint(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/complaints/:id/reopen',
+  validate(idParamSchema, 'params'),
+  validate(complaintReopenSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await complaints.reopenComplaint(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body,
+      ),
     });
   }),
 );

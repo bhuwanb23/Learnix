@@ -35,6 +35,20 @@ The **Hall Tickets hub (X-04)** opens the same way — the `HallTickets` feature
 | `HallTicketsRequests` | Corrections & Reissues | `REQUESTS` |
 | `HallTicketsPublication` | Hall Ticket Publication | `PUBLICATION` |
 
+The **Evaluations hub (X-05)** opens the same way — the `Evaluations` tab opens a hub of **9 sub-screens**, block ids, labels and routes owned by `evaluation.rules.ts` `BLOCKS` and read from `GET /api/examcell/evaluations/catalogue`:
+
+| `FEATURE_MODULES` key | Title | Block id |
+|------------------------|--------------------------|----------------|
+| `EvaluationsProgress` | Evaluation Progress | `PROGRESS` |
+| `EvaluationsScripts` | Answer Scripts | `SCRIPTS` |
+| `EvaluationsAllocation` | Evaluator Allocation | `ALLOCATION` |
+| `EvaluationsSubjects` | Subject-wise Evaluation | `SUBJECTS` |
+| `EvaluationsMarks` | Marks Entry | `MARKS` |
+| `EvaluationsDeadlines` | Deadlines | `DEADLINES` |
+| `EvaluationsMissing` | Missing Marks | `MISSING` |
+| `EvaluationsModeration` | Moderation | `MODERATION` |
+| `EvaluationsRevaluation` | Revaluation Requests | `REVALUATION` |
+
 ## 3. Modules & Data Entities
 
 ### 3.1 Dashboard
@@ -46,9 +60,11 @@ Hub for the X-02 feature: season stats, the eight blocks listed in §2, and a pu
 **Entities**: `exam` (title, type, academicYear, status `DRAFT`/`PUBLISHED`) · `exam_slot` (exam, offering, date, `startTime`/`endTime` `HH:MM`, seats, status `SCHEDULED`/`COMPLETED`/`RESCHEDULED`) · `exam_room_allocation` (slot, room, invigilator) · `exam_conflict` (type, severity, description, resolvedAt).
 
 ### 3.3 Evaluations
-Evaluation queue: exam → subject → paper counts with status (Pending / In Progress / Completed), per-paper evaluator assignment, progress %. Actions: assign evaluator, mark complete.
+X-05: the exam controller's marking desk. The hub (`Evaluations` tab) shows the hero — **% of papers marked, days to the grading deadline, count unmarked** — plus alerts and the nine blocks listed in §2; each block is its own sub-screen. Four blocks (`SCRIPTS`, `ALLOCATION`, `SUBJECTS`, `MARKS`) are scoped to one exam through their own picker; five are institution-wide. The eleven requirements it implements are mapped in §3.11.
 
-**Entity `evaluation`**: examId, subject, totalPapers, completed, inProgress, pending, evaluator.
+Everything derives from rows, never from the denormalised counters: a subject is `COMPLETED` exactly when every one of its papers carries both marks in bounds, and `MISSING`/the hub percent/the publication gate all share that one definition (`isMarked`).
+
+**Entities**: `evaluation` (examSlot, subjectOffering, totalPapers, completedPapers, inProgressPapers, evaluatorUserId?, status `PENDING`/`IN_PROGRESS`/`COMPLETED`, moderationStatus `NOT_REQUESTED`/`PENDING`/`APPROVED`/`FLAGGED`, moderatedByUserId?, moderatedAt?, moderationNote?) · `evaluation_paper` (evaluation, studentProfile, evaluatorUserId?, marksEntered?, internalMarks? 0..40, externalMarks? 0..60, scriptStatus `NOT_RECEIVED`/`RECEIVED`/`VERIFIED`, status `PENDING`/`EVALUATING`/`DONE`) · `grading_deadline` (exam, dueAt, remindedAt?).
 
 ### 3.4 Results
 Result list per exam (published/unpublished), class-wise pass %, topper, grade distribution. Actions: **publish results** (→ student app), re-evaluation requests handling.
@@ -111,16 +127,51 @@ The hub reads everything it renders in one round trip: `GET /hall-tickets/catalo
 
 **Policy (confirmed):** eligibility warnings **never block** generation — they are shown alongside the result · corrections and reissues share ONE `hall_ticket_request` table, two kinds · publication is **per exam**, there is no institution-wide switch · an exam with no generated ticket cannot be published (422) · one open request per ticket (a second is 409) · completing a reissue takes a NEW seat and a rebuilt QR · recall gates the student side: `student.service.ts` hands the `hallTicket` to the student only while the exam is `PUBLISHED`, and re-publishing restores the same seat.
 
+### 3.11 Evaluations (X-05) — the eleven requirements
+
+| # | Requirement | Where it lives | Endpoint |
+|---|-------------|----------------|----------|
+| 1 | Answer-script custody | `SCRIPTS` — per-paper `NOT_RECEIVED → RECEIVED → VERIFIED`, one step at a time; bulk receive for a subject | `POST /evaluations/papers/:paperId/script` · `POST /evaluations/:id/scripts/receive` |
+| 2 | Evaluator allocation | `ALLOCATION` — eligible evaluators are TEACHER/HOD **of this institution** with their live load; allocation moves `PENDING → IN_PROGRESS` and stamps every paper | `POST /evaluations/:id/allocate` |
+| 3 | Subject-wise evaluation | `SUBJECTS` — every subject with marked/missing counts and moderation state | `GET /evaluations/blocks/SUBJECTS?examId=` |
+| 4 | Internal marks entry | `MARKS` — per paper, 0..40; out-of-bounds is 422 with the bound | `POST /evaluations/papers/:paperId/marks` |
+| 5 | External marks entry | `MARKS` — per paper, 0..60; a paper counts as marked only when BOTH halves are in | the same route |
+| 6 | Grading deadlines | `DEADLINES` — one `grading_deadline` per exam (a second set MOVES it, never competes); remind stamps `remindedAt`; overdue = past due with papers unmarked | `POST /evaluations/exams/:examId/deadline` · `…/deadline/remind` |
+| 7 | Missing marks report | `MISSING` — the unmarked list with which half is absent; it IS the publication block list | `GET /evaluations/blocks/MISSING` |
+| 8 | Moderation workflow | `MODERATION` — request only on `COMPLETED`; decide `APPROVED` (locks marks) or `FLAGGED` (reopens them); only `PENDING` can be decided | `POST /evaluations/:id/moderation/request` · `…/moderation/decide` |
+| 9 | Progress overview | `PROGRESS` + the hub hero — percent derived from rows, worst subject first; alerts name the problem | `GET /evaluations/blocks/PROGRESS` · `GET /evaluations/overview` |
+| 10 | Publication gate | `publicationGate` — reasons results may not go out: unmarked papers, `FLAGGED` moderation | `GET /evaluations/slots/:id/publication-gate` |
+| 11 | Revaluation requests | `REVALUATION` — the student's `re_evaluation_requests` queue with counts; decisions go through the EXISTING `/re-evaluations/:id/decide` route, never a second one | `GET /evaluations/blocks/REVALUATION` |
+
+The hub reads everything it renders in two round trips: `GET /evaluations/catalogue` (blocks, statuses, marks policy, exams for the picker) and `GET /evaluations/overview` (hero, counters, alerts, revaluation badge); each sub-screen then fetches only its own block through `GET /evaluations/blocks/:block`.
+
+**Policy (confirmed):** marks are internal + external against a **40/60 split**, and `isMarked` (both halves present and in bounds) is the ONE definition used by PROGRESS, MISSING, the hub percent and the publication gate · evaluation status is **derived from the papers**, never set by hand — `complete` as an endpoint does not exist · custody is **one-way** (no skipping to VERIFIED, no rewind) · APPROVED moderation **locks** entry, FLAGGED reopens it · counts are recomputed from rows in the same transaction as every write · every query is anchored at `examSlot.exam.institutionId`, so a rival's id is 404 at the wire.
+
 ## 4. Backend API Surface
 
 Legacy exam-cell surface:
 ```
 GET  /api/examcell/dashboard
-GET  /api/examcell/evaluations            (+ /{id}/assign, /{id}/complete)
 GET  /api/examcell/results                (+ /{id}/publish, re-evaluation)
 GET/POST /api/examcell/cheating-cases     (+ /{id}/confirm|dismiss)
 GET  /api/examcell/notifications
 POST /api/examcell/broadcasts
+```
+
+The old `GET /api/examcell/evaluations` (+ `/{id}/assign`, `/{id}/complete`) handlers were **removed** in X-05 — assign accepted any TEACHER id with no institution check, and complete force-marked every paper graded without reading one. They are replaced by the 12 evaluation routes below (`evaluation.routes.ts`, mounted **before** `examcellRoutes` with its own auth; literals first, then `papers/:paperId/...`, then `:id/...`):
+```
+GET    /api/examcell/evaluations/catalogue                  blocks, statuses, marks policy, exams for the picker
+GET    /api/examcell/evaluations/overview                   hero %, counters, alerts, revaluation badge
+GET    /api/examcell/evaluations/blocks/:block              one of the 9 blocks (422 on unknown block / missing examId)
+GET    /api/examcell/evaluations/slots/:id/publication-gate may results go out? reasons if not
+POST   /api/examcell/evaluations/papers/:paperId/script     custody step NOT_RECEIVED→RECEIVED→VERIFIED (422 otherwise)
+POST   /api/examcell/evaluations/papers/:paperId/marks      internal+external against 40/60 (422 out of bounds)
+POST   /api/examcell/evaluations/exams/:examId/deadline     set or MOVE the grading deadline (one row per exam)
+POST   /api/examcell/evaluations/exams/:examId/deadline/remind  stamp remindedAt
+POST   /api/examcell/evaluations/:id/scripts/receive        bulk receive a subject's scripts
+POST   /api/examcell/evaluations/:id/allocate               evaluator must be THIS institution's staff
+POST   /api/examcell/evaluations/:id/moderation/request     only on COMPLETED (422 otherwise)
+POST   /api/examcell/evaluations/:id/moderation/decide      APPROVED (locks marks) | FLAGGED (reopens)
 ```
 
 The old `GET/POST /api/examcell/timetable` (+ `/{id}/reschedule, notify`) handlers were **removed** in X-02 and replaced by the 13 timetable routes below (`timetable.routes.ts`, mounted **before** `examcellRoutes`):
@@ -163,8 +214,9 @@ POST   /api/examcell/hall-tickets/:id/download                   mark printed (i
 
 ## 6. Wiring Status
 
-Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04
-Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens, all wired to live API)
+Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05
+Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens, all wired to live API)
+Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53) · `audit-evaluations-ui.ts` (223) · `prove-evaluations-teeth.sh` (13) · `check-evaluations-jsx.ts` / `-locals.js` / `-named-imports.js` (12 each)
 
 | Endpoint | Method | Status |
 |----------|--------|--------|
@@ -192,9 +244,18 @@ Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticke
 | `/examcell/hall-tickets/requests/:id` | PATCH | ✅ wired |
 | `/examcell/hall-tickets/requests/:id/complete` | POST | ✅ wired |
 | `/examcell/hall-tickets/:id/download` | POST | ✅ wired |
-| `/examcell/evaluations` | GET | ✅ wired |
-| `/examcell/evaluations/:id/assign` | POST | ✅ wired |
-| `/examcell/evaluations/:id/complete` | POST | ✅ wired |
+| `/examcell/evaluations/catalogue` | GET | ✅ wired |
+| `/examcell/evaluations/overview` | GET | ✅ wired |
+| `/examcell/evaluations/blocks/:block` | GET | ✅ wired ×9 blocks |
+| `/examcell/evaluations/slots/:id/publication-gate` | GET | ✅ wired |
+| `/examcell/evaluations/papers/:paperId/script` | POST | ✅ wired |
+| `/examcell/evaluations/papers/:paperId/marks` | POST | ✅ wired |
+| `/examcell/evaluations/exams/:examId/deadline` | POST | ✅ wired |
+| `/examcell/evaluations/exams/:examId/deadline/remind` | POST | ✅ wired |
+| `/examcell/evaluations/:id/scripts/receive` | POST | ✅ wired |
+| `/examcell/evaluations/:id/allocate` | POST | ✅ wired |
+| `/examcell/evaluations/:id/moderation/request` | POST | ✅ wired |
+| `/examcell/evaluations/:id/moderation/decide` | POST | ✅ wired |
 | `/examcell/results` | GET | ✅ wired |
 | `/examcell/results` | POST | ✅ wired |
 | `/examcell/results/publish` | POST | ✅ wired |
@@ -218,7 +279,8 @@ Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticke
 - **Invigilator duty**: live API (per-faculty load, assign, heavy duty)
 - **Student timetable**: live API (per-student season, unallocated shown)
 - **Clashes & publishing**: live API (8 conflict kinds, severities, publish gate)
-- Evaluations: live API (progress, deadlines, mark complete)
+- Evaluations hub: live API (catalogue, hero %, alerts, nine block cards with live badges)
+- **Progress / Scripts / Allocation / Subjects / Marks / Deadlines / Missing / Moderation / Revaluation**: live API — custody buttons only offer the move the server would accept, marks entry validates 40/60 against the published policy, moderation decides only from `PENDING`, revaluation decides through the existing `/re-evaluations/:id/decide`
 - Results: live API (pending/published, publish, re-evaluation decide)
 - **Hall Tickets hub**: live API (catalogue, overview, publication hero); block cards route through `goToRoute`
 - **Eligibility / Generation / Tickets / Schedule**: live API — each owns its exam picker; warnings are shown, never enforced; the run issues exactly what the preview promised; printing marks downloaded

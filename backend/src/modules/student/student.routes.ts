@@ -20,6 +20,7 @@ import * as mentorshipFeedback from '../alumni/feedback.service.js';
 import * as gatePasses from '../hostel/hostel-gate-passes.service.js';
 import * as visitorService from '../hostel/hostel-visitors.service.js';
 import * as mess from '../hostel/hostel-mess.service.js';
+import * as complaints from '../hostel/hostel-complaints.service.js';
 // The mess schemas live with the rest of the mess feature rather than being duplicated here, so a
 // change to what a valid rating looks like cannot be made in one module and missed in the other.
 import {
@@ -27,6 +28,9 @@ import {
   visitorAuthoriseSchema,
   messFeedbackSchema,
   dayOffsetSchema,
+  myComplaintSchema,
+  complaintNoteSchema,
+  complaintFeedbackSchema,
 } from '../hostel/hostel.schemas.js';
 
 /**
@@ -424,6 +428,75 @@ router.post(
     // when in fact their rating was replaced.
     res.json({
       data: await mess.rateMeal(req.auth!.userId, req.auth!.institutionId, req.body),
+    });
+  }),
+);
+
+// ── Complaints (docs/users/08-hostel.md §3.7, 01-students.md §3.11) ─────────────
+//
+// A resident RAISES a complaint and RATES the fix. They do not assign it, resolve it, or decide how
+// urgent it is - all of that is the warden's, on `/hostel/complaints`, and the staff's, on
+// `/api/v1/staff-complaints`.
+//
+// IDENTITY COMES FROM THE TOKEN. `myComplaintSchema` deliberately has no `studentProfileId` field: a
+// body field a client can set is a field a client can get wrong, and a complaint filed against
+// somebody else's name is the exact failure this route exists to make impossible. The schema is
+// `.strict()`, so sending one anyway is a 400 rather than a silently ignored field.
+//
+// The feedback endpoint is the loop-closer: a poor rating REOPENS the complaint on the server, so a
+// resident saying "this is not fixed" produces work rather than a grievance nobody reads.
+router.get(
+  '/complaints',
+  wrap(async (req, res) => {
+    res.json({ data: await complaints.listMyComplaints(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+router.post(
+  '/complaints',
+  validate(myComplaintSchema),
+  wrap(async (req, res) => {
+    res.status(201).json({
+      data: await complaints.registerMyComplaint(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/complaints/:id/notes',
+  validate(idParamSchema, 'params'),
+  validate(complaintNoteSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await complaints.addNote(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body,
+        'student',
+      ),
+    });
+  }),
+);
+
+router.post(
+  '/complaints/:id/feedback',
+  validate(idParamSchema, 'params'),
+  validate(complaintFeedbackSchema),
+  wrap(async (req, res) => {
+    // 200 not 201: one rating per complaint, and EDITABLE, so a resident who rated 2 and then saw it
+    // fixed can say so. 201 would claim a new row each time.
+    res.json({
+      data: await complaints.submitFeedback(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        String(req.params.id),
+        req.body,
+      ),
     });
   }),
 );

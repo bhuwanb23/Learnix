@@ -101,7 +101,7 @@
 | X-02 | Exam schedule: create exam + slots, conflict detection | C exams/exam_slots/exam_conflicts | ✅ wired |
 | X-03 | Room allocations + invigilator duty | C exam_room_allocations | ✅ wired |
 | X-04 | Hall tickets: batch generate (QR), download tracking | C hall_tickets | ✅ wired |
-| X-05 | Evaluations: assign evaluator, paper progress, deadline reminders | C evaluations/evaluation_papers/grading_deadlines | ✅ wired |
+| X-05 | Evaluations: 9-block desk (script custody, allocation, 40/60 marks, deadlines, missing, moderation, publication gate, revaluation queue) | C evaluations/evaluation_papers/grading_deadlines | ✅ wired |
 | X-06 | Results: enter → publish (gated by exam status), student view | C results, exams.status | ✅ wired |
 | X-07 | Re-evaluation window (config-gated) + decisions | C re_evaluation_requests, L system_config | ✅ wired |
 | X-08 | Cheating cases: review → confirm/dismiss/escalate | C cheating_cases | ✅ wired |
