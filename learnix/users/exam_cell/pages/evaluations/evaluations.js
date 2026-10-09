@@ -2,11 +2,12 @@
 //
 // The screen this replaces was a single list fed by `GET /examcell/evaluations`
 // — a flat row dump with counters straight off the table — plus a
-// `constants/evaluationsData.js` fixture nobody had deleted. The endpoint is
-// GONE (see api.js): its assign route took any TEACHER id with no institution
-// check, and its complete route marked every paper graded without reading one.
+// `constants/evaluationsData.js` fixture that has since been DELETED along
+// with the endpoint. The endpoint is GONE (see api.js): its assign route took
+// any TEACHER id with no institution check, and its complete route marked
+// every paper graded without reading one.
 //
-// It is now eight blocks, each answering one question:
+// It is now nine blocks, each answering one question:
 //
 //   1. Evaluation progress  — how much of the season is marked
 //   2. Answer scripts       — which papers arrived, which are missing
@@ -20,7 +21,7 @@
 // EVERYTHING COMES FROM TWO CALLS, and the block list is NOT hard-coded here.
 // It arrives from `/evaluations/catalogue` with each block's id, label, icon,
 // colour and route, so a block added on the server draws itself.
-// `evaluationMeta.js` still mirrors the ids because the eight sub-screens are
+// `evaluationMeta.js` still mirrors the ids because the nine sub-screens are
 // separate modules that must exist at build time, and `audit-evaluations-ui.ts`
 // asserts the two agree.
 //
@@ -28,7 +29,7 @@
 // marked, and is the deadline near. It says the percent rather than going
 // grey for no stated reason, and the badge on each block card is the live
 // number that block exists to report — so the controller can see WHICH of the
-// eight is wrong without opening any of them.
+// nine is wrong without opening any of them.
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,7 +53,7 @@ export default function EvaluationsModule({ navigation }) {
   const hero = overview.data?.hero;
 
   // Every block card carries the live number that block exists to report.
-  // A badge of 0 is NOT drawn — an eight-row list of zeroes is noise.
+  // A badge of 0 is NOT drawn — a nine-row list of zeroes is noise.
   //
   // Four blocks carry no single figure on purpose: allocation's problem is
   // spread across subjects (it has its own screen for that), the deadline's
@@ -65,6 +66,7 @@ export default function EvaluationsModule({ navigation }) {
       case 'SUBJECTS': return s.evaluations;
       case 'MISSING': return s.missingMarks;
       case 'MODERATION': return (s.moderationPending ?? 0) + (s.moderationFlagged ?? 0);
+      case 'REVALUATION': return s.reevalOpen || undefined;
       default: return undefined;
     }
   };
@@ -140,7 +142,7 @@ export default function EvaluationsModule({ navigation }) {
         ]}
       />
 
-      {/* ── The eight blocks ── */}
+      {/* ── The nine blocks ── */}
       <Text style={styles.blockLabel}>Work through the desk</Text>
       {blocks.map((b) => (
         <BlockCard

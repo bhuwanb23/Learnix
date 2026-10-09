@@ -57,6 +57,22 @@ import HallTicketsCentre from './pages/hall_tickets/pages/centre/centre';
 import HallTicketsRequests from './pages/hall_tickets/pages/requests/requests';
 import HallTicketsPublication from './pages/hall_tickets/pages/publication/publication';
 
+// X-05 evaluations: the hub plus its nine block sub-screens, reached through
+// the Evaluations tab. Same contract as the timetable and hall-ticket sets:
+// each `route` in `evaluationMeta.BLOCKS` must have a key here, and a missing
+// key fails SILENTLY — `renderContent` finds nothing and drops the controller
+// back on the hub with no error. `audit-evaluations-ui.ts` asserts every block
+// route has a registry entry.
+import EvaluationsProgress from './pages/evaluations/pages/progress/progress';
+import EvaluationsScripts from './pages/evaluations/pages/scripts/scripts';
+import EvaluationsAllocation from './pages/evaluations/pages/allocation/allocation';
+import EvaluationsSubjects from './pages/evaluations/pages/subjects/subjects';
+import EvaluationsMarks from './pages/evaluations/pages/marks/marks';
+import EvaluationsDeadlines from './pages/evaluations/pages/deadlines/deadlines';
+import EvaluationsMissing from './pages/evaluations/pages/missing/missing';
+import EvaluationsModeration from './pages/evaluations/pages/moderation/moderation';
+import EvaluationsRevaluation from './pages/evaluations/pages/revaluation/revaluation';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 import { setDemoUser } from '../../services/api';
@@ -84,6 +100,15 @@ const FEATURE_MODULES = {
   HallTicketsCentre: { title: 'Examination Centre', icon: 'business-outline', component: HallTicketsCentre },
   HallTicketsRequests: { title: 'Corrections & Reissues', icon: 'swap-horizontal-outline', component: HallTicketsRequests },
   HallTicketsPublication: { title: 'Hall Ticket Publication', icon: 'megaphone-outline', component: HallTicketsPublication },
+  EvaluationsProgress: { title: 'Evaluation Progress', icon: 'pie-chart-outline', component: EvaluationsProgress },
+  EvaluationsScripts: { title: 'Answer Scripts', icon: 'document-text-outline', component: EvaluationsScripts },
+  EvaluationsAllocation: { title: 'Evaluator Allocation', icon: 'people-outline', component: EvaluationsAllocation },
+  EvaluationsSubjects: { title: 'Subject-wise Evaluation', icon: 'library-outline', component: EvaluationsSubjects },
+  EvaluationsMarks: { title: 'Marks Entry', icon: 'create-outline', component: EvaluationsMarks },
+  EvaluationsDeadlines: { title: 'Deadlines', icon: 'alarm-outline', component: EvaluationsDeadlines },
+  EvaluationsMissing: { title: 'Missing Marks', icon: 'alert-circle-outline', component: EvaluationsMissing },
+  EvaluationsModeration: { title: 'Moderation', icon: 'checkmark-done-outline', component: EvaluationsModeration },
+  EvaluationsRevaluation: { title: 'Revaluation Requests', icon: 'refresh-circle-outline', component: EvaluationsRevaluation },
 };
 
 const TAB_TITLES = {

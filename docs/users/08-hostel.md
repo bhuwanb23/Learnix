@@ -138,9 +138,90 @@ bedLabel, fromDate, toDate, status (Active/Transferred/Vacated), isCurrent, nigh
 > a student has ever had was already on record — there was simply no reader for it.
 
 ### 3.4 Mess Management (tab)
-Weekly menu by day (breakfast/lunch/dinner, editable), veg/non-veg meal plans, today's meal attendance bars, resident feedback with ratings + **Send Rating Survey**.
 
-**Entity `mess_menu`**: day, meal, items[]; `meal_attendance`: date, meal, count; `mess_feedback`: residentId, rating, comment.
+Four working surfaces over one menu and one attendance log: **today's participation**, **the roll**,
+**insights** and **mess spend**.
+
+**Weekly menu** — seven days × three meals, editable per slot, with a veg/non-veg flag that is now
+actually persisted. The server refuses a meal flagged vegetarian that lists chicken, mutton, beef,
+pork, fish, egg or prawn, because a flag the cook cannot trust is worse than no flag.
+
+**The roll** — the only way meal attendance is ever written. Mess staff call it at the counter; a
+resident does not tap in. That is deliberate: the kitchen provisions against this number, so it has to
+be a count somebody took rather than a claim somebody remembered to make. Marking **replaces** the
+meal rather than adding to it, so re-marking is a correction rather than an accumulation, and the
+request is idempotent. Only this hostel's residents may be marked; unknown ids are refused rather
+than skipped, so a typo cannot quietly save a short roll.
+
+**Today's participation** — `present / residents`, with the denominator on screen, and `—` when there
+are no residents. The resident count comes from bed inventory and is never inferred from whether some
+other table happens to have rows.
+
+**Insights** — participation and satisfaction over 7 / 30 / 90 days. Every rate is divided by
+`residents × days` — the *opportunity* to eat — not by the days that happen to have a roll, or a
+sparsely-marked fortnight would read as a busier mess than a fully-marked one. Breaks down by meal
+and by weekday, because a kitchen is staffed by weekday.
+
+**Resident feedback** — ratings from students, newest first, with the average **and its sample size**.
+A star rating with no count beside it cannot be argued with.
+
+**Ask residents to rate** — pushes a notification to every resident, optionally scoped to one meal.
+
+**Mess spend** — the institutional ledger, filtered to the `MESS` category, showing approved and
+awaiting-approval separately. A claim raised here lands `PENDING` and is approved by the **accounts
+desk**; the hostel cannot approve its own spend. See §3.4.1.
+
+#### 3.4.1 Why mess money needs a permission, not a role
+
+`Expense` is the institution's financial ledger, and every other route to it sits behind
+`requireRole('ACCOUNTS','ADMIN')`. A warden holds only the `HOSTEL` role, so without something in
+between they could see no rupee of mess spend.
+
+Giving the warden the `ACCOUNTS` role would have been the easy answer and the wrong one: it also
+hands over `payroll.run`, `fees.waive`, scholarships and every financial report. Instead
+`/mess/expenses` is gated on `hostel.mess.expenses`, which:
+
+- is **separable** from `hostel.mess.manage`, so a college can give a deputy warden the roll and the
+  menu while the money stays with the chief warden;
+- is **auditable and live** — grants are administered at `/platform/roles/:role/permissions` and every
+  change is written to the audit log;
+- is the first route in the platform to actually **enforce** `RolePermission`. That table was already
+  modelled, seeded, shown on the user's profile and administered — but never checked, so the seeded
+  `HOSTEL: fees.read` grant had been decorative since it was written. Permissions are now enforced on
+  this surface and nowhere else; retrofitting the other modules is separate work.
+
+The category is pinned to `MESS` in the service, and the request schema is `.strict()`, so a body
+carrying `category` is refused rather than silently ignored.
+
+**Entities**
+
+| Model | Fields |
+|---|---|
+| `mess_menu_items` | `institutionId`, `dayOfWeek` (0=Sun), `meal`, `itemsJson`, `isVeg` |
+| `meal_attendance` | `institutionId`, `date` (a local calendar day), `meal`, `studentProfileId`, `count`, `markedByUserId` |
+| `mess_feedback` | `institutionId`, `studentProfileId`, `mealDate`, `meal`, `rating`, `comment` |
+
+`date` and `mealDate` are **calendar days, not instants**. Every read filters by a half-open range
+`[gte local midnight, lt next midnight)` and every write normalises to local midnight. Matching them
+by equality looks like it works — it only did because the seeder happened to write midnight and the
+server shared the institution's timezone — and produced "today" reading zero attendance and zero
+ratings with no error anywhere. All of it lives in `hostel-mess.rules.ts`.
+
+`MealAttendance` has no student-side write and no scheduler. "Overdue roll" is derived on read, so it
+is true the instant it becomes true.
+
+### 3.4.2 The student's side
+
+In the Student app, under **Profile → Today's Menu**: today's menu for all three meals and a 1–5 rating
+per meal with an optional comment. A rating is an **upsert** — re-rating replaces rather than filing a
+second opinion — and the server refuses a rating for a meal that is not on the menu, so the kitchen is
+never reviewed on a dish it did not serve. Stepping back a day uses an integer `dayOffset`, never a
+client-built date string.
+
+**Report a problem** opens a hostel complaint with category `FOOD`, reusing the existing
+`OPEN → ASSIGNED → RESOLVED` workflow rather than a second queue — a resident who found hair in the dal
+wants it fixed and tracked, not routed somewhere different.
+
 ### 3.5 Gate Passes (module)
 
 A pass is requested by the **student**, from the Student app, and decided by the **warden** here.
@@ -331,7 +412,25 @@ PUT  /residents/:id/contacts/:contactId
 DELETE /residents/:id/contacts/:contactId
 POST /rent/:id/collect                      { method }
 
-GET/PUT /mess/menu                          (+ POST /mess/survey)
+GET   /mess                                menu + today's participation + rating + feedback
+GET   /mess/menu                           the weekly menu on its own, for the editor
+PUT   /mess/menu                           { dayOfWeek, meal, items[], isVeg } — writes isVeg now
+GET   /mess/roll                           ?meal=&date= — every resident, who ate, the rate
+POST  /mess/attendance                     { date?, meal, presentStudentProfileIds[] }
+                                            REPLACES the meal; idempotent; residents only
+GET   /mess/attendance                     ?from=&to= | ?days= — the log, day by day
+GET   /mess/absent                         ?meal=&date= — who to chase. Agrees with /mess/roll
+GET   /mess/analytics                      ?days= — participation per meal and per weekday
+GET   /mess/feedback                       ?from=&to= — ratings, with the window's own average
+POST  /mess/survey                         { meal? } — ask residents to rate
+GET   /mess/expenses                       MESS-category spend; approved and pending separately
+POST  /mess/expenses                       { amountMinor, title, vendor?, note?,
+                                             paymentMethod?, date? } → PENDING, accounts approves
+                                            ^ the two expense routes require `hostel.mess.expenses`
+
+Student side (Student app, §3.4.2) — read the menu and rate; no attendance write:
+GET   /student/mess                        ?dayOffset= — menu + this student's own ratings
+POST  /student/mess/feedback                { meal, rating, comment?, mealDate? } — an upsert
 
 GET  /visitors                             ?q=&status=&alerts=&needsAction=&date=&page=&pageSize=
 GET  /visitors/policy                      the effective rules, plus the defaults

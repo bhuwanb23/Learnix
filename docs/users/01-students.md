@@ -155,7 +155,30 @@ There is no approve and no "let them in" here — and no resident-facing route t
 either. `studentApi` has no `approveVisitor`, `visitorEntry`, `visitorExit`, `barVisitor` or
 `updateVisitorPolicy` method at all, which is asserted in `check-hostel-visitors-ui.ts`.
 
-### 3.9 Notifications (top-level screen)
+### 3.9 Today's Menu (rate a meal)
+
+Reached from **Profile → Today's Menu**, which opens a whole screen in the Students module (same
+routing shape as Gate Passes and My Visitors — it needs its own back stack and its own API client, so
+it goes through `onOpenModule`).
+
+Today's menu for all three meals, each showing its dishes and its veg/non-veg flag, plus a **1–5 star
+rating** and an optional comment. A rating is an **upsert**: tapping again replaces the earlier rating
+rather than filing a second opinion, and the screen says "you rated this 4" so a mis-tap is visible
+rather than silent. The server refuses a rating for a meal that is not on the menu, so the kitchen is
+never reviewed on a dish it did not serve.
+
+Steps back a day with `dayOffset` — an **integer**, not a date the client builds. That is deliberate:
+a client that computes "yesterday" has to get local midnight and DST right on its own, and every way
+of getting that wrong asks the server about the wrong day.
+
+**What a student deliberately cannot do here:** mark a meal as eaten. The roll is called by mess
+staff. If residents could tap in themselves, the number the kitchen provisions against would be a
+claim rather than a count, and forgetting to tap would be indistinguishable from not eating.
+
+**Report a problem** opens a hostel complaint with category `FOOD`, reusing the existing
+`OPEN → ASSIGNED → RESOLVED` workflow.
+
+### 3.10 Notifications (top-level screen)
 List with unread count, mark all read, per-item read on tap. Same shape as staff apps' inbox.
 
 ## 4. Backend API Surface
@@ -178,11 +201,13 @@ POST /api/student/visitors/{id}/cancel        withdraw a still-pending authorisa
 GET  /api/student/gate-passes                 own passes, newest first
 POST /api/student/gate-passes                 { reason, destination?, outAt, expectedInAt, isEmergency? }
 POST /api/student/gate-passes/{id}/cancel     withdraw a still-PENDING request
+GET  /api/student/mess                         ?dayOffset= — menu + this student's own ratings
+POST /api/student/mess/feedback                { meal, rating, comment?, mealDate? } — an upsert
 GET  /api/student/notifications
 POST /api/student/notifications/read-all
 ```
 
-Gate passes and visitors are the only hostel routes mounted here. Creation exists **only** on this
+Gate passes, visitors and mess are the only hostel routes mounted here. Creation exists **only** on this
 router: a `POST` on the warden's `/gate-passes` would sit behind `requireRole('HOSTEL','ADMIN')` -
 exactly the role that must not be able to mint its own approvals. The decision, exit and return
 routes exist **only** on the warden's router, and the two-sided refusal is asserted from both

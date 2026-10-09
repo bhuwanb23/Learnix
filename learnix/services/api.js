@@ -901,13 +901,12 @@ export const studentApi = {
   // write, because the roll is called by mess staff and a self-reported count would make the
   // kitchen's provisioning numbers a guess.
   //
-  // `date` is optional and means today. Passing it is how the rating screen shows yesterday's
-  // menu, which is the common case for a student complaining about last night's dinner.
-  myMess: (date) => {
-    const qs = new URLSearchParams(
-      Object.entries({ date }).filter(([, v]) => v !== undefined && v !== null && v !== ''),
-    ).toString();
-    return api.get(`/student/mess${qs ? `?${qs}` : ''}`);
+  // `dayOffset` is an integer, NOT a date string. The screen steps back a day to review last night's
+  // dinner; building that date on the client would mean getting local midnight and DST right there,
+  // and every way of getting it wrong asks the server about the wrong day.
+  myMess: (dayOffset = 0) => {
+    const qs = new URLSearchParams({ dayOffset: String(dayOffset) }).toString();
+    return api.get(`/student/mess?${qs}`);
   },
   // An UPSERT, not a create: re-rating the same meal replaces the earlier rating. The screen
   // therefore shows "you rated this 3" with an Edit affordance rather than an empty form.

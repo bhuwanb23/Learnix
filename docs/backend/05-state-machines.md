@@ -184,6 +184,44 @@ Rules worth stating because they are the ones that were wrong:
 ### 6.4 Complaint
 `OPEN → ASSIGNED → RESOLVED` (assign to staff user → notification).
 
+The category set is `PLUMBING | ELECTRICAL | NETWORK | MAINTENANCE | FOOD`. **`FOOD` is a mess
+complaint and it deliberately reuses this lifecycle** rather than getting a second queue: a resident
+who found hair in the dal wants it fixed and tracked, not routed somewhere different, and two
+complaint workflows would drift apart.
+
+### 6.4a Meal attendance — no states, and that is the point
+
+There is **no attendance state machine.** A roll is a *measurement*, and a measurement has no
+lifecycle: a resident either ate a meal or they did not, and the record of it is one row.
+
+This is stated explicitly because the absence looks like an oversight. It is not:
+
+- **Nobody marks attendance as `PENDING`.** Mess staff call the roll at the counter. A roll that is
+  called and a roll that has not been called are not two states of the same thing — the second one
+  does not exist yet.
+- **There is no student-side write.** A resident cannot tap in. If they could, the figure the kitchen
+  provisions against would be a claim rather than a count, and *forgot to tap* would be
+  indistinguishable from *did not eat*.
+- **Nothing schedules.** No cron marks a roll open, expires it, or closes the day. "Today's roll has
+  not been called" is derived on read, so it is true the instant it becomes true and cannot drift
+  because a job was missed.
+
+Marking **replaces** the meal rather than appending: everyone not in the submitted list is cleared.
+That is what makes the endpoint safe to retry and makes a correction at the counter a correction, not
+an accumulation.
+
+### 6.4b Meal feedback — one rating per student per meal per day
+
+Also not a state machine. A rating is a single upsert keyed on
+`(institutionId, mealDate, meal, studentProfileId)`: re-rating **replaces** rather than filing a
+second opinion, so a mis-tap is correctable and a retried request over a flaky connection is not a
+duplicate.
+
+The interesting part was a bug, not a design. `listMessFeedback` took `take: 15` and then averaged
+*those fifteen rows*, so the reported rating moved depending on how many opinions happened to arrive
+last — and the UI labelled it "Weekly Rating". The average is now a database aggregate over the whole
+window, computed independently of the page size, and it always ships with its sample size.
+
 ### 6.5 Visitor (superseded)
 The one-line `IN → OUT` check-in/out log this section used to describe is now the full
 authorisation workflow in **6.3**. There is no separate "just log a visitor" path: the old
@@ -261,6 +299,8 @@ was removed rather than kept as a shortcut.
 | Visitor barred / unbarred | Wardens of that institution |
 | Gate pass decided / checked out / checked back in / withdrawn | The student |
 | Complaint resolved / allocation change | Student |
+| Mess rating survey sent | Every resident of that institution (optionally scoped to one meal) |
+| Mess expense raised by the hostel | The **accounts desk** — never the hostel, which cannot approve its own spend |
 | Route delay / service alert | Affected route students |
 | Mentorship approved/declined / event invite / donation receipt | Student / Alumni |
 

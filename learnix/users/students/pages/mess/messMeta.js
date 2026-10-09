@@ -11,12 +11,13 @@
  * The duplication is deliberately small - meal labels, icons, colours and a date formatter - and
  * this file says so rather than pretending the two screens are unrelated.
  *
- * NO DATE ARITHMETIC BEYOND STRING FORMATTING
- * -------------------------------------------
- * The day of the week comes from `GET /student/mess` (`dayOfWeek`), not from the client. The one
- * date function here splits a `YYYY-MM-DD` string into readable parts, which is a pure transform:
- * it cannot be off by a day the way `new Date('2026-10-08')` can, since that parses as UTC midnight
- * and renders as the 7th in a negative offset.
+ * NO DATE ARITHMETIC AT ALL
+ * ----------------------------
+ * The screen sends `dayOffset` (an integer, "how many days back") and the server derives the day.
+ * There is no `dateFor`/`daysAgo` helper here, and no `new Date()`: a client that builds a date has
+ * to get local midnight and DST right on its own, and every way of getting that wrong asks about a
+ * day the resident did not mean. `fmtDayLabel` below is the only date-shaped code and it is a pure
+ * string transform on a value the server sent.
  */
 
 export const DAY_NAMES = [
@@ -55,18 +56,8 @@ export const fmtDayLabel = (dayKey) => {
   return `${Number(d)} ${MONTHS[mi]}`;
 };
 
-/**
- * `YYYY-MM-DD` for `n` days back, from local calendar parts.
- *
- * Built from `getFullYear/getMonth/getDate` and string-padded, NOT from
- * `toISOString().slice(0, 10)`. That is a real trap rather than a style preference: `toISOString`
- * converts to UTC first, so a request made at 00:30 local in IST asks the server about the
- * PREVIOUS day, and a student complaining about tonight's dinner is silently rating yesterday.
- */
-export function dateFor(n = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`;
-}
+// There is deliberately no `dateFor` here. This screen used to carry one, and it was wrong by
+// construction: `toISOString().slice(0, 10)` converts to UTC first, so a request made at 00:30 local
+// asked the server about the PREVIOUS day - and a student complaining about tonight's dinner was
+// silently rating yesterday. Building the offset by hand was only a smaller version of the same
+// mistake. The screen now sends `dayOffset` (an integer) and the server derives the day.

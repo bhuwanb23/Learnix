@@ -57,7 +57,11 @@ export default function AnalyticsSheet({ visible, onClose }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await hostelApi.messAnalytics({ from: daysAgo(days), to: today() });
+      // `days`, NOT a date range. This sheet asks the server for "the last N days" and lets the
+      // SERVER decide which days those are. Sending `from`/`to` would mean building "today minus 6"
+      // on the client, which means getting local midnight and DST right on the client - and every
+      // way of getting that wrong asks for a window one day short.
+      const res = await hostelApi.messAnalytics({ days });
       setData(res.data);
     } catch (e) {
       setError(e.message || 'Could not load the insights');
@@ -203,24 +207,15 @@ export default function AnalyticsSheet({ visible, onClose }) {
 }
 
 /**
- * `YYYY-MM-DD` for `n` days back, built from local calendar parts.
+ * NO DATE CODE IN THIS FILE.
  *
- * String arithmetic, not `new Date().setDate()`. This is a wire-format query string, so it has to
- * be a `YYYY-MM-DD` the server's `parseDay` accepts; producing it by string math avoids the
- * timezone class of bug the rest of this feature is built to avoid. It is a query STRING, not a
- * stored value - the server re-parses and re-derives the range authoritatively.
+ * There used to be a `daysAgo(n)` helper here that built a `YYYY-MM-DD` string from `new Date()`
+ * and `setDate()`. It is gone because it did not need to exist: the endpoint accepts `days`, and the
+ * day boundaries are derived server-side by the same helper that writes the roll. A client that
+ * computes a date has to get local midnight and DST right on its own, and every way of getting that
+ * wrong produces a window that is quietly one day short - which is exactly the class of bug this
+ * feature shipped three of.
  */
-function daysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
-    d.getDate(),
-  ).padStart(2, '0')}`;
-}
-
-function today() {
-  return daysAgo(0);
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },

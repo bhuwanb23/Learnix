@@ -1,7 +1,7 @@
 // X-05 Evaluations — the pieces every evaluation screen shares
 // (docs/users/05 §3.3).
 //
-// This is a MIRROR of `evaluation.rules.ts`: same eight blocks, same
+// This is a MIRROR of `evaluation.rules.ts`: same nine blocks, same
 // statuses, same marks policy. It exists so a screen can colour and label a
 // row without a second round trip. It is not the authority — the catalogue
 // publishes the same lists and a screen that has fetched it prefers those.

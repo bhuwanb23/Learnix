@@ -43,7 +43,7 @@ import { theme } from '../../../../constants/theme';
 import { AnimatedCard, EmptyState } from '../../../../components/ui';
 import { SkeletonCard } from '../../../../components/ui/SkeletonLoader';
 import { studentApi } from '../../../../services/api';
-import { DAY_NAMES, MEALS, mealLabel, mealIcon, mealColor, fmtDayLabel, dateFor } from './messMeta';
+import { DAY_NAMES, MEALS, mealLabel, mealIcon, mealColor, fmtDayLabel } from './messMeta';
 
 export default function MessPage({ navigation }) {
   const [offset, setOffset] = useState(0); // 0 = today, 1 = yesterday, …
@@ -59,7 +59,8 @@ export default function MessPage({ navigation }) {
     else setLoading(true);
     setError(null);
     try {
-      const res = await studentApi.myMess(offset === 0 ? undefined : dateFor(offset));
+      // `dayOffset` is an integer, so no date is built on the client - see `messMeta`.
+      const res = await studentApi.myMess(offset);
       setData(res.data);
       // Seed the editors from what is stored, so a re-rating starts from the truth.
       const next = {};
@@ -288,8 +289,6 @@ export default function MessPage({ navigation }) {
 }
 
 /**
- * `YYYY-MM-DD` for `n` days back lives in `messMeta` (`dateFor`) so this file holds no date maths
- * at all. It is a query parameter only: the server re-parses it and re-derives the day range itself.
  */
 
 const styles = StyleSheet.create({

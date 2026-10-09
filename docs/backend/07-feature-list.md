@@ -30,7 +30,7 @@
 | S-12 | Placement: browse jobs, apply, my applications, offers | D jobs/job_applications/placement_offers | ✅ wired |
 | S-13 | Events: browse, register (QR pass), my registrations | I events/event_registrations | ✅ wired |
 | S-14 | Library: my issued books, dues, request a book, digital resources | F books/book_issues/fines/book_requests, digital_resources | ✅ wired |
-| S-15 | Hostel: my allocation, mess menu/feedback, gate pass request/withdraw, complaints | G hostel_allocations/mess_*/gate_passes/hostel_complaints | wired |
+| S-15 | Hostel: my allocation, mess menu/feedback, gate pass request/withdraw, complaints | G hostel_allocations/mess_*/gate_passes/hostel_complaints | wired · mess menu + 1–5 rating per meal (07 §3.9) |
 | S-16 | Transport: my route/stop, live bus position, delay alerts, fee | H routes/route_stops/enrollments/bus_positions, E transport_fee_dues | ✅ wired |
 | S-17 | Sports: join team/tournament, see fixtures | I teams/team_members/fixtures | ✅ wired |
 | S-18 | Alumni mentorship: my mentor, request sessions | J mentorship_pairs/sessions | ✅ wired |
@@ -142,7 +142,7 @@
 | H-02 | Blocks/rooms/beds grid (vacant/allocated/maintenance) | G hostel_blocks/rooms/beds | ✅ A-101 |
 | H-03 | Allocations: allocate/transfer/vacate (+bed state, rent dues) | G hostel_allocations, E hostel_rent_dues | ✅ |
 | H-04 | Residents list | G allocations → students | ✅ (1) |
-| H-05 | Mess: weekly menu CRUD, meal attendance, feedback review | G mess_menu_items/meal_attendance/mess_feedback | ✅ |
+| H-05 | Mess: weekly menu CRUD, meal attendance (staff roll), feedback review, insights, mess spend | G mess_menu_items/meal_attendance/mess_feedback, E expenses | ✅ wired · 6wk attendance + 4wk ratings seeded · 2 permissions |
 | H-06 | Gate passes: student request, approve/reject, exit/return stamps, computed overdue | G gate_passes | wired (8 lifecycle states seeded) |
 | H-07 | Complaints: assign, resolve | G hostel_complaints | ✅ OPEN |
 | H-08 | Visitors: resident authorisation, warden confirm, entry/exit, computed overdue, barred list, frequent-visitor history, editable house rules | G visitors/barred_visitors, L system_config | wired (9 lifecycle states seeded) |

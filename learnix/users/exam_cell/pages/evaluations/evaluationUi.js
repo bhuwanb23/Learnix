@@ -1,7 +1,7 @@
 // X-05 Evaluations — the pieces all nine evaluation screens share
 // (docs/users/05 §3.3).
 //
-// Nine screens: the hub and eight block sub-screens. They share one shell,
+// Ten screens: the hub and nine block sub-screens. They share one shell,
 // one fetch hook and one exam picker, and the reason they must is
 // load-bearing:
 //
