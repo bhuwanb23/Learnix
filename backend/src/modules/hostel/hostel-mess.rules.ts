@@ -13,6 +13,14 @@
  * A day is a RANGE. `dayRange` is the only way to turn one into a query, and it is used by every
  * read and every write, so the mistake cannot be made twice in a different file.
  *
+ * It is worth being exact about the SECOND layer of this bug, because it survived a fix that
+ * replaced `===` with a range and still made "today" read zero. `dayRange` originally computed its
+ * start as `now - offsetMinutes`, which is an arbitrary instant roughly half an hour before local
+ * midnight - correct only when `at` was itself local midnight. So `gte` landed at 10:12 rather than
+ * 00:00, every row written at local midnight fell outside the range, and participation and ratings
+ * for today read zero with no error anywhere. `localMidnightOf` is the fix, and it is separated out
+ * because it is the one piece of real arithmetic in here.
+ *
  * WHY `RESIDENTS` IS NOT A CONSTANT
  * ---------------------------------
  * `getMess` reported residents as `attendance.length > 0 ? residentsOfBlock().length : 0` - two
@@ -170,31 +178,61 @@ export function windowedRating(rows: Array<{ rating: number }>): { average: numb
 /**
  * Clamp a requested analytics window to something a kitchen chart can actually draw.
  *
+ * `gte` / `lt` form the half-open QUERY RANGE; `to` is the last day INCLUDED, which is what a screen
+ * should print. They are not the same value, and conflating them is a quiet off-by-one.
+ *
+ * Why they must differ: every caller filters `mealDate: { gte, lt }`, and `lt` is EXCLUSIVE. Returning
+ * `lt` as the midnight of the last requested day therefore drops that day entirely - a window of
+ * "today minus 29 … today" excluded today, so the roll marked this morning never appeared in the
+ * ten-day total, and the participation rate came out one day short against a denominator that still
+ * counted it. `lt` is the midnight AFTER `to`.
+ *
  * Defaults to the last 30 days, swaps the ends if they arrive reversed, and refuses to return more
  * than `maxDays`. An unparseable `from`/`to` is treated as absent rather than as an error, so a
- * hand-typed query string cannot blank the screen - the range the caller asked for is clamped, not
- * discarded.
+ * hand-typed query string cannot blank the screen - the range is clamped, not discarded.
  *
  * Written with explicit `if`s rather than `from && parseDay(from) ?? fallback`: that idiom yields
  * `''` (not `undefined`) for an empty string, so the type quietly widens to `"" | Date` and the
  * first `.getTime()` is a runtime hazard waiting to happen.
  */
-export function clampWindow(from?: string, to?: string, maxDays = 90) {
-  const parsedFrom = from ? parseDay(from) : null;
-  const parsedTo = to ? parseDay(to) : null;
+export function clampWindow(
+  from?: string,
+  to?: string,
+  maxDays = 90,
+  /** "Just give me the last N days" - the form a UI filter can produce without doing date maths. */
+  days?: number,
+) {
+  const requestedFrom = from ? parseDay(from) : null;
+  const requestedTo = to ? parseDay(to) : null;
   const today = localToday();
 
-  let gte = parsedFrom ?? addDays(today, -29);
-  let lt = parsedTo ?? today;
-  if (gte > lt) {
-    const swap = gte;
-    gte = lt;
-    lt = swap;
+  // `days` wins when given, and is clamped to the same ceiling as an explicit range. This exists so
+  // a screen can send `{ days: 7 }` rather than computing "today minus 6" itself - a client that
+  // derives a date string has to get local midnight and DST right on its own, and every way of
+  // getting it wrong produces a window that is quietly one day short.
+  let gte: Date;
+  let toDay: Date;
+  if (days != null && Number.isFinite(days)) {
+    const n = Math.min(Math.max(1, Math.round(days)), maxDays);
+    gte = addDays(today, -(n - 1));
+    toDay = today;
+  } else {
+    gte = requestedFrom ?? addDays(today, -29);
+    toDay = requestedTo ?? today;
+    if (gte > toDay) {
+      const swap = gte;
+      gte = toDay;
+      toDay = swap;
+    }
+    if ((toDay.getTime() - gte.getTime()) / 86_400_000 > maxDays - 1) {
+      toDay = addDays(gte, maxDays - 1);
+    }
   }
-  const spanDays = (lt.getTime() - gte.getTime()) / 86_400_000;
-  if (spanDays > maxDays) lt = addDays(gte, maxDays);
 
-  // Inclusive of both end days, which is what a person means by "the 1st to the 7th".
-  const days = Math.max(1, Math.round((lt.getTime() - gte.getTime()) / 86_400_000) + 1);
-  return { gte, lt, days };
+  return {
+    gte,
+    to: toDay,
+    lt: addDays(toDay, 1),
+    days: Math.max(1, Math.round((toDay.getTime() - gte.getTime()) / 86_400_000) + 1),
+  };
 }

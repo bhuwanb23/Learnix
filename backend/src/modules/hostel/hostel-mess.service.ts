@@ -16,6 +16,10 @@
  * could only ever hold demo data. Every write in this file is new, which is why the roll is
  * careful about three things - whose students may be marked, what happens on a re-mark, and that a
  * mark records who made it.
+ *
+ * Attendance is a MEASUREMENT, not a claim: mess staff call the roll, so there is deliberately no
+ * student-side write. A self-reported count would make the figure the kitchen provisions against
+ * indistinguishable from a resident who forgot to tap.
  */
 import { prisma } from '../../db/prisma.js';
 import { notFound, unprocessable, badRequest } from '../../lib/errors.js';
@@ -33,6 +37,7 @@ import {
   dayIndex,
   dayKey,
   clampWindow,
+  addDays,
   participationRate,
   windowedRating,
   isMeal,
@@ -337,8 +342,9 @@ export async function getAttendanceLog(
   institutionId: string,
   from: string | undefined,
   to: string | undefined,
+  windowDays?: number,
 ) {
-  const window = clampWindow(from, to);
+  const window = clampWindow(from, to, 90, windowDays);
   const residents = (await residentsOf(institutionId)).length;
   const rows = await prisma.mealAttendance.findMany({
     where: { institutionId, date: { gte: window.gte, lt: window.lt } },
@@ -358,7 +364,7 @@ export async function getAttendanceLog(
     meals[r.meal] = (meals[r.meal] ?? 0) + 1;
   }
 
-  const days = [...byDay.entries()]
+  const byDate = [...byDay.entries()]
     .map(([date, meals]) => ({
       date,
       meals: MEALS.map((meal) => ({
@@ -370,11 +376,11 @@ export async function getAttendanceLog(
     .sort((a, b) => a.date.localeCompare(b.date));
 
   const totals = MEALS.map((meal) => {
-    const total = days.reduce((n, d) => n + (d.meals.find((m) => m.meal === meal)?.present ?? 0), 0);
-    return { meal, present: total, ratePct: participationRate(total, residents * days.length) };
+    const total = byDate.reduce((n, d) => n + (d.meals.find((m) => m.meal === meal)?.present ?? 0), 0);
+    return { meal, present: total, ratePct: participationRate(total, residents * byDate.length) };
   });
 
-  return { from: dayKey(window.gte), to: dayKey(window.lt), residents, days, totals };
+  return { from: dayKey(window.gte), to: dayKey(window.to), residents, days: byDate, totals };
 }
 
 /**
@@ -388,8 +394,9 @@ export async function getMessAnalytics(
   institutionId: string,
   from: string | undefined,
   to: string | undefined,
+  days?: number,
 ) {
-  const window = clampWindow(from, to);
+  const window = clampWindow(from, to, 90, days);
   const residents = (await residentsOf(institutionId)).length;
 
   const [attendance, feedback] = await Promise.all([
@@ -443,7 +450,7 @@ export async function getMessAnalytics(
 
   return {
     from: dayKey(window.gte),
-    to: dayKey(window.lt),
+    to: dayKey(window.to),
     days: window.days,
     residents,
     opportunities,
@@ -491,8 +498,9 @@ export async function listMessFeedback(
   from: string | undefined,
   to: string | undefined,
   take = 50,
+  windowDays?: number,
 ) {
-  const window = clampWindow(from, to);
+  const window = clampWindow(from, to, 90, windowDays);
 
   // The average is an AGGREGATE over the whole window, computed by the database, and it is
   // deliberately a separate query from the page of rows.
@@ -517,7 +525,7 @@ export async function listMessFeedback(
 
   return {
     from: dayKey(window.gte),
-    to: dayKey(window.lt),
+    to: dayKey(window.to),
     // `null` when nobody answered, not 0 - "rated 0 out of 5" would be a false statement.
     avgRating: agg._avg.rating == null ? null : Math.round(agg._avg.rating * 10) / 10,
     responses: agg._count,
@@ -566,17 +574,31 @@ export async function sendMessSurvey(userId: string, institutionId: string, meal
 
 // ── Student side ───────────────────────────────────────────────
 
-/** Today (or a named day) of the menu, plus this student's own ratings for it. */
-export async function getStudentMess(userId: string, institutionId: string, date?: string) {
+/**
+ * Today (or `dayOffset` days ago) of the menu, plus this student's own ratings for it.
+ *
+ * `dayOffset` rather than a date string, deliberately. A screen stepping back to review last night's
+ * dinner would otherwise have to build "yesterday's date" on the client, which means it has to get
+ * local midnight and DST right on its own - and every way of getting that wrong asks the server
+ * about a day the student did not mean. Here the offset is an integer and the day boundary is
+ * derived by the same helper the roll uses.
+ */
+export async function getStudentMess(
+  userId: string,
+  institutionId: string,
+  dayOffset = 0,
+) {
   const studentProfile = await prisma.studentProfile.findFirst({
     where: { userId, institutionId },
     select: { id: true },
   });
   if (!studentProfile) throw notFound('No student profile for this account');
 
-  const day = date ? parseDay(date) : localToday();
-  if (!day) throw unprocessable('Give a real calendar date as YYYY-MM-DD');
-
+  // NEGATED, deliberately. `dayOffset` counts BACK (`1` means yesterday), and this was originally
+  // `addDays(localToday(), dayOffset)` - which moved a student's "yesterday" view FORWARD a day, so
+  // a resident reviewing last night's dinner was shown tomorrow's menu. Asserted directly in
+  // `check-hostel-mess.ts`, because an off-by-sign in a date helper is silent everywhere else.
+  const day = addDays(localToday(), -dayOffset);
   const range = dayRange(day);
   const dow = dayIndex(day);
 
@@ -697,12 +719,13 @@ export async function getMessExpenses(
   institutionId: string,
   from: string | undefined,
   to: string | undefined,
+  days?: number,
 ) {
   // Imported inside the function so this module's dependency on Accounts is explicit and visible,
   // rather than a top-level import that makes the coupling invisible in the file header.
   const { listExpenses, vendorSpend, monthlyTrend } = await import('../accounts/expenses.service.js');
 
-  const window = clampWindow(from, to);
+  const window = clampWindow(from, to, 90, days);
   // Accounts owns the fiscal-year rule; ask it rather than re-deriving a year boundary here, so a
   // change to that rule cannot leave the mess screen and the budget screen disagreeing.
   const fiscalYear = fiscalYearOf(window.gte);
@@ -720,7 +743,7 @@ export async function getMessExpenses(
 
   return {
     from: dayKey(window.gte),
-    to: dayKey(window.lt),
+    to: dayKey(window.to),
     fiscalYear,
     category: 'MESS',
     totalRupees: stats.totalRupees,
@@ -752,7 +775,21 @@ export async function getMessExpenses(
   };
 }
 
-/** Raise a mess expense. Creates a PENDING claim for the accounts desk - see the note above. */
+/**
+ * Raise a mess expense. Creates a PENDING claim for the accounts desk - see the note above.
+ *
+ * AND TELLS THE ACCOUNTS DESK, which is the part that makes it end-to-end. Nothing in Accounts
+ * notifies on creation - a claim raised by the hostel would sit `PENDING` in a queue nobody is told
+ * about, so the warden would believe they had asked for something and the accounts desk would never
+ * know it was asked. The notification lives here rather than in `createExpense` on purpose: an
+ * ACCOUNTS user filing their own claim should not notify themselves, so the signal that matters is
+ * specifically "the HOSTEL is asking", which is exactly what this function knows and the shared
+ * expense writer does not.
+ *
+ * `ADMIN` is included as well as `ACCOUNTS`: an admin is the fallback approver when the desk is
+ * vacant, and a claim with nobody to approve is worse than one that pings the wrong desk. The raiser
+ * is excluded so nobody is notified about their own request.
+ */
 export async function raiseMessExpense(
   userId: string,
   institutionId: string,
@@ -769,5 +806,29 @@ export async function raiseMessExpense(
   // `category` is fixed HERE, not taken from the body. A warden can raise mess spend and nothing
   // else, whatever they put in the request.
   const row = await createExpense(institutionId, userId, { ...body, category: 'MESS' });
-  return { ...row, category: 'MESS' };
+
+  const recipients = await prisma.userRole.findMany({
+    where: {
+      role: { in: ['ACCOUNTS', 'ADMIN'] },
+      user: { institutionId, deletedAt: null, id: { not: userId } },
+    },
+    select: { userId: true },
+  });
+  const recipientIds = [...new Set(recipients.map((r) => r.userId))];
+
+  if (recipientIds.length > 0) {
+    await prisma.notification.createMany({
+      data: recipientIds.map((rid) => ({
+        institutionId,
+        recipientUserId: rid,
+        type: 'EXPENSE_APPROVAL',
+        title: 'Mess expense awaiting approval',
+        body: `The hostel raised ${row.title ?? 'a mess expense'}${row.vendor ? ` from ${row.vendor}` : ''}. It is waiting on your approval.`,
+        sourceModule: 'hostel',
+        dataJson: JSON.stringify({ module: 'accounts', action: 'approve-expense', expenseId: row.id }),
+      })),
+    });
+  }
+
+  return { ...row, category: 'MESS', notified: recipientIds.length };
 }

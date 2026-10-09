@@ -107,14 +107,14 @@ export async function evaluationOverview(institutionId: string) {
       if (p.scriptStatus !== 'NOT_RECEIVED') scriptsReceived += 1;
       if (p.scriptStatus === 'VERIFIED') scriptsVerified += 1;
     }
-    if (e.moderationStatus === 'PENDING')      moderationPending += 1;
-      if (e.moderationStatus === 'FLAGGED') moderationFlagged += 1;
-    }
+    if (e.moderationStatus === 'PENDING') moderationPending += 1;
+    if (e.moderationStatus === 'FLAGGED') moderationFlagged += 1;
+  }
 
-    // Revaluation requests that still need a decision (REVALUATION block's badge).
-    const reevalOpen = await prisma.reEvaluationRequest.count({
-      where: { status: 'REQUESTED', result: { examSlot: { exam: { institutionId } } } },
-    });
+  // Revaluation requests that still need a decision (REVALUATION block's badge).
+  const reevalOpen = await prisma.reEvaluationRequest.count({
+    where: { status: 'REQUESTED', result: { examSlot: { exam: { institutionId } } } },
+  });
 
   // The nearest grading deadline across the institution — the hub's countdown.
   const deadline = await prisma.gradingDeadline.findFirst({
@@ -151,13 +151,16 @@ export async function evaluationOverview(institutionId: string) {
 }
 
 export async function evaluationBlock(institutionId: string, block: string, examId?: string) {
-  assertBlock(block);
-  const meta = blockMeta(block)!;
+  // `assertBlock` normalises case, and the SWITCH below must use its return:
+  // switching on the raw input would fall through to `default` for "marks",
+  // where `assertBlock` passes again and the caller silently gets `{} `.
+  const blockId = assertBlock(block);
+  const meta = blockMeta(blockId)!;
   if (meta.requiresExam && !examId) {
-    throw unprocessable(`${block} needs an examId`, { allowed: BLOCK_IDS.filter((id) => blockMeta(id)?.requiresExam) });
+    throw unprocessable(`${blockId} needs an examId`, { allowed: BLOCK_IDS.filter((id) => blockMeta(id)?.requiresExam) });
   }
 
-  switch (block) {
+  switch (blockId) {
     // ── PROGRESS — the season, per subject, sorted by what is worst ──────
     case 'PROGRESS': {
       const rows = await prisma.evaluation.findMany({

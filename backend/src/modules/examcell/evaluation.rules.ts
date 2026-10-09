@@ -18,7 +18,7 @@ import { unprocessable } from '../../lib/errors.js';
 // ═══ Blocks ══════════════════════════════════════════════════════════════
 //
 // `route` is the FEATURE_MODULES key on the app, never invented by the app.
-// All eight are sub-screens of the Evaluations tab (`isTab: false`), so every
+// All nine are sub-screens of the Evaluations tab (`isTab: false`), so every
 // block is reached through `openModule`, not through the bottom nav.
 export type Block = {
   id: string;
@@ -205,17 +205,19 @@ export const MODERATION_DECISION_TARGET: Record<(typeof MODERATION_DECISIONS)[nu
 // ═══ Assert helpers — every unknown choice answers 422 with `allowed` ═════
 
 export function assertBlock(id: string): string {
-  if (!BLOCK_IDS.includes(id)) {
+  const key = id.toUpperCase();
+  if (!BLOCK_IDS.includes(key)) {
     throw unprocessable(`Unknown evaluation block "${id}"`, { allowed: BLOCK_IDS });
   }
-  return id;
+  return key;
 }
 
 export function assertScriptStatus(status: string): ScriptStatus {
-  if (!(SCRIPT_STATUSES as readonly string[]).includes(status)) {
+  const key = status.toUpperCase();
+  if (!(SCRIPT_STATUSES as readonly string[]).includes(key)) {
     throw unprocessable(`Unknown script status "${status}"`, { allowed: [...SCRIPT_STATUSES] });
   }
-  return status as ScriptStatus;
+  return key as ScriptStatus;
 }
 
 export function assertScriptTransition(from: ScriptStatus, to: ScriptStatus): ScriptStatus {
@@ -229,10 +231,11 @@ export function assertScriptTransition(from: ScriptStatus, to: ScriptStatus): Sc
 }
 
 export function assertModerationDecision(decision: string): 'APPROVED' | 'FLAGGED' {
-  if (!(MODERATION_DECISIONS as readonly string[]).includes(decision)) {
+  const key = decision.toUpperCase();
+  if (!(MODERATION_DECISIONS as readonly string[]).includes(key)) {
     throw unprocessable(`Unknown moderation decision "${decision}"`, { allowed: [...MODERATION_DECISIONS] });
   }
-  return decision as 'APPROVED' | 'FLAGGED';
+  return key as 'APPROVED' | 'FLAGGED';
 }
 
 export function assertMarksSplit(internalMarks: number, externalMarks: number): void {

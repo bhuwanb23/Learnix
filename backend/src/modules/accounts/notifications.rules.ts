@@ -124,6 +124,11 @@ export const TYPE_META: Record<string, TypeMeta> = {
   PAYMENT: { label: 'Payment confirmed', category: 'PAYMENT', icon: 'checkmark-circle-outline', color: '#059669' },
   PAYMENT_REVERSED: { label: 'Payment reversed', category: 'PAYMENT', icon: 'arrow-undo-outline', color: '#dc2626' },
   RECEIPT: { label: 'Receipt issued', category: 'RECEIPT', icon: 'receipt-outline', color: '#0891b2' },
+  // A SPEND CLAIM awaiting approval - raised by a department (today: the hostel mess) rather than by
+  // accounts itself. Filed under `RECEIPT` because that is the existing money-desk category and the
+  // recipient is the accounts approver; adding a ninth category for one emitter would be more churn
+  // than the taxonomy can justify.
+  EXPENSE_APPROVAL: { label: 'Expense awaiting approval', category: 'RECEIPT', icon: 'wallet-outline', color: '#d97706' },
 
   // ── Scholarships ──
   SCHOLARSHIP: { label: 'Scholarship update', category: 'SCHOLARSHIP', icon: 'ribbon-outline', color: '#7c3aed' },

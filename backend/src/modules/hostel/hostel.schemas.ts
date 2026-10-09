@@ -212,6 +212,21 @@ export const messRollQuerySchema = z.object({
 export const messWindowQuerySchema = z.object({
   from: daySchema.optional(),
   to: daySchema.optional(),
+  // A window LENGTH, so a filter chip can ask for "the last 7 days" without the client building a
+  // date string. A client that computes dates has to get local midnight and DST right on its own,
+  // and every way of getting that wrong is a window that is quietly one day short.
+  days: z.coerce.number().int().min(1).max(90).optional(),
+});
+
+/**
+ * "N days ago", for a screen that wants to LOOK BACK without doing date maths.
+ *
+ * The student's menu screen steps back a day to review last night's dinner. Sending `dayOffset=1`
+ * instead of a date means the day boundary is derived in one place, by the same helper that writes
+ * the roll, rather than by whichever client remembered to subtract a day from its own clock.
+ */
+export const dayOffsetSchema = z.object({
+  dayOffset: z.coerce.number().int().min(0).max(14).optional(),
 });
 
 export const messSurveySchema = z.object({
@@ -229,15 +244,22 @@ export const messFeedbackSchema = z.object({
  * A mess claim. `category` is absent BY DESIGN - it is pinned to `MESS` in the service, so a warden
  * raising a grocery bill cannot talk this endpoint into creating a `LABS` or `PAYROLL` claim. The
  * amount is in paise (ADR-04), like every other amount in the system.
+ *
+ * `.strict()` so an UNEXPECTED field is refused rather than quietly dropped. Without it a client
+ * sending `category: 'LABS'` gets a 201 and a correct MESS claim, and has no idea its own field was
+ * ignored - which is exactly the bug that leads somebody to believe they filed against the budget
+ * they named. A 400 says "this endpoint does not take that", which is the useful answer.
  */
-export const messExpenseSchema = z.object({
-  amountMinor: z.number().int().min(1),
-  title: z.string().trim().min(1).max(160),
-  vendor: z.string().trim().max(120).optional(),
-  note: z.string().trim().max(500).optional(),
-  paymentMethod: z.enum(['BANK_TRANSFER', 'UPI', 'CHEQUE', 'CARD', 'CASH']).optional(),
-  date: daySchema.optional(),
-});
+export const messExpenseSchema = z
+  .object({
+    amountMinor: z.number().int().min(1),
+    title: z.string().trim().min(1).max(160),
+    vendor: z.string().trim().max(120).optional(),
+    note: z.string().trim().max(500).optional(),
+    paymentMethod: z.enum(['BANK_TRANSFER', 'UPI', 'CHEQUE', 'CARD', 'CASH']).optional(),
+    date: daySchema.optional(),
+  })
+  .strict();
 
 export const complaintSchema = z.object({
   studentProfileId: z.string().min(1).max(64),

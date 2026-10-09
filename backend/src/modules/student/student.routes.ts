@@ -26,12 +26,15 @@ import {
   gatePassRequestSchema,
   visitorAuthoriseSchema,
   messFeedbackSchema,
-  daySchema,
+  dayOffsetSchema,
 } from '../hostel/hostel.schemas.js';
-import { z } from 'zod';
 
-/** The student's own mess view: an optional day, defaulting to today server-side. */
-const messStudentQuerySchema = z.object({ date: daySchema.optional() });
+/**
+ * The student's own mess view. `dayOffset` is how many days back to look - it is an INTEGER on
+ * purpose, so this router never has to turn a date into a `YYYY-MM-DD` string and cannot be the
+ * thing that asks the service about the wrong day.
+ */
+const messStudentQuerySchema = dayOffsetSchema;
 import type { Viewer } from '../alumni/directory.service.js';
 import {
   mentorshipRequestSchema, mentorshipSessionSchema, updateSessionSchema,
@@ -406,7 +409,7 @@ router.get(
       data: await mess.getStudentMess(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.query.date as string | undefined,
+        req.query.dayOffset as number | undefined,
       ),
     });
   }),

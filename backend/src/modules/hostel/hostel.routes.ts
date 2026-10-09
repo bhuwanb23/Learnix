@@ -353,6 +353,7 @@ router.get(
         req.auth!.institutionId,
         req.query.from as string | undefined,
         req.query.to as string | undefined,
+        req.query.days as number | undefined,
       ),
     });
   }),
@@ -381,6 +382,7 @@ router.get(
         req.auth!.institutionId,
         req.query.from as string | undefined,
         req.query.to as string | undefined,
+        req.query.days as number | undefined,
       ),
     });
   }),
@@ -395,6 +397,7 @@ router.get(
         req.auth!.institutionId,
         req.query.from as string | undefined,
         req.query.to as string | undefined,
+        req.query.days as number | undefined,
       ),
     });
   }),
@@ -441,6 +444,7 @@ router.get(
         req.auth!.institutionId,
         req.query.from as string | undefined,
         req.query.to as string | undefined,
+        req.query.days as number | undefined,
       ),
     });
   }),
