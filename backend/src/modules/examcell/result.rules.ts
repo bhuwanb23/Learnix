@@ -43,7 +43,7 @@ export const BLOCKS: Block[] = [
     route: 'ResultsConsolidate',
     isTab: false,
     order: 1,
-    requiresExam: true,
+    requiresExam: false,
   },
   {
     id: 'GRADES',
@@ -293,7 +293,7 @@ export function assertRevaluationDecision(status: string, decision: string): Rev
 export function assertRevisedMarks(revisedMarks: number, maxMarks: number): void {
   if (!Number.isInteger(revisedMarks) || revisedMarks < 0 || revisedMarks > maxMarks) {
     throw unprocessable(`revisedMarks must be an integer 0..${maxMarks}`, {
-      allowed: `0..${maxMarks}`,
+      allowed: [0, maxMarks],
     });
   }
 }

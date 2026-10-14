@@ -1,29 +1,6 @@
 // X-06 Results — verification (docs/users/05 §3.4).
-//
-// Two halves, deliberately, for the same reason the timetable, hall-ticket
-// and evaluation suites are split.
-//
-// The PURE half runs `result.rules.ts` with no database: the eleven blocks,
-// the grade scale, the workflow transitions and every `assert*` answering
-// 422 with its `allowed` list. Those are PUBLISHED CHOICES, checked as
-// choices — above all the grade scale, because a screen that invents its own
-// pass mark will disagree with the server at exactly the moment a marksheet
-// is printed.
-//
-// The WIRED half builds a real institution and drives the service, because
-// most of what could be wrong here is in the PIPELINE: a consolidation that
-// trusts a client's grade, a verify step that does not read the papers, a
-// publish that skips approval, a tenancy scope dropped from one include. The
-// invariants this suite exists to pin down:
-//
-//   TENANCY          — a rival's slot/result id is 404 on every read/write.
-//   DERIVED GRADES   — grade/isPass come from gradeFor(marks), never a field.
-//   THE CHAIN        — DRAFT → VERIFIED → APPROVED → PUBLISHED, one hop at a
-//                      time, each guarded by the row's own status.
-//   THE GATE         — publish refuses on unmarked papers, flagged moderation
-//                      and un-approved rows, naming every reason.
-//   THE REVISION     — a COMPLETED re-evaluation re-derives the grade and
-//                      bumps result.revision; it never rewinds the status.
+// Pure half: rules, grade scale, transitions, every published choice.
+// Wired half: real institution driven service.
 //
 // Run: npx tsx scripts/verify-results.ts
 import { prisma } from '../src/db/prisma.js';
@@ -62,7 +39,6 @@ function ok(cond: unknown, label: string, detail = '') {
   }
 }
 
-/** `detail` prints only on FAILURE — the evidence for a mismatch is the point. */
 function eq(actual: unknown, expected: unknown, label: string, detail = '') {
   ok(
     actual === expected,
@@ -85,7 +61,6 @@ async function failsWith(fn: () => Promise<unknown>, expected: number, label: st
   }
 }
 
-/** A 422 must carry `allowed` — that list is what tells the client what would work. */
 async function fails422WithAllowed(fn: () => Promise<unknown>, label: string) {
   try {
     await fn();
@@ -97,7 +72,6 @@ async function fails422WithAllowed(fn: () => Promise<unknown>, label: string) {
   }
 }
 
-/** The 422's `reasons`/`mismatches` payload — what the screen renders. */
 async function fails422WithDetail(fn: () => Promise<unknown>, key: 'reasons' | 'mismatches', label: string) {
   try {
     await fn();
@@ -181,37 +155,40 @@ eq(assertBlock('grades'), 'GRADES', 'a lowercase block is normalised, not reject
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-section('2. Fixtures');
+section('2. Fixtures and cleanup');
 
-/** The cascade this suite created, in dependency order — run at both ends. */
-const purgeFixture = async (institutionIds: string[], userIds: string[]) => {
+/** Purge all data for given institutions and users — dependency-ordered. */
+async function purgeFixture(institutionIds: string[], userIds: string[]) {
   if (!institutionIds.length) return;
-  const ids = { in: institutionIds };
-  await prisma.reEvaluationRequest.deleteMany({ where: { result: { examSlot: { exam: { institutionId: ids } } } } });
-  await prisma.result.deleteMany({ where: { examSlot: { exam: { institutionId: ids } } } });
-  await prisma.evaluationPaper.deleteMany({ where: { evaluation: { examSlot: { exam: { institutionId: ids } } } } });
-  await prisma.evaluation.deleteMany({ where: { examSlot: { exam: { institutionId: ids } } } });
-  await prisma.gradingDeadline.deleteMany({ where: { exam: { institutionId: ids } } });
-  await prisma.examRoomAllocation.deleteMany({ where: { examSlot: { exam: { institutionId: ids } } } });
-  await prisma.hallTicket.deleteMany({ where: { examSlot: { exam: { institutionId: ids } } } });
-  await prisma.examSlot.deleteMany({ where: { exam: { institutionId: ids } } });
-  await prisma.examConflict.deleteMany({ where: { exam: { institutionId: ids } } });
-  await prisma.exam.deleteMany({ where: { institutionId: ids } });
-  await prisma.enrollment.deleteMany({ where: { studentProfile: { institutionId: ids } } });
-  await prisma.courseOffering.deleteMany({ where: { course: { institutionId: ids } } });
-  await prisma.course.deleteMany({ where: { institutionId: ids } });
-  await prisma.section.deleteMany({ where: { program: { department: { institutionId: ids } } } });
-  await prisma.batch.deleteMany({ where: { program: { department: { institutionId: ids } } } });
-  await prisma.program.deleteMany({ where: { department: { institutionId: ids } } });
-  await prisma.department.deleteMany({ where: { institutionId: ids } } });
-  await prisma.academicYear.deleteMany({ where: { institutionId: ids } });
-  await prisma.studentProfile.deleteMany({ where: { institutionId: ids } });
+  await prisma.reEvaluationRequest.deleteMany({ where: { result: { examSlot: { exam: { id: { in: institutionIds } } } } } });
+  await prisma.result.deleteMany({ where: { examSlot: { exam: { id: { in: institutionIds } } } } });
+  await prisma.evaluationPaper.deleteMany({ where: { evaluation: { examSlot: { exam: { id: { in: institutionIds } } } } } });
+  await prisma.evaluation.deleteMany({ where: { examSlot: { exam: { id: { in: institutionIds } } } } });
+  await prisma.gradingDeadline.deleteMany({ where: { exam: { id: { in: institutionIds } } } });
+  await prisma.enrollment.deleteMany({ where: { studentProfile: { institutionId: { in: institutionIds } } } });
+  await prisma.courseOffering.deleteMany({ where: { course: { institutionId: { in: institutionIds } } } });
+  await prisma.section.deleteMany({ where: { program: { department: { institutionId: { in: institutionIds } } } } });
+  await prisma.batch.deleteMany({ where: { program: { department: { institutionId: { in: institutionIds } } } } });
+  await prisma.program.deleteMany({ where: { department: { institutionId: { in: institutionIds } } } });
+  await prisma.department.deleteMany({ where: { institutionId: { in: institutionIds } } });
+  await prisma.academicYear.deleteMany({ where: { institutionId: { in: institutionIds } } });
+  await prisma.course.deleteMany({ where: { institutionId: { in: institutionIds } } });
+  await prisma.examRoomAllocation.deleteMany({ where: { examSlot: { exam: { id: { in: institutionIds } } } } });
+  await prisma.hallTicket.deleteMany({ where: { examSlot: { exam: { id: { in: institutionIds } } } } });
+  await prisma.examSlot.deleteMany({ where: { exam: { id: { in: institutionIds } } } });
+  await prisma.examConflict.deleteMany({ where: { exam: { id: { in: institutionIds } } } });
+  await prisma.exam.deleteMany({ where: { id: { in: institutionIds } } });
+  await prisma.reEvaluationRequest.deleteMany({ where: { result: { examSlot: { exam: { id: { in: institutionIds } } } } } });
+  await prisma.result.deleteMany({ where: { examSlot: { exam: { id: { in: institutionIds } } } } });
+  await prisma.evaluationPaper.deleteMany({ where: { evaluation: { examSlot: { exam: { id: { in: institutionIds } } } } } });
+  await prisma.evaluation.deleteMany({ where: { examSlot: { exam: { id: { in: institutionIds } } } } });
+  await prisma.gradingDeadline.deleteMany({ where: { exam: { id: { in: institutionIds } } } });
   await prisma.userRole.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.auditLog.deleteMany({ where: { actorUserId: { in: userIds } } });
-  await prisma.auditLog.deleteMany({ where: { institutionId: ids } });
+  await prisma.auditLog.deleteMany({ where: { institutionId: { in: institutionIds } } });
   await prisma.user.deleteMany({ where: { id: { in: userIds } } });
-  await prisma.institution.deleteMany({ where: { id: ids } });
-};
+  await prisma.institution.deleteMany({ where: { id: { in: institutionIds } } });
+
 
 // Sweep whatever a KILLED previous run left behind, so its debris cannot fail
 // this run (and later teeth cases bite on what they broke, not on leftovers).
@@ -680,4 +657,4 @@ process.exit(fail ? 1 : 0);
 /** The status of the row under revision — asserted, not assumed. */
 function PUBLISHED_STATUS() {
   return 'PUBLISHED';
-}
+}}
