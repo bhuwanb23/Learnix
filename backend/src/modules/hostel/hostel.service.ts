@@ -589,33 +589,3 @@ export {
 // meant the bug was still reachable from whichever route someone wired up next.
 export * from './hostel-complaints.service.js';
 
-export async function getProfile(userId: string, institutionId: string) {
-  const user = await prisma.user.findFirst({
-    where: { id: userId, institutionId },
-    select: { id: true, fullName: true, email: true, phone: true },
-  });
-  if (!user) throw notFound('User not found');
-
-  const staff = await prisma.staffProfile.findFirst({ where: { userId } });
-
-  const blocks = await prisma.hostelBlock.findMany({
-    where: { institutionId },
-    include: { rooms: { include: { beds: true } } },
-  });
-  const totalBeds = blocks.reduce((n, b) => n + b.rooms.reduce((m, r) => m + r.beds.length, 0), 0);
-  const occupied = blocks.reduce(
-    (n, b) => n + b.rooms.reduce((m, r) => m + r.beds.filter((x) => x.status === 'ALLOCATED').length, 0),
-    0,
-  );
-
-  return {
-    user,
-    designation: staff?.designation ?? 'Chief Warden',
-    employeeNo: staff?.employeeNo ?? null,
-    stats: {
-      residents: occupied,
-      blocks: blocks.length,
-      occupancyPct: totalBeds === 0 ? 0 : Math.round((occupied / totalBeds) * 100),
-    },
-  };
-}

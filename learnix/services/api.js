@@ -702,6 +702,35 @@ export const hostelApi = {
   //
   // `category` accepts either a raw category or a GROUP name ('maintenance' shows plumbing and
   // electrical together), and `status: 'OPEN_LIKE'` is the "needs attention" bucket — both server-side.
+  // ---- Notifications (the hostel's own eight categories) ------------------------
+  //
+  // These are the WARDEN's inbox, which reads the hostel's vocabulary — not the shared finance
+  // one. A chip that could show "a fee is due" next to "the water is off in Block B" would mean
+  // nothing, so the hostel owns its categories. A resident reads a different inbox (the shared
+  // student one), which merges both.
+  //
+  // Filtered and paged on the SERVER. The categories are eight fixed vocabularies, so client-side
+  // filtering would be harmless — but the counts and the "important" flag come off the response, and
+  // a screen that re-derived them would disagree with the API.
+  notifications: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hostel/notifications${qs ? `?${qs}` : ''}`);
+  },
+  // The eight categories, with the labels, icons and colours the screen renders from. Read from the
+  // server so the client does not hold a second copy of the vocabulary that can drift.
+  notificationCatalogue: () => api.get('/hostel/notifications/catalogue'),
+  markAllNotificationsRead: () => api.post('/hostel/notifications/read-all'),
+  setNotificationRead: (id, read) => api.patch(`/hostel/notifications/${id}/read`, { read }),
+  // Composing a notice. `category` is one of the COMPOSABLE ones (ANNOUNCEMENT, MAINTENANCE,
+  // EMERGENCY) — the other five are facts the system reports, and a warden who could publish a
+  // gate-pass approval could forge one. `audience` is an OBJECT, so a block is named by its id and a
+  // new block needs no change here.
+  broadcastNotification: (payload) => api.post('/hostel/notifications/broadcasts', payload),
+  // On-demand, not scheduled: the platform schedules nothing, so "who is overdue" is answered by
+  // asking, and the answer is derived from live rows.
+  sweepLateReturns: () => api.post('/hostel/notifications/late-returns/sweep'),
   complaints: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
@@ -770,10 +799,14 @@ export const hostelApi = {
   unbarVisitor: (id) => api.delete(`/hostel/visitors/barred/${id}`),
   visitorPolicy: () => api.get('/hostel/visitors/policy'),
   updateVisitorPolicy: (policy) => api.put('/hostel/visitors/policy', policy),
-  notifications: () => api.get('/hostel/notifications'),
-    markAllRead: () => api.post('/hostel/notifications/read-all'),
-    broadcast: (payload) => api.post('/hostel/broadcasts', payload),
-    profile: () => api.get('/hostel/profile'),
+  // `notifications`, `markAllRead` and `broadcast` used to live here. They are gone:
+  //   · `notifications` collided with the new one above, and a duplicate key in an object literal
+  //     means the LAST one wins — so the flat, unpaged version would have silently replaced it.
+  //   · `markAllRead` marked EVERY notification read, including the warden's finance mail, which is
+  //     not a claim "I read the hostel notices" is entitled to make.
+  //   · `broadcast` posted to `/hostel/broadcasts`, a route that no longer exists — the composer
+  //     lives at `/hostel/notifications/broadcasts` and takes an object audience and a category.
+  profile: () => api.get('/hostel/profile'),
   };
 
   // ── Library Staff endpoints (docs/users/07 §4) ──
@@ -1013,7 +1046,15 @@ export const studentApi = {
   libraryMyBooks: () => api.get('/student/library/my-books'),
   hostelAllocation: () => api.get('/student/hostel/allocation'),
   transport: () => api.get('/student/transport'),
-  notifications: () => api.get('/student/notifications'),
+  // The resident's inbox: their bills AND their hostel notices, in one list. The two vocabularies
+  // are merged SERVER-side, so a hostel announcement is labelled "Hostel announcement" with its own
+  // icon and colour rather than showing up as a raw `HOSTEL_COMPLAINT` type string.
+  notifications: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/student/notifications${qs ? `?${qs}` : ''}`);
+  },
   markAllRead: () => api.post('/student/notifications/read-all'),
   profile: () => api.get('/student/profile'),
 
