@@ -225,6 +225,100 @@ export function typesForCategory(category: CategoryId): string[] {
   return Object.keys(TYPE_META).filter((t) => TYPE_META[t].category === category);
 }
 
+// ── Registries ──────────────────────────────────────────────────────────────
+//
+// A DESK'S TAXONOMY, IN A FORM THE SHARED INBOX CAN CONSUME.
+//
+// The `Notification` table is shared by every desk, but a CATEGORY is not. "A fee is due" and "the
+// water is off in Block B" are different facts about the world, and a filter chip that could show
+// either is a filter chip that means nothing. So each desk declares its own categories and its own
+// type → category map, and the shared inbox is handed the ones it should render.
+//
+// A registry is that pair — the categories, and the types that map into them. The finance one is
+// below; the hostel one lives in the hostel module, because the HOSTEL owns its vocabulary. The
+// hostel depends on this module (it already imports the money helpers and the id schemas), so the
+// dependency runs one way and the shared inbox never has to know what a hostel is.
+//
+// A type with `category: null` is "another module's business" — it is labelled rather than dropped,
+// and the inbox leaves it out of the visible set. That is how a finance type that the hostel raised
+// (a mess expense awaiting approval, say) stays in the accounts desk's inbox without the hostel
+// owning a category for it.
+
+export interface CategoryDescriptor {
+  id: string;
+  label: string;
+  blurb: string;
+  icon: string;
+  color: string;
+}
+
+export interface TypeDescriptor {
+  label: string;
+  /** null = not this registry's business; the row is labelled but left out of the visible set. */
+  category: string | null;
+  icon: string;
+  color: string;
+}
+
+export interface NotificationRegistry {
+  categories: readonly CategoryDescriptor[];
+  types: Record<string, TypeDescriptor>;
+}
+
+/** The finance desk's own registry. The default for every shared-inbox caller. */
+export const FINANCE_REGISTRY: NotificationRegistry = {
+  categories: CATEGORIES,
+  types: TYPE_META as unknown as Record<string, TypeDescriptor>,
+};
+
+/**
+ * Combine registries.
+ *
+ * LATER REGISTRIES WIN for a type they both own. That is what makes the composition order
+ * meaningful: the hostel's map is authoritative for `HOSTEL*` types, so merging finance-then-hostel
+ * gives the hostel the last word on its own vocabulary while the finance desk keeps every type it
+ * declared.
+ */
+export function mergeRegistries(...registries: NotificationRegistry[]): NotificationRegistry {
+  const categories: CategoryDescriptor[] = [];
+  const types: Record<string, TypeDescriptor> = {};
+  for (const registry of registries) {
+    for (const category of registry.categories) {
+      const at = categories.findIndex((c) => c.id === category.id);
+      if (at >= 0) categories[at] = category;
+      else categories.push(category);
+    }
+    Object.assign(types, registry.types);
+  }
+  return { categories, types };
+}
+
+/** The category a type belongs to within a registry, or null when it is out of scope. */
+export function categoryFor(registry: NotificationRegistry, type: string): string | null {
+  const meta = registry.types[type];
+  if (!meta) return null;
+  return meta.category;
+}
+
+/**
+ * The chrome for a type within a registry.
+ *
+ * An UNKNOWN type resolves to the `SYSTEM` chrome rather than vanishing — the failure mode nobody
+ * notices until a resident says they were never told. A type that is known but out of scope (one
+ * belonging to another desk) still gets its own label, because "this is a hostel message" is a
+ * fact about the row even when the finance inbox does not show it.
+ */
+export function metaFor(registry: NotificationRegistry, type: string): TypeDescriptor {
+  const meta = registry.types[type];
+  if (meta) return meta;
+  return {
+    label: type.replace(/_/g, ' ').toLowerCase(),
+    category: 'SYSTEM',
+    icon: 'notifications-outline',
+    color: '#d97706',
+  };
+}
+
 // ── Audiences ─────────────────────────────────────────────────────────────
 // `needsBalance` marks the audiences that cannot be resolved without reading
 // the dues table, which is why sending to one costs more than sending to all.

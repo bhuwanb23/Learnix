@@ -2471,6 +2471,40 @@ const roomOf = async (profId: string | null | undefined) => {
     });
   }
 
+  // ── Migrating the LEGACY `HOSTEL` notification type ──────────────────────────────
+  //
+  // Every hostel notification used to be written as `type: 'HOSTEL'`, which made the eight
+  // categories indistinguishable in the database — the category could only be recovered by matching
+  // the title text, which is a string the user can see and the schema cannot constrain. The emitters
+  // now write a specific type, and the inbox filters on it.
+  //
+  // The rows already in the database are demo data worth keeping, so they are RE-TYPED rather than
+  // deleted. The mapping is by title because the title is what distinguishes them, and each of these
+  // was written by exactly one emitter. A title that matches nothing falls back to ANNOUNCEMENT,
+  // which is the legacy bucket's own meaning — a visible row in a sensible place, never a silent one.
+  {
+    const legacyTitleType: [RegExp, string][] = [
+      [/complaint/i, 'HOSTEL_COMPLAINT'],
+      [/gate pass|checked out|checked back in/i, 'HOSTEL_GATE_PASS'],
+      [/visitor/i, 'HOSTEL_VISITOR'],
+      [/meal|menu|mess|food/i, 'HOSTEL_MESS'],
+    ];
+    const legacyRows = await db.notification.findMany({
+      where: { institutionId, type: 'HOSTEL' },
+      select: { id: true, title: true },
+    });
+    let migrated = 0;
+    for (const row of legacyRows) {
+      const hit = legacyTitleType.find(([pattern]) => pattern.test(row.title));
+      const type = hit ? hit[1] : 'HOSTEL_ANNOUNCEMENT';
+      await db.notification.update({ where: { id: row.id }, data: { type } });
+      migrated += 1;
+    }
+    if (migrated > 0) {
+      console.log(`  ✓ ${migrated} legacy HOSTEL notification(s) re-typed into the eight categories`);
+    }
+  }
+
   // ── Visitors (H-08) ──────────────────────────────────────────────────────────────
 // Replaces three ad-hoc `db.visitor.create` calls. Two reasons it is not the same shape:
 //
@@ -2922,18 +2956,22 @@ for (const v of await db.visitor.findMany({
       data: { itemsJson: JSON.stringify(['Rice', 'Dal Tadka', 'Beans Poriyal', 'Curd']) },
     });
   }
-  // Warden inbox: 3 alerts so the app's Notifications tab is non-empty
+  // Warden inbox: 3 alerts so the app's Notifications tab is non-empty.
+  //
+  // Each carries its own TYPE, because the type is the discriminator the hostel inbox filters on. It
+  // used to be a flat `HOSTEL` for all three, which made the eight categories indistinguishable in
+  // the database and left every one of these rows in the legacy bucket.
   if (warden) {
     const wardenAlerts = [
-      { title: 'New gate pass request', body: 'Arjun Kumar (A-101) requested a weekend home visit outpass.' },
-      { title: 'New complaint — PLUMBING', body: 'Water leakage reported in A-101 bathroom (Sneha Patel). Severity HIGH.' },
-      { title: 'Visitor checked in', body: 'Suresh Kumar (Father) checked in to see Arjun Kumar, A-101.' },
+      { type: 'HOSTEL_GATE_PASS', title: 'New gate pass request', body: 'Arjun Kumar (A-101) requested a weekend home visit outpass.' },
+      { type: 'HOSTEL_COMPLAINT', title: 'New complaint — PLUMBING', body: 'Water leakage reported in A-101 bathroom (Sneha Patel). Severity HIGH.' },
+      { type: 'HOSTEL_VISITOR', title: 'Visitor checked in', body: 'Suresh Kumar (Father) checked in to see Arjun Kumar, A-101.' },
     ];
     for (const a of wardenAlerts) {
       const exists = await db.notification.findFirst({ where: { recipientUserId: warden.id, title: a.title } });
       if (!exists) {
         await db.notification.create({
-          data: { institutionId, recipientUserId: warden.id, type: 'HOSTEL', title: a.title, body: a.body, sourceModule: 'hostel' },
+          data: { institutionId, recipientUserId: warden.id, type: a.type, title: a.title, body: a.body, sourceModule: 'hostel' },
         });
       }
     }

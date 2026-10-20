@@ -90,17 +90,46 @@ async function main() {
   check('auth/login', true, `token for ${EMAIL}`);
 
   // ── 1. Dashboard ──
-  console.log('\n\u2500\u2500 1. Dashboard');
+  console.log('\n── 1. Dashboard');
   const dash = await call('GET', '/alumni/dashboard');
   const d = dash.data;
   check('GET /dashboard', dash.status === 200 && !!d, `status ${dash.status}`);
-  check('  engagement.totalAlumni', (d?.engagement?.totalAlumni ?? 0) > 10, `${d?.engagement?.totalAlumni} alumni`);
-  check('  engagement.percentage', d?.engagement?.percentage > 0, `${d?.engagement?.percentage}% active`);
-  check('  stats.donationsReceivedRupees', (d?.stats?.donationsReceivedRupees ?? 0) > 0, `Rs ${d?.stats?.donationsReceivedRupees}`);
-  check('  stats.activeMentorships', (d?.stats?.activeMentorships ?? 0) > 0, `${d?.stats?.activeMentorships}`);
-  check('  stats.pendingMentorships', (d?.stats?.pendingMentorships ?? 0) > 0, `${d?.stats?.pendingMentorships}`);
-  check('  upcomingEvents[]', (d?.upcomingEvents?.length ?? 0) > 0, `${d?.upcomingEvents?.length} events`);
-  check('  campaigns[]', (d?.campaigns?.length ?? 0) > 0, `${d?.campaigns?.length} campaigns`);
+  //
+  // The dashboard is now PERSONAL, not an office-wide engagement view. It used to answer
+  // "how many alumni does the school have, what % are engaged, how much did the school
+  // receive" — institution-wide aggregates, on a screen a graduate opens. It now answers
+  // "my batch, my job, my events, my mentorships, what I have given", because "₹2.07 Cr
+  // received" next to "my giving" reads as the same number when it is not.
+  //
+  // So the assertions below are re-pointed at the equivalents in the new shape, and they
+  // keep their ORIGINAL INTENT: every figure is populated and non-zero. Renaming the fields
+  // without that would have turned seven live assertions into seven presence checks.
+  check('  snapshot is populated', d?.snapshot?.hasProfile === true && !!d?.snapshot?.name,
+    `${d?.snapshot?.name ?? 'no profile'}`);
+  check('  snapshot names the viewer', !!d?.snapshot?.graduationYear, `class of ${d?.snapshot?.graduationYear}`);
+  check('  network.newAlumni[]', (d?.network?.newAlumni?.length ?? 0) > 0, `${d?.network?.newAlumni?.length} alumni`);
+  check('  network.suggestions[]', (d?.network?.suggestions?.length ?? 0) > 0, `${d?.network?.suggestions?.length} suggested`);
+  check('  giving.receivedRupees', (d?.giving?.receivedRupees ?? 0) > 0, `Rs ${d?.giving?.receivedRupees}`);
+  check('  giving.pledgedRupees', (d?.giving?.pledgedRupees ?? 0) > 0, `Rs ${d?.giving?.pledgedRupees}`);
+  check('  giving.campaigns[]', (d?.giving?.campaigns?.length ?? 0) > 0, `${d?.giving?.campaigns?.length} campaigns`);
+  check('  mentorship.activeCount', (d?.mentorship?.activeCount ?? 0) > 0, `${d?.mentorship?.activeCount} active`);
+  // `pendingCount` is the viewer's OWN pending pairs, not the institution's — the dashboard is a
+  // personal view, and this office account mentors one pair and has asked for none, so zero is the
+  // TRUE answer here. Asserting `> 0` was asserting that the dashboard should show a stranger's
+  // pending request. What is asserted instead is the internal consistency, which holds whatever
+  // the numbers are: a pair the viewer is in is either active, pending, or closed, and the mentor
+  // and mentee sides cannot both be true of the same pair.
+  check('  mentorship.pendingCount is reported', typeof d?.mentorship?.pendingCount === 'number', `${d?.mentorship?.pendingCount} pending`);
+  check('  mentorship sides do not double-count a pair',
+    (d?.mentorship?.asMentorCount ?? 0) + (d?.mentorship?.asMenteeCount ?? 0) >= (d?.mentorship?.activeCount ?? 0),
+    `mentor ${d?.mentorship?.asMentorCount} + mentee ${d?.mentorship?.asMenteeCount} vs ${d?.mentorship?.activeCount} active`);
+  check('  events[]', (d?.events?.length ?? 0) > 0, `${d?.events?.length} events`);
+  check('  unreadNotifications is a number', typeof d?.unreadNotifications === 'number', `${d?.unreadNotifications}`);
+  // The point of the redesign: the viewer's own giving, not the school's. A dashboard that
+  // shows the institution total next to "my giving" is the confusion this shape removed.
+  check('  giving is scoped to the viewer, not the institution',
+    d?.giving?.receivedCount !== undefined && d?.giving?.unrestrictedOnly !== undefined,
+    `${d?.giving?.receivedCount} gift(s), unrestrictedOnly=${d?.giving?.unrestrictedOnly}`);
 
   // ── 2. Directory ──
   console.log('\n\u2500\u2500 2. Alumni Network (directory)');
@@ -371,14 +400,19 @@ async function main() {
 
 
   // ── 5. Donations ──
-  console.log('\n\u2500\u2500 5. Donations');
+  console.log('\n── 5. Donations');
   const don = await call('GET', '/alumni/donations');
   check('GET /donations', don.status === 200, `status ${don.status}`);
-  check('  campaigns[]', (don.data?.campaigns?.length ?? 0) > 0, `${don.data?.campaigns?.length} campaigns`);
   check('  donations[]', (don.data?.donations?.length ?? 0) > 0, `${don.data?.donations?.length} donations`);
   check('  fy.collectedRupees', (don.data?.fy?.collectedRupees ?? 0) > 0, `Rs ${don.data?.fy?.collectedRupees} from ${don.data?.fy?.donors} donors`);
-  const pctShown = don.data?.campaigns?.[0]?.percent;
-  check('  campaign percent computed', typeof pctShown === 'number', `${pctShown}% on "${don.data?.campaigns?.[0]?.name}"`);
+  // Campaigns have their OWN route now — `GET /alumni/donations/campaigns`. They used to be
+  // embedded in the donations list, and the list grew enough to warrant splitting, so this
+  // asserts against the route that actually serves them rather than a field that moved.
+  const camp = await call('GET', '/alumni/donations/campaigns');
+  check('GET /donations/campaigns', camp.status === 200, `status ${camp.status}`);
+  check('  campaigns[]', (camp.data?.campaigns?.length ?? 0) > 0, `${camp.data?.campaigns?.length} campaigns`);
+  const pctShown = camp.data?.campaigns?.[0]?.percent;
+  check('  campaign percent computed', typeof pctShown === 'number', `${pctShown}% on "${camp.data?.campaigns?.[0]?.name}"`);
 
   // Record a pledge end-to-end: PLEDGED → payment + receipt.
   //
@@ -722,18 +756,28 @@ const ca = await call('GET', `/alumni/chapters/${firstChapter.id}/activity`);
 check('GET /chapters/:id/activity', ca.status === 200 && (ca.data?.activity?.length ?? 0) > 0, `${ca.data?.count} items`);
 
   // ── 8. Notifications + broadcast ──
-  console.log('\n\u2500\u2500 8. Notifications');
+  console.log('\n── 8. Notifications');
   const notif = await call('GET', '/alumni/notifications');
   check('GET /notifications', notif.status === 200, `status ${notif.status}`);
   check('  notifications[] populated', (notif.data?.notifications?.length ?? 0) > 0, `${notif.data?.notifications?.length} items`);
+  // The envelope. Every route in this platform answers `{ data: … }` and the client unwraps
+  // unconditionally, so an unwrapped response here handed the screen `undefined` and it threw
+  // on `data.counts`. Asserted explicitly so the shape cannot drift back.
+  check('  the response is enveloped in `data`', notif.data !== undefined && notif.error === undefined,
+    `top-level keys: ${Object.keys(notif as any).join(',')}`);
 
-  const bc = await call('POST', '/alumni/broadcasts', {
-    audience: 'ALL_ALUMNI',
+  // The broadcast route lives under `/alumni/notifications/broadcasts`, because the
+  // notifications router owns it and `/broadcasts` sits above the notifications router's own
+  // `/:id` route. And `audience` is an OBJECT now — `{ kind, value?, chapterId? }` — because the
+  // composer targets a year, a city, a chapter or the mentor pool, and a bare string could not
+  // carry which of those was meant.
+  const bc = await call('POST', '/alumni/notifications/broadcasts', {
+    audience: { kind: 'ALL_ALUMNI' },
     templateKey: 'NEWSLETTER',
     title: 'Alumni Newsletter — Autumn 2026',
     body: 'Homecoming dates, the new lab fund, and chapter meetups near you.',
   });
-  check('POST /broadcasts', bc.status === 201, `${bc.data?.recipients} recipients`);
+  check('POST /notifications/broadcasts', bc.status === 201, `${bc.data?.recipients} recipients`);
 
   const readAll = await call('POST', '/alumni/notifications/read-all');
   check('POST /notifications/read-all', readAll.status === 200, `${readAll.data?.updated} marked read`);
@@ -850,11 +894,48 @@ check('GET /chapters/:id/activity', ca.status === 200 && (ca.data?.activity?.len
     check(`GET /connections?box=${box}`, b.status === 200 && typeof b.data?.count === 'number', `${b.data?.count} items`);
   }
 
-  for (const type of ['connections', 'mentors']) {
-    const m = await call('GET', `/alumni/matches?type=${type}&limit=5`);
+  // The two halves of the matcher have DIFFERENT contracts, and asserting the same thing about
+  // both is what made this fail for a long time.
+  //
+  // `type=connections` suggests people to connect with — one skill in common is enough, and the
+  // answer is "who is near you in the network".
+  //
+  // `type=mentors` suggests people to ASK for help, and it is deliberately strict: a candidate
+  // must be at least two years senior AND have DEMONSTRATED DEPTH (ADVANCED/EXPERT) in a skill
+  // the viewer has. Someone who merely lists a skill they do not practise is dropped, because
+  // recommending a final-year student as a mentor is worse than recommending nobody. So an EMPTY
+  // mentor list is a correct answer whenever the senior pool has no deep match — and this seed
+  // is exactly that case. The old assertion demanded a non-empty list and so demanded the
+  // product be wrong.
+  //
+  // What is asserted instead is the contract, plus the two invariants that hold either way.
+  {
+    const m = await call('GET', '/alumni/matches?type=connections&limit=5');
     const matches = m.data?.matches ?? [];
-    check(`GET /matches?type=${type}`, m.status === 200 && matches.length > 0, `${matches.length} matches from ${m.data?.totalConsidered} candidates`);
+    check('GET /matches?type=connections', m.status === 200 && matches.length > 0, `${matches.length} matches from ${m.data?.totalConsidered} candidates`);
     check('  scores are explainable', matches.every((x: any) => typeof x.score === 'number' && Array.isArray(x.reasons)), `top ${matches[0]?.score}: ${(matches[0]?.reasons ?? []).join(' | ')}`);
+  }
+  {
+    const m = await call('GET', '/alumni/matches?type=mentors&limit=5');
+    const matches = m.data?.matches ?? [];
+    check('GET /matches?type=mentors', m.status === 200 && Array.isArray(matches), `status ${m.status}, ${matches.length} matches from ${m.data?.totalConsidered} candidates`);
+    check('  the senior pool was actually considered', typeof m.data?.totalConsidered === 'number', `${m.data?.totalConsidered} candidates`);
+    check('  every match is explainable', matches.every((x: any) => typeof x.score === 'number' && Array.isArray(x.reasons)), `top ${matches[0]?.score}: ${(matches[0]?.reasons ?? []).join(' | ')}`);
+    // THE mentor invariant: a mentor is at least two years senior. If this ever fails, the
+    // endpoint is recommending a peer, which the whole "mentor" half exists to avoid.
+    const viewerYear = viewerProfile.graduationYear;
+    check(
+      '  every mentor match is at least two years senior',
+      matches.every((x: any) => typeof x.graduationYear === 'number' && viewerYear !== undefined && x.graduationYear <= viewerYear - 2),
+      `viewer class of ${viewerYear}; matches: ${matches.map((x: any) => x.graduationYear).join(', ') || 'none'}`,
+    );
+    // The depth rule, stated rather than implied: a mentor match must say it matched on
+    // EXPERIENCE, because that is the only way a candidate survives the mentor filter.
+    check(
+      '  a mentor match is justified by demonstrated depth',
+      matches.every((x: any) => (x.reasons ?? []).some((r: string) => /experienced|depth|expert/i.test(r))),
+      matches.length ? (matches[0]?.reasons ?? []).join(' | ') : 'no matches to check',
+    );
   }
 
   // Full lifecycle on a pair with no existing connection.

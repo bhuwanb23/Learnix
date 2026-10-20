@@ -39,7 +39,9 @@ export const OTHER_GRADUATE_EMAIL = 'alumni.farhan.rao@learnix.dev';
 export type ApiResponse<T = any> = {
   status: number;
   data: T;
-  error?: { code?: string; message?: string };
+  // `details` carries the zod payload — a rejection's allowed values, the offending field, the
+  // form errors. Without it a suite can only assert that something was refused, never WHY.
+  error?: { code?: string; message?: string; details?: unknown };
 };
 
 /**
