@@ -147,7 +147,7 @@
 | H-07 | Complaints: report, triage, route by trade, assign, note, resolve, derived escalation, poor-rating reopen | G hostel_complaints + complaint_events/feedback, L system_config | ✅ 3 routers, 6 lifecycle states seeded |
 | H-08 | Visitors: resident authorisation, warden confirm, entry/exit, computed overdue, barred list, frequent-visitor history, editable house rules | G visitors/barred_visitors, L system_config | wired (9 lifecycle states seeded) |
 | H-09 | Rent dues tracking → payments write-through | E hostel_rent_dues | ✅ Jul+Aug |
-| H-10 | Notifications + profile | K, A | ✅ |
+| H-10 | Notifications (8 categories, warden inbox, composer, late-return sweep) + profile (identity, assigned blocks, RBAC permissions, notification mutes, sessions, activity history) | G hostel_notifications, L permission_groups/role_permissions, E refresh_tokens | ✅ 3 desks merged for residents |
 
 ## Transport (R) — docs/users/09 · tables: H
 

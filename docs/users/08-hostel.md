@@ -421,10 +421,70 @@ maintenance), `MESS` (food), `SECURITY`. A group name and a raw category are bot
 `?category=`; a **group wins** when the value is both.
 
 ### 3.8 Notifications (module)
-Inbox (mess/maintenance/pass/complaint types) + **Broadcast tab** (audience: All Residents / Block A/B/C / Mess Members → pushes to student app).
+**The warden's notification centre**, over eight categories, each with its own vocabulary:
+
+| Category | Composed by a warden? | Source |
+|---|---|---|
+| `ANNOUNCEMENT` — hostel announcements | yes | the warden, to everybody |
+| `MAINTENANCE` — work affecting a block or service | yes | the warden, usually to one block |
+| `EMERGENCY` — evacuations, curfew changes | yes | the warden; **ignores mutes** |
+| `GATE_PASS` — approved, refused, now outside | no | the gate-pass lifecycle |
+| `LATE_RETURN` — past the time they said they'd be back | no | the gate-pass return window |
+| `VISITOR` — their visitor arrived or left | no | the visitor lifecycle |
+| `COMPLAINT` — assigned, updated, resolved, reopened | no | the complaint lifecycle |
+| `MESS` — menu changes, a meal to rate, an expense to approve | no | the mess lifecycle |
+
+**One desk, one vocabulary.** A category belongs to a desk. "A fee is due" and "the water is off in
+Block B" are different facts, and a chip that could show either means nothing — so the hostel owns its
+eight and the accounts desk owns its seven, and a resident's inbox **merges** both so a student sees
+their bills and their block's notice in one list. The accounts desk's chip list is untouched.
+
+**A mute SUPPRESSES the row; it does not hide it.** A muted category writes no notification at all,
+because the unread badge counts rows the recipient cannot see — a resident who mutes four categories
+would watch a badge that only goes up and never clears. The `Broadcast` row is the record of what was
+sent.
+
+**An emergency is the exception, and it is declared, not special-cased.** `HOSTEL_EMERGENCY` carries
+`bypassesMute`, so it reaches a resident who muted everything else. You cannot opt out of being told
+to leave a building, and a mute is a preference about noise, not about safety. The bypass is a flag on
+the type, so a new emergency type inherits the behaviour by being declared correctly.
+
+**Composing is a privilege, not a description.** Only the three composed categories may be sent. The
+other five are facts the system reports, and a warden who could publish a `GATE_PASS` approval could
+forge one — so the server refuses, not just the picker.
+
+**The late-return sweep is ON DEMAND**, not scheduled: the platform schedules nothing, so "who is
+overdue" is answered by asking, and the answer is derived from live rows. It is idempotent — the alert
+is keyed on the pass, so pressing the button twice does not leave two copies in the inbox.
 
 ### 3.10 Profile
-Chief Warden profile, resident stats, preference toggles (pass/curfew/visitor alerts), account menu.
+**Six questions, six endpoints**, because they change at different rates — the profile is read once a
+session, the permissions when somebody is promoted, the preferences when a mute is toggled, and the
+activity on every page of the history.
+
+1. **Who is this?** — name, designation, employee number, email, phone, roles, when they joined and
+   when they last signed in.
+2. **What is theirs?** — the blocks they are responsible for, with each block's occupancy counted
+   from **bed status**. A warden holding no block is responsible for the **whole hostel** (`scope:
+   ALL`), not for none of it; "0 of 3" would be a lie about the person who runs the desk.
+3. **What may they do?** — the permissions their roles grant, read from the platform's RBAC map
+   (`RolePermission` / `PermissionGroup`), which is administered live and audited. The hostel ones
+   first; the others are listed too, because a warden who also holds `ADMIN` can do more than the
+   hostel.
+4. **What do they want?** — which of the eight categories they have muted. The emergency is shown as
+   **locked**, because the delivery path ignores its mute and a toggle that does nothing would be a
+   lie in the interface.
+5. **Is the account safe?** — change password (the current one is required), the live sessions, and
+   "sign out of every other device".
+6. **What have they done?** — recent actions from the audit log, read **by actor**, plus the last
+   sign-in. Sessions and activity are different questions: a session says somebody is signed in, an
+   activity entry says a complaint was assigned.
+
+**Nothing on this screen is a literal.** The old screen showed "1,248 Residents / 3 Blocks / 42 Staff"
+— all three hardcoded, and none of them right: the institution has 60 beds and 3 blocks. It also had
+five menu rows that navigated nowhere, and three toggles held in `useState` that were forgotten the
+moment the screen unmounted. A mute that silently forgets itself is worse than no mute at all,
+because the person believes they turned it off.
 
 ## 4. Backend API Surface
 All routes are mounted at `/api/v1/hostel` and require the `HOSTEL` or `ADMIN` role.
@@ -498,9 +558,17 @@ GET/POST /complaints                        (+ /complaints/:id, /:id/assign, /:i
                                              GET/PUT /complaints/policy,
                                              GET /complaints/assignees?category=)
 GET  /visitors                              (+ POST /visitors/checkin, /visitors/:id/checkout)
-GET  /notifications                         (+ POST /notifications/read-all)
-POST /broadcasts
-GET  /profile
+GET  /notifications                         ?category=&unread=&important=&page=&pageSize=
+                                             (+ GET /notifications/catalogue,
+                                                POST /notifications/read-all,
+                                                PATCH /notifications/:id/read)
+POST /notifications/broadcasts               { category, audience:{kind,blockId?}, title, body }
+POST /notifications/late-returns/sweep      on demand, idempotent
+GET  /profile                               who they are + the blocks they hold
+GET  /profile/permissions                   what their roles grant, from the RBAC map
+GET  /profile/notification-preferences      the eight categories, and which are muted
+PATCH /profile/notification-preferences      { category, muted } - the emergency is refused
+GET  /profile/activity                      live sessions + recent actions + last sign-in
 ```
 
 ### Room detail is keyed by ID, not room number
@@ -624,6 +692,12 @@ users/hostel/pages/residents/
 | `scripts/check-hostel-visitors-ui.ts` | no | As above for the visitor screens, plus: no mock array survives, the resident is a **picker** and not a typed name, no visiting-hours or threshold constant exists in the client, and `studentApi` has no approve/entry/exit/policy method at all |
 | `scripts/verify-hostel/gate-passes.ts` | **yes** | Both sides of the desk over HTTP: the two-sided role boundary, schema rejections, the 400-vs-422 split, decide/exit/return, withdrawal, and that every mutation returns the shaped pass |
 | `scripts/verify-hostel/visitors.ts` | **yes** | Both sides of the desk over HTTP: the two-sided boundary, route order for the three static siblings, the 400-vs-422 split, the full lifecycle, `PUT /visitors/policy` persistence and partial-save behaviour, and the gate refusing a barred visitor |
+| `scripts/check-hostel-complaints.ts` | no | The derived escalation (never stored), the inclusive threshold from both sides, the SECURITY severity floor, the poor-rating reopen, and that the feedback loop clears the stale resolution stamp |
+| `scripts/verify-hostel/complaints.ts` | **yes** | Three routers over HTTP: the resident's, the warden's and the support desk's; the assignment boundary (the assignee, a warden, or nobody); the 400-vs-422 split; and that the reassignee cannot close a colleague's complaint |
+| `scripts/check-hostel-notifications.ts` | no | The eight categories and their completeness, every type in the database being registered, a mute SUPPRESSING rather than hiding, the emergency bypassing it, only the composable categories being composable, and the late-return derivation with its idempotence |
+| `scripts/verify-hostel/notifications.ts` | **yes** | The catalogue, the three-sided boundary (warden / resident / accounts officer), route order for the literal paths, the compose schema, and that a resident sees what was composed for them |
+| `scripts/check-hostel-profile-ui.ts` | no | As above for the profile screens, plus: no hardcoded stat survives, the mute is written THROUGH rather than held locally, every menu row opens a registered screen, and the profile tab is actually given a `navigate` |
+| `scripts/verify-hostel/profile.ts` | **yes** | The six profile endpoints, the envelope, the mute round-trip, the emergency refusal, and that a student can neither read nor write the warden's profile |
 | `scripts/repair-hostel-inventory.ts` | no | One-off data repair; idempotent |
 
 The DB suites build their own `hrchk-` fixtures and delete them, so they do not depend on seed

@@ -202,6 +202,43 @@ mess complaint and it deliberately reuses this lifecycle** rather than getting a
 resident who found hair in the dal wants it fixed and tracked, not routed somewhere different, and two
 complaint workflows would drift apart.
 
+#### The notification lifecycle, which is NOT a state machine
+
+A notification has no states. It is a **fact that was reported**, and the only thing that changes
+about it is whether it has been read. There is no "archived", no "dismissed", no "snoozed" — a
+notification either exists and is read, or exists and is not.
+
+That is why the hostel owns its **categories** rather than sharing the accounts desk's. A category is
+a vocabulary, and "a fee is due" and "the water is off in Block B" are different vocabularies. The
+hostel's eight:
+
+| Category | Composed? | Written by |
+|---|---|---|
+| `ANNOUNCEMENT` | yes | the warden |
+| `MAINTENANCE` | yes | the warden |
+| `EMERGENCY` | yes | the warden — bypasses mutes |
+| `GATE_PASS` | no | the gate-pass lifecycle |
+| `LATE_RETURN` | no | the gate-pass return window |
+| `VISITOR` | no | the visitor lifecycle |
+| `COMPLAINT` | no | the complaint lifecycle |
+| `MESS` | no | the mess lifecycle |
+
+**A RESIDENT'S INBOX MERGES DESKS.** The student reads one list containing their finance
+notifications and their hostel ones, because those are the two desks a student has dealings with. The
+accounts desk's own inbox does not gain the hostel's chips — a filter chip list is a claim about what
+that desk is for.
+
+**MUTING SUPPRESSES; IT DOES NOT FILTER.** A muted category writes no row. The alternative — write
+it and hide it — makes the unread badge count rows the recipient cannot see, so the badge only goes up
+and never clears. The `Broadcast` row is the record of what was sent.
+
+**THE EMERGENCY EXCEPTION IS DECLARED, NOT SPECIAL-CASED.** `HOSTEL_EMERGENCY` carries
+`bypassesMute`, so it reaches a resident who muted everything else. You cannot opt out of being told
+to leave a building.
+
+**NOTHING IS SCHEDULED.** The late-return sweep is on demand and idempotent — the alert is keyed on
+the pass, so asking twice does not leave two copies in the inbox.
+
 #### The reopen edge, and why it is not a downgrade
 
 A rating at or below `reopenRatingThreshold` (default 3, **capped at 4**) does not merely record a bad

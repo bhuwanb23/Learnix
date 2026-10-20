@@ -472,9 +472,16 @@ async function main() {
       ok('...and none of this suite\'s descriptions appear there',
         !foreignQueue.complaints.some((c: any) => String(c.description).startsWith(PFX)));
 
-      const foreignInbox = await complaints.getStaffInbox(technician.id, other.id);
-      ok('the staff inbox is scoped to the caller\'s own institution',
-        !foreignInbox.complaints.some((c: any) => String(c.description).startsWith(PFX)));
+      // A technician of THIS institution asking for ANOTHER institution's inbox. The service looks
+      // the caller up INSIDE the requested institution, so it cannot find them and refuses — which is
+      // the tenant guard working. Asserted as a refusal rather than an empty result: an empty inbox
+      // would have meant the lookup succeeded and the filter found nothing, and those are very
+      // different guarantees.
+      await expectReject(
+        'a staff inbox cannot be read for another institution',
+        () => complaints.getStaffInbox(technician.id, other.id),
+        404,
+      );
     }
 
     // A staff member of THIS institution still cannot see another institution's queue.

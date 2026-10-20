@@ -811,14 +811,16 @@ export const hostelApi = {
   unbarVisitor: (id) => api.delete(`/hostel/visitors/barred/${id}`),
   visitorPolicy: () => api.get('/hostel/visitors/policy'),
   updateVisitorPolicy: (policy) => api.put('/hostel/visitors/policy', policy),
-  // `notifications`, `markAllRead` and `broadcast` used to live here. They are gone:
+  // `notifications`, `markAllRead`, `broadcast` and the old `profile` used to live here. They are gone:
   //   · `notifications` collided with the new one above, and a duplicate key in an object literal
   //     means the LAST one wins — so the flat, unpaged version would have silently replaced it.
   //   · `markAllRead` marked EVERY notification read, including the warden's finance mail, which is
   //     not a claim "I read the hostel notices" is entitled to make.
   //   · `broadcast` posted to `/hostel/broadcasts`, a route that no longer exists — the composer
   //     lives at `/hostel/notifications/broadcasts` and takes an object audience and a category.
-  profile: () => api.get('/hostel/profile'),
+  //   · `profile` collided with the new one above. The two pointed at the same path, so nothing
+  //     broke — but a duplicate key is a silent trap, and the one that survives is whichever is
+  //     written LAST, not the one anybody meant.
   };
 
   // ── Library Staff endpoints (docs/users/07 §4) ──
