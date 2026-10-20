@@ -303,7 +303,7 @@ export async function requestGatePass(
       data: wardens.map((w) => ({
         institutionId,
         recipientUserId: w.userId,
-        type: 'HOSTEL',
+        type: 'HOSTEL_GATE_PASS',
         title: pass.isEmergency ? 'EMERGENCY gate pass request' : 'Gate pass requested',
         body: `${profile.user.fullName} requested a pass to ${body.destination?.trim() || 'unspecified destination'}${pass.isEmergency ? ' (marked emergency)' : ''}.`,
         sourceModule: 'hostel',
@@ -426,7 +426,7 @@ export async function decideGatePass(
     data: {
       institutionId,
       recipientUserId: pass.studentProfile.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_GATE_PASS',
       title: `Gate pass ${decision.toLowerCase()}`,
       body:
         decision === 'APPROVED'
@@ -488,7 +488,7 @@ export async function recordGateExit(
     data: {
       institutionId,
       recipientUserId: pass.studentProfile.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_GATE_PASS',
       title: 'Checked out of the hostel',
       body: `You were marked out at ${when.toLocaleString('en-IN')}. Expected back ${pass.expectedInAt.toLocaleString('en-IN')}.`,
       sourceModule: 'hostel',
@@ -545,7 +545,7 @@ export async function recordGateReturn(
     data: {
       institutionId,
       recipientUserId: pass.studentProfile.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_GATE_PASS',
       title: late ? 'Checked back in — late' : 'Checked back in',
       body: late
         ? `You were marked back in at ${when.toLocaleString('en-IN')}, after your expected return of ${pass.expectedInAt.toLocaleString('en-IN')}.`

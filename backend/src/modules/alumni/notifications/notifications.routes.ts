@@ -97,6 +97,16 @@ const requireOffice = () =>
   });
 
 // ── Literals before /:id ──────────────────────────────────────────────────────
+//
+// EVERY response in this router is wrapped in `{ data: … }`, like the other 520 in the
+// platform. This file did not, and the client unwraps unconditionally — `api.get` returns
+// `json.data` — so every one of these endpoints handed the screen `undefined` and the
+// alumni inbox threw on `data.counts`. The routes worked; the SHAPE was wrong, and the
+// only reason it went unnoticed is that the UI suite is static and the DB suite never
+// sees a response body.
+//
+// A router that answers a different envelope from every other router is a trap for the
+// next reader, so the convention is now stated here rather than left to be rediscovered.
 
 router.get(
   '/categories',
@@ -106,16 +116,18 @@ router.get(
     // Rule metadata rides along so the app renders icons, colours and blurbs from
     // ONE source rather than hardcoding a second copy of the vocabulary in JS.
     res.json({
-      ...catalogue,
-      rules: CATEGORIES.map((c) => ({
-        id: c.id,
-        label: c.label,
-        icon: c.icon,
-        color: c.color,
-        blurb: c.blurb,
-        defaultMuted: c.defaultMuted,
-        module: c.module,
-      })),
+      data: {
+        ...catalogue,
+        rules: CATEGORIES.map((c) => ({
+          id: c.id,
+          label: c.label,
+          icon: c.icon,
+          color: c.color,
+          blurb: c.blurb,
+          defaultMuted: c.defaultMuted,
+          module: c.module,
+        })),
+      },
     });
   }),
 );
@@ -124,7 +136,7 @@ router.get(
   '/preferences',
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json(await listPreferences(viewer.institutionId, viewer.userId));
+    res.json({ data: await listPreferences(viewer.institutionId, viewer.userId) });
   }),
 );
 
@@ -133,7 +145,7 @@ router.patch(
   validate(preferencePatchSchema),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json(await updatePreferences(viewer.institutionId, viewer.userId, req.body));
+    res.json({ data: await updatePreferences(viewer.institutionId, viewer.userId, req.body) });
   }),
 );
 
@@ -149,15 +161,15 @@ router.get(
       page?: number;
       pageSize?: number;
     };
-    res.json(
-      await listInbox(viewer.institutionId, viewer.userId, viewer.isOffice, {
+    res.json({
+      data: await listInbox(viewer.institutionId, viewer.userId, viewer.isOffice, {
         category: q.category,
         unreadOnly: q.unread === 'true',
         importantOnly: q.important === 'true',
         page: q.page,
         pageSize: q.pageSize,
       }),
-    );
+    });
   }),
 );
 
@@ -165,7 +177,7 @@ router.post(
   '/read-all',
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json(await markAllRead(viewer.institutionId, viewer.userId));
+    res.json({ data: await markAllRead(viewer.institutionId, viewer.userId) });
   }),
 );
 
@@ -179,7 +191,7 @@ router.patch(
     // 404, not 403: whether somebody else's notification exists is not this
     // caller's business, and a 403 would confirm that it does.
     if (!out) throw notFound('Notification not found');
-    res.json({ notification: out });
+    res.json({ data: { notification: out } });
   }),
 );
 
@@ -201,7 +213,7 @@ router.get(
   validate(broadcastListQuerySchema, 'query'),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json({ broadcasts: await listBroadcasts(viewer.institutionId, Number(req.query.limit) || undefined) });
+    res.json({ data: { broadcasts: await listBroadcasts(viewer.institutionId, Number(req.query.limit) || undefined) } });
   }),
 );
 
@@ -211,7 +223,7 @@ router.post(
   validate(broadcastPreviewSchema),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json(await previewAudience(viewer.institutionId, req.body.audience as Audience, viewer.userId));
+    res.json({ data: await previewAudience(viewer.institutionId, req.body.audience as Audience, viewer.userId) });
   }),
 );
 
@@ -228,7 +240,7 @@ router.get(
   requireOffice(),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json(await audienceOptions(viewer.institutionId));
+    res.json({ data: await audienceOptions(viewer.institutionId) });
   }),
 );
 
@@ -238,7 +250,7 @@ router.post(
   validate(broadcastCreateSchema),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.status(201).json(await createBroadcast(viewer, req.body));
+    res.status(201).json({ data: await createBroadcast(viewer, req.body) });
   }),
 );
 
@@ -248,7 +260,7 @@ router.post(
   validate(sweepSchema.optional()),
   wrap(async (req, res) => {
     const viewer = await viewerFor(req);
-    res.json(await runReminderSweep(viewer, { dryRun: req.body?.dryRun === 'true' }));
+    res.json({ data: await runReminderSweep(viewer, { dryRun: req.body?.dryRun === 'true' }) });
   }),
 );
 
@@ -259,7 +271,7 @@ router.get(
     const viewer = await viewerFor(req);
     const out = await getNotification(viewer.institutionId, viewer.userId, String(req.params.id));
     if (!out) throw notFound('Notification not found');
-    res.json({ notification: out });
+    res.json({ data: { notification: out } });
   }),
 );
 

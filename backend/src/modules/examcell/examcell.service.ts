@@ -262,6 +262,34 @@ export async function decideCheatingCase(
   return updated;
 }
 
+// X-08 — Create a new cheating case report
+// A student (or invigilator) reports an incident. The exam cell creates a
+// case record. Only the exam cell can decide on it.
+export async function createCheatingCase(
+  institutionId: string,
+  studentProfileId: string,
+  examSlotId: string,
+  issue: string,
+  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW',
+  source: 'AI' | 'INVIGILATOR',
+  evidenceJson?: string,
+) {
+  const cheatingCase = await prisma.cheatingCase.create({
+    data: {
+      examSlotId,
+      studentProfileId,
+      issue,
+      riskLevel,
+      source,
+      evidenceJson,
+      status: 'UNDER_REVIEW',
+    },
+  });
+
+  await writeAudit({ institutionId, actorUserId: null, action: 'CHEATING_CREATED', entityType: 'CheatingCase', entityId: cheatingCase.id });
+  return cheatingCase;
+}
+
 // ─────────────────────────────────────────────────────────────
 // X-09 — Notifications + profile
 // ─────────────────────────────────────────────────────────────

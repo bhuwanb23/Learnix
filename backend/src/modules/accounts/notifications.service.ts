@@ -29,8 +29,10 @@ import { writeAudit } from '../../lib/audit.js';
 import { syncDueOverdue } from './collections.service.js';
 import {
   ALERT_KINDS, AUDIENCES, CATEGORIES, DEFAULTER_MIN_DAYS,
-  assertAudience, financeCategory, typeMeta,
+  assertAudience, categoryFor, metaFor,
+  FINANCE_REGISTRY,
   type AlertKind,
+  type NotificationRegistry,
 } from './notifications.rules.js';
 
 export { CATEGORIES, AUDIENCES, ALERT_KINDS };
@@ -55,6 +57,16 @@ export async function listNotifications(
   userId: string,
   institutionId: string,
   filters: InboxFilters = {},
+  /**
+   * Which vocabulary to render in. Defaults to the finance desk's, which is what every caller
+   * wanted before a second desk existed.
+   *
+   * A STUDENT wants the finance categories (their own bills) AND the hostel's (their block's water
+   * is off). So the student route merges the two registries and passes the result. The accounts
+   * desk passes nothing and is unchanged: a finance officer's inbox does not grow eight hostel
+   * chips, because the chip list is the registry's, not the table's.
+   */
+  registry: NotificationRegistry = FINANCE_REGISTRY,
 ) {
   const { category, unreadOnly, take = 50, skip = 0 } = filters;
   const limit = Math.min(200, Math.max(1, take));
@@ -72,8 +84,8 @@ export async function listNotifications(
   });
 
   const shape = (n: (typeof all)[number]) => {
-    const cat = financeCategory(n.type);
-    const meta = typeMeta(n.type);
+    const cat = categoryFor(registry, n.type);
+    const meta = metaFor(registry, n.type);
     return {
       id: n.id,
       type: n.type,
@@ -81,7 +93,7 @@ export async function listNotifications(
       icon: meta.icon,
       color: meta.color,
       category: cat,
-      categoryLabel: cat ? CATEGORIES.find((c) => c.id === cat)?.label ?? cat : null,
+      categoryLabel: cat ? registry.categories.find((c) => c.id === cat)?.label ?? cat : null,
       inScope: cat !== null,
       title: n.title,
       body: n.body,
@@ -97,7 +109,7 @@ export async function listNotifications(
   const scoped = shaped.filter((n) => n.inScope);
   // Unread counts are counted over the WHOLE inbox, not the current page, so the
   // badge never changes just because the officer scrolled.
-  const unreadByCategory = CATEGORIES.map((c) => ({
+  const unreadByCategory = registry.categories.map((c) => ({
     category: c.id,
     count: scoped.filter((n) => n.category === c.id && !n.read).length,
   }));

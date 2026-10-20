@@ -551,7 +551,7 @@ export async function sendMessSurvey(userId: string, institutionId: string, meal
       data: recipientIds.map((rid) => ({
         institutionId,
         recipientUserId: rid,
-        type: 'HOSTEL',
+        type: 'HOSTEL_MESS',
         title: 'Rate your meal',
         body: meal
           ? `Tell us what you thought of ${meal.toLowerCase()}. Your rating shapes next week's menu.`

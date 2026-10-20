@@ -345,7 +345,7 @@ async function fileComplaint(
       data: {
         institutionId,
         recipientUserId: args.residentUserId,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: 'Complaint logged',
         body: `${args.notificationPrefix}: "${args.description.slice(0, 80)}".`,
         sourceModule: 'hostel',
@@ -365,7 +365,7 @@ async function fileComplaint(
       data: recipients.map((rid) => ({
         institutionId,
         recipientUserId: rid,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: `New ${args.category.toLowerCase()} complaint`,
         body: `${complaint.roomNumber ? `${complaint.roomNumber} · ` : ''}${severity} severity · "${args.description.slice(0, 70)}"`,
         sourceModule: 'hostel',
@@ -736,7 +736,7 @@ export async function assignComplaint(
     data: {
       institutionId,
       recipientUserId: assignee.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_COMPLAINT',
       title: 'Complaint assigned to you',
       body: `${complaint.roomNumber ? `${complaint.roomNumber} · ` : ''}${complaint.category} · "${complaint.description.slice(0, 80)}"`,
       sourceModule: 'hostel',
@@ -749,7 +749,7 @@ export async function assignComplaint(
       data: {
         institutionId,
         recipientUserId: complaint.studentProfile.user.id,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: reassigning ? 'Your complaint was reassigned' : 'Your complaint was assigned',
         body: `"${complaint.description.slice(0, 60)}" is now with ${assignee.fullName}.`,
         sourceModule: 'hostel',
@@ -812,7 +812,7 @@ export async function addNote(
       data: [...new Set(wardens.map((w) => w.userId))].map((rid) => ({
         institutionId,
         recipientUserId: rid,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: 'New note on a complaint',
         body: note.slice(0, 90),
         sourceModule: 'hostel',
@@ -825,7 +825,7 @@ export async function addNote(
       data: {
         institutionId,
         recipientUserId: complaint.studentProfile.user.id,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: 'Update on your complaint',
         body: note.slice(0, 90),
         sourceModule: 'hostel',
@@ -899,7 +899,7 @@ export async function resolveComplaint(
       data: {
         institutionId,
         recipientUserId: complaint.studentProfile.user.id,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: 'Was it fixed?',
         body: `"${complaint.description.slice(0, 60)}" was marked resolved. Let us know if that is not right.`,
         sourceModule: 'hostel',
@@ -976,7 +976,7 @@ export async function reopenComplaint(
       data: [...new Set(wardens.map((w) => w.userId))].map((rid) => ({
         institutionId,
         recipientUserId: rid,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: 'Complaint reopened',
         body: `"${complaint.description.slice(0, 60)}" was reopened${body.reason ? `: ${body.reason.slice(0, 60)}` : '.'}`,
         sourceModule: 'hostel',
@@ -1096,7 +1096,7 @@ export async function submitFeedback(
       data: recipients.map((rid) => ({
         institutionId,
         recipientUserId: rid,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: reopens ? 'Complaint reopened by the resident' : 'Complaint rated',
         body: reopens
           ? `"${complaint.description.slice(0, 50)}" was rated ${rating}/5 and is back on the board.`
@@ -1111,7 +1111,7 @@ export async function submitFeedback(
       data: {
         institutionId,
         recipientUserId: complaint.assignedToUserId,
-        type: 'HOSTEL',
+        type: 'HOSTEL_COMPLAINT',
         title: 'A complaint you resolved was not fixed',
         body: `"${complaint.description.slice(0, 60)}" was rated ${rating}/5 by the resident.`,
         sourceModule: 'hostel',

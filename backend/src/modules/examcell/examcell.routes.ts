@@ -146,6 +146,24 @@ router.post(
   }),
 );
 
+// X-08 cheating cases — create report
+router.post(
+  '/cheating-cases',
+  wrap(async (req, res) => {
+    res.json({
+      data: await service.createCheatingCase(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body.examSlotId,
+        req.body.issue,
+        req.body.riskLevel,
+        req.body.source,
+        req.body.evidenceJson,
+      ),
+    });
+  }),
+);
+
 // X-09 notifications + broadcast + profile
 router.get(
   '/notifications',
