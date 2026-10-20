@@ -70,7 +70,9 @@ export async function reportCase(
   const created = await prisma.$transaction(async (tx) => {
     const c = await tx.cheatingCase.create({
       data: {
-        institutionId,
+        // NO `institutionId`: the case's tenancy runs through `examSlot.exam`, and a second copy of
+        // it on the row would be a second thing to keep in step. The service resolves the exam, and
+        // every read filters on it.
         examSlotId: slot.id,
         studentProfileId: student.id,
         issue: body.issue.trim(),
@@ -119,16 +121,20 @@ export async function getReportContext(institutionId: string, examSlotId: string
     include: {
       exam: { select: { id: true, name: true, type: true, semester: true } },
       offering: { include: { course: { select: { id: true, name: true, code: true } } } },
-      roomAllocations: {
-        select: {
-          roomId: true,
-          invigilatorUserId: true,
-          invigilator: { select: { id: true, fullName: true } },
-        },
-      },
+      roomAllocations: { select: { roomId: true, invigilatorUserId: true } },
     },
   });
   if (!slot) throw notFound('Exam slot not found in this institution');
+
+  // The invigilator is a BARE user id on the allocation — there is no relation to follow, so the
+  // person is looked up by id. One query, and it is skipped entirely when nobody was on duty.
+  const invigilatorId = slot.roomAllocations[0]?.invigilatorUserId ?? null;
+  const invigilatorUser = invigilatorId
+    ? await prisma.user.findFirst({
+        where: { id: invigilatorId, institutionId, deletedAt: null },
+        select: { id: true, fullName: true },
+      })
+    : null;
 
   // The students who sat this slot, from the hall tickets issued for it.
   const tickets = await prisma.hallTicket.findMany({
@@ -154,9 +160,7 @@ export async function getReportContext(institutionId: string, examSlotId: string
       course: slot.offering.course,
     },
     room: slot.roomAllocations[0]?.roomId ?? null,
-    invigilator: slot.roomAllocations[0]?.invigilator
-      ? { id: slot.roomAllocations[0]!.invigilator!.id, name: slot.roomAllocations[0]!.invigilator!.fullName }
-      : null,
+    invigilator: invigilatorUser ? { id: invigilatorUser.id, name: invigilatorUser.fullName } : null,
     students: tickets.map((t) => ({
       studentProfileId: t.studentProfile.id,
       rollNo: t.studentProfile.rollNo,

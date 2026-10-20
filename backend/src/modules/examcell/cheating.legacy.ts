@@ -24,7 +24,7 @@ import { prisma } from '../../db/prisma.js';
 import { badRequest, notFound } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { CASE_STATUS_META, assertCaseStatus, assertTransition, type CaseStatus } from './cheating.rules.js';
-import { appendCheatingEvent, loadCheatingCase, shapeCheatingCase } from './cheating.internal.js';
+import { appendCheatingEvent, loadCheatingCase } from './cheating.internal.js';
 import { listCheatingCases } from './cheating.read.js';
 import { reportCase } from './cheating.report.js';
 

@@ -68,8 +68,12 @@ export async function classifyCase(
 
   const classification = assertClassification(body.classification);
   const risk = body.riskLevel ? assertRiskLevel(body.riskLevel) : c.riskLevel;
-  const nextStatus: CaseStatus = c.status === 'REPORTED' ? 'UNDER_REVIEW' : c.status;
-  assertTransition(c.status, nextStatus);
+  // `c.status` is a plain string in the database, so it is narrowed through the same assertion the
+  // rest of the module uses. An unrecognised status would otherwise be treated as a valid one and
+  // silently allowed to move.
+  const current = assertCaseStatus(c.status);
+  const nextStatus: CaseStatus = current === 'REPORTED' ? 'UNDER_REVIEW' : current;
+  assertTransition(current, nextStatus);
 
   await prisma.$transaction(async (tx) => {
     await tx.cheatingCase.update({

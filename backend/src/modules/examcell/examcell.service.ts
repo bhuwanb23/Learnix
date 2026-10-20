@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { notFound, badRequest } from '../../lib/errors.js';
-import { writeAudit } from '../../lib/audit.js';
+import { notFound } from '../../lib/errors.js';
 
 const prisma = new PrismaClient();
 
@@ -211,86 +210,21 @@ export async function getDashboard(institutionId: string) {
 // ─────────────────────────────────────────────────────────────
 // X-08 — Cheating cases
 // ─────────────────────────────────────────────────────────────
-export async function listCheatingCases(institutionId: string) {
-  const cases = await prisma.cheatingCase.findMany({
-    where: { examSlot: { exam: { institutionId } } },
-    include: {
-      studentProfile: { include: { user: { select: { fullName: true } } } },
-      examSlot: { include: { offering: { include: { course: true } } } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+// The X-08 cheating-case implementation now lives in its own module, split by what it does:
+// `cheating.rules.ts` (the vocabulary), `cheating.internal.ts` (the loader and the shaper),
+// `cheating.catalogue.ts`, `cheating.read.ts`, `cheating.report.ts`, `cheating.write.ts` and
+// `cheating.legacy.ts` (the three functions that predate the feature, kept working).
+//
+// These three NAMES are re-exported because the admin app and the exam cell both read this table,
+// and two implementations of one table is how two screens start disagreeing. The behaviour is the
+// new one — the state machine is enforced, a decision carries a penalty, and the student is told —
+// while the SIGNATURE stays the one the existing callers use.
+export {
+  listCheatingCasesLegacy as listCheatingCases,
+  decideCheatingCaseLegacy as decideCheatingCase,
+  createCheatingCaseLegacy as createCheatingCase,
+} from './cheating.legacy.js';
 
-  return cases.map((c) => ({
-    id: c.id,
-    studentName: c.studentProfile.user.fullName,
-    rollNo: c.studentProfile.rollNo,
-    course: c.examSlot.offering.course.name,
-    courseCode: c.examSlot.offering.course.code,
-    issue: c.issue,
-    riskLevel: c.riskLevel,
-    evidence: c.evidenceJson ? JSON.parse(c.evidenceJson) : null,
-    source: c.source,
-    status: c.status,
-    createdAt: c.createdAt,
-  }));
-}
-
-export async function decideCheatingCase(
-  institutionId: string,
-  userId: string,
-  caseId: string,
-  decision: string,
-) {
-  const cheatingCase = await prisma.cheatingCase.findFirst({
-    where: { id: caseId, examSlot: { exam: { institutionId } } },
-  });
-  if (!cheatingCase) throw notFound('Cheating case not found');
-  if (cheatingCase.status !== 'UNDER_REVIEW') {
-    throw badRequest('This case has already been decided');
-  }
-
-  const updated = await prisma.cheatingCase.update({
-    where: { id: caseId },
-    data: {
-      status: decision,
-      reviewedByUserId: userId,
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: userId, action: `CHEATING_${decision}`, entityType: 'CheatingCase', entityId: caseId });
-  return updated;
-}
-
-// X-08 — Create a new cheating case report
-// A student (or invigilator) reports an incident. The exam cell creates a
-// case record. Only the exam cell can decide on it.
-export async function createCheatingCase(
-  institutionId: string,
-  studentProfileId: string,
-  examSlotId: string,
-  issue: string,
-  riskLevel: 'HIGH' | 'MEDIUM' | 'LOW',
-  source: 'AI' | 'INVIGILATOR',
-  evidenceJson?: string,
-) {
-  const cheatingCase = await prisma.cheatingCase.create({
-    data: {
-      examSlotId,
-      studentProfileId,
-      issue,
-      riskLevel,
-      source,
-      evidenceJson,
-      status: 'UNDER_REVIEW',
-    },
-  });
-
-  await writeAudit({ institutionId, actorUserId: null, action: 'CHEATING_CREATED', entityType: 'CheatingCase', entityId: cheatingCase.id });
-  return cheatingCase;
-}
-
-// ─────────────────────────────────────────────────────────────
 // X-09 — Notifications + profile
 // ─────────────────────────────────────────────────────────────
 export async function listNotifications(userId: string, institutionId: string) {

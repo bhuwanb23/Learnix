@@ -4,8 +4,6 @@ import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
-  idParamSchema,
-  decideCheatingSchema,
   examcellBroadcastSchema,
 } from './examcell.schemas.js';
 import * as service from './examcell.service.js';
@@ -121,48 +119,10 @@ router.get(
 // DRAFT → VERIFIED → APPROVED → PUBLISHED with the row's own status as the
 // guard, and gate publication on every paper being marked.
 
-// X-08 cheating cases — list
-router.get(
-  '/cheating-cases',
-  wrap(async (req, res) => {
-    res.json({ data: await service.listCheatingCases(req.auth!.institutionId) });
-  }),
-);
-
-// X-08 cheating cases — decide
-router.post(
-  '/cheating-cases/:id/decide',
-  validate(idParamSchema, 'params'),
-  validate(decideCheatingSchema),
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.decideCheatingCase(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        String(req.params.id),
-        req.body.decision,
-      ),
-    });
-  }),
-);
-
-// X-08 cheating cases — create report
-router.post(
-  '/cheating-cases',
-  wrap(async (req, res) => {
-    res.json({
-      data: await service.createCheatingCase(
-        req.auth!.institutionId,
-        req.auth!.userId,
-        req.body.examSlotId,
-        req.body.issue,
-        req.body.riskLevel,
-        req.body.source,
-        req.body.evidenceJson,
-      ),
-    });
-  }),
-);
+// X-08 cheating cases now live in their own router, `cheating.routes.ts`,
+// mounted BEFORE this one in `app.ts`. It owns every `/cheating-cases/*`
+// path, and it applies its own auth — so declaring the three endpoints here
+// as well would mean two routers answering for one path.
 
 // X-09 notifications + broadcast + profile
 router.get(

@@ -30,6 +30,7 @@ import timetableRoutes from './modules/examcell/timetable.routes.js';
 import hallticketRoutes from './modules/examcell/hallticket.routes.js';
 import evaluationRoutes from './modules/examcell/evaluation.routes.js';
 import resultRoutes from './modules/examcell/result.routes.js';
+import cheatingRoutes from './modules/examcell/cheating.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -178,6 +179,13 @@ app.use('/api/v1/staff-complaints', staffComplaintsRoutes);
   // mounted before it for the same reason the others are: it applies its own
   // auth, and Express matches by mount order.
   app.use('/api/v1/examcell', resultRoutes);
+  // X-08 cheating cases owns every `/cheating-cases/*` path now, and those three
+  // endpoints used to be declared in examcellRoutes. Mounted before it for the
+  // same reason the others are: it applies its own auth, and Express matches
+  // by mount order. Its own route order matters too — `/cheating-cases/catalogue`
+  // and `/cheating-cases/history` are literals and must be declared before
+  // `/cheating-cases/:id`, or "catalogue" is read as a case id.
+  app.use('/api/v1/examcell', cheatingRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);
