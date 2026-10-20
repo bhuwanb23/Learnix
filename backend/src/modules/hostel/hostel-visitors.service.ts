@@ -759,7 +759,7 @@ export async function registerVisitor(
     data: {
       institutionId,
       recipientUserId: profile.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_VISITOR',
       title: opts.viaResident ? 'Visitor expected' : 'A visitor has arrived for you',
       body: opts.viaResident
         ? `${fields.name} (${fields.relation}) is expected${fields.expectedInAt ? ` at ${new Date(fields.expectedInAt).toLocaleString('en-IN')}` : ''}.`
@@ -929,7 +929,7 @@ export async function decideVisitor(
     data: {
       institutionId,
       recipientUserId: visitor.visitingStudent.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_VISITOR',
       title: `Visitor ${decision === 'APPROVED' ? 'confirmed' : 'refused'}`,
       body:
         decision === 'APPROVED'
@@ -1003,7 +1003,7 @@ export async function recordVisitorEntry(userId: string, institutionId: string, 
     data: {
       institutionId,
       recipientUserId: visitor.visitingStudent.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_VISITOR',
       title: 'Your visitor has arrived',
       body: `${visitor.name} (${visitor.relation}) has been let in.`,
       sourceModule: 'hostel',
@@ -1048,7 +1048,7 @@ export async function recordVisitorExit(userId: string, institutionId: string, i
     data: {
       institutionId,
       recipientUserId: visitor.visitingStudent.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_VISITOR',
       title: 'Your visitor has left',
       body: `${visitor.name} was checked out at ${when.toLocaleString('en-IN')}.`,
       sourceModule: 'hostel',

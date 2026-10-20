@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
@@ -21,6 +22,10 @@ import * as gatePasses from '../hostel/hostel-gate-passes.service.js';
 import * as visitorService from '../hostel/hostel-visitors.service.js';
 import * as mess from '../hostel/hostel-mess.service.js';
 import * as complaints from '../hostel/hostel-complaints.service.js';
+// The hostel's notification vocabulary, merged with the finance one so a resident's inbox spans
+// both desks. The student module already depends on the hostel module, so the direction is right.
+import { HOSTEL_NOTIFICATION_REGISTRY } from '../hostel/hostel-notifications.rules.js';
+import { FINANCE_REGISTRY, mergeRegistries } from '../accounts/notifications.rules.js';
 // The mess schemas live with the rest of the mess feature rather than being duplicated here, so a
 // change to what a valid rating looks like cannot be made in one module and missed in the other.
 import {
@@ -186,8 +191,40 @@ router.get('/transport', wrap(async (req, res) => {
 }));
 
 // S-19 Notifications
-router.get('/notifications', wrap(async (req, res) => {
-  res.json({ data: await service.listNotifications(req.auth!.userId, req.auth!.institutionId) });
+//
+// A student reads ONE inbox: their bills AND their hostel news. The two vocabularies are merged
+// here, at the route, because the student module already depends on the hostel module (for
+// complaints) and the hostel does NOT depend on the student.
+//
+// Without this merge a hostel announcement was INVISIBLE to the resident it was written for: the
+// shared inbox selects by category, and a hostel `type` had no finance category, so the row was
+// labelled and then left out. The fix is not to widen the finance desk's chip list — a finance
+// officer's inbox has no business growing eight hostel chips — it is to give the STUDENT an inbox
+// that spans both desks.
+const STUDENT_NOTIFICATION_REGISTRY = mergeRegistries(FINANCE_REGISTRY, HOSTEL_NOTIFICATION_REGISTRY);
+
+/** The resident's inbox query. `category` is free-form so an unknown one yields an empty list. */
+const studentNotificationQuerySchema = z.object({
+  category: z.string().trim().max(40).optional(),
+  unread: z.enum(['true', 'false']).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+});
+router.get('/notifications', validate(studentNotificationQuerySchema, 'query'), wrap(async (req, res) => {
+  const q = req.query as { category?: string; unread?: string; page?: string; pageSize?: string };
+  res.json({
+    data: await service.listNotifications(
+      req.auth!.userId,
+      req.auth!.institutionId,
+      {
+        category: q.category,
+        unreadOnly: q.unread === 'true',
+        page: q.page ? Number(q.page) : undefined,
+        pageSize: q.pageSize ? Number(q.pageSize) : undefined,
+      },
+      STUDENT_NOTIFICATION_REGISTRY,
+    ),
+  });
 }));
 
 router.post('/notifications/read-all', wrap(async (req, res) => {

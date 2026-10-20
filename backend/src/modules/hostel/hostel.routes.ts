@@ -23,7 +23,10 @@ import {
   complaintQuerySchema,
   complaintPolicySchema,
   complaintAssigneeQuerySchema,
-  broadcastSchema,
+  hostelBroadcastSchema,
+  hostelNotificationQuerySchema,
+  hostelNotificationReadSchema,
+  hostelNotificationPreferenceSchema,
   residentQuerySchema,
   contactSchema,
   roomQuerySchema,
@@ -41,6 +44,13 @@ import {
   visitorPolicySchema,
 } from './hostel.schemas.js';
 import * as service from './hostel.service.js';
+// The hostel desk's own notification stack: its eight categories, its inbox, and the composer.
+// Separate from the shared accounts inbox because a CATEGORY belongs to a desk — see the header of
+// `hostel-notifications.rules.ts`.
+import * as notifications from './hostel-notifications.service.js';
+// The warden's own profile surface. Separate from the shared accounts one because a HOSTEL profile
+// answers a different question — which blocks are yours, and what the hostel desk grants you.
+import * as profile from './hostel-profile.service.js';
 import * as visitors from './hostel-visitors.service.js';
 import * as complaints from './hostel-complaints.service.js';
 import {
@@ -899,34 +909,153 @@ router.post(
 );
 
 // H-10 notifications + broadcast + profile
+//
+// The hostel inbox. It reads the HOSTEL's own eight categories, not the finance desk's — a chip
+// that could show "a fee is due" next to "the water is off" would mean nothing. A resident reads
+// a DIFFERENT inbox: the shared student one, which merges both vocabularies.
 router.get(
   '/notifications',
+  validate(hostelNotificationQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listNotifications(req.auth!.userId, req.auth!.institutionId) });
+    const q = req.query as {
+      category?: string;
+      unread?: string;
+      important?: string;
+      page?: string;
+      pageSize?: string;
+    };
+    res.json({
+      data: await notifications.listHostelNotifications(req.auth!.userId, req.auth!.institutionId, {
+        category: q.category,
+        unreadOnly: q.unread === 'true',
+        importantOnly: q.important === 'true',
+        page: q.page ? Number(q.page) : undefined,
+        pageSize: q.pageSize ? Number(q.pageSize) : undefined,
+      }),
+    });
+  }),
+);
+
+/** The eight categories, with the vocabulary the screen renders from. */
+router.get(
+  '/notifications/catalogue',
+  wrap(async (_req, res) => {
+    res.json({ data: await notifications.hostelNotificationCatalogue() });
   }),
 );
 
 router.post(
   '/notifications/read-all',
   wrap(async (req, res) => {
-    res.json({ data: await service.markAllRead(req.auth!.userId, req.auth!.institutionId) });
+    res.json({ data: await notifications.markAllHostelNotificationsRead(req.auth!.userId, req.auth!.institutionId) });
   }),
 );
 
-router.post(
-  '/broadcasts',
-  validate(broadcastSchema),
+router.patch(
+  '/notifications/:id/read',
+  validate(idParamSchema, 'params'),
+  validate(hostelNotificationReadSchema),
   wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.createBroadcast(req.auth!.institutionId, req.auth!.userId, req.body),
+    res.json({
+      data: await notifications.setHostelNotificationRead(
+        String(req.params.id),
+        req.auth!.userId,
+        req.auth!.institutionId,
+        Boolean(req.body.read),
+      ),
     });
   }),
 );
 
+/**
+ * Compose a notice to a group of residents.
+ *
+ * ANNOUNCEMENT, MAINTENANCE and EMERGENCY are composable. The other five are facts the system
+ * reports, and a warden who could publish a gate-pass approval could forge one — so the category
+ * list is checked, not just the role.
+ */
+router.post(
+  '/notifications/broadcasts',
+  validate(hostelBroadcastSchema),
+  wrap(async (req, res) => {
+    const role = (req.auth!.roles ?? []).includes('ADMIN') ? 'ADMIN' : 'HOSTEL';
+    notifications.assertCanCompose(role);
+    res.status(201).json({
+      data: await notifications.composeHostelBroadcast(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+/**
+ * Raise the late-return alerts.
+ *
+ * On-demand rather than scheduled, like the alumni reminder sweep: the platform schedules nothing
+ * (see `verify-hostel/visitors.ts`), so "who is overdue" is answered by asking, and the answer is
+ * derived from live rows rather than remembered from a job that may not have run.
+ */
+router.post(
+  '/notifications/late-returns/sweep',
+  wrap(async (req, res) => {
+    res.json({
+      data: await notifications.raiseLateReturnAlerts(req.auth!.institutionId),
+    });
+  }),
+);
+
+// ── Profile ─────────────────────────────────────────────────────────────────
+//
+// Six questions, six endpoints. They are separate rather than one fat document because they change
+// at completely different rates: the profile is read once a session, the permissions when somebody
+// is promoted, the preferences when the warden mutes something, and the activity on every page of
+// the history.
+
+/** Who they are, and which blocks are theirs. */
 router.get(
   '/profile',
   wrap(async (req, res) => {
-    res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
+    res.json({ data: await profile.getHostelProfile(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+/** What their roles actually grant, read from the RBAC map. */
+router.get(
+  '/profile/permissions',
+  wrap(async (req, res) => {
+    res.json({ data: await profile.getHostelPermissions(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+/** Which of the eight hostel categories they have muted. */
+router.get(
+  '/profile/notification-preferences',
+  wrap(async (req, res) => {
+    res.json({ data: await profile.getHostelNotificationPreferences(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+router.patch(
+  '/profile/notification-preferences',
+  validate(hostelNotificationPreferenceSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await profile.updateHostelNotificationPreferences(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+/** Live sessions and recent actions — the account's safety and its history. */
+router.get(
+  '/profile/activity',
+  wrap(async (req, res) => {
+    res.json({ data: await profile.getHostelActivity(req.auth!.userId, req.auth!.institutionId) });
   }),
 );
 

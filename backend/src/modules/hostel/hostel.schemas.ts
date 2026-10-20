@@ -505,9 +505,66 @@ export const visitorPolicySchema = z
   })
   .strict();
 
-export const broadcastSchema = z.object({
-  audience: z.enum(['ALL_RESIDENTS', 'BLOCK_A', 'BLOCK_B', 'BLOCK_C', 'MESS_MEMBERS']),
-  templateKey: z.string().trim().min(2).max(60).default('HOSTEL_NOTICE'),
+/**
+ * Composing a notice to a group of residents.
+ *
+ * `category` is the COMPOSABLE category — ANNOUNCEMENT, MAINTENANCE or EMERGENCY. The other five
+ * categories are facts the system reports, and a warden who could publish a gate-pass approval
+ * could forge one, so the list is enumerated here rather than left open.
+ *
+ * `audience` is an OBJECT, not a string. The old shape was `'ALL_RESIDENTS' | 'BLOCK_A' | …`, which
+ * hard-coded the blocks into the schema: a fourth block could not be addressed, and the block was
+ * identified by a NAME that the caller had to know. It is now `{ kind, blockId? }`, so the block is
+ * identified by its id and a new block needs no schema change.
+ */
+export const hostelBroadcastSchema = z.object({
+  category: z.enum(['ANNOUNCEMENT', 'MAINTENANCE', 'EMERGENCY']),
+  audience: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('ALL_RESIDENTS') }).strict(),
+    z.object({ kind: z.literal('BLOCK'), blockId: z.string().min(1).max(64) }).strict(),
+    z.object({ kind: z.literal('MESS_MEMBERS') }).strict(),
+  ]),
   title: z.string().trim().min(3).max(120),
   body: z.string().trim().min(3).max(1000),
+}).strict();
+
+/** The hostel inbox query. `category` is free-form so an unknown one yields an empty list, not a 400. */
+export const hostelNotificationQuerySchema = z.object({
+  category: z.string().trim().max(40).optional(),
+  unread: z.enum(['true', 'false']).optional(),
+  important: z.enum(['true', 'false']).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).optional(),
 });
+
+/** Mark one notification read or unread. */
+export const hostelNotificationReadSchema = z.object({
+  read: z.boolean(),
+}).strict();
+
+/**
+ * Mute or unmute one of the eight hostel categories.
+ *
+ * The category is enumerated rather than free-form, so a typo is a 400 with the list of valid ids
+ * rather than a silently-stored preference for a category that does not exist — a mute nobody can
+ * see and nobody can undo. `EMERGENCY` is deliberately absent: the delivery path ignores its mute,
+ * so offering a toggle that does nothing would be a lie in the interface.
+ */
+export const hostelNotificationPreferenceSchema = z.object({
+  category: z.enum(['ANNOUNCEMENT', 'MAINTENANCE', 'GATE_PASS', 'LATE_RETURN', 'VISITOR', 'COMPLAINT', 'MESS']),
+  muted: z.boolean(),
+}).strict();
+
+/**
+ * @deprecated The flat `audience` string is gone. This is an ALIAS of `hostelBroadcastSchema`, kept
+ * so an old import does not break the build, and it is not accepted by any route.
+ *
+ * The old shape pinned the audience to `'ALL_RESIDENTS' | 'BLOCK_A' | 'BLOCK_B' | 'BLOCK_C' |
+ * 'MESS_MEMBERS'`, which hard-coded the blocks into the schema: a fourth block could not be
+ * addressed, and the block was identified by a NAME the caller had to know. The replacement takes an
+ * object audience and a composable category.
+ *
+ * An ALIAS rather than a copy, because a copy is a second definition of the same contract and the
+ * two would drift.
+ */
+export const broadcastSchema = hostelBroadcastSchema;

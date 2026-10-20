@@ -2,9 +2,9 @@ import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
 import { HOSTEL_RENT_MONTHLY_MINOR } from './hostel.constants.js';
-// The day arithmetic is owned by the mess rules module. Imported here so the broadcast audience
-// below resolves "today" the same way the mess screen does, rather than each rolling its own.
-import { dayRange, localToday } from './hostel-mess.rules.js';
+// The day arithmetic is owned by the mess rules module. It used to be imported here for the
+// broadcast audience, which now lives in `hostel-notifications.service.ts` — the module that owns
+// the hostel inbox — so the import moved with the code rather than being left behind.
 
 // The reads over room inventory live in `hostel-rooms.service.ts`, and the residents surface in
 // `hostel-residents.service.ts` / `hostel-contacts.service.ts`. Re-exported here so the routes
@@ -280,7 +280,7 @@ export async function allocateBed(
     data: {
       institutionId,
       recipientUserId: profile.userId,
-      type: 'HOSTEL',
+      type: 'HOSTEL_ANNOUNCEMENT',
       title: 'Room allocated',
       body: `You have been allotted bed ${room.number}-${freeBed.bedNo} (${room.block.name}). Rent dues have been generated.`,
       sourceModule: 'hostel',
@@ -354,7 +354,7 @@ export async function vacateBed(userId: string, institutionId: string, bedId: st
     data: {
       institutionId,
       recipientUserId: allocation.studentProfile.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_ANNOUNCEMENT',
       title: 'Room vacated',
       body: `Your allocation in ${allocation.bed.room.number} has been closed. Clear any outstanding rent dues at the office.`,
       sourceModule: 'hostel',
@@ -451,7 +451,7 @@ export async function transferResident(
     data: {
       institutionId,
       recipientUserId: current.studentProfile.user.id,
-      type: 'HOSTEL',
+      type: 'HOSTEL_ANNOUNCEMENT',
       title: 'Room transferred',
       body: `You have been transferred to bed ${target.number}-${freeBed.bedNo}. Rent dues carry over.`,
       sourceModule: 'hostel',
@@ -529,7 +529,7 @@ export async function markRentPaid(
     data: {
       institutionId,
       recipientUserId: due.allocation.studentProfile.user.id,
-      type: 'HOSTEL',
+      type: 'PAYMENT',
       title: 'Rent payment received',
       body: `Rent for ${due.month} (₹${rupees(due.amountMinor)}) received. Receipt ${receipt.receiptNo}.`,
       sourceModule: 'hostel',
@@ -588,100 +588,6 @@ export {
 // derived from the resident's CURRENT bed, so two live implementations of assign/resolve would have
 // meant the bug was still reachable from whichever route someone wired up next.
 export * from './hostel-complaints.service.js';
-
-// ── H-10 Notifications + broadcast + profile ────────────────
-export async function listNotifications(userId: string, institutionId: string) {
-  const rows = await prisma.notification.findMany({
-    where: { recipientUserId: userId, institutionId },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
-  return {
-    notifications: rows.map((n) => ({
-      id: n.id,
-      title: n.title,
-      body: n.body,
-      type: n.type,
-      read: n.readAt !== null,
-      createdAt: n.createdAt,
-    })),
-    unread: rows.filter((n) => n.readAt === null).length,
-  };
-}
-
-export async function markAllRead(userId: string, institutionId: string) {
-  const res = await prisma.notification.updateMany({
-    where: { recipientUserId: userId, institutionId, readAt: null },
-    data: { readAt: new Date() },
-  });
-  return { updated: res.count };
-}
-
-export async function createBroadcast(
-  institutionId: string,
-  senderUserId: string,
-  body: { audience: string; templateKey: string; title: string; body: string },
-) {
-  let recipientIds: string[] = [];
-  const all = await residentsOfBlock(institutionId);
-
-  if (body.audience === 'ALL_RESIDENTS') {
-    recipientIds = all.map((a) => a.studentProfile.user.id);
-  } else if (body.audience.startsWith('BLOCK_')) {
-    const name = `Block ${body.audience.slice(6)}`;
-    recipientIds = all
-      .filter((a) => a.bed.room.block.name === name)
-      .map((a) => a.studentProfile.user.id);
-  } else if (body.audience === 'MESS_MEMBERS') {
-    // RANGE, not `date: today` equality. This was the THIRD place a calendar day was compared as
-    // an instant, and the effect was that a broadcast to mess members resolved to zero recipients
-    // whenever the day's roll had not been written at exactly midnight - silently, with a 201 and
-    // a recipient count of 0. Same fix as `getMess`, and it shares the same helper.
-    const range = dayRange(localToday());
-    const att = await prisma.mealAttendance.findMany({
-      where: { institutionId, date: { gte: range.gte, lt: range.lt } },
-      select: { studentProfile: { select: { userId: true } } },
-    });
-    recipientIds = [...new Set(att.map((a) => a.studentProfile.userId))];
-  }
-
-  const broadcast = await prisma.broadcast.create({
-    data: {
-      institutionId,
-      senderUserId,
-      audienceJson: JSON.stringify({ audience: body.audience }),
-      templateKey: body.templateKey,
-      title: body.title,
-      body: body.body,
-      channels: 'IN_APP',
-      sentAt: new Date(),
-    },
-  });
-
-  if (recipientIds.length > 0) {
-    await prisma.notification.createMany({
-      data: recipientIds.map((rid) => ({
-        institutionId,
-        recipientUserId: rid,
-        type: 'BROADCAST',
-        title: body.title,
-        body: body.body,
-        sourceModule: 'hostel',
-      })),
-    });
-  }
-
-  await writeAudit({
-    actorUserId: senderUserId,
-    institutionId,
-    action: 'hostel.broadcast',
-    entityType: 'Broadcast',
-    entityId: broadcast.id,
-    after: { audience: body.audience, recipients: recipientIds.length },
-  });
-
-  return { id: broadcast.id, recipients: recipientIds.length };
-}
 
 export async function getProfile(userId: string, institutionId: string) {
   const user = await prisma.user.findFirst({

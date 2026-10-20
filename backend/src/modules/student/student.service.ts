@@ -1,5 +1,13 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict } from '../../lib/errors.js';
+// The registry shapes the resident's inbox. The finance one is the default; the route merges in the
+// hostel's so a resident sees their bills AND their block's notices.
+import {
+  categoryFor,
+  metaFor,
+  FINANCE_REGISTRY,
+  type NotificationRegistry,
+} from '../accounts/notifications.rules.js';
 
 // ── Helper: resolve student profile ────────────────────────
 async function requireStudent(userId: string, institutionId: string) {
@@ -695,14 +703,71 @@ export async function getTransportInfo(userId: string, institutionId: string) {
 }
 
 // ── S-19 Notifications ─────────────────────────────────────
-export async function listNotifications(userId: string, institutionId: string) {
-  const [items, unread] = await Promise.all([
-    prisma.notification.findMany({ where: { recipientUserId: userId, institutionId }, orderBy: { createdAt: 'desc' }, take: 50 }),
-    prisma.notification.count({ where: { recipientUserId: userId, institutionId, readAt: null } }),
-  ]);
+/**
+ * The resident's inbox.
+ *
+ * It used to be a raw dump: every row for the user, fifty of them, with the raw `type` string and
+ * no category, icon or colour. So a resident could not tell a hostel notice from a fee notice, could
+ * not filter to one, and — with 209 unread against a fifty-row page — had no way to reach the rest.
+ *
+ * It is now shaped by a REGISTRY, and the registry is the finance and hostel vocabularies merged.
+ * The merge happens at the route (see `student.routes.ts`), because the student module depends on
+ * the hostel module and not the other way round.
+ */
+export async function listNotifications(
+  userId: string,
+  institutionId: string,
+  filters: { category?: string; unreadOnly?: boolean; page?: number; pageSize?: number } = {},
+  registry: NotificationRegistry = FINANCE_REGISTRY,
+) {
+  const page = Math.max(1, Number(filters.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number(filters.pageSize) || 50));
+  const skip = (page - 1) * pageSize;
+
+  // Every row for the user, then shaped and filtered. The category is derived from a `type` STRING,
+  // so it cannot live in the Prisma `where` without a hardcoded IN list that drifts from the
+  // registry. The set is one person's notifications, so it is bounded in practice.
+  const all = await prisma.notification.findMany({
+    where: { recipientUserId: userId, institutionId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const shape = (n: (typeof all)[number]) => {
+    const cat = categoryFor(registry, n.type);
+    const meta = metaFor(registry, n.type);
+    return {
+      id: n.id,
+      type: n.type,
+      typeLabel: meta.label,
+      icon: meta.icon,
+      color: meta.color,
+      category: cat,
+      categoryLabel: cat ? registry.categories.find((c) => c.id === cat)?.label ?? cat : null,
+      title: n.title,
+      body: n.body,
+      read: n.readAt !== null,
+      readAt: n.readAt,
+      important: n.isImportant,
+      sourceModule: n.sourceModule,
+      createdAt: n.createdAt,
+    };
+  };
+
+  const shaped = all.map(shape);
+  const filtered = shaped.filter((n) => {
+    if (filters.category && n.category !== filters.category) return false;
+    if (filters.unreadOnly && n.read) return false;
+    return true;
+  });
+
   return {
-    unread,
-    notifications: items.map(n => ({ id: n.id, type: n.type, title: n.title, body: n.body, read: n.readAt !== null, createdAt: n.createdAt })),
+    // Counted over the WHOLE inbox, not the page, so the badge never changes because the resident
+    // scrolled — and never disagrees with the number of unread they actually have.
+    unread: shaped.filter((n) => !n.read).length,
+    importantUnread: shaped.filter((n) => n.important && !n.read).length,
+    total: filtered.length,
+    notifications: filtered.slice(skip, skip + pageSize),
+    pagination: { page, pageSize, total: filtered.length, hasMore: skip + pageSize < filtered.length },
   };
 }
 
