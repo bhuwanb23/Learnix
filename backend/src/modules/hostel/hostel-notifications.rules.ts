@@ -44,7 +44,27 @@
  * they still appear in a sensible place rather than being invisible, and so the migration is not
  * destructive. New rows never use it.
  */
-import type { NotificationRegistry } from '../accounts/notifications.rules.js';
+import {
+  TYPE_META as PLATFORM_TYPE_META,
+  type NotificationRegistry,
+  type TypeMeta,
+} from '../accounts/notifications.rules.js';
+
+/**
+ * The chrome for a type, read from the platform registry.
+ *
+ * The platform registry is where a type's label, icon and colour live for every desk, so a hostel row
+ * looks the same wherever it is rendered. The hostel adds the CATEGORY, which is the part only the
+ * owning desk may decide.
+ */
+function platformChrome(type: string): Omit<HostelTypeMeta, 'category' | 'bypassesMute'> {
+  const meta = PLATFORM_TYPE_META[type] as TypeMeta | undefined;
+  return {
+    label: meta?.label ?? type.replace(/_/g, ' ').toLowerCase(),
+    icon: meta?.icon ?? 'notifications-outline',
+    color: meta?.color ?? '#0284c7',
+  };
+}
 
 export type HostelCategoryId =
   | 'ANNOUNCEMENT'
@@ -165,69 +185,62 @@ export interface HostelTypeMeta {
  * Every type the hostel writes is registered here. A type that is NOT here is a bug, and the
  * fallback below turns it into a visible row with generic chrome rather than a silent drop — the
  * failure mode nobody notices until a resident says they were never told.
+ *
+ * THE CHROME COMES FROM THE PLATFORM REGISTRY, NOT FROM HERE
+ * -------------------------------------------------------
+ * The label, icon and colour are read from the platform's own type registry
+ * (`accounts/notifications.rules.ts`), which is where a type's chrome lives for EVERY desk — so a
+ * hostel row looks the same in the warden's inbox, in the resident's inbox and in a future one.
+ * What lives HERE is the part only the hostel may decide: which of the eight categories a type
+ * belongs to, and whether it bypasses a mute.
+ *
+ * Declaring the chrome in both places would be two copies of one vocabulary, and the two would drift
+ * the first time somebody changed a colour.
  */
 export const HOSTEL_TYPE_META: Record<string, HostelTypeMeta> = {
   // ── Composed by the warden ──
   HOSTEL_ANNOUNCEMENT: {
-    label: 'Hostel announcement',
+    ...platformChrome('HOSTEL_ANNOUNCEMENT'),
     category: 'ANNOUNCEMENT',
-    icon: 'megaphone-outline',
-    color: '#0284c7',
   },
   HOSTEL_MAINTENANCE: {
-    label: 'Maintenance alert',
+    ...platformChrome('HOSTEL_MAINTENANCE'),
     category: 'MAINTENANCE',
-    icon: 'construct-outline',
-    color: '#d97706',
   },
   HOSTEL_EMERGENCY: {
-    label: 'Emergency notice',
+    ...platformChrome('HOSTEL_EMERGENCY'),
     category: 'EMERGENCY',
-    icon: 'warning-outline',
-    color: '#dc2626',
     bypassesMute: true,
   },
 
   // ── Noticed by the system ──
   HOSTEL_GATE_PASS: {
-    label: 'Gate pass update',
+    ...platformChrome('HOSTEL_GATE_PASS'),
     category: 'GATE_PASS',
-    icon: 'exit-outline',
-    color: '#2563eb',
   },
   HOSTEL_LATE_RETURN: {
-    label: 'Late return',
+    ...platformChrome('HOSTEL_LATE_RETURN'),
     category: 'LATE_RETURN',
-    icon: 'time-outline',
-    color: '#ea580c',
   },
   HOSTEL_VISITOR: {
-    label: 'Visitor update',
+    ...platformChrome('HOSTEL_VISITOR'),
     category: 'VISITOR',
-    icon: 'people-outline',
-    color: '#0891b2',
   },
   HOSTEL_COMPLAINT: {
-    label: 'Complaint update',
+    ...platformChrome('HOSTEL_COMPLAINT'),
     category: 'COMPLAINT',
-    icon: 'chatbubble-ellipses-outline',
-    color: '#7c3aed',
   },
   HOSTEL_MESS: {
-    label: 'Mess update',
+    ...platformChrome('HOSTEL_MESS'),
     category: 'MESS',
-    icon: 'restaurant-outline',
-    color: '#db2777',
   },
 
   // ── Legacy ──
   // Rows written before the eight categories existed. Mapped to ANNOUNCEMENT so they land
   // somewhere a reader can make sense of, rather than being invisible.
   HOSTEL: {
-    label: 'Hostel update',
+    ...platformChrome('HOSTEL'),
     category: 'ANNOUNCEMENT',
-    icon: 'bed-outline',
-    color: '#0284c7',
   },
 };
 

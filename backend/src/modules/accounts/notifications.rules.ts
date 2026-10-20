@@ -153,6 +153,30 @@ export const TYPE_META: Record<string, TypeMeta> = {
   VENUE: { label: 'Venue booking', category: null, icon: 'business-outline', color: '#64748b' },
   EQUIPMENT: { label: 'Equipment', category: null, icon: 'construct-outline', color: '#64748b' },
   MAINTENANCE: { label: 'Maintenance', category: null, icon: 'build-outline', color: '#64748b' },
+
+  // ── The hostel's eight types ──
+  //
+  // THIS IS THE PLATFORM REGISTRY, and it is where a type's CHROME lives — the label, the icon and
+  // the colour a screen draws. The hostel's own module owns its CATEGORIES (which of the eight a type
+  // belongs to), and the two are kept apart on purpose: the chrome must be identical wherever the row
+  // is rendered, and the category is what makes a row filterable, which only the owning desk decides.
+  //
+  // `category: null` here, so the FINANCE inbox leaves them out — an accounts officer's chip list is
+  // not the hostel's. The hostel registry (which the student route MERGES with this one) maps them to
+  // their real categories, so a resident sees "Complaint update" rather than a raw type string, and the
+  // finance desk sees nothing.
+  //
+  // A type missing from here is not a row that vanishes — it falls back to the SYSTEM chrome. But it
+  // IS a row labelled wrongly, and `verify-notifications.ts` asserts that every type the database
+  // actually holds is registered here, because that is the only way to notice.
+  HOSTEL_ANNOUNCEMENT: { label: 'Hostel announcement', category: null, icon: 'megaphone-outline', color: '#0284c7' },
+  HOSTEL_MAINTENANCE: { label: 'Maintenance alert', category: null, icon: 'construct-outline', color: '#d97706' },
+  HOSTEL_EMERGENCY: { label: 'Emergency notice', category: null, icon: 'warning-outline', color: '#dc2626' },
+  HOSTEL_GATE_PASS: { label: 'Gate pass update', category: null, icon: 'exit-outline', color: '#2563eb' },
+  HOSTEL_LATE_RETURN: { label: 'Late return', category: null, icon: 'time-outline', color: '#ea580c' },
+  HOSTEL_VISITOR: { label: 'Visitor update', category: null, icon: 'people-outline', color: '#0891b2' },
+  HOSTEL_COMPLAINT: { label: 'Complaint update', category: null, icon: 'chatbubble-ellipses-outline', color: '#7c3aed' },
+  HOSTEL_MESS: { label: 'Mess update', category: null, icon: 'restaurant-outline', color: '#db2777' },
   MENTORSHIP: { label: 'Mentorship', category: null, icon: 'people-outline', color: '#64748b' },
   SOCIAL: { label: 'Social', category: null, icon: 'happy-outline', color: '#64748b' },
   DONATION: { label: 'Donation', category: null, icon: 'gift-outline', color: '#64748b' },
