@@ -21,6 +21,13 @@ import GatePassesModule from './pages/gate_passes/gate_passes';
 import ComplaintsModule from './pages/complaints/complaints';
 import VisitorsModule from './pages/visitors/visitors';
 import NotificationsScreen from './pages/notifications/notifications';
+// The profile's own sub-screens. They are separate files because each one is a real screen with
+// real data, not a section of the profile — and a menu row that navigates nowhere is the exact
+// dead button this shell already had.
+import MyPermissionsScreen from './pages/profile/my_permissions/my_permissions';
+import ChangePasswordScreen from './pages/profile/change_password/change_password';
+import ActivityScreen from './pages/profile/activity/activity';
+import HelpSupportScreen from './pages/profile/help_support/help_support';
 
 // Import theme
 import { COLORS } from '../../constants/theme';
@@ -37,6 +44,13 @@ const FEATURE_MODULES = {
   Complaints: { title: 'Complaints', component: ComplaintsModule },
   Visitors: { title: 'Visitors', component: VisitorsModule },
   Notifications: { title: 'Notifications', component: NotificationsScreen },
+  // The profile's sub-screens, reachable from the profile tab. They live in the same registry
+  // because they are opened the same way — a `navigate` that sets `currentScreen` — and a second
+  // registry would need a second branch in `renderContent` for no reason.
+  MyPermissions: { title: 'Access & Permissions', component: MyPermissionsScreen },
+  ChangePassword: { title: 'Change Password', component: ChangePasswordScreen },
+  Activity: { title: 'Sign-in history', component: ActivityScreen },
+  HelpSupport: { title: 'Help & Support', component: HelpSupportScreen },
 };
 
 const TAB_TITLES = {
@@ -134,7 +148,20 @@ export default function HostelScreen({ navigation }) {
           />
         );
       case 'Profile':
-        return <HostelProfile navigation={{ goBack: handleBackPress }} />;
+        // `navigate` is what makes the profile's menu rows work. It was missing here, so every row
+        // was a dead button — the screen called `navigation.navigate(...)` on an object that had only
+        // `goBack`, and the optional chaining swallowed the failure. Now the rows open the
+        // sub-screens registered in `FEATURE_MODULES`.
+        return (
+          <HostelProfile
+            navigation={{
+              navigate: (screen) => setCurrentScreen(screen),
+              goBack: handleBackPress,
+              openModule: (key) => setCurrentScreen(key),
+              switchTab: (tabId) => handleTabChange(tabId),
+            }}
+          />
+        );
       case 'Dashboard':
       default:
         return (

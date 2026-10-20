@@ -731,6 +731,18 @@ export const hostelApi = {
   // On-demand, not scheduled: the platform schedules nothing, so "who is overdue" is answered by
   // asking, and the answer is derived from live rows.
   sweepLateReturns: () => api.post('/hostel/notifications/late-returns/sweep'),
+  // ---- Profile (the warden's own) ---------------------------------------------
+  // Six questions, six endpoints, because they change at different rates: the profile is read
+  // once a session, the permissions when somebody is promoted, the preferences when a mute is
+  // toggled, and the activity on every page of the history.
+  profile: () => api.get('/hostel/profile'),
+  profilePermissions: () => api.get('/hostel/profile/permissions'),
+  profileNotificationPreferences: () => api.get('/hostel/profile/notification-preferences'),
+  // The mute is written THROUGH. A toggle held only in local state is forgotten on unmount, and a
+  // person who believes they turned something off is worse off than one who never could.
+  saveProfileNotificationPreference: (payload) =>
+    api.patch('/hostel/profile/notification-preferences', payload),
+  profileActivity: () => api.get('/hostel/profile/activity'),
   complaints: (params = {}) => {
     const qs = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
