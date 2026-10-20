@@ -171,10 +171,116 @@ model CheatingCase {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
+  // ── The incident, as reported ──
+  //
+  // `issue` is the ONE-LINE label the queue shows ("Frequent gaze deviation detected"). `description`
+  // is the incident narrative the reporter actually wrote. They are different facts and the queue
+  // needs the first while the committee needs the second, so they are two columns rather than one
+  // field used for both.
+  description      String?
+
+  /// WHERE the incident happened, and WHO was watching. Both are DERIVED from
+  /// `ExamRoomAllocation` — the room allocation for the slot already carries the room and the
+  /// invigilator — but they are SNAPSHOTTED here, because a case is a historical document: the room
+  /// roster for an exam in March is not the room roster today, and a case decided in June must still
+  /// say which room it happened in and who was on duty.
+  roomId           String? // scalar → room master
+  invigilatorUserId String? // scalar → users.id
+  reportedByUserId  String? // scalar → users.id — who raised it
+
+  /// WHAT KIND of malpractice this is. `riskLevel` is how SEVERE it is; `classification` is what it
+  /// IS. They are independent: a dismissed case can be HIGH risk, and a confirmed case can be LOW
+  /// risk. Collapsing them into one field is why "confirmed" and "high risk" get used
+  /// interchangeably on a screen.
+  classification   String? // IMPERSONATION | HIDDEN_DEVICE | COPY_PASTE | ANSWER_SIMILARITY | TIMING_PATTERN | LOOKING_AROUND | POSSESSION | OTHER
+
+  /// The student's own account of what happened. It is recorded SEPARATELY from the incident
+  /// description because they are two different accounts of the same event, and a committee that
+  /// cannot see both cannot judge.
+  studentStatement String?
+  statementAt      DateTime?
+  statementByUserId String? // scalar → users.id
+
+  /// The committee's finding. `committeeUserIds` is a JSON list of user ids rather than a join table:
+  /// a committee is a small, ad-hoc group attached to ONE case, and nothing in the platform queries
+  /// "every case this person sat on" — so a table would be a relationship nothing ever traverses.
+  committeeUserIds String? // JSON array of user ids
+  reviewNote       String?
+  reviewedAt       DateTime?
+
+  /// The outcome. `penalty` is the consequence, and it is a separate field from `status` because
+  /// "confirmed" says what was decided and "penalty" says what it costs.
+  decisionNote     String?
+  penalty          String? // WARNING | REPEAT_OFFENDER | SUSPENSION | CANCEL_EXAM | EXCLUSION | NONE
+  penaltyDetail    String?
+  decidedAt        DateTime?
+  decidedByUserId  String? // scalar → users.id
+
+  /// The student has been told. A case that was decided and never communicated is a case the
+  /// student cannot appeal, so the fact of telling them is recorded rather than assumed.
+  notifiedStudentAt DateTime?
+
   examSlot       ExamSlot       @relation(fields: [examSlotId], references: [id])
   studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
 
+  /// The timeline and the evidence. Both are collections OF a case, so they cascade with it.
+  events   CheatingCaseEvent[]
+  evidence CheatingCaseEvidence[]
+
   @@index([examSlotId])
   @@index([studentProfileId])
+  @@index([status])
+  @@index([riskLevel])
+  @@index([classification])
+  @@index([reportedByUserId])
   @@map("cheating_cases")
+}
+
+/// Every state change on a case, in order.
+///
+/// A case moves through several hands — reported, reviewed by the committee, a statement taken, a
+/// decision made, the student told — and each of those is something a person did, at a time, on
+/// purpose. A single `status` column cannot say WHEN or BY WHOM, and a case file that cannot say
+/// who reviewed it is not reviewable.
+model CheatingCaseEvent {
+  id           String   @id @default(cuid())
+  cheatingCaseId String
+  /// REPORTED | CLASSIFIED | STATEMENT_TAKEN | COMMITTEE_REVIEW | DECIDED | ESCALATED | REOPENED |
+  /// NOTIFIED | EVIDENCE_ADDED | NOTE_ADDED
+  type         String
+  /// The user who did it. NULL for a derived event (a case ageing into escalation) — recorded, but
+  /// not attributable to a person.
+  actorUserId  String?
+  note         String?
+  /// What changed, as JSON. `{"status":"CONFIRMED","penalty":"SUSPENSION"}` and so on, so the timeline
+  /// can show the BEFORE and the AFTER without every event type needing its own columns.
+  detailJson   String?
+  createdAt    DateTime @default(now())
+
+  cheatingCase CheatingCase @relation(fields: [cheatingCaseId], references: [id], onDelete: Cascade)
+
+  @@index([cheatingCaseId, createdAt])
+  @@map("cheating_case_events")
+}
+
+/// A document attached to a case as evidence.
+///
+/// The FILE itself lives in the platform's `File` table — that is where every uploaded document in
+/// this app already lives, with its mime type, size and storage key. This table records what the
+/// file IS in the context of a case: which case, which kind of evidence, who attached it, and when.
+model CheatingCaseEvidence {
+  id           String   @id @default(cuid())
+  cheatingCaseId String
+  fileId       String
+  /// SCREENSHOT | SCRIPT | DEVICE_PHOTO | REPORT | STATEMENT_DOCUMENT | OTHER
+  kind         String   @default("OTHER")
+  note         String?
+  uploadedByUserId String?
+  createdAt    DateTime @default(now())
+
+  cheatingCase CheatingCase @relation(fields: [cheatingCaseId], references: [id], onDelete: Cascade)
+  file         File        @relation(fields: [fileId], references: [id])
+
+  @@index([cheatingCaseId])
+  @@map("cheating_case_evidence")
 }

@@ -34,6 +34,10 @@ model File {
   // Back-relation for ScholarshipApplicationDocument.file — a student's income
   // proof or marks sheet is a real File so the desk can open it.
   scholarshipDocuments ScholarshipApplicationDocument[]
+  // Back-relation for CheatingCaseEvidence.file. The evidence table records what a document IS in
+  // the context of a case; the file itself, its mime type and its storage key stay here, where every
+  // other uploaded document in the platform already lives.
+  cheatingEvidence  CheatingCaseEvidence[]
   @@map("files")
 }
 
