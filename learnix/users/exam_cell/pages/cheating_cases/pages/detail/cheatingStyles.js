@@ -1,0 +1,190 @@
+/**
+ * X-08 — Cheating cases: the case file's styles.
+ * (docs/users/05 §3.6)
+ *
+ * The styles live apart from the screen because a file that holds both the layout and the palette
+ * is a file where a colour change means scrolling past three hundred lines to find the other three
+ * that go with it. The names are the ones the screen uses, so this file reads as the palette it
+ * serves rather than as a wall of hex codes.
+ */
+import { StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+  body: { paddingBottom: 40 },
+  flex: { flex: 1 },
+
+  hero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  heroAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  heroInitial: { fontSize: 19, fontWeight: '800' },
+  heroName: { fontSize: 17, fontWeight: '700', color: '#0f172a' },
+  heroMeta: { fontSize: 12, color: SLATE, marginTop: 1 },
+  heroBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 6 },
+  heroBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  heroBadgeText: { fontSize: 9.5, fontWeight: '800' },
+
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 9999,
+  },
+  statusPillText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#eef2f7',
+    padding: 14,
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  actionsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#eef2f7',
+    padding: 14,
+    marginHorizontal: 20,
+    marginBottom: 14,
+  },
+
+  issueText: { fontSize: 14, fontWeight: '600', color: '#0f172a', lineHeight: 20 },
+  descriptionText: { fontSize: 12.5, color: '#475569', marginTop: 6, lineHeight: 19 },
+  muted: { fontSize: 12, color: MUTED, lineHeight: 18 },
+  metaRow: { flexDirection: 'row', gap: 14, marginTop: 10 },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { fontSize: 11, color: MUTED },
+
+  evidenceRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 6 },
+  evidenceIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    backgroundColor: THEME + '14',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  evidenceName: { fontSize: 12.5, fontWeight: '600', color: '#0f172a' },
+  evidenceMeta: { fontSize: 10.5, color: MUTED, marginTop: 1 },
+
+  statementText: { fontSize: 12.5, color: '#475569', lineHeight: 19 },
+  statementMeta: { fontSize: 10.5, color: MUTED, marginTop: 5 },
+  decisionNote: { fontSize: 12.5, color: '#475569', marginTop: 8, lineHeight: 19 },
+
+  eventRow: { flexDirection: 'row', gap: 10 },
+  eventRail: { alignItems: 'center', width: 22 },
+  eventDot: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eventLine: { width: 2, flex: 1, backgroundColor: '#eef2f7', marginVertical: 2 },
+  eventBody: { flex: 1, paddingBottom: 14 },
+  eventLabel: { fontSize: 12, fontWeight: '700', color: '#0f172a' },
+  eventNote: { fontSize: 11.5, color: '#475569', marginTop: 2, lineHeight: 16 },
+  eventTime: { fontSize: 10, color: MUTED, marginTop: 2 },
+
+  actionRow: { gap: 8, marginTop: 4 },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+  },
+  actionBtnText: { fontSize: 12.5, fontWeight: '700' },
+  linkAction: { fontSize: 11.5, fontWeight: '700', color: THEME },
+
+  sheetBackdrop: { flex: 1, backgroundColor: '#00000080', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '88%',
+    paddingTop: 16,
+  },
+  sheetHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  sheetTitle: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
+  sheetBody: { paddingHorizontal: 20, paddingBottom: 10 },
+  sheetLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: SLATE,
+    marginTop: 14,
+    marginBottom: 5,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  sheetHint: { fontSize: 11, color: MUTED, marginBottom: 4, lineHeight: 16 },
+  sheetInput: {
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 12.5,
+    color: '#0f172a',
+    backgroundColor: '#f8fafc',
+    marginBottom: 4,
+  },
+  sheetInputTall: { minHeight: 84, textAlignVertical: 'top' },
+  choices: { gap: 6 },
+  choice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#fff',
+  },
+  choiceOn: { borderColor: THEME, backgroundColor: THEME + '0D' },
+  choiceLabel: { fontSize: 12.5, fontWeight: '600', color: '#0f172a' },
+  choiceLabelOn: { color: THEME },
+  choiceHint: { fontSize: 10.5, color: MUTED, marginTop: 1, lineHeight: 15 },
+  sheetFoot: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#eef2f7',
+  },
+  sheetCancel: { paddingHorizontal: 16, paddingVertical: 10 },
+  sheetCancelText: { fontSize: 13, fontWeight: '600', color: SLATE },
+  sheetSubmit: {
+    backgroundColor: THEME,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  sheetSubmitText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+});
