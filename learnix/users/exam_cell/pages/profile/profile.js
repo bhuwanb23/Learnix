@@ -1,179 +1,405 @@
-import React, { useState, useEffect, useCallback } from 'react';
+/**
+ * X-10 — The exam officer's profile.
+ * Docs: 05-exam-cell.md §3.8
+ *
+ * WAS A MOCK, AND A MENU OF DEAD ENDS. This screen fetched `GET /examcell/profile` and got a name, a
+ * designation and three counts. The header then printed a HARDCODED "Exam Cell • Examinations
+ * Department" line, and the stats row showed "Hall Tickets" and "Cases" — which were the
+ * INSTITUTION's totals, presented as if they were the officer's own work. Two notification toggles
+ * were `useState` and died on unmount, so a mute that silently forgot itself was worse than no mute
+ * at all: the person believed they had turned it off.
+ *
+ * And the four menu rows did nothing:
+ *
+ *   Edit Profile     → an alert saying "Update your name, title, and contact details."
+ *   Exam Reports     → an alert saying "Season-wise exam analytics: pass rates, grade distribution."
+ *   Help & Support   → an alert saying "Contact the ERP support team."
+ *   Logout           → an alert saying "Returning to login", and then nothing. The token stayed.
+ *
+ * WHAT IT IS NOW
+ * --------------
+ * Seven questions, each answered by the server and each on its own endpoint, because they change at
+ * completely different rates:
+ *
+ *   1. WHO IS THIS?         the profile — name, designation, employee number, contact
+ *   2. WHERE DO THEY WORK?   the institution and the department they belong to
+ *   3. WHAT IS THEIRS?      the exams they created, the duties they hold, the evaluations they own
+ *   4. WHAT MAY THEY DO?    the permissions their roles actually grant
+ *   5. WHAT DO THEY WANT?   which notifications they have muted
+ *   6. IS THE ACCOUNT SAFE? password, live sessions, sign-out-everywhere
+ *   7. WHAT HAVE THEY DONE? recent actions, and when they last signed in
+ *
+ * EVERY FIGURE IS DERIVED ON THE SERVER
+ * ---------------------------------------
+ * The screen re-derives nothing. A client-side copy of a rule the server owns is the bug this
+ * feature had before: a count that cannot go stale, because it was never written down.
+ */
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   Switch,
   Alert,
-  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '../../../../constants/theme';
+import { AnimatedCard, SkeletonStatRow, SkeletonCard } from '../../../../components/ui';
+import { examcellApi, authApi } from '../../../../services/api';
+import { styles } from './profileUi';
 
-import { examcellApi } from '../../../../services/api';
+function timeAgo(iso) {
+  if (!iso) return 'never';
+  const h = Math.floor((Date.now() - new Date(iso).getTime()) / 3600000);
+  if (h < 1) return 'just now';
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
+/**
+ * The menu rows all open a real screen now.
+ *
+ * Each key is registered in `exam_cell.js`'s `FEATURE_MODULES`. A key that is not registered fails
+ * SILENTLY — `renderContent` finds nothing and drops the controller back on the hub with no error
+ * anywhere — so `audit-examcell-profile-ui.ts` asserts every one of them is present.
+ */
 const MENU_ITEMS = [
-  { id: 'edit', label: 'Edit Profile', icon: 'create-outline', color: '#2563eb' },
-  { id: 'reports', label: 'Exam Reports', icon: 'analytics-outline', color: '#059669' },
-  { id: 'help', label: 'Help & Support', icon: 'help-circle-outline', color: '#d97706' },
-  { id: 'logout', label: 'Logout', icon: 'log-out-outline', color: '#dc2626' },
+  {
+    key: 'ExamPermissions',
+    icon: 'shield-checkmark-outline',
+    label: 'Access & Permissions',
+    sub: 'What your role allows',
+    color: '#d97706',
+  },
+  {
+    key: 'ExamActivity',
+    icon: 'time-outline',
+    label: 'Sign-in history',
+    sub: 'Sessions and recent actions',
+    color: '#0891b2',
+  },
+  {
+    key: 'ExamChangePassword',
+    icon: 'lock-closed-outline',
+    label: 'Change Password',
+    sub: 'Update your sign-in',
+    color: '#7c3aed',
+  },
+  {
+    key: 'ExamHelpSupport',
+    icon: 'help-circle-outline',
+    label: 'Help & Support',
+    sub: 'How this module works',
+    color: '#2563eb',
+  },
 ];
 
 export default function ExamProfile({ navigation }) {
   const [profile, setProfile] = useState(null);
+  const [prefs, setPrefs] = useState(null);
+  const [permissions, setPermissions] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [notifications, setNotifications] = useState(true);
-  const [resultAlerts, setResultAlerts] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(null);
 
-  const fetchData = useCallback(async () => {
+  const load = useCallback(async (mode) => {
     try {
-      const res = await examcellApi.profile();
-      setProfile(res);
+      if (mode === 'refresh') setRefreshing(true);
+      else setLoading(true);
+      setError(null);
+      const [p, pref, perm] = await Promise.all([
+        examcellApi.profile(),
+        examcellApi.profileNotificationPreferences(),
+        examcellApi.profilePermissions(),
+      ]);
+      setProfile(p);
+      setPrefs(pref);
+      setPermissions(perm);
     } catch (e) {
-      // silent
+      setError(e.message || 'Could not load your profile');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.loadingText}>Loading profile…</Text>
-      </View>
-    );
-  }
-
-  const handleMenuPress = (item) => {
-    if (item.id === 'edit') {
-      Alert.alert('Edit Profile', 'Update your name, title, and contact details.');
-    } else if (item.id === 'reports') {
-      Alert.alert('Exam Reports', 'Season-wise exam analytics: pass rates, grade distribution, incidents.');
-    } else if (item.id === 'help') {
-      Alert.alert('Help & Support', 'Contact the ERP support team or view documentation.');
-    } else if (item.id === 'logout') {
-      Alert.alert('Logout', 'Sign out of the Exam Cell account?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => Alert.alert('Logged Out', 'Returning to login.') },
-      ]);
+  // The mute is written THROUGH, not held in local state. A toggle that only exists until the
+  // screen unmounts is a toggle that lies to the person who used it.
+  const toggleMute = async (category, next) => {
+    setSaving(category.id);
+    const previous = prefs;
+    setPrefs({
+      ...prefs,
+      categories: prefs.categories.map((c) => (c.id === category.id ? { ...c, muted: next } : c)),
+    });
+    try {
+      await examcellApi.saveProfileNotificationPreference({ category: category.id, muted: next });
+      load('refresh');
+    } catch (e) {
+      setPrefs(previous);
+      Alert.alert('Could not save that', e.message || 'Try again');
+    } finally {
+      setSaving(null);
     }
   };
 
-  const initials = profile?.name ? profile.name.split(' ').map((n) => n[0]).join('').substring(0, 2) : 'EC';
-  const stats = profile?.stats ?? {};
+  const signOutEverywhere = () => {
+    Alert.alert(
+      'Sign out of every other device?',
+      'Your own session stays signed in. Every other device is signed out immediately.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign out everywhere',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const res = await authApi.revokeAllSessions();
+              Alert.alert(
+                'Done',
+                res?.revoked ? `${res.revoked} session(s) ended.` : 'No other sessions were live.',
+              );
+            } catch (e) {
+              Alert.alert('Could not do that', e.message || 'Try again');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  /**
+   * Logout — and it ACTUALLY LOGS OUT.
+   *
+   * The old screen showed an alert that said "Returning to login" and then did nothing at all: the
+   * refresh token stayed in storage and the officer stayed signed in. A logout that does not log
+   * out is worse than no logout, because the officer believes they signed out.
+   */
+  const logout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await authApi.logout();
+          } catch (e) {
+            // The local session is cleared regardless: a failed server call must not leave the
+            // person stranded in a signed-in app.
+            Alert.alert('Signed out locally', e.message || 'The server could not be reached.');
+          }
+        },
+      },
+    ]);
+  };
+
+  if (loading && !profile) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.pad}>
+        <SkeletonStatRow />
+        <SkeletonCard />
+        <SkeletonCard />
+      </ScrollView>
+    );
+  }
+
+  const s = profile?.staff;
+  const r = profile?.responsibilities;
+  const dept = profile?.department;
+  const inst = profile?.institution;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      <View style={styles.profileCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-        <Text style={styles.name}>{profile?.name || 'Exam Cell User'}</Text>
-        <Text style={styles.role}>{profile?.designation || 'Controller of Examinations'}</Text>
-        <Text style={styles.meta}>Exam Cell • Examinations Department</Text>
-        <View style={styles.badgeRow}>
-          {profile?.email && (
-            <View style={styles.badge}>
-              <Ionicons name="mail-outline" size={12} color="#2563eb" />
-              <Text style={[styles.badgeText, { color: '#2563eb' }]}>{profile.email}</Text>
-            </View>
-          )}
-          {profile?.employeeNo && (
-            <View style={styles.badge}>
-              <Ionicons name="id-card-outline" size={12} color="#059669" />
-              <Text style={[styles.badgeText, { color: '#059669' }]}>{profile.employeeNo}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-
-      <Text style={styles.sectionLabel}>Exam Stats</Text>
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>{stats.totalExams ?? 0}</Text>
-          <Text style={styles.statLabel}>Exams Created</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>{(stats.totalHallTickets ?? 0).toLocaleString()}</Text>
-          <Text style={styles.statLabel}>Hall Tickets</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statValue}>{stats.totalCheatingCases ?? 0}</Text>
-          <Text style={styles.statLabel}>Cases</Text>
-        </View>
-      </View>
-
-      <Text style={styles.sectionLabel}>Preferences</Text>
-      <View style={styles.prefCard}>
-        <View style={styles.prefRow}>
-          <View style={styles.prefIcon}>
-            <Ionicons name="notifications-outline" size={18} color="#2563eb" />
+    <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.pad}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load('refresh')} />}
+      >
+        <LinearGradient colors={['#2563eb', '#1d4ed8']} style={styles.header}>
+          <View style={styles.avatar}>
+            <Ionicons name="school" size={38} color="#fff" />
           </View>
-          <Text style={styles.prefLabel}>App Notifications</Text>
-          <Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: '#e2e8f0', true: '#bfdbfe' }} thumbColor={notifications ? '#2563eb' : '#f1f5f9'} />
-        </View>
-        <View style={styles.prefDivider} />
-        <View style={styles.prefRow}>
-          <View style={styles.prefIcon}>
-            <Ionicons name="trophy-outline" size={18} color="#059669" />
+          <Text style={styles.name}>{profile?.user?.fullName ?? '—'}</Text>
+          <Text style={styles.designation}>{s?.designation ?? 'Controller of Examinations'}</Text>
+          {s?.employeeNo ? <Text style={styles.employee}>Employee {s.employeeNo}</Text> : null}
+          <Text style={styles.where}>
+            {inst?.name ? `${inst.name} • ` : ''}
+            {dept?.name ? dept.name : 'Examinations Department'}
+          </Text>
+          <View style={styles.roleRow}>
+            {(profile?.roles ?? []).map((role) => (
+              <View key={role} style={styles.rolePill}>
+                <Text style={styles.rolePillText}>{role}</Text>
+              </View>
+            ))}
           </View>
-          <Text style={styles.prefLabel}>Result Publish Alerts</Text>
-          <Switch value={resultAlerts} onValueChange={setResultAlerts} trackColor={{ false: '#e2e8f0', true: '#bfdbfe' }} thumbColor={resultAlerts ? '#2563eb' : '#f1f5f9'} />
-        </View>
-      </View>
+        </LinearGradient>
 
-      <Text style={styles.sectionLabel}>Account</Text>
-      <View style={styles.menuCard}>
-        {MENU_ITEMS.map((item, idx) => (
-          <TouchableOpacity key={item.id} style={[styles.menuRow, idx < MENU_ITEMS.length - 1 && styles.menuDivider]} onPress={() => handleMenuPress(item)} activeOpacity={0.7}>
-            <View style={[styles.menuIcon, { backgroundColor: item.color + '14' }]}>
-              <Ionicons name={item.icon} size={18} color={item.color} />
+        {error ? (
+          <AnimatedCard style={styles.errorCard}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={() => load()} hitSlop={8}>
+                <Text style={styles.link}>Retry</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+          </AnimatedCard>
+        ) : null}
+
+        {/* WHAT IS THEIRS. Derived from the rows the officer actually owns. */}
+        <View style={styles.statRow}>
+          <View style={styles.statTile}>
+            <Text style={styles.statValue}>{r?.examsCreated ?? 0}</Text>
+            <Text style={styles.statLabel}>of {r?.examsTotal ?? 0} exams created</Text>
+          </View>
+          <View style={styles.statTile}>
+            <Text style={styles.statValue}>{r?.invigilatorDuties ?? 0}</Text>
+            <Text style={styles.statLabel}>duties held</Text>
+          </View>
+          <View style={styles.statTile}>
+            <Text style={styles.statValue}>{r?.evaluationsOwned ?? 0}</Text>
+            <Text style={styles.statLabel}>evaluations</Text>
+          </View>
+        </View>
+
+        {/* WHAT THEY CREATED. Named, not just counted. */}
+        <AnimatedCard style={styles.card}>
+          <Text style={styles.sectionTitle}>Exams you created</Text>
+          {(r?.authored ?? []).length === 0 ? (
+            <Text style={styles.muted}>
+              You have not created an exam yet. One you create will appear here.
+            </Text>
+          ) : (
+            (r?.authored ?? []).map((e) => (
+              <View key={e.id} style={styles.examRow}>
+                <Ionicons name="document-text-outline" size={16} color={theme.colors.primary} />
+                <View style={styles.flex}>
+                  <Text style={styles.examName}>{e.name}</Text>
+                  <Text style={styles.examMeta}>
+                    Semester {e.semester} · {e.type}
+                  </Text>
+                </View>
+                <Text style={styles.examStatus}>{e.status}</Text>
+              </View>
+            ))
+          )}
+        </AnimatedCard>
+
+        {/* WHAT MAY THEY DO. Read from the RBAC map. */}
+        <AnimatedCard style={styles.card}>
+          <Text style={styles.sectionTitle}>What you can do</Text>
+          <Text style={styles.muted}>
+            From your {permissions?.roles?.join(', ') || 'role'} in the access map.
+          </Text>
+          {(permissions?.examCellPermissions ?? []).length === 0 ? (
+            <Text style={styles.muted}>No examination permissions are granted to this role yet.</Text>
+          ) : (
+            (permissions?.examCellPermissions ?? []).map((p) => (
+              <View key={p.key} style={styles.permRow}>
+                <Ionicons name="checkmark-circle" size={14} color={theme.colors.success} />
+                <Text style={styles.permKey}>{p.key}</Text>
+                <Text style={styles.permName}>{p.name}</Text>
+              </View>
+            ))
+          )}
+          <TouchableOpacity
+            style={styles.linkRow}
+            onPress={() => navigation?.navigate?.('ExamPermissions')}
+          >
+            <Text style={styles.link}>See all permissions</Text>
+            <Ionicons name="chevron-forward" size={14} color={theme.colors.primary} />
+          </TouchableOpacity>
+        </AnimatedCard>
+
+        {/* WHAT THEY WANT. The mute is written through to the server. */}
+        <AnimatedCard style={styles.card}>
+          <Text style={styles.sectionTitle}>Notifications you receive</Text>
+          <Text style={styles.muted}>
+            Turning one off stops it reaching you at all. Important notices cannot be turned off.
+          </Text>
+          {(prefs?.categories ?? []).map((c) => (
+            <View key={c.id} style={styles.prefRow}>
+              <View style={[styles.prefIcon, { backgroundColor: `${c.color}1a` }]}>
+                <Ionicons name={c.icon} size={14} color={c.color} />
+              </View>
+              <View style={styles.flex}>
+                <Text style={styles.prefLabel}>{c.label}</Text>
+                <Text style={styles.prefBlurb}>{c.blurb}</Text>
+              </View>
+              {c.mutable ? (
+                <Switch
+                  value={!c.muted}
+                  onValueChange={(next) => toggleMute(c, !next)}
+                  disabled={saving === c.id}
+                  trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+                />
+              ) : (
+                <View style={styles.locked}>
+                  <Ionicons name="lock-closed" size={12} color={theme.colors.error} />
+                  <Text style={styles.lockedText}>Always on</Text>
+                </View>
+              )}
+            </View>
+          ))}
+        </AnimatedCard>
+
+        {/* IS IT SAFE. */}
+        <AnimatedCard style={styles.card}>
+          <Text style={styles.sectionTitle}>Security</Text>
+          <Text style={styles.muted}>
+            Last signed in {timeAgo(profile?.user?.lastLoginAt)}. Sign out other devices if a session
+            is not yours.
+          </Text>
+          <TouchableOpacity style={styles.dangerRow} onPress={signOutEverywhere}>
+            <Ionicons name="log-out-outline" size={16} color={theme.colors.error} />
+            <Text style={styles.dangerText}>Sign out of every other device</Text>
+          </TouchableOpacity>
+        </AnimatedCard>
+
+        {/* THE ACCOUNT ITSELF. */}
+        <AnimatedCard style={styles.card}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.muted}>{profile?.user?.email}</Text>
+          {profile?.user?.phone ? <Text style={styles.muted}>{profile.user.phone}</Text> : null}
+          <Text style={styles.muted}>
+            With the examination office since{' '}
+            {new Date(profile?.user?.joinedAt ?? Date.now()).toLocaleDateString()}
+          </Text>
+        </AnimatedCard>
+
+        {MENU_ITEMS.map((m) => (
+          <TouchableOpacity
+            key={m.key}
+            style={styles.menuRow}
+            onPress={() => navigation?.navigate?.(m.key)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.menuIcon, { backgroundColor: `${m.color}1a` }]}>
+              <Ionicons name={m.icon} size={16} color={m.color} />
+            </View>
+            <View style={styles.flex}>
+              <Text style={styles.menuLabel}>{m.label}</Text>
+              <Text style={styles.menuSub}>{m.sub}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
           </TouchableOpacity>
         ))}
-      </View>
 
-      <Text style={styles.version}>Learnix ERP • Exam Cell v1.0</Text>
-    </ScrollView>
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+          <Ionicons name="log-out-outline" size={16} color={theme.colors.error} />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f7f9' },
-  content: { padding: 24, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Regular' },
-  profileCard: { backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 24, alignItems: 'center', marginBottom: 24 },
-  avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#2563eb', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  avatarText: { fontSize: 24, fontWeight: '800', color: '#FFFFFF', fontFamily: 'PlusJakartaSans-Bold' },
-  name: { fontSize: 20, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.4 },
-  role: { fontSize: 13, fontWeight: '600', color: '#2563eb', fontFamily: 'Manrope-SemiBold', marginTop: 2 },
-  meta: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 2 },
-  badgeRow: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap', justifyContent: 'center' },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#f8fafc', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  badgeText: { fontSize: 11, fontWeight: '600', fontFamily: 'Manrope-SemiBold' },
-  sectionLabel: { fontSize: 15, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', marginBottom: 10 },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  statBox: { flex: 1, backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', paddingVertical: 14, alignItems: 'center' },
-  statValue: { fontSize: 20, fontWeight: '800', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold', letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: '#64748b', fontFamily: 'Manrope-Medium', marginTop: 2 },
-  prefCard: { backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', paddingHorizontal: 16, marginBottom: 24 },
-  prefRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
-  prefIcon: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  prefLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  prefDivider: { height: 1, backgroundColor: '#eef2f7' },
-  menuCard: { backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', paddingHorizontal: 16, marginBottom: 24 },
-  menuRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
-  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#eef2f7' },
-  menuIcon: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  menuLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },
-  version: { textAlign: 'center', fontSize: 11, color: '#94a3b8', fontFamily: 'Manrope-Regular' },
-});
