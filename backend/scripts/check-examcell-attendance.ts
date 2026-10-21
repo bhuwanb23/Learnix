@@ -184,6 +184,14 @@ async function main() {
       ok('and the state label says "Not marked"',
         unmarkedRoll.rows[0]?.stateLabel === 'Not marked');
 
+      // THE ROW'S OWN STATE IS UNMARKED, NOT ABSENT. This is the assertion that keeps a roll from
+      // reporting a student absent when nobody has been through the room — the conflation the
+      // whole feature exists to prevent, and the one an inference from missing results would make.
+      ok('every row reports its state as UNMARKED',
+        unmarkedRoll.rows.every((r) => r.state === 'UNMARKED'));
+      ok('and no row reports itself ABSENT',
+        unmarkedRoll.rows.every((r) => r.state !== 'ABSENT'));
+
       // ═══ 4. Marking is idempotent ═══════════════════════════════════════════════════════════
       section(4, 'Marking is a bulk write, and marking twice CORRECTS rather than duplicates');
 

@@ -198,8 +198,8 @@ for (const id of actionIds) {
 // THE COLOURS MUST AGREE TOO. A mirror that disagrees about a colour is a mirror that shows a
 // HIGH alert in green.
 //
-// The client uses NAMED CONSTANTS (`THEME`, `RED`, …) rather than repeating the hex, so the
-// comparison is against the CONSTANT'S VALUE, not against the literal in the mirror.
+// The client uses NAMED CONSTANTS (`THEME`, `RED`, …) for most colours and a literal for the
+// rest, so the comparison RESOLVES the constant and compares the value.
 const CLIENT_COLOUR_CONSTANTS: Record<string, string> = {
   THEME: '#2563eb',
   RED: '#dc2626',
@@ -208,9 +208,6 @@ const CLIENT_COLOUR_CONSTANTS: Record<string, string> = {
   VIOLET: '#7c3aed',
   INDIGO: '#4f46e5',
   CYAN: '#0891b2',
-  '#b91c1c': '#b91c1c',
-  '#ea580c': '#ea580c',
-  '#c2410c': '#c2410c',
 };
 const clientColours = new Set<string>();
 for (const m of metaCode.matchAll(/color:\s*([A-Z_]+|'(#[0-9a-f]{6})')/g)) {
@@ -335,8 +332,11 @@ ok(
   /single point, not a trend/i.test(actionsCode),
   'and says a single point is not a trend',
 );
+// The wording is checked on the RAW source and with the whitespace collapsed, because the
+// sentence is wrapped across two lines in the file and a line-anchored pattern would miss it.
+const attendanceFlat = attendanceSrc.replace(/\s+/g, ' ');
 ok(
-  /not the same as absent/i.test(attendanceCode),
+  /not the same as absent/i.test(attendanceFlat),
   'the mark-roll says an unmarked student is not absent either',
 );
 
