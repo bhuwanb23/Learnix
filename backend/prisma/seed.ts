@@ -704,25 +704,354 @@ async function seedDomainC(institutionId: string): Promise<void> {
     });
   }
 
-  const cheatExists = await db.cheatingCase.findFirst({
-    where: { examSlotId: slot.id, studentProfileId: studentProfile.id, issue: 'Frequent gaze deviation detected' },
-  });
-  if (!cheatExists) {
-    await db.cheatingCase.create({
-      data: {
-        examSlotId: slot.id,
-        studentProfileId: studentProfile.id,
-        issue: 'Frequent gaze deviation detected',
-        riskLevel: 'LOW',
-        evidenceJson: JSON.stringify({ events: 4, windowMin: 15 }),
-        source: 'AI',
-        status: 'UNDER_REVIEW',
+  // ── X-08 Cheating cases ──────────────────────────────────────────────────
+  //
+  // Replaces the single row this used to seed. The old one was a case with a status and nothing
+  // else, which meant the desk could only ever show one shape of case — and a queue where every
+  // case looks the same is a queue nobody can triage.
+  //
+  // These cover EVERY lifecycle state, because each one exercises a different part of the workflow:
+  // a REPORTED case has never been looked at; a COMMITTEE_REVIEW case has a panel; a CONFIRMED case
+  // has a penalty and a notified student; a DISMISSED case has neither, because a student who was
+  // cleared cannot carry a consequence.
+  //
+  // Idempotent by construction: each case is found by (slot, student, issue) before it is created,
+  // and each TIMELINE event is found by (case, type, note) before it is created. A reseed therefore
+  // leaves the demo exactly as it was.
+  {
+    const cheatStudents = await db.studentProfile.findMany({
+      where: { user: { institutionId } },
+      orderBy: { rollNo: 'asc' },
+      take: 6,
+      select: { id: true, rollNo: true, user: { select: { id: true, fullName: true } } },
+    });
+    const cheatSlots = await db.examSlot.findMany({
+      where: { exam: { institutionId } },
+      orderBy: { date: 'asc' },
+      select: {
+        id: true,
+        date: true,
+        roomAllocations: { select: { roomId: true, invigilatorUserId: true } },
       },
     });
+    const committee = await db.user.findMany({
+      where: { institutionId, deletedAt: null, email: { in: ['teacher@learnix.dev', 'examcell@learnix.dev'] } },
+      select: { id: true },
+    });
+    const examCellUser = await db.user.findFirst({ where: { email: 'examcell@learnix.dev', institutionId }, select: { id: true } });
+    const invigilatorUser = await db.user.findFirst({
+      where: { institutionId, deletedAt: null, roles: { some: { role: 'TEACHER' } } },
+      select: { id: true },
+    });
+
+    // The demo cases, one per lifecycle state. `hoursAgo` is how long ago the case was raised —
+    // it is what makes one of them OVERDUE, because a high-risk case that has sat unreviewed for
+    // two days is the failure the queue exists to surface.
+    const demoCases = [
+      {
+        status: 'REPORTED',
+        risk: 'HIGH',
+        classification: 'HIDDEN_DEVICE',
+        source: 'INVIGILATOR',
+        student: 0,
+        slot: 0,
+        hoursAgo: 3,
+        issue: 'Phone found under the desk during the second half',
+        description:
+          'A smartphone was found under the desk with the exam open on it. The screen showed a messaging app with a conversation in progress. The invigilator asked the student to step outside and the device was held by the office.',
+      },
+      {
+        status: 'UNDER_REVIEW',
+        risk: 'MEDIUM',
+        classification: 'ANSWER_SIMILARITY',
+        source: 'AI',
+        student: 1,
+        slot: 0,
+        hoursAgo: 30,
+        issue: 'Answers overlap with a script three seats away',
+        description:
+          'The similarity scan flagged six answers matching a script in the next row, and two more matching a script two rows over. The pattern is consistent across a question the pair answered differently.',
+      },
+      {
+        status: 'COMMITTEE_REVIEW',
+        risk: 'MEDIUM',
+        classification: 'TIMING_PATTERN',
+        source: 'AI',
+        student: 2,
+        slot: 1,
+        hoursAgo: 50,
+        issue: 'Response times do not match someone reading the paper',
+        description:
+          'Twelve of the fourteen responses were submitted in under forty seconds, including two on the long question. The remaining two took eleven and nine minutes. A student who is a fast typist is fast on the short ones too.',
+      },
+      {
+        status: 'ESCALATED',
+        risk: 'HIGH',
+        classification: 'IMPERSONATION',
+        source: 'INVIGILATOR',
+        student: 3,
+        slot: 2,
+        hoursAgo: 26,
+        issue: 'A second person answered for the candidate',
+        description:
+          'The invigilator noticed the candidate had not attended the briefing and that the person answering the paper was not the candidate. Photographs of the briefing sign-in sheet are attached. Referred out of the exam cell to the examinations committee.',
+      },
+      {
+        status: 'CONFIRMED',
+        risk: 'HIGH',
+        classification: 'HIDDEN_DEVICE',
+        source: 'INVIGILATOR',
+        student: 4,
+        slot: 3,
+        hoursAgo: 96,
+        issue: 'Second phone recovered from the locker',
+        description:
+          'A second handset, switched off, was recovered from the locker the student had booked. The examination had already been sat with a phone on the desk.',
+        penalty: 'SUSPENSION',
+        decisionNote:
+          'A second device was found in the booked locker and the device on the desk was on a messaging app. The student was offered the chance to explain before the panel and did not attend. Confirmed.',
+      },
+      {
+        status: 'DISMISSED',
+        risk: 'LOW',
+        classification: 'LOOKING_AROUND',
+        source: 'INVIGILATOR',
+        student: 5,
+        slot: 3,
+        hoursAgo: 120,
+        issue: 'Repeated movement towards the next seat',
+        description:
+          'The invigilator logged the candidate turning towards the neighbouring seat four times in twenty minutes. The invigilator had also been called away from that row twice in the same period.',
+        decisionNote:
+          'The invigilator was called away from the row twice in the same window, and the neighbouring seat belonged to a candidate who had already been warned for the same behaviour. Movement towards a seat that is already being supervised is not a finding. Dismissed.',
+      },
+    ];
+
+    for (const demo of demoCases) {
+      const st = cheatStudents[demo.student % Math.max(1, cheatStudents.length)];
+      const sl = cheatSlots[demo.slot % Math.max(1, cheatSlots.length)];
+      if (!st || !sl) continue;
+
+      const raisedAt = new Date(Date.now() - demo.hoursAgo * 3600000);
+      const alloc = sl.roomAllocations[0];
+      const reporterId = invigilatorUser?.id ?? examCellUser?.id ?? null;
+
+      // ONE lookup by (slot, student, issue) — so a reseed finds the case it made last time and
+      // leaves it alone.
+      let cheatCase = await db.cheatingCase.findFirst({
+        where: { examSlotId: sl.id, studentProfileId: st.id, issue: demo.issue },
+      });
+      if (!cheatCase) {
+        cheatCase = await db.cheatingCase.create({
+          data: {
+            examSlotId: sl.id,
+            studentProfileId: st.id,
+            issue: demo.issue,
+            description: demo.description,
+            riskLevel: demo.risk,
+            classification: demo.classification,
+            source: demo.source,
+            evidenceJson: JSON.stringify({
+              detectedBy: demo.source === 'AI' ? 'pattern analysis' : 'the invigilator on duty',
+              events: 4,
+              windowMin: 15,
+            }),
+            roomId: alloc?.roomId ?? null,
+            invigilatorUserId: alloc?.invigilatorUserId ?? null,
+            reportedByUserId: reporterId,
+            status: demo.status,
+            createdAt: raisedAt,
+            updatedAt: raisedAt,
+          },
+        });
+      }
+
+      // The TIMELINE. One event per thing that happened, each found before it is created — so the
+      // timeline is rebuilt identically on every reseed rather than growing a second copy of itself.
+      const addEvent = async (type: string, note: string | null, detail: object | null, actorId: string | null, at: Date) => {
+        const exists = await db.cheatingCaseEvent.findFirst({
+          where: { cheatingCaseId: cheatCase!.id, type, note },
+        });
+        if (exists) return;
+        await db.cheatingCaseEvent.create({
+          data: {
+            cheatingCaseId: cheatCase!.id,
+            type,
+            note,
+            actorUserId: actorId,
+            detailJson: detail ? JSON.stringify(detail) : null,
+            createdAt: at,
+          },
+        });
+      };
+
+      await addEvent('REPORTED', demo.issue, { riskLevel: demo.risk, source: demo.source }, reporterId, raisedAt);
+
+      if (demo.status === 'REPORTED') continue;
+
+      const classifiedAt = new Date(raisedAt.getTime() + 2 * 3600000);
+      await addEvent(
+        'CLASSIFIED',
+        `Classified as ${demo.classification}`,
+        { classification: demo.classification, riskLevel: demo.risk },
+        examCellUser?.id ?? null,
+        classifiedAt,
+      );
+
+      if (demo.status === 'UNDER_REVIEW') continue;
+
+      if (demo.status === 'COMMITTEE_REVIEW') {
+        const panel = committee.map((c) => c.id);
+        await db.cheatingCase.update({
+          where: { id: cheatCase.id },
+          data: {
+            committeeUserIds: JSON.stringify(panel),
+            reviewNote:
+              'Referred to the examinations committee. The timing pattern is worth a second opinion, but a fast typist is fast on the short answers too, and this student has one of the shorter papers.',
+            reviewedAt: new Date(raisedAt.getTime() + 5 * 3600000),
+            reviewedByUserId: examCellUser?.id ?? null,
+          },
+        });
+        await addEvent(
+          'COMMITTEE_REVIEW',
+          'Referred to the examinations committee for a second opinion.',
+          { committeeUserIds: panel, recommendation: 'NEEDS_MORE_INFO' },
+          examCellUser?.id ?? null,
+          new Date(raisedAt.getTime() + 5 * 3600000),
+        );
+        continue;
+      }
+
+      if (demo.status === 'ESCALATED') {
+        await addEvent(
+          'ESCALATED',
+          'Referred out of the exam cell to the examinations committee.',
+          { to: 'ESCALATED' },
+          examCellUser?.id ?? null,
+          new Date(raisedAt.getTime() + 6 * 3600000),
+        );
+        continue;
+      }
+
+      // A DECIDED case: a statement, a committee finding, the decision, and the student told.
+      const statementAt = new Date(raisedAt.getTime() + 8 * 3600000);
+      const statement =
+        demo.status === 'DISMISSED'
+          ? 'I was looking at the clock because I was worried about the end of the paper and I did not want to lose the last question. I am sorry it looked like I was copying.'
+          : 'I did not know the phone in the locker was mine. I left it there in the morning when I changed desks and I did not go back for it.';
+      await db.cheatingCase.update({
+        where: { id: cheatCase.id },
+        data: {
+          studentStatement: statement,
+          statementAt,
+          statementByUserId: st.user.id,
+        },
+      });
+      await addEvent('STATEMENT_TAKEN', statement, { length: statement.length }, st.user.id, statementAt);
+
+      const reviewAt = new Date(raisedAt.getTime() + 20 * 3600000);
+      const panel = committee.map((c) => c.id);
+      await db.cheatingCase.update({
+        where: { id: cheatCase.id },
+        data: {
+          committeeUserIds: JSON.stringify(panel),
+          reviewNote:
+            demo.status === 'DISMISSED'
+              ? 'The invigilator on the row was called away twice in the same window, and the seat the candidate was turning towards was already supervised. The committee does not find movement towards a supervised seat to be a finding.'
+              : 'A second handset, switched off, was recovered from the locker the student had booked. The student was told the device on the desk was on a messaging app, and the panel finds the account of the second device consistent with the photographs.',
+          reviewedAt: reviewAt,
+          reviewedByUserId: examCellUser?.id ?? null,
+        },
+      });
+      await addEvent(
+        'COMMITTEE_REVIEW',
+        'The committee reviewed the file and agreed with the invigilator.',
+        { committeeUserIds: panel, recommendation: demo.status === 'DISMISSED' ? 'RECOMMEND_DISMISS' : 'RECOMMEND_CONFIRM' },
+        examCellUser?.id ?? null,
+        reviewAt,
+      );
+
+      const decidedAt = new Date(raisedAt.getTime() + 30 * 3600000);
+      await db.cheatingCase.update({
+        where: { id: cheatCase.id },
+        data: {
+          status: demo.status,
+          penalty: 'penalty' in demo ? (demo.penalty ?? null) : null,
+          penaltyDetail: 'penalty' in demo ? 'Suspension from the next examination sitting.' : null,
+          decisionNote: demo.decisionNote,
+          decidedAt,
+          decidedByUserId: examCellUser?.id ?? null,
+          notifiedStudentAt: new Date(decidedAt.getTime() + 3600000),
+        },
+      });
+      await addEvent(
+        'DECIDED',
+        demo.decisionNote,
+        { decision: demo.status, penalty: 'penalty' in demo ? (demo.penalty ?? null) : null },
+        examCellUser?.id ?? null,
+        decidedAt,
+      );
+      await addEvent(
+        'NOTIFIED',
+        'The student was told the outcome.',
+        { recipientUserId: st.user.id },
+        examCellUser?.id ?? null,
+        new Date(decidedAt.getTime() + 3600000),
+      );
+    }
+
+    // One case with EVIDENCE attached. The file is a real `File` row — the platform's own table,
+    // where every uploaded document in this app already lives — so the evidence is openable rather
+    // than a description of something that might exist.
+    {
+      const st = cheatStudents[0];
+      const sl = cheatSlots[0];
+      if (st && sl) {
+        const withEvidence = await db.cheatingCase.findFirst({
+          where: { examSlotId: sl.id, studentProfileId: st.id, issue: demoCases[0].issue },
+        });
+        if (withEvidence) {
+          const existing = await db.cheatingCaseEvidence.findFirst({
+            where: { cheatingCaseId: withEvidence.id },
+          });
+          if (!existing) {
+            const evidenceFile = await db.file.create({
+              data: {
+                institutionId,
+                uploaderUserId: invigilatorUser?.id ?? examCellUser?.id ?? st.user.id,
+                purpose: 'CHEATING_EVIDENCE',
+                mimeType: 'image/png',
+                sizeBytes: 48213,
+                storageKey: `cheating-evidence/${withEvidence.id}-device.png`,
+                originalName: 'device-on-desk.png',
+              },
+            });
+            await db.cheatingCaseEvidence.create({
+              data: {
+                cheatingCaseId: withEvidence.id,
+                fileId: evidenceFile.id,
+                kind: 'DEVICE_PHOTO',
+                note: 'The device on the desk, with the exam still open.',
+                uploadedByUserId: invigilatorUser?.id ?? examCellUser?.id ?? null,
+              },
+            });
+            await db.cheatingCaseEvent.create({
+              data: {
+                cheatingCaseId: withEvidence.id,
+                type: 'EVIDENCE_ADDED',
+                actorUserId: invigilatorUser?.id ?? examCellUser?.id ?? null,
+                note: 'Photograph of the device on the desk attached.',
+                detailJson: JSON.stringify({ kind: 'DEVICE_PHOTO' }),
+              },
+            });
+          }
+        }
+      }
+    }
   }
 
   console.log('  ✓ quiz (3 Qs, AUTO_GRADED attempt 2/3), MID_TERM exam + slot + hall ticket A-12');
-  console.log('  ✓ evaluation + 1 paper PENDING, grading deadline, 1 AI cheating case UNDER_REVIEW');
+  console.log('  ✓ evaluation + 1 paper PENDING, grading deadline, 6 cheating cases across every state');
 }
 
 // ─────────────────────────────────────────────────────────────

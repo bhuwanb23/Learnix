@@ -25,7 +25,6 @@
 export {
   cheatingCatalogue,
 } from './cheating.catalogue.js';
-
 export {
   listCheatingCases,
   getCheatingCase,

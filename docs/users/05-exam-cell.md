@@ -79,9 +79,81 @@ X-04: one hall ticket **per student, per paper**, with the exam cell in control 
 Student photo: `User.avatarFileId` is published on the ticket, and the tile renders initials (or a person icon) rather than inventing an image URL — no file-serving route exists yet, so nothing is shipped that would 404.
 
 ### 3.6 Cheating Cases (module)
-Cases from AI detection (timing analysis, answer similarity) with risk levels (High/Medium/Low), evidence, status (Under Review / Confirmed / Dismissed). Actions: **Confirm / Dismiss**, escalate to admin, notify student.
+A case file, not an alert. It is the one place in the exam cell where a mistake is expensive: a case can
+end a student's degree, and a student who was cleared must be able to see that they were cleared, when,
+by whom, and on what grounds.
 
-**Entity `cheating_case`**: id, studentId, examId, issue, riskLevel, evidence, status.
+**The lifecycle.**
+
+```
+REPORTED ──→ UNDER_REVIEW ──→ COMMITTEE_REVIEW ──┐
+    │              │                  │            │
+    └──────────────┴──────────────────┴──→ ESCALATED ──→ CONFIRMED | DISMISSED
+                                                  ↑                  │
+                                                  └──── UNDER_REVIEW ┘   (reopened, with a reason)
+```
+
+Every state change writes a `CheatingCaseEvent` **in the same transaction as the change**. A case
+that can change without a record is a case nobody can audit, and a decision that can be quietly
+overwritten is not a decision — so a CONFIRMED case offers exactly one move: reopen it, with a reason.
+
+**Risk and classification are different facts.** `riskLevel` is how SEVERE the allegation looks and is
+what the queue is triaged on. `classification` is what the misconduct actually IS, and it is what a
+penalty attaches to. A HIGH-risk case can be DISMISSED (the student was copying the person next to
+them) and a LOW-risk case can be CONFIRMED (a phone in a bag, quietly). Collapsing them is why
+"confirmed" and "high risk" get used interchangeably on a screen.
+
+**Escalation is DERIVED, never stored.** There is no `escalatedAt` column and no ESCALATED status
+that means "overdue". A case escalates when its age exceeds the threshold for its risk (HIGH 24h,
+MEDIUM 72h, LOW 168h) and it is still open. The threshold is the risk's, so a high-risk case sitting
+for a fortnight is a failure of the desk and not of the student — and the queue says so.
+
+**The eight categories.**
+
+| Category | Composed? | Source |
+|---|---|---|
+| `ANNOUNCEMENT` | yes | the warden, to everybody |
+| `MAINTENANCE` | yes | the warden, usually to one block |
+| `EMERGENCY` | yes | the warden — **bypasses a resident's mutes** |
+| `GATE_PASS` | no | the gate-pass lifecycle |
+| `LATE_RETURN` | no | the gate-pass return window |
+| `VISITOR` | no | the visitor lifecycle |
+| `COMPLAINT` | no | the complaint lifecycle |
+| `MESS` | no | the mess lifecycle |
+
+**Composing is a privilege, not a description.** Only the three composed categories may be sent. The
+other five are facts the system reports, and a warden who could publish a `GATE_PASS` approval could
+forge one — so the server refuses, not just the picker.
+
+**An emergency ignores a mute.** A mute is a preference about noise, not about safety, and you cannot
+opt out of being told to leave a building. The bypass is a flag on the type, so a new emergency type
+inherits it by being declared correctly.
+
+**A DISMISSED case carries no penalty.** The student was cleared, and a consequence on a clearance is
+a contradiction the file would happily store.
+
+**The student is told, and the fact of telling them is recorded.** A case that was decided and never
+communicated is a case the student cannot appeal.
+
+**Room, invigilator and classification are snapshotted.** They come from the slot's room allocation
+and are COPIED onto the case, because a case is a historical document: the room roster for an exam in
+March is not the roster today.
+
+**Entities.**
+`cheating_case`: id, examSlotId, studentProfileId, issue, description, riskLevel, classification,
+source, status, roomId, invigilatorUserId, reportedByUserId, studentStatement, statementAt,
+committeeUserIds, reviewNote, reviewedAt, decisionNote, penalty, penaltyDetail, decidedAt,
+decidedByUserId, notifiedStudentAt, evidenceJson, createdAt, updatedAt.
+`cheating_case_event`: cheatingCaseId, type, actorUserId, note, detailJson, createdAt.
+`cheating_case_evidence`: cheatingCaseId, fileId, kind, note, uploadedByUserId, createdAt.
+
+**Screens.** The hub (queue + block cards + counts) and five blocks: the queue, report, committee
+review, the case file, and the historical record. The block list is published by
+`GET /examcell/cheating-cases/catalogue`, so a block added on the server draws itself.
+
+**The admin's view reads the same table.** The admin's cheating screen was a mock — five hardcoded
+alerts naming students who do not exist — and it now reads the same endpoint, so the two desks cannot
+disagree about the same case. The decision still belongs to the exam cell.
 
 ### 3.7 Notifications
 Inbox (timetable/result/hall-ticket/cheating types) + Broadcast tab (audience: All Students / By Class / Exam Registrants → timetable changes, hall ticket release, result announcements).

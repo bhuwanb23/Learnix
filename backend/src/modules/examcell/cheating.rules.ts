@@ -499,3 +499,35 @@ export const OVERDUE_HOURS: Record<RiskLevel, number> = {
   MEDIUM: 72,
   LOW: 168,
 };
+
+/**
+ * The queue's order.
+ *
+ * A case can end a student's degree, so what sits at the top of the queue is the case that has
+ * waited longest AND matters most. The two are not the same thing: a low-risk case that has sat for
+ * a week should not outrank a high-risk case raised this morning, and a high-risk case raised this
+ * morning should not outrank one raised last week.
+ *
+ * So the score is a SUM of two independent parts, and the age term SATURATES at the case's own
+ * threshold. That saturation is deliberate. Without it an ancient low-risk case would sit above every
+ * urgent high-risk one forever, because its age term would keep growing while the severity term did
+ * not — and a queue where one stale case outranks everything is a queue people stop reading.
+ */
+export function priorityScore(
+  createdAt: Date,
+  riskLevel: string,
+  status: string,
+  now: Date = new Date(),
+): number {
+  // A decided case is out of the way. It sorts last, always.
+  if ((CASE_STATUS_META as any)[status]?.terminal) return 0;
+
+  const risk = (RISK_LEVELS as readonly string[]).includes(riskLevel) ? (riskLevel as RiskLevel) : 'LOW';
+  const severityWeight = risk === 'HIGH' ? 100 : risk === 'MEDIUM' ? 60 : 30;
+
+  const threshold = OVERDUE_HOURS[risk];
+  const ageHours = Math.max(0, (now.getTime() - new Date(createdAt).getTime()) / 3600000);
+  const ageRatio = Math.min(1, ageHours / Math.max(1, threshold));
+
+  return severityWeight + Math.round(ageRatio * 40);
+}

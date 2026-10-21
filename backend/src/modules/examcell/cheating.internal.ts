@@ -17,7 +17,18 @@
  * places is two answers.
  */
 import { prisma } from '../../db/prisma.js';
-import { CASE_STATUS_META, CLASSIFICATION_META, EVIDENCE_KIND_META, OVERDUE_HOURS, PENALTY_META, RISK_META, SOURCE_META, type CaseStatus } from './cheating.rules.js';
+import {
+  CASE_STATUS_META,
+  CASE_TRANSITIONS,
+  CLASSIFICATION_META,
+  EVIDENCE_KIND_META,
+  OVERDUE_HOURS,
+  PENALTY_META,
+  RISK_META,
+  SOURCE_META,
+  priorityScore,
+  type CaseStatus,
+} from './cheating.rules.js';
 
 /** The relations a case needs to be shown: the student, the exam, the timeline and the evidence. */
 export const CHEATING_CASE_INCLUDE = {
@@ -154,6 +165,15 @@ export function shapeCheatingCase(c: CheatingCaseRow, now = new Date()) {  const
     reportedByUserId: c.reportedByUserId,
 
     // ── Status tracking ──
+    //
+    // The LEGAL MOVES, from the state machine. They are published so the screen can draw exactly
+    // the buttons the server will accept — a screen that offers a move the server refuses is a
+    // screen that lies, and a screen that hides one the server allows is a screen that cannot do
+    // its job. A decided case offers exactly one thing: reopen it, with a reason.
+    legalTransitions: CASE_TRANSITIONS[status] ?? [],
+    // The queue's order. The SERVER computes it, so the badge on a row and the order of the list
+    // cannot disagree — and a client that re-derived it would have to re-implement the thresholds.
+    priority: priorityScore(new Date(c.createdAt), risk, status, now),
     ageHours: Math.round(ageHours),
     overdue,
     overdueByHours: overdue ? Math.round(ageHours - overdueHours) : 0,

@@ -75,15 +75,23 @@ export async function listCheatingCases(institutionId: string, filters: Cheating
   const pageSize = Math.min(100, Math.max(1, Number(filters.pageSize) || 20));
   const where = buildWhere(institutionId, filters);
 
-  const [rows, total] = await Promise.all([
-    prisma.cheatingCase.findMany({ where, include: CHEATING_CASE_INCLUDE, orderBy: [{ createdAt: 'desc' }] }),
-    prisma.cheatingCase.count({ where }),
-  ]);
+  // The WHOLE set is read and then ordered, because `priority` is DERIVED from the age and the
+  // risk and a derived column cannot be an `orderBy`. The set is one institution's cases, so it is
+  // bounded in practice — and the alternative is paging the database by `createdAt` and sorting
+  // inside the page, which would make "page 1" a random page rather than the most urgent cases.
+  const rows = await prisma.cheatingCase.findMany({ where, include: CHEATING_CASE_INCLUDE });
 
   const shaped = rows.map((c) => shapeCheatingCase(c));
+
+  // THE ORDER IS THE PRIORITY. It used to sort by `createdAt DESC`, which is newest-first, while
+  // the hub's own copy said "worst first". A queue that puts this morning's low-risk case above
+  // last week's high-risk one is a queue nobody triages. The tiebreak is the OLDEST first, so two
+  // cases of equal weight do not swap places between loads.
+  shaped.sort((a, b) => b.priority - a.priority || new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
   const filtered = filters.overdueOnly ? shaped.filter((c) => c.overdue) : shaped;
   const start = (page - 1) * pageSize;
-  const count = filters.overdueOnly ? filtered.length : total;
+  const count = filtered.length;
 
   return {
     cases: filtered.slice(start, start + pageSize),
