@@ -28,7 +28,7 @@
 import { prisma } from '../../db/prisma.js';
 import { isMarked, publicationBlockers } from './evaluation.rules.js';
 import { EXAM_STATUSES } from './timetable.rules.js';
-import { RECENT_CASE_LIMIT, UPCOMING_LIMIT, UPCOMING_WINDOW_DAYS } from './examcell-dashboard.rules.js';
+import { UPCOMING_LIMIT, UPCOMING_WINDOW_DAYS } from './examcell-dashboard.rules.js';
 
 // ═══ Section 1 — exam overview ════════════════════════════════════════════
 
@@ -272,7 +272,7 @@ export async function resultProgressSection(institutionId: string) {
   });
 
   const publishable = bySlot.filter((s) => s.ready);
-  const blocked = bySlot.filter((s) => !s.ready && s.results.length > 0);
+  const blocked = bySlot.filter((s) => !s.ready && s.results > 0);
 
   return {
     counts,
@@ -284,7 +284,7 @@ export async function resultProgressSection(institutionId: string) {
     readyToPublish: publishable.length,
     blockedSlots: blocked.length,
     slots: bySlot
-      .filter((s) => s.results.length > 0)
+      .filter((s) => s.results > 0)
       .sort((a, b) => b.blockers.length - a.blockers.length)
       .slice(0, 12),
   };

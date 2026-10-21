@@ -35,7 +35,7 @@ import cheatingRoutes from './modules/examcell/cheating.routes.js';
 // their own auth and are mounted BEFORE examcellRoutes, because Express matches
 // by mount order.
 import attendanceRoutes from './modules/examcell/attendance.routes.js';
-import dashboardRoutes from './modules/examcell/examcell-dashboard.routes.js';
+import examcellDashboardRoutes from './modules/examcell/examcell-dashboard.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -200,7 +200,7 @@ app.use('/api/v1/staff-complaints', staffComplaintsRoutes);
   // counted three of the six exam statuses, counted only UNDER_REVIEW cheating
   // cases, and answered with a flat list of prose strings where the new one
   // answers with seven structured sections.
-  app.use('/api/v1/examcell', dashboardRoutes);
+  app.use('/api/v1/examcell', examcellDashboardRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);

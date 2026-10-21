@@ -10,12 +10,10 @@ import {
   examcellNotificationReadSchema,
   idParamSchema,
 } from './examcell.schemas.js';
-import * as service from './examcell.service.js';
+import * as profile from './examcell-profile.service.js';
 // X-09 — the officer's inbox, the composer, and the reminder sweep.
 import * as inbox from './examcell-notifications.inbox.js';
 import * as emitters from './examcell-notifications.emitters.js';
-// X-10 — the officer's profile.
-import * as profile from './examcell-profile.service.js';
 
 // Exam Cell module — mounted at /api/v1/examcell (docs/users/05 §4)
 const router = Router();

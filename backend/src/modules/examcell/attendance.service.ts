@@ -128,7 +128,10 @@ export async function listAttendance(institutionId: string, slotId: string) {
     .sort((a, b) => a.rollNo.localeCompare(b.rollNo))
     .map((student) => {
       const mark = markedBy.get(student.id);
-      const state: RollRowState = (mark?.state as AttendanceState) ?? 'UNMARKED';
+      // The row's own state, or UNMARKED. The `as` widens the DATABASE's free-text column to the
+      // declared union — the column is a plain String, so this is where a hand-written bad value
+      // would surface.
+      const state: RollRowState = (mark?.state as AttendanceState | undefined) ?? 'UNMARKED';
       return {
         studentProfileId: student.id,
         rollNo: student.rollNo,
