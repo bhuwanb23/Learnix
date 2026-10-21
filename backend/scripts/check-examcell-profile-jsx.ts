@@ -35,6 +35,7 @@ const EXAM_CELL = path.join(REPO, 'learnix', 'users', 'exam_cell');
 const FILES = [
   'pages/notifications/notifications.js',
   'pages/notifications/notificationsUi.js',
+  'pages/notifications/NoticeComposer.js',
   'pages/profile/profile.js',
   'pages/profile/profileUi.js',
   'pages/profile/my_permissions/my_permissions.js',
