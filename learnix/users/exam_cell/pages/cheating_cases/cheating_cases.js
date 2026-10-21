@@ -214,6 +214,10 @@ export default function CheatingCasesModule({ navigation }) {
           A case can end a student's degree. Every decision is recorded on the case file, and the
           student is told.
         </Text>
+        <Text style={styles.footNote}>
+          An EMERGENCY notice reaches a resident even when they have turned the other categories
+          off. A mute is a preference about noise, not about safety.
+        </Text>
       </ScrollView>
     </CheatingScreen>
   );

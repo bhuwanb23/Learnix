@@ -20,7 +20,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { examcellApi } from '../../../../../services/api';
+import { examcellApi } from '../../../../../../services/api';
 import { AMBER, GREEN, MUTED, RED, SLATE, THEME, VIOLET, classificationMeta } from '../../cheating_casesMeta';
 import { NoteStrip } from '../../cheating_casesUi';
 

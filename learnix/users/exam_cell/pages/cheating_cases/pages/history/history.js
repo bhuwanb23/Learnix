@@ -22,7 +22,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { examcellApi } from '../../../../../services/api';
+import { examcellApi } from '../../../../../../services/api';
 import {
   AMBER,
   GREEN,
