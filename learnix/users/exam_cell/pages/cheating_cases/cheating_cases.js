@@ -7,7 +7,8 @@
  * The queue of every case in the institution, and the doorway to the other four blocks.
  *
  * WAS A CORRUPTED FILE. It arrived as fifteen physical lines containing four hundred and ninety-one
- * literal `\n` escape sequences — the whole source written with escaped newlines that were never
+ * literal `
+` escape sequences — the whole source written with escaped newlines that were never
  * interpreted, so it could not parse and the exam cell app crashed on opening this screen. It has been
  * rebuilt against the live API rather than repaired, because the behaviour it described (a flat list
  * with a "resolve" button and a fake create modal) is not the behaviour the module promises.
