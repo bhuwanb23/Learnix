@@ -196,6 +196,11 @@ const purgeFixture = async (institutionIds: string[], userIds: string[]) => {
   await prisma.department.deleteMany({ where: { institutionId: ids } });
   await prisma.academicYear.deleteMany({ where: { institutionId: ids } });
   await prisma.studentProfile.deleteMany({ where: { institutionId: ids } });
+  // The NOTIFICATIONS are new since X-09: reminding an evaluation deadline
+  // raises a message to the exam office, and a `Notification` row references
+  // its recipient.
+  await prisma.notification.deleteMany({ where: { recipientUserId: { in: userIds } } });
+  await prisma.notificationPreference.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.userRole.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.auditLog.deleteMany({ where: { actorUserId: { in: userIds } } });
   await prisma.auditLog.deleteMany({ where: { institutionId: ids } });

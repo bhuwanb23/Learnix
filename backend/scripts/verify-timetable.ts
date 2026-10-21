@@ -855,6 +855,14 @@ await prisma.studentProfile.deleteMany({ where: { institutionId: { in: [institut
 await prisma.academicYear.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
 // Roles and audit rows hang off the users and must go first: these relations do
 // not cascade, and a delete that trips a foreign key is not a cleanup.
+//
+// The NOTIFICATIONS are here too, and they are new since X-09: adding a slot,
+// publishing an exam and rescheduling one each raise a message to the students
+// who sit the paper, and a `Notification` row references its recipient. Without
+// deleting them, the user delete below trips a foreign key and the cleanup is
+// not a cleanup at all.
+await prisma.notification.deleteMany({ where: { recipientUserId: { in: createdUserIds } } });
+await prisma.notificationPreference.deleteMany({ where: { userId: { in: createdUserIds } } });
 await prisma.userRole.deleteMany({ where: { userId: { in: createdUserIds } } });
 await prisma.auditLog.deleteMany({ where: { actorUserId: { in: createdUserIds } } });
 await prisma.user.deleteMany({ where: { id: { in: createdUserIds } } });

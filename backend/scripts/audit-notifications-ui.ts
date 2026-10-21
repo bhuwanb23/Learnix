@@ -439,7 +439,13 @@ section('13. The server contract the screens rely on');
 ok(/router\.use\(auth, requireRole\('ACCOUNTS', 'ADMIN'\)\)/.test(routesSrc),
   'the router applies its own auth — it no longer inherits it from accountsRoutes');
 ok(!/financeCategory\(n\.type\)/.test(metaSrc), 'the app does not re-implement the category mapping');
-ok(/financeCategory/.test(serviceSrc), 'the server does the category mapping, once');
+// The service maps the category ONCE, through the REGISTRY (`categoryFor(registry, n.type)`) rather
+// than through the old hardcoded `financeCategory(type)`. The registry is what lets a second desk —
+// the hostel, the exam cell — own its own vocabulary while the finance desk keeps every type it
+// declared. Asserting the old name would fail against the very refactor that made the registry
+// possible, so the contract is asserted as it now stands.
+ok(/categoryFor\(registry,\s*n\.type\)/.test(serviceSrc), 'the server does the category mapping, once');
+ok(/metaFor\(registry,\s*n\.type\)/.test(serviceSrc), 'and the chrome mapping, once');
 ok(/assertCategory/.test(rulesSrc), 'and validates the category server-side');
 // Unprocessable input is 422; a mistyped filter is a 400. Both must be reachable.
 ok(/export function assertCategory[\s\S]{0,200}unprocessable/.test(rulesSrc),

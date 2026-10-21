@@ -316,8 +316,12 @@ async function main() {
     const officerInbox = await inbox.listExamCellNotifications(officer.id, inst.id);
     ok('the officer inbox does not carry the student row',
       officerInbox.notifications.every((n) => n.title !== `${PFX} student result`));
-    ok('...and the student row is not counted as out of scope (it is simply not the officer\'s)',
-      officerInbox.notifications.every((n) => n.recipientUserId === undefined || true));
+    // The student's own inbox DOES carry it, and it carries a CATEGORY rather than a raw type.
+    const studentInbox = await inbox.listExamCellNotifications(studentUser.id, inst.id);
+    ok('the student inbox DOES carry their own result row',
+      studentInbox.notifications.some((n) => n.title === `${PFX} student result`));
+    ok('...and it is filed under RESULT_PUBLICATION',
+      studentInbox.notifications.find((n) => n.title === `${PFX} student result`)?.category === 'RESULT_PUBLICATION');
 
     // A row of ANOTHER desk's type must not be in the exam inbox.
     await prisma.notification.create({
@@ -408,7 +412,7 @@ async function main() {
     // A role that is not the exam office cannot compose.
     await expectReject(
       'a non-officer cannot compose',
-      () => inbox.assertCanComposeExamNotice('STUDENT'),
+      async () => inbox.assertCanComposeExamNotice('STUDENT'),
       403,
     );
     ok('an officer can compose', (() => { inbox.assertCanComposeExamNotice('EXAMCELL'); return true; })());
@@ -436,7 +440,6 @@ async function main() {
       select: { id: true, userId: true },
     });
 
-    let slotId: string | null = null;
     if (offering && exam && studentProfile) {
       const when = new Date(Date.now() + 6 * 3600000);
       const day = when.toISOString().slice(0, 10);
@@ -451,7 +454,6 @@ async function main() {
           status: 'SCHEDULED',
         },
       });
-      slotId = slot.id;
       await prisma.hallTicket.create({
         data: {
           examSlotId: slot.id,
@@ -505,12 +507,12 @@ async function main() {
     // EVALUATION_DEADLINE row in the database would also pick up another suite's leftovers and
     // fail for a reason that has nothing to do with this one.
     const deadlineRows = await prisma.notification.findMany({
-      where: { type: 'EVALUATION_DEADLINE', institutionId: inst.id, title: { startsWith: '' } },
+      where: { type: 'EVALUATION_DEADLINE', institutionId: inst.id },
     });
     const thisRun = deadlineRows.filter((r) => r.createdAt > new Date(Date.now() - 120000));
     ok(
-      thisRun.length > 0 && thisRun.every((r) => officers.includes(r.recipientUserId)),
       'every recipient is an officer',
+      thisRun.length > 0 && thisRun.every((r) => officers.includes(r.recipientUserId)),
       `${thisRun.length} rows, ${thisRun.filter((r) => !officers.includes(r.recipientUserId)).length} not officers`,
     );
 

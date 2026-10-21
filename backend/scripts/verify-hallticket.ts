@@ -175,6 +175,12 @@ const purgeFixture = async (institutionIds: string[], userIds: string[]) => {
   await prisma.department.deleteMany({ where: { institutionId: ids } });
   await prisma.academicYear.deleteMany({ where: { institutionId: ids } });
   await prisma.studentProfile.deleteMany({ where: { institutionId: ids } });
+  // The NOTIFICATIONS are new since X-09: publishing the hall tickets raises a
+  // message to every student who was issued one, and a `Notification` row
+  // references its recipient. Without deleting them, the user delete below
+  // trips a foreign key and the cleanup is not a cleanup at all.
+  await prisma.notification.deleteMany({ where: { recipientUserId: { in: userIds } } });
+  await prisma.notificationPreference.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.userRole.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.auditLog.deleteMany({ where: { actorUserId: { in: userIds } } });
   await prisma.auditLog.deleteMany({ where: { institutionId: ids } });

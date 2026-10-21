@@ -36,8 +36,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
-  Modal,
-  TextInput,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
@@ -46,13 +44,8 @@ import { theme } from '../../../../constants/theme';
 import { AnimatedCard, EmptyState } from '../../../../components/ui';
 import { SkeletonCard, SkeletonStatRow } from '../../../../components/ui/SkeletonLoader';
 import { examcellApi } from '../../../../services/api';
-import {
-  FALLBACK_AUDIENCES,
-  FALLBACK_CATEGORIES,
-  PAGE_SIZE,
-  ageLabel,
-  styles,
-} from './notificationsUi';
+import { FALLBACK_AUDIENCES, FALLBACK_CATEGORIES, PAGE_SIZE, ageLabel, styles } from './notificationsUi';
+import NoticeComposer from './NoticeComposer';
 
 export default function NotificationsScreen({ navigation }) {
   const [rows, setRows] = useState([]);
@@ -74,11 +67,6 @@ export default function NotificationsScreen({ navigation }) {
   const [error, setError] = useState(null);
 
   const [composeOpen, setComposeOpen] = useState(false);
-  const [audience, setAudience] = useState('ALL_STUDENTS');
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [important, setImportant] = useState(true);
-  const [sending, setSending] = useState(false);
   const [sweeping, setSweeping] = useState(false);
 
   const load = useCallback(
@@ -216,41 +204,7 @@ export default function NotificationsScreen({ navigation }) {
     );
   };
 
-  const openCompose = () => {
-    setAudience('ALL_STUDENTS');
-    setTitle('');
-    setBody('');
-    setImportant(true);
-    setComposeOpen(true);
-  };
-
-  const send = async () => {
-    if (title.trim().length < 3 || body.trim().length < 3) {
-      Alert.alert('Almost there', 'Give it a subject and a message of at least three characters.');
-      return;
-    }
-    setSending(true);
-    try {
-      const res = await examcellApi.broadcast({
-        audience,
-        title: title.trim(),
-        body: body.trim(),
-        important,
-      });
-      setComposeOpen(false);
-      Alert.alert(
-        'Sent',
-        `${res?.recipients ?? 0} recipient(s) notified${
-          res?.muted ? `, ${res.muted} had muted notices` : ''
-        }.`,
-      );
-      load(1);
-    } catch (e) {
-      Alert.alert('Could not send', e.message || 'Try again');
-    } finally {
-      setSending(false);
-    }
-  };
+  const openCompose = () => setComposeOpen(true);
 
   const countFor = (id) => counts.find((c) => c.category === id)?.count ?? 0;
 
@@ -448,85 +402,12 @@ export default function NotificationsScreen({ navigation }) {
         </TouchableOpacity>
       </ScrollView>
 
-      <Modal visible={composeOpen} animationType="slide" onRequestClose={() => setComposeOpen(false)}>
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.pad}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text style={styles.h1}>Compose an examination notice</Text>
-          <Text style={styles.sub}>
-            An important notice is the only thing the exam office composes. The other eight categories
-            are reported by the system, and a controller who could publish a result could forge one.
-          </Text>
-
-          <Text style={styles.label}>Who is it for?</Text>
-          <View style={styles.chipRow}>
-            {audienceList.map((a) => (
-              <TouchableOpacity
-                key={a.id}
-                style={[styles.chip, audience === a.id && styles.chipOn]}
-                onPress={() => setAudience(a.id)}
-              >
-                <Text style={[styles.chipText, audience === a.id && styles.chipTextOn]}>{a.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <Text style={styles.label}>Subject</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Examination venue change for the 6th semester"
-            placeholderTextColor={theme.colors.textMuted}
-            value={title}
-            onChangeText={setTitle}
-            maxLength={120}
-          />
-
-          <Text style={styles.label}>Message</Text>
-          <TextInput
-            style={[styles.input, styles.inputTall]}
-            placeholder="What do they need to know, and what should they do?"
-            placeholderTextColor={theme.colors.textMuted}
-            value={body}
-            onChangeText={setBody}
-            multiline
-            maxLength={2000}
-          />
-
-          <TouchableOpacity style={styles.importantRow} onPress={() => setImportant((v) => !v)}>
-            <Ionicons
-              name={important ? 'checkbox' : 'square-outline'}
-              size={20}
-              color={important ? theme.colors.error : theme.colors.textMuted}
-            />
-            <View style={styles.flex}>
-              <Text style={[styles.importantLabel, important && { color: theme.colors.error }]}>
-                Mark as important
-              </Text>
-              <Text style={styles.importantHint}>
-                An important notice reaches everyone even if they muted notices — it ignores the
-                mutes. Use it for something they must act on.
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.sendBtn, sending && styles.sendOff]}
-            onPress={send}
-            disabled={sending}
-          >
-            {sending ? (
-              <ActivityIndicator color={theme.colors.white} />
-            ) : (
-              <Text style={styles.sendText}>Send</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.cancel} onPress={() => setComposeOpen(false)}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </Modal>
+      <NoticeComposer
+        visible={composeOpen}
+        audiences={audienceList}
+        onClose={() => setComposeOpen(false)}
+        onSent={() => load(1)}
+      />
     </View>
   );
 }

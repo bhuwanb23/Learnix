@@ -545,6 +545,11 @@ try {
   await prisma.academicYear.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
   await prisma.studentProfile.deleteMany({ where: { institutionId: { in: [institutionId, rival.id] } } });
   await prisma.auditLog.deleteMany({ where: { actorUserId: { in: createdUsers } } });
+  // The NOTIFICATIONS are new since X-09: publishing the hall tickets raises a
+  // message to every student who was issued one, and a `Notification` row
+  // references its recipient.
+  await prisma.notification.deleteMany({ where: { recipientUserId: { in: createdUsers } } });
+  await prisma.notificationPreference.deleteMany({ where: { userId: { in: createdUsers } } });
   await prisma.userRole.deleteMany({ where: { userId: { in: createdUsers } } });
   await prisma.user.deleteMany({ where: { id: { in: createdUsers } } });
   await prisma.institution.deleteMany({ where: { id: { in: [institutionId, rival.id] } } });
