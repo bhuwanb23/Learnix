@@ -1,4 +1,4 @@
-// X-09 + X-10 — Exam cell notifications and profile: HTTP verification (docs/users/05 §3.7, §3.8).
+// X-10 — Exam cell profile: HTTP verification (docs/users/05 §3.8).
 //
 // Everything here is about the BOUNDARY, which a direct service call cannot see:
 //
@@ -6,60 +6,32 @@
 //   with no business in the examination office.
 //   A that a MISSPELLED field is REJECTED rather than silently dropped. A body the server
 //   ignores returns everything and looks like it worked.
-//   A that `.strict()` really is strict on the notification bodies.
-//   A that the OFFICER inbox and the STUDENT inbox are different inboxes, over the wire.
-//   A that a mute is honoured over the wire, and that an IMPORTANT notice is not muted.
-//   A that the reminder sweep is idempotent over the wire.
-//   A that the profile's figures are the officer's and not the institution's.
+//   A that the profile's figures are the OFFICER's and not the institution's, over the wire.
+//   A that a mute is written through and read back, and that IMPORTANT_NOTICE cannot be muted.
+//   A that the activity endpoint SAYS the session limitation rather than the client guessing.
 //
 // Run: npx tsx scripts/verify-examcell-profile-http.ts
 import { createApp } from '../src/app.js';
 import { env } from '../src/config/env.js';
 import { prisma } from '../src/db/prisma.js';
 import jwt from 'jsonwebtoken';
-
-let pass = 0;
-let fail = 0;
-const failures: string[] = [];
-
-function ok(cond: unknown, label: string, detail = '') {
-  if (cond) {
-    pass += 1;
-    console.log(`  ok  ${label}${detail ? ` (${detail})` : ''}`);
-  } else {
-    fail += 1;
-    failures.push(label);
-    console.log(`  FAIL ${label}${detail ? ` (${detail})` : ''}`);
-  }
-}
-function eq(a: unknown, b: unknown, label: string, detail = '') {
-  ok(
-    a === b,
-    label,
-    a === b ? '' : `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}${detail ? ` - ${detail}` : ''}`,
-  );
-}
-const section = (n: string) => console.log(`\n-- ${n}`);
+import { cleanupNotifications, eq, noteThrow, ok, report, section } from './examcell-profile.http-harness.js';
 
 const app = createApp();
 const server = app.listen(0);
 await new Promise((r) => server.once('listening', r));
 const port = (server.address() as { port: number }).port;
-// The router is mounted at `/api/v1/examcell`, so every path below is written as it
-// appears INSIDE that router.
 const base = `http://127.0.0.1:${port}/api/v1/examcell`;
-const studentBase = `http://127.0.0.1:${port}/api/v1/student`;
 
 const stamp = Date.now().toString(36);
-const PREFIX = `ex-http-${stamp}`;
+const PREFIX = `exprof-http-${stamp}`;
 
 async function call(
   method: string,
   path: string,
-  opts: { token?: string; body?: unknown; base?: string } = {},
+  opts: { token?: string; body?: unknown } = {},
 ) {
-  const root = opts.base ?? base;
-  const res = await fetch(`${root}${path}`, {
+  const res = await fetch(`${base}${path}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -78,10 +50,10 @@ async function call(
 }
 
 const inst = await prisma.institution.create({
-  data: { name: 'Exam Profile HTTP', code: `exh${stamp}`.slice(0, 24) },
+  data: { name: 'Exam Profile HTTP', code: `exp${stamp}`.slice(0, 24) },
 });
 const rival = await prisma.institution.create({
-  data: { name: 'Exam Profile HTTP Rival', code: `exr${stamp}`.slice(0, 24) },
+  data: { name: 'Exam Profile HTTP Rival', code: `exq${stamp}`.slice(0, 24) },
 });
 const institutionId = inst.id;
 
@@ -103,7 +75,6 @@ async function mkUser(institution: string, tag: string, role: string) {
 
 const officer = await mkUser(institutionId, 'officer', 'EXAMCELL');
 const rivalOfficer = await mkUser(rival.id, 'rival', 'EXAMCELL');
-const studentUser = await mkUser(institutionId, 'student', 'STUDENT');
 const teacherUser = await mkUser(institutionId, 'teacher', 'TEACHER');
 
 // The token is signed with the app's OWN access secret, read from the env the app reads - a token
@@ -113,13 +84,7 @@ const tokenFor = (userId: string, institution = institutionId, roles = ['EXAMCEL
   jwt.sign({ sub: userId, institutionId: institution, roles }, env.jwtAccessSecret, { expiresIn: '1h' });
 const officerToken = tokenFor(officer);
 const rivalToken = tokenFor(rivalOfficer, rival.id);
-const studentToken = tokenFor(studentUser, institutionId, ['STUDENT']);
 const teacherToken = tokenFor(teacherUser, institutionId, ['TEACHER']);
-
-const student = await prisma.studentProfile.create({
-  data: { userId: studentUser, institutionId, rollNo: 'EX-001', currentSemester: 4, status: 'ACTIVE' },
-  select: { id: true, userId: true },
-});
 
 const academicYear = await prisma.academicYear.create({
   data: {
@@ -131,112 +96,48 @@ const academicYear = await prisma.academicYear.create({
   },
 });
 const dept = await prisma.department.create({
-  data: { institutionId, name: 'EX Dept', code: `EXD${stamp}`.slice(0, 12) },
+  data: { institutionId, name: 'EX Prof Dept', code: `EXPD${stamp}`.slice(0, 12) },
 });
 await prisma.staffProfile.create({
   data: {
     userId: officer,
     institutionId,
-    employeeNo: `EX-${stamp}`.slice(0, 24),
+    employeeNo: `EXP-${stamp}`.slice(0, 24),
     designation: 'Controller of Examinations',
     departmentId: dept.id,
   },
 });
 
-const course = await prisma.course.create({
-  data: {
-    institutionId,
-    departmentId: dept.id,
-    code: `EXC${stamp}`.slice(0, 12),
-    name: 'Exam HTTP Course',
-    semester: 4,
-  },
-});
-const program = await prisma.program.create({
-  data: {
-    departmentId: dept.id,
-    name: 'Exam HTTP Programme',
-    code: `EXP${stamp}`.slice(0, 12),
-    level: 'UG',
-  },
-});
-const batch = await prisma.batch.create({
-  data: {
-    programId: program.id,
-    name: 'Batch 2025',
-    startYear: 2025,
-    graduationYear: 2029,
-  },
-});
-const sectionRow = await prisma.section.create({
-  data: {
-    programId: program.id,
-    batchId: batch.id,
-    name: 'A',
-    currentSemester: 1,
-  },
-});
-const offering = await prisma.courseOffering.create({
-  data: {
-    courseId: course.id,
-    sectionId: sectionRow.id,
-    teacherUserId: teacherUser,
-    semester: 4,
-    academicYearId: academicYear.id,
-  },
-});
-await prisma.enrollment.create({
-  data: { offeringId: offering.id, studentProfileId: student.id, status: 'ACTIVE' },
-});
-const exam = await prisma.exam.create({
+// An exam the OFFICER created, and one they did not. The profile must count only the first.
+const examByOfficer = await prisma.exam.create({
   data: {
     institutionId,
     academicYearId: academicYear.id,
     semester: 4,
     type: 'FINAL',
-    name: `Exam HTTP ${stamp}`,
+    name: `Officer exam ${stamp}`,
     createdByUserId: officer,
     status: 'SCHEDULED',
   },
 });
-const slot = await prisma.examSlot.create({
+const examByOther = await prisma.exam.create({
   data: {
-    examId: exam.id,
-    offeringId: offering.id,
-    date: new Date(Date.now() + 6 * 3600000),
-    startTime: '09:00',
-    endTime: '12:00',
-    seats: 30,
+    institutionId,
+    academicYearId: academicYear.id,
+    semester: 6,
+    type: 'MID_TERM',
+    name: `Other exam ${stamp}`,
+    createdByUserId: teacherUser,
     status: 'SCHEDULED',
   },
 });
-await prisma.hallTicket.create({
-  data: { examSlotId: slot.id, studentProfileId: student.id, seatNo: 'A1', status: 'GENERATED' },
-});
 
 async function cleanup() {
-  await prisma.notification.deleteMany({ where: { title: { startsWith: PREFIX } } });
-  await prisma.notification.deleteMany({ where: { institutionId, sourceModule: 'examcell' } });
-  await prisma.notificationPreference.deleteMany({ where: { institutionId } });
-  await prisma.broadcast.deleteMany({ where: { institutionId } });
-  await prisma.auditLog.deleteMany({ where: { institutionId } });
-  await prisma.hallTicket.deleteMany({ where: { examSlotId: slot.id } });
-  await prisma.examSlot.delete({ where: { id: slot.id } });
-  await prisma.exam.delete({ where: { id: exam.id } });
-  await prisma.enrollment.deleteMany({ where: { offeringId: offering.id } });
-  await prisma.courseOffering.delete({ where: { id: offering.id } });
-  await prisma.section.delete({ where: { id: sectionRow.id } });
-  await prisma.batch.delete({ where: { id: batch.id } });
-  await prisma.program.delete({ where: { id: program.id } });
-  await prisma.course.delete({ where: { id: course.id } });
+  await cleanupNotifications([institutionId, rival.id], createdUsers);
+  await prisma.exam.deleteMany({ where: { id: { in: [examByOfficer.id, examByOther.id] } } });
   await prisma.staffProfile.deleteMany({ where: { institutionId } });
   await prisma.department.delete({ where: { id: dept.id } });
   await prisma.academicYear.delete({ where: { id: academicYear.id } });
-  await prisma.studentProfile.deleteMany({ where: { institutionId } });
-  // The users are referenced by a few scalar columns that do not cascade (`Exam.createdByUserId`,
-  // `CourseOffering.teacherUserId`), so the rows that carry them are cleared first. The exam and
-  // the offering are already deleted above, but the OFFICER is also the exam's author and there is
-  // a `TeachingAssistant`-style reference on the user themselves.
   await prisma.userRole.deleteMany({ where: { userId: { in: createdUsers } } });
   await prisma.user.deleteMany({ where: { id: { in: createdUsers } } });
   await prisma.institution.deleteMany({ where: { id: { in: [inst.id, rival.id] } } });
@@ -246,205 +147,72 @@ try {
   // ═══ 1. Authentication and authorisation ═══════════════════════════════════════════════════
   section('1. Authentication and authorisation');
 
-  const noToken = await call('GET', '/notifications');
+  const noToken = await call('GET', '/profile');
   eq(noToken.status, 401, 'no token is 401, not 500');
-
-  const teacherInbox = await call('GET', '/notifications', { token: teacherToken });
-  eq(teacherInbox.status, 403, 'a teacher has no business in the examination office');
 
   const teacherProfile = await call('GET', '/profile', { token: teacherToken });
   eq(teacherProfile.status, 403, 'a teacher has no business in the examination profile');
 
-  const rivalInbox = await call('GET', '/notifications', { token: rivalToken });
-  eq(rivalInbox.status, 200, "another institution's officer has their own inbox");
-  eq(rivalInbox.data?.notifications?.length, 0, 'and it is empty');
+  const teacherPrefs = await call('GET', '/profile/notification-preferences', { token: teacherToken });
+  eq(teacherPrefs.status, 403, 'a teacher has no business in the notification preferences either');
 
-  // ═══ 2. The catalogue ══════════════════════════════════════════════════════════════════════
-  section('2. The catalogue');
+  // ═══ 2. The profile ══════════════════════════════════════════════════════════════════════════
+  section('2. The profile');
 
-  const cat = await call('GET', '/notifications/catalogue', { token: officerToken });
-  eq(cat.status, 200, 'the catalogue is served');
-  eq(cat.data?.categories?.length, 9, 'it carries the nine categories');
-  ok(cat.data?.categories?.every((c: any) => c.label && c.icon && c.color), 'every category has its chrome');
-  eq(cat.data?.composable?.length, 1, 'only one category is composable');
-  eq(cat.data?.composable?.[0], 'IMPORTANT_NOTICE', 'and it is the important notice');
-  ok(cat.data?.officerCategories?.length > 0, 'the officer categories are listed');
-  ok(cat.data?.audiences?.length >= 3, 'the audiences are listed');
+  const prof = await call('GET', '/profile', { token: officerToken });
+  eq(prof.status, 200, 'the profile is served');
+  ok(prof.data?.user?.fullName, 'it names the officer');
+  ok(prof.data?.user?.email, 'and their email');
+  ok(prof.data?.institution?.name, 'it names the institution');
+  eq(prof.data?.institution?.id, institutionId, 'and it is THEIR institution');
+  ok(prof.data?.department?.name, 'it names the department');
+  ok(prof.data?.staff?.designation, 'it carries the designation');
+  ok(prof.data?.staff?.employeeNo, 'and the employee number');
+  ok(prof.data?.roles?.length, 'and their roles');
 
-  // ═══ 3. The inbox ══════════════════════════════════════════════════════════════════════════
-  section('3. The inbox');
+  // THE DERIVED FIGURES. The officer created ONE of the institution's two exams, and the profile
+  // must say one — not two, and not "the exam count" of the college.
+  eq(prof.data?.responsibilities?.examsCreated, 1, "the exam count is this officer's, not the institution's");
+  eq(prof.data?.responsibilities?.examsTotal, 2, 'the institution total is reported separately');
+  eq(prof.data?.responsibilities?.authored?.length, 1, 'and the exams they created are named');
+  eq(prof.data?.responsibilities?.authored?.[0]?.id, examByOfficer.id, 'and it is the right one');
+  ok(typeof prof.data?.responsibilities?.invigilatorDuties === 'number', 'the duty count is reported');
+  ok(typeof prof.data?.responsibilities?.evaluationsOwned === 'number', 'the evaluation count is reported');
 
-  // A row for the OFFICER, and a row for the STUDENT, of two different exam types.
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: officer,
-      type: 'EVALUATION_DEADLINE',
-      title: `${PREFIX} officer deadline`,
-      body: 'Mark the papers.',
-      sourceModule: 'examcell',
-    },
-  });
-  await prisma.notification.create({
-    data: {
-      institutionId,
-      recipientUserId: studentUser,
-      type: 'RESULT_PUBLISHED',
-      title: `${PREFIX} student result`,
-      body: 'Your result is out.',
-      sourceModule: 'examcell',
-    },
-  });
+  const rivalProfile = await call('GET', '/profile', { token: rivalToken });
+  eq(rivalProfile.status, 200, "another institution's officer has their own profile");
+  eq(rivalProfile.data?.institution?.id, rival.id, 'and it is THEIR institution');
+  eq(rivalProfile.data?.responsibilities?.examsCreated, 0, 'and none of this institution\'s exams');
 
-  const inbox = await call('GET', '/notifications', { token: officerToken });
-  eq(inbox.status, 200, 'the inbox is served');
-  ok(inbox.data?.notifications?.length >= 1, 'it has the officer row');
+  // ═══ 3. The permissions ═════════════════════════════════════════════════════════════════════
+  section('3. The permissions');
+
+  const perms = await call('GET', '/profile/permissions', { token: officerToken });
+  eq(perms.status, 200, 'the permissions are served');
+  ok(typeof perms.data?.total === 'number', 'the total is reported');
+  ok(Array.isArray(perms.data?.examCellPermissions), 'the exam permissions are listed');
+  ok(Array.isArray(perms.data?.groups), 'the groups are listed');
+  ok(perms.data?.roles?.length, 'and the roles are named');
+
+  // ═══ 4. The notification preferences ════════════════════════════════════════════════════════
+  section('4. The notification preferences');
+
+  const prefs = await call('GET', '/profile/notification-preferences', { token: officerToken });
+  eq(prefs.status, 200, 'the preferences are served');
+  eq(prefs.data?.categories?.length, 9, 'all nine categories are offered');
   ok(
-    inbox.data?.notifications?.every((n: any) => n.title !== `${PREFIX} student result`),
-    "the STUDENT's result is NOT in the officer's work queue",
-  );
-  ok(inbox.data?.notifications?.[0]?.icon, 'each row carries its own icon');
-  ok(inbox.data?.notifications?.[0]?.color, 'each row carries its own colour');
-  ok(inbox.data?.notifications?.[0]?.categoryLabel, 'each row carries its category label');
-  eq(inbox.data?.counts?.length, 9, 'the counts cover all nine categories');
-  ok(typeof inbox.data?.unread === 'number', 'the unread count is reported');
-  ok(typeof inbox.data?.importantUnread === 'number', 'the important count is reported');
-  ok(inbox.data?.pagination, 'the inbox is paged');
-
-  // THE STUDENT READS A DIFFERENT INBOX - the shared one, which merges the vocabularies.
-  const studentInbox = await call('GET', '/notifications', {
-    token: studentToken,
-    base: studentBase,
-  });
-  eq(studentInbox.status, 200, 'the student inbox is served');
-  ok(
-    studentInbox.data?.notifications?.some((n: any) => n.title === `${PREFIX} student result`),
-    "the student's result IS in the student's inbox",
+    prefs.data?.categories?.find((c: any) => c.id === 'IMPORTANT_NOTICE')?.mutable === false,
+    'and the important notice is not mutable',
   );
   ok(
-    studentInbox.data?.notifications?.every((n: any) => n.title !== `${PREFIX} officer deadline`),
-    "the officer's deadline is NOT in the student's inbox",
+    prefs.data?.categories?.filter((c: any) => c.id !== 'IMPORTANT_NOTICE').every((c: any) => c.mutable === true),
+    'and the other eight are',
   );
   ok(
-    studentInbox.data?.notifications?.find((n: any) => n.title === `${PREFIX} student result`)?.category === 'RESULT_PUBLICATION',
-    'and it carries a CATEGORY, not a raw type',
+    prefs.data?.categories?.every((c: any) => c.label && c.blurb && c.icon && c.color),
+    'and every one carries its chrome',
   );
 
-  // The filters.
-  const byCategory = await call('GET', '/notifications?category=EVALUATION_DEADLINE', { token: officerToken });
-  eq(byCategory.status, 200, 'a category filter is accepted');
-  ok(
-    byCategory.data?.notifications?.every((n: any) => n.category === 'EVALUATION_DEADLINE'),
-    'and it returns only that category',
-  );
-
-  const badCategory = await call('GET', '/notifications?category=NOPE', { token: officerToken });
-  eq(badCategory.status, 200, 'an unknown category is an empty list, not an error');
-  eq(badCategory.data?.notifications?.length, 0, 'and it really is empty');
-
-  const badPage = await call('GET', '/notifications?page=0', { token: officerToken });
-  eq(badPage.status, 400, 'a page of zero is rejected');
-  const badPageSize = await call('GET', '/notifications?pageSize=1000', { token: officerToken });
-  eq(badPageSize.status, 400, 'a page size over the ceiling is rejected');
-  const unknownParam = await call('GET', '/notifications?nonsense=1', { token: officerToken });
-  eq(unknownParam.status, 400, 'an unknown query param is rejected');
-
-  // ═══ 4. Read state ═════════════════════════════════════════════════════════════════════════
-  section('4. Read state');
-
-  const target = inbox.data?.notifications?.find((n: any) => n.title === `${PREFIX} officer deadline`);
-  ok(Boolean(target), 'there is a row to mark');
-
-  const marked = await call('PATCH', `/notifications/${target.id}/read`, {
-    token: officerToken,
-    body: { read: true },
-  });
-  eq(marked.status, 200, 'one message can be marked read');
-  eq(marked.data?.read, true, 'and it says so');
-  const row = await prisma.notification.findUnique({ where: { id: target.id } });
-  ok(row?.readAt !== null, 'and the row really is read');
-
-  const unmarked = await call('PATCH', `/notifications/${target.id}/read`, {
-    token: officerToken,
-    body: { read: false },
-  });
-  eq(unmarked.status, 200, 'and un-read');
-  const row2 = await prisma.notification.findUnique({ where: { id: target.id } });
-  ok(row2?.readAt === null, 'and the row really is unread again');
-
-  const noBody = await call('PATCH', `/notifications/${target.id}/read`, { token: officerToken, body: {} });
-  eq(noBody.status, 400, 'a read with no flag is rejected');
-
-  const strangerRow = await call('PATCH', `/notifications/${target.id}/read`, {
-    token: rivalToken,
-    body: { read: true },
-  });
-  eq(strangerRow.status, 404, "another institution cannot touch another officer's message");
-
-  const readAll = await call('POST', '/notifications/read-all', { token: officerToken });
-  eq(readAll.status, 200, 'the whole inbox can be marked read');
-  ok(readAll.data?.updated >= 0, 'and it reports how many');
-
-  // ═══ 5. The composer ═══════════════════════════════════════════════════════════════════════
-  section('5. The composer');
-
-  const badAudience = await call('POST', '/broadcasts', {
-    token: officerToken,
-    body: { audience: 'NOBODY', title: 'x', body: 'y' },
-  });
-  eq(badAudience.status, 400, 'an unknown audience is rejected');
-
-  const typo = await call('POST', '/broadcasts', {
-    token: officerToken,
-    body: { audience: 'ALL_STUDENTS', title: 'A title', body: 'A body', audiance: 'ALL_STUDENTS' },
-  });
-  eq(typo.status, 400, 'a MISSPELLED field is rejected rather than ignored');
-
-  const noTitle = await call('POST', '/broadcasts', {
-    token: officerToken,
-    body: { audience: 'ALL_STUDENTS', body: 'A body' },
-  });
-  eq(noTitle.status, 400, 'a notice with no subject is rejected');
-
-  const sent = await call('POST', '/broadcasts', {
-    token: officerToken,
-    body: { audience: 'ALL_STUDENTS', title: `${PREFIX} notice`, body: 'The examination office has a notice.', important: true },
-  });
-  eq(sent.status, 201, 'a notice is sent');
-  ok(sent.data?.recipients > 0, 'and it reaches somebody');
-  eq(sent.data?.type, 'EXAM_IMPORTANT', 'and it is written as an IMPORTANT notice');
-  eq(sent.data?.important, true, 'and it is flagged important');
-
-  const teacherBroadcast = await call('POST', '/broadcasts', {
-    token: teacherToken,
-    body: { audience: 'ALL_STUDENTS', title: `${PREFIX} forged`, body: 'A teacher should not be able to do this.' },
-  });
-  eq(teacherBroadcast.status, 403, 'a teacher cannot publish an examination notice');
-
-  const history = await call('GET', '/broadcasts', { token: officerToken });
-  eq(history.status, 200, 'the sent notices are listed');
-  ok(history.data?.broadcasts?.length >= 1, 'and the one we sent is there');
-  ok(history.data?.broadcasts?.[0]?.audienceLabel, 'with a label for the audience');
-
-  // ═══ 6. Mutes ══════════════════════════════════════════════════════════════════════════════
-  section('6. Mutes');
-
-  // The composer writes IMPORTANT_NOTICE, and an IMPORTANT notice BYPASSES a mute. So muting the
-  // category must NOT suppress it — that is the whole point of the bypass, and a screen that let
-  // somebody silence an important notice would be worse than one that had no mute at all.
-  await prisma.notificationPreference.create({
-    data: { institutionId, userId: officer, category: 'IMPORTANT_NOTICE', muted: true },
-  });
-  const bypassed = await call('POST', '/broadcasts', {
-    token: officerToken,
-    body: { audience: 'ALL_OFFICERS', title: `${PREFIX} bypassed notice`, body: 'A body for the bypassed notice.' },
-  });
-  eq(bypassed.status, 201, 'the notice is sent');
-  const bypassedRows = await prisma.notification.count({ where: { title: `${PREFIX} bypassed notice` } });
-  eq(bypassedRows, 1, 'and an IMPORTANT notice IGNORES the mute — it reaches the officer');
-  eq(bypassed.data?.muted, 0, 'and it is not counted as muted');
-
-  // The mute is written THROUGH the preference endpoint, and it is READ BACK.
   const mutePref = await call('PATCH', '/profile/notification-preferences', {
     token: officerToken,
     body: { category: 'EVALUATION_DEADLINE', muted: true },
@@ -457,61 +225,10 @@ try {
   ok(prefRow?.muted === true, 'and the row really is written');
 
   const readBack = await call('GET', '/profile/notification-preferences', { token: officerToken });
-  const readCategory = readBack.data?.categories?.find((c: any) => c.id === 'EVALUATION_DEADLINE');
-  eq(readCategory?.muted, true, 'and it is read back as muted');
-
-  await prisma.notificationPreference.deleteMany({ where: { institutionId, userId: officer } });
-
-  // ═══ 7. The reminder sweep ═════════════════════════════════════════════════════════════════
-  section('7. The reminder sweep');
-
-  const sweep1 = await call('POST', '/notifications/reminders/sweep', { token: officerToken });
-  eq(sweep1.status, 200, 'the sweep runs');
-  ok(sweep1.data?.slots >= 1, 'and it finds the slot');
-  ok(sweep1.data?.raised >= 1, 'and it raises a reminder');
-
-  const studentReminders = await prisma.notification.count({
-    where: { institutionId, recipientUserId: studentUser, type: 'EXAM_REMINDER' },
-  });
-  eq(studentReminders, 1, 'the student has exactly ONE reminder');
-
-  const sweep2 = await call('POST', '/notifications/reminders/sweep', { token: officerToken });
-  eq(sweep2.status, 200, 'the sweep runs again');
-  eq(sweep2.data?.raised, 0, 'and raises nothing new');
-  const studentReminders2 = await prisma.notification.count({
-    where: { institutionId, recipientUserId: studentUser, type: 'EXAM_REMINDER' },
-  });
-  eq(studentReminders2, 1, 'the student still has exactly one reminder');
-
-  const teacherSweep = await call('POST', '/notifications/reminders/sweep', { token: teacherToken });
-  eq(teacherSweep.status, 403, 'a teacher cannot run the sweep');
-
-  // ═══ 8. The profile ═════════════════════════════════════════════════════════════════════════
-  section('8. The profile');
-
-  const prof = await call('GET', '/profile', { token: officerToken });
-  eq(prof.status, 200, 'the profile is served');
-  ok(prof.data?.user?.fullName, 'it names the officer');
-  ok(prof.data?.institution?.name, 'it names the institution');
-  ok(prof.data?.department?.name, 'it names the department');
-  ok(prof.data?.staff?.designation, 'it carries the designation');
-  ok(prof.data?.responsibilities, 'it carries the responsibilities');
-  eq(prof.data?.responsibilities?.examsCreated, 1, 'the exam count is this officer\'s, not the institution\'s');
-  ok(typeof prof.data?.responsibilities?.examsTotal === 'number', 'the institution total is reported separately');
-  ok(Array.isArray(prof.data?.responsibilities?.authored), 'the authored exams are listed');
-
-  const perms = await call('GET', '/profile/permissions', { token: officerToken });
-  eq(perms.status, 200, 'the permissions are served');
-  ok(typeof perms.data?.total === 'number', 'the total is reported');
-  ok(Array.isArray(perms.data?.examCellPermissions), 'the exam permissions are listed');
-  ok(Array.isArray(perms.data?.groups), 'the groups are listed');
-
-  const prefs = await call('GET', '/profile/notification-preferences', { token: officerToken });
-  eq(prefs.status, 200, 'the preferences are served');
-  eq(prefs.data?.categories?.length, 9, 'all nine categories are offered');
-  ok(
-    prefs.data?.categories?.find((c: any) => c.id === 'IMPORTANT_NOTICE')?.mutable === false,
-    'and the important notice is not mutable',
+  eq(
+    readBack.data?.categories?.find((c: any) => c.id === 'EVALUATION_DEADLINE')?.muted,
+    true,
+    'and it is read back as muted',
   );
 
   const muteImportant = await call('PATCH', '/profile/notification-preferences', {
@@ -528,14 +245,23 @@ try {
 
   const prefTypo = await call('PATCH', '/profile/notification-preferences', {
     token: officerToken,
-    body: { category: 'EXAM_REMINDER', muted: true, mutes: true },
+    body: { category: 'EVALUATION_DEADLINE', muted: true, mutes: true },
   });
   eq(prefTypo.status, 400, 'a MISSPELLED field is rejected');
 
+  const prefNoBody = await call('PATCH', '/profile/notification-preferences', {
+    token: officerToken,
+    body: { category: 'EVALUATION_DEADLINE' },
+  });
+  eq(prefNoBody.status, 400, 'a mute with no flag is rejected');
+
   await call('PATCH', '/profile/notification-preferences', {
     token: officerToken,
-    body: { category: 'EXAM_REMINDER', muted: false },
+    body: { category: 'EVALUATION_DEADLINE', muted: false },
   });
+
+  // ═══ 5. The activity ════════════════════════════════════════════════════════════════════════
+  section('5. The activity');
 
   const activity = await call('GET', '/profile/activity', { token: officerToken });
   eq(activity.status, 200, 'the activity is served');
@@ -543,22 +269,12 @@ try {
   ok(Array.isArray(activity.data?.sessions), 'the sessions are listed');
   ok(Array.isArray(activity.data?.activity), 'the recent actions are listed');
   ok(activity.data?.sessionNote, 'and the session limitation is stated');
-
-  const rivalProfile = await call('GET', '/profile', { token: rivalToken });
-  eq(rivalProfile.status, 200, "another institution's officer has their own profile");
-  ok(rivalProfile.data?.institution?.id === rival.id, 'and it is THEIR institution');
+  ok('lastLoginAt' in (activity.data ?? {}), 'and the last sign-in is reported');
 } catch (e) {
-  fail += 1;
-  failures.push(`threw: ${(e as Error).message}`);
-  console.error(e);
+  noteThrow(e);
 } finally {
   await cleanup();
-  console.log(`\n${pass} passed, ${fail} failed`);
-  if (failures.length) {
-    for (const f of failures) console.log(`  ! ${f}`);
-    process.exit(1);
-  }
-  console.log('Exam cell notifications + profile HTTP verification OK');
+  report('Exam cell profile HTTP verification');
   await prisma.$disconnect();
   server.close();
 }

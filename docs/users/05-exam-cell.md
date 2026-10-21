@@ -421,7 +421,7 @@ POST   /api/examcell/hall-tickets/:id/download                   mark printed (i
 
 Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05 + `cheating.rules.ts` / `cheating.internal.ts` / `cheating.catalogue.ts` / `cheating.read.ts` / `cheating.report.ts` / `cheating.write.ts` / `cheating.legacy.ts` / `cheating.routes.ts` for X-08 + `examcell-notifications.rules.ts` / `examcell-notifications.service.ts` / `examcell-notifications.emitters.ts` / `examcell-notifications.inbox.ts` for X-09 + `examcell-profile.service.ts` for X-10
 Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens + result hub & 11 sub-screens + cheating hub & 4 sub-screens + notification centre + profile hub & 4 sub-screens, all wired to live API)
-Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53) · `audit-evaluations-ui.ts` (223) · `prove-evaluations-teeth.sh` (13) · `check-evaluations-jsx.ts` / `-locals.js` / `-named-imports.js` (12 each) · `check-examcell-cheating.ts` (81) · `verify-examcell-cheating-http.ts` (72) · `audit-cheating-ui.ts` (112) · `prove-cheating-teeth.sh` (10) · `check-cheating-jsx.ts` (13)
+Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53) · `audit-evaluations-ui.ts` (223) · `prove-evaluations-teeth.sh` (13) · `check-evaluations-jsx.ts` / `-locals.js` / `-named-imports.js` (12 each) · `check-examcell-cheating.ts` (81) · `verify-examcell-cheating-http.ts` (72) · `audit-cheating-ui.ts` (112) · `prove-cheating-teeth.sh` (10) · `check-cheating-jsx.ts` (13) · `check-examcell-notifications.ts` (188) · `check-examcell-profile.ts` (39) · `verify-examcell-notifications-http.ts` (64) · `verify-examcell-profile-http.ts` (45) · `audit-examcell-profile-ui.ts` (176) · `check-examcell-profile-jsx.ts` (10)
 
 | Endpoint | Method | Status |
 |----------|--------|--------|
@@ -480,10 +480,17 @@ Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53)
 | `/examcell/cheating-cases/:id/decide` | POST | ✅ wired |
 | `/examcell/cheating-cases/:id/reopen` | POST | ✅ wired |
 | `/examcell/cheating-cases/:id/notes` | POST | ✅ wired |
-| `/examcell/notifications` | GET | ✅ wired |
+| `/examcell/notifications` | GET | ✅ wired — 9 categories, filters, paging |
+| `/examcell/notifications/catalogue` | GET | ✅ wired |
 | `/examcell/notifications/read-all` | POST | ✅ wired |
-| `/examcell/broadcasts` | POST | ✅ wired |
-| `/examcell/profile` | GET | ✅ wired |
+| `/examcell/notifications/:id/read` | PATCH | ✅ wired |
+| `/examcell/notifications/reminders/sweep` | POST | ✅ wired — on demand, idempotent |
+| `/examcell/broadcasts` | GET | ✅ wired — the sent notices |
+| `/examcell/broadcasts` | POST | ✅ wired — compose an IMPORTANT notice |
+| `/examcell/profile` | GET | ✅ wired — 7 questions, derived figures |
+| `/examcell/profile/permissions` | GET | ✅ wired |
+| `/examcell/profile/notification-preferences` | GET · PATCH | ✅ wired |
+| `/examcell/profile/activity` | GET | ✅ wired |
 
 **App wiring:**
 - `exam_cell.js`: demo user `setDemoUser('examcell@learnix.dev')`
@@ -504,5 +511,6 @@ Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53)
 - **Eligibility / Generation / Tickets / Schedule**: live API — each owns its exam picker; warnings are shown, never enforced; the run issues exactly what the preview promised; printing marks downloaded
 - **Centre / Requests / Publication**: live API — institution-wide centre, approve/reject/complete requests, publish or recall
 - Cheating Cases: live API (risk filters, confirm/dismiss/escalate)
-- Notifications: live API (inbox, mark all read, broadcast)
-- Profile: live API (name, stats, preferences, menu)
+- **Notifications**: live API — the nine categories from the server's catalogue, category/unread/important filters, paging, mark one read, mark all read, the notice composer, and the on-demand reminder sweep
+- **Profile**: live API — identity, institution and department, the derived responsibilities, the RBAC permission list, the nine category mutes written through, the live sessions, the recent actions, and a logout that actually logs out
+- **Profile sub-screens**: access & permissions · sign-in history · change password · help & support — all four registered in `FEATURE_MODULES` and all four live

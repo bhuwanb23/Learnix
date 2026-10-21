@@ -89,6 +89,7 @@ function stripComments(src: string) {
 
 const NOTIFY = `${NS}/notifications.js`;
 const NOTIFY_UI = `${NS}/notificationsUi.js`;
+const NOTIFY_COMPOSER = `${NS}/NoticeComposer.js`;
 const PROFILE = `${PS}/profile.js`;
 const PROFILE_UI = `${PS}/profileUi.js`;
 const PERMISSIONS = `${PS}/my_permissions/my_permissions.js`;
@@ -100,11 +101,13 @@ const API = 'services/api.js';
 
 const notifySrc = read(NOTIFY);
 const notifyUiSrc = read(NOTIFY_UI);
+const composerSrc = read(NOTIFY_COMPOSER);
 const profileSrc = read(PROFILE);
 const shellSrc = read(SHELL);
 const apiSrc = read(API);
 const notifyCode = stripComments(notifySrc);
 const notifyUiCode = stripComments(notifyUiSrc);
+const composerCode = stripComments(composerSrc);
 const profileCode = stripComments(profileSrc);
 const shellCode = stripComments(shellSrc);
 const apiCode = stripComments(apiSrc);
@@ -112,7 +115,7 @@ const apiCode = stripComments(apiSrc);
 // ═══ 1. Every screen exists ═══════════════════════════════════════════════════════════════════
 section('1. Every screen exists');
 
-for (const rel of [NOTIFY, NOTIFY_UI, PROFILE, PROFILE_UI, PERMISSIONS, ACTIVITY, CHANGE_PW, HELP]) {
+for (const rel of [NOTIFY, NOTIFY_UI, NOTIFY_COMPOSER, PROFILE, PROFILE_UI, PERMISSIONS, ACTIVITY, CHANGE_PW, HELP]) {
   ok(fs.existsSync(path.join(LEARNIX, rel)), `${rel}: exists`);
 }
 
@@ -175,7 +178,14 @@ for (const m of EXAM_METHODS) {
 
 // Every examcellApi method the screens CALL must exist.
 const called = new Set<string>();
-for (const src of [notifyCode, profileCode, stripComments(read(PERMISSIONS)), stripComments(read(ACTIVITY)), stripComments(read(CHANGE_PW))]) {
+for (const src of [
+  notifyCode,
+  composerCode,
+  profileCode,
+  stripComments(read(PERMISSIONS)),
+  stripComments(read(ACTIVITY)),
+  stripComments(read(CHANGE_PW)),
+]) {
   for (const m of src.matchAll(/examcellApi\.(\w+)/g)) called.add(m[1]!);
 }
 for (const m of called) {
@@ -266,11 +276,14 @@ ok(
 );
 ok(!/Returning to login/.test(profileCode), 'the logout does not claim to return to login without doing it');
 
-// The notification screen's buttons all do something.
+// The notification screen's buttons all do something. The composer is its own component — the
+// screen was 534 lines and the composer is a self-contained modal — so its API call is asserted
+// THERE, and the screen is asserted to actually render it.
 ok(notifyCode.includes('examcellApi.setNotificationRead'), 'a row can be marked read');
 ok(notifyCode.includes('examcellApi.markAllRead'), 'the whole inbox can be marked read');
 ok(notifyCode.includes('examcellApi.sweepExamReminders()'), 'the reminder sweep can be run');
-ok(notifyCode.includes('examcellApi.broadcast('), 'a notice can be composed and sent');
+ok(composerCode.includes('examcellApi.broadcast('), 'a notice can be composed and sent');
+ok(notifyCode.includes('<NoticeComposer'), 'and the screen actually renders the composer');
 
 // ═══ 6. The mute is written through ═════════════════════════════════════════════════════════════
 section('6. The mute is written THROUGH, not held in local state');
@@ -304,12 +317,12 @@ ok(profileCode.includes('Always on'), 'a category that cannot be muted says so')
 section('7. The policy is on the screens');
 
 ok(
-  /only thing the exam office composes/i.test(notifyCode),
+  /only thing the exam office composes/i.test(composerCode),
   'the composer says that only the office composes',
 );
-ok(/ignore/i.test(notifyCode), 'the screen says that important notices ignore the mutes');
+ok(/ignore/i.test(composerCode), 'the screen says that important notices ignore the mutes');
 ok(
-  /ignores the\s+mutes/i.test(notifyCode),
+  /ignores the\s+mutes/i.test(composerCode),
   'the composer says so on the control itself, not only in a comment',
 );
 ok(
@@ -317,7 +330,7 @@ ok(
   'the screen says the sweep is idempotent',
 );
 ok(
-  /forged|forge/i.test(notifyCode),
+  /forged|forge/i.test(composerCode),
   'the screen says why the office cannot publish a result',
 );
 
