@@ -1174,7 +1174,6 @@ export const teacherApi = {
 
 // ── Exam Cell endpoints (docs/users/05 §4) ──
 export const examcellApi = {
-  dashboard: () => api.get('/examcell/dashboard'),
   // ── X-02 Timetable (docs/users/05 §3.9) ──────────────────────────────
   //
   // These replace six methods that all pointed at endpoints this build

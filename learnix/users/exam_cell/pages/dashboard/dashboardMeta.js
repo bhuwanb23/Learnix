@@ -80,7 +80,9 @@ export const BLOCKS = [
     label: 'Quick actions',
     blurb: 'The four things the office does next, each with the count of what it would act on.',
     icon: 'flash-outline',
-    color: CYAN,
+    // The server's colour for this section, NOT `CYAN`. They differ, and a mirror that paints a
+    // section the wrong blue is exactly the drift the audit is here to catch.
+    color: '#0284c7',
     order: 6,
   },
   {
@@ -118,7 +120,10 @@ export const QUICK_ACTIONS = [
     label: 'Generate hall tickets',
     blurb: 'Issue the admit cards for an exam.',
     icon: 'ticket-outline',
-    color: CYAN,
+    // The server's colour for this action, NOT `CYAN`. The two differ — `#0284c7` against
+    // `#0891b2` — and a mirror that paints a hall-ticket tile the wrong blue is exactly the
+    // drift the audit is here to catch.
+    color: '#0284c7',
     route: 'HallTicketsGeneration',
     isTab: false,
   },

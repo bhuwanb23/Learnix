@@ -48,7 +48,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { AnimatedCard, EmptyState } from '../../../../components/ui';
 import { examcellApi } from '../../../../services/api';
-import { GREEN, MUTED, RED, SLATE, fmtDay, plural } from '../dashboardMeta';
+import { GREEN, MUTED, RED, SLATE, fmtDay, plural } from '../dashboard/dashboardMeta';
 
 const STATE_STYLE = {
   PRESENT: { color: GREEN, bg: '#dcfce7' },

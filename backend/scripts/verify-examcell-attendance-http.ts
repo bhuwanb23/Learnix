@@ -221,10 +221,10 @@ try {
   section('1. Authentication and authorisation');
 
   const noToken = await call('GET', `/attendance/slots/${slot.id}`);
-  eq(noToken.status, 401, 'no token is 401, not 500');
+  eq('no token is 401, not 500', noToken.status, 401);
 
   const teacher = await call('GET', `/attendance/slots/${slot.id}`, { token: teacherToken });
-  eq(teacher.status, 403, 'a teacher has no business taking an exam roll');
+  eq('a teacher has no business taking an exam roll', teacher.status, 403);
 
   const rivalRoll = await call('GET', `/attendance/slots/${slot.id}`, { token: rivalToken });
   eq(rivalRoll.status, 404, "another institution's officer cannot read the roll");
@@ -233,13 +233,13 @@ try {
   section('2. The roll');
 
   const roll = await call('GET', `/attendance/slots/${slot.id}`, { token: officerToken });
-  eq(roll.status, 200, 'the roll is served');
-  eq(roll.data?.total, 3, 'it has the three enrolled students');
+  eq('the roll is served', roll.status, 200);
+  eq('it has the three enrolled students', roll.data?.total, 3);
   ok(roll.data?.rows?.every((r: any) => r.state === 'UNMARKED'), 'and every one starts UNMARKED');
-  eq(roll.data?.counts?.UNMARKED, 3, 'the unmarked count agrees');
-  eq(roll.data?.counts?.ABSENT, 0, 'and nobody is counted ABSENT');
-  eq(roll.data?.counts?.PRESENT, 0, 'and nobody is counted PRESENT');
-  eq(roll.data?.marked, false, 'and it says the roll has NOT been taken');
+  eq('the unmarked count agrees', roll.data?.counts?.UNMARKED, 3);
+  eq('and nobody is counted ABSENT', roll.data?.counts?.ABSENT, 0);
+  eq('and nobody is counted PRESENT', roll.data?.counts?.PRESENT, 0);
+  eq('and it says the roll has NOT been taken', roll.data?.marked, false);
   ok(roll.data?.slot?.courseName, 'it carries the paper');
   ok(roll.data?.rows?.every((r: any) => r.rollNo && r.name), 'every row carries a name and a roll number');
 
@@ -255,51 +255,51 @@ try {
       ],
     },
   });
-  eq(marked.status, 200, 'the roll is saved');
-  eq(marked.data?.marked, 2, 'it reports the marks it took');
-  eq(marked.data?.present, 1, 'the present count');
-  eq(marked.data?.absent, 1, 'the absent count');
+  eq('the roll is saved', marked.status, 200);
+  eq('it reports the marks it took', marked.data?.marked, 2);
+  eq('the present count', marked.data?.present, 1);
+  eq('the absent count', marked.data?.absent, 1);
 
   const afterMark = await call('GET', `/attendance/slots/${slot.id}`, { token: officerToken });
-  eq(afterMark.data?.counts?.PRESENT, 1, 'the roll now shows one present');
-  eq(afterMark.data?.counts?.ABSENT, 1, 'and one absent');
-  eq(afterMark.data?.counts?.UNMARKED, 1, 'and one still unmarked');
-  eq(afterMark.data?.marked, true, 'and the roll is marked');
+  eq('the roll now shows one present', afterMark.data?.counts?.PRESENT, 1);
+  eq('and one absent', afterMark.data?.counts?.ABSENT, 1);
+  eq('and one still unmarked', afterMark.data?.counts?.UNMARKED, 1);
+  eq('and the roll is marked', afterMark.data?.marked, true);
 
   // THE REFUSALS.
   const offRoll = await call('POST', `/attendance/slots/${slot.id}`, {
     token: officerToken,
     body: { marks: [{ studentProfileId: outsider.id, state: 'PRESENT' }] },
   });
-  eq(offRoll.status, 422, 'a student who is not on the roll is refused');
+  eq('a student who is not on the roll is refused', offRoll.status, 422);
   ok(Array.isArray(offRoll.json?.error?.details?.offRoll), 'and the error NAMES them');
-  eq(offRoll.json?.error?.details?.offRoll?.[0]?.studentProfileId, outsider.id, 'by id');
+  eq('by id', offRoll.json?.error?.details?.offRoll?.[0]?.studentProfileId, outsider.id);
   ok(offRoll.json?.error?.details?.offRoll?.[0]?.rollNo, 'and by roll number');
 
   const empty = await call('POST', `/attendance/slots/${slot.id}`, {
     token: officerToken,
     body: { marks: [] },
   });
-  eq(empty.status, 400, 'an empty mark-roll is rejected by the schema');
+  eq('an empty mark-roll is rejected by the schema', empty.status, 400);
 
   const badState = await call('POST', `/attendance/slots/${slot.id}`, {
     token: officerToken,
     body: { marks: [{ studentProfileId: students[2]!.id, state: 'LATE' }] },
   });
-  eq(badState.status, 422, 'a bad state is refused');
+  eq('a bad state is refused', badState.status, 422);
   ok(Array.isArray(badState.json?.error?.details?.allowed), 'and it says what IS allowed');
 
   const typo = await call('POST', `/attendance/slots/${slot.id}`, {
     token: officerToken,
     body: { marks: [{ studentProfileId: students[2]!.id, state: 'PRESENT' }], markss: [] },
   });
-  eq(typo.status, 400, 'a MISSPELLED field is rejected rather than ignored');
+  eq('a MISSPELLED field is rejected rather than ignored', typo.status, 400);
 
   const teacherMark = await call('POST', `/attendance/slots/${slot.id}`, {
     token: teacherToken,
     body: { marks: [{ studentProfileId: students[2]!.id, state: 'PRESENT' }] },
   });
-  eq(teacherMark.status, 403, 'a teacher cannot take the roll');
+  eq('a teacher cannot take the roll', teacherMark.status, 403);
 
   // ═══ 4. Idempotency over the wire ══════════════════════════════════════════════════════════
   section('4. Marking twice CORRECTS rather than duplicates');
@@ -308,28 +308,28 @@ try {
     token: officerToken,
     body: { marks: [{ studentProfileId: students[1]!.id, state: 'PRESENT' }] },
   });
-  eq(corrected.status, 200, 'the correction is accepted');
+  eq('the correction is accepted', corrected.status, 200);
   const rows = await prisma.examAttendance.findMany({ where: { examSlotId: slot.id } });
-  eq(rows.length, 2, 'and it did NOT duplicate the row');
+  eq('and it did NOT duplicate the row', rows.length, 2);
   eq(rows.find((r) => r.studentProfileId === students[1]!.id)?.state, 'PRESENT', '...and the state was corrected');
 
   // ═══ 5. The summary ═══════════════════════════════════════════════════════════════════════════
   section('5. The summary');
 
   const summary = await call('GET', '/attendance/summary', { token: officerToken });
-  eq(summary.status, 200, 'the summary is served');
+  eq('the summary is served', summary.status, 200);
   ok(Array.isArray(summary.data?.slots), 'it lists the papers');
   ok(typeof summary.data?.totals?.PRESENT === 'number', 'it counts the present');
   ok(typeof summary.data?.totals?.ABSENT === 'number', 'it counts the absent');
   ok(typeof summary.data?.totals?.UNMARKED === 'number', 'it counts the unmarked');
-  eq(summary.data?.marked, true, 'and it says a roll has been taken');
+  eq('and it says a roll has been taken', summary.data?.marked, true);
 
   const paper = summary.data?.slots?.find((s: any) => s.slotId === slot.id);
-  ok('the paper is in the summary', paper !== undefined);
-  eq(paper?.present, 2, '...with its present count');
-  eq(paper?.absent, 0, '...its absent count');
-  eq(paper?.unmarked, 1, '...its unmarked count');
-  ok('...and it is NOT complete, because one student is unmarked', paper?.complete === false);
+  ok('the paper is in the summary', paper !== undefined)
+  eq('...with its present count', paper?.present, 2);
+  eq('...its absent count', paper?.absent, 0);
+  eq('...its unmarked count', paper?.unmarked, 1);
+  ok('...and it is NOT complete, because one student is unmarked', paper?.complete === false)
 } catch (e) {
   noteThrow(e);
 } finally {

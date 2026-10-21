@@ -99,52 +99,61 @@ try {
   section('1. Authentication and authorisation');
 
   const noToken = await call('GET', '/dashboard/overview');
-  eq(noToken.status, 401, 'no token is 401, not 500');
+  eq('no token is 401, not 500', noToken.status, 401);
 
   const teacher = await call('GET', '/dashboard/overview', { token: teacherToken });
-  eq(teacher.status, 403, 'a teacher has no business in the examination office');
+  eq('a teacher has no business in the examination office', teacher.status, 403);
 
   const teacherCatalogue = await call('GET', '/dashboard/catalogue', { token: teacherToken });
-  eq(teacherCatalogue.status, 403, 'a teacher cannot read the vocabulary either');
+  eq('a teacher cannot read the vocabulary either', teacherCatalogue.status, 403);
 
   const rivalOverview = await call('GET', '/dashboard/overview', { token: rivalToken });
-  eq(rivalOverview.status, 200, "another institution's officer has their own dashboard");
+  eq("another institution's officer has their own dashboard", rivalOverview.status, 200);
 
   // ═══ 2. The old endpoint is GONE ═════════════════════════════════════════════════════════════
   section('2. The old flat dashboard is a 404, not a quietly different shape');
 
   const old = await call('GET', '/dashboard', { token: officerToken });
-  eq(old.status, 404, 'the old GET /examcell/dashboard is gone');
+  eq('the old GET /examcell/dashboard is gone', old.status, 404);
   ok(
-    old.json?.error !== undefined || old.status === 404,
     'and it answers with an error, not with the old hero-and-stats shape',
+    old.json?.error !== undefined || old.status === 404,
   );
 
   // ═══ 3. The catalogue ══════════════════════════════════════════════════════════════════════
   section('3. The catalogue publishes the vocabulary');
 
   const cat = await call('GET', '/dashboard/catalogue', { token: officerToken });
-  eq(cat.status, 200, 'the catalogue is served');
-  eq(cat.data?.blocks?.length, 7, 'it carries the seven sections');
-  eq(cat.data?.quickActions?.length, 4, 'the four quick actions');
-  eq(cat.data?.alertKinds?.length, 6, 'the six alert kinds');
-  ok(cat.data?.blocks?.every((b: any) => b.label && b.icon && b.color && b.order), 'every section has its chrome');
-  ok(cat.data?.quickActions?.every((a: any) => a.label && a.route && a.icon), 'every action has its chrome');
-  ok(cat.data?.alertKinds?.every((a: any) => a.label && a.severity && a.route), 'every alert kind has its chrome');
-  ok(typeof cat.data?.thresholds?.upcomingWindowDays === 'number', 'and the thresholds');
+  eq('the catalogue is served', cat.status, 200);
+  eq('it carries the seven sections', cat.data?.blocks?.length, 7);
+  eq('the four quick actions', cat.data?.quickActions?.length, 4);
+  eq('the six alert kinds', cat.data?.alertKinds?.length, 6);
+  ok(
+    'every section has its chrome',
+    cat.data?.blocks?.every((b: any) => b.label && b.icon && b.color && b.order),
+  );
+  ok(
+    'every action has its chrome',
+    cat.data?.quickActions?.every((a: any) => a.label && a.route && a.icon),
+  );
+  ok(
+    'every alert kind has its chrome',
+    cat.data?.alertKinds?.every((a: any) => a.label && a.severity && a.route),
+  );
+  ok('and the thresholds', typeof cat.data?.thresholds?.upcomingWindowDays === 'number');
 
   // ═══ 4. The overview carries all seven sections ══════════════════════════════════════════════
   section('4. The overview answers all seven questions in one call');
 
   const o = await call('GET', '/dashboard/overview', { token: officerToken });
-  eq(o.status, 200, 'the overview is served');
-  ok(o.data?.overview !== undefined, 'it carries the exam overview');
-  ok(o.data?.evaluation !== undefined, 'the evaluation status');
-  ok(o.data?.results !== undefined, 'the result progress');
-  ok(o.data?.students !== undefined, 'the student statistics');
-  ok(o.data?.alerts !== undefined, 'the exam alerts');
-  ok(o.data?.actions !== undefined, 'the quick actions');
-  ok(o.data?.performance !== undefined, 'the performance snapshot');
+  eq('the overview is served', o.status, 200);
+  ok('it carries the exam overview', o.data?.overview !== undefined);
+  ok('the evaluation status', o.data?.evaluation !== undefined);
+  ok('the result progress', o.data?.results !== undefined);
+  ok('the student statistics', o.data?.students !== undefined);
+  ok('the exam alerts', o.data?.alerts !== undefined);
+  ok('the quick actions', o.data?.actions !== undefined);
+  ok('the performance snapshot', o.data?.performance !== undefined);
 
   // THE SEVEN, BY NAME. The section keys are the contract, and a screen that asks for one by name
   // must find it.
@@ -166,15 +175,15 @@ try {
   const withExam = await call('GET', '/dashboard/overview?examId=does-not-exist', {
     token: officerToken,
   });
-  eq(withExam.status, 200, 'an unknown exam is an empty scope, not an error');
-  eq(withExam.data?.scope, 'exam', 'and the scope says so');
-  eq(withExam.data?.examId, 'does-not-exist', 'and it echoes the filter back');
+  eq('an unknown exam is an empty scope, not an error', withExam.status, 200);
+  eq('and the scope says so', withExam.data?.scope, 'exam');
+  eq('and it echoes the filter back', withExam.data?.examId, 'does-not-exist');
 
   const misspelled = await call('GET', '/dashboard/overview?examid=abc', { token: officerToken });
-  eq(misspelled.status, 400, 'a MISSPELLED query param is rejected rather than ignored');
+  eq('a MISSPELLED query param is rejected rather than ignored', misspelled.status, 400);
 
   const unknownParam = await call('GET', '/dashboard/overview?nonsense=1', { token: officerToken });
-  eq(unknownParam.status, 400, 'an unknown query param is rejected');
+  eq('an unknown query param is rejected', unknownParam.status, 400);
 
   // ═══ 6. The per-block route ═══════════════════════════════════════════════════════════════
   section('6. The per-block route');
@@ -182,32 +191,28 @@ try {
   const cat2 = await call('GET', '/dashboard/catalogue', { token: officerToken });
   for (const block of cat2.data?.blocks ?? []) {
     const one = await call('GET', `/dashboard/blocks/${block.id}`, { token: officerToken });
-    eq(one.status, 200, `the "${block.id}" block is served`);
-    eq(one.data?.block, block.id, `...and it names itself`);
-    ok(one.data?.data !== undefined, `...and it carries data`);
+    eq(`the "${block.id}" block is served`, one.status, 200);
+    eq(`...and it names itself`, one.data?.block, block.id);
+    ok(`...and it carries data`, one.data?.data !== undefined);
   }
 
   const unknownBlock = await call('GET', '/dashboard/blocks/NOPE', { token: officerToken });
-  eq(unknownBlock.status, 422, 'an unknown block is a 422 naming the list');
-  ok(Array.isArray(unknownBlock.json?.error?.details?.allowed), 'and it says what IS allowed');
+  eq('an unknown block is a 422 naming the list', unknownBlock.status, 422);
+  ok('and it says what IS allowed', Array.isArray(unknownBlock.json?.error?.details?.allowed));
 
   // THE TWO ROUTES MUST AGREE. Two functions counting the same thing is how two screens start
   // disagreeing, and the whole point of the rewrite was ONE place per figure.
   const viaBlock = await call('GET', '/dashboard/blocks/STUDENT_STATISTICS', { token: officerToken });
-  eq(viaBlock.data?.data?.appeared, o.data?.students?.appeared, 'the appeared count agrees');
-  eq(viaBlock.data?.data?.absent, o.data?.students?.absent, 'the absent count agrees');
-  eq(viaBlock.data?.data?.unmarked, o.data?.students?.unmarked, 'the unmarked count agrees');
-  eq(
-    viaBlock.data?.data?.registered,
-    o.data?.students?.registered,
-    'the registered count agrees',
-  );
+  eq('the appeared count agrees', viaBlock.data?.data?.appeared, o.data?.students?.appeared);
+  eq('the absent count agrees', viaBlock.data?.data?.absent, o.data?.students?.absent);
+  eq('the unmarked count agrees', viaBlock.data?.data?.unmarked, o.data?.students?.unmarked);
+  eq('the registered count agrees', viaBlock.data?.data?.registered, o.data?.students?.registered);
 
   // ═══ 7. The alerts are structured ═══════════════════════════════════════════════════════════
   section('7. The alerts are structured, not prose');
 
   const alerts = o.data?.alerts?.alerts ?? [];
-  eq(alerts.length, 6, 'every alert kind is present, zeroes included');
+  eq('every alert kind is present, zeroes included', alerts.length, 6);
   for (const a of alerts) {
     ok(`${a.kind} carries a count`, typeof a.count === 'number');
     ok(`${a.kind} carries a tone`, typeof a.tone === 'string');
@@ -216,14 +221,17 @@ try {
     ok(`${a.kind} carries a label`, typeof a.label === 'string' && a.label.length > 0);
   }
   const zeroAlert = alerts.find((a: any) => a.count === 0);
-  ok('a zero-count alert is CLEAR, not alarming', zeroAlert === undefined || zeroAlert.tone === 'clear');
+  ok(
+    'a zero-count alert is CLEAR, not alarming',
+    zeroAlert === undefined || zeroAlert.tone === 'clear',
+  );
   ok('and none of the alerts is a bare string', alerts.every((a: any) => typeof a === 'object'));
 
   // ═══ 8. The quick actions ═══════════════════════════════════════════════════════════════════
   section('8. The quick actions carry their live counts');
 
   const actions = o.data?.actions?.actions ?? [];
-  eq(actions.length, 4, 'there are four');
+  eq('there are four', actions.length, 4);
   for (const a of actions) {
     ok(`${a.id} carries a count`, typeof a.count === 'number');
     ok(`${a.id} carries a tone`, typeof a.tone === 'string');
@@ -232,7 +240,7 @@ try {
   for (const a of catalogueActions) {
     const live = actions.find((x: any) => x.id === a.id);
     ok(`${a.id} is in the live list too`, live !== undefined);
-    eq(live?.route ?? a.route, a.route, `...and it points at the same route`);
+    eq(`...and it points at the same route`, live?.route ?? a.route, a.route);
   }
 
   // ═══ 9. The old surface's fields are gone ════════════════════════════════════════════════════

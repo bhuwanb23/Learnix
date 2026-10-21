@@ -11,7 +11,24 @@ export let pass = 0;
 export let fail = 0;
 export const failures: string[] = [];
 
-export function ok(cond: unknown, label: string, detail = '') {
+/**
+ * Assert.
+ *
+ * The argument order is `(label, cond)` — the SAME as the database harness, so a suite reads the
+ * same way whichever it uses.
+ *
+ * AND A STRING CONDITION IS REFUSED. A string is always truthy, so `ok('the hero bag is gone',
+ * someBoolean)` written the other way round would ALWAYS PASS — and it did, in the first draft
+ * of this suite, for four assertions about the old dashboard's shape. A guard here turns a
+ * vacuous assertion into a loud failure, which is the whole point of a suite.
+ */
+export function ok(label: string, cond: unknown, detail = '') {
+  if (typeof cond === 'string') {
+    throw new Error(
+      `ok("${label}") was given a STRING as its condition. A string is always truthy, so this ` +
+        `assertion can never fail. The arguments are the wrong way round: ok(label, cond).`,
+    );
+  }
   if (cond) {
     pass += 1;
     console.log(`  ok  ${label}${detail ? ` (${detail})` : ''}`);
@@ -22,11 +39,11 @@ export function ok(cond: unknown, label: string, detail = '') {
   }
 }
 
-export function eq(a: unknown, b: unknown, label: string, detail = '') {
+export function eq(label: string, actual: unknown, expected: unknown, detail = '') {
   ok(
-    a === b,
     label,
-    a === b ? '' : `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}${detail ? ` - ${detail}` : ''}`,
+    actual === expected,
+    actual === expected ? '' : `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}${detail ? ` - ${detail}` : ''}`,
   );
 }
 
