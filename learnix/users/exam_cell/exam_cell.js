@@ -21,6 +21,22 @@ import HallTicketsModule from './pages/hall_tickets/hall_tickets';
 import CheatingCasesModule from './pages/cheating_cases/cheating_cases';
 import NotificationsScreen from './pages/notifications/notifications';
 
+// X-08 cheating cases: the hub plus its four block sub-screens, reached through
+// the dashboard. The hub is `./pages/cheating_cases/cheating_cases`; these are its
+// blocks, and each `route` in `cheating_casesMeta.js` names one of them.
+//
+// Registering them HERE is load-bearing and its failure is SILENT, exactly as
+// for the timetable and hall-ticket sets: `renderContent` looks the key up in
+// FEATURE_MODULES, finds nothing, falls through to the tab switcher and puts the
+// controller back on the hub with no error anywhere.
+// `audit-cheating-ui.ts` asserts all five are present and point at their own
+// component.
+import CheatingCasesQueue from './pages/cheating_cases/pages/queue/queue';
+import CheatingCasesReport from './pages/cheating_cases/pages/report/report';
+import CheatingCasesCommittee from './pages/cheating_cases/pages/committee/committee';
+import CheatingCasesHistory from './pages/cheating_cases/pages/history/history';
+import CheatingCasesDetail from './pages/cheating_cases/pages/detail/detail';
+
 // X-02 Timetable sub-screens (docs/users/05 §3.9). The hub is
 // `./pages/timetable/timetable`, reached through the Timetable tab; these eight
 // are its blocks, and each `route` in `timetable.rules.ts` names one of them.
@@ -102,6 +118,11 @@ import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 const FEATURE_MODULES = {
   HallTickets: { title: 'Hall Tickets', component: HallTicketsModule },
   CheatingCases: { title: 'Cheating Cases', component: CheatingCasesModule },
+  CheatingCasesQueue: { title: 'Case queue', icon: 'albums-outline', component: CheatingCasesQueue },
+  CheatingCasesReport: { title: 'Report malpractice', icon: 'create-outline', component: CheatingCasesReport },
+  CheatingCasesCommittee: { title: 'Committee review', icon: 'people-outline', component: CheatingCasesCommittee },
+  CheatingCasesHistory: { title: 'Historical records', icon: 'time-outline', component: CheatingCasesHistory },
+  CheatingCasesDetail: { title: 'Case file', icon: 'document-text-outline', component: CheatingCasesDetail },
   Notifications: { title: 'Notifications', component: NotificationsScreen },
   TimetableCalendar: { title: 'Examination Calendar', icon: 'calendar-outline', component: TimetableCalendar },
   TimetableExams: { title: 'Exam Schedules', icon: 'document-text-outline', component: TimetableExams },
@@ -152,6 +173,10 @@ export default function ExamCellScreen({ navigation }) {
   setDemoUser('examcell@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
+  // The params for the current sub-screen. A sub-screen that opens ONE of something — the case
+  // file, which shows a single case out of a list — cannot be reached without knowing which, and a
+  // `navigate` that drops its second argument is a navigate that opens the screen on nothing.
+  const [screenParams, setScreenParams] = useState({});
   const insets = useSafeAreaInsetsWithPadding();
 
   const handleTabChange = (tabId) => {
@@ -192,11 +217,19 @@ export default function ExamCellScreen({ navigation }) {
         return (
           <ModuleComponent
             navigation={{
-              navigate: (screen) => setCurrentScreen(screen),
+              // The PARAMS are carried, not just the screen name. A sub-screen that needs to know
+              // WHICH case it is showing — the case file, which opens a single case out of a list —
+              // cannot be reached without them, and a `navigate` that drops its second argument is a
+              // navigate that opens the screen on nothing.
+              navigate: (screen, params) => {
+                setCurrentScreen(screen);
+                setScreenParams(params ?? {});
+              },
               goBack: handleBackPress,
               openModule: (key) => setCurrentScreen(key),
               switchTab: (tabId) => handleTabChange(tabId),
             }}
+            route={{ params: screenParams }}
           />
         );
       }

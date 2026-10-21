@@ -1,16 +1,302 @@
-// X-08 — Cheating Cases: report, review, decide (docs/users/05 §3.3)
-// 
-// Full end-to-end feature set:
-// - Report examination malpractice (create case)
-// - Student identification (auto-populated from profile)
-// - Exam/room/invigilator details (from exam slot)
-// - Incident description
-// - Evidence/document upload
-// - Case classification (HIGH/MEDIUM/LOW risk)
-// - Committee review (decide: CONFIRMED/DISMISSED/ESCALATED)
-// - Student statement
-// - Decision & penalty
-// - Case status tracking (UNDER_REVIEW → CONFIRMED/DISMISSED/ESCALATED)
-// - Historical case records
+/**
+ * X-08 — Cheating cases: the hub.
+ * (docs/users/05 §3.6)
+ *
+ * WHAT THIS IS
+ * ------------
+ * The queue of every case in the institution, and the doorway to the other four blocks.
+ *
+ * WAS A CORRUPTED FILE. It arrived as fifteen physical lines containing four hundred and ninety-one
+ * literal `\n` escape sequences — the whole source written with escaped newlines that were never
+ * interpreted, so it could not parse and the exam cell app crashed on opening this screen. It has been
+ * rebuilt against the live API rather than repaired, because the behaviour it described (a flat list
+ * with a "resolve" button and a fake create modal) is not the behaviour the module promises.
+ *
+ * THE BLOCK LIST COMES FROM THE SERVER
+ * -----------------------------------
+ * It arrives from `/examcell/cheating-cases/catalogue` with each block's id, label, icon, colour
+ * and route, so a block added on the server draws itself. `cheating_casesMeta.js` mirrors the ids
+ * because the five sub-screens are separate modules that must exist at build time, and
+ * `audit-cheating-ui.ts` asserts the two agree. The mirror is the FALLBACK for the frame before the
+ * catalogue lands, and nothing more.
+ *
+ * THE HERO ANSWERS THE ONE QUESTION THIS DESK EXISTS TO ANSWER
+ * -----------------------------------------------------------
+ * Not "how many cases are there" — every desk can count. It is "how much of this is waiting on a
+ * decision, and how much of it has been waiting too long". A high-risk case that has sat unreviewed
+ * for a fortnight is a failure of the desk and not of the student, and the number that matters is the
+ * overdue one.
+ */
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { examcellApi } from '../../../../services/api';
+import {
+  AMBER,
+  BLOCKS,
+  GREEN,
+  MUTED,
+  RED,
+  SLATE,
+  THEME,
+  VIOLET,
+  plural,
+} from './cheating_casesMeta';
+import {
+  CaseRow,
+  CheatingScreen,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  StatGrid,
+  useCheating,
+} from './cheating_casesUi';
 
-import React, { useState, useEffect, useCallback } from 'react';\nimport {\n  View,\r\n  Text,\r\n  StyleSheet,\r\n  ScrollView,\r\n  TouchableOpacity,\r\n  Alert,\r\n  ActivityIndicator,\r\n  RefreshControl,\r\n  Modal,\r\n  Image,\r\n  TextInput,\r\n  Platform,\r\n} from 'react-native';\nimport { Ionicons } from '@expo/vector-icons';\n\nimport { examcellApi } from '../../../../services/api';\n\nimport { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';\n\nconst RISK_COLORS = {\n  HIGH: '#ef4444',\n  MEDIUM: '#d97706',\n  LOW: '#eab308',\n};\n\nconst RISK_LABELS = {\n  HIGH: 'High Risk',\n  MEDIUM: 'Medium Risk',\n  LOW: 'Low Risk',\n};\n\nconst RISK_FILTERS = [\n  { label: 'All', value: 'all' },\n  { label: 'High Risk', value: 'HIGH' },\n  { label: 'Medium Risk', value: 'MEDIUM' },\n  { label: 'Low Risk', value: 'LOW' },\n];\n\nconst DECISION_COLORS = {\n  CONFIRMED: '#ef4444',\n  DISMISSED: '#059669',\n  ESCALATED: '#2563eb',\n};\n\nconst DECISION_LABELS = {\n  CONFIRMED: 'Confirm Malpractice',\n  DISMISSED: 'Dismiss Case',\n  ESCALATED: 'Escalate to Committee',\n};\n\nconst STATUS_LABELS = {\n  UNDER_REVIEW: 'Under Review',\n  CONFIRMED: 'Confirmed',\n  DISMISSED: 'Dismissed',\n  ESCALATED: 'Escalated',\n};\n\nconst STATUS_COLORS = {\n  UNDER_REVIEW: '#d97706',\n  CONFIRMED: '#ef4444',\n  DISMISSED: '#059669',\n  ESCALATED: '#2563eb',\n};\n\nexport default function CheatingCasesModule({ navigation }) {\n  const [cases, setCases] = useState([]);\n  const [loading, setLoading] = useState(true);\r\n  const [error, setError] = useState(null);\r\n  const [refreshing, setRefreshing] = useState(false);\r\n  const [filter, setFilter] = useState('all');\r\n  const [resolvedIds, setResolvedIds] = useState([]);\r\n  const [creatingCase, setCreatingCase] = useState(false);\r\n  const [showCreateModal, setShowCreateModal] = useState(false);\r\n  const [newCase, setNewCase] = useState({\r\n    studentProfileId: '',\n    examSlotId: '',\n    issue: '',\n    riskLevel: 'MEDIUM',\n    source: 'INVIGILATOR',\n    evidence: null,\n  });\r\n\n  const fetchData = useCallback(async () => {\r\n    try {\r\n      setError(null);\r\n      const res = await examcellApi.cheatingCases();\r\n      setCases(Array.isArray(res) ? res : []);\r\n    } catch (e) {\r\n      setError(e.message);\r\n    } finally {\r\n      setLoading(false);\r\n      setRefreshing(false);\r\n    }\r\n  }, []);\r\n\n  useEffect(() => { fetchData(); }, [fetchData]);\r\n\n  const onRefresh = () => { setRefreshing(true); fetchData(); };\r\n\n  const filteredCases = cases.filter((c) => {\r\n    if (filter !== 'all' && c.riskLevel !== filter) return false;\r\n    return !resolvedIds.includes(c.id);\r\n  });\n\n  const handleAction = async (item, decision) => {\r\n    try {\r\n      await examcellApi.decideCheatingCase(item.id, decision);\r\n      setResolvedIds((prev) => [...prev, item.id]);\r\n      Alert.alert(\n        decision === 'CONFIRMED' ? 'Confirmed' : decision === 'DISMISSED' ? 'Dismissed' : 'Escalated',\n        `${item.studentName}'s case has been ${decision.toLowerCase()}.`\n      );\r\n    } catch (e) {\r\n      Alert.alert('Error', e.message);\r\n    }\r\n  };\n\n  const openCreateModal = () => setShowCreateModal(true);\r\n  const closeCreateModal = () => setShowCreateModal(false);\r\n\n  const handleCreateCase = async () => {\r\n    try {\r\n      setCreatingCase(true);\r\n      await examcellApi.createCheatingCase(\n        newCase.studentProfileId,\n        newCase.examSlotId,\n        newCase.issue,\n        newCase.riskLevel,\n        newCase.source,\n        newCase.evidence?.uri,\n      );\r\n      closeCreateModal();\n      setNewCase({\n        studentProfileId: '',\n        examSlotId: '',\n        issue: '',\n        riskLevel: 'MEDIUM',\n        source: 'INVIGILATOR',\n        evidence: null,\n      });\n      fetchData();\n    } catch (e) {\r\n      Alert.alert('Error', e.message);\r\n    } finally {\r\n      setCreatingCase(false);\r\n    }\r\n  };\n\n  if (loading) {\r\n    return (\r\n      <View style={styles.center}>\r\n        <ActivityIndicator size=\"large\" color=\"#2563eb\" />\r\n        <Text style={styles.loadingText}>Loading cheating cases…</Text>\r\n      </View>\r\n    );\r\n  }\r\n\n  if (error) {\r\n    return (\r\n      <View style={styles.center}>\r\n        <Ionicons name=\"cloud-offline-outline\" size={40} color=\"#94a3b8\" />\r\n        <Text style={styles.errorText}>{error}</Text>\r\n        <TouchableOpacity onPress={fetchData} style={styles.retryBtn}>\r\n          <Text style={styles.retryText}>Retry</Text>\r\n        </TouchableOpacity>\r\n      </View>\r\n    );\r\n  }\r\n\n  const totalAlerts = cases.length;\r\n  const highRisk = cases.filter((c) => c.riskLevel === 'HIGH').length;\r\n\n  return (\r\n    <ScrollView\r\n      style={styles.container}\r\n      showsVerticalScrollIndicator={false}\r\n      contentContainerStyle={styles.content}\r\n      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor=\"#2563eb\" />}\r\n    >\r\n      <View style={styles.headerRow}>\r\n        <View style={styles.titleBar}>\r\n          <Ionicons name=\"alert-octagon\" size={28} color=\"#ef4444\" />\r\n          <Text style={styles.title}>Cheating Cases</Text>\r\n          <Text style={styles.subTitle}>{totalAlerts} alerts · {highRisk} high risk</Text>\r\n        </View>\r\n        <View style={styles.actionsBar}>\n          <TouchableOpacity onPress={openCreateModal} style={styles.createBtn} activeOpacity={0.8}>\r\n            <Ionicons name=\"add\" size={14} color=\"#fff\" />\r\n            <Text style={styles.createBtnText}>Report Incident</Text>\r\n          </TouchableOpacity>\r\n        </View>\r\n      </View>\r\n\n      <View style={styles.filterRow}>\r\n        {RISK_FILTERS.map((f) => (\r\n          <TouchableOpacity\n            key={f.value}\n            style={[styles.filterChip, filter === f.value && styles.filterChipActive]}\n            onPress={() => setFilter(f.value)}\n            activeOpacity={0.8}\n          >\n            <Text style={[styles.filterText, filter === f.value && styles.filterTextActive]}>{f.label}</Text>\n          </TouchableOpacity>\n        ))}\r\n      </View>\r\n\n      <Text style={styles.listLabel}>{filteredCases.length} cases to review</Text>\r\n\n      {filteredCases.map((item) => (\r\n        <View key={item.id} style={styles.caseCard}>\r\n          <View style={styles.caseHeader}>\r\n            <View style={[styles.caseAvatar, { backgroundColor: (RISK_COLORS[item.riskLevel] || '#ef4444') + '14' }]}>\r\n              <Text style={[styles.caseInitial, { color: RISK_COLORS[item.riskLevel] || '#ef4444' }]}>{item.studentName.charAt(0)}</Text>\r\n            </View>\r\n            <View style={styles.caseInfo}>\r\n              <Text style={styles.caseName}>{item.studentName}</Text>\r\n              <Text style={styles.caseMeta}>{item.rollNo} · {item.course} · {item.exam}</Text>\n              <Text style={styles.caseMeta2}>Room: {item.room} · Invigilator: {item.invigilator}</Text>\n            </View>\r\n            <View style={[styles.riskChip, { backgroundColor: (RISK_COLORS[item.riskLevel] || '#ef4444') + '1A' }]}>\r\n              <Text style={[styles.riskText, { color: RISK_COLORS[item.riskLevel] || '#ef4444' }]}>{RISK_LABELS[item.riskLevel] || item.riskLevel}</Text>\r\n            </View>\r\n          </View>\r\n          <View style={styles.evidenceBox}>\r\n            <Ionicons name=\"analytics-outline\" size={14} color=\"#64748b\" />\r\n            <Text style={styles.evidenceText}>{item.issue}</Text>\r\n            {item.evidence && item.evidence.length > 0 && (\n              <Text style={styles.evidenceMeta}>{JSON.stringify(item.evidence)}</Text>\n            )}\n          </View>\r\n          <View style={styles.statusBadge}>\r\n            <Text style={styles.statusBadgeText}>{STATUS_LABELS[item.status] || item.status}</Text>\r\n          </View>\r\n          {item.status === 'UNDER_REVIEW' && (\r\n            <View style={styles.caseActions}>\r\n              <TouchableOpacity style={styles.confirmBtn} onPress={() => handleAction(item, 'CONFIRMED')} activeOpacity={0.8}>\r\n                <Ionicons name=\"alert-circle-outline\" size={14} color=\"#d97706\" />\r\n                <Text style={styles.confirmBtnText}>Confirm</Text>\r\n              </TouchableOpacity>\r\n              <TouchableOpacity style={styles.dismissBtn} onPress={() => handleAction(item, 'DISMISSED')} activeOpacity={0.8}>\r\n                <Ionicons name=\"close-circle-outline\" size={14} color=\"#dc2626\" />\r\n                <Text style={styles.dismissBtnText}>Dismiss</Text>\r\n              </TouchableOpacity>\r\n              <TouchableOpacity style={styles.escalateBtn} onPress={() => handleAction(item, 'ESCALATED')} activeOpacity={0.8}>\r\n                <Ionicons name=\"arrow-up-circle-outline\" size={14} color=\"#2563eb\" />\r\n                <Text style={styles.escalateBtnText}>Escalate</Text>\r\n              </TouchableOpacity>\r\n            </View>\r\n          )}\r\n          {item.status !== 'UNDER_REVIEW' && (\r\n            <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[item.status] + '1A' }]}>\r\n              <Text style={styles.statusBadgeText, { color: STATUS_COLORS[item.status] }}>{item.status}</Text>\r\n            </View>\r\n          )}\r\n        </View>\n      ))}\r\n      {filteredCases.length === 0 && <Text style={styles.emptyText}>No cases match this filter.</Text>}\r\n      {showCreateModal && <CreateCaseModal open={openCreateModal} close={closeCreateModal} onSubmit={handleCreateCase} newCase={newCase} setNewCase={setNewCase} />}\r\n    </ScrollView>\n  );\n}\n\n// ── Create Case Modal Component ────────────────────────────────────────────\nconst CreateCaseModal = ({ open, close, onSubmit, newCase, setNewCase }) => {\n  const [evidenceUri, setEvidenceUri] = useState(newCase.evidence?.uri || null);\r\n  const [evidenceFile, setEvidenceFile] = useState(newCase.evidence?.file || null);\r\n\n  const onChange = (field, value) => {\r\n    setNewCase((m) => ({ ...m, [field]: value }));\r\n  };\n\n  const pickEvidence = async () => {\n    if (Platform.OS === 'web') {\n      const input = document.createElement('input');\n      input.type = 'file';\n      input.accept = '.pdf,.jpg,.png,.doc,.docx';\r      input.click();\n      input.onchange = (e) => {\n        const file = e.target.files[0];\n        if (file) {\n          const reader = new FileReader();\n          reader.readAsDataURL(file);\n          reader.onload = (r) => setEvidenceUri(r.target.result);\n          setEvidenceFile({ name: file.name, type: file.type, uri: r.target.result });\n        }\n      };\n    }\n  };\n\n  return (\n    <Modal visible={open} onRequestClose={close} transparent animationType=\"fade\">\r\n      <View style={styles.modalBackground}>\r\n        <View style={styles.modalCard}>\r\n          <View style={styles.modalHeader}>\r\n            <Ionicons name=\"alert-octagon\" size={28} color=\"#ef4444\" />\r\n            <Text style={styles.modalTitle}>Report Examination Malpractice</Text>\r\n            <TouchableOpacity onPress={close} style={styles.closeBtn} activeOpacity={0.8}>\r\n              <Ionicons name=\"close\" size={20} color=\"#64748b\" />\r\n            </TouchableOpacity>\r\n          </View>\r\n\n          <View style={styles.modalContent}>\r\n            <View style={styles.formGroup}>\r\n              <Label>Student</Label>\n              <View style={styles.formInput}>\r\n                <TextInput\n                  style={styles.input}\n                  value={newCase.studentProfileId ? 'STD-' + newCase.studentProfileId.substring(0, 6) : 'Select student'}\n                  placeholder=\"Student profile ID\"\n                  onChangeText={(v) => onChange('studentProfileId', v)}\n                  disabled\n                />\r\n              </View>\r\n            </View>\n\n            <View style={styles.formGroup}>\r\n              <Label>Exam Slot</Label>\n              <View style={styles.formInput}>\r\n                <TextInput\n                  style={styles.input}\n                  value={newCase.examSlotId ? 'Slot-' + newCase.examSlotId.substring(0, 4) : 'Select exam slot'}\n                  placeholder=\"Exam slot ID\"\n                  onChangeText={(v) => onChange('examSlotId', v)}\n                  disabled\n                />\r\n              </View>\r\n            </View>\n\n            <View style={styles.formGroup}>\r\n              <Label>Issue Description</Label>\n              <View style={styles.formInput Expanded}>\r\n                <TextInput\n                  style={styles.input}\n                  multiline\n                  numberOfLines={3}\n                  value={newCase.issue}\n                  onChangeText={(v) => onChange('issue', v)}\n                  placeholder=\"Describe the incident\"\n                />\r\n              </View>\r\n            </View>\n\n            <View style={styles.formGroup}>\r\n              <Label>Risk Level</Label>\r\n              <View style={styles.formInput}>\r\n                {['HIGH', 'MEDIUM', 'LOW'].map((level) => (\r\n                  <TouchableOpacity\n                    key={level}\n                    style={[styles.riskOption, newCase.riskLevel === level && styles.riskOptionActive]}\n                    onPress={() => onChange('riskLevel', level)}\n                    activeOpacity={0.8}\n                  >\n                    <View style={styles.riskBadge}>\r\n                      <Text style={styles.riskText}>{RISK_LABELS[level]}</Text>\r\n                    </View>\r\n                  </TouchableOpacity>\n                ))}\r\n              </View>\r\n            </View>\n\n            <View style={styles.formGroup}>\r\n              <Label>Evidence</Label>\n              <View style={styles.formInput}>\r\n                <TextInput\n                  style={styles.input}\n                  value={evidenceUri ? 'Evidence attached' : 'Add evidence'}\n                  placeholder=\"Upload evidence (PDF, image, document)\"\n                  onChangeText={(v) => setEvidenceUri(v || null)}\n                  placeholderTextColor=\"#94a3b8\"\n                  disabled\n                />\r\n                <TouchableOpacity onPress={pickEvidence} style={styles.evidenceBtn} activeOpacity={0.8}>\r\n                  <Ionicons name=\"upload-outline\" size={14} color=\"#2563eb\" />\r\n                  <Text style={styles.evidenceBtnText}>Choose File</Text>\r\n                </TouchableOpacity>\r\n              </View>\r\n              {evidenceUri && (\n                <View style={styles.evidencePreview}>\r\n                  <Ionicons name=\"checkmark-circle-outline\" size={12} color=\"#059669\" />\r\n                  <Text style={styles.evidencePreviewText}>Evidence uploaded</Text>\r\n                </View>\n              )}\r\n            </View>\r\n\n            <View style={styles.formGroup}>\r\n              <Label>Source</Label>\r\n              <View style={styles.formInput}>\r\n                {['AI', 'INVIGILATOR'].map((src) => (\r\n                  <TouchableOpacity\n                    key={src}\n                    style={[styles.sourceOption, newCase.source === src && styles.sourceOptionActive]}\n                    onPress={() => onChange('source', src)}\n                    activeOpacity={0.8}\n                  >\n                    <Text style={styles.sourceLabel}>{src}</Text>\r\n                  </TouchableOpacity>\n                ))}\r\n              </View>\r\n            </View>\r\n          </View>\r\n\n          <View style={styles.modalFooter}>\r\n            <TouchableOpacity onPress={close} style={styles.cancelBtn} activeOpacity={0.8}>\r\n              <Text style={styles.cancelBtnText}>Cancel</Text>\r\n            </TouchableOpacity>\n            <TouchableOpacity onPress={handleCreateCase} style={styles.submitBtn} activeOpacity={0.8} disabled={creatingCase}>\r\n              {creatingCase ? (\r\n                <Ionicons name=\"loading\" size={14} color=\"#fff\" />\r\n              ) : (\n                <Text style={styles.submitBtnText}>Submit Report</Text>\n              )}\n            </TouchableOpacity>\r\n          </View>\r\n        </View>\r\n      </View>\r\n    </Modal>\r\n  );\n};\n\n// ── Styles ────────────────────────────────────────────────────────────────\nconst styles = StyleSheet.create({\n  container: { flex: 1, backgroundColor: '#f5f7f9' },\r\n  content: { padding: 24, paddingBottom: 40 },\r\n  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },\r\n  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Regular' },\r\n  errorText: { marginTop: 12, fontSize: 14, color: '#dc2626', fontFamily: 'Manrope-Regular', textAlign: 'center' },\n  retryBtn: { marginTop: 12, backgroundColor: '#2563eb', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },\n  retryText: { color: '#fff', fontWeight: '700', fontFamily: 'Manrope-Bold' },\n  emptyText: { fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope-Regular', textAlign: 'center', marginTop: 20 },\n\n  headerRow: { marginBottom: 16 },\n  titleBar: { flexDirection: 'row', alignItems: 'center', gap: 8 },\n  title: { fontSize: 20, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold' },\n  subTitle: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Medium' },\n  actionsBar: { marginLeft: 'auto' },\n  createBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#2563eb', borderRadius: 9, paddingHorizontal: 12, paddingVertical: 8 },\n  createBtnText: { color: '#fff', fontSize: 11, fontWeight: '700', fontFamily: 'Manrope-Bold' },\n\n  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },\n  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 9999, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0' },\n  filterChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },\n  filterText: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Medium' },\n  filterTextActive: { color: '#FFFFFF' },\n  listLabel: { fontSize: 12, color: '#94a3b8', fontFamily: 'Manrope-Medium', marginBottom: 10 },\n\n  caseCard: { backgroundColor: '#fff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 12 },\n  caseHeader: { flexDirection: 'row', alignItems: 'center' },\n  caseAvatar: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },\n  caseInitial: { fontSize: 16, fontWeight: '800', fontFamily: 'PlusJakartaSans-Bold' },\n  caseInfo: { flex: 1 },\n  caseName: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold' },\n  caseMeta: { fontSize: 11, color: '#64748b', fontFamily: 'Manrope-Regular', marginTop: 1 },\n  caseMeta2: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Regular', marginTop: 1 },\n  riskChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },\n  riskText: { fontSize: 10, fontWeight: '700', fontFamily: 'Manrope-Bold' },\n  evidenceBox: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#f8fafc', borderRadius: 10, padding: 10, marginTop: 12 },\n  evidenceText: { flex: 1, fontSize: 11, color: '#475569', fontFamily: 'Manrope-Regular', lineHeight: 16, marginLeft: 8 },\n  statusBadge: { marginTop: 12, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, alignSelf: 'flex-start' },\n  statusBadgeText: { fontSize: 11, fontWeight: '700', fontFamily: 'Manrope-Bold' },\n\n  modalBackground: { flex: 1, backgroundColor: '#00000080' },\n  modalCard: { backgroundColor: '#fff', borderRadius: BORDER_RADIUS.xl, height: 'auto', maxHeight: '80%', width: '100%' },\n  modalHeader: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#eef2f7', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },\n  modalTitle: { fontSize: 18, fontWeight: '700', color: '#0f172a', fontFamily: 'PlusJakartaSans-Bold' },\n  closeBtn: { padding: 4 },\n  modalContent: { padding: 20, maxHeight: '70%', overflow: 'hidden' },\n  modalFooter: { padding: 16, borderTopWidth: 1, borderTopColor: '#eef2f7', flexDirection: 'row', justifyContent: 'flex-end', gap: 8 },\n  cancelBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 9, paddingHorizontal: 16, paddingVertical: 8 },\n  cancelBtnText: { color: '#64748b', fontSize: 11, fontWeight: '600', fontFamily: 'Manrope-Medium' },\n  submitBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2563eb', borderRadius: 9, paddingHorizontal: 20, paddingVertical: 10 },\n  submitBtnText: { color: '#fff', fontSize: 13, fontWeight: '700', fontFamily: 'Manrope-Bold' },\n  modalLoading: { color: '#fff', fontSize: 12 },\n\n  formGroup: { marginBottom: 16 },\n  Label: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Medium', marginBottom: 4 },\n  formInput: { flexDirection: 'row', alignItems: 'center' },\n  input: { flex: 1, height: 48, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, paddingHorizontal: 12, fontSize: 13, color: '#0f172a', fontFamily: 'Manrope-SemiBold', backgroundColor: '#f8fafc' },\n  Expanded: { flex: 1 },\n  riskOption: { flex: 1, padding: 8, backgroundColor: '#f8fafc', borderRadius: 6, marginRight: 6 },\n  riskOptionActive: { backgroundColor: '#2563eb', borderRadius: 6 },\n  riskBadge: { width: 56, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6, alignItems: 'center', backgroundColor: '#fff' },\n  riskText: { fontSize: 10, fontWeight: '700', color: '#0f172a', fontFamily: 'Manrope-Bold' },\n  sourceOption: { flex: 1, padding: 8, backgroundColor: '#f8fafc', borderRadius: 6, marginRight: 6 },\n  sourceOptionActive: { backgroundColor: '#2563eb' },\n  sourceLabel: { fontSize: 11, color: '#0f172a', fontFamily: 'Manrope-Medium' },\n  evidenceBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },\n  evidenceBtnText: { color: '#2563eb', fontSize: 11, fontWeight: '600', fontFamily: 'Manrope-Medium' },\n  evidencePreview: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6, padding: 6, backgroundColor: '#f0f4f8', borderRadius: 8 },\n  evidencePreviewText: { fontSize: 10, color: '#059669', fontFamily: 'Manrope-Regular' },\n});\n","referencedBy":{}}
+export default function CheatingCasesModule({ navigation }) {
+  const catalogue = useCheating(() => examcellApi.cheatingCatalogue(), []);
+  const queue = useCheating(() => examcellApi.cheatingCases({ pageSize: 20 }), []);
+
+  const reload = useCallback(() => {
+    catalogue.reload();
+    queue.reload();
+  }, [catalogue, queue]);
+
+  // The block list comes from the server. The mirror in cheating_casesMeta.js is the FALLBACK for the
+  // frame before the catalogue lands, and nothing more — a fallback that also acted as the source
+  // would be a second list to keep true.
+  const blocks = catalogue.data?.blocks?.length ? catalogue.data.blocks : BLOCKS;
+  const stats = catalogue.data?.stats;
+  const cases = queue.data?.cases ?? [];
+
+  // Every block card carries the live number that block exists to report. A badge of 0 is NOT drawn:
+  // an eight-row list of zeroes is noise.
+  const badgeFor = (id) => {
+    if (!stats) return undefined;
+    switch (id) {
+      case 'QUEUE': return stats.open;
+      case 'REPORT': return undefined;
+      case 'COMMITTEE': return stats.committee;
+      case 'HISTORY': return stats.total - stats.open;
+      case 'CASE': return undefined;
+      default: return undefined;
+    }
+  };
+
+  const open = (block) => {
+    // The CASE block needs a case to be a case file, and the hub is a list of cases — so it opens
+    // the first one the queue is showing. If there is none, the block is not offered.
+    if (block.id === 'CASE') {
+      if (!cases.length) return;
+      navigation?.navigate?.(block.route, { caseId: cases[0].id });
+      return;
+    }
+    navigation?.navigate?.(block.route);
+  };
+
+  if (catalogue.loading && !catalogue.data) {
+    return (
+      <CheatingScreen title="Cheating Cases" blurb="The exam cell's malpractice desk.">
+        <LoadingState label="Loading the case desk" />
+      </CheatingScreen>
+    );
+  }
+
+  if (catalogue.error && !catalogue.data) {
+    return (
+      <CheatingScreen title="Cheating Cases" blurb="The exam cell's malpractice desk.">
+        <ErrorState message={catalogue.error} onRetry={reload} />
+      </CheatingScreen>
+    );
+  }
+
+  return (
+    <CheatingScreen
+      title="Cheating Cases"
+      blurb="Report malpractice, work the queue, and see what has been decided."
+      right={
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => navigation?.navigate?.('CheatingCasesReport')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="add" size={14} color="#fff" />
+          <Text style={styles.headerBtnText}>Report</Text>
+        </TouchableOpacity>
+      }
+    >
+      <ScrollView
+        contentContainerStyle={styles.body}
+        refreshControl={
+          <RefreshControl refreshing={queue.refreshing} onRefresh={reload} tintColor={THEME} />
+        }
+      >
+        <StatGrid
+          stats={[
+            { label: 'Open', value: stats?.open, tone: AMBER },
+            { label: 'Overdue', value: stats?.overdue, tone: RED },
+            { label: 'With committee', value: stats?.committee, tone: VIOLET },
+            { label: 'Confirmed', value: stats?.confirmed, tone: RED },
+            { label: 'Dismissed', value: stats?.dismissed, tone: GREEN },
+          ]}
+        />
+
+        <Text style={styles.sectionLabel}>The desk</Text>
+        <View style={styles.blockGrid}>
+          {blocks.map((b) => {
+            const badge = badgeFor(b.id);
+            const isCase = b.id === 'CASE';
+            if (isCase && !cases.length) return null;
+            return (
+              <TouchableOpacity
+                key={b.id}
+                style={styles.blockCard}
+                onPress={() => open(b)}
+                activeOpacity={0.8}
+              >
+                <View style={styles.blockTop}>
+                  <View style={[styles.blockIcon, { backgroundColor: b.color + '14' }]}>
+                    <Ionicons name={b.icon} size={16} color={b.color} />
+                  </View>
+                  {badge !== undefined && badge !== null ? (
+                    <View style={[styles.blockBadge, { backgroundColor: b.color }]}>
+                      <Text style={styles.blockBadgeText}>{badge}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.blockLabel}>{b.label}</Text>
+                <Text style={styles.blockBlurb}>{b.blurb}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <View style={styles.queueHead}>
+          <Text style={styles.sectionLabel}>Waiting on a decision</Text>
+          <Text style={styles.queueCount}>{plural(cases.length, 'case')}</Text>
+        </View>
+
+        {queue.loading && !queue.data ? (
+          <LoadingState label="Loading the queue" />
+        ) : queue.error ? (
+          <ErrorState message={queue.error} onRetry={queue.reload} />
+        ) : cases.length === 0 ? (
+          <EmptyState
+            icon="checkmark-done-outline"
+            title="Nothing waiting"
+            message="No case is waiting on a decision. Anything raised will appear here."
+            action="Report an incident"
+            onAction={() => navigation?.navigate?.('CheatingCasesReport')}
+          />
+        ) : (
+          cases.map((c) => (
+            <CaseRow
+              key={c.id}
+              item={c}
+              onPress={() => navigation?.navigate?.('CheatingCasesDetail', { caseId: c.id })}
+            />
+          ))
+        )}
+
+        {queue.data?.pagination?.hasMore ? (
+          <TouchableOpacity
+            style={styles.moreBtn}
+            onPress={() =>
+              navigation?.navigate?.('CheatingCasesQueue', { filter: { status: 'OPEN' } })
+            }
+            activeOpacity={0.8}
+          >
+            <Text style={styles.moreText}>See the whole queue</Text>
+            <Ionicons name="chevron-forward" size={14} color={THEME} />
+          </TouchableOpacity>
+        ) : null}
+
+        <Text style={styles.footNote}>
+          A case can end a student's degree. Every decision is recorded on the case file, and the
+          student is told.
+        </Text>
+      </ScrollView>
+    </CheatingScreen>
+  );
+}
+
+const styles = StyleSheet.create({
+  body: { paddingBottom: 40 },
+  headerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: THEME,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 9,
+  },
+  headerBtnText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: SLATE,
+    marginTop: 14,
+    marginBottom: 8,
+    marginHorizontal: 20,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+
+  blockGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, paddingHorizontal: 20 },
+  blockCard: {
+    width: '48%',
+    flexGrow: 1,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#eef2f7',
+    padding: 13,
+  },
+  blockTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  blockIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  blockBadge: {
+    minWidth: 22,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 9999,
+    alignItems: 'center',
+  },
+  blockBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  blockLabel: { fontSize: 13, fontWeight: '700', color: '#0f172a', marginTop: 9 },
+  blockBlurb: { fontSize: 10.5, color: MUTED, marginTop: 3, lineHeight: 15 },
+
+  queueHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginRight: 20,
+  },
+  queueCount: { fontSize: 11, color: MUTED, marginTop: 14 },
+
+  moreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    marginHorizontal: 20,
+    marginTop: 6,
+    paddingVertical: 11,
+  },
+  moreText: { fontSize: 12, fontWeight: '600', color: THEME },
+
+  footNote: {
+    fontSize: 10.5,
+    color: MUTED,
+    textAlign: 'center',
+    marginTop: 18,
+    paddingHorizontal: 34,
+    lineHeight: 16,
+  },
+});

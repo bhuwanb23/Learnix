@@ -1292,8 +1292,47 @@ export const examcellApi = {
   // string the server has to guess the shape of.
   decideReevaluation: (id, payload) =>
     api.post(`/examcell/re-evaluations/${encodeURIComponent(id)}/decide`, payload),
-  cheatingCases: () => api.get('/examcell/cheating-cases'),
-  decideCheatingCase: (id, decision) => api.post(`/examcell/cheating-cases/${id}/decide`, { decision }),
+  // ── X-08 Cheating cases ─────────────────────────────────────────────────────
+  //
+  // The queue is filtered and paged ON THE SERVER. The overdue badge is derived
+  // from the risk level and the age of the case, and the policy behind it is the
+  // server's — so a client-side filter would have to re-derive the rule, and it
+  // would disagree with the API the first time somebody edited the thresholds.
+  //
+  // The catalogue carries the eight categories AND the live counts in one call,
+  // so the hub draws its blocks from the server's list rather than from a second
+  // copy of the vocabulary kept in the app.
+  cheatingCatalogue: () => api.get('/examcell/cheating-cases/catalogue'),
+  cheatingCases: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/examcell/cheating-cases${qs ? `?${qs}` : ''}`);
+  },
+  cheatingCase: (id) => api.get(`/examcell/cheating-cases/${id}`),
+  cheatingCaseTimeline: (id) => api.get(`/examcell/cheating-cases/${id}/timeline`),
+  cheatingHistory: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/examcell/cheating-cases/history${qs ? `?${qs}` : ''}`);
+  },
+  reportCheatingCase: (payload) => api.post('/examcell/cheating-cases', payload),
+  classifyCheatingCase: (id, payload) => api.post(`/examcell/cheating-cases/${id}/classify`, payload),
+  recordCheatingStatement: (id, payload) => api.post(`/examcell/cheating-cases/${id}/statement`, payload),
+  submitCheatingCommitteeReview: (id, payload) =>
+    api.post(`/examcell/cheating-cases/${id}/committee-review`, payload),
+  addCheatingEvidence: (id, payload) => api.post(`/examcell/cheating-cases/${id}/evidence`, payload),
+  // The whole payload, never a bare decision string: a decision carries a penalty,
+  // a note and whether the student is told, and the server would have to guess.
+  decideCheatingCase: (id, payload) => api.post(`/examcell/cheating-cases/${id}/decide`, payload),
+  reopenCheatingCase: (id, payload) => api.post(`/examcell/cheating-cases/${id}/reopen`, payload),
+  addCheatingCaseNote: (id, payload) => api.post(`/examcell/cheating-cases/${id}/notes`, payload),
+  // The context a report is raised in: the slot, the room, the invigilator, and
+  // the students who actually sat it. A report is about a student IN a room, so
+  // the screen needs that room's roster — not a free text box.
+  cheatingReportContext: (slotId) => api.get(`/examcell/cheating-cases/report-context/${slotId}`),
+  cheatingReportableSlots: () => api.get('/examcell/cheating-cases/reportable-slots'),
   notifications: () => api.get('/examcell/notifications'),
   markAllRead: () => api.post('/examcell/notifications/read-all'),
   broadcast: (payload) => api.post('/examcell/broadcasts', payload),
