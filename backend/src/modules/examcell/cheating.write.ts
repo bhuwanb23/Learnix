@@ -34,6 +34,10 @@ import {
   loadCheatingCase,
   shapeCheatingCase,
 } from './cheating.internal.js';
+// X-09 — the one writer for a notification. The cheating desk used to open-code its own
+// `prisma.notification.create`, which is how a type ends up unregistered and a row ends up
+// labelled with a fallback.
+import { raise } from './examcell-notifications.service.js';
 
 /** Load a case or refuse. The 404 is the tenant guard doing its job. */
 async function requireCase(institutionId: string, id: string) {
@@ -328,19 +332,17 @@ export async function decideCase(
   // consequential notification in the platform, and it goes to the person it concerns.
   if (notifyStudent) {
     const studentUserId = c.studentProfile.user.id;
-    await prisma.notification.create({
-      data: {
-        institutionId,
-        recipientUserId: studentUserId,
-        type: 'EXAM_CHEATING',
-        title: decision === 'CONFIRMED' ? 'Examination misconduct — decision' : 'Examination complaint dismissed',
-        body:
-          decision === 'CONFIRMED'
-            ? `A case concerning your examination has been confirmed. ${penalty ? `Outcome: ${(PENALTY_META as any)[penalty]?.label ?? penalty}.` : ''} ${note}`.slice(0, 500)
-            : `The case concerning your examination has been dismissed. ${note}`.slice(0, 500),
-        sourceModule: 'examcell',
-        dataJson: JSON.stringify({ module: 'examcell', screen: 'CheatingCases', id }),
-      },
+    await raise({
+      institutionId,
+      recipientUserIds: [studentUserId],
+      type: 'EXAM_CHEATING',
+      title: decision === 'CONFIRMED' ? 'Examination misconduct — decision' : 'Examination complaint dismissed',
+      body:
+        decision === 'CONFIRMED'
+          ? `A case concerning your examination has been confirmed. ${penalty ? `Outcome: ${(PENALTY_META as any)[penalty]?.label ?? penalty}.` : ''} ${note}`.slice(0, 500)
+          : `The case concerning your examination has been dismissed. ${note}`.slice(0, 500),
+      data: { module: 'examcell', screen: 'CheatingCases', id },
+      actorUserId,
     });
     await appendCheatingEvent(prisma, id, 'NOTIFIED', actorUserId, 'The student was notified.', {
       recipientUserId: studentUserId,

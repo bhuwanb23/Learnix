@@ -205,6 +205,32 @@ export const TYPE_META: Record<string, TypeMeta> = {
   // legacy value for rows already on disk. Do not "simplify" it back.
   EVENT_REMINDER: { label: 'Event reminder', category: null, icon: 'alarm-outline', color: '#64748b' },
   CHAPTER: { label: 'Chapter news', category: null, icon: 'location-outline', color: '#64748b' },
+
+  // -- Exam cell desk (src/modules/examcell/examcell-notifications.rules.ts) --
+  //
+  // APPEND-ONLY, and the same reasoning as the hostel block above: these are NOT finance
+  // messages, so they stay `category: null` and the accounts inbox leaves them out. The exam
+  // cell's own registry maps them to their real categories, and the STUDENT route merges that
+  // registry with this one — so a student sees "Hall ticket available" rather than a raw type
+  // string, and an accounts officer sees nothing.
+  //
+  // The chrome lives HERE because a row's label, icon and colour must be identical wherever it
+  // is rendered — the exam officer's inbox, the student's merged inbox, and any future one. What
+  // the exam cell owns is the CATEGORY, and that is in its own rules file.
+  EXAM_SCHEDULED: { label: 'Exam scheduled', category: null, icon: 'calendar-outline', color: '#2563eb' },
+  EXAM_PUBLISHED: { label: 'Exam published', category: null, icon: 'calendar-outline', color: '#2563eb' },
+  TIMETABLE_CHANGED: { label: 'Timetable changed', category: null, icon: 'time-outline', color: '#0891b2' },
+  HALL_TICKET_READY: { label: 'Hall ticket available', category: null, icon: 'ticket-outline', color: '#0284c7' },
+  EXAM_REMINDER: { label: 'Exam reminder', category: null, icon: 'alarm-outline', color: '#d97706' },
+  RESULT_PUBLISHED: { label: 'Result published', category: null, icon: 'trophy-outline', color: '#059669' },
+  REVALUATION_DECIDED: { label: 'Revaluation decided', category: null, icon: 'refresh-circle-outline', color: '#7c3aed' },
+  EVALUATION_DEADLINE: { label: 'Evaluation deadline', category: null, icon: 'clipboard-outline', color: '#dc2626' },
+  EXAM_IMPORTANT: { label: 'Important notice', category: null, icon: 'megaphone-outline', color: '#ea580c' },
+  EXAM_CHEATING: { label: 'Cheating case update', category: null, icon: 'warning-outline', color: '#b91c1c' },
+  // The legacy broad-cast type the exam office used before the nine categories existed. It is
+  // mapped to null here so the finance inbox ignores it; the exam cell's own registry maps it to
+  // IMPORTANT_NOTICE so the officer's inbox still shows the old rows rather than losing them.
+  EXAM_CELL_BROADCAST: { label: 'Exam office notice', category: null, icon: 'megaphone-outline', color: '#ea580c' },
   // The KEY is `ANNOUNCEMENT` because that is the literal value the alumni desk
   // writes to `Notification.type` - a registry key that does not match the emitted
   // string is worse than no entry, because the row then falls through to the

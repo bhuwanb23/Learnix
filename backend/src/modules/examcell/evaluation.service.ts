@@ -32,6 +32,9 @@ import {
   totalOf,
   type ScriptStatus,
 } from './evaluation.rules.js';
+// X-09 — the evaluation-deadline emitter. The deadline service used to stamp the deadline and send
+// NOTHING, and its own comment said the notification was somebody else's job. This is that job.
+import { announceEvaluationDeadline } from './examcell-notifications.emitters.js';
 
 const prisma = new PrismaClient();
 
@@ -626,9 +629,21 @@ export async function setDeadline(institutionId: string, userId: string, examId:
   return { examId, dueAt: row.dueAt };
 }
 
-/** Requirement 6 — stamp the reminder (the notification itself is X-09's job). */
+/**
+ * Requirement 6 — remind the exam office that the papers are waiting.
+ *
+ * This used to stamp `remindedAt` and write an audit entry, and nothing else — the comment said the
+ * notification was X-09's job, and X-09 did not exist, so the deadline was a fact on a row that
+ * nobody was ever shown. Now it is sent.
+ *
+ * THE AUDIENCE IS THE EXAM OFFICE, not the students. A grading deadline is the desk's problem; the
+ * student has no part in it.
+ */
 export async function remindDeadline(institutionId: string, userId: string, examId: string) {
-  const exam = await prisma.exam.findFirst({ where: { id: examId, institutionId }, select: { id: true } });
+  const exam = await prisma.exam.findFirst({
+    where: { id: examId, institutionId },
+    select: { id: true, name: true, semester: true },
+  });
   if (!exam) throw notFound('Exam not found');
   const existing = await prisma.gradingDeadline.findUnique({ where: { examId } });
   if (!existing) throw unprocessable('No deadline set for this exam yet — set one first');
@@ -640,7 +655,48 @@ export async function remindDeadline(institutionId: string, userId: string, exam
     entityType: 'GradingDeadline',
     entityId: row.id,
   });
-  return { examId, dueAt: row.dueAt, remindedAt: row.remindedAt };
+
+  // How many papers are actually still unmarked, and for WHICH subject. The count is derived from
+  // the papers, never from the denormalised counter, so a reminder never says "0 papers waiting"
+  // when there are forty.
+  const evaluations = await prisma.evaluation.findMany({
+    where: { examSlot: { examId } },
+    include: { papers: true, subjectOffering: { include: { course: { select: { name: true } } } } },
+  });
+  let papersPending = 0;
+  let courseName = 'the paper';
+  for (const evaluation of evaluations) {
+    const pending = evaluation.papers.filter((p) => p.marksEntered === null).length;
+    papersPending += pending;
+    if (pending > 0 && courseName === 'the paper') {
+      courseName = evaluation.subjectOffering.course.name;
+    }
+  }
+
+  let notified = 0;
+  try {
+    const res = await announceEvaluationDeadline(
+      institutionId,
+      userId,
+      { id: exam.id, name: exam.name, courseName },
+      row.dueAt,
+      papersPending,
+    );
+    notified = res.delivered;
+  } catch (error) {
+    // The deadline was stamped — that is the fact. A failure to announce it must be recorded, not
+    // swallowed and not allowed to un-stamp the deadline.
+    await writeAudit({
+      institutionId,
+      actorUserId: userId,
+      action: 'DEADLINE_ANNOUNCEMENT_FAILED',
+      entityType: 'GradingDeadline',
+      entityId: row.id,
+      after: { error: error instanceof Error ? error.message : String(error) },
+    });
+  }
+
+  return { examId, dueAt: row.dueAt, remindedAt: row.remindedAt, papersPending, notified };
 }
 
 /**
