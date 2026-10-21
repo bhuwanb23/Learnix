@@ -1,510 +1,593 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+/**
+ * X-11 — The exam cell dashboard: the seven-section screen.
+ * Docs: 05-exam-cell.md §3.1
+ *
+ * WHAT THIS SCREEN REPLACED
+ * -------------------------
+ * A hero banner, four counters, a list of upcoming papers, a "Needs Attention" box of PROSE
+ * STRINGS, five recent cheating cases, and a grid of six module tiles. It fetched
+ * `GET /examcell/dashboard` and guessed the rest.
+ *
+ * It was wrong in four ways that could not be fixed in place:
+ *
+ *   1. It counted THREE of the SIX exam statuses, so a DRAFT exam and a PUBLISHED one were both
+ *      INVISIBLE. An officer reading "0 ongoing" could not tell whether that meant "none running"
+ *      or "the dashboard does not count that".
+ *   2. It counted only `UNDER_REVIEW` misconduct cases, when the open set is REPORTED, UNDER_REVIEW,
+ *      COMMITTEE_REVIEW and ESCALATED. Three of the four were invisible.
+ *   3. Its alerts were prose strings, which cannot be filtered, counted, or linked to.
+ *   4. It had no "absent" and no "appeared" — because the exam domain had NO attendance record at
+ *      all, and the only attendance table in the platform was a teacher's per-lecture register,
+ *      keyed by course offering, with no join key to an exam slot.
+ *
+ * (4) is why this feature also adds `ExamAttendance` and the mark-roll that fills it. Absence is
+ * RECORDED, never inferred: a paper whose roll nobody has taken is not a paper full of absentees,
+ * and the screen says "not marked yet" rather than "0 appeared".
+ *
+ * EVERYTHING COMES FROM THE SERVER
+ * --------------------------------
+ * The seven section names, the four quick actions, the six alert kinds, every icon, every colour
+ * and every threshold arrive from `GET /examcell/dashboard/catalogue`. The client holds a MIRROR
+ * for the frame before the catalogue lands, and nothing else — a client-side list that acted as the
+ * source would be a second list to forget to update.
+ *
+ * EVERY FIGURE IS WHAT THE SERVER SENT
+ * ------------------------------------
+ * The screen computes nothing about the data. It renders what came back. A number the client
+ * derived is a number the client can get wrong.
+ */
+import React, { useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { theme } from '../../../../constants/theme';
 import { examcellApi } from '../../../../services/api';
-
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS } from '../../../../constants/theme';
-
-const STAT_META = [
-  { id: 'activeExams', label: 'Active Exams', icon: 'calendar', color: '#2563eb' },
-  { id: 'pendingEvaluations', label: 'Pending Evaluations', icon: 'clipboard', color: '#d97706' },
-  { id: 'pendingResults', label: 'Results Pending', icon: 'trophy', color: '#059669' },
-  { id: 'activeCheatingCases', label: 'Cheating Cases', icon: 'warning', color: '#dc2626' },
-];
-
-const MODULES = [
-  { id: 'Timetable', label: 'Exam Timetable', desc: 'Schedule exams & allocate rooms', icon: 'calendar-outline', color: '#2563eb' },
-  { id: 'Evaluations', label: 'Evaluations', desc: 'Track grading progress', icon: 'clipboard-outline', color: '#059669' },
-  { id: 'Results', label: 'Results', desc: 'Publish & moderate results', icon: 'trophy-outline', color: '#d97706' },
-  { id: 'HallTickets', label: 'Hall Tickets', desc: 'Issue & verify admit cards', icon: 'ticket-outline', color: '#0284c7' },
-  { id: 'CheatingCases', label: 'Cheating Cases', desc: 'Review AI-detected alerts', icon: 'warning-outline', color: '#dc2626' },
-  { id: 'Notifications', label: 'Notify Students', desc: 'Broadcast exam updates', icon: 'megaphone-outline', color: '#4f46e5' },
-];
+import {
+  ALERT_KINDS,
+  BLOCKS,
+  GREEN,
+  MUTED,
+  QUICK_ACTIONS,
+  RED,
+  SLATE,
+  VIOLET,
+  blockMeta,
+  fmtDay,
+  fmtDayFull,
+  percent,
+  plural,
+  quickActionMeta,
+  timeAgo,
+} from './dashboardMeta';
+import {
+  ActionTile,
+  AlertRow,
+  DashboardEmpty,
+  DashboardScreen,
+  DetailRow,
+  NoteStrip,
+  ProgressBar,
+  Section,
+  StatRow,
+  StatTile,
+  useDashboard,
+} from './dashboardUi';
 
 export default function ExamDashboard({ navigation }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  const catalogue = useDashboard(() => examcellApi.dashboardCatalogue());
+  const overview = useDashboard(() => examcellApi.dashboardOverview());
 
-  const fetchData = useCallback(async () => {
-    try {
-      setError(null);
-      const res = await examcellApi.dashboard();
-      setData(res);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const reload = useCallback(() => {
+    catalogue.reload();
+    overview.reload();
+  }, [catalogue, overview]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // THE SERVER'S VOCABULARY, with the mirror as the fallback for the frame before it lands.
+  const blocks = catalogue.data?.blocks ?? BLOCKS;
+  const quickActions = catalogue.data?.quickActions ?? QUICK_ACTIONS;
+  const alertKinds = catalogue.data?.alertKinds ?? ALERT_KINDS;
 
-  const onRefresh = () => { setRefreshing(true); fetchData(); };
+  const d = overview.data;
+  const ex = d?.overview;
+  const ev = d?.evaluation;
+  const rs = d?.results;
+  const st = d?.students;
+  const al = d?.alerts;
+  const ac = d?.actions;
+  const pf = d?.performance;
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.loadingText}>Loading dashboard…</Text>
-      </View>
-    );
-  }
+  // The alert kinds the server sent, and the counts it sent with them. The kind LIST comes from the
+  // catalogue so a kind added on the server is drawn; the COUNT comes with the alert, because that
+  // is where the query lives.
+  const alerts = useMemo(() => {
+    const byKind = new Map((al?.alerts ?? []).map((a) => [a.kind, a]));
+    return alertKinds.map((kind) => byKind.get(kind.id) ?? { ...kind, count: 0, tone: 'clear' });
+  }, [al?.alerts, alertKinds]);
 
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color="#94a3b8" />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity onPress={fetchData} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const actionCounts = useMemo(() => {
+    const byId = new Map((ac?.actions ?? []).map((a) => [a.id, a]));
+    return quickActions.map((a) => {
+      const live = byId.get(a.id);
+      return { ...a, count: live?.count ?? 0, tone: live?.tone ?? 'clear' };
+    });
+  }, [ac?.actions, quickActions]);
 
-  const hero = data?.hero ?? {};
-  const stats = data?.stats ?? {};
-
-  const handleModulePress = (moduleId) => {
-    if (moduleId === 'Timetable' || moduleId === 'Evaluations' || moduleId === 'Results') {
-      navigation.switchTab(moduleId);
-    } else {
-      navigation.openModule(moduleId);
-    }
-  };
+  const openRoute = useCallback(
+    (route) => {
+      if (!route) return;
+      // `openModule` DROPS its second argument, so a route that needs a param cannot be reached
+      // this way. Every route the server publishes here is a screen that picks its own exam, so
+      // this is the correct call — and the audit asserts every route is a registered key.
+      navigation?.openModule?.(route);
+    },
+    [navigation],
+  );
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
+    <DashboardScreen
+      loading={overview.loading && catalogue.loading}
+      refreshing={overview.refreshing || catalogue.refreshing}
+      error={overview.error ?? catalogue.error}
+      onRetry={reload}
+      onRefresh={reload}
     >
-      {/* Hero banner */}
-      <View style={styles.heroCard}>
-        <View style={styles.heroRow}>
-          <View style={styles.heroIcon}>
-            <Ionicons name="calendar" size={20} color="#2563eb" />
-          </View>
-          <View style={styles.heroText}>
-            <Text style={styles.heroTitle}>Exams Overview</Text>
-            <Text style={styles.heroSubtitle}>
-              {hero.activeExams ?? 0} active · {hero.scheduledExams ?? 0} scheduled · {hero.completedExams ?? 0} completed
+      {/* 1 — EXAM OVERVIEW. */}
+      <Section
+        title={blockMeta('EXAM_OVERVIEW')?.label ?? 'Exam overview'}
+        blurb={blockMeta('EXAM_OVERVIEW')?.blurb}
+        icon={blockMeta('EXAM_OVERVIEW')?.icon}
+        color={blockMeta('EXAM_OVERVIEW')?.color}
+        right={
+          <TouchableOpacity onPress={() => navigation?.switchTab?.('Timetable')} hitSlop={8}>
+            <Text style={styles.link}>Timetable</Text>
+          </TouchableOpacity>
+        }
+      >
+        <StatRow>
+          <StatTile
+            label="Ongoing"
+            value={ex?.ongoing ?? 0}
+            icon="pulse-outline"
+            color={blockMeta('EXAM_OVERVIEW')?.color}
+          />
+          <StatTile
+            label="Scheduled"
+            value={ex?.scheduled ?? 0}
+            hint={`${ex?.draft ?? 0} draft`}
+            icon="calendar-outline"
+            color={blockMeta('EXAM_OVERVIEW')?.color}
+          />
+          <StatTile
+            label="Completed"
+            value={ex?.completed ?? 0}
+            icon="checkmark-done-outline"
+            color={GREEN}
+          />
+        </StatRow>
+
+        {ex?.deadline ? (
+          <View style={styles.deadline}>
+            <Ionicons
+              name={ex.deadline.overdue ? 'alarm' : 'alarm-outline'}
+              size={14}
+              color={ex.deadline.overdue ? RED : SLATE}
+            />
+            <Text style={[styles.deadlineText, ex.deadline.overdue ? { color: RED } : null]}>
+              {ex.deadline.examName} — grading due {fmtDayFull(ex.deadline.dueAt)}
+              {ex.deadline.daysLeft !== null
+                ? ex.deadline.overdue
+                  ? ` (${Math.abs(ex.deadline.daysLeft)}d overdue)`
+                  : ` (${ex.deadline.daysLeft}d left)`
+                : ''}
             </Text>
           </View>
-        </View>
-        {hero.totalStudents > 0 && (
-          <>
-            <View style={styles.heroProgressTrack}>
-              <View style={[styles.heroProgressFill, { width: `${Math.min(((hero.completedExams ?? 0) / Math.max((hero.activeExams ?? 0) + (hero.scheduledExams ?? 0) + (hero.completedExams ?? 0), 1)) * 100, 100)}%` }]} />
+        ) : null}
+
+        {(ex?.upcoming ?? []).length === 0 ? (
+          <DashboardEmpty
+            icon="calendar-outline"
+            title="No papers in the next week"
+            message="The next fortnight is empty. Papers appear here once they are scheduled."
+          />
+        ) : (
+          (ex?.upcoming ?? []).map((u) => (
+            <View key={u.slotId} style={styles.paperRow}>
+              <View style={styles.paperWhen}>
+                <Text style={styles.paperDay}>{fmtDay(u.date)}</Text>
+                <Text style={styles.paperTime}>{u.startTime}</Text>
+              </View>
+              <View style={styles.flex}>
+                <Text style={styles.paperTitle} numberOfLines={1}>
+                  {u.subject}
+                </Text>
+                <Text style={styles.paperMeta} numberOfLines={1}>
+                  {u.code} · {u.examName}
+                  {u.room ? ` · ${u.room}` : ''}
+                </Text>
+              </View>
+              {u.rescheduled ? (
+                <View style={styles.rescheduledTag}>
+                  <Text style={styles.rescheduledText}>moved</Text>
+                </View>
+              ) : null}
             </View>
-            <Text style={styles.heroNote}>{hero.totalStudents} total hall tickets generated</Text>
+          ))
+        )}
+      </Section>
+
+      {/* 2 — EVALUATION STATUS. */}
+      <Section
+        title={blockMeta('EVALUATION_STATUS')?.label ?? 'Evaluation status'}
+        blurb={blockMeta('EVALUATION_STATUS')?.blurb}
+        icon={blockMeta('EVALUATION_STATUS')?.icon}
+        color={blockMeta('EVALUATION_STATUS')?.color}
+        right={
+          <TouchableOpacity onPress={() => navigation?.switchTab?.('Evaluations')} hitSlop={8}>
+            <Text style={styles.link}>Evaluations</Text>
+          </TouchableOpacity>
+        }
+      >
+        <StatRow>
+          <StatTile label="Evaluated" value={ev?.evaluated ?? 0} hint={`of ${ev?.total ?? 0}`} />
+          <StatTile
+            label="Still to mark"
+            value={ev?.pending ?? 0}
+            tone={ev?.pending > 0 ? 'warn' : 'clear'}
+          />
+          <StatTile
+            label="Under review"
+            value={ev?.underReview ?? 0}
+            tone={ev?.underReview > 0 ? 'warn' : 'clear'}
+            hint="moderation"
+          />
+        </StatRow>
+        <ProgressBar
+          percent={ev?.percent ?? 0}
+          color={blockMeta('EVALUATION_STATUS')?.color}
+          label={`${ev?.percent ?? 0}% of papers marked`}
+        />
+        <DetailRow
+          label="Scripts in custody"
+          value={`${ev?.scripts?.inCustody ?? 0} of ${ev?.total ?? 0}`}
+        />
+        <DetailRow
+          label="Scripts verified"
+          value={`${ev?.scripts?.verified ?? 0}`}
+        />
+        {ev?.flagged > 0 ? (
+          <NoteStrip tone="warn">
+            {plural(ev.flagged, 'subject')} flagged by moderation — the marks are unlocked and need
+            looking at.
+          </NoteStrip>
+        ) : null}
+      </Section>
+
+      {/* 3 — RESULT PROGRESS. */}
+      <Section
+        title={blockMeta('RESULT_PROGRESS')?.label ?? 'Result progress'}
+        blurb={blockMeta('RESULT_PROGRESS')?.blurb}
+        icon={blockMeta('RESULT_PROGRESS')?.icon}
+        color={blockMeta('RESULT_PROGRESS')?.color}
+        right={
+          <TouchableOpacity onPress={() => navigation?.switchTab?.('Results')} hitSlop={8}>
+            <Text style={styles.link}>Results</Text>
+          </TouchableOpacity>
+        }
+      >
+        <StatRow>
+          <StatTile
+            label="Published"
+            value={rs?.published ?? 0}
+            hint={`of ${rs?.total ?? 0}`}
+            tone="clear"
+          />
+          <StatTile
+            label="In processing"
+            value={rs?.inProcessing ?? 0}
+            tone={rs?.inProcessing > 0 ? 'warn' : 'clear'}
+          />
+          <StatTile
+            label="Ready to publish"
+            value={rs?.readyToPublish ?? 0}
+            tone={rs?.readyToPublish > 0 ? 'warn' : 'clear'}
+          />
+        </StatRow>
+        <ProgressBar
+          percent={rs?.publishPercent ?? 0}
+          color={blockMeta('RESULT_PROGRESS')?.color}
+          label={`${rs?.publishPercent ?? 0}% published`}
+        />
+        {(rs?.slots ?? []).length === 0 ? (
+          <DashboardEmpty
+            icon="trophy-outline"
+            title="No results yet"
+            message="Marks appear here as the papers are consolidated."
+          />
+        ) : (
+          (rs?.slots ?? []).slice(0, 4).map((s) => (
+            <View key={s.slotId} style={styles.slotRow}>
+              <View style={styles.flex}>
+                <Text style={styles.paperTitle} numberOfLines={1}>
+                  {s.subject}
+                </Text>
+                <Text style={styles.paperMeta} numberOfLines={1}>
+                  {s.code} · {s.examName}
+                </Text>
+              </View>
+              {s.ready ? (
+                <View style={[styles.tag, { backgroundColor: '#dcfce7' }]}>
+                  <Text style={[styles.tagText, { color: GREEN }]}>ready</Text>
+                </View>
+              ) : (
+                <Text style={styles.blockers} numberOfLines={1}>
+                  {s.blockers[0] ?? 'blocked'}
+                </Text>
+              )}
+            </View>
+          ))
+        )}
+      </Section>
+
+      {/* 4 — STUDENT STATISTICS. */}
+      <Section
+        title={blockMeta('STUDENT_STATISTICS')?.label ?? 'Student statistics'}
+        blurb={blockMeta('STUDENT_STATISTICS')?.blurb}
+        icon={blockMeta('STUDENT_STATISTICS')?.icon}
+        color={blockMeta('STUDENT_STATISTICS')?.color}
+      >
+        <StatRow>
+          <StatTile label="Registered" value={st?.registered ?? 0} hint="enrolments" />
+          <StatTile label="Eligible" value={st?.eligible ?? 0} hint="no warnings" />
+          <StatTile
+            label="Appeared"
+            value={st?.appeared ?? 0}
+            tone={st?.marked ? 'clear' : undefined}
+            hint={st?.marked ? 'present' : 'not marked yet'}
+          />
+          <StatTile
+            label="Absent"
+            value={st?.absent ?? 0}
+            tone={st?.absent > 0 ? 'bad' : 'clear'}
+          />
+        </StatRow>
+        {st && !st.marked ? (
+          <NoteStrip tone="warn">
+            No paper has been marked yet, so the appeared and absent figures are zero because the
+            roll has not been taken — not because nobody came. Take the roll from a paper.
+          </NoteStrip>
+        ) : null}
+        {st && st.unmarked > 0 ? (
+          <NoteStrip>
+            {plural(st.unmarked, 'student')} on the roll {st.unmarked === 1 ? 'has' : 'have'} not
+            been marked yet. That is not an absence.
+          </NoteStrip>
+        ) : null}
+        <DetailRow label="Students on the roll" value={`${st?.rollTotal ?? 0}`} />
+        <DetailRow
+          label="Papers marked"
+          value={`${st?.markedSlots ?? 0} of ${st?.slots ?? 0}`}
+        />
+        <DetailRow
+          label="With fee dues"
+          value={`${st?.warnings?.outstandingFees ?? 0}`}
+        />
+      </Section>
+
+      {/* 5 — EXAM ALERTS. */}
+      <Section
+        title={blockMeta('EXAM_ALERTS')?.label ?? 'Exam alerts'}
+        blurb={blockMeta('EXAM_ALERTS')?.blurb}
+        icon={blockMeta('EXAM_ALERTS')?.icon}
+        color={blockMeta('EXAM_ALERTS')?.color}
+      >
+        {alerts.map((a) => (
+          <AlertRow key={a.kind} alert={a} onPress={() => openRoute(a.route)} />
+        ))}
+        {(al?.recentCases ?? []).length > 0 ? (
+          <>
+            <Text style={styles.subLabel}>Recent cases</Text>
+            {(al?.recentCases ?? []).map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                style={styles.caseRow}
+                onPress={() => openRoute('CheatingCases')}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="warning-outline" size={15} color={RED} />
+                <View style={styles.flex}>
+                  <Text style={styles.paperTitle} numberOfLines={1}>
+                    {c.student}
+                  </Text>
+                  <Text style={styles.paperMeta} numberOfLines={1}>
+                    {c.subject} · {c.status}
+                  </Text>
+                </View>
+                <Text style={styles.caseWhen}>{timeAgo(c.createdAt)}</Text>
+              </TouchableOpacity>
+            ))}
+          </>
+        ) : null}
+      </Section>
+
+      {/* 6 — QUICK ACTIONS. */}
+      <Section
+        title={blockMeta('QUICK_ACTIONS')?.label ?? 'Quick actions'}
+        blurb={blockMeta('QUICK_ACTIONS')?.blurb}
+        icon={blockMeta('QUICK_ACTIONS')?.icon}
+        color={blockMeta('QUICK_ACTIONS')?.color}
+      >
+        <View style={styles.actionGrid}>
+          {actionCounts.map((a) => (
+            <ActionTile
+              key={a.id}
+              action={a}
+              count={a.count}
+              tone={a.tone}
+              onPress={() => openRoute(a.route)}
+            />
+          ))}
+        </View>
+      </Section>
+
+      {/* 7 — PERFORMANCE SNAPSHOT. */}
+      <Section
+        title={blockMeta('PERFORMANCE_SNAPSHOT')?.label ?? 'Performance snapshot'}
+        blurb={blockMeta('PERFORMANCE_SNAPSHOT')?.blurb}
+        icon={blockMeta('PERFORMANCE_SNAPSHOT')?.icon}
+        color={blockMeta('PERFORMANCE_SNAPSHOT')?.color}
+        right={
+          <TouchableOpacity
+            onPress={() => openRoute('ResultsAnalytics')}
+            hitSlop={8}
+          >
+            <Text style={styles.link}>Analytics</Text>
+          </TouchableOpacity>
+        }
+      >
+        {(pf?.results ?? 0) === 0 ? (
+          <DashboardEmpty
+            icon="stats-chart-outline"
+            title="No results to summarise"
+            message="The pass rate and the subject trends appear once results exist."
+          />
+        ) : (
+          <>
+            <StatRow>
+              <StatTile label="Pass rate" value={percent(pf?.passPercent)} />
+              <StatTile
+                label="Average marks"
+                value={pf?.averageMarks ?? '—'}
+                hint={pf?.averagePercent !== null ? `${pf.averagePercent}%` : undefined}
+              />
+              <StatTile label="Results" value={pf?.results ?? 0} />
+            </StatRow>
+
+            {(pf?.subjects ?? []).length > 0 ? (
+              <>
+                <Text style={styles.subLabel}>Subject-wise</Text>
+                {pf.subjects.slice(0, 6).map((s) => (
+                  <View key={s.code} style={styles.subjectRow}>
+                    <View style={styles.flex}>
+                      <Text style={styles.paperTitle} numberOfLines={1}>
+                        {s.subject}
+                      </Text>
+                      <Text style={styles.paperMeta}>
+                        {s.code} · {plural(s.count, 'result')}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.subjectPass,
+                        { color: s.passPercent >= 50 ? GREEN : s.passPercent > 0 ? '#d97706' : RED },
+                      ]}
+                    >
+                      {percent(s.passPercent)}
+                    </Text>
+                  </View>
+                ))}
+              </>
+            ) : null}
+
+            {pf?.hasTrends ? (
+              <>
+                <Text style={styles.subLabel}>Trends</Text>
+                {pf.trends.slice(0, 4).map((t) => (
+                  <View key={t.code} style={styles.trendBox}>
+                    <Text style={styles.paperTitle} numberOfLines={1}>
+                      {t.subject}
+                    </Text>
+                    {t.points.map((p) => (
+                      <View key={p.examId} style={styles.trendRow}>
+                        <Text style={styles.trendExam} numberOfLines={1}>
+                          {p.examName}
+                        </Text>
+                        <Text style={styles.trendValue}>
+                          {percent(p.averagePercent)} avg · {percent(p.passPercent)} pass
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                ))}
+              </>
+            ) : (
+              <NoteStrip>
+                A subject seen in one exam only has a single point, not a trend. Trends appear when a
+                subject is examined twice.
+              </NoteStrip>
+            )}
           </>
         )}
-      </View>
-
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        {STAT_META.map((stat) => (
-          <TouchableOpacity
-            key={stat.id}
-            style={styles.statCard}
-            activeOpacity={0.8}
-            onPress={() => {
-              if (stat.id === 'activeExams') navigation.switchTab('Timetable');
-              if (stat.id === 'pendingEvaluations') navigation.switchTab('Evaluations');
-              if (stat.id === 'pendingResults') navigation.switchTab('Results');
-              if (stat.id === 'activeCheatingCases') navigation.openModule('CheatingCases');
-            }}
-          >
-            <View style={[styles.statIcon, { backgroundColor: stat.color + '14' }]}>
-              <Ionicons name={stat.icon} size={18} color={stat.color} />
-            </View>
-            <Text style={styles.statValue}>{stats[stat.id] ?? 0}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Upcoming exams */}
-      {data?.upcomingExams?.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Exams</Text>
-          </View>
-          {data.upcomingExams.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.examCard}
-              activeOpacity={0.8}
-              onPress={() => navigation.switchTab('Timetable')}
-            >
-              <View style={styles.timeBox}>
-                <Text style={styles.timeText}>{item.startTime}</Text>
-                <Text style={styles.timeAm}>{item.endTime}</Text>
-              </View>
-              <View style={[styles.examIcon, { backgroundColor: '#2563eb14' }]}>
-                <Ionicons name="create-outline" size={16} color="#2563eb" />
-              </View>
-              <View style={styles.examInfo}>
-                <Text style={styles.examTitle}>{item.subject}</Text>
-                <Text style={styles.examMeta}>{item.code} • {item.room ?? 'TBA'}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
-
-      {/* Alerts */}
-      {data?.alerts?.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Needs Attention</Text>
-          </View>
-          {data.alerts.map((alert, i) => (
-            <View key={i} style={styles.alertCard}>
-              <Ionicons name="alert-circle-outline" size={16} color="#dc2626" />
-              <Text style={styles.alertText}>{alert}</Text>
-            </View>
-          ))}
-        </>
-      )}
-
-      {/* Recent cheating */}
-      {data?.recentCheating?.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Cheating Alerts</Text>
-          </View>
-          {data.recentCheating.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.taskCard}
-              activeOpacity={0.8}
-              onPress={() => navigation.openModule('CheatingCases')}
-            >
-              <View style={[styles.taskIcon, { backgroundColor: '#dc262614' }]}>
-                <Ionicons name="warning-outline" size={16} color="#dc2626" />
-              </View>
-              <View style={styles.taskInfo}>
-                <Text style={styles.taskTitle}>{item.student}</Text>
-                <Text style={styles.taskDetail}>{item.issue} • {item.subject}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
-
-      {/* Module hub */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Exam Tools</Text>
-      </View>
-      <View style={styles.moduleGrid}>
-        {MODULES.map((mod) => (
-          <TouchableOpacity
-            key={mod.id}
-            style={styles.moduleCard}
-            activeOpacity={0.8}
-            onPress={() => handleModulePress(mod.id)}
-          >
-            <View style={[styles.moduleIcon, { backgroundColor: mod.color + '14' }]}>
-              <Ionicons name={mod.icon} size={20} color={mod.color} />
-            </View>
-            <Text style={styles.moduleLabel}>{mod.label}</Text>
-            <Text style={styles.moduleDesc} numberOfLines={2}>{mod.desc}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
+      </Section>
+    </DashboardScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f7f9',
-  },
-  content: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-  },
-  errorText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#dc2626',
-    fontFamily: 'Manrope-Regular',
-    textAlign: 'center',
-  },
-  retryBtn: {
-    marginTop: 12,
-    backgroundColor: '#2563eb',
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  retryText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontFamily: 'Manrope-Bold',
-  },
-  heroCard: {
-    backgroundColor: '#2563eb',
-    borderRadius: BORDER_RADIUS.lg,
-    padding: 20,
-    marginBottom: 20,
-  },
-  heroRow: {
+  flex: { flex: 1 },
+  link: { color: theme.colors.primary, fontWeight: '600', fontSize: 12 },
+
+  deadline: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  deadlineText: { fontSize: 11, color: SLATE, flex: 1 },
+
+  paperRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: 5,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
-  heroIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    justifyContent: 'center',
+  paperWhen: { width: 46 },
+  paperDay: { fontSize: 12, fontWeight: '700', color: theme.colors.text },
+  paperTime: { fontSize: 10, color: MUTED },
+  paperTitle: { fontSize: 13, fontWeight: '600', color: theme.colors.text },
+  paperMeta: { fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
+  rescheduledTag: { backgroundColor: '#fef3c7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  rescheduledText: { fontSize: 9, fontWeight: '700', color: '#d97706' },
+
+  slotRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    gap: theme.spacing.sm,
+    paddingVertical: 5,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
   },
-  heroText: {
-    flex: 1,
-  },
-  heroTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.3,
-  },
-  heroSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 2,
-  },
-  heroProgressTrack: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    marginTop: 16,
-    overflow: 'hidden',
-  },
-  heroProgressFill: {
-    height: '100%',
-    borderRadius: 3,
-    backgroundColor: '#FFFFFF',
-  },
-  heroNote: {
+  blockers: { fontSize: 10, color: '#d97706', maxWidth: 130, textAlign: 'right' },
+  tag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  tagText: { fontSize: 9, fontWeight: '700' },
+
+  subLabel: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.9)',
-    fontFamily: 'Manrope-Medium',
-    marginTop: 8,
+    fontWeight: '700',
+    color: theme.colors.textMuted,
+    marginTop: theme.spacing.xs,
   },
-  statsRow: {
+
+  caseRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#eef2f7',
-    padding: 14,
-  },
-  statIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    gap: theme.spacing.sm,
+    paddingVertical: 5,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#64748b',
-    fontFamily: 'Manrope-Medium',
-    marginTop: 2,
-  },
-  sectionHeader: {
+  caseWhen: { fontSize: 10, color: MUTED },
+
+  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
+
+  subjectRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: theme.spacing.sm,
+    paddingVertical: 4,
+  },
+  subjectPass: { fontSize: 14, fontWeight: '700' },
+
+  trendBox: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
     marginTop: 4,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-    letterSpacing: -0.3,
-  },
-  examCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#eef2f7',
-    padding: 14,
-    marginBottom: 10,
-  },
-  timeBox: {
-    width: 48,
-    marginRight: 12,
-  },
-  timeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-  },
-  timeAm: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontFamily: 'Manrope-Medium',
-  },
-  examIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  examInfo: {
-    flex: 1,
-  },
-  examTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  examMeta: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 2,
-  },
-  alertCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    padding: 14,
-    marginBottom: 10,
-    gap: 10,
-  },
-  alertText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#dc2626',
-    fontFamily: 'Manrope-Regular',
-  },
-  taskCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#eef2f7',
-    padding: 14,
-    marginBottom: 10,
-  },
-  taskIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  taskInfo: {
-    flex: 1,
-  },
-  taskTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
-    fontFamily: 'Manrope-SemiBold',
-  },
-  taskDetail: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    marginTop: 2,
-  },
-  moduleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 8,
-  },
-  moduleCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: '#eef2f7',
-    padding: 16,
-  },
-  moduleIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  moduleLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0f172a',
-    fontFamily: 'PlusJakartaSans-Bold',
-    marginBottom: 2,
-  },
-  moduleDesc: {
-    fontSize: 11,
-    color: '#64748b',
-    fontFamily: 'Manrope-Regular',
-    lineHeight: 16,
-  },
+  trendRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 6, paddingVertical: 2 },
+  trendExam: { fontSize: 10, color: theme.colors.textMuted, flex: 1 },
+  trendValue: { fontSize: 10, fontWeight: '600', color: theme.colors.text },
 });
