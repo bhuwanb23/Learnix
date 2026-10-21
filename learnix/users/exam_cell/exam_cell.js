@@ -120,6 +120,14 @@ import ExamActivity from './pages/profile/activity/activity';
 import ExamChangePassword from './pages/profile/change_password/change_password';
 import ExamHelpSupport from './pages/profile/help_support/help_support';
 
+// X-11 the exam mark-roll. The invigilator takes the roll on a phone in a room, so the screen is a
+// list of names with a PRESENT/ABSENT choice and ONE bulk submit.
+//
+// Its own FEATURE_MODULES entry rather than a ninth timetable block, because the timetable's eight
+// blocks are a published contract that the docs and the UI audit both assert, and the timetable's
+// job is the SCHEDULE — not the roll.
+import ExamAttendanceScreen from './pages/attendance/attendance';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 import { setDemoUser } from '../../services/api';
@@ -141,6 +149,7 @@ const FEATURE_MODULES = {
   ExamActivity: { title: 'Sign-in history', icon: 'time-outline', component: ExamActivity },
   ExamChangePassword: { title: 'Change password', icon: 'lock-closed-outline', component: ExamChangePassword },
   ExamHelpSupport: { title: 'Help & Support', icon: 'help-circle-outline', component: ExamHelpSupport },
+  ExamAttendance: { title: 'Mark the roll', icon: 'checkbox-outline', component: ExamAttendanceScreen },
   TimetableCalendar: { title: 'Examination Calendar', icon: 'calendar-outline', component: TimetableCalendar },
   TimetableExams: { title: 'Exam Schedules', icon: 'document-text-outline', component: TimetableExams },
   TimetableAllocation: { title: 'Course Allocation', icon: 'school-outline', component: TimetableAllocation },

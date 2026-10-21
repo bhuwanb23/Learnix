@@ -1333,6 +1333,43 @@ export const examcellApi = {
   // the screen needs that room's roster — not a free text box.
   cheatingReportContext: (slotId) => api.get(`/examcell/cheating-cases/report-context/${slotId}`),
   cheatingReportableSlots: () => api.get('/examcell/cheating-cases/reportable-slots'),
+  // X-11 Dashboard (docs/users/05 3.1). The seven-section screen.
+  //
+  // The old surface was a single `dashboard()` returning a flat
+  // `{ hero, stats, upcomingExams, alerts }` — a banner, four counters and a list
+  // of PROSE STRINGS. It counted three of the six exam statuses, counted only
+  // UNDER_REVIEW misconduct cases when the open set is four, and had no
+  // "absent" or "appeared" because the exam domain had no attendance record.
+  //
+  // It is GONE rather than re-pointed: `GET /examcell/dashboard` is a 404 now.
+  dashboardCatalogue: () => api.get('/examcell/dashboard/catalogue'),
+  dashboardOverview: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/examcell/dashboard/overview${qs ? `?${qs}` : ''}`);
+  },
+  dashboardBlock: (block, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(
+      `/examcell/dashboard/blocks/${encodeURIComponent(block)}${qs ? `?${qs}` : ''}`,
+    );
+  },
+  // X-11 the exam mark-roll. The roll is a UNION of the students enrolled on
+  // the offering and the students holding a hall ticket, and "absent" is
+  // RECORDED — never inferred from a missing result.
+  attendanceRoll: (slotId) =>
+    api.get(`/examcell/attendance/slots/${encodeURIComponent(slotId)}`),
+  markAttendance: (slotId, payload) =>
+    api.post(`/examcell/attendance/slots/${encodeURIComponent(slotId)}`, payload),
+  attendanceSummary: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/examcell/attendance/summary${qs ? `?${qs}` : ''}`);
+  },
   // X-09 Notifications (docs/users/05 3.7) + X-10 Profile.
   //
   // The old surface was four methods over a flat 50-row inbox: `notifications()`

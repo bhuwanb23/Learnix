@@ -68,7 +68,7 @@ const ROLES = [
   { name: 'Teacher',   email: 'teacher@learnix.dev',   dash: '/api/v1/teacher/dashboard',   role: 'TEACHER' },
   { name: 'Admin',     email: 'admin@learnix.dev',     dash: '/api/v1/admin/dashboard',     role: 'ADMIN' },
   { name: 'HOD',       email: 'hod@learnix.dev',       dash: '/api/v1/hod/dashboard',       role: 'HOD' },
-  { name: 'ExamCell',  email: 'examcell@learnix.dev',  dash: '/api/v1/examcell/dashboard',  role: 'EXAMCELL' },
+  { name: 'ExamCell',  email: 'examcell@learnix.dev',  dash: '/api/v1/examcell/dashboard/overview', role: 'EXAMCELL' },
   { name: 'Placement', email: 'placement@learnix.dev', dash: '/api/v1/placement/dashboard', role: 'PLACEMENT' },
   { name: 'Accounts',  email: 'accounts@learnix.dev',  dash: '/api/v1/accounts/dashboard',  role: 'ACCOUNTS' },
   { name: 'Library',   email: 'library@learnix.dev',   dash: '/api/v1/library/dashboard',   role: 'LIBRARY' },
