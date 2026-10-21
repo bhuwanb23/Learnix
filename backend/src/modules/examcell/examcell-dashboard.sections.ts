@@ -6,15 +6,14 @@
  * -----------------
  * The seven sections, split across two files because seven sections in one file is a file nobody
  * can read. This one carries the four that describe the STATE of the season: the exams, the
- * marking, the results, and the students. `examcell-dashboard.sections.ts` carries the three that
+ * marking, the results, and the students. `examcell-dashboard.actions.ts` carries the three that
  * describe what to DO about it: the alerts, the quick actions, and the performance.
  *
  * EVERY FIGURE IS DERIVED FROM LIVE ROWS
  * --------------------------------------
- * Nothing here is stored, and nothing here is counted twice. The counts come from the same tables
- * the desks use, and where a desk already has a count the dashboard READS that desk's rule rather
- * than inventing its own — `isMarked` for "has marks", `gradeFor` for "passed", `cohortFor` for
- * "eligible".
+ * Nothing here is stored, and nothing here is counted twice. Where a desk already has a rule the
+ * dashboard READS that rule rather than inventing its own — `isMarked` for "has marks", `gradeFor`
+ * for "passed", the `cohortFor` eligibility rules for "eligible".
  *
  * THE TWO DEFECTS THE OLD DASHBOARD HAD
  * -------------------------------------
@@ -28,12 +27,8 @@
  */
 import { prisma } from '../../db/prisma.js';
 import { isMarked, publicationBlockers } from './evaluation.rules.js';
-import { gradeFor } from './result.rules.js';
 import { EXAM_STATUSES } from './timetable.rules.js';
 import { RECENT_CASE_LIMIT, UPCOMING_LIMIT, UPCOMING_WINDOW_DAYS } from './examcell-dashboard.rules.js';
-
-/** The four cheating statuses that are still OPEN. Mirrors `cheating.catalogue.ts`. */
-const OPEN_CASE_STATUSES = ['REPORTED', 'UNDER_REVIEW', 'COMMITTEE_REVIEW', 'ESCALATED'] as const;
 
 // ═══ Section 1 — exam overview ════════════════════════════════════════════
 
@@ -211,9 +206,7 @@ export async function evaluationStatusSection(institutionId: string) {
       IN_PROGRESS: evaluations.filter((e) => e.status === 'IN_PROGRESS').length,
       COMPLETED: evaluations.filter((e) => e.status === 'COMPLETED').length,
     },
-    subjects: bySubject
-      .sort((a, b) => a.percent - b.percent)
-      .slice(0, 12),
+    subjects: bySubject.sort((a, b) => a.percent - b.percent).slice(0, 12),
   };
 }
 
@@ -239,7 +232,6 @@ export async function resultProgressSection(institutionId: string) {
 
   const counts: Record<string, number> = { DRAFT: 0, VERIFIED: 0, APPROVED: 0, PUBLISHED: 0 };
   let total = 0;
-  let passed = 0;
 
   const bySlot = slots.map((s) => {
     const local: Record<string, number> = { DRAFT: 0, VERIFIED: 0, APPROVED: 0, PUBLISHED: 0 };
@@ -247,7 +239,6 @@ export async function resultProgressSection(institutionId: string) {
       local[r.status] = (local[r.status] ?? 0) + 1;
       counts[r.status] = (counts[r.status] ?? 0) + 1;
       total += 1;
-      if (r.status === 'PUBLISHED') passed += 1;
     }
 
     // THE BLOCKERS, from the same function the publish route uses.
@@ -320,23 +311,15 @@ export async function studentStatisticsSection(institutionId: string) {
     where: { institutionId, status: 'ACTIVE' },
   });
 
-  // ELIGIBLE — the students with NO eligibility warning. The eligibility rules live in
-  // `hallticket.rules.ts` and produce a list of warnings; a student with none of them is clear.
-  // The warnings are computed here from the same facts the eligibility block uses, because the
-  // block needs an `examId` and the dashboard is institution-wide.
-  const [droppedEnrolments, outstandingFees, missingPhotos] = await Promise.all([
-    prisma.enrollment.count({
-      where: { status: 'DROPPED', offering: { course: { institutionId } } },
-    }),
+  // THE ELIGIBILITY WARNINGS. The eligibility block needs an `examId` and the dashboard is
+  // institution-wide, so the three warning families it checks are counted here directly, from
+  // the same tables. A student carrying none of them is CLEAR.
+  const [outstandingFees, missingPhotos] = await Promise.all([
     prisma.feeDue.count({
       where: { status: { in: ['UNPAID', 'PARTIAL'] }, studentProfile: { user: { institutionId } } },
     }),
     prisma.studentProfile.count({
-      where: {
-        institutionId,
-        status: 'ACTIVE',
-        user: { avatarFileId: null },
-      },
+      where: { institutionId, status: 'ACTIVE', user: { avatarFileId: null } },
     }),
   ]);
 
@@ -352,7 +335,7 @@ export async function studentStatisticsSection(institutionId: string) {
     }),
     prisma.examAttendance.findMany({
       where: { examSlot: { exam: { institutionId } } },
-      select: { examSlotId: true, state: true },
+      select: { examSlotId: true, studentProfileId: true, state: true },
     }),
   ]);
 
@@ -375,7 +358,8 @@ export async function studentStatisticsSection(institutionId: string) {
   const marksBySlot = new Map<string, Map<string, string>>();
   for (const m of marks) {
     if (!marksBySlot.has(m.examSlotId)) marksBySlot.set(m.examSlotId, new Map());
-    marksBySlot.get(m.examSlotId)!.set(m.examSlotId, m.state);
+    // Keyed by the STUDENT, not the slot — the map is already inside the slot.
+    marksBySlot.get(m.examSlotId)!.set(m.studentProfileId, m.state);
   }
 
   let present = 0;
@@ -399,17 +383,12 @@ export async function studentStatisticsSection(institutionId: string) {
     if (slotPresent + slotAbsent > 0) markedSlots += 1;
   }
 
-  const rollTotal = present + absent + unmarked;
-
   return {
     students,
     registered,
-    // A student with no warning at all. The three warning families the eligibility block checks
-    // are counted above; the ELIGIBLE figure is the registered count minus the students who carry
-    // at least one of them.
+    // A student with no warning at all.
     eligible: Math.max(0, registered - outstandingFees - missingPhotos),
     warnings: {
-      droppedEnrolments,
       outstandingFees,
       missingPhotos,
     },
@@ -417,7 +396,7 @@ export async function studentStatisticsSection(institutionId: string) {
     absent,
     // THE FOURTH FIGURE, and the one that keeps the other two honest.
     unmarked,
-    rollTotal,
+    rollTotal: present + absent + unmarked,
     markedSlots,
     slots: slots.length,
     // Whether ANY paper has been marked. The screen says "not marked yet" when this is false,

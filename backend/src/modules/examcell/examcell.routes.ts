@@ -28,13 +28,33 @@ const wrap =
 
 router.use(auth, requireRole('EXAMCELL', 'ADMIN'));
 
-// X-01 dashboard
-router.get(
-  '/dashboard',
-  wrap(async (req, res) => {
-    res.json({ data: await service.getDashboard(req.auth!.institutionId) });
-  }),
-);
+// X-01 dashboard — REMOVED, superseded by `examcell-dashboard.routes.ts`.
+//
+// The old `GET /examcell/dashboard` answered with `{ hero, stats, upcomingExams, recentCheating,
+// alerts }` — a flat shape with a banner and four counters. It had four defects that could not be
+// fixed in place:
+//
+//   1. It counted THREE of the SIX exam statuses. `EXAM_STATUSES` (`timetable.rules.ts:172`) is
+//      DRAFT | SCHEDULED | PUBLISHED | ONGOING | COMPLETED | RESULTS_PUBLISHED, and the old one
+//      reported only ONGOING, SCHEDULED and COMPLETED. A DRAFT exam and a PUBLISHED one were both
+//      INVISIBLE — so an officer reading "0 ongoing" could not tell whether that meant "none
+//      running" or "the dashboard does not count that".
+//   2. It counted only `UNDER_REVIEW` misconduct cases, when the OPEN set is REPORTED |
+//      UNDER_REVIEW | COMMITTEE_REVIEW | ESCALATED. Three of the four were invisible.
+//   3. `alerts` was a flat `string[]` — "3 cheating case(s) under review" — which cannot be
+//      filtered, cannot be counted, and cannot be linked to.
+//   4. It had no "absent" or "appeared", because the exam domain had NO attendance record at all.
+//
+// The replacement is SEVEN STRUCTURED SECTIONS, served by `examcell-dashboard.routes.ts`:
+//
+//   GET /examcell/dashboard/catalogue   the seven sections, the four quick actions, the alert kinds
+//   GET /examcell/dashboard/overview     all seven sections in one call
+//   GET /examcell/dashboard/blocks/:block one section on its own
+//
+// The old path is GONE rather than re-pointed: a caller holding it gets a 404 rather than a
+// quietly different shape.
+
+// X-09 notifications + X-10 profile
 
 // ── X-02 Timetable ───────────────────────────────────────────────────────
 // MOVED to `./timetable.routes.ts`, which is mounted BEFORE this router.
