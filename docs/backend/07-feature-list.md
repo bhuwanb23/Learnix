@@ -105,7 +105,8 @@
 | X-06 | Results: enter → publish (gated by exam status), student view | C results, exams.status | ✅ wired |
 | X-07 | Re-evaluation window (config-gated) + decisions | C re_evaluation_requests, L system_config | ✅ wired |
 | X-08 | Cheating cases: report, triage, classify, statement, committee review, decision + penalty, derived escalation, reopen, historical record | C cheating_cases + events/evidence | ✅ 8 categories, 6 states |
-| X-09 | Notifications + profile | K, A | ✅ wired |
+| X-09 | Notifications: 9 categories, officer-only inbox, mute-suppression with an important-notice bypass, 8 emitters + an idempotent on-demand reminder sweep, notice composer | K notifications/preferences/broadcasts | ✅ 9 categories, 9 types |
+| X-10 | Profile: identity, institution/department, derived responsibilities, RBAC permissions, 9-category notification preferences, sessions, activity history | A staff_profiles, L audit_logs | ✅ 7 questions, 5 endpoints |
 
 ## Accounts & Finance (F) — docs/users/06 · tables: E
 

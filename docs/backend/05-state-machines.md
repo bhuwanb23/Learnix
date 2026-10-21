@@ -417,6 +417,33 @@ severity term did not. A queue where one stale case outranks everything is a que
 | Mess expense raised by the hostel | The **accounts desk** — never the hostel, which cannot approve its own spend |
 | Route delay / service alert | Affected route students |
 | Mentorship approved/declined / event invite / donation receipt | Student / Alumni |
+| Exam scheduled / published / timetable changed / hall ticket ready / exam reminder | Student (the enrolment union of the slot's offering) |
+| Result published | The students with a **result** on that slot — not everybody who sat it |
+| Revaluation decided | The student who **asked** — never the cohort |
+| Evaluation deadline reminded | The **exam office** of that institution |
+| Cheating case decided | The student the case concerns |
+| Important examination notice | The chosen audience — students, the exam office, or both |
+
+> **The exam cell has two inboxes.** Its own is **officer-only**; a student's exam notice goes to the
+> shared student inbox, which merges the finance, hostel and exam-cell vocabularies. The inbox
+> selects by **type**, not by `sourceModule` — `sourceModule: 'examcell'` is also set on rows the
+> student owns, so selecting by source module would pull a student's result into the controller's
+> work queue.
+>
+> **A mute SUPPRESSES the row; it does not hide it.** A muted category writes **no row at all**,
+> because the unread badge counts rows the recipient cannot see. The exception is
+> `IMPORTANT_NOTICE`, which **ignores the mute** — a notice the office marked as needing attention
+> must not be able to be silenced.
+>
+> **The reminder sweep is on demand and idempotent.** Nothing in this platform is scheduled, so
+> "who is due a reminder" is answered by asking. The alert is keyed on the exam and the day
+> (`dedupeKey`), so asking twice leaves one row per student. Asserted in
+> `check-examcell-profile.ts` and over the wire in `verify-examcell-profile-http.ts`.
+>
+> **One writer.** Every exam-cell notification goes through `raise`, and an unregistered type is
+> **refused at the writer** (400) — an unregistered type is a row that will be labelled with a
+> fallback and filed nowhere. The cheating desk no longer open-codes its own
+> `prisma.notification.create`.
 
 > **Gate-pass paging is institution-scoped.** `UserRole` has no `institutionId` — tenancy lives
 > on the user — so the warden lookup filters *through the relation* (`role: 'HOSTEL', user:

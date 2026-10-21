@@ -505,8 +505,8 @@ export default function NotificationsScreen({ navigation }) {
                 Mark as important
               </Text>
               <Text style={styles.importantHint}>
-                An important notice reaches everyone even if they muted notices. Use it for something
-                they must act on.
+                An important notice reaches everyone even if they muted notices — it ignores the
+                mutes. Use it for something they must act on.
               </Text>
             </View>
           </TouchableOpacity>

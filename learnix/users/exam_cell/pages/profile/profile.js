@@ -232,9 +232,12 @@ export default function ExamProfile({ navigation }) {
           <Text style={styles.name}>{profile?.user?.fullName ?? '—'}</Text>
           <Text style={styles.designation}>{s?.designation ?? 'Controller of Examinations'}</Text>
           {s?.employeeNo ? <Text style={styles.employee}>Employee {s.employeeNo}</Text> : null}
+          {/* The department is the SERVER's answer. An officer with no department row gets no
+              department line at all — a hardcoded "Examinations Department" would be a guess
+              dressed as a fact, and it is wrong the moment somebody joins the office from
+              another department. */}
           <Text style={styles.where}>
-            {inst?.name ? `${inst.name} • ` : ''}
-            {dept?.name ? dept.name : 'Examinations Department'}
+            {[inst?.name, dept?.name].filter(Boolean).join(' • ')}
           </Text>
           <View style={styles.roleRow}>
             {(profile?.roles ?? []).map((role) => (

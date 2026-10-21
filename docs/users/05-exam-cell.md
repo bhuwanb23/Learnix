@@ -155,11 +155,104 @@ review, the case file, and the historical record. The block list is published by
 alerts naming students who do not exist — and it now reads the same endpoint, so the two desks cannot
 disagree about the same case. The decision still belongs to the exam cell.
 
-### 3.7 Notifications
-Inbox (timetable/result/hall-ticket/cheating types) + Broadcast tab (audience: All Students / By Class / Exam Registrants → timetable changes, hall ticket release, result announcements).
+### 3.7 Notifications (X-09)
 
-### 3.8 Profile
-Exam controller profile, exam stats, preference toggles, account menu.
+The exam office sends **nine kinds of message**, and the vocabulary is the SERVER's: `GET
+/examcell/notifications/catalogue` returns every category with its label, icon and colour, and the
+screen draws from that. A client-side copy is a second thing to forget to update, and the symptom
+is a chip that says "Results" in the list and "Result publication" in the composer.
+
+| Category | Audience | What it is | Raised by |
+|---|---|---|---|
+| `EXAM_SCHEDULE` | student | an exam is on the timetable | `addSlot` → `announceExamScheduled` |
+| `TIMETABLE_CHANGE` | student | a paper moved, or a room changed | `rescheduleSlot` → `announceTimetableChange` |
+| `HALL_TICKET` | student | your hall ticket is ready to collect | hall-ticket publication → `announceHallTickets` |
+| `EXAM_REMINDER` | student | your exam is tomorrow | `POST /notifications/reminders/sweep` → `sweepExamReminders` |
+| `EVALUATION_DEADLINE` | officer | papers are waiting and the deadline is close | `remindDeadline` → `announceEvaluationDeadline` |
+| `RESULT_PUBLICATION` | student | your result is out | `publishSlot` → `announceResultPublished` |
+| `REVALUATION` | student | your revaluation was decided | `decideReevaluation` → `announceRevaluationDecided` |
+| `CHEATING_CASE` | student | a case concerning you has moved | `decideCase` → `raise` (`EXAM_CHEATING`) |
+| `IMPORTANT_NOTICE` | both | a notice the office has marked as important | `POST /broadcasts` → `composeExamCellBroadcast` |
+
+**Two inboxes, and they are different.** The exam cell's own inbox is **OFFICER-ONLY**: a student's
+result publication is not in the controller's work queue, and the controller's evaluation deadline
+is not in a student's inbox. A student reads the **shared student inbox**, which merges the finance,
+hostel and exam-cell vocabularies (`mergeRegistries` in `student.routes.ts`) — so a student sees
+their hall ticket, their timetable change, their result and their revaluation in the inbox they
+already open.
+
+**The inbox selects by TYPE, not by source module.** `sourceModule: 'examcell'` is also set on a row
+the student owns (a cheating decision, a result publication), so selecting by source module would
+pull a student's result into the desk's queue.
+
+**A mute SUPPRESSES the row; it does not hide it.** A reader who muted a category gets **no row at
+all**, because the unread badge counts rows the recipient cannot see — and a badge that only goes up
+and never clears is worse than no badge. The exception is `IMPORTANT_NOTICE`, which **ignores the
+mute**: a notice the office marked as needing attention must not be able to be silenced. The bypass
+is a flag on the type, so a new important type inherits the behaviour by being declared correctly.
+
+**The reminder sweep is ON DEMAND and IDEMPOTENT.** Nothing in this platform is scheduled, so "who
+is due a reminder" is answered by asking. The alert is keyed on the exam and the day
+(`dedupeKey = exam.reminder:<examId>:<day>`), so pressing the button twice leaves one row per
+student, not two. The lead window is 24 hours (`REMINDER_LEAD_HOURS`).
+
+**One writer.** Every notification in this module goes through `raise`, and the type is checked
+against the registry on the way out — an unregistered type is **refused at the writer** (400),
+because an unregistered type is a row that will be labelled with a fallback and filed nowhere. The
+cheating desk no longer open-codes its own `prisma.notification.create`.
+
+**Only the office composes.** `IMPORTANT_NOTICE` is the single composable category. The other eight
+are facts the system reports, and a controller who could publish a `RESULT_PUBLISHED` could forge a
+result. The composer says so on the screen, not only in the code.
+
+**Audiences.** `ALL_STUDENTS` · `SEM_STUDENTS` (semester ≥ 3) · `FINAL_YEAR` (semester ≥ 7) ·
+`ALL_OFFICERS` · `EVERYONE`. Every branch is **tenant-scoped** — the old composer resolved
+`ALL_STUDENTS` with no institution filter, so one college's exam notice went to every college's
+students.
+
+### 3.8 Profile (X-10)
+
+A profile is not a card. It answers **seven questions**, each on its own endpoint, because they
+change at completely different rates.
+
+| # | Question | Endpoint | What it answers |
+|---|---|---|---|
+| 1 | Who is this? | `GET /examcell/profile` | name, email, phone, joined, last sign-in |
+| 2 | Where do they work? | the same | the **institution** and the **department** (read from the rows, never hardcoded) |
+| 3 | What is theirs? | the same | exams **they created**, invigilator duties **they hold**, evaluations **they own**, and the named list of their exams |
+| 4 | What may they do? | `GET /examcell/profile/permissions` | the permissions their roles grant, read from the RBAC map |
+| 5 | What do they want? | `GET /examcell/profile/notification-preferences` · `PATCH` the same | which of the nine categories they have muted |
+| 6 | Is the account safe? | the auth surface | password, live sessions, sign-out-everywhere |
+| 7 | What have they done? | `GET /examcell/profile/activity` | live sessions and recent actions from the audit log |
+
+**Every figure is DERIVED.** The exam count comes from `Exam.createdByUserId`, the duty count from
+`ExamRoomAllocation.invigilatorUserId`, the evaluation count from `Evaluation.evaluatorUserId` —
+and the institution's own totals are reported **beside** them, not instead of them. The old profile
+reported the institution's hall tickets and results as though they were the officer's work, which
+is a different claim dressed as the same one.
+
+**The permissions are the RBAC map's.** `RolePermission` and `PermissionGroup` are administered live
+and audited, so "what may this officer do" is **read** from that map rather than restated. The
+category is `EXAMS` (the desk), not `EXAMCELL` (the role).
+
+**The mute is written THROUGH.** A toggle held in local `useState` is forgotten the moment the
+screen unmounts — and a mute that silently forgets itself is worse than no mute at all, because the
+person believes they turned it off. `IMPORTANT_NOTICE` is **not mutable**, and the screen says
+"Always on" rather than offering a switch that does nothing.
+
+**The activity endpoint SAYS the session limitation.** Sessions are identified by start time only —
+no device information is stored — and the response carries that note so the screen does not have to
+hardcode the limitation.
+
+**Logout actually logs out.** The old profile's Logout row showed an alert saying "Returning to
+login" and then did nothing at all: the token stayed and the officer stayed signed in. A logout
+that does not log out is worse than no logout.
+
+**Screens.** The profile hub plus four blocks: access & permissions, sign-in history, change
+password, and help & support. The help screen is navigable — every part of the module it names
+links to the screen that does the work. All four are registered in `exam_cell.js`'s
+`FEATURE_MODULES`, and a key that is not registered fails **silently**, so the UI audit asserts
+every one of them is present.
 
 ### 3.9 Timetable (X-02) — the ten requirements
 
@@ -244,6 +337,32 @@ GET  /api/examcell/notifications
 POST /api/examcell/broadcasts
 ```
 
+The X-09 notification and X-10 profile routes live on `examcell.routes.ts` and replace the old flat
+inbox. The old `GET /api/examcell/notifications` was a 50-row dump of every message the platform had
+ever sent the officer, with no categories, no filters and no pagination; `markAllRead` marked the
+officer's finance mail read as well; `createBroadcast` wrote rows with a type registered **nowhere**,
+and fell back to "all students" when its audience matched nobody; and `getProfile` answered a name
+and three counts, two of which were the institution's totals presented as the officer's work. All
+four were **removed**, not re-pointed:
+```
+GET    /api/examcell/notifications/catalogue                the nine categories, the composable list, the audiences
+GET    /api/examcell/notifications                          ?category=&unread=&important=&page=&pageSize=
+PATCH  /api/examcell/notifications/:id/read                 read or un-read ONE message
+POST   /api/examcell/notifications/read-all                 scoped to the exam cell's own types
+POST   /api/examcell/notifications/reminders/sweep          on demand; idempotent on (exam, day)
+GET    /api/examcell/broadcasts                             what was sent, and to how many
+POST   /api/examcell/broadcasts                             compose an IMPORTANT notice (403 for a non-officer)
+GET    /api/examcell/profile                                who they are, where they work, what is theirs
+GET    /api/examcell/profile/permissions                    read from the RBAC map
+GET    /api/examcell/profile/notification-preferences       which of the nine they have muted
+PATCH  /api/examcell/profile/notification-preferences       mute or unmute (IMPORTANT_NOTICE is refused)
+GET    /api/examcell/profile/activity                       live sessions and recent actions
+```
+
+The student reads a **different** inbox — the shared one, which merges the finance, hostel and
+exam-cell vocabularies (`mergeRegistries` in `student.routes.ts`). The exam cell's own inbox is
+officer-only.
+
 The old `GET /api/examcell/evaluations` (+ `/{id}/assign`, `/{id}/complete`) handlers were **removed** in X-05 — assign accepted any TEACHER id with no institution check, and complete force-marked every paper graded without reading one. They are replaced by the 12 evaluation routes below (`evaluation.routes.ts`, mounted **before** `examcellRoutes` with its own auth; literals first, then `papers/:paperId/...`, then `:id/...`):
 ```
 GET    /api/examcell/evaluations/catalogue                  blocks, statuses, marks policy, exams for the picker
@@ -300,8 +419,8 @@ POST   /api/examcell/hall-tickets/:id/download                   mark printed (i
 
 ## 6. Wiring Status
 
-Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05 + `cheating.rules.ts` / `cheating.internal.ts` / `cheating.catalogue.ts` / `cheating.read.ts` / `cheating.report.ts` / `cheating.write.ts` / `cheating.legacy.ts` / `cheating.routes.ts` for X-08
-Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens + cheating hub & 4 sub-screens, all wired to live API)
+Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05 + `cheating.rules.ts` / `cheating.internal.ts` / `cheating.catalogue.ts` / `cheating.read.ts` / `cheating.report.ts` / `cheating.write.ts` / `cheating.legacy.ts` / `cheating.routes.ts` for X-08 + `examcell-notifications.rules.ts` / `examcell-notifications.service.ts` / `examcell-notifications.emitters.ts` / `examcell-notifications.inbox.ts` for X-09 + `examcell-profile.service.ts` for X-10
+Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens + result hub & 11 sub-screens + cheating hub & 4 sub-screens + notification centre + profile hub & 4 sub-screens, all wired to live API)
 Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53) · `audit-evaluations-ui.ts` (223) · `prove-evaluations-teeth.sh` (13) · `check-evaluations-jsx.ts` / `-locals.js` / `-named-imports.js` (12 each) · `check-examcell-cheating.ts` (81) · `verify-examcell-cheating-http.ts` (72) · `audit-cheating-ui.ts` (112) · `prove-cheating-teeth.sh` (10) · `check-cheating-jsx.ts` (13)
 
 | Endpoint | Method | Status |

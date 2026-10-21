@@ -501,9 +501,18 @@ async function main() {
       3,
     );
     ok('a deadline notice reaches the office', deadline.delivered > 0);
-    const deadlineRows = await prisma.notification.findMany({ where: { type: 'EVALUATION_DEADLINE' } });
-    ok('...and every recipient is an officer',
-      deadlineRows.every((r) => officers.includes(r.recipientUserId)));
+    // Scoped to THIS institution, and to the rows this suite raised. A query over every
+    // EVALUATION_DEADLINE row in the database would also pick up another suite's leftovers and
+    // fail for a reason that has nothing to do with this one.
+    const deadlineRows = await prisma.notification.findMany({
+      where: { type: 'EVALUATION_DEADLINE', institutionId: inst.id, title: { startsWith: '' } },
+    });
+    const thisRun = deadlineRows.filter((r) => r.createdAt > new Date(Date.now() - 120000));
+    ok(
+      thisRun.length > 0 && thisRun.every((r) => officers.includes(r.recipientUserId)),
+      'every recipient is an officer',
+      `${thisRun.length} rows, ${thisRun.filter((r) => !officers.includes(r.recipientUserId)).length} not officers`,
+    );
 
     // An important notice to both reaches both.
     const both = await emitters.announceImportant(inst.id, officer.id, 'BOTH', `${PFX} both`, `${PFX} body`);
