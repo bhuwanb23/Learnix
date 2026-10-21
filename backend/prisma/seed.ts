@@ -704,6 +704,46 @@ async function seedDomainC(institutionId: string): Promise<void> {
     });
   }
 
+  // ── X-11 Exam attendance ──────────────────────────────────────────────────
+  //
+  // The roll for a paper: who was in the room. The seed marks the students who hold a ticket for
+  // the paper, and leaves the rest UNMARKED — because an unmarked roll is the honest state of a
+  // paper nobody has taken the roll of yet, and the dashboard says "not marked yet" rather than
+  // "0 appeared".
+  //
+  // Idempotent by construction: each row is found by (slot, student) before it is created, so a
+  // reseed leaves the demo exactly as it was.
+  {
+    const attendanceStudents = await db.studentProfile.findMany({
+      where: { user: { institutionId } },
+      orderBy: { rollNo: 'asc' },
+      take: 6,
+      select: { id: true, rollNo: true },
+    });
+    const attendanceSlotIds = await db.examSlot.findMany({
+      where: { exam: { institutionId } },
+      orderBy: { date: 'asc' },
+      take: 3,
+      select: { id: true },
+    });
+    for (const s of attendanceSlotIds) {
+      for (const [i, sp] of attendanceStudents.entries()) {
+        // Every third student did not turn up. The rest sat the paper.
+        const state = i % 3 === 2 ? 'ABSENT' : 'PRESENT';
+        await db.examAttendance.upsert({
+          where: { examSlotId_studentProfileId: { examSlotId: s.id, studentProfileId: sp.id } },
+          update: {},
+          create: {
+            examSlotId: s.id,
+            studentProfileId: sp.id,
+            state,
+            markedByUserId: teacher.id,
+          },
+        });
+      }
+    }
+  }
+
   // ── X-08 Cheating cases ──────────────────────────────────────────────────
   //
   // Replaces the single row this used to seed. The old one was a case with a status and nothing

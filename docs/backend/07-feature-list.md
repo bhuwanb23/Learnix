@@ -107,6 +107,7 @@
 | X-08 | Cheating cases: report, triage, classify, statement, committee review, decision + penalty, derived escalation, reopen, historical record | C cheating_cases + events/evidence | ✅ 8 categories, 6 states |
 | X-09 | Notifications: 9 categories, officer-only inbox, mute-suppression with an important-notice bypass, 8 emitters + an idempotent on-demand reminder sweep, notice composer | K notifications/preferences/broadcasts | ✅ 9 categories, 9 types |
 | X-10 | Profile: identity, institution/department, derived responsibilities, RBAC permissions, 9-category notification preferences, sessions, activity history | A staff_profiles, L audit_logs | ✅ 7 questions, 5 endpoints |
+| X-11 | Dashboard: 7 sections (overview, evaluation, results, students, alerts, quick actions, performance), live action counts, mark-roll with recorded PRESENT/ABSENT | C exams, new exam_attendance | ✅ 7 sections, 6 alert kinds |
 
 ## Accounts & Finance (F) — docs/users/06 · tables: E
 

@@ -55,6 +55,13 @@ teeth() {
   fi
 }
 
+# Some cases break something by CREATING a file rather than by editing one. The restore above puts
+# back the file it edited, but a file it CREATED would survive the run and poison the next one — so
+# every path this script may have created is removed after the whole run.
+cleanup_created() {
+  rm -rf "../learnix/users/exam_cell/pages/dashboard/constants"
+}
+
 DASH="../learnix/users/exam_cell/pages/dashboard"
 ATT="../learnix/users/exam_cell/pages/attendance"
 SHELL="../learnix/users/exam_cell/exam_cell.js"
@@ -141,7 +148,7 @@ teeth "a roll that folds UNMARKED into ABSENT is caught" \
 # out, the unread badge would count rows the recipient cannot see.
 teeth "a roll that stops reporting an unmarked student is caught" \
   "$ATT_SERVICE" scripts/check-examcell-attendance.ts \
-  "import io; p=r'$ATT_SERVICE'; s=io.open(p,encoding='utf-8').read(); s=s.replace(chr(39)+chr(39)+'UNMARKED'+chr(39)+chr(39), chr(39)+chr(39)+'ABSENT'+chr(39)+chr(39)); io.open(p,'w',encoding='utf-8').write(s)"
+  "import io; p=r'$ATT_SERVICE'; s=io.open(p,encoding='utf-8').read(); s=s.replace(chr(63)+chr(63)+' '+chr(39)+'UNMARKED'+chr(39), chr(63)+chr(63)+' '+chr(39)+'ABSENT'+chr(39)); io.open(p,'w',encoding='utf-8').write(s)"
 
 # -- 12. The student who is not on the roll being accepted -------------------
 # A roll that silently accepts a name from nowhere is a roll that can be padded, and the absence
@@ -172,6 +179,7 @@ teeth "a mark-roll that submits one request per student is caught" \
   "import io; p=r'$ATT/attendance.js'; s=io.open(p,encoding='utf-8').read(); io.open(p,'w',encoding='utf-8').write(s.replace('marks: entries.map(([studentProfileId, state]) => ({ studentProfileId, state })),', 'marks: entries[0] ? [{ studentProfileId: entries[0][0], state: entries[0][1] }] : [],'))"
 
 echo
+cleanup_created
 echo "  $PASS proved, $FAIL vacuous"
 if [ "$FAIL" -ne 0 ]; then
   exit 1

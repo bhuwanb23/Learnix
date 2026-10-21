@@ -50,6 +50,55 @@ Status is **derived, never set**: `recomputeCounts` recomputes total/marked/stat
 ### 2.5 Hall tickets
 `NOT_GENERATED → GENERATED → DOWNLOADED` (batch generate per exam slot; QR payload = signed examSlot+student id).
 
+### 2.6 Exam attendance (X-11)
+
+**NOT A STATE MACHINE — and that is the point.** An examination roll is a set of independent facts
+about a room, not a document that moves from one stage to the next. There is no `DRAFT` roll and no
+`FINAL` roll: the invigilator marks a student `PRESENT` or `ABSENT`, and a student nobody has reached
+yet is simply **not marked**.
+
+```
+unmarked  →  PRESENT | ABSENT
+```
+
+**Three labels, and the third is the one that keeps the other two honest.** `PRESENT` and `ABSENT`
+are the two recorded states. `UNMARKED` is not a state — it is the **absence of a record**, and it
+is reported as its own figure beside the other two. Folding it into `ABSENT` is the exact
+conflation the feature exists to prevent: a paper whose roll nobody has taken is not a paper full of
+absentees, and a dashboard that says "0 absent" for an unmarked paper is lying by omission.
+
+**Why a new table, and not the platform's attendance one.** `AttendanceSession` /
+`AttendanceRecord` (`b5_attendance.prisma`) are a **teacher's per-lecture register**: keyed by
+`offeringId`, recording `PRESENT | ABSENT | LATE`, and read by the teacher and student apps. A
+lecture session has **no `examSlotId`** — there is no join key between the two — so a student can be
+`ABSENT` for a lecture on the same afternoon as an examination, and neither record knows anything
+about the other. An examination is a different fact: sat in a room, on a date, under an invigilator,
+with a hall ticket.
+
+**Three states that would be wrong, and why:**
+
+| Candidate | Why not |
+|---|---|
+| `LATE` | A late student is **PRESENT**. A third state would make "who did not turn up" ambiguous, and every absence count would then need a rule about what to do with `LATE`. |
+| `EXCUSED` | An excuse is a **decision about a consequence**, not a fact about a room. It needs an approver, a reason and a workflow — a feature of its own, not a third colour on a roll. |
+| *derived from results* | A `Result` proves the student sat the paper, so "ticket issued but no result" could be called absent. It cannot: it conflates *absent*, *paper-not-yet-marked* and *enrolment-dropped*. The live data proves the risk — every `EvaluationPaper` row is `scriptStatus: 'NOT_RECEIVED'` — so inferring absence from missing marks would report an empty college as fully absent. |
+
+**The write is a bulk upsert, and it is idempotent.** One request for the whole roll, because an
+invigilator takes it on a phone in a room and does not submit one request per student. The unique key
+is `(examSlotId, studentProfileId)`, so marking the same student twice **corrects** rather than
+duplicates — a student walking in late is the ordinary case, not the exceptional one. Every mark
+is validated **before anything is written**, because a half-written roll is worse than a rejected
+one: the invigilator would have to take it again.
+
+**A student who is not on the roll is refused.** The roll is the union of the students **enrolled**
+on the offering and the students holding a **hall ticket** for it, minus any dropped enrolment. A
+name from nowhere is refused with a 422 that names them, because a roll that can be padded is a
+roll whose absence count cannot be reported on.
+
+**The mark is audited.** `EXAM_ATTENDANCE_MARKED` records who took the roll, when, and how many were
+present and absent — because an absence count is a claim about a room, and a claim about a room
+needs a name against it.
+
 ## 3. Placement (04 → 03 §3.10 → 01 §3.5)
 
 ### 3.1 Drive

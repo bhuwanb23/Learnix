@@ -51,8 +51,76 @@ The **Evaluations hub (X-05)** opens the same way — the `Evaluations` tab open
 
 ## 3. Modules & Data Entities
 
-### 3.1 Dashboard
-Hero (exam season progress), stats (exams scheduled, students registered, evaluations pending, results published), today's exam schedule, pending items (evaluations to collect, results to publish), alerts (room conflicts, unverified papers), quick-tool launcher, activity feed.
+### 3.1 Dashboard (X-11)
+
+The examination office's morning screen: **seven sections**, every figure derived from live rows, every
+word of vocabulary published by the server.
+
+| # | Section | What it answers |
+|---|---|---|
+| 1 | **Exam overview** | Ongoing, upcoming and completed examinations — and the grading deadline |
+| 2 | **Evaluation status** | Evaluated, pending, and under-review scripts |
+| 3 | **Result progress** | Marks processing and publication status, and what blocks each slot |
+| 4 | **Student statistics** | Registered, eligible, absent and appeared — the roll, counted |
+| 5 | **Exam alerts** | Timetable conflicts, missing marks, unresolved cases, blocked results |
+| 6 | **Quick actions** | Create Schedule, Generate Hall Tickets, Enter Marks, Publish Results |
+| 7 | **Performance snapshot** | Pass rate, average marks, the grade spread, subject-wise trends |
+
+**It replaces a flat dashboard, and the old one was wrong in four ways.** The previous
+`GET /examcell/dashboard` returned `{ hero, stats, upcomingExams, recentCheating, alerts }` — a banner,
+four counters and a list of **prose strings**. It counted **three of the six** exam statuses
+(`DRAFT` and `PUBLISHED` were invisible, so "0 ongoing" could mean "none running" or "the dashboard
+does not count that"); it counted only `UNDER_REVIEW` misconduct cases when the open set is
+`REPORTED | UNDER_REVIEW | COMMITTEE_REVIEW | ESCALATED`; its alerts could not be filtered, counted
+or linked to; and it had no "absent" and no "appeared", because **the exam domain had no attendance
+record at all**. The old path is **gone** — a caller holding it gets a 404, not a quietly different
+shape.
+
+**Absence is RECORDED, never inferred.** The platform's one attendance table
+(`AttendanceSession` / `AttendanceRecord`) is a **teacher's per-lecture register**, keyed by course
+offering, with no join key to an exam slot — a student can be `ABSENT` for a lecture on the same
+afternoon as an examination, and neither record knows about the other. So X-11 adds
+`ExamAttendance` (see below) and a **mark-roll**, and the dashboard reports three figures where the
+old one had none: **appeared**, **absent**, and **unmarked**. The third is the one that keeps the
+other two honest — a paper whose roll nobody has taken is not a paper full of absentees, and the
+screen says "not marked yet" rather than "0 appeared".
+
+**A zero is CLEAR, not alarming.** A screen that paints "0 conflicts" in the alarm colour teaches
+its reader to ignore the alarm colour, and that is how real problems get missed. Every count on
+this screen is painted by one rule (`alertTone`), and the alert kinds are always listed with their
+counts — including the zeroes — because a section that hides the clear kinds cannot answer "is
+anything wrong?".
+
+**The vocabulary is the SERVER's.** The seven section names, the four quick actions, the six alert
+kinds, every icon, every colour and every threshold arrive from
+`GET /examcell/dashboard/catalogue`. The client holds a **mirror** for the frame before the
+catalogue lands, and nothing else — a client-side list that acted as the source would be a second
+list to forget to update. The mirror is asserted against the server by `audit-examcell-dashboard-ui.ts`.
+
+**The quick actions each carry the LIVE count** of what they would act on, and every one of their
+four destinations is a registered `FEATURE_MODULES` key — a route that is not registered fails
+**silently**, dropping the officer back on the dashboard with no error anywhere.
+
+**The endpoints:**
+
+```
+GET /api/v1/examcell/dashboard/catalogue    the seven sections, the four actions, the six alert kinds
+GET /api/v1/examcell/dashboard/overview      all seven sections in one call (?examId= to scope one exam)
+GET /api/v1/examcell/dashboard/blocks/:block one section on its own — the SAME function the overview calls
+```
+
+**The mark-roll** (`ExamAttendance`) — the feature the dashboard's absent/appeared figures depend on:
+
+```
+GET  /api/v1/examcell/attendance/summary       the per-paper roll state, institution-wide
+GET  /api/v1/examcell/attendance/slots/:slotId the roll for one paper — PRESENT, ABSENT or UNMARKED
+POST /api/v1/examcell/attendance/slots/:slotId mark the roll (bulk; idempotent; audited)
+```
+
+**Entities**: `exam_attendance` (examSlot, studentProfile, state `PRESENT`|`ABSENT`, markedByUserId?,
+markedAt) — one row per student per paper, so an invigilator marking the roll twice **corrects**
+rather than duplicates, and a student walking in late is the ordinary case rather than the
+exceptional one.
 
 ### 3.2 Timetable
 Hub for the X-02 feature: season stats, the eight blocks listed in §2, and a publish banner that says whether this season may go out. Each block opens as its own sub-screen. The ten requirements it implements are mapped in §3.9.
@@ -419,8 +487,8 @@ POST   /api/examcell/hall-tickets/:id/download                   mark printed (i
 
 ## 6. Wiring Status
 
-Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05 + `cheating.rules.ts` / `cheating.internal.ts` / `cheating.catalogue.ts` / `cheating.read.ts` / `cheating.report.ts` / `cheating.write.ts` / `cheating.legacy.ts` / `cheating.routes.ts` for X-08 + `examcell-notifications.rules.ts` / `examcell-notifications.service.ts` / `examcell-notifications.emitters.ts` / `examcell-notifications.inbox.ts` for X-09 + `examcell-profile.service.ts` for X-10
-Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens + result hub & 11 sub-screens + cheating hub & 4 sub-screens + notification centre + profile hub & 4 sub-screens, all wired to live API)
+Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05 + `cheating.rules.ts` / `cheating.internal.ts` / `cheating.catalogue.ts` / `cheating.read.ts` / `cheating.report.ts` / `cheating.write.ts` / `cheating.legacy.ts` / `cheating.routes.ts` for X-08 + `examcell-notifications.rules.ts` / `examcell-notifications.service.ts` / `examcell-notifications.emitters.ts` / `examcell-notifications.inbox.ts` for X-09 + `examcell-profile.service.ts` for X-10 + `examcell-dashboard.rules.ts` / `examcell-dashboard.sections.ts` / `examcell-dashboard.actions.ts` / `examcell-dashboard.service.ts` / `examcell-dashboard.routes.ts` and `attendance.rules.ts` / `attendance.service.ts` / `attendance.routes.ts` for X-11
+Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens + result hub & 11 sub-screens + cheating hub & 4 sub-screens + notification centre + profile hub & 4 sub-screens + the seven-section dashboard + the mark-roll, all wired to live API)
 Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53) · `audit-evaluations-ui.ts` (223) · `prove-evaluations-teeth.sh` (13) · `check-evaluations-jsx.ts` / `-locals.js` / `-named-imports.js` (12 each) · `check-examcell-cheating.ts` (81) · `verify-examcell-cheating-http.ts` (72) · `audit-cheating-ui.ts` (112) · `prove-cheating-teeth.sh` (10) · `check-cheating-jsx.ts` (13) · `check-examcell-notifications.ts` (188) · `check-examcell-profile.ts` (39) · `verify-examcell-notifications-http.ts` (64) · `verify-examcell-profile-http.ts` (45) · `audit-examcell-profile-ui.ts` (176) · `check-examcell-profile-jsx.ts` (10)
 
 | Endpoint | Method | Status |
@@ -491,6 +559,17 @@ Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53)
 | `/examcell/profile/permissions` | GET | ✅ wired |
 | `/examcell/profile/notification-preferences` | GET · PATCH | ✅ wired |
 | `/examcell/profile/activity` | GET | ✅ wired |
+
+**X-11 — the seven-section dashboard and the mark-roll:**
+
+| Endpoint | Method | Status |
+|----------|--------|--------|
+| `/examcell/dashboard/catalogue` | GET | ✅ wired |
+| `/examcell/dashboard/overview` | GET | ✅ wired — all seven sections |
+| `/examcell/dashboard/blocks/:block` | GET | ✅ wired |
+| `/examcell/dashboard` | GET | **gone** — 404, superseded by the three above |
+| `/examcell/attendance/summary` | GET | ✅ wired |
+| `/examcell/attendance/slots/:slotId` | GET · POST | ✅ wired — the roll, and marking it |
 
 **App wiring:**
 - `exam_cell.js`: demo user `setDemoUser('examcell@learnix.dev')`
