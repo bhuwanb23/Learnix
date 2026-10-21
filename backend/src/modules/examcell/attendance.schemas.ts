@@ -8,6 +8,19 @@
  */
 import { z } from 'zod';
 
+/**
+ * The slot the roll belongs to.
+ *
+ * A PARAM schema, because the id arrives in the path — and it is named `slotId` rather than `id`
+ * so it cannot be confused with the `idParamSchema` in `examcell.schemas.ts`, which validates a
+ * route whose parameter is literally called `id`.
+ */
+export const attendanceSlotParamSchema = z
+  .object({
+    slotId: z.string().min(1).max(64),
+  })
+  .strict();
+
 export const markAttendanceSchema = z
   .object({
     // A BULK mark-roll. One request for the whole roll, because an invigilator takes it in a room

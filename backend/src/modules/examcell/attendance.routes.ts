@@ -11,8 +11,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { auth } from '../../middlewares/auth.js';
 import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
-import { idParamSchema } from './examcell.schemas.js';
-import { markAttendanceSchema } from './attendance.schemas.js';
+import { attendanceSlotParamSchema, markAttendanceSchema } from './attendance.schemas.js';
 import * as service from './attendance.service.js';
 
 const router = Router();
@@ -34,7 +33,7 @@ router.use(auth, requireRole('EXAMCELL', 'ADMIN'));
  */
 router.get(
   '/attendance/slots/:slotId',
-  validate(idParamSchema, 'params'),
+  validate(attendanceSlotParamSchema, 'params'),
   wrap(async (req, res) => {
     res.json({
       data: await service.listAttendance(
@@ -53,7 +52,7 @@ router.get(
  */
 router.post(
   '/attendance/slots/:slotId',
-  validate(idParamSchema, 'params'),
+  validate(attendanceSlotParamSchema, 'params'),
   validate(markAttendanceSchema),
   wrap(async (req, res) => {
     res.json({
