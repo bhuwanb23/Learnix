@@ -99,7 +99,6 @@ const attendanceSrc = read('users/exam_cell/pages/attendance/attendance.js');
 const shellSrc = read('users/exam_cell/exam_cell.js');
 const apiSrc = read('services/api.js');
 const rulesSrc = readSrc('src/modules/examcell/examcell-dashboard.rules.ts');
-const attendanceRulesSrc = readSrc('src/modules/examcell/attendance.rules.ts');
 
 const dashboardCode = stripComments(dashboardSrc);
 const metaCode = stripComments(metaSrc);

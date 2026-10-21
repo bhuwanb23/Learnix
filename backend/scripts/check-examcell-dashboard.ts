@@ -46,7 +46,7 @@ import {
   quickActionMeta,
 } from '../src/modules/examcell/examcell-dashboard.rules.js';
 import { EXAM_STATUSES } from '../src/modules/examcell/timetable.rules.js';
-import { PFX, eq, expectReject, ok, report, section, sweep } from './examcell-dashboard.harness.js';
+import { eq, expectReject, ok, report, section, sweep } from './examcell-dashboard.harness.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -83,7 +83,7 @@ async function main() {
 
     ok('a known block is accepted', assertDashboardBlock('EXAM_ALERTS') === 'EXAM_ALERTS');
     await expectReject('an unknown block is refused', async () => assertDashboardBlock('NOPE'), 422);
-    ok('a block has metadata', dashboardBlockMeta('EXAM_ALERTS')?.label?.length > 0);
+    ok('a block has metadata', (dashboardBlockMeta('EXAM_ALERTS')?.label?.length ?? 0) > 0);
     ok('an unknown block has none', dashboardBlockMeta('NOPE') === null);
 
     // ═══ 2. The four quick actions ═════════════════════════════════════════════════════════════
@@ -308,9 +308,15 @@ async function main() {
     // how two screens start disagreeing.
     const viaBlock = await dashboard.dashboardBlock(inst.id, 'STUDENT_STATISTICS');
     const viaOverview = (await dashboard.dashboardOverview(inst.id)).students;
-    eq('the student statistics agree between the two routes', viaBlock.data.appeared, viaOverview.appeared);
-    eq('...and the absent count', viaBlock.data.absent, viaOverview.absent);
-    eq('...and the unmarked count', viaBlock.data.unmarked, viaOverview.unmarked);
+    const blockData = viaBlock.data as Record<string, unknown>;
+    const overviewData = viaOverview as unknown as Record<string, unknown>;
+    eq(
+      'the student statistics agree between the two routes',
+      blockData.appeared,
+      overviewData.appeared,
+    );
+    eq('...and the absent count', blockData.absent, overviewData.absent);
+    eq('...and the unmarked count', blockData.unmarked, overviewData.unmarked);
   } finally {
     await sweep();
   }

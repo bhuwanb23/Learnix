@@ -264,7 +264,7 @@ async function main() {
       ok('...the unmarked', summary.totals.UNMARKED >= 1);
       ok('...the slots', summary.totals.slots >= 1);
       ok('...and it says a roll has been taken', summary.marked === true);
-      ok('...and it reports a tone for the absences', summary.tone.absent === 'clear');
+      ok('...and it reports a tone for the absences', summary.tone?.absent === 'clear');
 
       const slotRow = summary.slots.find((s) => s.slotId === slot.id);
       ok('the slot is in the summary', slotRow !== undefined);
