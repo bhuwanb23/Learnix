@@ -104,7 +104,7 @@
 | X-05 | Evaluations: 9-block desk (script custody, allocation, 40/60 marks, deadlines, missing, moderation, publication gate, revaluation queue) | C evaluations/evaluation_papers/grading_deadlines | ✅ wired |
 | X-06 | Results: enter → publish (gated by exam status), student view | C results, exams.status | ✅ wired |
 | X-07 | Re-evaluation window (config-gated) + decisions | C re_evaluation_requests, L system_config | ✅ wired |
-| X-08 | Cheating cases: review → confirm/dismiss/escalate | C cheating_cases | ✅ wired |
+| X-08 | Cheating cases: report, triage, classify, statement, committee review, decision + penalty, derived escalation, reopen, historical record | C cheating_cases + events/evidence | ✅ 8 categories, 6 states |
 | X-09 | Notifications + profile | K, A | ✅ wired |
 
 ## Accounts & Finance (F) — docs/users/06 · tables: E

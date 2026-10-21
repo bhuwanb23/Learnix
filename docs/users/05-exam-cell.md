@@ -225,7 +225,21 @@ Legacy exam-cell surface:
 ```
 GET  /api/examcell/dashboard
 GET  /api/examcell/results                (+ /{id}/publish, re-evaluation)
-GET/POST /api/examcell/cheating-cases     (+ /{id}/confirm|dismiss)
+GET  /api/examcell/cheating-cases/catalogue   blocks + vocabularies + counts
+GET  /api/examcell/cheating-cases             ?status=&riskLevel=&classification=&q=&overdueOnly=
+GET  /api/examcell/cheating-cases/history     the decided record
+GET  /api/examcell/cheating-cases/:id         the case file
+GET  /api/examcell/cheating-cases/:id/timeline
+GET  /api/examcell/cheating-cases/report-context/:slotId
+GET  /api/examcell/cheating-cases/reportable-slots
+POST /api/examcell/cheating-cases             report a case
+POST /api/examcell/cheating-cases/:id/classify
+POST /api/examcell/cheating-cases/:id/statement
+POST /api/examcell/cheating-cases/:id/committee-review
+POST /api/examcell/cheating-cases/:id/evidence
+POST /api/examcell/cheating-cases/:id/decide   (+ penalty, and the student is told)
+POST /api/examcell/cheating-cases/:id/reopen
+POST /api/examcell/cheating-cases/:id/notes
 GET  /api/examcell/notifications
 POST /api/examcell/broadcasts
 ```
@@ -286,9 +300,9 @@ POST   /api/examcell/hall-tickets/:id/download                   mark printed (i
 
 ## 6. Wiring Status
 
-Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05
-Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens, all wired to live API)
-Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53) · `audit-evaluations-ui.ts` (223) · `prove-evaluations-teeth.sh` (13) · `check-evaluations-jsx.ts` / `-locals.js` / `-named-imports.js` (12 each)
+Backend: `backend/src/modules/examcell/` (schemas, service, routes) + `timetable.rules.ts` / `timetable.service.ts` / `timetable.routes.ts` for X-02 + `hallticket.rules.ts` / `hallticket.service.ts` / `hallticket.routes.ts` for X-04 + `evaluation.rules.ts` / `evaluation.service.ts` / `evaluation.routes.ts` for X-05 + `cheating.rules.ts` / `cheating.internal.ts` / `cheating.catalogue.ts` / `cheating.read.ts` / `cheating.report.ts` / `cheating.write.ts` / `cheating.legacy.ts` / `cheating.routes.ts` for X-08
+Frontend: `learnix/users/exam_cell/` (hub + 8 timetable sub-screens + hall-ticket hub & 7 sub-screens + evaluation hub & 9 sub-screens + cheating hub & 4 sub-screens, all wired to live API)
+Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53) · `audit-evaluations-ui.ts` (223) · `prove-evaluations-teeth.sh` (13) · `check-evaluations-jsx.ts` / `-locals.js` / `-named-imports.js` (12 each) · `check-examcell-cheating.ts` (81) · `verify-examcell-cheating-http.ts` (72) · `audit-cheating-ui.ts` (112) · `prove-cheating-teeth.sh` (10) · `check-cheating-jsx.ts` (13)
 
 | Endpoint | Method | Status |
 |----------|--------|--------|
@@ -333,7 +347,20 @@ Verification: `verify-evaluations.ts` (169) · `verify-evaluations-http.ts` (53)
 | `/examcell/results/publish` | POST | ✅ wired |
 | `/examcell/re-evaluations/:id/decide` | POST | ✅ wired |
 | `/examcell/cheating-cases` | GET | ✅ wired |
+| `/examcell/cheating-cases/catalogue` | GET | ✅ wired |
+| `/examcell/cheating-cases/history` | GET | ✅ wired |
+| `/examcell/cheating-cases/:id` | GET | ✅ wired |
+| `/examcell/cheating-cases/:id/timeline` | GET | ✅ wired |
+| `/examcell/cheating-cases/report-context/:slotId` | GET | ✅ wired |
+| `/examcell/cheating-cases/reportable-slots` | GET | ✅ wired |
+| `/examcell/cheating-cases` | POST | ✅ wired |
+| `/examcell/cheating-cases/:id/classify` | POST | ✅ wired |
+| `/examcell/cheating-cases/:id/statement` | POST | ✅ wired |
+| `/examcell/cheating-cases/:id/committee-review` | POST | ✅ wired |
+| `/examcell/cheating-cases/:id/evidence` | POST | ✅ wired |
 | `/examcell/cheating-cases/:id/decide` | POST | ✅ wired |
+| `/examcell/cheating-cases/:id/reopen` | POST | ✅ wired |
+| `/examcell/cheating-cases/:id/notes` | POST | ✅ wired |
 | `/examcell/notifications` | GET | ✅ wired |
 | `/examcell/notifications/read-all` | POST | ✅ wired |
 | `/examcell/broadcasts` | POST | ✅ wired |

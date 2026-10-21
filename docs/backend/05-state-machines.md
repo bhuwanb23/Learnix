@@ -305,6 +305,43 @@ authorisation workflow in **6.3**. There is no separate "just log a visitor" pat
 `POST /visitors/checkin` created an on-campus row with no authorisation and no planned window, and
 was removed rather than kept as a shortcut.
 
+### 6.6 Cheating case (05 §3.6)
+
+```
+REPORTED ──→ UNDER_REVIEW ──→ COMMITTEE_REVIEW ──┐
+    │              │                  │            │
+    └──────────────┴──────────────────┴──→ ESCALATED ──→ CONFIRMED | DISMISSED
+                                                  ↑                  │
+                                                  └──── UNDER_REVIEW ┘   (reopened, with a reason)
+```
+
+A case is the one lifecycle in the exam cell where being wrong is expensive: it can end a student's
+degree. So the record is the point, and three rules follow from that.
+
+**EVERY STATE CHANGE WRITES AN EVENT, IN THE SAME TRANSACTION.** The `CheatingCaseEvent` row and the
+change it records are written together. A case that can change without a record is a case nobody can
+audit, and a decision that can be quietly overwritten is not a decision — so a CONFIRMED case offers
+exactly one move: reopen it, with a reason.
+
+**A DECIDED CASE IS DECIDED.** `CONFIRMED` and `DISMISSED` are terminal, and the only way out is an
+explicit `REOPENED` event. Reopening clears the decision stamp and the penalty, because a reopened case
+still showing the date of the decision that was overturned is a case file that lies.
+
+**A DISMISSED CASE CARRIES NO PENALTY.** The student was cleared, and a consequence on a clearance is
+a contradiction the schema would happily store. The server refuses it rather than storing a penalty
+beside a dismissal.
+
+**ESCALATION IS DERIVED, NEVER STORED.** There is no `escalatedAt` column and no ESCALATED status
+that means "overdue" — `ESCALATED` is a referral, a place a case can go, and it can still come back
+and be decided. What is derived is the OVERDUE flag: a case crosses its threshold when its age exceeds
+the limit for its RISK (HIGH 24h, MEDIUM 72h, LOW 168h) and it is still open. The threshold is the
+risk's, so a high-risk case sitting for a fortnight is a failure of the desk and not of the student.
+
+**THE QUEUE ORDER IS A SUM, NOT A MAXIMUM.** `priority = severityWeight + min(1, age/threshold) × 40`.
+The age term SATURATES at the case's own threshold, deliberately: without that, an ancient low-risk
+case would outrank every urgent high-risk one forever, because its age term kept growing while the
+severity term did not. A queue where one stale case outranks everything is a queue people stop reading.
+
 ## 7. Transport (09)
 
 ### 7.1 Service record
