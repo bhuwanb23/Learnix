@@ -29,6 +29,8 @@ model StudentProfile {
   reEvaluations     ReEvaluationRequest[]
   hallTicketRequests HallTicketRequest[]
   cheatingCases     CheatingCase[]
+  // X-11 — the exam roll. Distinct from `attendanceRecords`, which is the per-lecture register.
+  examAttendance    ExamAttendance[]
   jobApplications   JobApplication[]
   placementEligibility PlacementEligibility?
   driveRegistrations   DriveRegistration[]

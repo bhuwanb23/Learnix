@@ -31,6 +31,11 @@ import hallticketRoutes from './modules/examcell/hallticket.routes.js';
 import evaluationRoutes from './modules/examcell/evaluation.routes.js';
 import resultRoutes from './modules/examcell/result.routes.js';
 import cheatingRoutes from './modules/examcell/cheating.routes.js';
+// X-11 — the exam attendance roll and the seven-section dashboard. Both apply
+// their own auth and are mounted BEFORE examcellRoutes, because Express matches
+// by mount order.
+import attendanceRoutes from './modules/examcell/attendance.routes.js';
+import dashboardRoutes from './modules/examcell/examcell-dashboard.routes.js';
 import examcellRoutes from './modules/examcell/examcell.routes.js';
 import placementRoutes from './modules/placement/placement.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
@@ -186,6 +191,16 @@ app.use('/api/v1/staff-complaints', staffComplaintsRoutes);
   // and `/cheating-cases/history` are literals and must be declared before
   // `/cheating-cases/:id`, or "catalogue" is read as a case id.
   app.use('/api/v1/examcell', cheatingRoutes);
+  // X-11 exam attendance owns every `/attendance/*` path. Mounted before it for
+  // the same reason the others are: it applies its own auth, and Express matches
+  // by mount order.
+  app.use('/api/v1/examcell', attendanceRoutes);
+  // X-11 the seven-section dashboard owns every `/dashboard/*` path. The old
+  // `GET /api/v1/examcell/dashboard` was REMOVED rather than re-pointed — it
+  // counted three of the six exam statuses, counted only UNDER_REVIEW cheating
+  // cases, and answered with a flat list of prose strings where the new one
+  // answers with seven structured sections.
+  app.use('/api/v1/examcell', dashboardRoutes);
   app.use('/api/v1/examcell', examcellRoutes);
   app.use('/api/v1/placement', placementRoutes);
   app.use('/api/v1/admin', adminRoutes);

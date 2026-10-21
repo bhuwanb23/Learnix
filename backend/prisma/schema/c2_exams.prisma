@@ -53,6 +53,9 @@ model ExamSlot {
   evaluations     Evaluation[]
   results         Result[]
   cheatingCases   CheatingCase[]
+  // X-11 — who actually sat this paper. One row per student per paper; see c4_attendance.prisma
+  // for why this is not the lecture attendance.
+  attendance      ExamAttendance[]
 
   @@unique([examId, offeringId, date, startTime])
   @@index([examId])

@@ -1,0 +1,51 @@
+// Domain C4 — Exam attendance. Docs: 05-exam-cell.md §3.1.
+//
+// WHY THIS IS NOT THE LECTURE ATTENDANCE IN b5_attendance.prisma
+// ----------------------------------------------------------------
+// `AttendanceSession` / `AttendanceRecord` are a TEACHER's per-lecture register: they are keyed by
+// `offeringId`, they record PRESENT | ABSENT | LATE, and they are read by the student app and the
+// teacher app. A student can be `ABSENT` for a lecture on the same afternoon as an examination, and
+// there is no join key between the two — a lecture session has no `examSlotId`.
+//
+// An examination is a different fact: it is sat in a room, on a date, under an invigilator, with a
+// hall ticket. "Did this student turn up for THIS paper" is a question only the exam cell can
+// answer, and it is asked per SLOT rather than per offering.
+//
+// THE THREE STATES THAT WOULD BE WRONG
+// ------------------------------------
+//   · LATE — a late student is still PRESENT. A third state would make "who did not turn up"
+//     ambiguous, and every count of absences would then need a rule about what to do with LATE.
+//   · EXCUSED — an excuse is a decision about a consequence, not a fact about a room, and it needs
+//     an approver, a reason and a workflow. That is a feature of its own; it is not a third colour
+//     on a roll.
+//   · DERIVED — a student with a `Result` demonstrably sat the paper, and a student with a hall
+//     ticket and no result MIGHT not have. But "might not have" conflates three different things:
+//     absent, paper-not-yet-marked, and enrolment-dropped. The live data proves the risk — every
+//     `EvaluationPaper` row is `scriptStatus: 'NOT_RECEIVED'` — so inferring absence from missing
+//     marks would report an empty college as fully absent. Absence is RECORDED, never inferred.
+//
+// The row is one per student per paper, so marking the roll twice UPDATES rather than duplicates —
+// which is what an invigilator does when somebody walks in late.
+
+model ExamAttendance {
+  id               String   @id @default(cuid())
+  examSlotId       String
+  studentProfileId String
+  state            String   @default("PRESENT") // PRESENT | ABSENT
+  // A SCALAR, not a relation — the same shape as `Exam.createdByUserId` and
+  // `Evaluation.evaluatorUserId`. A second relation on `User` for one audit column is not worth
+  // the schema weight.
+  markedByUserId String? // scalar → users.id
+  markedAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
+
+  examSlot      ExamSlot       @relation(fields: [examSlotId], references: [id])
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  // One roll per student per paper. Marking twice updates.
+  @@unique([examSlotId, studentProfileId])
+  @@index([examSlotId])
+  @@index([studentProfileId])
+  @@map("exam_attendance")
+}
