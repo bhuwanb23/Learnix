@@ -25,6 +25,9 @@ import * as complaints from '../hostel/hostel-complaints.service.js';
 // The hostel's notification vocabulary, merged with the finance one so a resident's inbox spans
 // both desks. The student module already depends on the hostel module, so the direction is right.
 import { HOSTEL_NOTIFICATION_REGISTRY } from '../hostel/hostel-notifications.rules.js';
+// X-09 — the exam cell's vocabulary, merged in so a student sees their hall ticket, their
+// timetable change, their result and their revaluation in the inbox they already open.
+import { EXAM_CELL_NOTIFICATION_REGISTRY } from '../examcell/examcell-notifications.rules.js';
 import { FINANCE_REGISTRY, mergeRegistries } from '../accounts/notifications.rules.js';
 // The mess schemas live with the rest of the mess feature rather than being duplicated here, so a
 // change to what a valid rating looks like cannot be made in one module and missed in the other.
@@ -192,16 +195,24 @@ router.get('/transport', wrap(async (req, res) => {
 
 // S-19 Notifications
 //
-// A student reads ONE inbox: their bills AND their hostel news. The two vocabularies are merged
-// here, at the route, because the student module already depends on the hostel module (for
-// complaints) and the hostel does NOT depend on the student.
+// A student reads ONE inbox: their bills AND their hostel news AND their exam notices. The three
+// vocabularies are merged here, at the route, because the student module already depends on the
+// hostel and exam-cell modules, and neither of those depends on the student.
 //
-// Without this merge a hostel announcement was INVISIBLE to the resident it was written for: the
-// shared inbox selects by category, and a hostel `type` had no finance category, so the row was
-// labelled and then left out. The fix is not to widen the finance desk's chip list — a finance
-// officer's inbox has no business growing eight hostel chips — it is to give the STUDENT an inbox
-// that spans both desks.
-const STUDENT_NOTIFICATION_REGISTRY = mergeRegistries(FINANCE_REGISTRY, HOSTEL_NOTIFICATION_REGISTRY);
+// Without this merge an exam notice was INVISIBLE to the student it was written for: the shared
+// inbox selects by category, and an exam `type` had no finance category, so the row was labelled
+// and then left out. The fix is not to widen the finance desk's chip list — a finance officer's
+// inbox has no business growing nine exam chips — it is to give the STUDENT an inbox that spans
+// every desk they actually read.
+//
+// ORDER MATTERS: the exam-cell registry is merged LAST, so it is authoritative for the `EXAM_*`
+// types. The finance registry claims `EXAM_CELL_BROADCAST`? No — it is registered `category: null`
+// in the platform registry, so neither desk claims it and the exam cell's mapping wins.
+const STUDENT_NOTIFICATION_REGISTRY = mergeRegistries(
+  FINANCE_REGISTRY,
+  HOSTEL_NOTIFICATION_REGISTRY,
+  EXAM_CELL_NOTIFICATION_REGISTRY,
+);
 
 /** The resident's inbox query. `category` is free-form so an unknown one yields an empty list. */
 const studentNotificationQuerySchema = z.object({

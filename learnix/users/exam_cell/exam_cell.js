@@ -107,6 +107,19 @@ import ResultsRevaluation from './pages/results/pages/revaluation/revaluation';
 import ResultsAnalytics from './pages/results/pages/analytics/analytics';
 import ResultsExport from './pages/results/pages/export/export';
 
+// X-10 profile sub-screens (docs/users/05 §3.8). The hub is `./pages/profile/profile`, reached
+// through the Profile tab; these four are the rows it opens.
+//
+// Registering them HERE is load-bearing and its failure is SILENT, exactly as for the timetable,
+// hall-ticket, evaluation, result and cheating sets: `renderContent` looks the key up in
+// FEATURE_MODULES, finds nothing, falls through to the tab switcher and puts the officer back on
+// the profile with no error anywhere. `audit-examcell-profile-ui.ts` asserts all four are present
+// and point at their own component.
+import ExamPermissions from './pages/profile/my_permissions/my_permissions';
+import ExamActivity from './pages/profile/activity/activity';
+import ExamChangePassword from './pages/profile/change_password/change_password';
+import ExamHelpSupport from './pages/profile/help_support/help_support';
+
 // Import theme
 import { COLORS } from '../../constants/theme';
 import { setDemoUser } from '../../services/api';
@@ -124,6 +137,10 @@ const FEATURE_MODULES = {
   CheatingCasesHistory: { title: 'Historical records', icon: 'time-outline', component: CheatingCasesHistory },
   CheatingCasesDetail: { title: 'Case file', icon: 'document-text-outline', component: CheatingCasesDetail },
   Notifications: { title: 'Notifications', component: NotificationsScreen },
+  ExamPermissions: { title: 'Access & Permissions', icon: 'shield-checkmark-outline', component: ExamPermissions },
+  ExamActivity: { title: 'Sign-in history', icon: 'time-outline', component: ExamActivity },
+  ExamChangePassword: { title: 'Change password', icon: 'lock-closed-outline', component: ExamChangePassword },
+  ExamHelpSupport: { title: 'Help & Support', icon: 'help-circle-outline', component: ExamHelpSupport },
   TimetableCalendar: { title: 'Examination Calendar', icon: 'calendar-outline', component: TimetableCalendar },
   TimetableExams: { title: 'Exam Schedules', icon: 'document-text-outline', component: TimetableExams },
   TimetableAllocation: { title: 'Course Allocation', icon: 'school-outline', component: TimetableAllocation },
@@ -275,7 +292,23 @@ export default function ExamCellScreen({ navigation }) {
           />
         );
       case 'Profile':
-        return <ExamProfile navigation={{ goBack: handleBackPress }} />;
+        // The profile opens FOUR sub-screens, so it needs a `navigate` that carries the screen
+        // name AND the params — a `navigate` that drops its second argument is a navigate that
+        // opens the screen on nothing. `goBack` returns to the profile, which is where the
+        // officer came from.
+        return (
+          <ExamProfile
+            navigation={{
+              navigate: (screen, params) => {
+                setCurrentScreen(screen);
+                setScreenParams(params ?? {});
+              },
+              goBack: handleBackPress,
+              openModule: (key) => setCurrentScreen(key),
+              switchTab: (tabId) => handleTabChange(tabId),
+            }}
+          />
+        );
       case 'Dashboard':
       default:
         return (

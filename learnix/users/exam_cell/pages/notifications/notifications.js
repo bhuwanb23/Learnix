@@ -1,203 +1,533 @@
-import React, { useState, useEffect, useCallback } from 'react';
+/**
+ * X-09 -- The exam office's notification centre: the nine categories, and the composer.
+ * Docs: 05-exam-cell.md section 3.7
+ *
+ * WAS A MOCK, AND A WRONG ONE. This screen fetched the inbox but then GUESSED the icon and the
+ * colour from the type string -- `type.includes('EXAM')` gives a calendar, `type.includes('RESULT')`
+ * gives a trophy -- so a row the server had no chrome for rendered as a blue bell, and a row of type
+ * `EVALUATION_DEADLINE` matched no rule at all and fell through to a generic bell. The categories
+ * were not offered, so the inbox could not be filtered. The composer's audience picker was a
+ * hardcoded list of three, and there was no "important" flag, so a notice the office had marked as
+ * needing attention looked exactly like a notice about anything else.
+ *
+ * WHAT IT IS NOW
+ * --------------
+ * The nine categories are read from `GET /examcell/notifications/catalogue`, because the labels,
+ * icons and colours are the SERVER's vocabulary -- a second copy in the client is a second thing to
+ * forget to update, and the symptom is a chip that says "Results" in the list and "Result
+ * publication" in the composer.
+ *
+ * WHY THE COMPOSER IS LIMITED TO ONE CATEGORY
+ * --------------------------------------------
+ * IMPORTANT_NOTICE is the one thing the exam office composes. The other eight are facts the SYSTEM
+ * reports, and letting a controller publish a RESULT_PUBLISHED would let them forge a result. The
+ * screen therefore offers only what the server will accept, and says why.
+ *
+ * IMPORTANT NOTICES IGNORE MUTES
+ * ------------------------------
+ * A reader who muted a category gets no row at all for it -- the mute is SUPPRESSION, not hiding.
+ * But an IMPORTANT notice is a notice the office marked as needing attention, so it bypasses the
+ * mute. That is why the composer says so out loud, and why the row treatment is visibly different.
+ */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Alert,
-  ActivityIndicator,
+  Modal,
+  TextInput,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { theme } from '../../../../constants/theme';
+import { AnimatedCard, EmptyState } from '../../../../components/ui';
+import { SkeletonCard, SkeletonStatRow } from '../../../../components/ui/SkeletonLoader';
 import { examcellApi } from '../../../../services/api';
-
-import { TYPOGRAPHY, SPACING, BORDER_RADIUS } from '../../../../constants/theme';
-
-const AUDIENCES = ['ALL_STUDENTS', 'SEM_STUDENTS', 'FINAL_YEAR'];
-const AUDIENCE_LABELS = { ALL_STUDENTS: 'All Students', SEM_STUDENTS: 'Sem Students', FINAL_YEAR: 'Final Year' };
+import {
+  FALLBACK_AUDIENCES,
+  FALLBACK_CATEGORIES,
+  PAGE_SIZE,
+  ageLabel,
+  styles,
+} from './notificationsUi';
 
 export default function NotificationsScreen({ navigation }) {
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [tab, setTab] = useState('inbox');
-  const [form, setForm] = useState({ title: '', body: '', audience: 'ALL_STUDENTS' });
+  const [rows, setRows] = useState([]);
+  const [counts, setCounts] = useState([]);
+  const [catalogue, setCatalogue] = useState([]);
+  const [audiences, setAudiences] = useState([]);
+  const [unread, setUnread] = useState(0);
+  const [importantUnread, setImportantUnread] = useState(0);
+  const [pagination, setPagination] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await examcellApi.notifications();
-      setNotifications(res.notifications ?? []);
-      setUnreadCount(res.unread ?? 0);
-    } catch (e) {
-      // silent
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+  const [category, setCategory] = useState(null);
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [importantOnly, setImportantOnly] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [audience, setAudience] = useState('ALL_STUDENTS');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [important, setImportant] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [sweeping, setSweeping] = useState(false);
+
+  const load = useCallback(
+    async (targetPage, mode) => {
+      try {
+        if (mode === 'append') setLoadingMore(true);
+        else if (mode === 'refresh') setRefreshing(true);
+        else setLoading(true);
+        setError(null);
+
+        const res = await examcellApi.notifications({
+          category: category ?? undefined,
+          unread: unreadOnly ? 'true' : undefined,
+          important: importantOnly ? 'true' : undefined,
+          page: targetPage,
+          pageSize: PAGE_SIZE,
+        });
+
+        setPagination(res.pagination ?? null);
+        setCounts(res.counts ?? []);
+        setUnread(res.unread ?? 0);
+        setImportantUnread(res.importantUnread ?? 0);
+        setRows((prev) =>
+          mode === 'append' ? [...prev, ...(res.notifications ?? [])] : res.notifications ?? [],
+        );
+      } catch (e) {
+        setError(e.message || 'Could not load notifications');
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+        setRefreshing(false);
+      }
+    },
+    [category, unreadOnly, importantOnly],
+  );
+
+  useEffect(() => {
+    load(1);
+  }, [load]);
+
+  // The catalogue is fetched once: it is the SERVER's vocabulary, not a filter, so it does not change
+  // when the filter does.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const cat = await examcellApi.notificationCatalogue();
+        if (!alive) return;
+        setCatalogue(cat?.categories ?? []);
+        setAudiences(cat?.audiences ?? []);
+      } catch {
+        // The list still works without the catalogue -- the chips fall back to the counts alone.
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const applyFilter = useCallback((patch) => {
+    setPage(1);
+    setRows([]);
+    if ('category' in patch) setCategory(patch.category);
+    if ('unreadOnly' in patch) setUnreadOnly(patch.unreadOnly);
+    if ('importantOnly' in patch) setImportantOnly(patch.importantOnly);
+  }, []);
 
-  const onRefresh = () => { setRefreshing(true); fetchData(); };
+  const loadMore = () => {
+    if (!pagination || loadingMore) return;
+    const totalPages = pagination.pageSize ? Math.ceil(pagination.total / pagination.pageSize) : 1;
+    if (page >= totalPages) return;
+    const next = page + 1;
+    setPage(next);
+    load(next, 'append');
+  };
 
-  const handleMarkAllRead = async () => {
+  const markRead = async (row) => {
+    if (row.read) return;
+    // Optimistic, reverted on failure -- a tap that silently does nothing is indistinguishable from a
+    // broken screen.
+    setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, read: true } : r)));
+    setUnread((n) => Math.max(0, n - 1));
+    try {
+      await examcellApi.setNotificationRead(row.id, true);
+    } catch (e) {
+      setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, read: false } : r)));
+      setUnread((n) => n + 1);
+      Alert.alert('Could not mark it read', e.message || 'Try again');
+    }
+  };
+
+  const markAll = async () => {
     try {
       await examcellApi.markAllRead();
-      setUnreadCount(0);
-      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      load(page, 'refresh');
     } catch (e) {
-      // silent
+      Alert.alert('Could not mark them read', e.message || 'Try again');
     }
   };
 
-  const handleSend = async () => {
-    if (!form.title.trim() || !form.body.trim()) {
-      Alert.alert('Missing Fields', 'Please enter both a subject and message.');
+  /**
+   * Raise the exam reminders.
+   *
+   * On demand, and IDEMPOTENT: the reminder is keyed on the exam and the day, so pressing this
+   * twice leaves one row per student, not two. The screen says so, because an officer who is told
+   * "12 sent" and then sees 24 rows will assume the platform duplicated them.
+   */
+  const runReminderSweep = () => {
+    Alert.alert(
+      'Send exam reminders?',
+      'Every student with an exam in the next 24 hours is reminded once. Running this again does not send a second reminder.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send reminders',
+          onPress: async () => {
+            setSweeping(true);
+            try {
+              const res = await examcellApi.sweepExamReminders();
+              Alert.alert(
+                'Reminders sent',
+                res?.raised
+                  ? `${res.raised} reminder(s) sent across ${res.exams ?? 0} exam(s).`
+                  : 'Every exam in the next 24 hours has already been reminded.',
+              );
+              load(1);
+            } catch (e) {
+              Alert.alert('Could not send reminders', e.message || 'Try again');
+            } finally {
+              setSweeping(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const openCompose = () => {
+    setAudience('ALL_STUDENTS');
+    setTitle('');
+    setBody('');
+    setImportant(true);
+    setComposeOpen(true);
+  };
+
+  const send = async () => {
+    if (title.trim().length < 3 || body.trim().length < 3) {
+      Alert.alert('Almost there', 'Give it a subject and a message of at least three characters.');
       return;
     }
+    setSending(true);
     try {
-      await examcellApi.broadcast({ audience: form.audience, title: form.title, body: form.body });
-      setForm({ title: '', body: '', audience: 'ALL_STUDENTS' });
-      setTab('inbox');
-      Alert.alert('Broadcast Sent', 'Notification delivered to students.');
+      const res = await examcellApi.broadcast({
+        audience,
+        title: title.trim(),
+        body: body.trim(),
+        important,
+      });
+      setComposeOpen(false);
+      Alert.alert(
+        'Sent',
+        `${res?.recipients ?? 0} recipient(s) notified${
+          res?.muted ? `, ${res.muted} had muted notices` : ''
+        }.`,
+      );
+      load(1);
     } catch (e) {
-      Alert.alert('Error', e.message);
+      Alert.alert('Could not send', e.message || 'Try again');
+    } finally {
+      setSending(false);
     }
   };
 
-  if (loading) {
+  const countFor = (id) => counts.find((c) => c.category === id)?.count ?? 0;
+
+  const chips = useMemo(
+    () => (catalogue.length ? catalogue : FALLBACK_CATEGORIES),
+    [catalogue],
+  );
+  const audienceList = useMemo(
+    () => (audiences.length ? audiences : FALLBACK_AUDIENCES),
+    [audiences],
+  );
+
+  if (loading && !rows.length) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.loadingText}>Loading notifications…</Text>
-      </View>
+      <ScrollView style={styles.container} contentContainerStyle={styles.pad}>
+        <SkeletonStatRow />
+        <SkeletonCard />
+        <SkeletonCard />
+      </ScrollView>
     );
   }
 
-  const getIcon = (type) => {
-    if (type?.includes('EXAM')) return 'calendar';
-    if (type?.includes('RESULT')) return 'trophy';
-    if (type?.includes('TICKET')) return 'ticket';
-    if (type?.includes('CHEATING')) return 'warning';
-    return 'notifications';
-  };
-
-  const getColor = (type) => {
-    if (type?.includes('EXAM')) return '#2563eb';
-    if (type?.includes('RESULT')) return '#059669';
-    if (type?.includes('TICKET')) return '#0284c7';
-    if (type?.includes('CHEATING')) return '#dc2626';
-    return '#4f46e5';
-  };
-
   return (
     <View style={styles.container}>
-      <View style={styles.tabsRow}>
-        {[
-          { id: 'inbox', label: `Inbox${unreadCount ? ` (${unreadCount})` : ''}` },
-          { id: 'broadcast', label: 'Broadcast' },
-        ].map((t) => (
-          <TouchableOpacity key={t.id} style={[styles.tab, tab === t.id && styles.activeTab]} onPress={() => setTab(t.id)} activeOpacity={0.8}>
-            <Text style={[styles.tabText, tab === t.id && styles.activeTabText]}>{t.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {tab === 'inbox' ? (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563eb" />}
-        >
-          {unreadCount > 0 && (
-            <TouchableOpacity style={styles.markAllRow} onPress={handleMarkAllRead} activeOpacity={0.7}>
-              <Text style={styles.markAllText}>Mark all read</Text>
+      <ScrollView
+        contentContainerStyle={styles.pad}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(page, 'refresh')} />}
+      >
+        <View style={styles.rowBetween}>
+          <View style={styles.flex}>
+            <Text style={styles.h1}>Notifications</Text>
+            <Text style={styles.sub}>
+              {unread > 0 ? `${unread} unread` : 'All caught up'}
+              {importantUnread > 0 ? ` - ${importantUnread} need attention` : ''}
+            </Text>
+          </View>
+          {unread > 0 ? (
+            <TouchableOpacity onPress={markAll} hitSlop={8}>
+              <Text style={styles.link}>Mark all read</Text>
             </TouchableOpacity>
-          )}
-          {notifications.map((item) => (
-            <View key={item.id} style={[styles.card, !item.read && styles.unreadCard]}>
-              <View style={[styles.iconContainer, { backgroundColor: (getColor(item.type) || '#4f46e5') + '14' }]}>
-                <Ionicons name={getIcon(item.type)} size={18} color={getColor(item.type) || '#4f46e5'} />
-              </View>
-              <View style={styles.cardContent}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardDesc} numberOfLines={2}>{item.body}</Text>
-                <Text style={styles.cardTime}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''}</Text>
-              </View>
-              {!item.read && <View style={styles.unreadDot} />}
+          ) : null}
+        </View>
+
+        {error ? (
+          <AnimatedCard style={styles.errorCard}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={() => load(1)} hitSlop={8}>
+                <Text style={styles.link}>Retry</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-          {notifications.length === 0 && <Text style={styles.emptyText}>No notifications yet.</Text>}
+          </AnimatedCard>
+        ) : null}
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
+          <View style={styles.chipRow}>
+            <TouchableOpacity
+              style={[styles.chip, !category && !unreadOnly && !importantOnly && styles.chipOn]}
+              onPress={() => applyFilter({ category: null, unreadOnly: false, importantOnly: false })}
+            >
+              <Text
+                style={[styles.chipText, !category && !unreadOnly && !importantOnly && styles.chipTextOn]}
+              >
+                All
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.chip, unreadOnly && styles.chipOn]}
+              onPress={() => applyFilter({ unreadOnly: !unreadOnly })}
+            >
+              <Ionicons
+                name="ellipse-outline"
+                size={12}
+                color={unreadOnly ? theme.colors.white : theme.colors.primary}
+              />
+              <Text style={[styles.chipText, unreadOnly && styles.chipTextOn]}>Unread</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.chip, importantOnly && styles.chipImportantOn]}
+              onPress={() => applyFilter({ importantOnly: !importantOnly })}
+            >
+              <Ionicons
+                name="alert-circle-outline"
+                size={12}
+                color={importantOnly ? theme.colors.white : theme.colors.error}
+              />
+              <Text style={[styles.chipText, importantOnly && styles.chipTextOn]}>Important</Text>
+            </TouchableOpacity>
+            {chips.map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                style={[
+                  styles.chip,
+                  category === c.id && styles.chipOn,
+                  c.id === 'IMPORTANT_NOTICE' && category !== c.id && styles.chipImportant,
+                ]}
+                onPress={() => applyFilter({ category: category === c.id ? null : c.id })}
+              >
+                <Ionicons
+                  name={c.icon ?? 'notifications-outline'}
+                  size={12}
+                  color={category === c.id ? theme.colors.white : c.color ?? theme.colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.chipText,
+                    category === c.id && styles.chipTextOn,
+                    c.id === 'IMPORTANT_NOTICE' && category !== c.id && { color: theme.colors.error },
+                  ]}
+                >
+                  {c.label}
+                  {countFor(c.id) > 0 ? ` ${countFor(c.id)}` : ''}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </ScrollView>
-      ) : (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.formHint}>Broadcast exam schedules, hall ticket availability, and result announcements directly to students.</Text>
 
-          <Text style={styles.fieldLabel}>Subject</Text>
-          <View style={styles.inputContainer}>
-            <TextInput style={styles.input} value={form.title} onChangeText={(v) => setForm((p) => ({ ...p, title: v }))} placeholder="e.g. Exam Schedule Released" placeholderTextColor="#cbd5e1" />
-          </View>
+        {rows.length === 0 ? (
+          <EmptyState
+            icon="notifications-off-outline"
+            title="Nothing here"
+            message={
+              importantOnly
+                ? 'No important notice is unread.'
+                : unreadOnly
+                  ? 'Nothing unread in this category.'
+                  : 'No notifications in this category yet.'
+            }
+          />
+        ) : (
+          rows.map((n) => (
+            <AnimatedCard key={n.id} style={[styles.card, n.important && styles.cardImportant]}>
+              <TouchableOpacity onPress={() => markRead(n)}>
+                <View style={styles.rowLeft}>
+                  <View
+                    style={[styles.icon, { backgroundColor: `${n.color ?? theme.colors.primary}1a` }]}
+                  >
+                    <Ionicons
+                      name={n.icon ?? 'notifications-outline'}
+                      size={16}
+                      color={n.color ?? theme.colors.primary}
+                    />
+                  </View>
+                  <View style={styles.flex}>
+                    <View style={styles.rowBetween}>
+                      <Text style={[styles.title, !n.read && styles.titleUnread]} numberOfLines={2}>
+                        {n.title}
+                      </Text>
+                      {!n.read ? <View style={styles.dot} /> : null}
+                    </View>
+                    <Text style={styles.body} numberOfLines={3}>
+                      {n.body}
+                    </Text>
+                    <View style={styles.metaRow}>
+                      <Text style={styles.meta}>{n.categoryLabel ?? n.typeLabel ?? n.type}</Text>
+                      <Text style={styles.meta}>·</Text>
+                      <Text style={styles.meta}>{ageLabel(n.createdAt)}</Text>
+                      {n.important ? (
+                        <>
+                          <Text style={styles.meta}>·</Text>
+                          <Text style={styles.metaUrgent}>Needs attention</Text>
+                        </>
+                      ) : null}
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </AnimatedCard>
+          ))
+        )}
 
-          <Text style={styles.fieldLabel}>Message</Text>
-          <View style={[styles.inputContainer, styles.textAreaContainer]}>
-            <TextInput style={[styles.input, styles.textArea]} value={form.body} onChangeText={(v) => setForm((p) => ({ ...p, body: v }))} placeholder="Write your message to students..." placeholderTextColor="#cbd5e1" multiline />
-          </View>
+        {pagination && pagination.total > rows.length ? (
+          <TouchableOpacity style={styles.more} onPress={loadMore} disabled={loadingMore}>
+            {loadingMore ? (
+              <ActivityIndicator color={theme.colors.primary} />
+            ) : (
+              <Text style={styles.moreText}>Load more ({pagination.total - rows.length} left)</Text>
+            )}
+          </TouchableOpacity>
+        ) : null}
 
-          <Text style={styles.fieldLabel}>Audience</Text>
-          <View style={styles.audienceGrid}>
-            {AUDIENCES.map((aud) => (
-              <TouchableOpacity key={aud} style={[styles.audienceChip, form.audience === aud && styles.audienceChipActive]} onPress={() => setForm((p) => ({ ...p, audience: aud }))} activeOpacity={0.8}>
-                <Text style={[styles.audienceText, form.audience === aud && styles.audienceTextActive]}>{AUDIENCE_LABELS[aud]}</Text>
+        <TouchableOpacity style={styles.secondaryBtn} onPress={runReminderSweep} disabled={sweeping}>
+          {sweeping ? (
+            <ActivityIndicator color={theme.colors.primary} size="small" />
+          ) : (
+            <Ionicons name="alarm-outline" size={16} color={theme.colors.primary} />
+          )}
+          <Text style={styles.secondaryText}>Send exam reminders</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.composeBtn} onPress={openCompose}>
+          <Ionicons name="megaphone-outline" size={18} color={theme.colors.white} />
+          <Text style={styles.composeText}>Compose a notice</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <Modal visible={composeOpen} animationType="slide" onRequestClose={() => setComposeOpen(false)}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.pad}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.h1}>Compose an examination notice</Text>
+          <Text style={styles.sub}>
+            An important notice is the only thing the exam office composes. The other eight categories
+            are reported by the system, and a controller who could publish a result could forge one.
+          </Text>
+
+          <Text style={styles.label}>Who is it for?</Text>
+          <View style={styles.chipRow}>
+            {audienceList.map((a) => (
+              <TouchableOpacity
+                key={a.id}
+                style={[styles.chip, audience === a.id && styles.chipOn]}
+                onPress={() => setAudience(a.id)}
+              >
+                <Text style={[styles.chipText, audience === a.id && styles.chipTextOn]}>{a.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <TouchableOpacity style={styles.sendBtn} onPress={handleSend} activeOpacity={0.85}>
-            <Ionicons name="send" size={16} color="#FFFFFF" />
-            <Text style={styles.sendBtnText}>Send Broadcast</Text>
+          <Text style={styles.label}>Subject</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Examination venue change for the 6th semester"
+            placeholderTextColor={theme.colors.textMuted}
+            value={title}
+            onChangeText={setTitle}
+            maxLength={120}
+          />
+
+          <Text style={styles.label}>Message</Text>
+          <TextInput
+            style={[styles.input, styles.inputTall]}
+            placeholder="What do they need to know, and what should they do?"
+            placeholderTextColor={theme.colors.textMuted}
+            value={body}
+            onChangeText={setBody}
+            multiline
+            maxLength={2000}
+          />
+
+          <TouchableOpacity style={styles.importantRow} onPress={() => setImportant((v) => !v)}>
+            <Ionicons
+              name={important ? 'checkbox' : 'square-outline'}
+              size={20}
+              color={important ? theme.colors.error : theme.colors.textMuted}
+            />
+            <View style={styles.flex}>
+              <Text style={[styles.importantLabel, important && { color: theme.colors.error }]}>
+                Mark as important
+              </Text>
+              <Text style={styles.importantHint}>
+                An important notice reaches everyone even if they muted notices. Use it for something
+                they must act on.
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.sendBtn, sending && styles.sendOff]}
+            onPress={send}
+            disabled={sending}
+          >
+            {sending ? (
+              <ActivityIndicator color={theme.colors.white} />
+            ) : (
+              <Text style={styles.sendText}>Send</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cancel} onPress={() => setComposeOpen(false)}>
+            <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
         </ScrollView>
-      )}
+      </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f7f9' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  loadingText: { marginTop: 12, fontSize: 14, color: '#64748b', fontFamily: 'Manrope-Regular' },
-  emptyText: { fontSize: 13, color: '#94a3b8', fontFamily: 'Manrope-Regular', textAlign: 'center', marginTop: 20 },
-  tabsRow: { flexDirection: 'row', backgroundColor: '#eef2f7', borderRadius: 12, padding: 4, margin: 24, marginBottom: 0 },
-  tab: { flex: 1, paddingVertical: 8, borderRadius: 9, alignItems: 'center' },
-  activeTab: { backgroundColor: '#ffffff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#64748b', fontFamily: 'Manrope-SemiBold' },
-  activeTabText: { color: '#2563eb' },
-  scrollContent: { padding: 24, paddingBottom: 40 },
-  markAllRow: { alignSelf: 'flex-end', marginBottom: 12 },
-  markAllText: { fontSize: 12, color: '#2563eb', fontFamily: 'Manrope-SemiBold' },
-  card: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: '#eef2f7', padding: 14, marginBottom: 10 },
-  unreadCard: { borderColor: '#bfdbfe', backgroundColor: '#f8faff' },
-  iconContainer: { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  cardContent: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: '600', color: '#0f172a', fontFamily: 'Manrope-SemiBold', marginBottom: 2 },
-  cardDesc: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 17 },
-  cardTime: { fontSize: 10, color: '#94a3b8', fontFamily: 'Manrope-Regular', marginTop: 4 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2563eb', marginLeft: 8, marginTop: 4 },
-  formHint: { fontSize: 12, color: '#64748b', fontFamily: 'Manrope-Regular', lineHeight: 18, marginBottom: 16 },
-  fieldLabel: { fontSize: 12, fontWeight: '700', color: '#334155', fontFamily: 'Manrope-Bold', marginBottom: 6, marginTop: 4 },
-  inputContainer: { backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 14, marginBottom: 12 },
-  input: { height: 44, fontSize: 14, color: '#0f172a', fontFamily: 'Manrope-Regular' },
-  textAreaContainer: { paddingVertical: 8 },
-  textArea: { height: 96, textAlignVertical: 'top' },
-  audienceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  audienceChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#e2e8f0' },
-  audienceChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  audienceText: { fontSize: 12, color: '#475569', fontFamily: 'Manrope-Medium' },
-  audienceTextActive: { color: '#FFFFFF' },
-  sendBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14 },
-  sendBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF', fontFamily: 'Manrope-Bold' },
-});

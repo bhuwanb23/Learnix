@@ -1333,10 +1333,39 @@ export const examcellApi = {
   // the screen needs that room's roster — not a free text box.
   cheatingReportContext: (slotId) => api.get(`/examcell/cheating-cases/report-context/${slotId}`),
   cheatingReportableSlots: () => api.get('/examcell/cheating-cases/reportable-slots'),
-  notifications: () => api.get('/examcell/notifications'),
+  // X-09 Notifications (docs/users/05 3.7) + X-10 Profile.
+  //
+  // The old surface was four methods over a flat 50-row inbox: `notifications()`
+  // returned every message the platform had ever sent the officer with no categories
+  // and no pagination, `markAllRead()` marked their FINANCE mail read as well, and
+  // `broadcast()` had no way to reach the exam office itself. `profile()` answered a
+  // name and three counts, two of which were the institution's totals presented as
+  // the officer's own work.
+  //
+  // The inbox is now shaped by the exam cell's own nine categories, and the profile is
+  // seven questions across five endpoints - the same contract the hostel desk uses.
+  notificationCatalogue: () => api.get('/examcell/notifications/catalogue'),
+  notifications: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/examcell/notifications${qs ? `?${qs}` : ''}`);
+  },
   markAllRead: () => api.post('/examcell/notifications/read-all'),
+  setNotificationRead: (id, read) =>
+    api.patch(`/examcell/notifications/${encodeURIComponent(id)}/read`, { read }),
+  // On-demand, like every other sweep in this platform. Idempotent: the reminder is
+  // keyed on the exam and the day, so pressing the button twice leaves one row per
+  // student rather than two.
+  sweepExamReminders: () => api.post('/examcell/notifications/reminders/sweep'),
   broadcast: (payload) => api.post('/examcell/broadcasts', payload),
+  broadcasts: () => api.get('/examcell/broadcasts'),
   profile: () => api.get('/examcell/profile'),
+  profilePermissions: () => api.get('/examcell/profile/permissions'),
+  profileNotificationPreferences: () => api.get('/examcell/profile/notification-preferences'),
+  saveProfileNotificationPreference: (payload) =>
+    api.patch('/examcell/profile/notification-preferences', payload),
+  profileActivity: () => api.get('/examcell/profile/activity'),
 };
 
 // ── Accounts & Finance endpoints (docs/users/06 §4) ──
