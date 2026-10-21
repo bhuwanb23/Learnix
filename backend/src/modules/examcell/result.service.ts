@@ -51,6 +51,13 @@ import {
   publicationBlockers,
   totalOf,
 } from './evaluation.rules.js';
+// X-09 — the result emitters. A result that is published and not announced is a result a student
+// does not know exists, and a revaluation that is decided and not announced is a decision a
+// student cannot act on.
+import {
+  announceResultPublished,
+  announceRevaluationDecided,
+} from './examcell-notifications.emitters.js';
 
 const prisma = new PrismaClient();
 
@@ -1003,7 +1010,7 @@ export async function publishSlot(institutionId: string, userId: string, slotId:
   const slot = await prisma.examSlot.findFirst({
     where: { id: slotId, exam: { institutionId } },
     include: {
-      exam: { select: { id: true, status: true } },
+      exam: { select: { id: true, name: true, status: true } },
       evaluations: { include: { papers: true } },
       results: { select: { id: true, studentProfileId: true, status: true } },
     },
@@ -1057,6 +1064,41 @@ export async function publishSlot(institutionId: string, userId: string, slotId:
     entityId: slot.id,
     after: { published: res.count, examStatus },
   });
+
+  // X-09 — the students with a RESULT for this slot are told. Not the ones who sat it: somebody who
+  // sat the paper and was not entered is not going to be told their result.
+  const published = await prisma.result.findMany({
+    where: { examSlotId: slot.id, status: 'PUBLISHED' },
+    select: { studentProfile: { select: { userId: true } } },
+  });
+  const course = await prisma.course.findFirst({
+    where: { institutionId, offerings: { some: { id: slot.evaluations[0]?.subjectOfferingId } } },
+    select: { name: true },
+  });
+  try {
+    await announceResultPublished(
+      institutionId,
+      userId,
+      {
+        id: slot.id,
+        examName: slot.exam.name ?? 'the examination',
+        courseName: course?.name ?? 'the paper',
+      },
+      published.map((r) => r.studentProfile.userId),
+    );
+  } catch (error) {
+    // The results ARE published. A failure to announce them must not un-publish them, but it must
+    // be recorded rather than swallowed.
+    await writeAudit({
+      institutionId,
+      actorUserId: userId,
+      action: 'RESULT_ANNOUNCEMENT_FAILED',
+      entityType: 'ExamSlot',
+      entityId: slot.id,
+      after: { error: error instanceof Error ? error.message : String(error) },
+    });
+  }
+
   return { slotId: slot.id, published: res.count, examStatus };
 }
 
@@ -1077,7 +1119,10 @@ export async function decideReevaluation(
 ) {
   const request = await prisma.reEvaluationRequest.findFirst({
     where: { id: requestId, result: { examSlot: { exam: { institutionId } } } },
-    include: { result: true },
+    include: {
+      result: true,
+      studentProfile: { select: { userId: true } },
+    },
   });
   if (!request) throw notFound('Re-evaluation request not found');
 
@@ -1140,6 +1185,46 @@ export async function decideReevaluation(
     before: { status: request.status },
     after: { status: target, revisedMarks: updated.revisedMarks ?? null, note: note ?? null },
   });
+
+  // X-09 — the student who ASKED is told, and only that student. A revaluation is one student's
+  // business, and telling the cohort would publish somebody's grade dispute to the people sitting
+  // next to them.
+  const course = await prisma.course.findFirst({
+    where: {
+      institutionId,
+      offerings: { some: { examSlots: { some: { id: request.result.examSlotId } } } },
+    },
+    select: { name: true },
+  });
+  const exam = await prisma.exam.findFirst({
+    where: { examSlots: { some: { id: request.result.examSlotId } } },
+    select: { name: true },
+  });
+  try {
+    await announceRevaluationDecided(
+      institutionId,
+      userId,
+      {
+        id: request.id,
+        courseName: course?.name ?? 'the paper',
+        examName: exam?.name ?? 'the examination',
+        decision: target,
+        newMarks: updated.revisedMarks ?? null,
+      },
+      request.studentProfile.userId,
+    );
+  } catch (e) {
+    // The decision is recorded. A failure to announce it must not undo the decision, but it must
+    // be recorded rather than swallowed.
+    await writeAudit({
+      institutionId,
+      actorUserId: userId,
+      action: 'REVALUATION_ANNOUNCEMENT_FAILED',
+      entityType: 'ReEvaluationRequest',
+      entityId: request.id,
+      after: { error: e instanceof Error ? e.message : String(e) },
+    });
+  }
 
   return {
     id: updated.id,

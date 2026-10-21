@@ -82,11 +82,52 @@ export const decideCheatingSchema = z.object({
 });
 
 // X-09 Notifications — broadcast
-export const examcellBroadcastSchema = z.object({
-  audience: z.enum(['ALL_STUDENTS', 'SEM_STUDENTS', 'FINAL_YEAR']),
-  title: z.string().trim().min(2).max(120),
-  body: z.string().trim().min(2).max(2000),
-});
+//
+// The audience list grew: the old composer could only reach ALL_STUDENTS, SEM_STUDENTS and
+// FINAL_YEAR, so an important notice to the exam office itself was impossible. ALL_OFFICERS and
+// EVERYONE are the two the office actually needs.
+//
+// `.strict()` like everything else here — a typo'd field rode along unnoticed on the old body.
+export const examcellBroadcastSchema = z
+  .object({
+    audience: z.enum([
+      'ALL_STUDENTS',
+      'SEM_STUDENTS',
+      'FINAL_YEAR',
+      'ALL_OFFICERS',
+      'EVERYONE',
+    ]),
+    title: z.string().trim().min(2).max(120),
+    body: z.string().trim().min(2).max(2000),
+    // Mark the notice IMPORTANT, so it bypasses the recipients' mutes. The office sets it when the
+    // notice is one a reader must not be able to silence.
+    important: z.boolean().optional(),
+  })
+  .strict();
+
+/** The officer's inbox query. */
+export const examcellNotificationQuerySchema = z
+  .object({
+    category: z.string().trim().max(40).optional(),
+    unread: z.enum(['true', 'false']).optional(),
+    important: z.enum(['true', 'false']).optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    pageSize: z.coerce.number().int().min(1).max(100).optional(),
+  })
+  .strict();
+
+/** Read or un-read one message. */
+export const examcellNotificationReadSchema = z
+  .object({ read: z.boolean() })
+  .strict();
+
+/** Mute or unmute one of the nine exam categories. */
+export const examcellNotificationPreferenceSchema = z
+  .object({
+    category: z.string().trim().min(1).max(40),
+    muted: z.boolean(),
+  })
+  .strict();
 
 
 // ═══════════════════════════════════════════════════════════════════════════

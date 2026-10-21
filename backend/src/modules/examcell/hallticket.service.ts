@@ -34,6 +34,9 @@ import {
   nextSeatNo,
   qrPayloadFor,
 } from './hallticket.rules.js';
+// X-09 — the hall-ticket publication emitter. Publishing the tickets is the moment a student can
+// collect theirs, and it is the moment they have to be told.
+import { announceHallTickets } from './examcell-notifications.emitters.js';
 
 // ═══ Tenant scoping ══════════════════════════════════════════════════════
 //
@@ -1373,6 +1376,35 @@ export async function setPublication(
       before: { hallTicketStatus: exam.hallTicketStatus },
       after: { hallTicketStatus: target },
     });
+  }
+
+  // X-09 — the students who were ISSUED a ticket are told that they can collect it. A recall is
+  // NOT announced to students: the students have nothing to do about a recall except worry, and
+  // the office tells them directly when it is re-issued.
+  if (action === 'publish' && !alreadyInState) {
+    const slots = await prisma.examSlot.findMany({
+      where: { examId: exam.id },
+      select: { id: true },
+    });
+    try {
+      await announceHallTickets(
+        institutionId,
+        actorUserId,
+        { id: exam.id, name: exam.name },
+        slots.map((s) => s.id),
+      );
+    } catch (error) {
+      // The publication succeeded; the announcement is a courtesy. A failure here must not undo
+      // the publication, but it must be recorded rather than swallowed.
+      await writeAudit({
+        institutionId,
+        actorUserId,
+        action: 'HALL_TICKET_ANNOUNCEMENT_FAILED',
+        entityType: 'Exam',
+        entityId: exam.id,
+        after: { error: error instanceof Error ? error.message : String(error) },
+      });
+    }
   }
 
   return { ...updated, alreadyInState };

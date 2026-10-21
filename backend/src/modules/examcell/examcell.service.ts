@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { notFound } from '../../lib/errors.js';
 
 const prisma = new PrismaClient();
 
@@ -225,118 +224,28 @@ export {
   createCheatingCaseLegacy as createCheatingCase,
 } from './cheating.legacy.js';
 
-// X-09 — Notifications + profile
+// X-09 — Notifications + X-10 — Profile
 // ─────────────────────────────────────────────────────────────
-export async function listNotifications(userId: string, institutionId: string) {
-  const [items, unread] = await Promise.all([
-    prisma.notification.findMany({
-      where: { recipientUserId: userId, institutionId },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    }),
-    prisma.notification.count({ where: { recipientUserId: userId, institutionId, readAt: null } }),
-  ]);
-  return {
-    unread,
-    notifications: items.map((n) => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      body: n.body,
-      read: n.readAt !== null,
-      createdAt: n.createdAt,
-    })),
-  };
-}
-
-export async function markAllRead(userId: string, institutionId: string) {
-  const res = await prisma.notification.updateMany({
-    where: { recipientUserId: userId, institutionId, readAt: null },
-    data: { readAt: new Date() },
-  });
-  return { updated: res.count };
-}
-
-export async function createBroadcast(
-  institutionId: string,
-  _senderUserId: string,
-  body: { audience: string; title: string; body: string },
-) {
-  let recipientIds: string[] = [];
-
-  if (body.audience === 'ALL_STUDENTS') {
-    const students = await prisma.studentProfile.findMany({
-      where: { user: { institutionId, deletedAt: null } },
-      select: { userId: true },
-    });
-    recipientIds = students.map((s) => s.userId);
-  } else if (body.audience === 'SEM_STUDENTS') {
-    const students = await prisma.studentProfile.findMany({
-      where: { user: { institutionId, deletedAt: null }, currentSemester: { gte: 3 } },
-      select: { userId: true },
-    });
-    recipientIds = students.map((s) => s.userId);
-  } else if (body.audience === 'FINAL_YEAR') {
-    const students = await prisma.studentProfile.findMany({
-      where: { user: { institutionId, deletedAt: null }, currentSemester: { gte: 7 } },
-      select: { userId: true },
-    });
-    recipientIds = students.map((s) => s.userId);
-  }
-
-  if (recipientIds.length === 0) {
-    // Fall back to all students if no specific audience matches
-    const allStudents = await prisma.studentProfile.findMany({
-      where: { user: { institutionId, deletedAt: null } },
-      select: { userId: true },
-    });
-    recipientIds = allStudents.map((s) => s.userId);
-  }
-
-  if (recipientIds.length === 0) return { created: 0 };
-
-  await prisma.notification.createMany({
-    data: recipientIds.map((id) => ({
-      recipientUserId: id,
-      institutionId,
-      type: 'EXAM_CELL_BROADCAST',
-      title: body.title,
-      body: body.body,
-    })),
-  });
-
-  return { created: recipientIds.length };
-}
-
-export async function getProfile(userId: string, institutionId: string) {
-  const user = await prisma.user.findFirst({
-    where: { id: userId, institutionId },
-    include: {
-      roles: true,
-      staffProfile: { select: { designation: true, employeeNo: true } },
-    },
-  });
-  if (!user) throw notFound('User not found');
-
-  const [totalExams, totalHallTickets, totalResults, totalCheatingCases] = await Promise.all([
-    prisma.exam.count({ where: { institutionId, createdByUserId: userId } }),
-    prisma.hallTicket.count({ where: { examSlot: { exam: { institutionId } } } }),
-    prisma.result.count({ where: { examSlot: { exam: { institutionId } } } }),
-    prisma.cheatingCase.count({ where: { examSlot: { exam: { institutionId } } } }),
-  ]);
-
-  return {
-    id: user.id,
-    name: user.fullName,
-    email: user.email,
-    roles: user.roles.map((r) => r.role),
-    designation: user.staffProfile?.designation,
-    employeeNo: user.staffProfile?.employeeNo,
-    stats: {
-      totalExams,
-      totalHallTickets,
-      totalResults,
-      totalCheatingCases,
-    },
-  };
-}
+//
+// The four functions that used to live here were REMOVED rather than re-pointed, because each one
+// was answering a question the wrong way:
+//
+//   listNotifications   a flat 50-row dump of every notification the platform had ever sent the
+//                       officer, with no categories, no unread filter and no pagination. Every row
+//                       wore the same icon, and the client GUESSED the icon from the type string
+//                       (`type.includes('EXAM')`), so a row the server had no chrome for rendered as
+//                       a blue bell.
+//   markAllRead        marked the officer's FINANCE mail read as well, on a screen labelled
+//                       "Notifications" in the exam office. "I read the exam notices" is not a
+//                       claim about their bills.
+//   createBroadcast    wrote rows with `type: 'EXAM_CELL_BROADCAST'`, which was registered NOWHERE,
+//                       so every notice it sent was labelled with a fallback. It also fell back to
+//                       "all students" when its audience matched nobody, so a notice meant for the
+//                       final year went to every student in the college.
+//   getProfile         answered a name, a designation and three counts — two of which were the
+//                       INSTITUTION's totals presented as the officer's work.
+//
+// The replacements live in `examcell-notifications.inbox.ts` (the officer's inbox, the catalogue,
+// the composer), `examcell-notifications.emitters.ts` (who to tell and when), and
+// `examcell-profile.service.ts` (the seven questions a profile answers).
+export {};

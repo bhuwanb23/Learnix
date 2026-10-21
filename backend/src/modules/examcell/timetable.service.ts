@@ -23,6 +23,14 @@ import {
   slotDurationMinutes, startOfLocalDay, THRESHOLDS, validateWindow,
   type ConflictKindId,
 } from './timetable.rules.js';
+// X-09 — the notification emitters. Imported here so that a schedule change and the message about
+// it are written by the same module: a controller who moves a paper and a student who was never
+// told is a failure that only one of these two can fix.
+import {
+  announceExamPublished,
+  announceExamScheduled,
+  announceTimetableChange,
+} from './examcell-notifications.emitters.js';
 
 // ═══ Tenant scoping ══════════════════════════════════════════════════════
 //
@@ -1222,7 +1230,46 @@ export async function addSlot(
     institutionId, actorUserId, action: 'exam.slot.added', entityType: 'ExamSlot', entityId: slot.id,
       after: { durationMinutes: minutes, examId },
   });
+
+  // X-09 — the students who sit this paper are told that it is on the timetable. A slot that is
+  // added and never announced is a slot half the cohort does not know about. The emitter is
+  // fire-and-forget in the sense that a failure here must not roll back a schedule that was
+  // legitimately written — but a failure is logged, not swallowed.
+  await announceSlotSafely(() =>
+    announceExamScheduled(
+      institutionId,
+      actorUserId,
+      { id: exam.id, name: exam.name, type: exam.type, semester: exam.semester },
+      [slot.id],
+    ),
+  );
+
   return slot;
+}
+
+/**
+ * Run a notification emitter without letting it fail the write it is attached to.
+ *
+ * A schedule that was legitimately written must not be rolled back because a message could not be
+ * delivered — the schedule is the fact, the message is a courtesy. But the failure must not be
+ * SILENT either: a swallowed emitter is how "the timetable was published and nobody was told"
+ * happened in the first place. So the error is recorded in the audit log, where somebody reading
+ * the exam's history can see it.
+ */
+async function announceSlotSafely(run: () => Promise<unknown>) {
+  try {
+    await run();
+  } catch (error) {
+    await writeAudit({
+      action: 'EXAM_ANNOUNCEMENT_FAILED',
+      entityType: 'Notification',
+      entityId: null,
+      after: { error: error instanceof Error ? error.message : String(error) },
+    }).catch(() => {
+      // The audit write itself failed. There is nowhere left to report this, and losing the audit
+      // entry is strictly better than failing the schedule.
+    });
+  }
 }
 
 /**
@@ -1286,6 +1333,26 @@ export async function rescheduleSlot(
     institutionId, actorUserId, action: 'exam.slot.rescheduled', entityType: 'ExamSlot',
     entityId: slotId, after: { from: { date: dayKey(slot.date), startTime: slot.startTime }, to: { date: dayKey(date), startTime } },
   });
+
+  // X-09 — the students sitting this paper are told it moved. This is the notification that
+  // matters most: a paper that moved to a different day and nobody was told is a student who
+  // turns up on the wrong day.
+  const course = await prisma.course.findFirst({
+    where: { institutionId, offerings: { some: { id: slot.offeringId } } },
+    select: { name: true },
+  });
+  await announceSlotSafely(() =>
+    announceTimetableChange(institutionId, actorUserId, {
+      id: slotId,
+      date,
+      startTime,
+      endTime,
+      room: slot.room,
+      examName: slot.exam.name,
+      courseName: course?.name ?? 'the paper',
+    }),
+  );
+
   return updated;
 }
 
@@ -1472,6 +1539,19 @@ export async function publishExam(
     institutionId, actorUserId, action: 'exam.published', entityType: 'Exam', entityId: examId,
       after: { slots: exam.examSlots.length },
   });
+
+  // X-09 — publishing is the moment the timetable becomes OFFICIAL, so it is the moment the
+  // students are told. Distinct from the "scheduled" notice: a draft schedule on the controller's
+  // desk is not news, and a published one is.
+  await announceSlotSafely(() =>
+    announceExamPublished(
+      institutionId,
+      actorUserId,
+      { id: exam.id, name: exam.name, semester: exam.semester },
+      exam.examSlots.map((s) => s.id),
+    ),
+  );
+
   return { ...updated, publishable: true, alreadyPublished };
 }
 

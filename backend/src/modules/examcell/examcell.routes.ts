@@ -5,8 +5,17 @@ import { requireRole } from '../../middlewares/requireRole.js';
 import { validate } from '../../middlewares/validate.js';
 import {
   examcellBroadcastSchema,
+  examcellNotificationPreferenceSchema,
+  examcellNotificationQuerySchema,
+  examcellNotificationReadSchema,
+  idParamSchema,
 } from './examcell.schemas.js';
 import * as service from './examcell.service.js';
+// X-09 — the officer's inbox, the composer, and the reminder sweep.
+import * as inbox from './examcell-notifications.inbox.js';
+import * as emitters from './examcell-notifications.emitters.js';
+// X-10 — the officer's profile.
+import * as profile from './examcell-profile.service.js';
 
 // Exam Cell module — mounted at /api/v1/examcell (docs/users/05 §4)
 const router = Router();
@@ -125,34 +134,176 @@ router.get(
 // as well would mean two routers answering for one path.
 
 // X-09 notifications + broadcast + profile
+//
+// The exam office's inbox. It reads the EXAM CELL's own nine categories, not the finance desk's —
+// a chip that could show "a fee is due" next to "your hall ticket is ready" would mean nothing. A
+// STUDENT reads a DIFFERENT inbox: the shared student one, which merges the finance, hostel and
+// exam-cell vocabularies.
+//
+// It is OFFICER-ONLY. A student's exam notice goes to the student, and a student's result
+// publication is not this screen's business.
 router.get(
   '/notifications',
+  validate(examcellNotificationQuerySchema, 'query'),
   wrap(async (req, res) => {
-    res.json({ data: await service.listNotifications(req.auth!.userId, req.auth!.institutionId) });
+    const q = req.query as {
+      category?: string;
+      unread?: string;
+      important?: string;
+      page?: string;
+      pageSize?: string;
+    };
+    res.json({
+      data: await inbox.listExamCellNotifications(req.auth!.userId, req.auth!.institutionId, {
+        category: q.category,
+        unreadOnly: q.unread === 'true',
+        importantOnly: q.important === 'true',
+        page: q.page ? Number(q.page) : undefined,
+        pageSize: q.pageSize ? Number(q.pageSize) : undefined,
+      }),
+    });
+  }),
+);
+
+/** The nine categories, with the vocabulary the screen renders from. */
+router.get(
+  '/notifications/catalogue',
+  wrap(async (_req, res) => {
+    res.json({ data: await inbox.examCellNotificationCatalogue() });
   }),
 );
 
 router.post(
   '/notifications/read-all',
   wrap(async (req, res) => {
-    res.json({ data: await service.markAllRead(req.auth!.userId, req.auth!.institutionId) });
-  }),
-);
-
-router.post(
-  '/broadcasts',
-  validate(examcellBroadcastSchema),
-  wrap(async (req, res) => {
-    res.status(201).json({
-      data: await service.createBroadcast(req.auth!.institutionId, req.auth!.userId, req.body),
+    res.json({
+      data: await inbox.markAllExamCellNotificationsRead(req.auth!.userId, req.auth!.institutionId),
     });
   }),
 );
 
+/** Read or un-read ONE message. The old screen could only mark everything. */
+router.patch(
+  '/notifications/:id/read',
+  validate(idParamSchema, 'params'),
+  validate(examcellNotificationReadSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await inbox.setExamCellNotificationRead(
+        String(req.params.id),
+        req.auth!.userId,
+        req.auth!.institutionId,
+        Boolean(req.body.read),
+      ),
+    });
+  }),
+);
+
+/**
+ * Compose an important examination notice.
+ *
+ * The audience decides the TYPE, and the type decides the chrome and whether the notice ignores the
+ * recipients' mutes. The old composer had no `important` flag and no way to reach the office, so an
+ * emergency notice to the exam office was impossible.
+ */
+router.post(
+  '/broadcasts',
+  validate(examcellBroadcastSchema),
+  wrap(async (req, res) => {
+    const role = (req.auth!.roles ?? []).includes('ADMIN') ? 'ADMIN' : 'EXAMCELL';
+    inbox.assertCanComposeExamNotice(role);
+    res.status(201).json({
+      data: await inbox.composeExamCellBroadcast(
+        req.auth!.institutionId,
+        req.auth!.userId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+/** What has been sent, and to how many people. The old desk could send blind. */
+router.get(
+  '/broadcasts',
+  wrap(async (req, res) => {
+    res.json({ data: await inbox.listExamCellBroadcasts(req.auth!.institutionId) });
+  }),
+);
+
+/**
+ * Raise the exam reminders.
+ *
+ * ON DEMAND rather than scheduled, like every other sweep in this platform — the platform schedules
+ * nothing, so "who is due a reminder" is answered by asking, and the answer is derived from live
+ * rows rather than remembered from a job that may not have run.
+ *
+ * IDEMPOTENT: the reminder is keyed on the exam and the day, so pressing the button twice leaves
+ * one row per student, not two.
+ */
+router.post(
+  '/notifications/reminders/sweep',
+  wrap(async (req, res) => {
+    res.json({
+      data: await emitters.sweepExamReminders(req.auth!.institutionId, req.auth!.userId),
+    });
+  }),
+);
+
+// ── X-10 Profile ──────────────────────────────────────────────────────────
+//
+// Six questions, six endpoints. They are separate rather than one fat document because they change
+// at completely different rates: the profile is read once a session, the permissions when somebody
+// is promoted, the preferences when the officer mutes something, and the activity on every page of
+// the history.
+
+/** Who they are, what is theirs, and where they work. */
 router.get(
   '/profile',
   wrap(async (req, res) => {
-    res.json({ data: await service.getProfile(req.auth!.userId, req.auth!.institutionId) });
+    res.json({ data: await profile.getExamCellProfile(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+/** What their roles actually grant, read from the RBAC map. */
+router.get(
+  '/profile/permissions',
+  wrap(async (req, res) => {
+    res.json({ data: await profile.getExamCellPermissions(req.auth!.userId, req.auth!.institutionId) });
+  }),
+);
+
+/** Which of the nine exam categories they have muted. */
+router.get(
+  '/profile/notification-preferences',
+  wrap(async (req, res) => {
+    res.json({
+      data: await profile.getExamCellNotificationPreferences(
+        req.auth!.userId,
+        req.auth!.institutionId,
+      ),
+    });
+  }),
+);
+
+router.patch(
+  '/profile/notification-preferences',
+  validate(examcellNotificationPreferenceSchema),
+  wrap(async (req, res) => {
+    res.json({
+      data: await profile.updateExamCellNotificationPreferences(
+        req.auth!.userId,
+        req.auth!.institutionId,
+        req.body,
+      ),
+    });
+  }),
+);
+
+/** Their live sessions and their recent actions. */
+router.get(
+  '/profile/activity',
+  wrap(async (req, res) => {
+    res.json({ data: await profile.getExamCellActivity(req.auth!.userId, req.auth!.institutionId) });
   }),
 );
 
