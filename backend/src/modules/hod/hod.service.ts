@@ -1,6 +1,7 @@
 import { prisma } from '../../db/prisma.js';
 import { notFound, conflict, unprocessable } from '../../lib/errors.js';
 import { writeAudit } from '../../lib/audit.js';
+import { durationHours } from './hod-dashboard.sections.js';
 
 // ── HOD scope resolution: the department this HOD owns ───────
 export async function getDepartment(hodUserId: string, institutionId: string) {
@@ -101,7 +102,8 @@ export async function listFaculty(hodUserId: string, institutionId: string) {
     include: {
       course: { select: { code: true, name: true } },
       section: { select: { name: true } },
-      _count: { select: { scheduleSlots: true, enrollments: true } },
+      scheduleSlots: { select: { startTime: true, endTime: true } },
+      _count: { select: { enrollments: true } },
     },
   });
 
@@ -115,7 +117,20 @@ export async function listFaculty(hodUserId: string, institutionId: string) {
 
   return staff.map((s) => {
     const myOfferings = offerings.filter((o) => o.teacherUserId === s.userId);
-    const load = myOfferings.reduce((sum, o) => sum + o._count.scheduleSlots, 0);
+    // THE LOAD IS IN HOURS, the same unit the max-workload guard and the dashboard use. It used
+    // to be a schedule-slot COUNT against a hours limit, so a three-hour lecture counted as one
+    // hour and the bar on the screen did not mean what the reader took it to mean.
+    const load = Math.round(
+      myOfferings.reduce(
+        (sum, o) =>
+          sum +
+          o.scheduleSlots.reduce(
+            (acc, slot) => acc + durationHours(slot.startTime, slot.endTime),
+            0,
+          ),
+        0,
+      ) * 100,
+    ) / 100;
     const onLeave = leaves.some(
       (l) => l.staffUserId === s.userId && l.fromDate <= now && l.toDate >= now,
     );
@@ -136,7 +151,12 @@ export async function listFaculty(hodUserId: string, institutionId: string) {
         name: o.course.name,
         section: o.section.name,
         students: o._count.enrollments,
-        weeklyHours: o._count.scheduleSlots,
+        weeklyHours: Math.round(
+          o.scheduleSlots.reduce(
+            (acc, slot) => acc + durationHours(slot.startTime, slot.endTime),
+            0,
+          ) * 100,
+        ) / 100,
       })),
     };
   });
@@ -169,15 +189,40 @@ export async function reassignOffering(
   // SCOPED TO THE DEPARTMENT, for the same reason as everywhere else: a teacher's load in
   // ANOTHER department is not this department's business, and counting it would refuse a
   // perfectly reasonable reassignment on the strength of somebody else's timetable.
+  //
+  // THE UNIT IS HOURS, AND IT WAS NOT
+  // ----------------------------------
+  // This used to count SCHEDULE SLOTS and compare the count against `maxWorkloadHours` — a
+  // hours limit. A three-hour lecture counted as one hour, so the guard let an overloaded
+  // teacher through, while the dashboard's workload section — which measures the same thing in
+  // hours — showed a different number for the same person. The screen and the rule that
+  // enforces it disagreed about the same teacher.
+  //
+  // So the load is measured in HOURS now, through the same `durationHours` the dashboard and the
+  // Courses desk use. One unit, everywhere.
   const siblings = await prisma.courseOffering.findMany({
     where: { teacherUserId: toUserId, ...offeringScope(dept.id) },
-    select: { _count: { select: { scheduleSlots: true } } },
+    select: {
+      id: true,
+      scheduleSlots: { select: { startTime: true, endTime: true } },
+    },
   });
-  const currentLoad = siblings.reduce((s, o) => s + o._count.scheduleSlots, 0);
-  const moving = await prisma.offeringScheduleSlot.count({ where: { offeringId } });
+  const currentLoad = siblings.reduce(
+    (sum, o) =>
+      sum + o.scheduleSlots.reduce((s, slot) => s + durationHours(slot.startTime, slot.endTime), 0),
+    0,
+  );
+  const movingSlots = await prisma.offeringScheduleSlot.findMany({
+    where: { offeringId },
+    select: { startTime: true, endTime: true },
+  });
+  const moving = movingSlots.reduce(
+    (s, slot) => s + durationHours(slot.startTime, slot.endTime),
+    0,
+  );
   if (currentLoad + moving > target.maxWorkloadHours) {
     throw unprocessable(
-      `Reassignment exceeds ${target.user.fullName}'s max workload (${currentLoad + moving} > ${target.maxWorkloadHours} hrs)`,
+      `Reassignment exceeds ${target.user.fullName}'s max workload (${Math.round((currentLoad + moving) * 100) / 100} > ${target.maxWorkloadHours} hrs)`,
     );
   }
 

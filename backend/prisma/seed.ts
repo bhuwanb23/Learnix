@@ -738,6 +738,194 @@ async function seedDomainB(institutionId: string): Promise<void> {
     }
   }
 
+  // ── HD-02: the Faculty desk — a workload spread the balancer can actually balance ──
+  //
+  // The workload balancer, the availability matrix and the teaching progress monitor are all
+  // only as good as the data under them. With every teacher on the default 18-hour cap and the
+  // classes all at 09:00, the desk would show five identical teachers and an availability
+  // matrix that is a solid block of Monday-to-Friday.
+  //
+  // So this block creates FOUR things:
+  //
+  //   1. VARIED CAPS. The cap is a person's agreed maximum, and it differs between a professor
+  //      with a heavy admin load and a lecturer who can take more. The spread is what puts one
+  //      teacher OVERLOADED and leaves two with real headroom.
+  //   2. A SECOND SECTION, so the same course can be taught to two sections — which is what
+  //      makes "a class" different from "a subject".
+  //   3. A TIMETABLE WITH SHAPE. Classes at different hours and on different days, so the
+  //      availability matrix is a grid and not a wall.
+  //   4. AN APPROVED LEAVE COVERING TODAY, so a teacher reads as ON LEAVE and the matrix can
+  //      mark it.
+  {
+    const sanjay = await db.user.findFirst({ where: { email: 'sanjay.tiwari@learnix.dev', institutionId } });
+    const priya = await db.user.findFirst({ where: { email: 'priya.venkatesh@learnix.dev', institutionId } });
+
+    // 1. THE CAPS. The spread that produces one overloaded teacher and two with headroom.
+    const caps: { email: string; max: number; designation?: string }[] = [
+      { email: 'hod@learnix.dev', max: 12, designation: 'Professor & Head' },
+      { email: 'teacher@learnix.dev', max: 16 },
+      { email: 'sunita.rao@learnix.dev', max: 10 },
+      { email: 'sanjay.tiwari@learnix.dev', max: 20 },
+      { email: 'priya.venkatesh@learnix.dev', max: 24 },
+    ];
+    for (const c of caps) {
+      const u = await db.user.findFirst({ where: { email: c.email, institutionId } });
+      if (!u) continue;
+      await db.staffProfile.updateMany({
+        where: { userId: u.id },
+        data: { maxWorkloadHours: c.max, ...(c.designation ? { designation: c.designation } : {}) },
+      });
+    }
+
+    // 2. THE SECOND SECTION, and the two extra courses.
+    const sectionB = await db.section.upsert({
+      where: { batchId_name: { batchId: batch2027.id, name: 'Section B' } },
+      update: { currentSemester: 4 },
+      create: { programId: btechCse.id, batchId: batch2027.id, name: 'Section B', currentSemester: 4 },
+    });
+
+    const extraCourses = [
+      { code: 'CS403', name: 'Software Engineering', semester: 4, type: 'CORE' },
+      { code: 'CS451', name: 'Machine Learning (Elective)', semester: 4, type: 'ELECTIVE' },
+    ];
+    for (const c of extraCourses) {
+      await db.course.upsert({
+        where: { institutionId_code: { institutionId, code: c.code } },
+        update: { status: 'ACTIVE' },
+        create: {
+          institutionId,
+          departmentId: cse.id,
+          code: c.code,
+          name: c.name,
+          credits: 4,
+          semester: c.semester,
+          type: c.type,
+          status: 'ACTIVE',
+        },
+      });
+    }
+
+    // 3. THE ALLOCATION — a deliberate spread, with the hours stated rather than implied.
+    //
+    //   sunita   10h cap  13h assigned  -> OVERLOADED
+    //   sanjay   20h cap   8h assigned  -> light, with headroom
+    //   teacher  16h cap   5h assigned  -> light
+    //   priya    24h cap   4h assigned  -> UNDERUTILISED, 20h free
+    //   hod      12h cap   0h assigned  -> UNDERUTILISED, 12h free
+    const allocation: {
+      code: string;
+      sectionId: string;
+      teacherEmail: string;
+      days: { day: number; start: string; end: string }[];
+    }[] = [
+      { code: 'CS401', sectionId: sectionA.id, teacherEmail: 'teacher@learnix.dev', days: [{ day: 1, start: '09:00', end: '10:00' }, { day: 3, start: '09:00', end: '10:00' }, { day: 5, start: '09:00', end: '10:00' }, { day: 5, start: '11:00', end: '12:00' }, { day: 2, start: '14:00', end: '15:00' }] },
+      { code: 'CS402', sectionId: sectionA.id, teacherEmail: 'sunita.rao@learnix.dev', days: [{ day: 1, start: '10:00', end: '11:00' }, { day: 2, start: '10:00', end: '11:00' }, { day: 3, start: '10:00', end: '11:00' }, { day: 4, start: '10:00', end: '11:00' }, { day: 5, start: '10:00', end: '11:00' }, { day: 6, start: '10:00', end: '12:00' }, { day: 1, start: '15:00', end: '16:00' }, { day: 2, start: '15:00', end: '16:00' }, { day: 3, start: '15:00', end: '16:00' }, { day: 4, start: '15:00', end: '16:00' }] },
+      { code: 'CS402', sectionId: sectionB.id, teacherEmail: 'sunita.rao@learnix.dev', days: [{ day: 1, start: '16:00', end: '17:00' }, { day: 3, start: '16:00', end: '17:00' }, { day: 5, start: '16:00', end: '17:00' }] },
+      { code: 'CS403', sectionId: sectionA.id, teacherEmail: 'sanjay.tiwari@learnix.dev', days: [{ day: 2, start: '11:00', end: '12:30' }, { day: 4, start: '11:00', end: '12:30' }, { day: 6, start: '09:00', end: '10:00' }] },
+      { code: 'CS401', sectionId: sectionB.id, teacherEmail: 'sanjay.tiwari@learnix.dev', days: [{ day: 1, start: '13:00', end: '14:00' }, { day: 2, start: '13:00', end: '14:00' }, { day: 3, start: '13:00', end: '14:00' }, { day: 4, start: '13:00', end: '14:00' }, { day: 5, start: '13:00', end: '14:00' }] },
+      { code: 'CS451', sectionId: sectionA.id, teacherEmail: 'priya.venkatesh@learnix.dev', days: [{ day: 3, start: '12:00', end: '13:00' }, { day: 6, start: '11:00', end: '13:00' }] },
+    ];
+
+    for (const a of allocation) {
+      const course = await db.course.findFirst({ where: { institutionId, code: a.code } });
+      const owner = await db.user.findFirst({ where: { email: a.teacherEmail, institutionId } });
+      if (!course || !owner) continue;
+
+      let offering = await db.courseOffering.findFirst({
+        where: { courseId: course.id, sectionId: a.sectionId, academicYearId: ay.id },
+        select: { id: true },
+      });
+      if (!offering) {
+        offering = await db.courseOffering.create({
+          data: {
+            courseId: course.id,
+            sectionId: a.sectionId,
+            teacherUserId: owner.id,
+            semester: 4,
+            academicYearId: ay.id,
+          },
+          select: { id: true },
+        });
+      } else {
+        await db.courseOffering.update({
+          where: { id: offering.id },
+          data: { teacherUserId: owner.id },
+        });
+      }
+
+      for (const d of a.days) {
+        await db.offeringScheduleSlot.upsert({
+          where: {
+            offeringId_dayOfWeek_startTime: {
+              offeringId: offering.id,
+              dayOfWeek: d.day,
+              startTime: d.start,
+            },
+          },
+          update: { endTime: d.end },
+          create: {
+            offeringId: offering.id,
+            dayOfWeek: d.day,
+            startTime: d.start,
+            endTime: d.end,
+            room: 'L-204',
+          },
+        });
+      }
+
+      // THE SCHEDULE IS OWNED BY THIS BLOCK, EXACTLY.
+      //
+      // The seed is additive, so a slot left behind by an earlier run would keep counting towards
+      // the teacher's hours — and the workload the screen shows would depend on how many times
+      // the seed had been run. So the declared timetable is the timetable: anything else on this
+      // offering goes.
+      const declared = new Set(a.days.map((d) => `${d.day}:${d.start}`));
+      const existingSlots = await db.offeringScheduleSlot.findMany({
+        where: { offeringId: offering.id },
+        select: { id: true, dayOfWeek: true, startTime: true },
+      });
+      for (const s of existingSlots) {
+        if (!declared.has(`${s.dayOfWeek}:${s.startTime}`)) {
+          await db.offeringScheduleSlot.delete({ where: { id: s.id } });
+        }
+      }
+    }
+
+    // 4. SOMEONE ON LEAVE TODAY, so the matrix can mark it.
+    if (sanjay) {
+      const today = new Date();
+      const from = new Date(today);
+      from.setDate(from.getDate() - 2);
+      const to = new Date(today);
+      to.setDate(to.getDate() + 3);
+      const existing = await db.leaveRequest.findFirst({
+        where: {
+          staffUserId: sanjay.id,
+          reason: 'Medical leave — recovery',
+        },
+        select: { id: true },
+      });
+      if (!existing) {
+        await db.leaveRequest.create({
+          data: {
+            institutionId,
+            staffUserId: sanjay.id,
+            type: 'MEDICAL',
+            fromDate: from,
+            toDate: to,
+            days: 6,
+            reason: 'Medical leave — recovery',
+            status: 'APPROVED',
+            decidedByUserId: hod?.id,
+            decidedAt: new Date(),
+          },
+        });
+      }
+    }
+
+    console.log('  ✓ HD-02: 5 faculty with varied caps, 5 classes across 2 sections, a leave in progress');
+  }
+
   // Lecture note (published) on the DBMS offering
   const noteExists = await db.lectureNote.findFirst({
     where: { offeringId: offerings[0].id, title: 'ER Modeling — Lecture 1' },
