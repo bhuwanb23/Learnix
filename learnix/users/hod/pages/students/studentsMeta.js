@@ -94,7 +94,7 @@ export const RISK_STATES = [
     id: 'UNMEASURED',
     label: 'Not measured',
     blurb: 'Nothing has been measured for this student yet.',
-    color: '#dc2626',
+    color: '#94a3b8',
   },
 ];
 

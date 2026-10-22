@@ -185,7 +185,7 @@
 | HD-02 | Faculty management: a directory with the workload, the performance insight and the status on every row, plus the **Workload Balancer**, the **Availability Matrix** and the **Teaching Progress Monitor**, and an individual faculty view with the whole chain in one call | A staff_profiles, B course_offerings/schedule_slots, C results, attendance | ✅ 5 faculty, varied caps, 5 classes, 2 sections |
 | HD-03 | Syllabus approvals: SUBMITTED → HOD_APPROVED / CHANGES_REQUESTED (+feedback) | B syllabus_versions | ✅ 1 waiting |
 | HD-04 | Leave requests: approve/reject (+substitute arrangement) | A users*, leave table pending** | — |
-| HD-05 | Students by year/section (department scope) | A student_profiles, B sections | ✅ (1) |
+| HD-05 | Students by year/section (department scope) — **built out in full as the Students desk**: the directory with every figure on the row, the **At-Risk Detection** (five signals: low attendance, declining marks, failed subjects, repeated absence, poor assignment completion), the **Early Intervention Suggestions**, the skill gap, the placement readiness, and the individual student view with the whole chain in one call | A student_profiles, B enrollments/assignments, C results/attendance, D placement | ✅ 5 students with a spread, 2 exams, interventions |
 | HD-06 | Course offerings oversight for department — **built out in full as the Courses desk**: a directory with the health badge on every row, the whole course in one call, the curriculum mapping, the prerequisite graph, and the Course Health Indicator | B course_offerings/courses, **new** `program_courses` + `course_prerequisites` | ✅ 6 courses, 2 programmes, 6 mappings, 4 edges |
 | HD-07 | Department results/attendance analytics | B/C aggregates | ✅ folded into HD-01 |
 | HD-08 | Notifications + profile | K, A | ✅ |
@@ -209,6 +209,26 @@ unchanged; the desk is a new set of paths (`/faculty/catalogue`, `/faculty/direc
   promised one; the insight is a composite of what IS measured.
 - **The department is the tenancy boundary, and it is enforced twice** — the shared scope's
   query and the desk's own re-check.
+
+**HD-05 is the Students desk, built out in full.** The old `GET /hod/students` list still answers,
+unchanged; the desk is a new set of paths (`/students/catalogue`, `/students/directory`,
+`/students/:studentProfileId/detail`) mounted before it, plus the two intervention writes.
+- **The five at-risk signals are computed where the data can support them.** A decline needs
+  **two** results — one result is a number, not a trend. A repeated absence is a **run**, not a
+  total. The assignment signal counts only the **overdue** work, and only the **student's own**
+  assignments — a student cannot have failed to hand in something that is not due yet, and a
+  signal that fires for everybody is not a signal.
+- **A student with nothing measured is `UNMEASURED`**, not on track, and the count of the
+  unmeasured is reported separately.
+- **The skill gap is computed per COURSE** — the student against their cohort — because the
+  platform has **no per-student, per-topic marks**. The "weak topics" are the syllabus topics of
+  the courses where the student trails the most, and the panel says exactly that.
+- **The gap is a percentage and both sides are the same unit.** `percentSum` is already a sum of
+  percentages, so dividing by the count and multiplying by 100 again makes every figure a hundred
+  times too big.
+- **The one new table is `student_intervention`**, because "what have we already tried with this
+  student?" had no answer. The suggestions **pre-fill** it; the HOD records it; the history is a
+  real list.
 
 **HD-01 replaced the old flat dashboard** (`GET /hod/dashboard`, now a 404). Two **tenancy bugs** were
 fixed with it: the leave queries were institution-scoped — an HOD could list and APPROVE another

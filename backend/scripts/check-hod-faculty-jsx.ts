@@ -48,6 +48,7 @@ const FILES = [
   'pages/students/studentsAtRisk.js',
   'pages/students/studentsInterventions.js',
   'pages/students/studentsDetail.js',
+  'pages/students/studentsDetailPanels.js',
   'hod.js',
 ];
 

@@ -15,7 +15,6 @@
 import { prisma } from '../src/db/prisma.js';
 import {
   INTERVENTION_TYPES,
-  POOR_ASSIGNMENT_COUNT,
   REPEATED_ABSENCE_STREAK,
   RISK_SIGNALS,
   RISK_STATES,

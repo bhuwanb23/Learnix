@@ -122,7 +122,7 @@ A full-stack, multi-tenant college management system with **14 role-specific app
 | HD-02 | Faculty management: the directory with the workload, the performance insight and the status on every row, the Workload Balancer, the Availability Matrix and the Teaching Progress Monitor, and the whole teacher in one call | ✅ |
 | HD-03 | Syllabus approvals: SUBMITTED → HOD_APPROVED / CHANGES_REQUESTED | ✅ |
 | HD-04 | Leave requests: approve/reject (+substitute arrangement) | ✅ |
-| HD-05 | Students by year/section (department scope) | ✅ |
+| HD-05 | Students by year/section: the directory with every figure on the row, the At-Risk Detection (five signals), the Early Intervention Suggestions, the skill gap, the placement readiness, and the whole student in one call | ✅ |
 | HD-06 | Course offerings oversight for department — the Courses desk: directory with a health badge per row, the whole course in one call, the curriculum mapping, the prerequisite graph, the Course Health Indicator | ✅ |
 | HD-07 | Department results/attendance analytics | ✅ |
 | HD-08 | Notifications + profile | ✅ |

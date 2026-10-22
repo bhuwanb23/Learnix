@@ -661,3 +661,43 @@ The platform has no availability concept of its own, so the matrix is **DERIVED*
 timetable and the leave: the hours each teacher has already scheduled on each day of the teaching
 week, the free hours left against their own cap, and whether they are on leave today. A derived
 matrix cannot disagree with the schedule that actually exists.
+## 16. The At-Risk Verdict and the Intervention (HD-05)
+
+### The five signals
+
+| Signal | Measured from | The rule that makes it honest |
+|--------|---------------|----------------------------------|
+| `LOW_ATTENDANCE` | `attendance_records` | Below the institution's `attendanceThreshold`, 75 fallback |
+| `DECLINING_MARKS` | `results` over `exam_slot.date` | **Needs two results.** One result is a number, not a trend, and nothing is claimed from one |
+| `FAILED_SUBJECTS` | `results` re-derived through `gradeFor` | `F` is the only failing grade, so the backlogs are exact |
+| `REPEATED_ABSENCE` | Consecutive `ABSENT` records in date order | A **run**, not a total. Three is where a streak stops being bad luck |
+| `POOR_ASSIGNMENT_COMPLETION` | `assignments` vs `submissions` | **Only the student's own assignments, and only the overdue ones** |
+
+### The verdict
+
+`AT_RISK` when a serious signal fires, `WATCH` when only a mild one does, `OK` when none
+does, and `UNMEASURED` when there is nothing to judge.
+
+`UNMEASURED` is a verdict of its own, and it is the one the platform's other desks already use.
+A student with no attendance records and no results is not safe and not at risk — they are
+**unmeasured**, and a list of "students at risk" that quietly includes everybody who has not been
+measured is a list nobody can act on.
+
+### The intervention lifecycle
+
+`PROPOSED` -> `IN_PROGRESS` -> `RESOLVED`, with `CANCELLED` available from any point.
+
+`
+PROPOSED ──▶ IN_PROGRESS ──▶ RESOLVED
+    └──────────────┴────────▶ CANCELLED
+`
+
+Resolving **stamps the time**, because "when was this dealt with" is the whole point of closing
+one, and a resolved intervention with no resolution date is a claim rather than a record.
+
+### The suggestion is not the intervention
+
+A **suggestion** is what the desk believes — derived from the signal that fired, with the
+context filled in. An **intervention** is what the department did. The suggestion pre-fills the
+form; the HOD records it; the history is the list. Conflating the two would mean the history was
+full of things nobody did.

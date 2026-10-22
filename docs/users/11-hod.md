@@ -213,10 +213,72 @@ Bands: `HEALTHY ≥ 80`, `WATCH ≥ 60`, `AT_RISK < 60`.
 
 **The old route stays.** `GET /api/v1/hod/courses` and `GET /api/v1/hod/courses/:courseId` still answer, unchanged. The desk is a new set of paths (`/courses/catalogue`, `/courses/directory`, `/courses/:courseId/detail`), so a caller holding the old path gets the old document rather than a quietly different one.
 
-### 3.4 Students (tab)
-Department stats (students, avg CGPA, at risk), **performance by year bars** (color-coded by CGPA), year filters, student list with Top/Good/At Risk status.
+### 3.4 Students (tab) — HD-05
 
-**Entity**: student + per-year aggregate { year, avgCgpa, atRisk }.
+Department-wide student monitoring: a **directory** of the department's students with every figure on the row, the **At-Risk Detection** list, and an **individual student view** that opens the whole chain.
+
+**The eleven features**
+
+| # | Feature | What it is |
+|---|---------|-----------|
+| 1 | Student directory | The department's students, with filters (semester, risk, search, sort) |
+| 2 | Semester / year filtering | By semester, and by batch |
+| 3 | Student profiles | Roll number, programme, batch, section, admission date, status |
+| 4 | Attendance tracking | The register, the percentage, and the longest absence **run** |
+| 5 | Academic performance | The average, the pass rate, the CGPA |
+| 6 | Assignment / exam performance | The assignment completion beside the exam results |
+| 7 | Subject-wise performance | The average per course, beside the cohort's |
+| 8 | Skill-gap analysis | The gap per course — cohort minus student — and the biggest one |
+| 9 | At-risk identification | The five signals and the verdict |
+| 10 | Placement readiness | The CGPA, the backlogs, and the drives they clear |
+| 11 | Intervention history | What the department has already tried, and where each one stands |
+
+**The individual student view**, one call: `Profile → Attendance → Subjects → Marks → Performance → Weak Topics → Interventions`.
+
+#### At-Risk Detection — the five signals
+
+| Signal | Measured from | Notes |
+|--------|---------------|-------|
+| **Low attendance** | `attendance_records` | The threshold comes from `SystemConfig.attendanceThreshold`, 75 fallback — the same number the teacher and the dashboard use |
+| **Declining marks** | `results` over `exam_slot.date` | **Needs two results.** One result is a number, not a trend, and nothing is claimed from one |
+| **Failed subjects** | `results` re-derived through `gradeFor` | `F` is the only failing grade, so the backlogs are exact |
+| **Repeated absence** | Consecutive `ABSENT` records in date order | A **run**, not a total. Three is where a streak stops being bad luck |
+| **Poor assignment completion** | `assignments` vs `submissions` | **Only the student's own assignments**, and **only the overdue ones** — a student cannot have failed to hand in something that is not due yet |
+
+The verdict is `AT_RISK | WATCH | OK | UNMEASURED`, and `UNMEASURED` is a verdict of its own. A student with no register and no results is **neither safe nor at risk** — the department simply has no picture of them — and a list of students at risk that quietly includes everybody the department knows nothing about is a list nobody can act on.
+
+#### Early Intervention Suggestions
+
+The four kinds — `REMEDIAL_CLASS`, `FACULTY_MENTORING`, `RESOURCES`, `PEER_LEARNING` — are **derived from the signal that fired**. A student with a failed course gets a remedial suggestion; a student with a run of absences gets a mentoring one. A generic "get help" card for everyone is not advice, it is a form letter.
+
+> **A suggestion is NOT an intervention.** A suggestion is what the desk *believes*; an intervention is what the department *did*. The suggestion pre-fills the form, the HOD records it, and the history is the list of what was done. Conflating the two would mean the history was full of things nobody did.
+
+#### The skill gap, and the weak topics
+
+The platform has **no per-student, per-topic marks** — a result is per exam, not per topic, and a syllabus topic carries no student score. So the gap is computed where it can be measured: **per course**, the student against their cohort. The "weak topics" are the **syllabus topics of the courses where the student trails the cohort the most**, and the panel says exactly that — it is not a per-topic score, and the platform cannot produce one.
+
+> **The gap is a percentage, and the two sides are the same unit.** `percentSum` is already a sum of percentages, so it is divided by the count and *not* multiplied by 100 again — the mistake makes every figure a hundred times too big, and the gap comes out at 1130%.
+
+#### The placement readiness
+
+Fully derived: the **credit-weighted CGPA** from the exam cell's `GRADE_SCALE` points, the **backlogs** (the failed courses), and then each drive's **own** `eligibilityJson` rule (`{ minCgpa, maxBacklogs }`) — so the department's view and the drive's rule agree.
+
+#### The one new table
+
+**Entity `student_intervention`** (new — `c6_students.prisma`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | |
+| studentProfileId | string | The student it is about |
+| type | string | `REMEDIAL_CLASS \| FACULTY_MENTORING \| RESOURCES \| PEER_LEARNING` |
+| status | string | `PROPOSED \| IN_PROGRESS \| RESOLVED \| CANCELLED` |
+| title, notes | string | |
+| raisedByUserId | string | A scalar actor stamp — an actor, not a relation |
+| ownerUserId | string? | Who is carrying it |
+| dueAt, resolvedAt | datetime? | Resolving stamps the time |
+
+> **The old route stays.** `GET /api/v1/hod/students` still answers, unchanged. The desk is a new set of paths (`/students/catalogue`, `/students/directory`, `/students/:studentProfileId/detail`), so a caller holding the old path gets the old document rather than a quietly different one.
 
 ### 3.5 Syllabus Approvals (module)
 Pending/Approved tabs, preview, **Approve** (forwards to Admin) / **Request Changes** (feedback to teacher). Shared state with Teacher's syllabus submit and Admin's syllabus templates.
@@ -255,7 +317,12 @@ DEL  /api/hod/courses/{courseId}/curriculum/{programId}
 POST /api/hod/courses/{courseId}/prerequisites   { prerequisiteCourseId, type }
 DEL  /api/hod/courses/{courseId}/prerequisites/{prerequisiteCourseId}
 POST /api/hod/syllabus/{id}/approve|request-changes   { feedback }
-GET  /api/hod/students                    (?year=)
+GET  /api/hod/students                    (?year=) — the OLD flat list, unchanged
+GET  /api/hod/students/catalogue          the vocabulary: the five signals, the four states, the intervention kinds, the thresholds
+GET  /api/hod/students/directory          the list, with the at-risk list (?semester=&batchId=&risk=&search=&sort=)
+GET  /api/hod/students/{id}/detail        the whole student: the chain, the gap, the weak topics, the interventions
+POST /api/hod/students/{id}/interventions { type, title, notes?, ownerUserId?, dueAt? }
+PATCH /api/hod/students/interventions/{id} { status, notes? }
 GET  /api/hod/leave                     (POST /{id}/approve|reject { substituteId })
 GET  /api/hod/notifications
 POST /api/hod/broadcasts
@@ -317,6 +384,29 @@ round trips to assemble one screen is six chances to show a half-drawn teacher.
   college has a `StaffProfile` in the same institution, and the institution is NOT the boundary.
 - The HOD shell's **param channel** (from HD-06) is what makes the faculty detail reachable: it
   is registered as `FacultyDetail` and opened with the teacher id.
+
+**The Students desk (HD-05)** — `GET /students/catalogue`, `GET /students/directory` and
+`GET /students/{id}/detail`, plus the two intervention writes, mounted BEFORE the old HOD router on
+its own paths so the old `GET /hod/students` keeps answering. The detail is **one call**: the chain
+is a chain, and six round trips to assemble one screen is six chances to show a half-drawn
+student.
+- **The five signals are the five the desk acts on**, and each one is computed where the data
+  can support it: a decline needs **two** results, a repeated absence is a **run** and not a
+  total, and the assignment signal counts only the **overdue** work and only the **student's own**
+  assignments. A signal that fires for everybody is not a signal.
+- **A student with nothing measured is `UNMEASURED`**, not on track — and the count of the
+  unmeasured is reported separately, because a list of students at risk that quietly includes
+  everybody the department knows nothing about is a list nobody can act on.
+- **The skill gap is computed at the level the platform can measure it** — per course, the
+  student against their cohort — and the "weak topics" are the syllabus topics of the courses
+  where they trail the most, labelled as exactly that. The platform has **no per-student,
+  per-topic marks**, and the panel says so rather than inventing a number.
+- **The one new table is `student_intervention`**, and it exists because "what have we already
+  tried with this student?" had no answer. The suggestions **pre-fill** it; the HOD records it;
+  the history is a real list.
+- **The department is the tenancy boundary, and it is enforced twice** — by the shared scope's
+  query and by the desk's own re-check. A colleague in the next department of the same college has
+  a `StudentProfile` in the same institution, and the institution is NOT the boundary.
 
 **The Courses desk (HD-06)** — `GET /courses/catalogue`, `GET /courses/directory` and
 `GET /courses/{id}/detail`, mounted BEFORE the old HOD router on its own paths so the old pair

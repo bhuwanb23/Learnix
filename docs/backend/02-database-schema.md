@@ -15,7 +15,8 @@
 | `institutions` | name, code(uq), timezone, address, logoFileId, plan, status | Platform-owned; NOT tenant-filtered itself |
 | `users` | institutionId, email(uq per inst), passwordHash, fullName, phone, avatarFileId, status(ACTIVE/SUSPENDED), lastLoginAt | Soft-delete. One row per person per institution |
 | `user_roles` | userId, role | Rows: STUDENT/TEACHER/ADMIN/PLACEMENT/EXAMCELL/ACCOUNTS/LIBRARY/HOSTEL/TRANSPORT/SPORTS/HOD/ALUMNI. uq(userId, role) |
-| `student_profiles` | userId(uq), institutionId(denorm), rollNo(**uq per inst**), programId, batchId, section, currentSemester, admissionDate, status | 01-students · 03-admin |
+| `student_profiles` | userId(uq), institutionId(denorm), rollNo(**uq per inst**), programId, batchId, section, currentSemester, admissionDate, status | 01-students · 03-admin · 11 §3.4 (HD-05) |
+| **`student_interventions`** | studentProfileId, type(REMEDIAL_CLASS/FACULTY_MENTORING/RESOURCES/PEER_LEARNING), status(PROPOSED/IN_PROGRESS/RESOLVED/CANCELLED), title, notes?, raisedByUserId, ownerUserId?, dueAt?, resolvedAt? | **NEW — HD-05.** The academic interventions the department records for a student. The actor stamps are SCALARS — an actor, not a relation |
 | `staff_profiles` | userId(uq), institutionId(denorm), employeeNo(**uq per inst**), designation, departmentId, joiningDate, maxWorkloadHours, status | All staff roles incl. teacher/HOD (02, 03, 11) |
 | `alumni_profiles` | userId(uq), batchId, graduationYear, companyId?, currentRole, location, chapterId?, engagementStatus | 12-alumni |
 | `role_permissions` | role, permissionKey | RBAC map seeded from admin Settings module (03 §3.15) |
@@ -211,11 +212,11 @@
 
 ---
 
-## 🏁 SCHEMA COMPLETE — 127 tables across 12 domains (A–L)
+## 🏁 SCHEMA COMPLETE — 128 tables across 12 domains (A–L)
 
 > Blueprint estimated ~96; the role-doc paste specs grew B (23) and I (13). Every cross-domain scalar from the blueprint that could become an FK **is now one** (fine_payments→BookIssue, hostel_rent_dues→HostelAllocation, donation_payments→Donation, donations→User, mentorship→User, profiles→AcademicYear anchors). Remaining deliberate scalars: actor stamps (createdBy/gradedBy/approvedBy… — services validate), fileId pointer rows whose `files` FK is by-id lookups (logoFileId, coverFileId, payslipFileId, avatarFileId, fines.paidPaymentId, scholarship_awards.disbursedPaymentId), deferred masters (roomId until venue sync, HodUser, drivers.staffUserId), and Domain-B placeholders (programId/batchId/departmentId/companyId) awaiting their owning-module FKs by design choice.
 >
-> **+2 in Domain B (HD-06, the Courses desk):** `program_courses` and `course_prerequisites`, plus `courses.status`. The curriculum had to be a table because the offerings report what *happened* and a curriculum says what *should* happen; the prerequisite graph is a self-relation with a kind on it, and the graph is kept acyclic by the service.
+> **+2 in Domain B (HD-06, the Courses desk) and +1 in Domain A (HD-05, the Students desk):** `program_courses` and `course_prerequisites`, plus `courses.status`. The curriculum had to be a table because the offerings report what *happened* and a curriculum says what *should* happen; the prerequisite graph is a self-relation with a kind on it, and the graph is kept acyclic by the service. `student_interventions` is the academic intervention the department records for a student, because "what have we already tried with this student?" had no answer.
 
 | Table | Key fields | Notes |
 |---|---|---|

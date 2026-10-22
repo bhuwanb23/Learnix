@@ -98,6 +98,7 @@ const rowSrc = read(`${SS}/studentsRow.js`);
 const atRiskSrc = read(`${SS}/studentsAtRisk.js`);
 const interventionsSrc = read(`${SS}/studentsInterventions.js`);
 const detailSrc = read(`${SS}/studentsDetail.js`);
+const detailPanelsSrc = read(`${SS}/studentsDetailPanels.js`);
 const shellSrc = read('users/hod/hod.js');
 const apiSrc = read('services/api.js');
 
@@ -108,6 +109,7 @@ const rowCode = stripComments(rowSrc);
 const atRiskCode = stripComments(atRiskSrc);
 const interventionsCode = stripComments(interventionsSrc);
 const detailCode = stripComments(detailSrc);
+const detailPanelsCode = stripComments(detailPanelsSrc);
 const apiCode = stripComments(apiSrc);
 
 const rulesSrc = stripComments(readSrc('src/modules/hod/hod-students.rules.ts'));
@@ -263,8 +265,11 @@ for (const c of new Set(serverColours)) {
 // place will keep a colour the drift removed — so it cannot tell "the AT RISK colour changed"
 // from "the palette still has a red in it". The per-item check can.
 const colourOf = (src: string, id: string): string | null => {
+  // `[^}]*?` keeps the match INSIDE the object literal. Without it, a lazy match walks past the
+  // item's own colour and finds the NEXT one's — which is how a broken UNMEASURED colour can be
+  // reported as a mismatched REMEDIAL_CLASS.
   const m = src.match(
-    new RegExp(`id: '${id}',[\\s\\S]{0,400}?color:\\s*(?:'([^']+)'|([A-Z_]+))`),
+    new RegExp(`id: '${id}',[^}]*?color:\\s*(?:'([^']+)'|([A-Z_]+))`),
   );
   if (!m) return null;
   if (m[1]) return m[1].toLowerCase();
@@ -345,7 +350,7 @@ ok(uiCode.includes('No signals'), 'the signal chips say when nothing is firing')
 ok(atRiskCode.includes('not measured'), 'the at-risk panel says what the unmeasured are');
 ok(studentsCode.includes('not measured'), 'and the directory says it too');
 ok(
-  detailCode.includes('weakTopics.note'),
+  detailPanelsCode.includes('weak.note'),
   'the weak-topics panel renders the server\'s note',
 );
 ok(
@@ -353,7 +358,7 @@ ok(
   'and the server says what the weak topics are NOT',
 );
 ok(
-  detailCode.includes('A trend needs at least two results'),
+  detailPanelsCode.includes('A trend needs at least two results'),
   'and a trend needs two results',
 );
 
