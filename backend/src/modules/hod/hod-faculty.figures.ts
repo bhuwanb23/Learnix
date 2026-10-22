@@ -1,9 +1,11 @@
 import { gradeFor } from '../examcell/result.rules.js';
 import { durationHours } from './hod-dashboard.sections.js';
 import {
+  AVAILABILITY_DAYS,
   FACULTY_INSIGHT_LEGS,
   FACULTY_SYLLABUS_STALE_DAYS,
   UNDERUTILISED_PCT,
+  facultyInsightScore,
   workloadBand,
   type FacultyInsightLegId,
 } from './hod-faculty.rules.js';
@@ -19,6 +21,11 @@ import type { FacultyScope } from './hod-faculty.scope.js';
  * and the individual view - and they share the same rows. Computing them in one place is what
  * stops the directory saying one thing about a teacher and the detail saying another.
  */
+// ═══ 2. The per-faculty figures ════════════════════════════════════════════
+
+/**
+ * EVERY FIGURE FOR ONE TEACHER, in one place.
+ *
  * The workload, the availability, the attendance, the syllabus, the class performance and the
  * insight are computed together, because they share the same rows and computing them apart would
  * mean reading the department's timetable once per feature.
@@ -270,7 +277,3 @@ export type FacultyDirectoryQuery = {
   search?: string;
   sort?: string;
 };
-
-/**
- * THE FACULTY DIRECTORY.
- *

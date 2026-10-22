@@ -22,7 +22,7 @@ import { notFound } from '../../lib/errors.js';
 import { gradeFor } from '../examcell/result.rules.js';
 import { durationHours } from './hod-dashboard.sections.js';
 import { resolveFacultyScope } from './hod-faculty.scope.js';
-import { facultyFigures } from './hod-faculty.service.js';
+import { facultyFigures } from './hod-faculty.figures.js';
 
 export type FacultyDetailQuery = { academicYearId?: string };
 

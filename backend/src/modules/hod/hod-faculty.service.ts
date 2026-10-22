@@ -23,7 +23,6 @@
  *
  *   PLUS: the WORKLOAD BALANCER, the AVAILABILITY MATRIX and the TEACHING PROGRESS MONITOR.
  */
-import { gradeFor } from '../examcell/result.rules.js';
 import { durationHours } from './hod-dashboard.sections.js';
 import {
   AVAILABILITY_DAYS,
@@ -40,11 +39,17 @@ import {
   WORKLOAD_BANDS,
   assertFacultySort,
   assertFacultyStatus,
-  facultyInsightScore,
-  workloadBand,
-  type FacultyInsightLegId,
 } from './hod-faculty.rules.js';
-import { resolveFacultyScope, type FacultyScope } from './hod-faculty.scope.js';
+import { resolveFacultyScope } from './hod-faculty.scope.js';
+import {
+  facultyFigures,
+  type FacultyDirectoryQuery,
+} from './hod-faculty.figures.js';
+import {
+  buildAvailabilityMatrix,
+  buildBalancer,
+  buildProgressMonitor,
+} from './hod-faculty.smart.js';
 
 // ═══ 1. The vocabulary ════════════════════════════════════════════════════
 
@@ -77,10 +82,8 @@ export async function facultyCatalogue() {
   };
 }
 
-// ═══ 2. The per-faculty figures ════════════════════════════════════════════
-
 /**
- * EVERY FIGURE FOR ONE TEACHER, in one place.
+ * THE FACULTY DIRECTORY.
  *
  * Every row carries the workload, the insight and the status, because the directory IS the
  * balancer's list and the balancer's list is the directory.
@@ -182,109 +185,3 @@ export async function facultyDirectory(
   };
 }
 
-// ═══ 4. The Workload Balancer ══════════════════════════════════════════════
-
-/**
- * THE WORKLOAD BALANCER.
- *
- * For each OVERLOADED teacher, the classes they hold and the teachers who could take one. The
- * suggestion is advisory — the guard on the reassign refuses a move that would break the cap —
- * so the balancer only suggests a target who could actually absorb the class.
- */
-function buildBalancer(rows: { staff: { userId: string; name: string }; figures: ReturnType<typeof facultyFigures> }[]) {
-  const overloaded = rows.filter((r) => r.figures.workload.overloaded);
-  const withHeadroom = rows
-    .filter((r) => !r.figures.workload.overloaded && r.figures.workload.freeHours >= MIN_FREE_HOURS_TO_SUGGEST)
-    .sort((a, b) => b.figures.workload.freeHours - a.figures.workload.freeHours);
-
-  return {
-    overloaded: overloaded.map((r) => ({
-      userId: r.staff.userId,
-      name: r.staff.name,
-      assignedWeeklyHours: r.figures.workload.assignedWeeklyHours,
-      maxWorkloadHours: r.figures.workload.maxWorkloadHours,
-      overBy: Math.round((r.figures.workload.assignedWeeklyHours - r.figures.workload.maxWorkloadHours) * 100) / 100,
-      // THE TARGETS, best first. A teacher with no headroom is not offered, because the move
-      // would be refused the moment it was pressed.
-      targets: withHeadroom.slice(0, 4).map((t) => ({
-        userId: t.staff.userId,
-        name: t.staff.name,
-        freeHours: t.figures.workload.freeHours,
-        band: t.figures.workload.band,
-      })),
-    })),
-    available: withHeadroom.map((r) => ({
-      userId: r.staff.userId,
-      name: r.staff.name,
-      freeHours: r.figures.workload.freeHours,
-      band: r.figures.workload.band,
-    })),
-    note: withHeadroom.length === 0
-      ? 'Nobody in the department has the headroom to take a class right now.'
-      : null,
-  };
-}
-
-// ═══ 5. The Availability Matrix ═══════════════════════════════════════════
-
-/**
- * THE AVAILABILITY MATRIX.
- *
- * A grid of the department's faculty against the teaching week: the hours each has already
- * scheduled on each day, the free hours in their week, and whether they are on leave today.
- *
- * It is DERIVED from the timetable and the leave, because the platform has no availability
- * concept of its own — and a matrix that is derived cannot disagree with the schedule that
- * actually exists.
- */
-function buildAvailabilityMatrix(
-  rows: { staff: { userId: string; name: string; designation: string | null }; figures: ReturnType<typeof facultyFigures> }[],
-) {
-  return {
-    days: AVAILABILITY_DAYS,
-    rows: rows.map((r) => ({
-      userId: r.staff.userId,
-      name: r.staff.name,
-      designation: r.staff.designation ?? 'Faculty',
-      freeHours: r.figures.availability.freeHours,
-      onLeaveNow: r.figures.availability.onLeaveNow,
-      band: r.figures.workload.band,
-      days: r.figures.availability.days,
-    })),
-  };
-}
-
-// ═══ 6. The Teaching Progress Monitor ══════════════════════════════════════
-
-/**
- * THE TEACHING PROGRESS MONITOR.
- *
- * Two halves, because "is the teaching on track" is two questions: is the SYLLABUS being
- * finished, and are the CLASSES being DELIVERED.
- */
-function buildProgressMonitor(
-  rows: { staff: { userId: string; name: string }; figures: ReturnType<typeof facultyFigures> }[],
-) {
-  return {
-    rows: rows.map((r) => ({
-      userId: r.staff.userId,
-      name: r.staff.name,
-      // THE SYLLABUS HALF. `null` when the teacher holds no course with a syllabus — a teacher
-      // with no syllabus has no syllabus progress, not zero.
-      syllabusPercent: r.figures.syllabus.percent,
-      syllabusCompleted: r.figures.syllabus.completed,
-      syllabusTopics: r.figures.syllabus.topics,
-      staleSyllabi: r.figures.syllabus.stale,
-      // THE CLASS HALF. `null` when no class has been recorded yet.
-      deliveryPct: r.figures.workload.deliveryPct,
-      deliveredHours: r.figures.workload.deliveredHours,
-      scheduledToDateHours: r.figures.workload.scheduledToDateHours,
-      sessions: r.figures.activity.sessionsTaken,
-    })),
-    summary: {
-      syllabusTracked: rows.filter((r) => r.figures.syllabus.percent !== null).length,
-      deliveryTracked: rows.filter((r) => r.figures.workload.deliveryPct !== null).length,
-      staleSyllabi: rows.reduce((s, r) => s + r.figures.syllabus.stale, 0),
-    },
-  };
-}

@@ -25,7 +25,7 @@
  * and the leave. A matrix that is DERIVED cannot disagree with the schedule that actually exists.
  */
 import { AVAILABILITY_DAYS } from './hod-faculty.rules.js';
-import type { facultyFigures } from './hod-faculty.service.js';
+import type { facultyFigures } from './hod-faculty.figures.js';
 
 /** The per-teacher figures the builders read. Derived from the service, so the two cannot drift. */
 type FacultyFigures = ReturnType<typeof facultyFigures>;
