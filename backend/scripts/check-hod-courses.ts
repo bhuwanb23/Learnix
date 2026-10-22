@@ -441,6 +441,26 @@ try {
   eq('and the band', row2.health.band, 'AT_RISK');
   eq('and the counted legs', row2.health.included, 2);
 
+  // THE HEALTH STRIP COUNTS THE TAUGHT COURSES ONLY.
+  // A retired course's last term is real data and its row shows the badge, but a course that is
+  // no longer taught is not a problem to fix — and counting it would put a healthy ARCHIVED
+  // course in the "healthy" strip and quietly flatter the department.
+  //
+  // courseA is ARCHIVED (from section 5) and now scores 50, which is AT_RISK. The strip must not
+  // count it. And the strip must be able to count it — otherwise "0 at risk" would be vacuous.
+  const stripArchived = await courseDirectory(hodUser.id, institution.id, {});
+  eq('an archived course is not counted in the health strip', stripArchived.totals.atRisk, 0);
+  eq('and it is still counted as a course', stripArchived.totals.courses, 2);
+  eq('and it is still counted as archived', stripArchived.totals.archived, 1);
+  eq('and a draft course is not counted either', stripArchived.totals.draft, 1);
+  eq('and the strip is empty', stripArchived.totals.healthy + stripArchived.totals.watch, 0);
+
+  await setCourseStatus(hodUser.id, institution.id, courseA.id, 'ACTIVE');
+  const stripActive = await courseDirectory(hodUser.id, institution.id, {});
+  eq('and an active course IS counted', stripActive.totals.atRisk, 1);
+  eq('and the archived count fell', stripActive.totals.archived, 0);
+  await setCourseStatus(hodUser.id, institution.id, courseA.id, 'ARCHIVED');
+
   // ═══ 10. The unmap ══════════════════════════════════════════════════════
   section(10, 'The unmap');
 

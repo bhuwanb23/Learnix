@@ -71,7 +71,7 @@ COURSES="../learnix/users/hod/pages/courses"
 SCREEN="$COURSES/courses.js"
 META="$COURSES/coursesMeta.js"
 UI="$COURSES/coursesUi.js"
-PANELS="$COURSES/coursesDetailPanels.js"
+RESULTS="$COURSES/coursesDetailResults.js"
 SHELL="../learnix/users/hod/hod.js"
 API="../learnix/services/api.js"
 RULES="src/modules/hod/hod-courses.rules.ts"
@@ -294,7 +294,7 @@ PY
 # ═══ 18. The client computing a figure of its own ══════════════════════════
 # A number the client derived is a number the client can get wrong.
 teeth "a client that computes its own grade share is caught" \
-  "$PANELS" scripts/audit-hod-courses-ui.ts <<'PY'
+  "$RESULTS" scripts/audit-hod-courses-ui.ts <<'PY'
 import io, os
 p = os.environ['TEETH_FILE']
 s = io.open(p, encoding='utf-8').read()

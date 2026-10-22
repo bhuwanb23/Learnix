@@ -35,10 +35,14 @@ const HOD = path.join(REPO, 'learnix', 'users', 'hod');
 const FILES = [
   'pages/courses/courses.js',
   'pages/courses/coursesMeta.js',
+  'pages/courses/coursesStyles.js',
   'pages/courses/coursesUi.js',
+  'pages/courses/coursesHealth.js',
   'pages/courses/coursesDetail.js',
   'pages/courses/coursesDetailActions.js',
   'pages/courses/coursesDetailPanels.js',
+  'pages/courses/coursesDetailResults.js',
+  'pages/courses/coursesDetailStyles.js',
   'hod.js',
 ];
 

@@ -30,7 +30,6 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND = path.resolve(HERE, '..');
-const PORT = 4000;
 
 /**
  * Every suite file, at any depth, relative to `scripts/`.
@@ -109,17 +108,17 @@ for (const name of suites) {
 
   // THE RETRY. A limiter-shaped failure is not a broken suite, so the server is restarted and
   // the suite is run again — ONCE, and only for that shape of failure.
-  if (code !== 0 && isLimiterFailure(out)) {
+  //
+  // AND A SUITE THAT PRODUCED NO TALLY AT ALL is treated as limiter-shaped too: a suite that
+  // exits non-zero without printing "N passed, M failed" never really ran, and the usual reason
+  // is that the auth limiter turned its first login into a 429.
+  const hasTally = /\d+\s+passed,\s*\d+\s+failed/.test(out);
+  if (code !== 0 && (!hasTally || isLimiterFailure(out))) {
     startServer();
     await new Promise((r) => setTimeout(r, 8000));
     const retry = runSuite(name);
-    if (retry.code === 0) {
-      out = `${out}\n--- retried after a server restart ---\n${retry.out}`;
-      code = 0;
-    } else {
-      out = `${out}\n--- retried after a server restart ---\n${retry.out}`;
-      code = retry.code;
-    }
+    out = `${out}\n--- retried after a server restart ---\n${retry.out}`;
+    code = retry.code;
   }
 
   const pm = out.match(/(\d+)\s+passed,\s*(\d+)\s+failed/);

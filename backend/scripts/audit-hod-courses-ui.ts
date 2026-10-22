@@ -85,26 +85,35 @@ const CS = 'users/hod/pages/courses';
 const SCREENS = [
   `${CS}/courses.js`,
   `${CS}/coursesMeta.js`,
+  `${CS}/coursesStyles.js`,
   `${CS}/coursesUi.js`,
+  `${CS}/coursesHealth.js`,
   `${CS}/coursesDetail.js`,
+  `${CS}/coursesSheets.js`,
   `${CS}/coursesDetailActions.js`,
   `${CS}/coursesDetailPanels.js`,
+  `${CS}/coursesDetailResults.js`,
+  `${CS}/coursesDetailStyles.js`,
   'users/hod/hod.js',
 ];
 
 const coursesSrc = read(`${CS}/courses.js`);
 const metaSrc = read(`${CS}/coursesMeta.js`);
 const uiSrc = read(`${CS}/coursesUi.js`);
+const healthSrc = read(`${CS}/coursesHealth.js`);
 const detailSrc = read(`${CS}/coursesDetail.js`);
 const panelsSrc = read(`${CS}/coursesDetailPanels.js`);
+const resultsSrc = read(`${CS}/coursesDetailResults.js`);
 const shellSrc = read('users/hod/hod.js');
 const apiSrc = read('services/api.js');
 
 const coursesCode = stripComments(coursesSrc);
 const metaCode = stripComments(metaSrc);
 const uiCode = stripComments(uiSrc);
+const healthCode = stripComments(healthSrc);
 const detailCode = stripComments(detailSrc);
 const panelsCode = stripComments(panelsSrc);
+const resultsCode = stripComments(resultsSrc);
 const apiCode = stripComments(apiSrc);
 
 const rulesSrc = stripComments(readSrc('src/modules/hod/hod-courses.rules.ts'));
@@ -362,12 +371,15 @@ const FORBIDDEN = [
   { re: /\.reduce\(\s*\(s,\s*o\)\s*=>\s*s\s*\+\s*o\.students/, label: 'a client-summed roll' },
 ];
 for (const f of FORBIDDEN) {
-  ok(!f.re.test(coursesCode + detailCode + panelsCode + uiCode), `the client does not compute ${f.label}`);
+  ok(
+    !f.re.test(coursesCode + detailCode + panelsCode + resultsCode + uiCode + healthCode),
+    `the client does not compute ${f.label}`,
+  );
 }
 
 // The grade bar draws the server's share, it does not compute one.
 ok(
-  panelsCode.includes('width: `${g.percent}%`'),
+  resultsCode.includes('width: `${g.percent}%`'),
   'the grade bar draws the server-provided share',
 );
 ok(
