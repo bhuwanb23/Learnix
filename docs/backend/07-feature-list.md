@@ -182,7 +182,7 @@
 | ID | Feature | Tables | Seed |
 |----|---------|--------|------|
 | HD-01 | Department dashboard: 9 sections (KPIs, today, attendance, syllabus progress, faculty workload, student risk, pending approvals, quick actions, performance trends) + a Department Health Score | A, B, C aggregates | ✅ 9 sections, 6 alert kinds |
-| HD-02 | Faculty management: workload view, max-hours enforcement | A staff_profiles, B offerings | ✅ |
+| HD-02 | Faculty management: a directory with the workload, the performance insight and the status on every row, plus the **Workload Balancer**, the **Availability Matrix** and the **Teaching Progress Monitor**, and an individual faculty view with the whole chain in one call | A staff_profiles, B course_offerings/schedule_slots, C results, attendance | ✅ 5 faculty, varied caps, 5 classes, 2 sections |
 | HD-03 | Syllabus approvals: SUBMITTED → HOD_APPROVED / CHANGES_REQUESTED (+feedback) | B syllabus_versions | ✅ 1 waiting |
 | HD-04 | Leave requests: approve/reject (+substitute arrangement) | A users*, leave table pending** | — |
 | HD-05 | Students by year/section (department scope) | A student_profiles, B sections | ✅ (1) |
@@ -191,6 +191,24 @@
 | HD-08 | Notifications + profile | K, A | ✅ |
 
 **\*** leave requests table was in HOD doc but not in the 12-domain schema paste — **flag: add `leave_requests` table if you want HD-04** (one-model addition).
+
+**HD-02 is the Faculty desk, built out in full.** The old `GET /hod/faculty` list still answers,
+unchanged; the desk is a new set of paths (`/faculty/catalogue`, `/faculty/directory`,
+`/faculty/:userId/detail`) mounted before it.
+- **The workload unit was a BUG, and it is fixed.** The reassign guard measured a teacher's load
+  as a **schedule-slot count** and compared it against `maxWorkloadHours` — a hours limit. A
+  three-hour lecture counted as one hour, so the guard let an overloaded teacher through while
+  the dashboard showed a different number for the same person. The load is measured in **hours**
+  everywhere now, and the test that proves it puts the target's cap deliberately **between** the
+  slot count and the hour count.
+- **The workload bands are bands of the teacher's OWN maximum**, never of a department average.
+- **The availability matrix is DERIVED** from the timetable and the leave — the platform has no
+  availability concept of its own, and a derived matrix cannot disagree with the schedule.
+- **The balancer only suggests a target with the hours to absorb the class.**
+- **There is no evaluation score, because the platform has no table for one.** The docs once
+  promised one; the insight is a composite of what IS measured.
+- **The department is the tenancy boundary, and it is enforced twice** — the shared scope's
+  query and the desk's own re-check.
 
 **HD-01 replaced the old flat dashboard** (`GET /hod/dashboard`, now a 404). Two **tenancy bugs** were
 fixed with it: the leave queries were institution-scoped — an HOD could list and APPROVE another

@@ -215,9 +215,14 @@ teeth "a reassign guard that counts slots instead of hours is caught" \
 import io, os, re
 p = os.environ['TEETH_FILE']
 s = io.open(p, encoding='utf-8').read()
+
+# THE WHOLE GUARD GOES BACK TO SLOTS — the load AND the class being moved. Breaking only one of
+# them would still refuse the move, because the other half is still in hours, and the case would
+# report a vacuous assertion.
 s = re.sub(
-    r"  const currentLoad = siblings\.reduce\(\n(?:.*\n)*?  \);",
-    "  const currentLoad = siblings.reduce((sum, o) => sum + o.scheduleSlots.length, 0);",
+    r"  const currentLoad = siblings\.reduce\(\r?\n(?:.*\r?\n)*?  const moving = movingSlots\.reduce\(\r?\n(?:.*\r?\n)*?  \);",
+    """  const currentLoad = siblings.reduce((sum, o) => sum + o.scheduleSlots.length, 0);
+  const moving = await prisma.offeringScheduleSlot.count({ where: { offeringId } });""",
     s,
     count=1,
 )

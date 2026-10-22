@@ -80,17 +80,64 @@ GET /api/v1/hod/dashboard/overview      all nine sections in one call (?academic
 GET /api/v1/hod/dashboard/blocks/:block one section on its own — the SAME function the overview calls
 ```
 
-### 3.2 Faculty (tab)
-Department faculty with **workload bars** (red > 90%, amber > 75%) and status → **faculty detail**: evaluation score, Message/Reassign/Evaluate actions, workload card, classes with attendance bars, leave balance.
+### 3.2 Faculty (tab) — HD-02
 
-**Entity `faculty`**
+Centralised faculty management for the department: a **directory** of the department's teachers with their workload, their performance and their status, the **three smart features**, and an **individual faculty view** that opens the whole chain.
+
+**The ten features**
+
+| # | Feature | What it is |
+|---|---------|-----------|
+| 1 | Faculty directory | The department's teachers, with filters (status, workload band, search, sort) |
+| 2 | Faculty profiles | Designation, employee number, joining date, status, own workload cap |
+| 3 | Subject allocation | The courses each teacher holds, and how many classes of each |
+| 4 | Teaching workload | Assigned hours against their **own** maximum, and the hours actually delivered |
+| 5 | Timetable allocation | The slots, by weekday, per class |
+| 6 | Attendance / leave status | The register across their classes, and their leave (on leave today, pending, approved days) |
+| 7 | Syllabus completion | How much of their courses' syllabus is complete, and which have stalled |
+| 8 | Class performance | The pass rate of the classes they teach, per class and rolled up |
+| 9 | Faculty activity history | The records they have actually created — notes, assignments, classes marked, syllabus versions, papers evaluated — plus the audit trail |
+| 10 | Faculty performance insights | The composite of four measures, with the legs named |
+
+**The individual faculty view**: `Faculty → Assigned Subjects → Classes → Workload → Attendance → Syllabus → Student Performance → Activity History` — **one call**.
+
+**The three smart features**
+- **Workload Balancer** — who is carrying more than their agreed maximum, and who has the hours to take a class.
+- **Faculty Availability Matrix** — the teaching week, faculty by faculty: the hours already scheduled on each day, the free hours in their week, and who is on leave today.
+- **Teaching Progress Monitor** — how much of the syllabus is done, and how much of the scheduled teaching was delivered.
+
+> **The workload is measured in HOURS, everywhere.** `StaffProfile.maxWorkloadHours` is a hours limit, so the load is measured in hours — through the same `durationHours` the dashboard and the Courses desk use. It used to be measured in **schedule-slot count** in the reassign guard, so a three-hour lecture counted as one hour: the guard let an overloaded teacher through while the screen showed a different number for the same person. **The screen and the rule that enforces it disagreed.** One unit, everywhere, now.
+
+> **The workload bands are bands of the teacher's OWN maximum**, never of a department average. A 90%-utilised teacher in a department with a 30-hour cap is doing their job.
+
+**The performance insight** — four legs, and the same "no data is not zero" rule as every other score in the platform:
+
+| Leg | Weight | Measured from |
+|-----|--------|---------------|
+| Teaching delivery | 30% | The delivered hours against the hours scheduled so far. `null` when nothing has been recorded |
+| Student attendance | 25% | The register across their classes. `PRESENT` and `LATE` both count as being in the room |
+| Syllabus completion | 20% | Completed topics over total, on their courses' **latest** syllabus version |
+| Class performance | 25% | The pass rate of their classes. The grade is **re-derived** from the marks through `gradeFor`, never read off the denormalised column |
+
+Bands: `STRONG ≥ 80`, `STEADY ≥ 60`, `NEEDS_SUPPORT < 60`. **A leg with no data is EXCLUDED and the rest re-weighted** — a teacher in their first fortnight is *unmeasured*, not failing, and the badge says "No data yet".
+
+> **There is no evaluation score, because the platform has no table for one.** The docs once promised one. The honest thing is to say what IS measured and leave the judgement to the HOD.
+
+> **The Availability Matrix is DERIVED** from the timetable and the leave, because the platform has no availability concept of its own. A matrix that is derived cannot disagree with the schedule that actually exists.
+
+**Entity `faculty`** (from `staff_profiles` + `users`)
+
 | Field | Type |
 |-------|------|
-| id, name, designation | string |
-| workload, maxWorkload | number |
-| evaluationScore | number |
-| classes | [{ name, attendance }] |
-| leaveBalance | number |
+| userId, name, email, designation | string |
+| maxWorkloadHours | number |
+| status | `ACTIVE \| ON_LEAVE` |
+| workload | { assignedWeeklyHours, deliveredHours, freeHours, utilizationPct, band, overloaded, underutilised } |
+| insight | { score, band, included, excluded, weakest, legs[] } |
+| subjects | [{ courseId, code, name, classes, weeklyHours }] |
+| attendance / leave / syllabus / performance / activity | aggregates |
+
+**The old route stays.** `GET /api/v1/hod/faculty` still answers, unchanged — and its load now means the same thing the screen's does.
 
 ### 3.3 Courses (tab) — HD-06
 
@@ -192,8 +239,11 @@ HOD profile (Dr. Meera Iyer, HoD Computer Science), department stats, preference
 GET  /api/hod/dashboard/catalogue        the nine sections, the four actions, the six alert kinds
 GET  /api/hod/dashboard/overview          all nine sections in one call (?academicYearId=)
 GET  /api/hod/dashboard/blocks/:block     one section on its own
-GET  /api/hod/faculty                     (+ /{id})
-POST /api/hod/faculty/{id}/evaluate|reassign
+GET  /api/hod/faculty                     the OLD flat list — unchanged
+GET  /api/hod/faculty/catalogue           the vocabulary: the workload bands, the insight legs and bands, the statuses, the sorts, the availability days, the thresholds
+GET  /api/hod/faculty/directory           the list, with the balancer, the availability matrix and the progress monitor (?status=&band=&search=&sort=)
+GET  /api/hod/faculty/{userId}/detail     the whole teacher: the chain, the workload, the insight, the activity
+POST /api/hod/offerings/{id}/reassign     { toUserId } — the balancer's move, with MAX-HOURS enforcement in HOURS
 GET  /api/hod/courses                     (+ /{id})   the OLD pair — unchanged
 GET  /api/hod/courses/catalogue           the vocabulary: statuses, types, sorts, the health legs and bands, the thresholds
 GET  /api/hod/courses/directory           the list, with the health on every row (?status=&type=&search=&sort=&page=)
@@ -244,6 +294,29 @@ Final API surface (vs §4 sketch):
 - Students `GET /students?year={semester}` — department programs scope
 - Courses `GET /courses` + `GET /courses/{id}` — offerings oversight with latest syllabus status
   (the OLD pair, still answering unchanged)
+
+**The Faculty desk (HD-02)** — `GET /faculty/catalogue`, `GET /faculty/directory` and
+`GET /faculty/{userId}/detail`, mounted BEFORE the old HOD router on its own paths so the old
+`GET /hod/faculty` keeps answering. The detail is **one call**: the chain is a chain, and six
+round trips to assemble one screen is six chances to show a half-drawn teacher.
+- **The workload unit was a BUG, and it is fixed.** The reassign guard measured a teacher's load
+  as a **schedule-slot count** and compared it against `maxWorkloadHours` — a hours limit. A
+  three-hour lecture counted as one hour, so the guard let an overloaded teacher through while
+  the dashboard's workload section showed a different number for the same person. The load is
+  measured in **hours** now, everywhere: the guard, the old `listFaculty`, the dashboard and the
+  Courses desk. The test that proves it puts the target's cap deliberately **between** the slot
+  count and the hour count, so it only passes for the right reason.
+- **The workload bands are bands of the teacher's OWN maximum**, and the "no data" rule is the
+  platform's: a leg with no data is EXCLUDED and the rest re-weighted, never scored as zero.
+- **The availability matrix is DERIVED** from the timetable and the leave, because the platform
+  has no availability concept of its own. A derived matrix cannot disagree with the schedule.
+- **The balancer only suggests a target with the HOURS to absorb the class**, because a
+  suggestion that would be refused the moment it was pressed is a bad suggestion.
+- **The department is the tenancy boundary, and it is enforced twice** — by the shared scope's
+  query and by the Faculty desk's own re-check. A colleague in the next department of the same
+  college has a `StaffProfile` in the same institution, and the institution is NOT the boundary.
+- The HOD shell's **param channel** (from HD-06) is what makes the faculty detail reachable: it
+  is registered as `FacultyDetail` and opened with the teacher id.
 
 **The Courses desk (HD-06)** — `GET /courses/catalogue`, `GET /courses/directory` and
 `GET /courses/{id}/detail`, mounted BEFORE the old HOD router on its own paths so the old pair

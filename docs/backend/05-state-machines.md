@@ -615,3 +615,49 @@ is taught but never declared is reported as `unmapped`.
 `course_prerequisites` is a self-relation with a kind on it, and the graph is kept **acyclic**:
 the server refuses an edge that would close a loop, because a loop makes "what must come first"
 unanswerable.
+## 15. The Faculty Performance Insight (HD-02)
+
+A teacher's insight is four measures, and it is a **weighted mean over the measures that have
+data** — exactly as the Department Health Score and the Course Health Score are, so the three read
+as one family.
+
+| Leg | Weight | Measured from |
+|-----|--------|---------------|
+| Teaching delivery | 30% | The delivered hours against the hours scheduled so far. `null` when nothing has been recorded |
+| Student attendance | 25% | The register across their classes. `PRESENT` **and** `LATE` both count as being in the room |
+| Syllabus completion | 20% | Completed topics over total, on their courses' **latest** `SyllabusVersion` |
+| Class performance | 25% | The pass rate of their classes. The grade is **re-derived** from the marks through `gradeFor` — the stored `Result.grade` / `Result.isPass` columns are denormalised and can drift from their own marks |
+
+The bands are `STRONG` >= 80, `STEADY` >= 60, `NEEDS_SUPPORT` < 60.
+
+### The rule that makes it honest
+
+**A leg with NO DATA IS EXCLUDED, never scored as zero.** A teacher in their first fortnight has no
+attendance and no results yet. Scoring those as zero reports a brand-new teacher as a failing one
+— and reports it *confidently*, because the number looks like a measurement rather than the absence
+of one. The score is a **weighted mean over the legs that have data**, the weights are
+re-normalised over those legs, and the response names the legs left out and the **weakest leg
+counted**. A teacher with no data at all has **no score and no band** — they are *unmeasured*,
+not *failing*.
+
+### The workload, and the unit it is measured in
+
+`StaffProfile.maxWorkloadHours` is a HOURS limit, so the load is measured in **hours** — through
+the same `durationHours` the dashboard and the Courses desk use.
+
+It used to be measured in **schedule-slot count** in the reassign guard, so a three-hour lecture
+counted as one hour. The guard let an overloaded teacher through while the screen showed a
+different number for the same person: **the rule that enforces the workload and the screen that
+reports it disagreed.** One unit, everywhere, now.
+
+### The workload bands
+
+A percentage of the teacher's **own** maximum, never of a department average: `OVERLOADED`
+(> 100%), `HEAVY` (85–100), `BALANCED` (50–85), `LIGHT` (25–50), `UNDERUTILISED` (< 25).
+
+### The availability matrix
+
+The platform has no availability concept of its own, so the matrix is **DERIVED** from the
+timetable and the leave: the hours each teacher has already scheduled on each day of the teaching
+week, the free hours left against their own cap, and whether they are on leave today. A derived
+matrix cannot disagree with the schedule that actually exists.

@@ -442,12 +442,22 @@ async function main() {
         select: {
           id: true,
           teacherUserId: true,
-          _count: { select: { scheduleSlots: true } },
+          scheduleSlots: { select: { startTime: true, endTime: true } },
         },
       });
+      // THE EXPECTED TOTAL IS IN HOURS, because the list's total is in hours.
+      //
+      // It used to be a SCHEDULE-SLOT COUNT, because `listFaculty` measured the load that way.
+      // The load is measured in hours now — the cap is `maxWorkloadHours`, and a slot has a
+      // duration — so the expectation has to be in the same unit or the two sides are comparing
+      // different quantities.
+      const { durationHours } = await import('../src/modules/hod/hod-dashboard.sections.js');
       const expectedLoad = new Map<string, number>();
       for (const off of deptOfferings) {
-        expectedLoad.set(off.id, off._count.scheduleSlots);
+        expectedLoad.set(
+          off.id,
+          off.scheduleSlots.reduce((s, slot) => s + durationHours(slot.startTime, slot.endTime), 0),
+        );
       }
       const listTotal = facultyList.reduce(
         (s, f) => s + (f.classes ?? []).reduce((n, c) => n + (c.weeklyHours ?? 0), 0),
@@ -456,8 +466,21 @@ async function main() {
       const deptTotal = [...expectedLoad.values()].reduce((s, n) => s + n, 0);
       eq(
         "listFaculty's workload is the DEPARTMENT's, not the teacher's",
-        listTotal,
-        deptTotal,
+        Math.round(listTotal * 100) / 100,
+        Math.round(deptTotal * 100) / 100,
+      );
+
+      // AND THE UNIT IS HOURS, not slots. A department whose classes are one two-hour lecture and
+      // one one-hour lecture has THREE hours of teaching, not two slots — and the screen that
+      // says "3 of 18 hours" has to be the screen the cap is checked against.
+      const slotCount = deptOfferings.reduce(
+        (s, off) => s + off.scheduleSlots.length,
+        0,
+      );
+      ok(
+        'the expected load differs from the slot count, so the unit is genuinely being tested',
+        Math.round(deptTotal * 100) !== slotCount,
+        `hours=${deptTotal} slots=${slotCount}`,
       );
 
       // THE CROSS-DEPARTMENT TEACHER — the case the bug actually needs.
@@ -538,11 +561,21 @@ async function main() {
         );
         const ownOnly = deptOfferings
           .filter((off) => off.teacherUserId === ownStaffUser)
-          .reduce((s, off) => s + off._count.scheduleSlots, 0);
+          // IN HOURS, for the same reason as above: the figure on one side is in hours, so the
+          // expectation has to be too.
+          .reduce(
+            (s, off) =>
+              s +
+              off.scheduleSlots.reduce(
+                (acc, slot) => acc + durationHours(slot.startTime, slot.endTime),
+                0,
+              ),
+            0,
+          );
         eq(
           "a cross-department offering is NOT counted against this department's teacher",
-          crossLoad,
-          ownOnly,
+          Math.round(crossLoad * 100) / 100,
+          Math.round(ownOnly * 100) / 100,
         );
 
         // CLEAN UP the cross-department offering, children first.

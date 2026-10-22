@@ -119,7 +119,7 @@ A full-stack, multi-tenant college management system with **14 role-specific app
 | ID | Feature | Status |
 |----|---------|--------|
 | HD-01 | Department dashboard (faculty workload, approvals pending, results) | ✅ |
-| HD-02 | Faculty management: workload view, max-hours enforcement | ✅ |
+| HD-02 | Faculty management: the directory with the workload, the performance insight and the status on every row, the Workload Balancer, the Availability Matrix and the Teaching Progress Monitor, and the whole teacher in one call | ✅ |
 | HD-03 | Syllabus approvals: SUBMITTED → HOD_APPROVED / CHANGES_REQUESTED | ✅ |
 | HD-04 | Leave requests: approve/reject (+substitute arrangement) | ✅ |
 | HD-05 | Students by year/section (department scope) | ✅ |
