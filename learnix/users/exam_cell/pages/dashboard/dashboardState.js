@@ -315,6 +315,19 @@ export function StudentStatisticsSection({ data }) {
           has not been taken — not because nobody came. Take the roll from a paper.
         </NoteStrip>
       ) : null}
+      {st && st.eligible === 0 && st.registered > 0 ? (
+        <NoteStrip tone="warn">
+          No student is currently clear for a hall ticket.{' '}
+          {st.warnings?.outstandingFees > 0
+            ? `${st.warnings.outstandingFees} carry fee dues`
+            : ''}
+          {st.warnings?.outstandingFees > 0 && st.warnings?.missingPhotos > 0 ? ' and ' : ''}
+          {st.warnings?.missingPhotos > 0
+            ? `${st.warnings.missingPhotos} ${st.warnings.missingPhotos === 1 ? 'has' : 'have'} no photo`
+            : ''}
+          . A warning does not block a ticket — it is shown, and never enforced.
+        </NoteStrip>
+      ) : null}
       {st && st.unmarked > 0 ? (
         <NoteStrip>
           {plural(st.unmarked, 'student')} on the roll {st.unmarked === 1 ? 'has' : 'have'} not been

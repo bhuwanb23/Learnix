@@ -303,25 +303,57 @@ export async function resultProgressSection(institutionId: string) {
  * absent" for an unmarked paper is lying by omission.
  */
 export async function studentStatisticsSection(institutionId: string) {
-  // REGISTERED — the active enrolments across every offering of this institution.
-  const registered = await prisma.enrollment.count({
+  // REGISTERED — the DISTINCT STUDENTS with an active enrolment across every offering of this
+  // institution.
+  //
+  // DISTINCT STUDENTS, not enrolments. A student taking four papers has four enrolments, and
+  // counting them would report a college of 40 students as a college of 91. The figure is about
+  // PEOPLE.
+  const registeredRows = await prisma.enrollment.findMany({
     where: { status: 'ACTIVE', offering: { course: { institutionId } } },
+    select: { studentProfileId: true },
+    distinct: ['studentProfileId'],
   });
+  const registered = registeredRows.length;
+  const registeredIds = registeredRows.map((r) => r.studentProfileId);
+
   const students = await prisma.studentProfile.count({
     where: { institutionId, status: 'ACTIVE' },
   });
 
   // THE ELIGIBILITY WARNINGS. The eligibility block needs an `examId` and the dashboard is
-  // institution-wide, so the three warning families it checks are counted here directly, from
-  // the same tables. A student carrying none of them is CLEAR.
-  const [outstandingFees, missingPhotos] = await Promise.all([
-    prisma.feeDue.count({
+  // institution-wide, so the warning families it checks are counted here directly, from the same
+  // tables. A student carrying none of them is CLEAR.
+  //
+  // EACH COUNT IS A COUNT OF STUDENTS, and that is the whole point. A fee due is a ROW, and a
+  // student with two unpaid bills has two of them; a photo is a field, and a student has one. So
+  // both are counted over DISTINCT STUDENTS, and the eligible figure is the number of REGISTERED
+  // students who carry none of the warnings.
+  //
+  // The first draft of this subtracted the raw counts from the enrolment count, which reported
+  // "0 eligible" in a college of 42 students — 91 enrolments minus 52 bill-rows minus 41
+  // photo-less students. Three different grains, subtracted from each other. A figure that is wrong
+  // in that way is worse than no figure, because it looks like a fact.
+  const [feeWarningStudents, photoWarningStudents] = await Promise.all([
+    prisma.feeDue.findMany({
       where: { status: { in: ['UNPAID', 'PARTIAL'] }, studentProfile: { user: { institutionId } } },
+      select: { studentProfileId: true },
+      distinct: ['studentProfileId'],
     }),
-    prisma.studentProfile.count({
+    prisma.studentProfile.findMany({
       where: { institutionId, status: 'ACTIVE', user: { avatarFileId: null } },
+      select: { id: true },
     }),
   ]);
+
+  const feeWarningIds = new Set(feeWarningStudents.map((f) => f.studentProfileId));
+  const photoWarningIds = new Set(photoWarningStudents.map((p) => p.id));
+
+  // A registered student is ELIGIBLE when they carry NEITHER warning. The intersection is counted
+  // once, so a student with both a bill and no photo is warned once and not twice.
+  const eligible = registeredIds.filter(
+    (id) => !feeWarningIds.has(id) && !photoWarningIds.has(id),
+  ).length;
 
   // THE ROLL. PRESENT and ABSENT come from the recorded marks; UNMARKED is the rest of the roll.
   const [slots, marks] = await Promise.all([
@@ -386,11 +418,13 @@ export async function studentStatisticsSection(institutionId: string) {
   return {
     students,
     registered,
-    // A student with no warning at all.
-    eligible: Math.max(0, registered - outstandingFees - missingPhotos),
+    // The REGISTERED students who carry no eligibility warning.
+    eligible,
     warnings: {
-      outstandingFees,
-      missingPhotos,
+      // The count of STUDENTS carrying each warning, not the count of rows. A bill is a row and a
+      // student with two of them has two; a photo is a field and a student has one.
+      outstandingFees: feeWarningIds.size,
+      missingPhotos: photoWarningIds.size,
     },
     appeared: present,
     absent,

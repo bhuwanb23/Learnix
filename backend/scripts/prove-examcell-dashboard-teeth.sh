@@ -178,6 +178,19 @@ teeth "a mark-roll that submits one request per student is caught" \
   "$ATT/attendance.js" scripts/audit-examcell-dashboard-ui.ts \
   "import io; p=r'$ATT/attendance.js'; s=io.open(p,encoding='utf-8').read(); io.open(p,'w',encoding='utf-8').write(s.replace('marks: entries.map(([studentProfileId, state]) => ({ studentProfileId, state })),', 'marks: entries[0] ? [{ studentProfileId: entries[0][0], state: entries[0][1] }] : [],'))"
 
+# -- 16. The eligible figure ignoring the warnings ------------------------
+# A fee due is a ROW and a student with two of them has two; a photo is a FIELD and a student has
+# one; an enrolment is a ROW and a student taking four papers has four. The first draft subtracted
+# the raw counts from each other and reported "0 eligible" in a college of forty-two students — and
+# on the seeded data the correct figure happens to be zero too, so the mix-up was invisible until
+# the counts were traced back to the tables they came from.
+#
+# The break here is the blunt version — an eligible count that ignores the warnings entirely — and
+# the suite catches it because it does not agree with the counted figure.
+teeth "an eligible count that ignores the warnings is caught" \
+  "$SECTIONS" scripts/check-examcell-dashboard.ts \
+  "import io; p=r'$SECTIONS'; s=io.open(p,encoding='utf-8').read(); s=s.replace('const eligible = registeredIds.filter(' + chr(10) + '    (id) => !feeWarningIds.has(id) && !photoWarningIds.has(id),' + chr(10) + '  ).length;', 'const eligible = registered;'); io.open(p,'w',encoding='utf-8').write(s)"
+
 echo
 cleanup_created
 echo "  $PASS proved, $FAIL vacuous"

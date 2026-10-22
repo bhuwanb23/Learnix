@@ -231,11 +231,62 @@ async function main() {
     eq('and the marked slots never exceed the slots', st.markedSlots <= st.slots, true);
 
     // The registered and eligible figures.
-    const registered = await prisma.enrollment.count({
+    const registered = await prisma.enrollment.findMany({
       where: { status: 'ACTIVE', offering: { course: { institutionId: inst.id } } },
+      select: { studentProfileId: true },
+      distinct: ['studentProfileId'],
     });
-    eq('the registered count is the active enrolments', st.registered, registered);
+    eq('the registered count is the DISTINCT students enrolled', st.registered, registered.length);
     ok('and the eligible count never exceeds the registered', st.eligible <= st.registered);
+    ok('and it is never negative', st.eligible >= 0);
+
+    // THE ELIGIBLE FIGURE IS ABOUT PEOPLE, and every warning is counted over DISTINCT STUDENTS. The
+    // first draft subtracted the raw warning ROW counts from the enrolment count, which reported
+    // "0 eligible" in a college of 42 students — 91 enrolments minus 52 bill-rows minus 41
+    // photo-less students. Three different grains, subtracted from each other.
+    const feeWarned = await prisma.feeDue.findMany({
+      where: { status: { in: ['UNPAID', 'PARTIAL'] }, studentProfile: { user: { institutionId: inst.id } } },
+      select: { studentProfileId: true },
+      distinct: ['studentProfileId'],
+    });
+    ok(
+      'the outstanding-fee warning is a count of STUDENTS, not of bills',
+      st.warnings?.outstandingFees === feeWarned.length,
+      `got ${st.warnings?.outstandingFees}, wanted ${feeWarned.length}`,
+    );
+    ok(
+      'and the eligible count is the registered students with NO warning',
+      st.eligible <= st.registered && st.eligible >= 0,
+    );
+    // A student with BOTH a bill and no photo is warned ONCE, not twice. The exact figure is the
+    // number of REGISTERED students carrying NEITHER warning, and the warning sets are not subsets
+    // of the registered set — a student with no photo and no enrolment is still a photo-warning.
+    const photoWarned = await prisma.studentProfile.findMany({
+      where: { institutionId: inst.id, status: 'ACTIVE', user: { avatarFileId: null } },
+      select: { id: true },
+    });
+    const photoIds = new Set(photoWarned.map((p) => p.id));
+    const feeIds = new Set(feeWarned.map((f) => f.studentProfileId));
+    const expectedEligible = registered.filter(
+      (r) => !feeIds.has(r.studentProfileId) && !photoIds.has(r.studentProfileId),
+    ).length;
+    eq('the eligible count is the registered students carrying NEITHER warning', st.eligible, expectedEligible);
+    ok('and it is never more than the registered count', st.eligible <= st.registered);
+
+    // THE INVARIANT THAT DISTINGUISHES THE TWO FORMULAS. Every REGISTERED student is either
+    // eligible or warned, and exactly one of the two — so the two counts add UP to the registered
+    // count. A formula that subtracts raw warning COUNTS from the registered count does not add up
+    // (a student with two bills is counted twice, and a student with no enrolment is counted as a
+    // warning against a roll they were never on), and on the seeded data it reported "0 eligible" in
+    // a college of forty-two students.
+    const registeredWithWarning = registered.filter(
+      (r) => feeIds.has(r.studentProfileId) || photoIds.has(r.studentProfileId),
+    ).length;
+    eq(
+      'every registered student is eligible OR warned, exactly once',
+      st.eligible + registeredWithWarning,
+      st.registered,
+    );
 
     // ═══ 9. The evaluation and result figures ═══════════════════════════════════════════════════
     section(9, 'The evaluation and result figures come from the desks own rules');

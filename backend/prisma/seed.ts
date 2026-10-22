@@ -4193,6 +4193,45 @@ async function seedDomainL(institutionId: string): Promise<void> {
     }
   }
 
+  // ── X-11: an avatar for every other student, so the exam office's ELIGIBLE
+  // figure means something in the demo.
+  //
+  // The eligibility rules carry a NO_PHOTO warning, and a student with one is not clear. The
+  // platform's own seed linked ONE avatar — the demo student's — so every other student was
+  // permanently warned, and the exam office's dashboard reported "0 eligible" in a college of
+  // forty-two students. That is the honest answer to the data, but the data was the wrong data: a
+  // college whose students have no photos has not been set up, and the seed should show a college
+  // that has.
+  //
+  // Idempotent: a file is looked up before it is created, and a user is only linked if they
+  // have no avatar yet.
+  {
+    const withoutAvatar = await db.user.findMany({
+      where: { institutionId, avatarFileId: null, studentProfile: { isNot: null } },
+      select: { id: true },
+      take: 60,
+    });
+    for (const u of withoutAvatar) {
+      const exists = await db.file.findFirst({ where: { purpose: 'AVATAR', uploaderUserId: u.id } });
+      let fileId = exists?.id;
+      if (!fileId) {
+        const file = await db.file.create({
+          data: {
+            institutionId,
+            uploaderUserId: u.id,
+            purpose: 'AVATAR',
+            mimeType: 'image/png',
+            sizeBytes: 45231,
+            storageKey: `avatars/${u.id}.png`,
+            originalName: 'student-avatar.png',
+          },
+        });
+        fileId = file.id;
+      }
+      await db.user.update({ where: { id: u.id }, data: { avatarFileId: fileId } });
+    }
+  }
+
   // Real audit entry via the wired helper (proves writeAudit works)
   const { writeAudit } = await import('../src/lib/audit.js');
   const auditExists = await db.auditLog.findFirst({ where: { action: 'system.seed' } });
