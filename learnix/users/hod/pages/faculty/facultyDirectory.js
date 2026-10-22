@@ -1,15 +1,15 @@
 /**
- * HD-02 — The HOD's Faculty desk: the three smart features.
- * Docs: 11-hod.md §3.2
+ * HD-02 ΓÇö The HOD's Faculty desk: the three smart features.
+ * Docs: 11-hod.md ┬º3.2
  *
- *   · THE WORKLOAD BALANCER      — who is carrying too much, and who could take a class
- *   · THE AVAILABILITY MATRIX    — the department's faculty against the teaching week
- *   · THE TEACHING PROGRESS MONITOR — is the syllabus being finished, and are the classes running
+ *   ┬╖ THE WORKLOAD BALANCER      ΓÇö who is carrying too much, and who could take a class
+ *   ┬╖ THE AVAILABILITY MATRIX    ΓÇö the department's faculty against the teaching week
+ *   ┬╖ THE TEACHING PROGRESS MONITOR ΓÇö is the syllabus being finished, and are the classes running
  *
  * THE BALANCER'S SUGGESTION IS ADVISORY, AND IT IS HONEST
  * ------------------------------------------------------
  * The suggestion is a move the HOD can make, not a move the platform has made. The server only
- * suggests a target who has the HOURS to absorb the class — because a suggestion that would be
+ * suggests a target who has the HOURS to absorb the class ΓÇö because a suggestion that would be
  * refused the moment it was pressed is a bad suggestion, and a HOD who learns to ignore the
  * suggestions learns to ignore the screen.
  *
@@ -49,7 +49,7 @@ import {
   workloadBandMeta,
 } from './facultyMeta';
 
-// ── The Workload Balancer ──────────────────────────────────────────────────
+// ΓöÇΓöÇ The Workload Balancer ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 /**
  * THE WORKLOAD BALANCER.
@@ -80,7 +80,7 @@ export function WorkloadBalancer({ balancer, onOpen }) {
               <View style={styles.flex}>
                 <Text style={styles.cardTitle}>{o.name}</Text>
                 <Text style={styles.cardMeta}>
-                  {hours(o.assignedWeeklyHours)} of {hours(o.maxWorkloadHours)} · over by{' '}
+                  {hours(o.assignedWeeklyHours)} of {hours(o.maxWorkloadHours)} ┬╖ over by{' '}
                   {hours(o.overBy)}
                 </Text>
               </View>
@@ -116,7 +116,7 @@ export function WorkloadBalancer({ balancer, onOpen }) {
   );
 }
 
-// ── The Availability Matrix ────────────────────────────────────────────────
+// ΓöÇΓöÇ The Availability Matrix ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 /**
  * THE AVAILABILITY MATRIX.
@@ -168,7 +168,7 @@ export function AvailabilityMatrix({ matrix }) {
                   {d.hours > 0 ? (
                     <Text style={styles.matrixBusy}>{d.hours}h</Text>
                   ) : (
-                    <Text style={styles.matrixFree}>—</Text>
+                    <Text style={styles.matrixFree}>ΓÇö</Text>
                   )}
                 </View>
               ))}
@@ -192,7 +192,7 @@ export function AvailabilityMatrix({ matrix }) {
   );
 }
 
-// ── The Teaching Progress Monitor ──────────────────────────────────────────
+// ΓöÇΓöÇ The Teaching Progress Monitor ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 /**
  * THE TEACHING PROGRESS MONITOR.
@@ -280,12 +280,12 @@ export function TeachingProgress({ progress }) {
   );
 }
 
-// ── The directory list ─────────────────────────────────────────────────────
+// ΓöÇΓöÇ The directory list ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 /**
  * ONE TEACHER'S ROW.
  *
- * The workload bar, the insight badge and the status — the three things a HOD scans a directory
+ * The workload bar, the insight badge and the status ΓÇö the three things a HOD scans a directory
  * for.
  */
 export function FacultyRow({ faculty, onPress }) {
@@ -301,7 +301,7 @@ export function FacultyRow({ faculty, onPress }) {
             {faculty.name}
           </Text>
           <Text style={styles.rowMeta} numberOfLines={1}>
-            {faculty.designation} · {plural(faculty.subjects?.length ?? 0, 'subject', 'subjects')} ·{' '}
+            {faculty.designation} ┬╖ {plural(faculty.subjects?.length ?? 0, 'subject', 'subjects')} ┬╖{' '}
             {plural(faculty.classes?.length ?? 0, 'class', 'classes')}
           </Text>
         </View>
@@ -327,7 +327,6 @@ export function FacultyRow({ faculty, onPress }) {
     </TouchableOpacity>
   );
 }
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
 
@@ -407,27 +406,4 @@ const styles = StyleSheet.create({
   progressCol: { flex: 1 },
   progressLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted },
   progressNone: { fontSize: 10, color: MUTED, marginTop: 3 },
-
-  row: {
-    backgroundColor: '#fff',
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-  },
-  rowHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: `${THEME}18`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontSize: 15, fontWeight: '800', color: THEME },
-  rowName: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
-  rowMeta: { fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
-  rowChips: { alignItems: 'flex-end', gap: 4 },
-  rowBars: { flexDirection: 'row', marginTop: 8 },
 });

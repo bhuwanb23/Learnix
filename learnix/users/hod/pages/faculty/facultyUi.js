@@ -1,128 +1,24 @@
 /**
- * HD-02 — The HOD's Faculty desk: the pieces the desk draws with.
- * Docs: 11-hod.md §3.2
+ * HD-02 - The HOD's Faculty desk: the pieces the desk draws with.
+ * Docs: 11-hod.md 3.2
  *
  * WHY THESE LIVE HERE AND NOT IN THE SCREEN
  * -----------------------------------------
  * A workload bar is drawn on a directory row, on the balancer's target list and on the detail's
- * gauge. Three copies of it is three chances for them to disagree about what "overloaded" looks
- * like — and the symptom of that disagreement is a directory that says a teacher is overloaded
+ * gauge. Three copies of it is three chances for them to disagree about what 'overloaded' looks
+ * like - and the symptom of that disagreement is a directory that says a teacher is overloaded
  * and a detail page that says they are not.
  *
  * So the bar, the badge, the gauge, the section, the tile, the chip, the progress bar, the empty
- * state and the screen frame live here, and the screens compose them.
+ * state and the search and the chips live here, and the screens compose them. The screen FRAME
+ * and the FETCH HOOK live in acultyFrame.js.
  */
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  RefreshControl,
-  TextInput,
-} from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
-import { SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
 import { MUTED, SLATE, insightBandMeta, toneMeta } from './facultyMeta';
 import { styles } from './facultyStyles';
-
-// ── The fetch hook ─────────────────────────────────────────────────────────
-
-/**
- * Load something, with loading and error state and a `reload`.
- *
- * `ALIVE` is what stops the setState-after-unmount warning, and it costs one boolean.
- */
-export function useFaculty(loader, deps = []) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [alive, setAlive] = useState(true);
-
-  useEffect(() => () => setAlive(false), []);
-
-  const run = useCallback(
-    async (mode) => {
-      try {
-        if (mode === 'refresh') setRefreshing(true);
-        else setLoading(true);
-        setError(null);
-        const result = await loader();
-        if (alive) setData(result);
-      } catch (e) {
-        if (alive) setError(e.message || 'Something went wrong');
-      } finally {
-        if (alive) {
-          setLoading(false);
-          setRefreshing(false);
-        }
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [alive, ...deps],
-  );
-
-  useEffect(() => {
-    run();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-
-  return { data, loading, error, refreshing, reload: () => run('refresh'), refetch: run };
-}
-
-// ── The screen frame ───────────────────────────────────────────────────────
-
-/**
- * The frame: a skeleton, an error panel, or the scroll view.
- *
- * The error is shown IN PLACE OF the content, not as a toast. A desk that fails quietly and
- * shows zeroes is dangerous: "0 overloaded" and "0 because the request failed" look identical.
- */
-export function FacultyScreen({
-  loading,
-  refreshing,
-  error,
-  onRetry,
-  onRefresh,
-  children,
-}) {
-  if (loading) {
-    return (
-      <ScrollView style={styles.wrap} contentContainerStyle={styles.pad}>
-        <SkeletonStatRow />
-        <SkeletonCard />
-        <SkeletonCard />
-      </ScrollView>
-    );
-  }
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.error} />
-        <Text style={styles.errorText}>
-          {error || 'The faculty could not be loaded.'}
-        </Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-  return (
-    <ScrollView
-      style={styles.wrap}
-      contentContainerStyle={styles.pad}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      {children}
-    </ScrollView>
-  );
-}
-
-// ── A section ──────────────────────────────────────────────────────────────
 
 /**
  * A titled card.

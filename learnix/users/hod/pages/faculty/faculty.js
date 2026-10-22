@@ -23,18 +23,17 @@ import { hodApi } from '../../../../services/api';
 import {
   ChipRow,
   FacultyEmpty,
-  FacultyScreen,
   SearchBox,
   StatRow,
   StatTile,
-  useFaculty,
 } from './facultyUi';
+import { FacultyScreen, useFaculty } from './facultyFrame';
 import {
   AvailabilityMatrix,
-  FacultyRow,
   TeachingProgress,
   WorkloadBalancer,
 } from './facultyDirectory';
+import { FacultyRow } from './facultyRow';
 import {
   FACULTY_SORTS,
   FACULTY_STATUSES,

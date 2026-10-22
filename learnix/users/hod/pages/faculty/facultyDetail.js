@@ -25,7 +25,6 @@ import {
   BandChip,
   DetailRow,
   FacultyEmpty,
-  FacultyScreen,
   InsightBreakdown,
   InsightGauge,
   NoteStrip,
@@ -33,10 +32,10 @@ import {
   Section,
   StatRow,
   StatTile,
-  Tag,
   WorkloadBar,
-  useFaculty,
 } from './facultyUi';
+import { FacultyScreen, useFaculty } from './facultyFrame';
+import { ClassesPanel, SubjectsPanel } from './facultyDetailPanels';
 import {
   AMBER,
   GREEN,
@@ -45,7 +44,6 @@ import {
   THEME,
   VIOLET,
   count,
-  dayName,
   hours,
   percent,
   plural,
@@ -165,88 +163,10 @@ export default function FacultyDetailScreen({ navigation, route }) {
         ) : null}
       </Section>
 
-      {/* ── The subjects and the classes ────────────────────────────────── */}
-      <Section
-        title="Assigned subjects"
-        blurb="The courses this teacher holds. A class is one offering of a subject — a course taught to one section."
-        icon="layers-outline"
-        color={VIOLET}
-      >
-        {(data?.subjects ?? []).length === 0 ? (
-          <FacultyEmpty
-            icon="layers-outline"
-            title="No subjects"
-            message="This teacher holds no course this year."
-          />
-        ) : (
-          data.subjects.map((s: any) => (
-            <View key={s.courseId} style={styles.rowCard}>
-              <View style={styles.rowHead}>
-                <Text style={styles.rowTitle}>{s.code}</Text>
-                <Tag
-                  label={`${plural(s.classes, 'class', 'classes')}`}
-                  color={VIOLET}
-                />
-              </View>
-              <Text style={styles.rowMeta}>{s.name}</Text>
-              <DetailRow label="Weekly hours" value={hours(s.weeklyHours)} />
-            </View>
-          ))
-        )}
-      </Section>
 
-      <Section
-        title="Classes"
-        blurb="Each class this teacher takes: its timetable, its register and its results."
-        icon="school-outline"
-        color={GREEN}
-      >
-        {(data?.classes ?? []).length === 0 ? (
-          <FacultyEmpty
-            icon="school-outline"
-            title="No classes"
-            message="This teacher has no class this year."
-          />
-        ) : (
-          data.classes.map((c: any) => (
-            <View key={c.offeringId} style={styles.rowCard}>
-              <View style={styles.rowHead}>
-                <Text style={styles.rowTitle}>
-                  {c.code} · {c.section}
-                </Text>
-                <Tag label={`${plural(c.students, 'student', 'students')}`} color={THEME} />
-              </View>
-              <Text style={styles.rowMeta}>{c.name}</Text>
-              <DetailRow label="Weekly hours" value={hours(c.weeklyHours)} />
-              <DetailRow
-                label="Attendance"
-                value={c.attendance.pct === null ? '—' : percent(c.attendance.pct)}
-                tone={
-                  c.attendance.pct !== null && c.attendance.pct < 75 ? AMBER : null
-                }
-              />
-              <DetailRow
-                label="Pass rate"
-                value={c.performance.passPercent === null ? '—' : percent(c.performance.passPercent)}
-                tone={
-                  c.performance.passPercent !== null && c.performance.passPercent < 75 ? RED : null
-                }
-              />
-              {c.timetable.length > 0 ? (
-                <View style={styles.timetableRow}>
-                  {c.timetable.map((t: any) => (
-                    <Tag
-                      key={t.dayOfWeek}
-                      label={`${dayName(t.dayOfWeek)} ${t.hours}h`}
-                      color={CYAN_SAFE}
-                    />
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          ))
-        )}
-      </Section>
+      {/* ── The subjects and the classes ────────────────────────────────── */}
+      <SubjectsPanel data={data} />
+      <ClassesPanel data={data} />
 
       {/* ── The attendance ───────────────────────────────────────────────── */}
       <Section
