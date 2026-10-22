@@ -562,6 +562,182 @@ async function seedDomainB(institutionId: string): Promise<void> {
     }
   }
 
+  // ── HD-02: the Courses desk — the curriculum, the graph, and the statuses ──
+  //
+  // Three things the Courses desk needs and the seed did not have:
+  //
+  // 1. A SECOND PROGRAMME, so the curriculum mapping screen has more than one target and the
+  //    "which programme runs this course" question has an answer that is not trivially "the only
+  //    one". The MTech programme carries no students and no sections — it is a DECLARED degree,
+  //    which is exactly what a programme is before anybody enrols in it.
+  //
+  // 2. THE CURRICULUM MAPPINGS themselves, so the directory can report which courses the
+  //    department has DECLARED. One course is deliberately left UNMAPPED — a course that is taught
+  //    but never declared — because that gap is the single most useful thing the mapping screen
+  //    reports, and a seed where every course is mapped cannot show it.
+  //
+  // 3. THE STATUS SPREAD. ACTIVE for the courses in use, DRAFT for one that is being prepared, and
+  //    ARCHIVED for one that has been retired but whose history must stay readable. The status is
+  //    the course's OWN lifecycle, and it is now editable by the HOD — so the seed has to contain
+  //    all three states or the screen can only ever show one.
+  {
+    const mtechCse = await db.program.upsert({
+      where: { departmentId_code: { departmentId: cse.id, code: 'MT-CSE' } },
+      update: {},
+      create: {
+        departmentId: cse.id,
+        name: 'M.Tech Computer Science',
+        code: 'MT-CSE',
+        level: 'PG',
+        durationYears: 2,
+        totalSemesters: 4,
+      },
+    });
+
+    // THE STATUS SPREAD.
+    //   CS401 ACTIVE   — the flagship: it is being taught, it has an exam, results and attendance.
+    //   CS402 ACTIVE   — taught, but its syllabus has gone quiet: the DELAYED case.
+    //   CS302 DRAFT    — being prepared; not taught yet, so it has no data at all.
+    //   CS403 ARCHIVED — retired from the curriculum; its history must stay readable.
+    const statusByCode: Record<string, string> = {
+      CS301: 'ACTIVE',
+      CS302: 'DRAFT',
+      CS401: 'ACTIVE',
+      CS402: 'ACTIVE',
+      CS403: 'ARCHIVED',
+    };
+    for (const [code, status] of Object.entries(statusByCode)) {
+      await db.course.updateMany({
+        where: { institutionId, code },
+        data: { status },
+      });
+    }
+
+    // A SYLLABUS FOR CS402, and one that has NOT MOVED for a teaching month.
+    //
+    // The "delayed" leg of the course health indicator reports how long a syllabus has been
+    // sitting still, and a seed where every syllabus was touched today could never show it. So
+    // this one's timestamp is backdated — with a RAW update, because Prisma's `@updatedAt` will
+    // not let a write set the column.
+    {
+      const networks = courses.find((c) => c.code === 'CS402');
+      if (networks) {
+        const existing = await db.syllabusVersion.findFirst({
+          where: { courseId: networks.id },
+          select: { id: true },
+        });
+        if (!existing) {
+          const version = await db.syllabusVersion.create({
+            data: {
+              courseId: networks.id,
+              version: 1,
+              submittedByUserId: teacher.id,
+              status: 'HOD_APPROVED',
+              actionedByUserId: hod?.id ?? teacher.id,
+            },
+            select: { id: true },
+          });
+          const netUnits = [
+            ['Network Models', ['OSI & TCP/IP', 'Addressing']],
+            ['Transport Layer', ['TCP Retransmission', 'Congestion Control']],
+            ['Routing', ['Distance Vector', 'Link State']],
+          ] as const;
+          for (let i = 0; i < netUnits.length; i++) {
+            const unit = await db.syllabusUnit.create({
+              data: {
+                syllabusVersionId: version.id,
+                order: i + 1,
+                title: netUnits[i]![0],
+              },
+            });
+            for (let j = 0; j < netUnits[i]![1].length; j++) {
+              await db.syllabusTopic.create({
+                data: {
+                  unitId: unit.id,
+                  order: j + 1,
+                  title: netUnits[i]![1][j]!,
+                  // Two of six done, and the rest not started: a real partial syllabus.
+                  status: j === 0 && i < 2 ? 'COMPLETED' : 'NOT_STARTED',
+                  completedAt: j === 0 && i < 2 ? new Date() : null,
+                },
+              });
+            }
+          }
+          // BACKDATE IT, so the indicator has a "stale" case to report.
+          const stale = new Date(Date.now() - 45 * 86400000);
+          await db.$executeRawUnsafe(
+            `UPDATE syllabus_versions SET updatedAt = ? WHERE id = ?`,
+            stale.toISOString(),
+            version.id,
+          );
+        }
+      }
+    }
+
+    // THE CURRICULUM. The semester each course sits in, and whether it is core or an elective.
+    // CS401 is deliberately NOT mapped — it is the unmapped course the screen reports.
+    const curriculum: {
+      code: string;
+      programId: string;
+      semester: number;
+      type: string;
+      isElective: boolean;
+    }[] = [
+      { code: 'CS301', programId: btechCse.id, semester: 3, type: 'CORE', isElective: false },
+      { code: 'CS302', programId: btechCse.id, semester: 3, type: 'CORE', isElective: false },
+      { code: 'CS401', programId: btechCse.id, semester: 4, type: 'CORE', isElective: false },
+      { code: 'CS402', programId: btechCse.id, semester: 4, type: 'CORE', isElective: false },
+      // The same course, in a second programme, as an ELECTIVE — which is the whole reason the
+      // curriculum carries a type of its own rather than reusing the course's.
+      { code: 'CS402', programId: mtechCse.id, semester: 1, type: 'ELECTIVE', isElective: true },
+      { code: 'CS301', programId: mtechCse.id, semester: 1, type: 'CORE', isElective: false },
+    ];
+    for (const m of curriculum) {
+      const course = courses.find((c) => c.code === m.code);
+      if (!course) continue;
+      await db.programCourse.upsert({
+        where: { programId_courseId: { programId: m.programId, courseId: course.id } },
+        update: { semester: m.semester, type: m.type, isElective: m.isElective },
+        create: {
+          programId: m.programId,
+          courseId: course.id,
+          semester: m.semester,
+          type: m.type,
+          isElective: m.isElective,
+        },
+      });
+    }
+
+    // THE PREREQUISITE GRAPH. A chain the screen can draw: Data Structures → Operating Systems →
+    // Database Management Systems, and Computer Networks demanding Operating Systems.
+    const byCode = new Map(courses.map((c) => [c.code, c]));
+    const prerequisites: { course: string; prereq: string; type: string }[] = [
+      { course: 'CS302', prereq: 'CS301', type: 'REQUIRED' },
+      { course: 'CS401', prereq: 'CS301', type: 'REQUIRED' },
+      { course: 'CS401', prereq: 'CS302', type: 'RECOMMENDED' },
+      { course: 'CS402', prereq: 'CS302', type: 'REQUIRED' },
+    ];
+    for (const p of prerequisites) {
+      const course = byCode.get(p.course);
+      const prereq = byCode.get(p.prereq);
+      if (!course || !prereq) continue;
+      await db.coursePrerequisite.upsert({
+        where: {
+          courseId_prerequisiteCourseId: {
+            courseId: course.id,
+            prerequisiteCourseId: prereq.id,
+          },
+        },
+        update: { type: p.type },
+        create: {
+          courseId: course.id,
+          prerequisiteCourseId: prereq.id,
+          type: p.type,
+        },
+      });
+    }
+  }
+
   // Lecture note (published) on the DBMS offering
   const noteExists = await db.lectureNote.findFirst({
     where: { offeringId: offerings[0].id, title: 'ER Modeling — Lecture 1' },

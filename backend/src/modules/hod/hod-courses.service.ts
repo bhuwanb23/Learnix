@@ -28,11 +28,7 @@
  * `attachProgramCourse`, `detachProgramCourse`, `addPrerequisite`, `removePrerequisite`.
  * Every one of them writes an audit row.
  */
-import { prisma } from '../../db/prisma.js';
-import { writeAudit } from '../../lib/audit.js';
-import { notFound, unprocessable } from '../../lib/errors.js';
 import {
-  ATTENDANCE_THRESHOLD_KEY,
   COURSE_ATTENDANCE_THRESHOLD,
   COURSE_HEALTH_BANDS,
   COURSE_HEALTH_COMPONENTS,
@@ -48,20 +44,9 @@ import {
   assertCourseSort,
   assertCourseStatus,
   assertCourseType,
-  assertPrerequisiteType,
 } from './hod-courses.rules.js';
-import {
-  courseAttendance,
-  courseHealthFor,
-  courseHealthForAll,
-  coursePerformance,
-  courseSyllabusProgress,
-} from './hod-courses.performance.js';
-import {
-  requireCourse,
-  resolveCourseScope,
-  type CourseScope,
-} from './hod-courses.scope.js';
+import { courseHealthForAll } from './hod-courses.performance.js';
+import { resolveCourseScope } from './hod-courses.scope.js';
 
 // ═══ 1. The vocabulary ════════════════════════════════════════════════════
 

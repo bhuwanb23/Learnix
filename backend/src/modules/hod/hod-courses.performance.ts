@@ -45,7 +45,6 @@ import type { CourseScope } from './hod-courses.scope.js';
 export async function coursePerformance(
   scope: CourseScope,
   courseId: string,
-  now: Date = new Date(),
 ) {
   const offeringIds = scope.offerings
     .filter((o) => o.courseId === courseId)
@@ -161,9 +160,11 @@ export async function courseAttendance(scope: CourseScope, courseId: string) {
  *
  * The course's LATEST version is the one being worked on — the approved version from last year is
  * not what a HOD is looking at.
+ *
+ * It takes no scope: the syllabus is reached through the course, and the course has already been
+ * checked against the department by the caller.
  */
 export async function courseSyllabusProgress(
-  scope: CourseScope,
   courseId: string,
   now: Date = new Date(),
 ) {
@@ -218,12 +219,11 @@ export async function courseSyllabusProgress(
 export async function courseHealthFor(
   scope: CourseScope,
   courseId: string,
-  now: Date = new Date(),
 ) {
   const [attendance, syllabus, performance] = await Promise.all([
     courseAttendance(scope, courseId),
-    courseSyllabusProgress(scope, courseId, now),
-    coursePerformance(scope, courseId, now),
+    courseSyllabusProgress(courseId),
+    coursePerformance(scope, courseId),
   ]);
 
   const legs: { id: CourseHealthComponentId; value: number | null }[] = [
@@ -267,7 +267,6 @@ export async function courseHealthFor(
 export async function courseHealthForAll(
   scope: CourseScope,
   courseIds: string[],
-  now: Date = new Date(),
 ) {
   const offeringIds = scope.offerings.map((o) => o.id);
 
@@ -343,9 +342,6 @@ export async function courseHealthForAll(
     const syl = latestVersion.get(courseId);
     const topics = syl?.units.flatMap((u) => u.topics) ?? [];
     const completed = topics.filter((t) => t.status === 'COMPLETED').length;
-    const daysSince = syl
-      ? Math.floor((now.getTime() - new Date(syl.updatedAt).getTime()) / 86400000)
-      : null;
 
     const score = courseHealthScore([
       {

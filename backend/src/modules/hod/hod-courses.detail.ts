@@ -20,7 +20,12 @@
  * panel lists the course's offerings, each with its section, its teacher and its student count.
  */
 import { prisma } from '../../db/prisma.js';
-import { notFound } from '../../lib/errors.js';
+import {
+  courseAttendance,
+  courseHealthFor,
+  coursePerformance,
+  courseSyllabusProgress,
+} from './hod-courses.performance.js';
 import { requireCourse, resolveCourseScope, type CourseScope } from './hod-courses.scope.js';
 
 // ═══ The course detail ════════════════════════════════════════════════════
@@ -55,7 +60,7 @@ export async function courseDetail(
       courseHealthFor(scope, courseId),
       courseAttendance(scope, courseId),
       coursePerformance(scope, courseId),
-      courseSyllabusProgress(scope, courseId),
+      courseSyllabusProgress(courseId),
       curriculumOf(scope, courseId),
       prerequisitesOf(scope, courseId),
       prerequisiteForOf(scope, courseId),

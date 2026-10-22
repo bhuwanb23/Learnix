@@ -100,7 +100,7 @@ router.get(
       data: await detail.courseDetail(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.params.courseId!,
+        String(req.params.courseId),
         { academicYearId: q.academicYearId },
       ),
     });
@@ -121,7 +121,7 @@ router.patch(
       data: await writes.updateCourse(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.params.courseId!,
+        String(req.params.courseId),
         req.body as Record<string, unknown>,
       ),
     });
@@ -140,7 +140,7 @@ router.put(
       data: await writes.setCourseStatus(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.params.courseId!,
+        String(req.params.courseId),
         (req.body as { status: string }).status,
       ),
     });
@@ -160,7 +160,7 @@ router.post(
       data: await writes.attachProgramCourse(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.params.courseId!,
+        String(req.params.courseId),
         b.programId,
         b.semester,
         b.type,
@@ -181,8 +181,8 @@ router.delete(
       data: await writes.detachProgramCourse(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.params.courseId!,
-        req.params.programId!,
+        String(req.params.courseId),
+        String(req.params.programId),
       ),
     });
   }),
@@ -201,7 +201,7 @@ router.post(
       data: await writes.addPrerequisite(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.params.courseId!,
+        String(req.params.courseId),
         b.prerequisiteCourseId,
         b.type,
       ),
@@ -220,8 +220,8 @@ router.delete(
       data: await writes.removePrerequisite(
         req.auth!.userId,
         req.auth!.institutionId,
-        req.params.courseId!,
-        req.params.prerequisiteCourseId!,
+        String(req.params.courseId),
+        String(req.params.prerequisiteCourseId),
       ),
     });
   }),
