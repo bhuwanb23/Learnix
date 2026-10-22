@@ -78,6 +78,10 @@ export async function sweep(stamp?: string) {
   // A leave decision writes a `LEAVE` notification, and a suite that decided a leave leaves one
   // behind for the next run to trip over.
   await prisma.notification.deleteMany({ where: { type: 'LEAVE' } });
+  // THE LEAVE REQUESTS THIS SUITE CREATED. They carry a marked reason, and without removing them
+  // every run leaves a few more pending behind — which shows up as the HOD's "pending approvals"
+  // growing by a handful on every run, in the demo data as well as in the suite.
+  await prisma.leaveRequest.deleteMany({ where: { reason: { startsWith: PFX } } });
   await prisma.systemConfig.deleteMany({ where: { key: 'attendanceThreshold' } });
   if (!stamp) return;
   const courses = await prisma.course.findMany({
