@@ -44,7 +44,22 @@ import { hodLeaveScope, type HodScope } from './hod-dashboard.scope.js';
 export async function pendingApprovalsSection(scope: HodScope) {
   const { institutionId } = scope;
 
-  const [leaves, syllabus] = await Promise.all([
+  // THE COUNTS AND THE LISTS ARE SEPARATE QUERIES.
+  //
+  // The lists are capped — a HOD does not need forty leave requests to know there are forty — but
+  // the COUNTS must be the true total, not the length of the capped list. Reading the count off
+  // the list reports "20 pending" to a HOD who has 28, which is the kind of number that ends a
+  // meeting early.
+  const [leaveCount, courseChangeCount, leaves, syllabus] = await Promise.all([
+    prisma.leaveRequest.count({
+      where: { ...hodLeaveScope(institutionId, scope.department.id), status: 'PENDING' },
+    }),
+    prisma.syllabusVersion.count({
+      where: {
+        course: { institutionId, departmentId: scope.department.id },
+        status: 'SUBMITTED',
+      },
+    }),
     prisma.leaveRequest.findMany({
       where: { ...hodLeaveScope(institutionId, scope.department.id), status: 'PENDING' },
       include: { staffUser: { select: { fullName: true } } },
@@ -74,9 +89,9 @@ export async function pendingApprovalsSection(scope: HodScope) {
   const submitterMap = new Map(submitters.map((u) => [u.id, u.fullName]));
 
   return {
-    total: leaves.length + syllabus.length,
+    total: leaveCount + courseChangeCount,
     leave: {
-      count: leaves.length,
+      count: leaveCount,
       items: leaves.map((l) => ({
         id: l.id,
         teacher: l.staffUser.fullName,
@@ -88,7 +103,7 @@ export async function pendingApprovalsSection(scope: HodScope) {
       })),
     },
     courseChange: {
-      count: syllabus.length,
+      count: courseChangeCount,
       items: syllabus.map((v) => ({
         id: v.id,
         courseCode: v.course.code,
@@ -98,6 +113,8 @@ export async function pendingApprovalsSection(scope: HodScope) {
         updatedAt: v.updatedAt,
       })),
     },
+    // The lists are capped, and the screen says so when they are.
+    truncated: leaveCount > leaves.length || courseChangeCount > syllabus.length,
     // The kinds that are NOT here, said out loud. A section that silently omits a category the
     // reader expected leaves them wondering whether the screen is broken.
     note:

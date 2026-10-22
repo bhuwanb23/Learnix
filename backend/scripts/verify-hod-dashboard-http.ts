@@ -198,13 +198,31 @@ try {
   eq(cat.data?.blocks?.length, 9, 'it carries the nine sections');
   eq(cat.data?.quickActions?.length, 4, 'the four quick actions');
   eq(cat.data?.alertKinds?.length, 6, 'the six alert kinds');
-  ok(cat.data?.blocks?.every((b: any) => b.label && b.icon && b.color && b.order), 'every section has its chrome');
-  ok(cat.data?.quickActions?.every((a: any) => a.label && a.route && a.icon), 'every action has its chrome');
-  ok(cat.data?.alertKinds?.every((a: any) => a.label && a.severity && a.route), 'every alert kind has its chrome');
-  ok(Array.isArray(cat.data?.health?.components), 'the health components are published');
+  ok(
+    'every section has its chrome',
+    cat.data?.blocks?.every((b: any) => b.label && b.icon && b.color && b.order),
+  );
+  ok(
+    'every action has its chrome',
+    cat.data?.quickActions?.every((a: any) => a.label && a.route && a.icon),
+  );
+  ok(
+    'every alert kind has its chrome',
+    cat.data?.alertKinds?.every((a: any) => a.label && a.severity && a.route),
+  );
+  ok(
+    'the health components are published',
+    Array.isArray(cat.data?.health?.components),
+  );
   eq(cat.data?.health?.components?.length, 4, 'all four of them');
-  ok(Array.isArray(cat.data?.health?.bands), 'the health bands are published');
-  ok(typeof cat.data?.thresholds?.attendanceRisk === 'number', 'and the thresholds');
+  ok(
+    'the health bands are published',
+    Array.isArray(cat.data?.health?.bands),
+  );
+  ok(
+    'and the thresholds',
+    typeof cat.data?.thresholds?.attendanceRisk === 'number',
+  );
 
   // ═══ 4. The overview carries all nine sections ═════════════════════════════════════════════
   section('4. The overview answers all nine questions in one call');
@@ -224,9 +242,9 @@ try {
   ]) {
     ok(`the overview carries "${key}"`, o.data?.[key] !== undefined);
   }
-  ok('...the health score', o.data?.health !== undefined);
-  ok('...and the alerts', o.data?.alerts !== undefined);
-  ok('...and the department', o.data?.department !== undefined);
+  ok(`...the health score`, o.data?.health !== undefined);
+  ok(`...and the alerts`, o.data?.alerts !== undefined);
+  ok(`...and the department`, o.data?.department !== undefined);
 
   // ═══ 5. The filters ═══════════════════════════════════════════════════════════════════════
   section('5. The filters');
@@ -249,12 +267,18 @@ try {
     const one = await call('GET', `/dashboard/blocks/${block.id}`, { token: hodToken });
     eq(one.status, 200, `the "${block.id}" block is served`);
     eq(one.data?.block, block.id, `...and it names itself`);
-    ok(one.data?.data !== undefined, `...and it carries data`);
+    ok(
+    `...and it carries data`,
+    one.data?.data !== undefined,
+  );
   }
 
   const unknownBlock = await call('GET', '/dashboard/blocks/NOPE', { token: hodToken });
   eq(unknownBlock.status, 422, 'an unknown block is a 422 naming the list');
-  ok(Array.isArray(unknownBlock.json?.error?.details?.allowed), 'and it says what IS allowed');
+  ok(
+    'and it says what IS allowed',
+    Array.isArray(unknownBlock.json?.error?.details?.allowed),
+  );
 
   // THE TWO ROUTES MUST AGREE. Two functions counting the same thing is how two screens start
   // disagreeing, and the whole point of the rewrite was ONE place per figure.

@@ -378,7 +378,7 @@ export async function studentRiskSection(scope: HodScope) {
     ok: rows.filter((r) => r.state === 'OK').length,
     threshold,
     // The NAMES, capped — the section's job is to start a conversation, not to be a list. The COUNT
-    // is the number that matters.
+    // is the number that matters, and `truncated` says so when the list is shorter than the count.
     students: atRisk
       .sort(
         (a, b) =>
@@ -386,6 +386,7 @@ export async function studentRiskSection(scope: HodScope) {
           (a.passRate ?? 101) - (b.passRate ?? 101),
       )
       .slice(0, RISK_STUDENT_LIMIT),
+    truncated: atRisk.length > RISK_STUDENT_LIMIT,
     lowAttendance: rows.filter((r) => r.reasons.includes('LOW_ATTENDANCE')).length,
     poorPerformance: rows.filter((r) => r.reasons.includes('POOR_PERFORMANCE')).length,
   };

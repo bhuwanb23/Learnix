@@ -181,6 +181,18 @@ export const TYPE_META: Record<string, TypeMeta> = {
   SOCIAL: { label: 'Social', category: null, icon: 'happy-outline', color: '#64748b' },
   DONATION: { label: 'Donation', category: null, icon: 'gift-outline', color: '#64748b' },
 
+  // -- The HOD desk (src/modules/hod/hod.service.ts) -------------------------
+  //
+  // `LEAVE` is written by the HOD's leave decision — "Leave approved" to the member of staff
+  // whose leave it was. It was NOT registered here, which meant a leave decision produced a row
+  // that fell through to the SYSTEM fallback chrome and was filed under a category the reader does
+  // not recognise. A type that is written and not registered is a type nobody can find.
+  //
+  // `category: null`, because a leave decision is not a finance message and must stay out of the
+  // accounts inbox. The HOD's own screens read the row directly; the STUDENT's shared inbox is
+  // where a leave decision would matter, and that registry is composed at the student route.
+  LEAVE: { label: 'Leave decision', category: null, icon: 'calendar-outline', color: '#0891b2' },
+
   // -- Alumni desk (src/modules/alumni/notifications/notifications.rules.ts) ----
   //
   // APPEND-ONLY. Four new keys, all `category: null` for the reason stated above:

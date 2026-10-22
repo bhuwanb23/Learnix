@@ -110,7 +110,6 @@ const apiCode = stripComments(apiSrc);
 const rulesSrc = stripComments(readSrc('src/modules/hod/hod-dashboard.rules.ts'));
 const healthSrc = stripComments(readSrc('src/modules/hod/hod-dashboard.health.ts'));
 const routesSrc = readSrc('src/modules/hod/hod-dashboard.routes.ts');
-const serviceSrc = readSrc('src/modules/hod/hod-dashboard.service.ts');
 
 // ── 1. Every screen exists ─────────────────────────────────────────────────
 section('1. Every screen file exists');
@@ -255,7 +254,6 @@ for (const [name, code] of [
 // ── 6. The policy is on the screens ─────────────────────────────────────────
 section('6. The policy is on the screens');
 
-const flat = (s: string) => s.replace(/\s+/g, ' ');
 ok(
   /not an absent one/i.test(workloadCode),
   'the risk section says an unmarked student is not an absent one',

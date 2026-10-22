@@ -56,6 +56,9 @@ import { PFX, eq, expectReject, ok, report, section, sweep } from './hod-dashboa
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
+/** A per-run stamp, so a fixture this suite creates cannot collide with one from an earlier run. */
+const STAMP = Math.random().toString(36).slice(2, 10);
+
 async function main() {
   console.log('\n  HOD dashboard - database rules');
 
@@ -309,8 +312,15 @@ async function main() {
       where: { institutionId: inst.id, hodUserId: hod.id },
       select: { id: true },
     });
+    // A department that is DEFINITELY a different one. `NOT: { id }` alone is not enough when the
+    // HOD's own department could not be resolved — it would then match the HOD's own department and
+    // the "another department" leave would be decidable, which is the opposite of the point.
     const otherDept = await prisma.department.findFirst({
-      where: { institutionId: inst.id, NOT: { id: dept?.id ?? '' } },
+      where: {
+        institutionId: inst.id,
+        ...(dept ? { NOT: { id: dept.id } } : {}),
+        hodUserId: null,
+      },
       select: { id: true },
     });
 
@@ -403,8 +413,8 @@ async function main() {
         where: { section: { program: { departmentId: dept.id } } },
         _count: { _all: true },
       });
-      const scope = await import('../src/modules/hod/hod-dashboard.scope.js');
-      const resolved = await scope.resolveHodScope(hod.id, inst.id);
+      const scopeModule = await import('../src/modules/hod/hod-dashboard.scope.js');
+      const resolved = await scopeModule.resolveHodScope(hod.id, inst.id);
       eq(
         'the scope resolves exactly the department\'s offerings',
         resolved.offerings.length,
@@ -429,7 +439,11 @@ async function main() {
       const facultyList = await service.listFaculty(hod.id, inst.id);
       const deptOfferings = await prisma.courseOffering.findMany({
         where: { section: { program: { departmentId: dept.id } } },
-        select: { id: true, _count: { select: { scheduleSlots: true } } },
+        select: {
+          id: true,
+          teacherUserId: true,
+          _count: { select: { scheduleSlots: true } },
+        },
       });
       const expectedLoad = new Map<string, number>();
       for (const off of deptOfferings) {
@@ -445,6 +459,102 @@ async function main() {
         listTotal,
         deptTotal,
       );
+
+      // THE CROSS-DEPARTMENT TEACHER — the case the bug actually needs.
+      //
+      // A teacher of THIS department who ALSO teaches an offering in ANOTHER department. Their
+      // cross-department offering is not this department's business, and counting it would inflate
+      // this department's utilisation and can raise a false "overloaded" alert about a person who
+      // is not overloaded here.
+      //
+      // The seeded data has no such teacher, so without this the query could be teacher-scoped
+      // and the suite would still pass.
+      const otherProgram = await prisma.program.findFirst({
+        where: { departmentId: otherDept?.id ?? '' },
+        select: { id: true },
+      });
+      const otherBatch = otherProgram
+        ? await prisma.batch.findFirst({
+            where: { programId: otherProgram.id },
+            select: { id: true },
+          })
+        : null;
+      const otherSection = otherProgram && otherBatch
+        ? await prisma.section.create({
+            data: {
+              programId: otherProgram.id,
+              batchId: otherBatch.id,
+              // `Section` is unique on (batchId, name), and a previous failed run may have left a
+              // section behind — so the name carries the stamp, not a fixed letter.
+              name: `X${STAMP}`.slice(0, 20),
+            },
+            select: { id: true },
+          })
+        : null;
+      const otherCourse = await prisma.course.create({
+        data: {
+          institutionId: inst.id,
+          departmentId: otherDept?.id ?? '',
+          code: `O${STAMP}`.slice(0, 12),
+          name: 'Other Department Course',
+          semester: 5,
+        },
+        select: { id: true },
+      });
+      const ownStaffUser = resolved.staffUserIds[0];
+      const ownYear = resolved.offerings[0]?.academicYearId;
+      const otherOffering =
+        otherSection && ownStaffUser && ownYear
+          ? await prisma.courseOffering.create({
+              data: {
+                courseId: otherCourse.id,
+                sectionId: otherSection.id,
+                teacherUserId: ownStaffUser,
+                semester: 5,
+                academicYearId: ownYear,
+              },
+              select: { id: true },
+            })
+          : null;
+
+      if (ownStaffUser && otherOffering) {
+        // THREE slots on the cross-department offering, and one on this department's.
+        for (const start of ['09:00', '10:00', '11:00']) {
+          await prisma.offeringScheduleSlot.create({
+            data: {
+              offeringId: otherOffering.id,
+              dayOfWeek: 1,
+              startTime: start,
+              endTime: '10:00',
+            },
+          });
+        }
+
+        const afterCross = await service.listFaculty(hod.id, inst.id);
+        const crossTeacher = afterCross.find((f: any) => f.id === ownStaffUser);
+        const crossLoad = (crossTeacher?.classes ?? []).reduce(
+          (n: number, c: any) => n + (c.weeklyHours ?? 0),
+          0,
+        );
+        const ownOnly = deptOfferings
+          .filter((off) => off.teacherUserId === ownStaffUser)
+          .reduce((s, off) => s + off._count.scheduleSlots, 0);
+        eq(
+          "a cross-department offering is NOT counted against this department's teacher",
+          crossLoad,
+          ownOnly,
+        );
+
+        // CLEAN UP the cross-department offering, children first.
+        await prisma.offeringScheduleSlot.deleteMany({
+          where: { offeringId: otherOffering.id },
+        });
+        await prisma.courseOffering.delete({ where: { id: otherOffering.id } });
+      }
+      if (otherSection) {
+        await prisma.section.delete({ where: { id: otherSection.id } });
+      }
+      await prisma.course.delete({ where: { id: otherCourse.id } });
     }
 
     // ═══ 9. Absent and unmarked are different figures ═══════════════════════════════════════════
@@ -494,7 +604,7 @@ async function main() {
     eq('the student risk agrees between the two routes', blockData.atRisk, overviewData.atRisk);
     eq('...and the unmeasured count', blockData.unmeasured, overviewData.unmeasured);
   } finally {
-    await sweep();
+    await sweep(STAMP);
   }
 
   report('HOD dashboard - database rules');

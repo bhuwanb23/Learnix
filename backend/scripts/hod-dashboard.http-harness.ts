@@ -15,7 +15,34 @@ export let pass = 0;
 export let fail = 0;
 export const failures: string[] = [];
 
-export function ok(cond: unknown, label: string, detail = '') {
+/**
+ * Assert.
+ *
+ * The argument order is `(label, cond)` — the SAME as the database harness, so a suite reads the
+ * same way whichever it uses. The other HTTP suites in this repo use `(cond, label)`; this one
+ * deliberately does not, because the two orders being different is exactly the kind of thing that
+ * makes a failing assertion read as a passing one.
+ *
+ * AND BOTH ORDERS ARE ACCEPTED, because the cost of getting it wrong is a boolean compared
+ * against a string — and a string is always truthy, so the assertion can never fail. If the first
+ * argument is a string it is the label; if the second is a string it is the condition. If NEITHER
+ * is a string, the call is refused rather than silently comparing two values.
+ */
+export function ok(a: unknown, b: unknown, detail = '') {
+  let label: string;
+  let cond: unknown;
+  if (typeof a === 'string') {
+    label = a;
+    cond = b;
+  } else if (typeof b === 'string') {
+    label = b;
+    cond = a;
+  } else {
+    throw new Error(
+      'ok() needs a string label. Neither argument is a string, so the call would compare two ' +
+        'values and print a number as the label.',
+    );
+  }
   if (cond) {
     pass += 1;
     console.log(`  ok  ${label}${detail ? ` (${detail})` : ''}`);
@@ -26,13 +53,22 @@ export function ok(cond: unknown, label: string, detail = '') {
   }
 }
 
-export function eq(actual: unknown, expected: unknown, label: string, detail = '') {
+export function eq(a: unknown, b: unknown, c?: unknown, detail = '') {
+  if (typeof c === 'string') {
+    // (actual, expected, label)
+    ok(
+      a === b,
+      c,
+      a === b
+        ? ''
+        : `expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}${detail ? ` - ${detail}` : ''}`,
+    );
+    return;
+  }
+  // (label, actual, expected)
   ok(
-    actual === expected,
-    label,
-    actual === expected
-      ? ''
-      : `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}${detail ? ` - ${detail}` : ''}`,
+    a === b,
+    c === undefined ? '' : `expected ${JSON.stringify(c)}, got ${JSON.stringify(b)}`,
   );
 }
 

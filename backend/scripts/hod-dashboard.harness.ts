@@ -67,11 +67,37 @@ export function noteThrow(e: unknown) {
  *
  * The attendance rows come FIRST: they reference a session and a student, and a delete that
  * trips a foreign key is not a cleanup.
+ *
+ * The FIXTURES too — a suite that fails halfway leaves a course and a section behind, and the next
+ * run collides with them on a unique key. So the sweep removes anything this suite's stamp
+ * touched, by prefix, rather than by remembering what it created.
  */
-export async function sweep() {
+export async function sweep(stamp?: string) {
   await prisma.auditLog.deleteMany({ where: { action: { startsWith: 'hod.' } } });
   await prisma.notification.deleteMany({ where: { title: { startsWith: PFX } } });
+  // A leave decision writes a `LEAVE` notification, and a suite that decided a leave leaves one
+  // behind for the next run to trip over.
+  await prisma.notification.deleteMany({ where: { type: 'LEAVE' } });
   await prisma.systemConfig.deleteMany({ where: { key: 'attendanceThreshold' } });
+  if (!stamp) return;
+  const courses = await prisma.course.findMany({
+    where: { code: { contains: stamp } },
+    select: { id: true },
+  });
+  for (const c of courses) {
+    const offerings = await prisma.courseOffering.findMany({
+      where: { courseId: c.id },
+      select: { id: true },
+    });
+    for (const o of offerings) {
+      await prisma.offeringScheduleSlot.deleteMany({ where: { offeringId: o.id } });
+      await prisma.enrollment.deleteMany({ where: { offeringId: o.id } });
+      await prisma.examSlot.deleteMany({ where: { offeringId: o.id } });
+    }
+    await prisma.courseOffering.deleteMany({ where: { courseId: c.id } });
+    await prisma.course.delete({ where: { id: c.id } });
+  }
+  await prisma.section.deleteMany({ where: { name: { contains: stamp } } });
 }
 
 /**

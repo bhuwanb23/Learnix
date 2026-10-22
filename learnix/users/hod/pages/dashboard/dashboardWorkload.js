@@ -214,6 +214,12 @@ export function StudentRiskSection({ data, onRoute }) {
           </View>
         ))
       )}
+      {r.truncated ? (
+        <NoteStrip>
+          Showing the first {r.students.length} of {r.atRisk}. The count above is the whole
+          number.
+        </NoteStrip>
+      ) : null}
     </Section>
   );
 }
