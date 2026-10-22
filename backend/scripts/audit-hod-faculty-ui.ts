@@ -367,7 +367,6 @@ ok(routesSrc.includes("'/faculty/catalogue'"), 'the catalogue is routed');
 ok(routesSrc.includes("'/faculty/directory'"), 'the directory is routed');
 ok(routesSrc.includes("'/faculty/:userId/detail'"), 'the detail is routed');
 const appCode = stripComments(readSrc('src/app.ts'));
-const coursesMount = appCode.indexOf("app.use('/api/v1/hod', hodCoursesRoutes)");
 const facultyMount = appCode.indexOf("app.use('/api/v1/hod', hodFacultyRoutes)");
 const oldMount = appCode.indexOf("app.use('/api/v1/hod', hodRoutes)");
 ok(facultyMount >= 0, 'the Faculty router is mounted at all');

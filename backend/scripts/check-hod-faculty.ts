@@ -326,6 +326,7 @@ try {
   const dir2 = await facultyDirectory(hodUser.id, institution.id, {});
   eq('the overloaded count is now 1', dir2.totals.overloaded, 1);
   const nowHeavy = dir2.faculty.find((f: any) => f.userId === heavyUser.id);
+  if (!nowHeavy) throw new Error('the heavy teacher is missing from the directory');
   eq('and their load grew', nowHeavy.workload.assignedWeeklyHours, 6);
   eq('so the utilisation is 150%', nowHeavy.workload.utilizationPct, 150);
   eq('and the band is OVERLOADED', nowHeavy.workload.band, 'OVERLOADED');
@@ -346,12 +347,14 @@ try {
   eq('it has a row per teacher', dir2.availability.rows.length, 3);
   eq('it has a column per teaching day', dir2.availability.days.length, 6);
   const heavyRow = dir2.availability.rows.find((r: any) => r.userId === heavyUser.id);
+  if (!heavyRow) throw new Error('the heavy teacher is missing from the matrix');
   eq('the overloaded teacher has 3h on Monday', heavyRow.days.find((d: any) => d.id === 1)?.hours, 3);
   eq('and 1h on Wednesday', heavyRow.days.find((d: any) => d.id === 3)?.hours, 1);
   eq('and 2h on Friday', heavyRow.days.find((d: any) => d.id === 5)?.hours, 2);
   eq('and nothing on Tuesday', heavyRow.days.find((d: any) => d.id === 2)?.hours, 0);
   eq('and their free hours are reported', heavyRow.freeHours, -2);
   const lightRow = dir2.availability.rows.find((r: any) => r.userId === lightUser.id);
+  if (!lightRow) throw new Error('the light teacher is missing from the matrix');
   eq('the light teacher has 2h on Tuesday', lightRow.days.find((d: any) => d.id === 2)?.hours, 2);
 
   // ═══ 6. The Teaching Progress Monitor ══════════════════════════════════
@@ -360,6 +363,7 @@ try {
   ok('the progress monitor is present', !!dir2.progress, 'the progress');
   eq('it has a row per teacher', dir2.progress.rows.length, 3);
   const heavyProgress = dir2.progress.rows.find((r: any) => r.userId === heavyUser.id);
+  if (!heavyProgress) throw new Error('the heavy teacher is missing from the progress monitor');
   eq('a teacher with no syllabus has NO syllabus percent', heavyProgress.syllabusPercent, null);
   eq('and no delivery percent either', heavyProgress.deliveryPct, null);
   eq('and the summary counts them as untracked', dir2.progress.summary.syllabusTracked, 0);
@@ -418,6 +422,7 @@ try {
 
   const dir3 = await facultyDirectory(hodUser.id, institution.id, {});
   const onLeave = dir3.faculty.find((f: any) => f.userId === lightUser.id);
+  if (!onLeave) throw new Error('the teacher on leave is missing from the directory');
   eq('the teacher on leave reads as ON_LEAVE', onLeave.status, 'ON_LEAVE');
   eq('the on-leave count is 1', dir3.totals.onLeave, 1);
   ok('the availability row marks them on leave', onLeave.availability.onLeaveNow, 'the matrix');

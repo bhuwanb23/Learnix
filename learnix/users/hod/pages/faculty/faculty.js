@@ -36,14 +36,12 @@ import {
   WorkloadBalancer,
 } from './facultyDirectory';
 import {
-  AMBER,
   FACULTY_SORTS,
   FACULTY_STATUSES,
   GREEN,
   RED,
   SLATE,
   THEME,
-  VIOLET,
   WORKLOAD_BANDS,
   count,
   countTone,
