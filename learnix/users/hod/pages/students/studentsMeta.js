@@ -94,7 +94,7 @@ export const RISK_STATES = [
     id: 'UNMEASURED',
     label: 'Not measured',
     blurb: 'Nothing has been measured for this student yet.',
-    color: '#94a3b8',
+    color: '#dc2626',
   },
 ];
 
@@ -143,7 +143,7 @@ export const INTERVENTION_STATUSES = [
   { id: 'PROPOSED', label: 'Proposed', color: '#0891b2' },
   { id: 'IN_PROGRESS', label: 'In progress', color: '#d97706' },
   { id: 'RESOLVED', label: 'Resolved', color: '#059669' },
-  { id: 'CANCELLED', label: 'Cancelled', color: '#94a3b8' },
+  { id: 'CANCELLED', label: 'Cancelled', color: '#dc2626' },
 ];
 
 export const interventionStatusMeta = (id) =>

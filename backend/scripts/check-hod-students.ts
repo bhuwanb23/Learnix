@@ -111,6 +111,7 @@ const studentSeeds = [
   { tag: 'good', name: 'Good Student', scenario: 'GOOD' },
   { tag: 'lowatt', name: 'Low Attendance', scenario: 'LOW_ATTENDANCE' },
   { tag: 'declining', name: 'Declining Student', scenario: 'DECLINING' },
+  { tag: 'oneoverdue', name: 'One Overdue Student', scenario: 'ONE_OVERDUE' },
   { tag: 'unmeasured', name: 'Unmeasured Student', scenario: 'UNMEASURED' },
 ];
 const students: { id: string; tag: string; scenario: string }[] = [];
@@ -195,10 +196,12 @@ for (const date of sessionDates) {
 const good = students.find((s) => s.scenario === 'GOOD')!;
 const lowAtt = students.find((s) => s.scenario === 'LOW_ATTENDANCE')!;
 const declining = students.find((s) => s.scenario === 'DECLINING')!;
+const oneOverdue = students.find((s) => s.scenario === 'ONE_OVERDUE')!;
 for (const s of sessions) {
   await prisma.attendanceRecord.create({ data: { sessionId: s.id, studentProfileId: good.id, state: 'PRESENT' } });
   await prisma.attendanceRecord.create({ data: { sessionId: s.id, studentProfileId: lowAtt.id, state: 'ABSENT' } });
   await prisma.attendanceRecord.create({ data: { sessionId: s.id, studentProfileId: declining.id, state: 'PRESENT' } });
+  await prisma.attendanceRecord.create({ data: { sessionId: s.id, studentProfileId: oneOverdue.id, state: 'PRESENT' } });
 }
 
 // THE EXAM, with TWO SLOTS, so the decline can be measured.
@@ -246,10 +249,19 @@ const overdue2 = await prisma.assignment.create({
 const notDue = await prisma.assignment.create({
   data: { offeringId: offering.id, title: 'Exercise Not Due Yet', maxMarks: 20, dueAt: new Date(Date.now() + 10 * 86400000), status: 'PUBLISHED', createdByUserId: teacherUser.id },
 });
-// The GOOD student hands in all three. The LOW-ATTENDANCE one hands in none.
-await prisma.submission.create({ data: { assignmentId: overdue.id, studentProfileId: good.id, status: 'GRADED', gradeMarks: 18 } });
-await prisma.submission.create({ data: { assignmentId: overdue2.id, studentProfileId: good.id, status: 'GRADED', gradeMarks: 18 } });
-await prisma.submission.create({ data: { assignmentId: notDue.id, studentProfileId: good.id, status: 'GRADED', gradeMarks: 18 } });
+// The GOOD student hands in all three. The LOW-ATTENDANCE one hands in all three too — their
+// problem is the register, not the work. The DECLINING one misses BOTH overdue ones, and hands in
+// the one that is not due yet. The ONE_OVERDUE student misses one overdue and one that is not
+// due — and so the assignment signal must NOT fire for them.
+const submits = async (assignmentId: string, studentProfileId: string) => {
+  await prisma.submission.create({ data: { assignmentId, studentProfileId, status: 'GRADED', gradeMarks: 18 } });
+};
+for (const a of [overdue, overdue2, notDue]) await submits(a.id, good.id);
+for (const a of [overdue, overdue2, notDue]) await submits(a.id, lowAtt.id);
+await submits(notDue.id, declining.id);
+// The ONE-OVERDUE student hands in the SECOND overdue one and nothing else, so they are missing
+// one OVERDUE assignment and one that is not due yet.
+await submits(overdue2.id, oneOverdue.id);
 
 try {
   // ═══ 1. The rules ══════════════════════════════════════════════════════
@@ -287,7 +299,7 @@ try {
   section(3, 'The directory');
 
   const dir = await studentDirectory(hodUser.id, institution.id, {});
-  eq('the directory lists the department\'s students', dir.totals.students, 4);
+  eq('the directory lists the department\'s students', dir.totals.students, 5);
   ok('the colleague\'s student is invisible', !dir.students.some((s: any) => s.studentProfileId === colleagueProfile.id), 'the directory');
 
   const goodRow = dir.students.find((s: any) => s.studentProfileId === good.id);
@@ -308,17 +320,39 @@ try {
   ok('and NOT FAILED_SUBJECTS', !lowRow.risk.signals.includes('FAILED_SUBJECTS'), 'the signals');
   eq('and a 0% attendance', lowRow.attendance.attendancePct, 0);
   eq('and a run of three absences', lowRow.attendance.longestAbsenceStreak, REPEATED_ABSENCE_STREAK);
-  // TWO OVERDUE, MISSING ASSIGNMENTS — the assignment signal.
-  ok('and POOR_ASSIGNMENT_COMPLETION', lowRow.risk.signals.includes('POOR_ASSIGNMENT_COMPLETION'), 'the signals');
-  eq('with one overdue assignment', lowRow.assignments.overdue, 1);
-  eq('and one not yet due', lowRow.assignments.missing - lowRow.assignments.overdue, 1);
+  // THE LOW-ATTENDANCE STUDENT HANDS IN ALL THEIR WORK, so the assignment signal must NOT fire
+  // for them — their problem is the register, not the work.
+  ok(
+    'and NOT POOR_ASSIGNMENT_COMPLETION',
+    !lowRow.risk.signals.includes('POOR_ASSIGNMENT_COMPLETION'),
+    'the signals',
+  );
+  eq('with no overdue assignments', lowRow.assignments.overdue, 0);
+
+  // THE ONE-OVERDUE STUDENT. One overdue assignment is not two, and the one that is not due yet
+  // does not count either — so no assignment signal fires.
+  const oneOverdueRow = dir.students.find((s: any) => s.studentProfileId === oneOverdue.id);
+  if (!oneOverdueRow) throw new Error('the one-overdue student is missing');
+  ok(
+    'a single overdue assignment does NOT fire the assignment signal',
+    !oneOverdueRow.risk.signals.includes('POOR_ASSIGNMENT_COMPLETION'),
+    'the signals',
+  );
+  eq('but the overdue one is counted', oneOverdueRow.assignments.overdue, 1);
+  eq('and the not-yet-due one is missing but not overdue', oneOverdueRow.assignments.missing, 2);
 
   const decliningRow = dir.students.find((s: any) => s.studentProfileId === declining.id);
   if (!decliningRow) throw new Error('the declining student is missing');
   eq('the declining student is AT_RISK', decliningRow.risk.state, 'AT_RISK');
   ok('with DECLINING_MARKS', decliningRow.risk.signals.includes('DECLINING_MARKS'), 'the signals');
   ok('and FAILED_SUBJECTS', decliningRow.risk.signals.includes('FAILED_SUBJECTS'), 'the signals');
+  ok(
+    'and POOR_ASSIGNMENT_COMPLETION — two overdue assignments',
+    decliningRow.risk.signals.includes('POOR_ASSIGNMENT_COMPLETION'),
+    'the signals',
+  );
   ok('and NOT LOW_ATTENDANCE', !decliningRow.risk.signals.includes('LOW_ATTENDANCE'), 'the signals');
+  eq('with two overdue assignments', decliningRow.assignments.overdue, 2);
   eq('the decline is measured', decliningRow.results.decline, -50);
   eq('the earlier average', decliningRow.results.earlierMean, 85);
   eq('the recent average', decliningRow.results.recentMean, 35);
@@ -333,10 +367,15 @@ try {
   eq('and no CGPA', unmeasuredRow.results.cgpa, null);
 
   // THE AT-RISK LIST, ordered by the number of signals.
+  //
+  // The DECLINING student has THREE signals and 100% attendance; the LOW-ATTENDANCE one has TWO
+  // and 0%. Ordered by signals the declining student is first; ordered by attendance the other
+  // one would be. So the order is genuinely the signal count and not a coincidence.
   eq('the at-risk list has two students', dir.atRisk.length, 2);
+  eq('and the most signals come first', dir.atRisk[0].signals.length, 3);
   ok(
-    'and it is ordered by the number of signals',
-    dir.atRisk[0].signals.length >= dir.atRisk[1].signals.length,
+    'and the order is by the signal count, not by attendance',
+    dir.atRisk[0].signals.length > dir.atRisk[1].signals.length,
     'the at-risk list',
   );
 
@@ -379,6 +418,24 @@ try {
   ok('it carries the weak topics', !!det.weakTopics, 'the detail');
   ok('and the interventions', Array.isArray(det.interventions), 'the detail');
   ok('and the suggestions', Array.isArray(det.suggestions), 'the detail');
+  // THE SUGGESTIONS ARE DERIVED FROM THE SIGNALS THAT FIRED.
+  //
+  // The DECLINING student's three signals justify all four kinds, so the COUNT alone would not
+  // prove anything. The LOW-ATTENDANCE student's two signals justify only THREE — and specifically
+  // NOT "additional resources", which needs a declining mark, a failed course or an overdue
+  // assignment. That is the assertion that bites.
+  const detLow = await studentDetail(hodUser.id, institution.id, lowAtt.id, {});
+  eq('the suggestions are derived from the signals', detLow.suggestions.length, 3);
+  ok(
+    'and "additional resources" is NOT among them',
+    !detLow.suggestions.some((s: any) => s.type === 'RESOURCES'),
+    'the suggestions',
+  );
+  ok(
+    'and a remedial class IS',
+    detLow.suggestions.some((s: any) => s.type === 'REMEDIAL_CLASS'),
+    'the suggestions',
+  );
   eq('the suggestions are derived from the signals', det.suggestions.length > 0, true);
 
   // THE WEAK TOPICS ARE THE TOPICS OF THE WEAKEST COURSE — and the note says so.
@@ -459,7 +516,7 @@ try {
 
   const drive = await prisma.placementDrive.create({
     data: {
-      companyId: (await prisma.company.create({ data: { name: `Co ${stamp}` } })).id,
+      companyId: (await prisma.company.create({ data: { institutionId: institution.id, name: `Co ${stamp}` } })).id,
       title: 'Drive with a CGPA rule',
       role: 'SDE',
       packageMinorPerAnnum: 600000,
@@ -474,7 +531,12 @@ try {
   const dir2 = await studentDirectory(hodUser.id, institution.id, {});
   const readyRow = dir2.students.find((s: any) => s.studentProfileId === good.id);
   if (!readyRow) throw new Error('the good student is missing');
-  eq('the good student clears the drive', readyRow.placement.eligibleDrives, 1);
+  ok('the good student clears the drive', readyRow.placement.eligibleDrives >= 1, `clears ${readyRow.placement.eligibleDrives}`);
+  ok(
+    'and the drive with the CGPA rule is one of them',
+    readyRow.placement.drives.some((d: any) => d.driveId === drive.id && d.eligible),
+    'the drive',
+  );
   const decliningRow2 = dir2.students.find((s: any) => s.studentProfileId === declining.id);
   if (!decliningRow2) throw new Error('the declining student is missing');
   eq('the declining student does not', decliningRow2.placement.eligibleDrives, 0);
@@ -503,7 +565,9 @@ try {
   await prisma.program.deleteMany({ where: { id: { in: [program.id, rivalProgram.id, colleagueProgram.id] } } });
   await prisma.department.deleteMany({ where: { id: { in: [dept.id, rivalDept.id, colleagueDept.id] } } });
   await prisma.userRole.deleteMany({ where: { userId: { in: [hodUser.id, rivalHod.id, teacherUser.id, colleagueUser.id, ...students.map((s) => s.tag)] } } });
+  await prisma.userRole.deleteMany({ where: { user: { email: { contains: PFX } } } });
   await prisma.user.deleteMany({ where: { email: { contains: PFX } } });
+  await prisma.company.deleteMany({ where: { institutionId: institution.id } });
   await prisma.institution.deleteMany({ where: { id: { in: [institution.id, rival.id] } } });
 }
 
