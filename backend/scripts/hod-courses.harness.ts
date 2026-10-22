@@ -1,5 +1,5 @@
 /**
- * Shared harness for the HOD Courses desk suites (HD-02).
+ * Shared harness for the HOD Courses desk suites (HD-06).
  * Docs: 11-hod.md §3.3
  *
  * A SEPARATE FILE from `hod-dashboard.harness.ts`, for the same reason the HTTP harness is a

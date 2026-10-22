@@ -123,7 +123,7 @@ A full-stack, multi-tenant college management system with **14 role-specific app
 | HD-03 | Syllabus approvals: SUBMITTED → HOD_APPROVED / CHANGES_REQUESTED | ✅ |
 | HD-04 | Leave requests: approve/reject (+substitute arrangement) | ✅ |
 | HD-05 | Students by year/section (department scope) | ✅ |
-| HD-06 | Course offerings oversight for department | ✅ |
+| HD-06 | Course offerings oversight for department — the Courses desk: directory with a health badge per row, the whole course in one call, the curriculum mapping, the prerequisite graph, the Course Health Indicator | ✅ |
 | HD-07 | Department results/attendance analytics | ✅ |
 | HD-08 | Notifications + profile | ✅ |
 </details>

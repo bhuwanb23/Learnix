@@ -1,5 +1,5 @@
 /**
- * Shared HTTP harness for the HOD Courses desk suites (HD-02).
+ * Shared HTTP harness for the HOD Courses desk suites (HD-06).
  *
  * A SEPARATE FILE from `hod-dashboard.http-harness.ts` on purpose. The two suites read
  * differently, and the difference is a trap: the dashboard harness takes `eq(label, actual,
@@ -10,8 +10,6 @@
  * So this harness accepts BOTH orders, and REFUSES a call where neither the first nor the third
  * argument is a string: a comparison that silently passes is worse than one that throws.
  */
-import { prisma } from '../src/db/prisma.js';
-
 export let pass = 0;
 export let fail = 0;
 export const failures: string[] = [];

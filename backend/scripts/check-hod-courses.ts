@@ -1,4 +1,4 @@
-// HD-02 — The HOD's Courses desk: the database and rules verification (docs/users/11 §3.3).
+// HD-06 — The HOD's Courses desk: the database and rules verification (docs/users/11 §3.3).
 //
 // This suite is about the CLAIMS, and every one of them is a claim the desk makes to a HOD:
 //
@@ -70,6 +70,14 @@ const dept = await prisma.department.create({
 });
 const rivalDept = await prisma.department.create({
   data: { institutionId: rival.id, name: 'Rival Dept', code: `HCR${stamp}`.slice(0, 12), hodUserId: rivalHod.id },
+});
+// A SECOND DEPARTMENT IN THE SAME INSTITUTION. The cross-institution case is the obvious one,
+// and a scope that is institution-scoped passes it while still leaking a colleague's courses.
+const sameInstDept = await prisma.department.create({
+  data: { institutionId: institution.id, name: 'Colleague Dept', code: `HCC${stamp}`.slice(0, 12), hodUserId: rivalHod.id },
+});
+const colleagueCourse = await prisma.course.create({
+  data: { institutionId: institution.id, departmentId: sameInstDept.id, code: `CSC${stamp}`.slice(0, 12), name: 'Colleague Course', credits: 3, semester: 1, type: 'CORE' },
 });
 const program = await prisma.program.create({
   data: { departmentId: dept.id, name: 'Courses Programme', code: `HCP${stamp}`.slice(0, 12) },
@@ -220,6 +228,7 @@ try {
 
   const row = dir.courses.find((c: any) => c.id === courseA.id);
   ok('the course is in the directory', !!row);
+  if (!row) throw new Error('the course is missing from the directory');
   eq('the row reports its status', row.status, 'ACTIVE');
   eq('the row reports its type', row.type, 'CORE');
   eq('the row reports its credits', row.credits, 4);
@@ -259,6 +268,20 @@ try {
   const rivalView = await courseDirectory(rivalHod.id, rival.id, {});
   eq('the rival HOD sees only its own course', rivalView.totals.courses, 1);
   eq('and it is the rival course', rivalView.courses[0].id, rivalCourse.id);
+
+  // THE SCOPE, IN THE SAME INSTITUTION. A cross-institution leak is the obvious one, and a
+  // scope that is institution-scoped passes it while still showing a COLLEAGUE's courses from
+  // the next department in the same college. The department is the boundary, not the college.
+  eq(
+    'the HOD does not see a colleague department course in the SAME institution',
+    dir.courses.some((c: any) => c.id === colleagueCourse.id),
+    false,
+  );
+  await expectReject(
+    'and cannot read a colleague department course',
+    () => courseDetail(hodUser.id, institution.id, colleagueCourse.id, {}),
+    404,
+  );
 
   // ═══ 4. The course detail — the chain ══════════════════════════════════
   section(4, 'The detail — the whole chain');
@@ -413,6 +436,7 @@ try {
   // THE DIRECTORY NOW CARRIES THE SCORE.
   const dir2 = await courseDirectory(hodUser.id, institution.id, {});
   const row2 = dir2.courses.find((c: any) => c.id === courseA.id);
+  if (!row2) throw new Error('the course is missing from the directory');
   eq('the directory row carries the score', row2.health.score, 50);
   eq('and the band', row2.health.band, 'AT_RISK');
   eq('and the counted legs', row2.health.included, 2);
@@ -457,14 +481,18 @@ try {
     where: { prerequisiteCourseId: { in: [courseA.id, courseB.id, rivalCourse.id] } },
   });
   await prisma.courseOffering.deleteMany({ where: { id: offering.id } });
-  await prisma.course.deleteMany({ where: { id: { in: [courseA.id, courseB.id, rivalCourse.id] } } });
+  await prisma.course.deleteMany({
+    where: { id: { in: [courseA.id, courseB.id, rivalCourse.id, colleagueCourse.id] } },
+  });
   await prisma.studentProfile.deleteMany({ where: { id: { in: [studentProfile.id, studentProfile2.id] } } });
   await prisma.staffProfile.deleteMany({ where: { userId: teacher.id } });
   await prisma.section.deleteMany({ where: { id: sectionRow.id } });
   await prisma.batch.deleteMany({ where: { id: batch.id } });
   await prisma.academicYear.deleteMany({ where: { id: academicYear.id } });
   await prisma.program.deleteMany({ where: { id: { in: [program.id, rivalProgram.id] } } });
-  await prisma.department.deleteMany({ where: { id: { in: [dept.id, rivalDept.id] } } });
+  await prisma.department.deleteMany({
+    where: { id: { in: [dept.id, rivalDept.id, sameInstDept.id] } },
+  });
   await prisma.userRole.deleteMany({
     where: {
       userId: { in: [hodUser.id, rivalHod.id, teacher.id, studentUser.id, studentUser2.id] },

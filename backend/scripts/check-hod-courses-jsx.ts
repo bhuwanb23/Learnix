@@ -1,4 +1,4 @@
-// HD-02 — The HOD's Courses desk: a parse check for the new screen files.
+// HD-06 — The HOD's Courses desk: a parse check for the new screen files.
 // Run: node node_modules/tsx/dist/cli.mjs scripts/check-hod-courses-jsx.ts
 //
 // The bundler is the real judge of JSX, and a full `expo export` cannot run here — the local

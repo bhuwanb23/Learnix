@@ -562,7 +562,7 @@ async function seedDomainB(institutionId: string): Promise<void> {
     }
   }
 
-  // ── HD-02: the Courses desk — the curriculum, the graph, and the statuses ──
+  // ── HD-06: the Courses desk — the curriculum, the graph, and the statuses ──
   //
   // Three things the Courses desk needs and the seed did not have:
   //

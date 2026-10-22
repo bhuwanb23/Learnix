@@ -1,4 +1,4 @@
--- X-11 / HD-02 — The curriculum a course belongs to, and what it demands first.
+-- X-11 / HD-06 — The curriculum a course belongs to, and what it demands first.
 --
 -- `program_courses` is the curriculum a department DECLARES. Before this, "which program runs
 -- which course" could only be answered retrospectively, from the offerings that had actually been
