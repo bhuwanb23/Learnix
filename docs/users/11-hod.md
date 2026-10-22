@@ -125,6 +125,8 @@ The HOD's course desk. A **directory** of the department's courses, each carryin
 
 Bands: `HEALTHY ≥ 80`, `WATCH ≥ 60`, `AT_RISK < 60`.
 
+> **The health strip counts the TAUGHT courses only.** A retired course's last term is real data and its row shows the badge so a HOD can read how it ended, but a course that is no longer taught is not a problem to fix — and counting it would put a healthy **archived** course in the "healthy" strip and quietly flatter the department.
+
 > **A leg with no data is EXCLUDED, never scored as zero.** A course in its first fortnight has no results and no attendance yet; scoring those as zero reports a brand-new course as a failing one — *confidently*, because the number looks like a measurement rather than the absence of one. The score is a weighted mean over the legs that **have** data, the weights are re-normalised over those legs, and the response names the legs left out and the weakest leg counted. A course with no data at all has **no score and no band** — it is unmeasured, not unhealthy.
 
 **What the HOD may write**: edit a course, change its status, map it to a programme, unmap it, add a prerequisite, remove a prerequisite. What the HOD may **not** write: create a course — that is the Admin's, and the screen says so rather than offering a button that opens an alert. Every write leaves an audit row, and the History panel reads that table.
