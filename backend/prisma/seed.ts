@@ -493,6 +493,75 @@ async function seedDomainB(institutionId: string): Promise<void> {
     }
   }
 
+  // ── HD-01: the syllabus is PARTLY DONE, not wholly untouched ─────────────
+  //
+  // Every topic was created NOT_STARTED, so the HOD's "Academic progress" section read 0% and
+  // the Department Health Score said AT RISK for a department that had simply not started.
+  //
+  // That is a seed artefact, not a finding: a syllabus that has been written and is being worked
+  // through is a real state, and the section has to be able to show it. The spread below is
+  // DELIBERATE — the first unit is done, the second is in progress, the third has not started —
+  // so the completion percentage, the stalled-course rule and the health score all have something
+  // real to work on.
+  //
+  // Idempotent: the topics are found by (unit, order) and only their status is updated, so a
+  // reseed leaves a partially-completed syllabus alone.
+  {
+    const topicStatuses = [
+      'COMPLETED',
+      'COMPLETED',
+      'IN_PROGRESS',
+      'COMPLETED',
+      'IN_PROGRESS',
+      'NOT_STARTED',
+    ] as const;
+    const units = await db.syllabusUnit.findMany({
+      where: { syllabusVersionId: syllabus.id },
+      orderBy: { order: 'asc' },
+      include: { topics: { orderBy: { order: 'asc' } } },
+    });
+    let index = 0;
+    for (const unit of units) {
+      for (const topic of unit.topics) {
+        const status = topicStatuses[index] ?? 'NOT_STARTED';
+        index += 1;
+        if (topic.status === status) continue;
+        await db.syllabusTopic.update({
+          where: { id: topic.id },
+          data: {
+            status,
+            completedAt: status === 'COMPLETED' ? new Date() : null,
+          },
+        });
+      }
+    }
+  }
+
+  // ── HD-01: the attendance threshold, as a CONFIG ───────────────────────
+  //
+  // `SystemConfig.attendanceThreshold` is named in the schema's own header
+  // (`l1_system.prisma`) and read by NOBODY — the threshold was hardcoded at 75 in the teacher's
+  // desk and now in the HOD's risk rule. A config key that a college can see and change but that
+  // nothing reads is worse than no key, because it looks like it is being honoured.
+  //
+  // It is seeded here, and READ by the risk rule with 75 as the fallback for an institution that
+  // has not set one. The two desks then agree about the same student on the same day.
+  {
+    const key = 'attendanceThreshold';
+    const existing = await db.systemConfig.findFirst({
+      where: { institutionId, key },
+    });
+    if (!existing) {
+      await db.systemConfig.create({
+        data: {
+          institutionId,
+          key,
+          valueJson: JSON.stringify({ percent: 75 }),
+        },
+      });
+    }
+  }
+
   // Lecture note (published) on the DBMS offering
   const noteExists = await db.lectureNote.findFirst({
     where: { offeringId: offerings[0].id, title: 'ER Modeling — Lecture 1' },

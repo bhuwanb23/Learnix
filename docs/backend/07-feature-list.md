@@ -181,16 +181,23 @@
 
 | ID | Feature | Tables | Seed |
 |----|---------|--------|------|
-| HD-01 | Department dashboard (faculty workload, approvals pending, results) | aggregates | — |
+| HD-01 | Department dashboard: 9 sections (KPIs, today, attendance, syllabus progress, faculty workload, student risk, pending approvals, quick actions, performance trends) + a Department Health Score | A, B, C aggregates | ✅ 9 sections, 6 alert kinds |
 | HD-02 | Faculty management: workload view, max-hours enforcement | A staff_profiles, B offerings | ✅ |
 | HD-03 | Syllabus approvals: SUBMITTED → HOD_APPROVED / CHANGES_REQUESTED (+feedback) | B syllabus_versions | ✅ 1 waiting |
 | HD-04 | Leave requests: approve/reject (+substitute arrangement) | A users*, leave table pending** | — |
 | HD-05 | Students by year/section (department scope) | A student_profiles, B sections | ✅ (1) |
 | HD-06 | Course offerings oversight for department | B course_offerings/courses | ✅ |
-| HD-07 | Department results/attendance analytics | B/C aggregates | — |
+| HD-07 | Department results/attendance analytics | B/C aggregates | ✅ folded into HD-01 |
 | HD-08 | Notifications + profile | K, A | ✅ |
 
 **\*** leave requests table was in HOD doc but not in the 12-domain schema paste — **flag: add `leave_requests` table if you want HD-04** (one-model addition).
+
+**HD-01 replaced the old flat dashboard** (`GET /hod/dashboard`, now a 404). Two **tenancy bugs** were
+fixed with it: the leave queries were institution-scoped — an HOD could list and APPROVE another
+department's leave — and the workload query was teacher-scoped, so a cross-department offering
+inflated this department's utilisation. The **attendance threshold** now comes from
+`SystemConfig.attendanceThreshold` (the schema named the key and nothing read it) with 75 as the
+fallback, so the HOD's desk and the teacher's desk agree about the same student.
 
 ## Alumni Relations (AL) — docs/users/12 · tables: J, I, E
 

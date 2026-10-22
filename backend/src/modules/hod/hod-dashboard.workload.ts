@@ -21,8 +21,8 @@
  */
 import { prisma } from '../../db/prisma.js';
 import {
-  ATTENDANCE_RISK_THRESHOLD,
   RISK_STUDENT_LIMIT,
+  resolveAttendanceThreshold,
 } from './hod-dashboard.rules.js';
 import { durationHours } from './hod-dashboard.sections.js';
 import { hodStudentScope, type HodScope } from './hod-dashboard.scope.js';
@@ -264,6 +264,10 @@ export async function facultyWorkloadSection(scope: HodScope, now: Date = new Da
 export async function studentRiskSection(scope: HodScope) {
   const { institutionId } = scope;
 
+  // THE THRESHOLD, from the institution's own config, with the conventional 75 as the fallback.
+  // The teacher's desk uses the same number, so the two desks agree about the same student.
+  const threshold = await resolveAttendanceThreshold(institutionId);
+
   const [records, results, students] = await Promise.all([
     scope.offeringIds.length
       ? prisma.attendanceRecord.findMany({
@@ -333,8 +337,8 @@ export async function studentRiskSection(scope: HodScope) {
     const averagePercent =
       res && res.total > 0 ? Math.round((res.percentSum / res.total) * 100) / 100 : null;
 
-    const lowAttendance = attendancePct !== null && attendancePct < ATTENDANCE_RISK_THRESHOLD;
-    const poorPerformance = passRate !== null && passRate < ATTENDANCE_RISK_THRESHOLD;
+    const lowAttendance = attendancePct !== null && attendancePct < threshold;
+    const poorPerformance = passRate !== null && passRate < threshold;
 
     // The verdict. A student with NEITHER measure is unmeasured, not safe — and the section says
     // so, because a list of "students at risk" that quietly includes everybody who has not been
@@ -372,7 +376,7 @@ export async function studentRiskSection(scope: HodScope) {
     atRisk: atRisk.length,
     unmeasured: unmeasured.length,
     ok: rows.filter((r) => r.state === 'OK').length,
-    threshold: ATTENDANCE_RISK_THRESHOLD,
+    threshold,
     // The NAMES, capped — the section's job is to start a conversation, not to be a list. The COUNT
     // is the number that matters.
     students: atRisk

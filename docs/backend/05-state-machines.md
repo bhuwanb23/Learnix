@@ -504,3 +504,60 @@ severity term did not. A queue where one stale case outranks everything is a que
 > **Visitor notifications carry a deep link** (`dataJson` = `{ module, screen, passId/visitorId }`),
 > because a notification with no target is an inbox entry a recipient has to search for. Matched on
 > the id inside that payload when a suite cleans up after itself.
+
+## 13. The Department Health Score (HD-01)
+
+**NOT A STATE MACHINE — it is an INDICATOR.** A composite number a department is measured by, and
+the rules that make it worth measuring.
+
+### The four components and their weights
+
+| Component | Source | Weight |
+|---|---|---|
+| Attendance | `AttendanceRecord` present+late over total, for the department's offerings | 35% |
+| Syllabus progress | COMPLETED `SyllabusTopic` over total topics, per course's latest version | 25% |
+| Faculty balance | the share of faculty not over `maxWorkloadHours`, discounted by how far over | 20% |
+| Student performance | `Result.isPass` over the department's results | 20% |
+
+The weights are **published** in `hod-dashboard.health.ts` and delivered in the catalogue, because
+a composite index a HOD cannot explain is a decoration.
+
+### The band
+
+`≥80 HEALTHY` · `≥60 WATCH` · `<60 AT RISK`. The **number** is for tracking over time; the **band**
+is for what to do on Monday. A HOD does not act on "68.4" — they act on "WATCH".
+
+### THE RULE THAT MAKES IT HONEST
+
+**A component with NO DATA IS EXCLUDED, never scored as zero.**
+
+A department in week three of term has no attendance records yet, and its syllabus has barely
+started. Scoring those as zero reports a brand-new department as an unhealthy one — and reports it
+*confidently*, because the number looks like a measurement rather than an absence of one. The score is
+a **weighted mean over the components that have data**, the weights are re-normalised over those
+components, and the response says how many were included and names the ones that were not.
+
+The **weakest component is named** too, because a single number a HOD cannot act on is a decoration —
+the first thing they read should be what to fix.
+
+### "Completed teaching hours" is a RECORD
+
+There is no `hoursTaught` column and `ClassSession` is empty, so "how many hours has this
+department actually taught?" has no direct source. The platform already keeps the answer: an
+`AttendanceSession` with `status = 'FINALIZED'` is a class that was actually held. The delivered
+hours are the hours of the offering's schedule slots **for that weekday** — one class meeting is one
+hour, not the offering's whole week.
+
+**"Assigned" and "delivered" are different units and are never divided into one another.**
+Assigned is a **weekly** figure, matched against the weekly `maxWorkloadHours`. Delivered is a
+**term-to-date** total. The comparison that means something is delivered against the hours scheduled
+over the period the attendance record actually covers, and **the coverage is reported** — because a
+department whose attendance was recorded for two weeks of a forty-eight-week term has a 91% delivery
+figure and a 4% *record*, and a HOD who saw only the first would think the teaching had collapsed.
+
+### "Absent" and "unmarked" are different facts
+
+A student with no attendance record and no result is **unmeasured**: not safe, and not at risk. The
+risk section reports the three counts separately, and the attendance threshold comes from
+`SystemConfig.attendanceThreshold` with 75 as the fallback — the same number the teacher's desk
+uses, so the two desks agree about the same student.
