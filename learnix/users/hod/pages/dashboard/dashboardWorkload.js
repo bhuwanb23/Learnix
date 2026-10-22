@@ -171,7 +171,8 @@ export function StudentRiskSection({ data, onRoute }) {
       {r.unmeasured > 0 ? (
         <NoteStrip>
           {plural(r.unmeasured, 'student has', 'students have')} neither an attendance record nor a
-          result yet. They are not counted as safe — they are unmeasured.
+          result yet. An unmarked student is not an absent one — they are unmeasured, and the
+          section says so rather than counting them as failures.
         </NoteStrip>
       ) : null}
       {r.atRisk === 0 ? (

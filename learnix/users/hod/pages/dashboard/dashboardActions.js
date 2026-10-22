@@ -287,7 +287,7 @@ export function PerformanceTrendsSection({ data, onRoute }) {
             </>
           ) : (
             <NoteStrip>
-              A subject seen in one semester has a point, not a trend. Trends appear when a
+              A subject seen in one semester has a single point, not a trend. Trends appear when a
               subject is examined more than once.
             </NoteStrip>
           )}
