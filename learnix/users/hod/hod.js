@@ -21,8 +21,16 @@ import SyllabusModule from './pages/syllabus/syllabus';
 import LeaveModule from './pages/leave/leave';
 import NotificationsScreen from './pages/notifications/notifications';
 
-// Import theme
-import { COLORS } from '../../constants/theme';
+// HD-02 the Courses desk: the course detail, opened from a course row on the
+// Courses tab. It needs to know WHICH course it is showing, so it is opened
+// with a PARAM and the shell carries it.
+//
+// Registering it HERE is load-bearing and its failure is SILENT, exactly as it is
+// for the exam cell's block sub-screens: `renderContent` looks the key up in
+// FEATURE_MODULES, finds nothing, falls through to the tab switcher, and puts the
+// controller back on the Courses tab with no error anywhere. `audit-hod-courses-ui.ts`
+// asserts it is present and points at its own component.
+import CourseDetailScreen from './pages/courses/coursesDetail';
 
 // Import hooks
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
@@ -35,6 +43,7 @@ const FEATURE_MODULES = {
   Syllabus: { title: 'Syllabus Approvals', component: SyllabusModule },
   Leave: { title: 'Leave Requests', component: LeaveModule },
   Notifications: { title: 'Notifications', component: NotificationsScreen },
+  CourseDetail: { title: 'Course', icon: 'book-outline', component: CourseDetailScreen },
 };
 
 const TAB_TITLES = {
@@ -49,15 +58,32 @@ export default function HODScreen({ navigation }) {
   setDemoUser('hod@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
+  // THE PARAM CHANNEL (HD-02).
+  //
+  // The shell's `navigate` used to take a screen name and nothing else, so a sub-screen that
+  // needed to know WHICH record it was showing could not be told. That is why the course detail
+  // was unreachable: it needs a course id, and there was no way to hand it one.
+  //
+  // So `navigate` and `openModule` now take an optional second argument, and the module receives
+  // it as `route.params` — the same contract the exam cell's shell already uses.
+  const [screenParams, setScreenParams] = useState(null);
+
   const insets = useSafeAreaInsetsWithPadding();
+
+  const openScreen = (screen, params) => {
+    setScreenParams(params ?? null);
+    setCurrentScreen(screen);
+  };
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     setCurrentScreen('main');
+    setScreenParams(null);
   };
 
   const handleBackPress = () => {
     setCurrentScreen('main');
+    setScreenParams(null);
   };
 
   const getHeaderTitle = () => {
@@ -89,11 +115,12 @@ export default function HODScreen({ navigation }) {
         return (
           <ModuleComponent
             navigation={{
-              navigate: (screen) => setCurrentScreen(screen),
+              navigate: (screen, params) => openScreen(screen, params),
               goBack: handleBackPress,
-              openModule: (key) => setCurrentScreen(key),
+              openModule: (key, params) => openScreen(key, params),
               switchTab: (tabId) => handleTabChange(tabId),
             }}
+            route={{ params: screenParams }}
           />
         );
       }
@@ -105,9 +132,9 @@ export default function HODScreen({ navigation }) {
         return (
           <FacultyModule
             navigation={{
-              navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              navigate: (screen, params) => openScreen(screen, params),
+              goBack: () => openScreen('main'),
+              openModule: (key, params) => openScreen(key, params),
             }}
           />
         );
@@ -115,9 +142,10 @@ export default function HODScreen({ navigation }) {
         return (
           <CoursesModule
             navigation={{
-              navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              navigate: (screen, params) => openScreen(screen, params),
+              goBack: () => openScreen('main'),
+              openModule: (key, params) => openScreen(key, params),
+              switchTab: (tabId) => handleTabChange(tabId),
             }}
           />
         );
@@ -125,9 +153,9 @@ export default function HODScreen({ navigation }) {
         return (
           <StudentsModule
             navigation={{
-              navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              navigate: (screen, params) => openScreen(screen, params),
+              goBack: () => openScreen('main'),
+              openModule: (key, params) => openScreen(key, params),
             }}
           />
         );
@@ -138,9 +166,9 @@ export default function HODScreen({ navigation }) {
         return (
           <HodDashboard
             navigation={{
-              navigate: (screen) => setCurrentScreen(screen),
-              goBack: () => setCurrentScreen('main'),
-              openModule: (key) => setCurrentScreen(key),
+              navigate: (screen, params) => openScreen(screen, params),
+              goBack: () => openScreen('main'),
+              openModule: (key, params) => openScreen(key, params),
               switchTab: (tabId) => handleTabChange(tabId),
             }}
           />

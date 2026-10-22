@@ -1,251 +1,443 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Alert } from 'react-native';
+/**
+ * HD-02 — The HOD's Courses desk: the directory.
+ * Docs: 11-hod.md §3.3
+ *
+ * THE SCREEN, AND WHAT IT IS FOR
+ * ------------------------------
+ * A HOD opens this tab to answer one question: "which of my courses is in trouble?" So every row
+ * carries its health, its attendance and its pass rate — because an answer that needs a second
+ * click per course is an answer that does not get asked.
+ *
+ * THAT IS ALSO WHY THE DASHBOARD'S TWO ALERTS ROUTE HERE
+ * ------------------------------------------------------
+ * `LOW_ATTENDANCE` and `POOR_PERFORMANCE` both point at this tab. Before this desk existed, the
+ * tab showed neither attendance nor performance — the alert fired and navigated to a screen that
+ * could not show the thing that fired. A route that cannot show its own alert is a broken route,
+ * so this screen shows both figures on every row.
+ *
+ * THE FILTERS ARE THE SERVER'S
+ * -----------------------------
+ * The status list, the type list, the sorts and the thresholds come from
+ * `GET /hod/courses/catalogue`. The mirror in `coursesMeta.js` is the fallback for the frame
+ * before the catalogue lands, and the audit script asserts the two never drift.
+ */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
-import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
-import CourseDetail from './pages/course_detail/course_detail';
-
-const COLORS = ['#2563eb', '#059669', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
-
-const syllabusStyle = (s) => {
-  if (s === 'HOD_APPROVED' || s === 'ADMIN_APPROVED') return { bg: '#dcfce7', color: '#059669', label: 'Approved' };
-  if (s === 'SUBMITTED') return { bg: '#fef3c7', color: '#d97706', label: 'Pending' };
-  if (s === 'CHANGES_REQUESTED') return { bg: '#fee2e2', color: '#dc2626', label: 'Changes Req.' };
-  return { bg: '#e0e7ff', color: '#4f46e5', label: 'Draft' };
-};
+import {
+  ActionButton,
+  ChipRow,
+  CoursesEmpty,
+  CoursesScreen,
+  HealthBadge,
+  NoteStrip,
+  SearchBox,
+  StatRow,
+  StatTile,
+  Tag,
+  useCourses,
+} from './coursesUi';
+import {
+  AMBER,
+  GREEN,
+  RED,
+  SLATE,
+  THEME,
+  countTone,
+  courseTypeMeta,
+  count,
+  percent,
+  plural,
+  statusChip,
+  statusIcon,
+} from './coursesMeta';
 
 export default function CoursesModule({ navigation }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedId, setSelectedId] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [type, setType] = useState(null);
+  const [sort, setSort] = useState('code');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState('');
 
-  const load = useCallback(async (showSpinner = true) => {
-    try {
-      if (showSpinner) setLoading(true);
-      setError(null);
-      const d = await hodApi.courses();
-      setData(d);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  // THE CATALOGUE, once. It is the SERVER's vocabulary and it does not change when the filter does.
+  const catalogue = useCourses(() => hodApi.coursesCatalogue(), []);
+
+  // THE DIRECTORY, and it reloads whenever a filter changes.
+  const queryKey = `${status ?? ''}|${type ?? ''}|${sort}|${query}|${page}`;
+  const directory = useCourses(
+    () =>
+      hodApi.coursesDirectory({
+        status: status ?? undefined,
+        type: type ?? undefined,
+        sort,
+        search: query || undefined,
+        page,
+      }),
+    [queryKey],
+  );
+
+  // THE SEARCH IS DEBOUNCED, because a search that fires a request per keystroke is a search
+  // that queues behind itself on a slow connection.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQuery(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const reload = useCallback(() => {
+    catalogue.reload();
+    directory.reload();
+  }, [catalogue, directory]);
+
+  // THE VOCABULARY, preferring the server's list and falling back to the mirror.
+  const statusOptions = useMemo(() => {
+    const server = catalogue.data?.statuses;
+    if (Array.isArray(server) && server.length) {
+      return server.map((s) => ({ id: s.id, label: s.label, color: s.color }));
     }
-  }, []);
+    return [
+      { id: 'ACTIVE', label: 'Active', color: GREEN },
+      { id: 'ARCHIVED', label: 'Archived', color: SLATE },
+      { id: 'DRAFT', label: 'Draft', color: AMBER },
+    ];
+  }, [catalogue.data]);
 
-  React.useEffect(() => {
-    load();
-  }, [load]);
+  const typeOptions = useMemo(() => {
+    const server = catalogue.data?.types;
+    if (Array.isArray(server) && server.length) {
+      return server.map((t) => ({
+        id: t.id,
+        label: t.label ?? courseTypeMeta(t.id)?.label ?? t.id,
+        color: t.color ?? courseTypeMeta(t.id)?.color ?? THEME,
+      }));
+    }
+    return [
+      { id: 'CORE', label: 'Core', color: THEME },
+      { id: 'ELECTIVE', label: 'Elective', color: '#7c3aed' },
+    ];
+  }, [catalogue.data]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false);
+  const sortOptions = useMemo(() => {
+    const server = catalogue.data?.sorts;
+    if (Array.isArray(server) && server.length) {
+      return server.map((s) => ({ id: s.id, label: s.label }));
+    }
+    return [
+      { id: 'code', label: 'Code' },
+      { id: 'name', label: 'Name' },
+      { id: 'semester', label: 'Semester' },
+      { id: 'credits', label: 'Credits' },
+      { id: 'attendance', label: 'Attendance' },
+      { id: 'health', label: 'Health' },
+    ];
+  }, [catalogue.data]);
+
+  const data = directory.data;
+  const totals = data?.totals ?? {};
+  const courses = data?.courses ?? [];
+  const pagination = data?.pagination ?? null;
+
+  const openCourse = (courseId) => {
+    // THE PARAM CHANNEL. The shell carries `route.params` to the module, so the detail screen
+    // knows WHICH course it is showing.
+    navigation?.openModule?.('CourseDetail', { courseId });
   };
 
-  if (selectedId) {
-    return <CourseDetail courseId={selectedId} onBack={() => setSelectedId(null)} />;
-  }
-
-  if (loading && !data) {
-    return (
-      <View style={styles.center}>
-        <SkeletonStatRow style={{ marginTop: 16 }} />
-        <View style={{ marginTop: 14 }}>
-          {[1, 2, 3].map((i) => (
-            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
-          ))}
-        </View>
-      </View>
-    );
-  }
-
-  if (error && !data) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const courses = data?.courses ?? [];
-  const stats = data?.stats ?? { total: 0, approved: 0, pending: 0 };
-
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    <CoursesScreen
+      loading={directory.loading && !data}
+      refreshing={directory.refreshing}
+      error={directory.error}
+      onRetry={directory.reload}
+      onRefresh={reload}
     >
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Courses</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.approved}</Text>
-          <Text style={styles.statLabel}>Approved</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.pending}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
+      {/* ── The counters ─────────────────────────────────────────────────── */}
+      <StatRow>
+        <StatTile
+          label="Courses"
+          value={count(totals.courses)}
+          hint={`${count(totals.active)} active`}
+          icon="book-outline"
+          color={THEME}
+        />
+        <StatTile
+          label="Healthy"
+          value={count(totals.healthy)}
+          hint="all measured parts in order"
+          icon="pulse-outline"
+          color={GREEN}
+          tone={totals.healthy > 0 ? 'good' : 'clear'}
+        />
+        <StatTile
+          label="Needs work"
+          value={count((totals.watch ?? 0) + (totals.atRisk ?? 0))}
+          hint={`${count(totals.atRisk)} at risk`}
+          icon="alert-circle-outline"
+          color={totals.atRisk > 0 ? RED : AMBER}
+          tone={countTone((totals.watch ?? 0) + (totals.atRisk ?? 0))}
+        />
+      </StatRow>
+
+      {/* ── The filters ──────────────────────────────────────────────────── */}
+      <View style={styles.filterBlock}>
+        <SearchBox
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search by code or name"
+        />
+        <ChipRow
+          options={[{ id: null, label: 'All', color: THEME }, ...statusOptions]}
+          value={status}
+          onChange={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
+        />
+        <ChipRow
+          options={[{ id: null, label: 'Any type', color: THEME }, ...typeOptions]}
+          value={type}
+          onChange={(v) => {
+            setType(v);
+            setPage(1);
+          }}
+        />
+        <View style={styles.sortRow}>
+          <Text style={styles.sortLabel}>Sort</Text>
+          <ChipRow
+            options={sortOptions}
+            value={sort}
+            onChange={(v) => {
+              setSort(v);
+              setPage(1);
+            }}
+          />
         </View>
       </View>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Department Courses</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          onPress={() => Alert.alert('New Course', 'Course creation is handled by Admin — courses appear here once added to your department.')}
-        >
-          <Ionicons name="add" size={15} color="#fff" />
-          <Text style={styles.addText}>New Course</Text>
-        </TouchableOpacity>
-      </View>
+      {/* ── The list ─────────────────────────────────────────────────────── */}
+      {courses.length === 0 ? (
+        <CoursesEmpty
+          icon="book-outline"
+          title={totals.courses === 0 ? 'No courses yet' : 'Nothing matches'}
+          message={
+            totals.courses === 0
+              ? 'Courses appear here once the Admin adds them to your department.'
+              : 'No course matches these filters. Clear the search or the filters to see them all.'
+          }
+        />
+      ) : (
+        courses.map((c) => {
+          const chip = statusChip(c.status);
+          const typeMeta = courseTypeMeta(c.type);
+          const legs = c.health?.legs ?? {};
+          return (
+            <TouchableOpacity
+              key={c.id}
+              style={styles.card}
+              onPress={() => openCourse(c.id)}
+              activeOpacity={0.75}
+            >
+              <View style={styles.cardHead}>
+                <View
+                  style={[
+                    styles.codeBox,
+                    { backgroundColor: `${typeMeta?.color ?? THEME}18` },
+                  ]}
+                >
+                  <Text
+                    style={[styles.codeText, { color: typeMeta?.color ?? THEME }]}
+                    numberOfLines={1}
+                  >
+                    {c.code}
+                  </Text>
+                </View>
+                <View style={styles.cardHeadBody}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {c.name}
+                  </Text>
+                  <Text style={styles.meta} numberOfLines={1}>
+                    Sem {c.semester} · {c.credits} credits ·{' '}
+                    {plural(c.offerings ?? 0, 'subject', 'subjects')} ·{' '}
+                    {plural(c.programs ?? 0, 'programme', 'programmes')}
+                  </Text>
+                </View>
+                <View style={styles.chipCol}>
+                  <Tag
+                    label={chip.label}
+                    color={chip.color}
+                    bg={chip.bg}
+                  />
+                </View>
+              </View>
 
-      {courses.map((c, idx) => {
-        const color = COLORS[idx % COLORS.length];
-        const st = syllabusStyle(c.syllabusStatus);
-        return (
-          <AnimatedCard
-            key={c.id}
-            onPress={() => setSelectedId(c.id)}
-            delay={idx * 40}
-            style={styles.card}
-          >
-            <View style={[styles.courseIcon, { backgroundColor: color + '1a' }]}>
-              <Text style={[styles.courseCode, { color }]}>{c.code}</Text>
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={styles.name}>{c.name}</Text>
-              <Text style={styles.meta}>
-                Sem {c.semester} · {c.credits} credits · {c.offerings.reduce((s, o) => s + o.students, 0)} students
-              </Text>
-              <Text style={styles.teacher} numberOfLines={1}>
-                {[...new Set(c.offerings.map((o) => o.teacher))].join(', ') || 'Not offered this year'}
-              </Text>
-            </View>
-            <View style={[styles.syllabusChip, { backgroundColor: st.bg }]}>
-              <Text style={[styles.syllabusText, { color: st.color }]}>{st.label}</Text>
-            </View>
-          </AnimatedCard>
-        );
-      })}
-      {courses.length === 0 && (
-        <EmptyState icon="book-outline" title="No courses yet" subtitle="Courses will appear here once added to your department" color="#4f46e5" />
+              {/* THE TWO FIGURES THE DASHBOARD'S ALERTS ROUTE HERE TO SEE. */}
+              <View style={styles.legRow}>
+                <View style={styles.legItem}>
+                  <Ionicons name="checkbox-outline" size={12} color={SLATE} />
+                  <Text style={styles.legText}>Attendance {percent(legs.attendance)}</Text>
+                </View>
+                <View style={styles.legItem}>
+                  <Ionicons name="trophy-outline" size={12} color={SLATE} />
+                  <Text style={styles.legText}>Pass {percent(legs.results)}</Text>
+                </View>
+                <View style={styles.legItem}>
+                  <Ionicons name="book-outline" size={12} color={SLATE} />
+                  <Text style={styles.legText}>Syllabus {percent(legs.syllabus)}</Text>
+                </View>
+              </View>
+
+              <View style={styles.cardFoot}>
+                <HealthBadge
+                  score={c.health?.score}
+                  band={c.health?.band}
+                  weakest={
+                    c.health?.weakest
+                      ? (c.health.weakest === 'ATTENDANCE'
+                          ? 'attendance'
+                          : c.health.weakest === 'SYLLABUS'
+                            ? 'syllabus'
+                            : 'results')
+                      : null
+                  }
+                />
+                <View style={styles.statusRow}>
+                  <Ionicons
+                    name={statusIcon(c.status)}
+                    size={12}
+                    color={chip.color}
+                  />
+                  <Text style={[styles.statusText, { color: chip.color }]}>{chip.label}</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })
       )}
-    </ScrollView>
+
+      {/* ── The pagination ──────────────────────────────────────────────── */}
+      {pagination && pagination.totalPages > 1 ? (
+        <View style={styles.pager}>
+          <ActionButton
+            label="Previous"
+            icon="chevron-back-outline"
+            color={SLATE}
+            onPress={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={!pagination.hasPrev}
+          />
+          <Text style={styles.pagerText}>
+            Page {pagination.page} of {pagination.totalPages} · {plural(pagination.total, 'course', 'courses')}
+          </Text>
+          <ActionButton
+            label="Next"
+            icon="chevron-forward-outline"
+            color={SLATE}
+            onPress={() => setPage((p) => p + 1)}
+            disabled={!pagination.hasNext}
+          />
+        </View>
+      ) : null}
+
+      {/* ── The footnote ─────────────────────────────────────────────────── */}
+      <NoteStrip>
+        A course with no attendance, no syllabus and no results yet has NO health score. It is
+        unmeasured, not unhealthy — so it is left out of the score rather than counted as a zero.
+      </NoteStrip>
+
+      {/* THE CREATION RULE, STATED RATHER THAN FAKED.
+          The old screen had a "New Course" button that opened an alert saying the Admin creates
+          courses. A button that opens an alert is a dead button, and a dead button teaches the
+          reader that the screen's controls are decorative. So the rule is a NOTE, and the note
+          names who does it. */}
+      <View style={styles.createNote}>
+        <Ionicons name="information-circle-outline" size={14} color={SLATE} />
+        <Text style={styles.createText}>
+          A course is created by the Admin. You can edit one, archive one, and map it to a
+          programme.
+        </Text>
+      </View>
+    </CoursesScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
-  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 24 },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
+  filterBlock: { marginTop: theme.spacing.md, marginBottom: theme.spacing.sm },
+
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+  sortLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.colors.textMuted,
   },
-  statCard: {
-    flex: 1,
+
+  card: {
     backgroundColor: '#fff',
-    borderRadius: 14,
+    borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: 12,
-    alignItems: 'center',
-    marginHorizontal: 4,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
   },
-  statValue: {
-    fontSize: 16,
-    fontFamily: 'Manrope-ExtraBold',
-    color: theme.colors.text,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 18,
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary,
+  cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  codeBox: {
+    width: 54,
+    height: 42,
     borderRadius: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-  },
-  addText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: '#fff',
-    marginLeft: 3,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
-  },
-  courseIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    paddingHorizontal: 4,
   },
-  courseCode: {
+  codeText: { fontSize: 10, fontWeight: '800' },
+  cardHeadBody: { flex: 1 },
+  name: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
+  meta: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2 },
+  chipCol: { alignItems: 'flex-end' },
+
+  legRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  legItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  legText: { fontSize: 10, color: theme.colors.textMuted, fontWeight: '600' },
+
+  cardFoot: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    gap: 8,
+  },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  statusText: { fontSize: 10, fontWeight: '700' },
+
+  pager: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: theme.spacing.sm,
+  },
+  pagerText: { fontSize: 11, color: theme.colors.textMuted, fontWeight: '600' },
+
+  createNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: theme.spacing.md,
+    paddingHorizontal: 4,
+  },
+  createText: {
+    flex: 1,
     fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-  },
-  cardBody: { flex: 1, marginRight: 8 },
-  name: {
-    fontSize: 14,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  meta: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
     color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  teacher: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.primary,
-    marginTop: 3,
-  },
-  syllabusChip: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  syllabusText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
+    lineHeight: 14,
   },
 });

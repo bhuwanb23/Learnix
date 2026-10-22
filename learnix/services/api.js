@@ -564,6 +564,48 @@ export const hodApi = {
   requestSyllabusChanges: (id, feedback) =>
     api.post(`/hod/syllabus/${id}/request-changes`, { feedback }),
   students: (year) => api.get(`/hod/students${year ? `?year=${year}` : ''}`),
+  // HD-02 the Courses desk (docs/users/11 §3.3).
+  //
+  // `courses()` and `courseDetail()` are the OLD, thin pair and they stay: `courses()` returns the
+  // flat `{ stats, courses }` the old screen used, and `courseDetail()` returns the old shape.
+  // They are not broken and they are not silently replaced with a different document.
+  //
+  // The DESK is the new pair below it, and it is a different set of paths:
+  //   `coursesDirectory()` — the list, with the health badge on every row and the filters.
+  //   `courseDetail2()`    — the whole course: the chain, the curriculum, the graph, the history.
+  //
+  // The name `courseDetail2` is ugly and it is DELIBERATE: renaming the old method to
+  // `courseDetail` and pointing the new one at the same name would make every existing caller
+  // silently receive a different document, and a caller that reads `detail.syllabus.status` would
+  // get `undefined` rather than an error.
+  coursesCatalogue: () => api.get('/hod/courses/catalogue'),
+  coursesDirectory: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hod/courses/directory${qs ? `?${qs}` : ''}`);
+  },
+  courseDetail2: (id, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hod/courses/${encodeURIComponent(id)}/detail${qs ? `?${qs}` : ''}`);
+  },
+  updateCourse: (id, body) => api.patch(`/hod/courses/${encodeURIComponent(id)}`, body),
+  setCourseStatus: (id, status) =>
+    api.put(`/hod/courses/${encodeURIComponent(id)}/status`, { status }),
+  mapCourseToProgram: (id, body) =>
+    api.post(`/hod/courses/${encodeURIComponent(id)}/curriculum`, body),
+  unmapCourseFromProgram: (id, programId) =>
+    api.delete(
+      `/hod/courses/${encodeURIComponent(id)}/curriculum/${encodeURIComponent(programId)}`,
+    ),
+  addCoursePrerequisite: (id, body) =>
+    api.post(`/hod/courses/${encodeURIComponent(id)}/prerequisites`, body),
+  removeCoursePrerequisite: (id, prerequisiteCourseId) =>
+    api.delete(
+      `/hod/courses/${encodeURIComponent(id)}/prerequisites/${encodeURIComponent(prerequisiteCourseId)}`,
+    ),
   courses: () => api.get('/hod/courses'),
   courseDetail: (id) => api.get(`/hod/courses/${id}`),
   leaves: () => api.get('/hod/leave'),
