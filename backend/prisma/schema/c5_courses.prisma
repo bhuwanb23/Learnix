@@ -1,0 +1,64 @@
+// Domain C5 — The curriculum a course belongs to, and what it demands first.
+//
+// WHY THIS IS A NEW TABLE AND NOT A QUERY
+// --------------------------------------
+// Before this, "which program runs which course" could only be answered RETROSPECTIVELY, from the
+// offerings that had actually been created. That reports what HAPPENED, never what SHOULD happen,
+// and it makes a course that was never offered indistinguishable from a course that does not exist.
+//
+// So the department DECLARES its curriculum, and the offerings are the evidence that the
+// declaration was carried out. The two are read together — a declared course with no offering is a
+// gap, and an offering with no declaration is an accident.
+//
+// WHY A PREREQUISITE IS ITS OWN TABLE
+// -----------------------------------
+// A course that demands another course is a SELF-relation, and a self-relation with a kind on it
+// ("required" against "recommended") needs its own table rather than a pair of columns on Course:
+// the columns would be a list of ids in a scalar, and a list of ids in a scalar cannot be indexed,
+// cannot be joined, and cannot carry a kind.
+
+/// The curriculum a department DECLARES: which program runs which course, in which semester.
+///
+/// `type` mirrors `Course.type` — CORE | ELECTIVE — because a course can be CORE in one program
+/// and ELECTIVE in another, and the distinction is exactly what the credit summary needs.
+model ProgramCourse {
+  id         String   @id @default(cuid())
+  programId  String
+  courseId   String
+  semester   Int
+  type       String   @default("CORE") // CORE | ELECTIVE
+  isElective Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  program Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, courseId])
+  @@index([courseId])
+  @@index([programId])
+  @@index([semester])
+  @@map("program_courses")
+}
+
+/// What must come before a course.
+///
+/// A SELF-relation, so it needs a relation NAME on both sides — Prisma requires it when a model
+/// has two relations to the same model, and an unnamed one is a compile error rather than a
+/// warning. The two names are `CoursePrerequisites` (the courses that demand this one) and
+/// `PrerequisiteFor` (the courses this one demands).
+model CoursePrerequisite {
+  id                  String   @id @default(cuid())
+  courseId            String
+  prerequisiteCourseId String
+  type                String   @default("REQUIRED") // REQUIRED | RECOMMENDED
+  createdAt           DateTime @default(now())
+
+  course            Course @relation("CoursePrerequisites", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisiteCourse Course @relation("PrerequisiteFor", fields: [prerequisiteCourseId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, prerequisiteCourseId])
+  @@index([prerequisiteCourseId])
+  @@index([courseId])
+  @@map("course_prerequisites")
+}

@@ -31,10 +31,12 @@ model Program {
   updatedAt      DateTime @updatedAt
 
   department Department @relation(fields: [departmentId], references: [id])
-  batches    Batch[]
-  sections   Section[]
+  batches Batch[]
+  sections Section[]
   feeStructures FeeStructure[]
   digitalGrants DigitalAccessGrant[]
+  // The curriculum the department DECLARES for this program.
+  courses ProgramCourse[]
 
   @@unique([departmentId, code])
   @@index([departmentId])
@@ -91,15 +93,27 @@ model Course {
   credits       Int      @default(3)
   semester      Int
   type          String   @default("CORE") // CORE | ELECTIVE
+  // The course's own lifecycle, and it is NOT the same as the exam's status or the syllabus's.
+  // A course can be DRAFT while the department works out its program mapping, ACTIVE while it is
+  // taught, and ARCHIVED when it is retired from the curriculum but its history must stay readable.
+  // Before this column there was NO course write path at all, so "status" could only be inferred
+  // from the syllabus and the exams - and a course that had never been examined looked identical
+  // to one that had been retired.
+  status        String   @default("ACTIVE") // ACTIVE | ARCHIVED | DRAFT
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   department    Department       @relation(fields: [departmentId], references: [id])
   offerings     CourseOffering[]
   syllabusVersions SyllabusVersion[]
+  // The curriculum the department DECLARES, and the graph of what must come first.
+  programCourses  ProgramCourse[]
+  prerequisites   CoursePrerequisite[] @relation("CoursePrerequisites")
+  prerequisiteFor CoursePrerequisite[] @relation("PrerequisiteFor")
 
   @@unique([institutionId, code])
   @@index([institutionId])
   @@index([departmentId])
+  @@index([status])
   @@map("courses")
 }
