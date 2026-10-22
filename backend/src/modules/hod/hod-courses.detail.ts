@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the course detail, the chain, and the writes.
+ * HD-06 — The HOD's Courses desk: the course detail, the chain, and the writes.
  * Docs: 11-hod.md §3.3
  *
  * THIS IS A SEPARATE FILE ON PURPOSE

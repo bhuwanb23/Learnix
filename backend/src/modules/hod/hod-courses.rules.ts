@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the vocabulary.
+ * HD-06 — The HOD's Courses desk: the vocabulary.
  * Docs: 11-hod.md §3.3
  *
  * WHY A RULES FILE

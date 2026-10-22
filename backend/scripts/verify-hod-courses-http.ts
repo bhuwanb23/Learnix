@@ -1,4 +1,4 @@
-// HD-02 — The HOD's Courses desk: HTTP verification (docs/users/11 §3.3).
+// HD-06 — The HOD's Courses desk: HTTP verification (docs/users/11 §3.3).
 //
 // Everything here is about the BOUNDARY, which a direct service call cannot see:
 //

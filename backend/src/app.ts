@@ -14,7 +14,7 @@ import hodRoutes from './modules/hod/hod.routes.js';
 // `hodRoutes`, because it applies its own auth and Express matches by mount
 // order — exactly as the exam cell's dashboard router is mounted.
 import hodDashboardRoutes from './modules/hod/hod-dashboard.routes.js';
-// HD-02 - the HOD's Courses desk. Its own router, mounted BEFORE `hodRoutes`,
+// HD-06 - the HOD's Courses desk. Its own router, mounted BEFORE `hodRoutes`,
 // because it owns `/courses/catalogue`, `/courses/directory` and
 // `/courses/:courseId/detail` - and the OLD `GET /api/v1/hod/courses` pair stays
 // where it is, doing what it did.
@@ -143,7 +143,7 @@ export function createApp() {
   // `GET /api/v1/hod/dashboard` is gone — it is a 404 now, superseded by
   // `/dashboard/overview`, `/dashboard/catalogue` and `/dashboard/blocks/:block`.
   app.use('/api/v1/hod', hodDashboardRoutes);
-  // HD-02 the Courses desk. Mounted before hodRoutes so `/courses/catalogue`,
+  // HD-06 the Courses desk. Mounted before hodRoutes so `/courses/catalogue`,
   // `/courses/directory` and `/courses/:courseId/detail` reach it; the old
   // `/courses` and `/courses/:courseId` GETs fall through to hodRoutes and are
   // unchanged.

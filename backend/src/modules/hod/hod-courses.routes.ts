@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the routes.
+ * HD-06 — The HOD's Courses desk: the routes.
  * Docs: 11-hod.md §3.3
  *
  * A ROUTER OF ITS OWN, mounted BEFORE `hodRoutes` in `app.ts`, because it applies its own auth and

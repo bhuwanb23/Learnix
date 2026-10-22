@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the service.
+ * HD-06 — The HOD's Courses desk: the service.
  * Docs: 11-hod.md §3.3
  *
  * THE TEN FEATURES, AND WHERE EACH ONE LIVES

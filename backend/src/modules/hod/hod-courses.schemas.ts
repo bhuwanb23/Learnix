@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the request schemas.
+ * HD-06 — The HOD's Courses desk: the request schemas.
  * Docs: 11-hod.md §3.3
  *
  * `.strict()` like everything else in this platform, so a typo'd query param is a 400 rather than a

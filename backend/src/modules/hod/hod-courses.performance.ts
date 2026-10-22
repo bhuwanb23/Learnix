@@ -1,5 +1,5 @@
 /**
- * HD-02 — The Courses desk: performance and the Course Health Indicator.
+ * HD-06 — The Courses desk: performance and the Course Health Indicator.
  * Docs: 11-hod.md §3.3
  *
  * THE GRADE IS RE-DERIVED, NOT READ

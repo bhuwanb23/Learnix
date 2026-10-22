@@ -1,5 +1,5 @@
 /**
- * HD-02 — The Courses desk: the department scope for courses.
+ * HD-06 — The Courses desk: the department scope for courses.
  * Docs: 11-hod.md §3.3
  *
  * BUILT ON `resolveHodScope`, NOT A SECOND SCOPE
