@@ -926,6 +926,351 @@ async function seedDomainB(institutionId: string): Promise<void> {
     console.log('  ✓ HD-02: 5 faculty with varied caps, 5 classes across 2 sections, a leave in progress');
   }
 
+  // ── HD-05: the Students desk — a student spread the at-risk detection can read ──
+  //
+  // The at-risk detection has five signals, and a seed where every student has the same data
+  // would show five students with identical rows and prove nothing. So this block creates a SPREAD:
+  //
+  //   · ANJALI    — on track. Present, passing, submitting.
+  //   · ROHAN     — low attendance AND a run of absences.
+  //   · MEERA     — failed a course AND declining marks between two exams.
+  //   · KABIR     — missing assignments.
+  //   · SANA      — not measured at all, which is a verdict of its own.
+  //
+  // The DECLINING MARKS signal needs TWO results to measure, so the block creates an exam with two
+  // slots — an earlier one and a later one — and the decline is between them.
+  {
+    const studentUsers = [
+      { email: 'anjali.menon@learnix.dev', fullName: 'Anjali Menon', rollNo: 'CSE-23-021' },
+      { email: 'rohan.desai@learnix.dev', fullName: 'Rohan Desai', rollNo: 'CSE-23-022' },
+      { email: 'meera.kaur@learnix.dev', fullName: 'Meera Kaur', rollNo: 'CSE-23-023' },
+      { email: 'kabir.sethi@learnix.dev', fullName: 'Kabir Sethi', rollNo: 'CSE-23-024' },
+      { email: 'sana.qureshi@learnix.dev', fullName: 'Sana Qureshi', rollNo: 'CSE-23-025' },
+    ];
+
+    const studentRows: { id: string; email: string }[] = [];
+    for (const s of studentUsers) {
+      const existing = await db.user.findFirst({ where: { email: s.email, institutionId } });
+      let u = existing;
+      if (!u) {
+        u = await db.user.create({
+          data: {
+            institutionId,
+            email: s.email,
+            fullName: s.fullName,
+            passwordHash: await bcrypt.hash(PASSWORD, 10),
+            roles: { create: { role: 'STUDENT' } },
+          },
+          select: { id: true },
+        });
+      }
+      const profile = await db.studentProfile.upsert({
+        where: { userId: u.id },
+        update: {
+          programId: btechCse.id,
+          batchId: batch2027.id,
+          section: 'A',
+          currentSemester: 4,
+        },
+        create: {
+          userId: u.id,
+          institutionId,
+          rollNo: s.rollNo,
+          programId: btechCse.id,
+          batchId: batch2027.id,
+          section: 'A',
+          currentSemester: 4,
+          admissionDate: new Date('2023-08-01'),
+        },
+        select: { id: true },
+      });
+      studentRows.push({ id: profile.id, email: s.email });
+    }
+
+    // THE OFFERINGS THE SPREAD IS MEASURED AGAINST.
+    const cs401 = await db.course.findFirst({ where: { institutionId, code: 'CS401' } });
+    const cs402 = await db.course.findFirst({ where: { institutionId, code: 'CS402' } });
+    const cs401Offering = await db.courseOffering.findFirst({
+      where: { courseId: cs401?.id, sectionId: sectionA.id },
+      select: { id: true },
+    });
+    const cs402Offering = await db.courseOffering.findFirst({
+      where: { courseId: cs402?.id, sectionId: sectionA.id },
+      select: { id: true },
+    });
+    if (cs401Offering && cs402Offering) {
+      for (const s of studentRows) {
+        for (const o of [cs401Offering.id, cs402Offering.id]) {
+          await db.enrollment.upsert({
+            where: { studentProfileId_offeringId: { studentProfileId: s.id, offeringId: o } },
+            update: {},
+            create: { studentProfileId: s.id, offeringId: o, status: 'ACTIVE' },
+          });
+        }
+      }
+    }
+
+    // THE CLASSES THAT WERE HELD, and the register.
+    //
+    // Six sessions over three Mondays, and the spread is in the REGISTER: Anjali is present,
+    // Rohan misses half and then three IN A ROW, Meera attends, Kabir attends.
+    const sessionDates = [1, 8, 15, 22, 29, 36].map(
+      (d) => new Date(Date.now() - d * 86400000),
+    );
+    const sessions: { id: string; date: Date }[] = [];
+    for (const date of sessionDates) {
+      const existing = await db.attendanceSession.findFirst({
+        where: { offeringId: cs401Offering.id, date },
+        select: { id: true, date: true },
+      });
+      if (existing) {
+        sessions.push(existing);
+        continue;
+      }
+      const created = await db.attendanceSession.create({
+        data: {
+          offeringId: cs401Offering.id,
+          date,
+          takenByUserId: teacher.id,
+          status: 'FINALIZED',
+        },
+        select: { id: true, date: true },
+      });
+      sessions.push(created);
+    }
+
+    const attendancePlan: Record<string, string[]> = {
+      // ANJALI — present throughout.
+      [studentRows[0]!.id]: sessions.map(() => 'PRESENT'),
+      // ROHAN — present for the first two, absent for the next THREE IN A ROW, present for the
+      // last. A run, not just a low total.
+      [studentRows[1]!.id]: ['PRESENT', 'PRESENT', 'ABSENT', 'ABSENT', 'ABSENT', 'PRESENT'],
+      // MEERA — present, with one absence.
+      [studentRows[2]!.id]: ['PRESENT', 'PRESENT', 'PRESENT', 'ABSENT', 'PRESENT', 'PRESENT'],
+      // KABIR — present, with a late mark.
+      [studentRows[3]!.id]: ['PRESENT', 'LATE', 'PRESENT', 'PRESENT', 'PRESENT', 'PRESENT'],
+      // SANA — never marked. UNMEASURED, not on track.
+      [studentRows[4]!.id]: [],
+    };
+    for (const [studentProfileId, states] of Object.entries(attendancePlan)) {
+      for (let i = 0; i < sessions.length; i++) {
+        const state = states[i];
+        if (!state) continue;
+        await db.attendanceRecord.upsert({
+          where: {
+            sessionId_studentProfileId: {
+              sessionId: sessions[i]!.id,
+              studentProfileId,
+            },
+          },
+          update: { state },
+          create: { sessionId: sessions[i]!.id, studentProfileId, state },
+        });
+      }
+    }
+
+    // THE EXAM, with TWO SLOTS, so the DECLINING MARKS signal has two points to measure.
+    const exam = await db.exam.upsert({
+      where: { id: `hd05-exam-${institutionId}` },
+      update: { status: 'RESULTS_PUBLISHED' },
+      create: {
+        id: `hd05-exam-${institutionId}`,
+        institutionId,
+        academicYearId: ay.id,
+        semester: 4,
+        type: 'MID_TERM',
+        name: 'Mid-term 2026 (HD-05)',
+        createdByUserId: teacher.id,
+        status: 'RESULTS_PUBLISHED',
+      },
+    });
+    const slotA = await db.examSlot.upsert({
+      where: { id: `hd05-slot-a-${cs401Offering.id}` },
+      update: {},
+      create: {
+        id: `hd05-slot-a-${cs401Offering.id}`,
+        examId: exam.id,
+        offeringId: cs401Offering.id,
+        date: new Date(Date.now() - 60 * 86400000),
+        startTime: '10:00',
+        endTime: '12:00',
+        room: 'L-204',
+        status: 'COMPLETED',
+      },
+    });
+    const slotB = await db.examSlot.upsert({
+      where: { id: `hd05-slot-b-${cs401Offering.id}` },
+      update: {},
+      create: {
+        id: `hd05-slot-b-${cs401Offering.id}`,
+        examId: exam.id,
+        offeringId: cs401Offering.id,
+        date: new Date(Date.now() - 20 * 86400000),
+        startTime: '10:00',
+        endTime: '12:00',
+        room: 'L-204',
+        status: 'COMPLETED',
+      },
+    });
+
+    // THE MARKS. Anjali improves; Meera declines AND fails; the others sit mid.
+    const marksPlan: { email: string; slotA: number; slotB: number; max: number }[] = [
+      { email: 'anjali.menon@learnix.dev', slotA: 26, slotB: 34, max: 40 },
+      { email: 'rohan.desai@learnix.dev', slotA: 24, slotB: 25, max: 40 },
+      { email: 'meera.kaur@learnix.dev', slotA: 32, slotB: 14, max: 40 },
+      { email: 'kabir.sethi@learnix.dev', slotA: 22, slotB: 23, max: 40 },
+    ];
+    for (const m of marksPlan) {
+      const student = studentRows.find((s) => s.email === m.email);
+      if (!student) continue;
+      for (const [slot, marks] of [
+        [slotA.id, m.slotA],
+        [slotB.id, m.slotB],
+      ] as [string, number][]) {
+        const percent = (marks / m.max) * 100;
+        const band = percent >= 40 ? 'C' : 'F';
+        const points = percent >= 40 ? 5 : 0;
+        await db.result.upsert({
+          where: { examSlotId_studentProfileId: { examSlotId: slot, studentProfileId: student.id } },
+          update: { marksObtained: marks, maxMarks: m.max },
+          create: {
+            examSlotId: slot,
+            studentProfileId: student.id,
+            marksObtained: marks,
+            maxMarks: m.max,
+            grade: band,
+            isPass: band !== 'F',
+            status: 'PUBLISHED',
+            publishedByUserId: teacher.id,
+            publishedAt: new Date(),
+            gradePoint: points,
+          },
+        });
+      }
+    }
+
+    // THE ASSIGNMENTS, and who handed them in.
+    const assignmentSeeds = [
+      { title: 'ER Modelling Exercise', dueInDays: -20 },
+      { title: 'Normalization Problem Set', dueInDays: -12 },
+      { title: 'SQL Joins Lab', dueInDays: -6 },
+    ];
+    const assignmentIds: string[] = [];
+    for (const a of assignmentSeeds) {
+      const existing = await db.assignment.findFirst({
+        where: { offeringId: cs401Offering.id, title: a.title },
+        select: { id: true },
+      });
+      if (existing) {
+        assignmentIds.push(existing.id);
+        continue;
+      }
+      const created = await db.assignment.create({
+        data: {
+          offeringId: cs401Offering.id,
+          title: a.title,
+          maxMarks: 20,
+          weightage: 10,
+          dueAt: new Date(Date.now() + a.dueInDays * 86400000),
+          status: 'PUBLISHED',
+          createdByUserId: teacher.id,
+        },
+        select: { id: true },
+      });
+      assignmentIds.push(created.id);
+    }
+    // ANJALI hands in everything. KABIR hands in nothing, which is the POOR ASSIGNMENT
+    // COMPLETION signal. The others hand in the first two.
+    for (const s of studentRows) {
+      const email = s.email;
+      const skipAll = email === 'kabir.sethi@learnix.dev';
+      for (let i = 0; i < assignmentIds.length; i++) {
+        if (skipAll) continue;
+        if (email !== 'anjali.menon@learnix.dev' && i === 2) continue;
+        await db.submission.upsert({
+          where: {
+            assignmentId_studentProfileId: {
+              assignmentId: assignmentIds[i]!,
+              studentProfileId: s.id,
+            },
+          },
+          update: {},
+          create: {
+            assignmentId: assignmentIds[i]!,
+            studentProfileId: s.id,
+            text: 'Submitted for the HD-05 spread.',
+            submittedAt: new Date(Date.now() - (10 - i) * 86400000),
+            status: 'GRADED',
+            gradeMarks: 16,
+            gradedByUserId: teacher.id,
+            gradedAt: new Date(),
+          },
+        });
+      }
+    }
+
+    // THE PLACEMENT VERDICT, for the readiness panel.
+    for (const s of studentRows) {
+      const blocked = s.email === 'meera.kaur@learnix.dev';
+      await db.placementEligibility.upsert({
+        where: { studentProfileId: s.id },
+        update: { isEligible: !blocked, blockedReason: blocked ? 'Backlogs in Database Management Systems' : null },
+        create: {
+          studentProfileId: s.id,
+          isEligible: !blocked,
+          blockedReason: blocked ? 'Backlogs in Database Management Systems' : null,
+          registeredForDrives: !blocked,
+        },
+      });
+    }
+
+    // THE INTERVENTIONS, so the history has something in it.
+    const meera = studentRows.find((s) => s.email === 'meera.kaur@learnix.dev');
+    const rohan = studentRows.find((s) => s.email === 'rohan.desai@learnix.dev');
+    const interventionSeeds = [
+      {
+        studentProfileId: meera?.id,
+        type: 'REMEDIAL_CLASS',
+        status: 'IN_PROGRESS',
+        title: 'Remedial class for CS401',
+        notes: 'Weekly remedial session on normalization.',
+        ownerUserId: teacher.id,
+        dueInDays: 21,
+      },
+      {
+        studentProfileId: rohan?.id,
+        type: 'FACULTY_MENTORING',
+        status: 'PROPOSED',
+        title: 'Mentoring for CS402',
+        notes: 'Weekly one-to-one with the course teacher.',
+        ownerUserId: sunita?.id ?? null,
+        dueInDays: 14,
+      },
+    ];
+    for (const i of interventionSeeds) {
+      if (!i.studentProfileId) continue;
+      const existing = await db.studentIntervention.findFirst({
+        where: { studentProfileId: i.studentProfileId, title: i.title },
+        select: { id: true },
+      });
+      if (existing) continue;
+      await db.studentIntervention.create({
+        data: {
+          studentProfileId: i.studentProfileId,
+          type: i.type,
+          status: i.status,
+          title: i.title,
+          notes: i.notes,
+          raisedByUserId: hod?.id ?? teacher.id,
+          ownerUserId: i.ownerUserId,
+          dueAt: new Date(Date.now() + i.dueInDays * 86400000),
+        },
+      });
+    }
+
+    console.log('  ✓ HD-05: 5 students with a spread, 2 exams, 3 assignments, 2 interventions');
+  }
+
   // Lecture note (published) on the DBMS offering
   const noteExists = await db.lectureNote.findFirst({
     where: { offeringId: offerings[0].id, title: 'ER Modeling — Lecture 1' },

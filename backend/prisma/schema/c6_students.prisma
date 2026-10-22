@@ -1,0 +1,48 @@
+// Domain C6 — The academic interventions a department records for a student.
+//
+// WHY THIS TABLE EXISTS AT ALL
+// -----------------------------
+// The platform had no academic-intervention concept. The dashboard could say a student was at
+// risk, and the teacher could act in a room, and then nothing recorded that anything had been
+// done — so "what has this department already tried with this student?" had no answer, and a
+// student who had been given three remedial classes and a mentoring pair looked exactly like a
+// student who had been given nothing.
+//
+// So the intervention is a RECORD, with a type, an owner, a state and a resolution. The HOD's
+// early-intervention suggestions pre-fill it; the HOD records it; the history is the list.
+//
+// WHY THE ACTOR STAMPS ARE SCALARS
+// ---------------------------------
+// `raisedByUserId` and `ownerUserId` are actor stamps, not relations, and they follow the
+// platform's rule: a stamp records who did something, and a relation would make the audit trail
+// depend on a user row that can be deleted. They are indexed, so "everything this teacher is
+// carrying" is a cheap query.
+
+/// ONE ACADEMIC INTERVENTION for one student.
+model StudentIntervention {
+  id               String    @id @default(cuid())
+  studentProfileId String
+  /// REMEDIAL_CLASS | FACULTY_MENTORING | RESOURCES | PEER_LEARNING
+  type             String
+  /// PROPOSED | IN_PROGRESS | RESOLVED | CANCELLED
+  status           String    @default("PROPOSED")
+  title            String
+  notes            String?
+  /// Who raised it. A scalar stamp — an actor, not a relation.
+  raisedByUserId   String
+  /// Who is carrying it. A teacher, or the HOD.
+  ownerUserId      String?
+  dueAt            DateTime?
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  studentProfile StudentProfile @relation(fields: [studentProfileId], references: [id])
+
+  @@index([studentProfileId])
+  @@index([status])
+  @@index([type])
+  @@index([ownerUserId])
+  @@index([raisedByUserId])
+  @@map("student_interventions")
+}

@@ -34,6 +34,8 @@ model StudentProfile {
   jobApplications   JobApplication[]
   placementEligibility PlacementEligibility?
   driveRegistrations   DriveRegistration[]
+  // HD-05 — the academic interventions the department has recorded for this student.
+  studentInterventions StudentIntervention[]
   feeDues           FeeDue[]
   payments          Payment[]
   transportFeeDues  TransportFeeDue[]

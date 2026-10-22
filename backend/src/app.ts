@@ -23,6 +23,10 @@ import hodCoursesRoutes from './modules/hod/hod-courses.routes.js';
 // `/faculty/catalogue`, `/faculty/directory` and `/faculty/:userId/detail` - and the OLD
 // `GET /api/v1/hod/faculty` stays where it is, doing what it did.
 import hodFacultyRoutes from './modules/hod/hod-faculty.routes.js';
+// HD-05 - the HOD's Students desk. Its own router, mounted BEFORE `hodRoutes`, because it owns
+// `/students/catalogue`, `/students/directory` and `/students/:studentProfileId/detail` - and the
+// OLD `GET /api/v1/hod/students` stays where it is, doing what it did.
+import hodStudentsRoutes from './modules/hod/hod-students.routes.js';
 import sportsRoutes from './modules/sports/sports.routes.js';
 import transportRoutes from './modules/transport/transport.routes.js';
 import hostelRoutes from './modules/hostel/hostel.routes.js';
@@ -156,6 +160,10 @@ export function createApp() {
   // `/faculty/directory` and `/faculty/:userId/detail` reach it; the old
   // `/faculty` GET falls through to hodRoutes and is unchanged.
   app.use('/api/v1/hod', hodFacultyRoutes);
+  // HD-05 the Students desk. Mounted before hodRoutes so `/students/catalogue`,
+  // `/students/directory` and `/students/:studentProfileId/detail` reach it; the old
+  // `/students` GET falls through to hodRoutes and is unchanged.
+  app.use('/api/v1/hod', hodStudentsRoutes);
   app.use('/api/v1/hod', hodRoutes);
   app.use('/api/v1/sports', sportsRoutes);
   app.use('/api/v1/transport', transportRoutes);
