@@ -557,6 +557,24 @@ export const hodApi = {
     );
   },
   faculty: () => api.get('/hod/faculty'),
+  // HD-02 the Faculty desk (docs/users/11 §3.2).
+  //
+  // `faculty()` is the OLD, flat list and it stays: it returns the array the old screen used,
+  // and it is not broken. The DESK is the new pair below, on its own paths, so a caller holding
+  // the old path gets the old document rather than a quietly different one.
+  facultyCatalogue: () => api.get('/hod/faculty/catalogue'),
+  facultyDirectory: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hod/faculty/directory${qs ? `?${qs}` : ''}`);
+  },
+  facultyDetail2: (userId, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hod/faculty/${encodeURIComponent(userId)}/detail${qs ? `?${qs}` : ''}`);
+  },
   reassign: (offeringId, toUserId) =>
     api.post(`/hod/offerings/${offeringId}/reassign`, { toUserId }),
   syllabus: () => api.get('/hod/syllabus'),

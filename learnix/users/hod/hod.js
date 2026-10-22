@@ -32,6 +32,17 @@ import NotificationsScreen from './pages/notifications/notifications';
 // asserts it is present and points at its own component.
 import CourseDetailScreen from './pages/courses/coursesDetail';
 
+// HD-02 the Faculty desk: the individual faculty view, opened from a row on the
+// Faculty tab. It needs to know WHICH teacher it is showing, so it is opened with
+// a PARAM and the shell carries it.
+//
+// Registering it HERE is load-bearing and its failure is SILENT, exactly as it is
+// for the Courses desk's detail: `renderContent` looks the key up in
+// FEATURE_MODULES, finds nothing, falls through to the tab switcher, and puts the
+// controller back on the Faculty tab with no error anywhere.
+// `audit-hod-faculty-ui.ts` asserts it is present and points at its own component.
+import FacultyDetailScreen from './pages/faculty/facultyDetail';
+
 // Import hooks
 import useSafeAreaInsetsWithPadding from '../../hooks/useSafeAreaInsets';
 
@@ -44,6 +55,7 @@ const FEATURE_MODULES = {
   Leave: { title: 'Leave Requests', component: LeaveModule },
   Notifications: { title: 'Notifications', component: NotificationsScreen },
   CourseDetail: { title: 'Course', icon: 'book-outline', component: CourseDetailScreen },
+  FacultyDetail: { title: 'Faculty', icon: 'person-outline', component: FacultyDetailScreen },
 };
 
 const TAB_TITLES = {
