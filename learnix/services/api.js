@@ -582,6 +582,30 @@ export const hodApi = {
   requestSyllabusChanges: (id, feedback) =>
     api.post(`/hod/syllabus/${id}/request-changes`, { feedback }),
   students: (year) => api.get(`/hod/students${year ? `?year=${year}` : ''}`),
+  // HD-05 the Students desk (docs/users/11 §3.4).
+  //
+  // `students()` is the OLD, flat list and it stays: it returns the array the old screen used,
+  // and it is not broken. The DESK is the new set of methods below, on its own paths, so a caller
+  // holding the old path gets the old document rather than a quietly different one.
+  studentsCatalogue: () => api.get('/hod/students/catalogue'),
+  studentsDirectory: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hod/students/directory${qs ? `?${qs}` : ''}`);
+  },
+  studentDetail2: (studentProfileId, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(
+      `/hod/students/${encodeURIComponent(studentProfileId)}/detail${qs ? `?${qs}` : ''}`,
+    );
+  },
+  recordStudentIntervention: (studentProfileId, body) =>
+    api.post(`/hod/students/${encodeURIComponent(studentProfileId)}/interventions`, body),
+  updateStudentIntervention: (interventionId, body) =>
+    api.patch(`/hod/students/interventions/${encodeURIComponent(interventionId)}`, body),
   // HD-06 the Courses desk (docs/users/11 §3.3).
   //
   // `courses()` and `courseDetail()` are the OLD, thin pair and they stay: `courses()` returns the
