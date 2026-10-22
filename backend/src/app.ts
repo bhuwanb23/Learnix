@@ -10,6 +10,10 @@ import { prisma } from './db/prisma.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import alumniRoutes from './modules/alumni/alumni.routes.js';
 import hodRoutes from './modules/hod/hod.routes.js';
+// HD-01 — the HOD's nine-section dashboard. Its own router, mounted BEFORE
+// `hodRoutes`, because it applies its own auth and Express matches by mount
+// order — exactly as the exam cell's dashboard router is mounted.
+import hodDashboardRoutes from './modules/hod/hod-dashboard.routes.js';
 import sportsRoutes from './modules/sports/sports.routes.js';
 import transportRoutes from './modules/transport/transport.routes.js';
 import hostelRoutes from './modules/hostel/hostel.routes.js';
@@ -129,6 +133,11 @@ export function createApp() {
 
   app.use('/api/v1/auth', authRoutes);
   app.use('/api/v1/alumni', alumniRoutes);
+  // HD-01 the HOD's dashboard owns every `/dashboard/*` path, and it applies its
+  // own auth, so it is mounted BEFORE hodRoutes. The old
+  // `GET /api/v1/hod/dashboard` is gone — it is a 404 now, superseded by
+  // `/dashboard/overview`, `/dashboard/catalogue` and `/dashboard/blocks/:block`.
+  app.use('/api/v1/hod', hodDashboardRoutes);
   app.use('/api/v1/hod', hodRoutes);
   app.use('/api/v1/sports', sportsRoutes);
   app.use('/api/v1/transport', transportRoutes);

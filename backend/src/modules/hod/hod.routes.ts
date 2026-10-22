@@ -22,13 +22,30 @@ const wrap =
 
 router.use(auth, requireRole('HOD', 'ADMIN'));
 
-// HD-01 dashboard
-router.get(
-  '/dashboard',
-  wrap(async (req, res) => {
-    res.json({ data: await service.getDashboard(req.auth!.userId, req.auth!.institutionId) });
-  }),
-);
+// HD-01 dashboard — REMOVED, superseded by `hod-dashboard.routes.ts`.
+//
+// The old `GET /api/v1/hod/dashboard` answered with `{ department, engagement, stats, alerts,
+// pendingApprovals }` — a hero, four counters and a list of PROSE STRINGS. It had four defects
+// that could not be fixed in place:
+//
+//   1. It counted the leave requests INSTITUTION-WIDE, so an HOD's "pending" figure included other
+//      departments' leave — and `listLeaves`/`decideLeave` let that HOD see and APPROVE them.
+//      Both are now scoped to the department's staff.
+//   2. Its workload query was filtered by `teacherUserId` alone, so a teacher who also taught in
+//      another department inflated this department's utilisation and could raise a false
+//      "overloaded" alert. It is now scoped through section → program → department.
+//   3. Its alerts were prose strings, which cannot be filtered, counted or linked to.
+//   4. It had no attendance, no pass rate, no syllabus progress, no teaching hours delivered, no
+//      student risk, no trends and no health score.
+//
+// The replacement is NINE STRUCTURED SECTIONS, served by `hod-dashboard.routes.ts`:
+//
+//   GET /api/v1/hod/dashboard/catalogue    the nine sections, the four actions, the alert kinds
+//   GET /api/v1/hod/dashboard/overview      all nine sections in one call
+//   GET /api/v1/hod/dashboard/blocks/:block one section on its own
+//
+// The old path is GONE rather than re-pointed: a caller holding it gets a 404 rather than a
+// quietly different document.
 
 // HD-02 faculty
 router.get(

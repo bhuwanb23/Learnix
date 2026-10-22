@@ -18,94 +18,86 @@ async function requireDepartment(hodUserId: string, institutionId: string) {
   return dept;
 }
 
-// ── HD-01 Dashboard ──────────────────────────────────────────
-export async function getDashboard(hodUserId: string, institutionId: string) {
-  const dept = await getDepartment(hodUserId, institutionId);
-  const programIds = dept.programs.map((p) => p.id);
+// ═══ Department scope ═════════════════════════════════════════════════════
+//
+// THE SCOPES, IN ONE PLACE, so they cannot drift.
+//
+// Every read in this module is scoped to the HOD's own department, and the three ways of reaching
+// a department's data are not the same:
+//
+//   · STAFF      — `StaffProfile.departmentId` is the department's own column.
+//   · STUDENTS   — through the department's PROGRAMMES, because a student belongs to a programme
+//                  and a programme belongs to a department.
+//   · OFFERINGS  — through the offering's SECTION → PROGRAM → DEPARTMENT. The offering itself
+//                  carries no department column.
+//
+// TWO LEAKS WERE FIXED HERE, and both are worth recording:
+//
+//   1. The LEAVE requests were filtered by `institutionId` alone. An HOD of CSE could therefore
+//      LIST and APPROVE another department's leave requests — the leave belongs to a person, and
+//      the person's department is the scope. A leave is now scoped through
+//      `staffUser.staffProfile.departmentId`.
+//
+//   2. The DASHBOARD's WORKLOAD query was filtered by `teacherUserId` alone. A teacher who also
+//      teaches in another department brought those offerings into this department's workload
+//      count, inflating the utilisation figure and raising a false "overloaded" alert. The
+//      offerings are now scoped to the department.
 
-  const [faculty, students, courses, syllabusPending, leavePending] = await Promise.all([
-    prisma.staffProfile.findMany({
-      where: { institutionId, departmentId: dept.id, user: { deletedAt: null } },
-      select: { userId: true, designation: true, maxWorkloadHours: true, user: { select: { fullName: true } } },
-    }),
-    prisma.studentProfile.count({
-      where: { institutionId, programId: { in: programIds }, user: { deletedAt: null } },
-    }),
-    prisma.course.count({ where: { institutionId, departmentId: dept.id } }),
-    prisma.syllabusVersion.count({
-      where: { status: 'SUBMITTED', course: { is: { institutionId, departmentId: dept.id } } },
-    }),
-    prisma.leaveRequest.count({ where: { institutionId, status: 'PENDING' } }),
-  ]);
-
-  // Workload = weekly schedule slots per faculty (real workload signal)
-  const facultyUserIds = faculty.map((f) => f.userId);
-  const offerings = await prisma.courseOffering.findMany({
-    where: { teacherUserId: { in: facultyUserIds } },
-    select: { id: true, teacherUserId: true, _count: { select: { scheduleSlots: true, enrollments: true } } },
-  });
-  const workloadMap = new Map<string, number>();
-  for (const o of offerings) {
-    workloadMap.set(o.teacherUserId, (workloadMap.get(o.teacherUserId) ?? 0) + o._count.scheduleSlots);
-  }
-
-  const totalMax = faculty.reduce((s, f) => s + f.maxWorkloadHours, 0);
-  const totalLoad = faculty.reduce((s, f) => s + (workloadMap.get(f.userId) ?? 0), 0);
-  const utilizationPct = totalMax === 0 ? 0 : Math.min(Math.round((totalLoad / totalMax) * 100), 100);
-
-  const overloaded = faculty.filter((f) => {
-    const load = workloadMap.get(f.userId) ?? 0;
-    return load > f.maxWorkloadHours;
-  });
-
+/** The leave requests belonging to THIS department's staff. */
+function leaveScope(institutionId: string, departmentId: string) {
   return {
-    department: { id: dept.id, name: dept.name, code: dept.code },
-    engagement: {
-      utilizationPct,
-      totalLoad,
-      totalMax,
-      students,
-    },
-    stats: {
-      faculty: faculty.length,
-      students,
-      courses,
-      pendingSyllabus: syllabusPending,
-      pendingLeaves: leavePending,
-    },
-    alerts: [
-      ...overloaded.map((f) => ({
-        type: 'WORKLOAD' as const,
-        severity: 'HIGH' as const,
-        message: `${f.user.fullName} exceeds max workload (${workloadMap.get(f.userId)} > ${f.maxWorkloadHours} hrs)`,
-      })),
-      ...(leavePending > 0
-        ? [{ type: 'LEAVE' as const, severity: 'MEDIUM' as const, message: `${leavePending} leave request(s) awaiting decision` }]
-        : []),
-      ...(syllabusPending > 0
-        ? [{ type: 'SYLLABUS' as const, severity: 'MEDIUM' as const, message: `${syllabusPending} syllabus version(s) awaiting HOD review` }]
-        : []),
-    ],
-    pendingApprovals: {
-      syllabus: syllabusPending,
-      leaves: leavePending,
-    },
+    institutionId,
+    staffUser: { staffProfile: { departmentId } },
   };
 }
 
+/** The course offerings that belong to THIS department, through section → program. */
+function offeringScope(departmentId: string) {
+  return { section: { program: { departmentId } } };
+}
+
+/** The staff of THIS department. */
+function staffScope(institutionId: string, departmentId: string) {
+  return { institutionId, departmentId };
+}
+
+// ── HD-01 Dashboard — REMOVED, superseded by `hod-dashboard.service.ts`.
+//
+// The old `getDashboard` answered with `{ department, engagement, stats, alerts, pendingApprovals }`
+// — a hero, four counters and a list of PROSE STRINGS. It had four defects that could not be fixed
+// in place:
+//
+//   1. It counted the leave requests INSTITUTION-WIDE, so an HOD's "pending" figure included other
+//      departments' leave — and `listLeaves`/`decideLeave` let that HOD see and APPROVE them.
+//      Both are now scoped to the department's staff, through `leaveScope`.
+//   2. Its workload query was filtered by `teacherUserId` alone, so a teacher who also taught in
+//      another department inflated this department's utilisation and could raise a false
+//      "overloaded" alert. It is now scoped through `offeringScope` — section → program →
+//      department.
+//   3. Its alerts were prose strings, which cannot be filtered, counted or linked to.
+//   4. It had no attendance, no pass rate, no syllabus progress, no teaching hours delivered, no
+//      student risk, no trends and no health score.
+//
+// The replacement is NINE STRUCTURED SECTIONS, in `hod-dashboard.service.ts`.
+//
+// THE SCOPES STAY HERE, because the OTHER functions in this module use them too, and a scope
+// written twice is a scope that will drift. `leaveScope`, `offeringScope` and `staffScope` are the
+// one definition of "this department's", and every read below goes through one of them.
 // ── HD-02 Faculty ────────────────────────────────────────────
 export async function listFaculty(hodUserId: string, institutionId: string) {
   const dept = await requireDepartment(hodUserId, institutionId);
 
   const staff = await prisma.staffProfile.findMany({
-    where: { institutionId, departmentId: dept.id, user: { deletedAt: null } },
+    where: { ...staffScope(institutionId, dept.id), user: { deletedAt: null } },
     include: { user: { select: { id: true, fullName: true, email: true, roles: true } } },
     orderBy: { user: { fullName: 'asc' } },
   });
 
   const userIds = staff.map((s) => s.userId);
+  // SCOPED TO THE DEPARTMENT — see `offeringScope`. It used to be `teacherUserId` alone, so a
+  // teacher's cross-department offerings were counted against this department.
   const offerings = await prisma.courseOffering.findMany({
-    where: { teacherUserId: { in: userIds } },
+    where: { teacherUserId: { in: userIds }, ...offeringScope(dept.id) },
     include: {
       course: { select: { code: true, name: true } },
       section: { select: { name: true } },
@@ -117,7 +109,7 @@ export async function listFaculty(hodUserId: string, institutionId: string) {
   const now = new Date();
   const yearStart = new Date(now.getFullYear(), 0, 1);
   const leaves = await prisma.leaveRequest.findMany({
-    where: { institutionId, status: 'APPROVED', fromDate: { gte: yearStart } },
+    where: { ...leaveScope(institutionId, dept.id), status: 'APPROVED', fromDate: { gte: yearStart } },
     select: { staffUserId: true, fromDate: true, toDate: true },
   });
 
@@ -173,8 +165,12 @@ export async function reassignOffering(
   if (!target) throw notFound('Target faculty not found in your institution');
 
   // Max-hours enforcement (HD-02)
+  //
+  // SCOPED TO THE DEPARTMENT, for the same reason as everywhere else: a teacher's load in
+  // ANOTHER department is not this department's business, and counting it would refuse a
+  // perfectly reasonable reassignment on the strength of somebody else's timetable.
   const siblings = await prisma.courseOffering.findMany({
-    where: { teacherUserId: toUserId },
+    where: { teacherUserId: toUserId, ...offeringScope(dept.id) },
     select: { _count: { select: { scheduleSlots: true } } },
   });
   const currentLoad = siblings.reduce((s, o) => s + o._count.scheduleSlots, 0);
@@ -469,10 +465,13 @@ export async function getCourseDetail(hodUserId: string, institutionId: string, 
 
 // ── HD-04 Leave requests ─────────────────────────────────────
 export async function listLeaves(hodUserId: string, institutionId: string) {
-  await requireDepartment(hodUserId, institutionId);
+  const dept = await requireDepartment(hodUserId, institutionId);
 
+  // SCOPED TO THE DEPARTMENT. It used to be `institutionId` alone, which meant an HOD could see
+  // — and through `decideLeave`, APPROVE — every other department's leave requests. A leave belongs
+  // to a person, and the person's department is the scope.
   const leaves = await prisma.leaveRequest.findMany({
-    where: { institutionId },
+    where: leaveScope(institutionId, dept.id),
     include: {
       staffUser: { select: { id: true, fullName: true } },
     },
@@ -500,10 +499,10 @@ export async function decideLeave(
   decision: 'approve' | 'reject',
   substituteUserId: string | null,
 ) {
-  await requireDepartment(hodUserId, institutionId);
+  const dept = await requireDepartment(hodUserId, institutionId);
 
   const leave = await prisma.leaveRequest.findFirst({
-    where: { id: leaveId, institutionId },
+    where: { id: leaveId, ...leaveScope(institutionId, dept.id) },
     include: { staffUser: { select: { fullName: true } } },
   });
   if (!leave) throw notFound('Leave request not found');
@@ -560,7 +559,7 @@ export async function getAnalytics(hodUserId: string, institutionId: string) {
   const dept = await requireDepartment(hodUserId, institutionId);
 
   const offerings = await prisma.courseOffering.findMany({
-    where: { section: { program: { departmentId: dept.id } } },
+    where: offeringScope(dept.id),
     select: { id: true, courseId: true },
   });
   const offeringIds = offerings.map((o) => o.id);
