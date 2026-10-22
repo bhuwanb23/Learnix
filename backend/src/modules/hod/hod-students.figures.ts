@@ -155,9 +155,12 @@ export function studentFigures(
     cohortByCourse.set(r.courseId, b);
   }
   const subjectPerformance = [...byCourse.values()].map((b) => {
-    const studentPercent = Math.round((b.percentSum / b.results) * 100);
+    // THE STUDENT'S AVERAGE PERCENT. `percentSum` is already a sum of PERCENTAGES, so it is
+    // divided by the count and NOT multiplied by 100 again — that mistake makes every figure a
+    // hundred times too big.
+    const studentPercent = Math.round(b.percentSum / b.results);
     const cohort = cohortByCourse.get(b.courseId);
-    const cohortPercent = cohort ? Math.round((cohort.percentSum / cohort.count) * 100) : null;
+    const cohortPercent = cohort ? Math.round(cohort.percentSum / cohort.count) : null;
     return {
       courseId: b.courseId,
       code: b.code,
@@ -175,19 +178,29 @@ export function studentFigures(
   });
 
   // ── THE ASSIGNMENTS ───────────────────────────────────────────────────────
-  const myOfferings = new Set(
-    scope.assignments.filter((a) => a.status !== 'DRAFT').map((a) => a.offeringId),
+  // THE STUDENT'S OWN ASSIGNMENTS — the ones for the classes they are enrolled in.
+  //
+  // Using the DEPARTMENT's assignments would flag every student for work that was never theirs,
+  // and a signal that fires for everybody is not a signal.
+  const myOfferingIds = new Set(
+    scope.enrollments
+      .filter((e) => e.studentProfileId === studentProfileId)
+      .map((e) => e.offeringId),
   );
-  const relevantAssignments = scope.assignments.filter((a) => myOfferings.has(a.offeringId));
+  const relevantAssignments = scope.assignments.filter(
+    (a) => myOfferingIds.has(a.offeringId) && a.status !== 'DRAFT',
+  );
   const submittedFor = new Set(
     scope.submissions
       .filter((s) => s.studentProfileId === studentProfileId)
       .map((s) => s.assignmentId),
   );
   const missingAssignments = relevantAssignments.filter(
-    (a) => a.status !== 'DRAFT' && !submittedFor.has(a.id),
+    (a) => !submittedFor.has(a.id),
   );
-  const pastDueMissing = missingAssignments.filter(
+  // ONLY THE OVERDUE ONES COUNT. A student cannot have failed to hand in an assignment that is
+  // not due yet, and counting one is crying wolf about a deadline that has not arrived.
+  const overdueAssignments = missingAssignments.filter(
     (a) => a.dueAt !== null && new Date(a.dueAt).getTime() < now.getTime(),
   );
   const assignmentCompletionPct =
@@ -205,7 +218,7 @@ export function studentFigures(
   if (declining) signals.push('DECLINING_MARKS');
   if (failedCourses.size > 0) signals.push('FAILED_SUBJECTS');
   if (longestAbsenceStreak >= REPEATED_ABSENCE_STREAK) signals.push('REPEATED_ABSENCE');
-  if (missingAssignments.length >= POOR_ASSIGNMENT_COUNT) {
+  if (overdueAssignments.length >= POOR_ASSIGNMENT_COUNT) {
     signals.push('POOR_ASSIGNMENT_COMPLETION');
   }
 
@@ -272,9 +285,9 @@ export function studentFigures(
       published: relevantAssignments.length,
       submitted: relevantAssignments.length - missingAssignments.length,
       missing: missingAssignments.length,
-      pastDueMissing: pastDueMissing.length,
+      overdue: overdueAssignments.length,
       completionPct: assignmentCompletionPct,
-      missingTitles: missingAssignments.map((a) => a.title),
+      missingTitles: overdueAssignments.map((a) => a.title),
     },
     subjectPerformance,
     risk: {

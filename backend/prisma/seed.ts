@@ -998,8 +998,13 @@ async function seedDomainB(institutionId: string): Promise<void> {
       where: { courseId: cs402?.id, sectionId: sectionA.id },
       select: { id: true },
     });
+    // SANA IS NOT ENROLLED IN ANYTHING. She is the UNMEASURED case: a student in the programme
+    // with no register, no results and no assignments. Enrolling her would make her partially
+    // measured, and the point of her is that the department knows NOTHING about her yet.
+    const unmeasured = 'sana.qureshi@learnix.dev';
     if (cs401Offering && cs402Offering) {
       for (const s of studentRows) {
+        if (s.email === unmeasured) continue;
         for (const o of [cs401Offering.id, cs402Offering.id]) {
           await db.enrollment.upsert({
             where: { studentProfileId_offeringId: { studentProfileId: s.id, offeringId: o } },
@@ -1129,7 +1134,6 @@ async function seedDomainB(institutionId: string): Promise<void> {
       ] as [string, number][]) {
         const percent = (marks / m.max) * 100;
         const band = percent >= 40 ? 'C' : 'F';
-        const points = percent >= 40 ? 5 : 0;
         await db.result.upsert({
           where: { examSlotId_studentProfileId: { examSlotId: slot, studentProfileId: student.id } },
           update: { marksObtained: marks, maxMarks: m.max },
@@ -1143,7 +1147,6 @@ async function seedDomainB(institutionId: string): Promise<void> {
             status: 'PUBLISHED',
             publishedByUserId: teacher.id,
             publishedAt: new Date(),
-            gradePoint: points,
           },
         });
       }
@@ -1179,33 +1182,60 @@ async function seedDomainB(institutionId: string): Promise<void> {
       });
       assignmentIds.push(created.id);
     }
-    // ANJALI hands in everything. KABIR hands in nothing, which is the POOR ASSIGNMENT
-    // COMPLETION signal. The others hand in the first two.
+    // THE CLASS HANDS IN ITS WORK.
+    //
+    // Every published assignment in the class is submitted by every student in it, because a real
+    // class does — and because a signal that fires for everybody is not a signal. The HD-05
+    // spread students are the exception: KABIR hands in NOTHING, and that is the POOR ASSIGNMENT
+    // COMPLETION case.
+    //
+    // This covers the assignments OTHER seed blocks created too, not just the three below,
+    // because an outstanding assignment nobody was ever meant to submit would flag the whole
+    // department.
+    const classOfferings = [cs401Offering.id, cs402Offering.id];
+    const classAssignments = await db.assignment.findMany({
+      where: { offeringId: { in: classOfferings }, status: { not: 'DRAFT' } },
+      select: { id: true, offeringId: true },
+    });
+    const classEnrollees = await db.enrollment.findMany({
+      where: { offeringId: { in: classOfferings } },
+      select: { studentProfileId: true, offeringId: true },
+    });
+    const handIn = async (assignmentId: string, studentProfileId: string, i: number) => {
+      await db.submission.upsert({
+        where: { assignmentId_studentProfileId: { assignmentId, studentProfileId } },
+        update: {},
+        create: {
+          assignmentId,
+          studentProfileId,
+          text: 'Submitted for the HD-05 spread.',
+          submittedAt: new Date(Date.now() - (10 - i) * 86400000),
+          status: 'GRADED',
+          gradeMarks: 16,
+          gradedByUserId: teacher.id,
+          gradedAt: new Date(),
+        },
+      });
+    };
+    for (const e of classEnrollees) {
+      const email = studentRows.find((s) => s.id === e.studentProfileId)?.email;
+      // KABIR hands in nothing. SANA is not enrolled, so she never appears here.
+      if (email === 'kabir.sethi@learnix.dev' || email === unmeasured) continue;
+      let i = 0;
+      for (const a of classAssignments) {
+        if (a.offeringId !== e.offeringId) continue;
+        await handIn(a.id, e.studentProfileId, i);
+        i += 1;
+      }
+    }
+    // ANJALI hands in EVERYTHING, including the three the seed creates below. The others hand in
+    // the first two of the seed's three, so the spread is visible in the completion figure too.
     for (const s of studentRows) {
       const email = s.email;
-      const skipAll = email === 'kabir.sethi@learnix.dev';
+      if (email === 'kabir.sethi@learnix.dev' || email === unmeasured) continue;
       for (let i = 0; i < assignmentIds.length; i++) {
-        if (skipAll) continue;
         if (email !== 'anjali.menon@learnix.dev' && i === 2) continue;
-        await db.submission.upsert({
-          where: {
-            assignmentId_studentProfileId: {
-              assignmentId: assignmentIds[i]!,
-              studentProfileId: s.id,
-            },
-          },
-          update: {},
-          create: {
-            assignmentId: assignmentIds[i]!,
-            studentProfileId: s.id,
-            text: 'Submitted for the HD-05 spread.',
-            submittedAt: new Date(Date.now() - (10 - i) * 86400000),
-            status: 'GRADED',
-            gradeMarks: 16,
-            gradedByUserId: teacher.id,
-            gradedAt: new Date(),
-          },
-        });
+        await handIn(assignmentIds[i]!, s.id, i);
       }
     }
 
@@ -1222,6 +1252,15 @@ async function seedDomainB(institutionId: string): Promise<void> {
           registeredForDrives: !blocked,
         },
       });
+    }
+
+    // SANA IS TRULY UNMEASURED. Another seed block may have enrolled her, and a student with an
+    // enrolment and a submission is partially measured — but the point of her is that the
+    // department knows NOTHING about her yet.
+    const sana = studentRows.find((s) => s.email === unmeasured);
+    if (sana) {
+      await db.enrollment.deleteMany({ where: { studentProfileId: sana.id } });
+      await db.submission.deleteMany({ where: { studentProfileId: sana.id } });
     }
 
     // THE INTERVENTIONS, so the history has something in it.

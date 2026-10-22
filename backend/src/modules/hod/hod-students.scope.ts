@@ -32,6 +32,8 @@ export type StudentScope = HodScope & {
     admissionDate: Date | null;
     status: string;
   }[];
+  /** The students' enrolments — the classes each of them is actually in. */
+  enrollments: { studentProfileId: string; offeringId: string }[];
   /** The attendance records of the department's offerings, with the session's date. */
   attendance: {
     studentProfileId: string;
@@ -143,7 +145,7 @@ export async function resolveStudentScope(
   const programIds = base.programIds;
   const offeringIds = base.offeringIds;
 
-  const [students, records, results, assignments, submissions, interventions, eligibility, applications, drives] =
+  const [students, enrollments, records, results, assignments, submissions, interventions, eligibility, applications, drives] =
     await Promise.all([
       prisma.studentProfile.findMany({
         where: { institutionId, programId: { in: programIds }, user: { deletedAt: null } },
@@ -160,6 +162,13 @@ export async function resolveStudentScope(
           user: { select: { fullName: true, email: true } },
         },
         orderBy: { rollNo: 'asc' },
+      }),
+      // THE ENROLMENTS. A student's assignments are the ones for the classes THEY are in, so the
+      // enrolments have to be in scope — the department's assignments alone would flag every
+      // student for work that was never theirs.
+      prisma.enrollment.findMany({
+        where: { offering: { section: { programId: { in: programIds } } } },
+        select: { studentProfileId: true, offeringId: true },
       }),
       offeringIds.length
         ? prisma.attendanceRecord.findMany({
@@ -300,6 +309,10 @@ export async function resolveStudentScope(
       batchName: s.batchId ? (batchName.get(s.batchId) ?? null) : null,
       admissionDate: s.admissionDate,
       status: s.status,
+    })),
+    enrollments: enrollments.map((e) => ({
+      studentProfileId: e.studentProfileId,
+      offeringId: e.offeringId,
     })),
     attendance: records.map((r) => ({
       studentProfileId: r.studentProfileId,
