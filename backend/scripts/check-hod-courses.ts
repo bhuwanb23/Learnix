@@ -35,7 +35,7 @@ import {
   addPrerequisite,
   removePrerequisite,
 } from '../src/modules/hod/hod-courses.writes.js';
-import { eq, expectReject, noteThrow, ok, report, section, sweep } from './hod-courses.harness.js';
+import { eq, expectReject, noteThrow, ok, report, section } from './hod-courses.harness.js';
 
 const stamp = Date.now().toString(36);
 const PFX = `hodcourses-${stamp}`;
@@ -66,10 +66,10 @@ const hodUser = await mkUser(institution.id, 'hod', 'HOD');
 const rivalHod = await mkUser(rival.id, 'rivalhod', 'HOD');
 
 const dept = await prisma.department.create({
-  data: { institutionId: institution.id, name: 'HOD Courses Dept', code: `HCD${stamp}`.slice(0, 12), hodUserId: hodUser },
+  data: { institutionId: institution.id, name: 'HOD Courses Dept', code: `HCD${stamp}`.slice(0, 12), hodUserId: hodUser.id },
 });
 const rivalDept = await prisma.department.create({
-  data: { institutionId: rival.id, name: 'Rival Dept', code: `HCR${stamp}`.slice(0, 12), hodUserId: rivalHod },
+  data: { institutionId: rival.id, name: 'Rival Dept', code: `HCR${stamp}`.slice(0, 12), hodUserId: rivalHod.id },
 });
 const program = await prisma.program.create({
   data: { departmentId: dept.id, name: 'Courses Programme', code: `HCP${stamp}`.slice(0, 12) },
@@ -80,7 +80,7 @@ const rivalProgram = await prisma.program.create({
 const batch = await prisma.batch.create({
   data: { programId: program.id, name: `Batch ${stamp}`, startYear: 2025, graduationYear: 2029 },
 });
-const section = await prisma.section.create({
+const sectionRow = await prisma.section.create({
   data: { programId: program.id, batchId: batch.id, name: `Section ${stamp}`, currentSemester: 1 },
 });
 
@@ -100,8 +100,18 @@ const teacher = await mkUser(institution.id, 'teacher', 'TEACHER');
 await prisma.staffProfile.create({
   data: { userId: teacher.id, institutionId: institution.id, departmentId: dept.id, employeeNo: `EMP-${stamp}`, designation: 'Lecturer' },
 });
+const academicYear = await prisma.academicYear.create({
+  data: {
+    institutionId: institution.id,
+    name: `AY ${stamp}`,
+    startDate: new Date('2025-07-01'),
+    endDate: new Date('2026-05-31'),
+    isCurrent: true,
+    semesterCount: 8,
+  },
+});
 const offering = await prisma.courseOffering.create({
-  data: { courseId: courseA.id, sectionId: section.id, teacherUserId: teacher.id, semester: 1, academicYearId: 'ay-none' },
+  data: { courseId: courseA.id, sectionId: sectionRow.id, teacherUserId: teacher.id, semester: 1, academicYearId: academicYear.id },
 });
 await prisma.offeringScheduleSlot.create({
   data: { offeringId: offering.id, dayOfWeek: 1, startTime: '09:00', endTime: '10:00', room: 'R1' },
@@ -113,8 +123,17 @@ const studentUser = await mkUser(institution.id, 'student', 'STUDENT');
 const studentProfile = await prisma.studentProfile.create({
   data: { userId: studentUser.id, institutionId: institution.id, rollNo: `R-${stamp}`, programId: program.id, batchId: batch.id, section: `Section ${stamp}` },
 });
+// A SECOND student, so the attendance can be one PRESENT and one ABSENT — the register is
+// (sessionId, studentProfileId) unique, so one student cannot hold two states in one session.
+const studentUser2 = await mkUser(institution.id, 'student2', 'STUDENT');
+const studentProfile2 = await prisma.studentProfile.create({
+  data: { userId: studentUser2.id, institutionId: institution.id, rollNo: `R2-${stamp}`, programId: program.id, batchId: batch.id, section: `Section ${stamp}` },
+});
 await prisma.enrollment.create({
   data: { studentProfileId: studentProfile.id, offeringId: offering.id, status: 'ACTIVE' },
+});
+await prisma.enrollment.create({
+  data: { studentProfileId: studentProfile2.id, offeringId: offering.id, status: 'ACTIVE' },
 });
 
 try {
@@ -152,6 +171,7 @@ try {
     { id: 'RESULTS', value: null },
   ]);
   eq('a course with no data has NO score', noData.score, null);
+  eq('and NO band — an unmeasured course is not an unhealthy one', noData.band, null);
   eq('and all three legs are excluded', noData.excluded, ['ATTENDANCE', 'SYLLABUS', 'RESULTS']);
   eq('and nothing is counted', noData.included, 0);
   eq('and no weakest leg is named', noData.weakest, null);
@@ -249,14 +269,14 @@ try {
   eq('the detail lists the subjects', det.subjects.length, 1);
   eq('the subject names the section', det.subjects[0].section, `Section ${stamp}`);
   eq('the subject names the teacher', det.subjects[0].teacherName, 'teacher person');
-  eq('the subject counts the students', det.subjects[0].students, 1);
+  eq('the subject counts the students', det.subjects[0].students, 2);
   eq('the subject counts the weekly slots', det.subjects[0].weeklySlots, 2);
   // 1h + 1.5h.
   eq('the subject counts the weekly HOURS', det.subjects[0].weeklyHours, 2.5);
   eq('the detail lists the faculty', det.faculty.length, 1);
-  eq('the faculty counts the students', det.faculty[0].students, 1);
-  eq('the detail counts the students', det.students.total, 1);
-  eq('the detail counts the active students', det.students.active, 1);
+  eq('the faculty counts the students', det.faculty[0].students, 2);
+  eq('the detail counts the students', det.students.total, 2);
+  eq('the detail counts the active students', det.students.active, 2);
   eq('the roll names the student', det.students.roll[0].name, 'student person');
   eq('the roll carries the roll number', det.students.roll[0].rollNumber, `R-${stamp}`);
   eq('the timetable lists the slots', det.timetable.slots.length, 2);
@@ -269,7 +289,7 @@ try {
   eq('and no results has no pass rate', det.performance.passPercent, null);
   ok('the detail carries a history', det.history.total === 0);
   eq('the curriculum has no mapping yet', det.curriculum.declared.length, 0);
-  ok('and the unmapped flag is null (not taught, not declared)', det.curriculum.unmapped === null);
+  ok('and the unmapped flag is TRUE (taught, never declared)', det.curriculum.unmapped === true);
   eq('the curriculum offers the department programme', det.curriculum.programs.length, 1);
   eq('and reports it as unmapped', det.curriculum.programs[0].mapped, false);
 
@@ -339,7 +359,7 @@ try {
 
   const graphDet = await courseDetail(hodUser.id, institution.id, courseB.id, {});
   eq('the detail lists the prerequisite', graphDet.prerequisites.length, 1);
-  eq('named', graphDet.prerequisites[0].name, 'Course Alpha');
+  eq('named', graphDet.prerequisites[0].name, 'Course Alpha Renamed');
   const reverse = await courseDetail(hodUser.id, institution.id, courseA.id, {});
   eq('and the reverse direction is listed too', reverse.prerequisiteFor.length, 1);
 
@@ -366,7 +386,7 @@ try {
     data: { sessionId: session.id, studentProfileId: studentProfile.id, state: 'PRESENT' },
   });
   await prisma.attendanceRecord.create({
-    data: { sessionId: session.id, studentProfileId: studentProfile.id, state: 'ABSENT' },
+    data: { sessionId: session.id, studentProfileId: studentProfile2.id, state: 'ABSENT' },
   });
 
   const syl = await prisma.syllabusVersion.create({
@@ -408,21 +428,53 @@ try {
 } catch (e) {
   noteThrow(e);
 } finally {
-  await sweep(stamp);
-  await prisma.auditLog.deleteMany({ where: { institutionId: institution.id } });
-  await prisma.enrollment.deleteMany({ where: { offeringId: offering.id } });
+  // THE CLEANUP ORDER MATTERS, and the order is: the things that hang off a user, then the user.
+  //
+  // `UserRole.userId` is a real foreign key with no cascade, so a user with a role row cannot be
+  // deleted until the role row goes. A cleanup that trips a foreign key is not a cleanup.
+  await prisma.attendanceRecord.deleteMany({ where: { session: { offeringId: offering.id } } });
   await prisma.attendanceSession.deleteMany({ where: { offeringId: offering.id } });
-  await prisma.syllabusVersion.deleteMany({ where: { courseId: { in: [courseA.id, courseB.id] } } });
+  await prisma.auditLog.deleteMany({ where: { institutionId: institution.id } });
+  await prisma.auditLog.deleteMany({ where: { institutionId: rival.id } });
+  await prisma.enrollment.deleteMany({ where: { offeringId: offering.id } });
   await prisma.offeringScheduleSlot.deleteMany({ where: { offeringId: offering.id } });
+  await prisma.syllabusTopic.deleteMany({
+    where: { unit: { syllabusVersion: { courseId: { in: [courseA.id, courseB.id] } } } },
+  });
+  await prisma.syllabusUnit.deleteMany({
+    where: { syllabusVersion: { courseId: { in: [courseA.id, courseB.id] } } },
+  });
+  await prisma.syllabusVersion.deleteMany({
+    where: { courseId: { in: [courseA.id, courseB.id] } },
+  });
+  await prisma.programCourse.deleteMany({
+    where: { courseId: { in: [courseA.id, courseB.id] } },
+  });
+  await prisma.coursePrerequisite.deleteMany({
+    where: { courseId: { in: [courseA.id, courseB.id] } },
+  });
+  await prisma.coursePrerequisite.deleteMany({
+    where: { prerequisiteCourseId: { in: [courseA.id, courseB.id, rivalCourse.id] } },
+  });
   await prisma.courseOffering.deleteMany({ where: { id: offering.id } });
-  await prisma.course.deleteMany({ where: { id: { in: [courseA.id, courseB.id] } } });
-  await prisma.studentProfile.deleteMany({ where: { id: studentProfile.id } });
+  await prisma.course.deleteMany({ where: { id: { in: [courseA.id, courseB.id, rivalCourse.id] } } });
+  await prisma.studentProfile.deleteMany({ where: { id: { in: [studentProfile.id, studentProfile2.id] } } });
   await prisma.staffProfile.deleteMany({ where: { userId: teacher.id } });
-  await prisma.section.deleteMany({ where: { id: section.id } });
+  await prisma.section.deleteMany({ where: { id: sectionRow.id } });
   await prisma.batch.deleteMany({ where: { id: batch.id } });
+  await prisma.academicYear.deleteMany({ where: { id: academicYear.id } });
   await prisma.program.deleteMany({ where: { id: { in: [program.id, rivalProgram.id] } } });
   await prisma.department.deleteMany({ where: { id: { in: [dept.id, rivalDept.id] } } });
-  await prisma.user.deleteMany({ where: { id: { in: [hodUser.id, rivalHod.id, teacher.id, studentUser.id] } } });
+  await prisma.userRole.deleteMany({
+    where: {
+      userId: { in: [hodUser.id, rivalHod.id, teacher.id, studentUser.id, studentUser2.id] },
+    },
+  });
+  await prisma.user.deleteMany({
+    where: {
+      id: { in: [hodUser.id, rivalHod.id, teacher.id, studentUser.id, studentUser2.id] },
+    },
+  });
   await prisma.institution.deleteMany({ where: { id: { in: [institution.id, rival.id] } } });
 }
 

@@ -211,8 +211,16 @@ export async function courseDirectory(
               included: h.included,
               excluded: h.excluded,
               weakest: h.weakest,
+              legs: h.legs,
             }
-          : { score: null, band: null, included: 0, excluded: [], weakest: null },
+          : {
+              score: null,
+              band: null,
+              included: 0,
+              excluded: [],
+              weakest: null,
+              legs: { attendance: null, syllabus: null, results: null },
+            },
       };
     }),
   };

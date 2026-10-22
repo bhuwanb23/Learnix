@@ -284,7 +284,7 @@ export function courseHealthScore(components: {
   value: number | null;
 }[]): {
   score: number | null;
-  band: CourseHealthBand;
+  band: CourseHealthBand | null;
   included: number;
   excluded: CourseHealthComponentId[];
   weakest: CourseHealthComponentId | null;
@@ -302,9 +302,12 @@ export function courseHealthScore(components: {
     .map((c) => c.id);
 
   if (scored.length === 0) {
+    // NO BAND, and that is the point. A course with nothing measured is not an unhealthy course —
+    // it is an unmeasured one, and painting it AT_RISK is a false alarm that teaches the reader
+    // to ignore the alarm colour.
     return {
       score: null,
-      band: 'AT_RISK',
+      band: null,
       included: 0,
       excluded,
       weakest: null,

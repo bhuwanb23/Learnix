@@ -97,7 +97,13 @@ export async function coursePerformance(
         ? null
         : Math.round((percentSum / results.length) * 100) / 100,
     distribution: Object.entries(distribution)
-      .map(([grade, count]) => ({ grade, count }))
+      .map(([grade, count]) => ({
+        grade,
+        count,
+        // THE SHARE IS COMPUTED HERE, not in the client. A number the client derived is a number
+        // the client can get wrong, and the share of each grade is a figure the HOD reads.
+        percent: results.length === 0 ? 0 : Math.round((count / results.length) * 100),
+      }))
       .sort((a, b) => b.count - a.count),
     byOffering: [...byOffering.entries()].map(([slotId, b]) => ({
       slotId,
@@ -333,7 +339,20 @@ export async function courseHealthForAll(
 
   const out = new Map<
     string,
-    { score: number | null; band: string; included: number; excluded: string[]; weakest: string | null }
+    {
+      score: number | null;
+      band: string | null;
+      included: number;
+      excluded: string[];
+      weakest: string | null;
+      // THE THREE LEG VALUES, so the directory can show WHAT the score is made of.
+      //
+      // The dashboard's LOW_ATTENDANCE and POOR_PERFORMANCE alerts both route to the Courses tab.
+      // Before this, that tab showed neither attendance nor performance, so the alert fired and
+      // navigated to a screen that could not show the thing that fired. A route that cannot show
+      // its own alert is a broken route.
+      legs: { attendance: number | null; syllabus: number | null; results: number | null };
+    }
   >();
 
   for (const courseId of courseIds) {
@@ -364,6 +383,12 @@ export async function courseHealthForAll(
       included: score.included,
       excluded: score.excluded,
       weakest: score.weakest,
+      legs: {
+        attendance:
+          att && att.total > 0 ? Math.round((att.attended / att.total) * 100) : null,
+        syllabus: topics.length > 0 ? Math.round((completed / topics.length) * 100) : null,
+        results: res && res.total > 0 ? Math.round((res.passed / res.total) * 100) : null,
+      },
     });
   }
 
