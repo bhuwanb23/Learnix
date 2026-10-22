@@ -76,11 +76,14 @@ SCREEN="$FACULTY/faculty.js"
 META="$FACULTY/facultyMeta.js"
 UI="$FACULTY/facultyUi.js"
 DIR="$FACULTY/facultyDirectory.js"
+ROW="$FACULTY/facultyRow.js"
 DETAIL="$FACULTY/facultyDetail.js"
 SHELL="../learnix/users/hod/hod.js"
 API="../learnix/services/api.js"
 RULES="src/modules/hod/hod-faculty.rules.ts"
 SVC="src/modules/hod/hod-faculty.service.ts"
+SMART="src/modules/hod/hod-faculty.smart.ts"
+FIGURES="src/modules/hod/hod-faculty.figures.ts"
 SCOPE="src/modules/hod/hod-dashboard.scope.ts"
 HOD_SVC="src/modules/hod/hod.service.ts"
 ROUTES="src/modules/hod/hod-faculty.routes.ts"
@@ -233,13 +236,13 @@ PY
 # A suggestion that would be refused the moment it was pressed is a bad suggestion, and a HOD who
 # learns to ignore the suggestions learns to ignore the screen.
 teeth "a balancer that offers a target with no headroom is caught" \
-  "$SVC" scripts/check-hod-faculty.ts <<'PY'
+  "$SMART" scripts/check-hod-faculty.ts <<'PY'
 import io, os
 p = os.environ['TEETH_FILE']
 s = io.open(p, encoding='utf-8').read()
 s = s.replace(
-    ".filter((r) => !r.figures.workload.overloaded && r.figures.workload.freeHours >= MIN_FREE_HOURS_TO_SUGGEST)",
-    ".filter((r) => !r.figures.workload.overloaded)",
+    "r.figures.workload.freeHours >= MIN_FREE_HOURS",
+    "true",
 )
 io.open(p, 'w', encoding='utf-8').write(s)
 PY
@@ -347,7 +350,7 @@ PY
 # A number the client derived is a number the client can get wrong — and the workload unit is
 # the obvious place for that to happen.
 teeth "a client that computes its own utilisation is caught" \
-  "$DIR" scripts/audit-hod-faculty-ui.ts <<'PY'
+  "$ROW" scripts/audit-hod-faculty-ui.ts <<'PY'
 import io, os
 p = os.environ['TEETH_FILE']
 s = io.open(p, encoding='utf-8').read()

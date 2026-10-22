@@ -1,15 +1,15 @@
 /**
- * HD-02 ΓÇö The HOD's Faculty desk: the three smart features.
- * Docs: 11-hod.md ┬º3.2
+ * HD-02 — The HOD's Faculty desk: the three smart features.
+ * Docs: 11-hod.md §3.2
  *
- *   ┬╖ THE WORKLOAD BALANCER      ΓÇö who is carrying too much, and who could take a class
- *   ┬╖ THE AVAILABILITY MATRIX    ΓÇö the department's faculty against the teaching week
- *   ┬╖ THE TEACHING PROGRESS MONITOR ΓÇö is the syllabus being finished, and are the classes running
+ *   · THE WORKLOAD BALANCER      — who is carrying too much, and who could take a class
+ *   · THE AVAILABILITY MATRIX    — the department's faculty against the teaching week
+ *   · THE TEACHING PROGRESS MONITOR — is the syllabus being finished, and are the classes running
  *
  * THE BALANCER'S SUGGESTION IS ADVISORY, AND IT IS HONEST
  * ------------------------------------------------------
  * The suggestion is a move the HOD can make, not a move the platform has made. The server only
- * suggests a target who has the HOURS to absorb the class ΓÇö because a suggestion that would be
+ * suggests a target who has the HOURS to absorb the class — because a suggestion that would be
  * refused the moment it was pressed is a bad suggestion, and a HOD who learns to ignore the
  * suggestions learns to ignore the screen.
  *
@@ -22,34 +22,10 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
-import {
-  BandChip,
-  FacultyEmpty,
-  InsightBadge,
-  NoteStrip,
-  ProgressBar,
-  Section,
-  StatRow,
-  StatTile,
-  Tag,
-} from './facultyUi';
-import {
-  AMBER,
-  CYAN,
-  GREEN,
-  MUTED,
-  RED,
-  SLATE,
-  THEME,
-  VIOLET,
-  count,
-  hours,
-  percent,
-  plural,
-  workloadBandMeta,
-} from './facultyMeta';
+import { FacultyEmpty, NoteStrip, Section, Tag } from './facultyUi';
+import { AMBER, CYAN, MUTED, RED, SLATE, hours } from './facultyMeta';
 
-// ΓöÇΓöÇ The Workload Balancer ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── The Workload Balancer ──────────────────────────────────────────────────
 
 /**
  * THE WORKLOAD BALANCER.
@@ -80,7 +56,7 @@ export function WorkloadBalancer({ balancer, onOpen }) {
               <View style={styles.flex}>
                 <Text style={styles.cardTitle}>{o.name}</Text>
                 <Text style={styles.cardMeta}>
-                  {hours(o.assignedWeeklyHours)} of {hours(o.maxWorkloadHours)} ┬╖ over by{' '}
+                  {hours(o.assignedWeeklyHours)} of {hours(o.maxWorkloadHours)} · over by{' '}
                   {hours(o.overBy)}
                 </Text>
               </View>
@@ -116,7 +92,7 @@ export function WorkloadBalancer({ balancer, onOpen }) {
   );
 }
 
-// ΓöÇΓöÇ The Availability Matrix ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── The Availability Matrix ────────────────────────────────────────────────
 
 /**
  * THE AVAILABILITY MATRIX.
@@ -168,7 +144,7 @@ export function AvailabilityMatrix({ matrix }) {
                   {d.hours > 0 ? (
                     <Text style={styles.matrixBusy}>{d.hours}h</Text>
                   ) : (
-                    <Text style={styles.matrixFree}>ΓÇö</Text>
+                    <Text style={styles.matrixFree}>—</Text>
                   )}
                 </View>
               ))}
@@ -192,141 +168,8 @@ export function AvailabilityMatrix({ matrix }) {
   );
 }
 
-// ΓöÇΓöÇ The Teaching Progress Monitor ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// ── The Teaching Progress Monitor ──────────────────────────────────────────
 
-/**
- * THE TEACHING PROGRESS MONITOR.
- *
- * Two halves, because "is the teaching on track" is two questions: is the SYLLABUS being
- * finished, and are the CLASSES being DELIVERED.
- */
-export function TeachingProgress({ progress }) {
-  if (!progress) return null;
-  const rows = progress.rows ?? [];
-  const summary = progress.summary ?? {};
-
-  return (
-    <Section
-      title="Teaching progress"
-      blurb="How much of the syllabus is done, and how much of the scheduled teaching was delivered."
-      icon="trending-up-outline"
-      color={VIOLET}
-    >
-      <StatRow>
-        <StatTile
-          label="Syllabus tracked"
-          value={count(summary.syllabusTracked)}
-          hint="teachers with a syllabus"
-          icon="book-outline"
-          color={VIOLET}
-        />
-        <StatTile
-          label="Delivery tracked"
-          value={count(summary.deliveryTracked)}
-          hint="teachers with classes held"
-          icon="checkmark-done-outline"
-          color={THEME}
-        />
-        <StatTile
-          label="Stalled syllabus"
-          value={count(summary.staleSyllabi)}
-          hint="not moved in a month"
-          icon="time-outline"
-          color={summary.staleSyllabi > 0 ? AMBER : SLATE}
-          tone={summary.staleSyllabi > 0 ? 'warn' : 'clear'}
-        />
-      </StatRow>
-
-      {rows.length === 0 ? (
-        <FacultyEmpty
-          icon="trending-up-outline"
-          title="Nothing to track"
-          message="No teacher has a syllabus or a recorded class yet."
-        />
-      ) : (
-        rows.map((r: any) => (
-          <View key={r.userId} style={styles.progressRow}>
-            <Text style={styles.progressName} numberOfLines={1}>
-              {r.name}
-            </Text>
-            <View style={styles.progressCol}>
-              <Text style={styles.progressLabel}>Syllabus</Text>
-              {r.syllabusPercent === null ? (
-                <Text style={styles.progressNone}>no syllabus</Text>
-              ) : (
-                <ProgressBar
-                  percent={r.syllabusPercent}
-                  color={r.staleSyllabi > 0 ? AMBER : VIOLET}
-                  label={`${r.syllabusCompleted}/${r.syllabusTopics} topics`}
-                />
-              )}
-            </View>
-            <View style={styles.progressCol}>
-              <Text style={styles.progressLabel}>Delivery</Text>
-              {r.deliveryPct === null ? (
-                <Text style={styles.progressNone}>no class held</Text>
-              ) : (
-                <ProgressBar
-                  percent={r.deliveryPct}
-                  color={r.deliveryPct < 60 ? AMBER : THEME}
-                  label={`${r.deliveryPct}% of ${hours(r.scheduledToDateHours)}`}
-                />
-              )}
-            </View>
-          </View>
-        ))
-      )}
-    </Section>
-  );
-}
-
-// ΓöÇΓöÇ The directory list ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-
-/**
- * ONE TEACHER'S ROW.
- *
- * The workload bar, the insight badge and the status ΓÇö the three things a HOD scans a directory
- * for.
- */
-export function FacultyRow({ faculty, onPress }) {
-  const band = workloadBandMeta(faculty.workload?.band);
-  return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
-      <View style={styles.rowHead}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{(faculty.name ?? '?').charAt(0)}</Text>
-        </View>
-        <View style={styles.flex}>
-          <Text style={styles.rowName} numberOfLines={1}>
-            {faculty.name}
-          </Text>
-          <Text style={styles.rowMeta} numberOfLines={1}>
-            {faculty.designation} ┬╖ {plural(faculty.subjects?.length ?? 0, 'subject', 'subjects')} ┬╖{' '}
-            {plural(faculty.classes?.length ?? 0, 'class', 'classes')}
-          </Text>
-        </View>
-        <View style={styles.rowChips}>
-          {faculty.status === 'ON_LEAVE' ? (
-            <Tag label="On leave" color={AMBER} bg={`${AMBER}18`} />
-          ) : null}
-          <BandChip band={band} small />
-          <InsightBadge insight={faculty.insight} small />
-        </View>
-      </View>
-      <View style={styles.rowBars}>
-        <View style={styles.flex}>
-          <ProgressBar
-            percent={faculty.workload?.utilizationPct ?? 0}
-            color={band?.color ?? THEME}
-            label={`${hours(faculty.workload?.assignedWeeklyHours)} of ${hours(
-              faculty.workload?.maxWorkloadHours,
-            )} a week`}
-          />
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
 const styles = StyleSheet.create({
   flex: { flex: 1 },
 
@@ -393,17 +236,4 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     textAlign: 'center',
   },
-
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  progressName: { width: 78, fontSize: 12, fontWeight: '700', color: theme.colors.text },
-  progressCol: { flex: 1 },
-  progressLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted },
-  progressNone: { fontSize: 10, color: MUTED, marginTop: 3 },
 });

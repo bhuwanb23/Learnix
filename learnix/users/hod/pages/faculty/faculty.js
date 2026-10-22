@@ -30,9 +30,9 @@ import {
 import { FacultyScreen, useFaculty } from './facultyFrame';
 import {
   AvailabilityMatrix,
-  TeachingProgress,
   WorkloadBalancer,
 } from './facultyDirectory';
+import { TeachingProgress } from './facultyProgress';
 import { FacultyRow } from './facultyRow';
 import {
   FACULTY_SORTS,

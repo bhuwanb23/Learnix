@@ -85,8 +85,12 @@ const SCREENS = [
   `${FS}/facultyMeta.js`,
   `${FS}/facultyStyles.js`,
   `${FS}/facultyUi.js`,
+  `${FS}/facultyFrame.js`,
+  `${FS}/facultyRow.js`,
   `${FS}/facultyDirectory.js`,
+  `${FS}/facultyProgress.js`,
   `${FS}/facultyDetail.js`,
+  `${FS}/facultyDetailPanels.js`,
   'users/hod/hod.js',
 ];
 
@@ -94,7 +98,10 @@ const facultySrc = read(`${FS}/faculty.js`);
 const metaSrc = read(`${FS}/facultyMeta.js`);
 const uiSrc = read(`${FS}/facultyUi.js`);
 const directorySrc = read(`${FS}/facultyDirectory.js`);
+const rowSrc = read(`${FS}/facultyRow.js`);
+const progressSrc = read(`${FS}/facultyProgress.js`);
 const detailSrc = read(`${FS}/facultyDetail.js`);
+const detailPanelsSrc = read(`${FS}/facultyDetailPanels.js`);
 const shellSrc = read('users/hod/hod.js');
 const apiSrc = read('services/api.js');
 
@@ -102,7 +109,10 @@ const facultyCode = stripComments(facultySrc);
 const metaCode = stripComments(metaSrc);
 const uiCode = stripComments(uiSrc);
 const directoryCode = stripComments(directorySrc);
+const rowCode = stripComments(rowSrc);
+const progressCode = stripComments(progressSrc);
 const detailCode = stripComments(detailSrc);
+const detailPanelsCode = stripComments(detailPanelsSrc);
 const apiCode = stripComments(apiSrc);
 
 const rulesSrc = stripComments(readSrc('src/modules/hod/hod-faculty.rules.ts'));
@@ -282,23 +292,26 @@ const FORBIDDEN = [
 ];
 for (const f of FORBIDDEN) {
   ok(
-    !f.re.test(facultyCode + detailCode + directoryCode + uiCode),
+    !f.re.test(
+      facultyCode + detailCode + directoryCode + rowCode + progressCode + uiCode +
+        detailPanelsCode,
+    ),
     `the client does not compute ${f.label}`,
   );
 }
 
 // THE WORKLOAD UNIT IS HOURS, and the screen says so.
 ok(
-  directoryCode.includes('assignedWeeklyHours') && directoryCode.includes('maxWorkloadHours'),
+  rowCode.includes('assignedWeeklyHours') && rowCode.includes('maxWorkloadHours'),
   'the screen reads the server\'s hours',
 );
 ok(
-  directoryCode.includes('faculty.workload?.utilizationPct'),
+  rowCode.includes('faculty.workload?.utilizationPct'),
   'and the bar is the server\'s own percentage, not a division done on the phone',
 );
 ok(
-  !/assignedWeeklyHours\s*\/\s*faculty/.test(directoryCode) &&
-    !/assignedWeeklyHours\s*\/\s*.*maxWorkloadHours/.test(directoryCode),
+  !/assignedWeeklyHours\s*\/\s*faculty/.test(rowCode) &&
+    !/assignedWeeklyHours\s*\/\s*.*maxWorkloadHours/.test(rowCode),
   'and the client never divides the load by the cap itself',
 );
 
@@ -341,7 +354,9 @@ for (const panel of [
 ]) {
   ok(facultyCode.includes(`<${panel}`), `the directory draws the ${panel}`);
 }
-ok(detailCode.includes('Assigned subjects'), 'the detail draws the subjects');
+ok(detailCode.includes('<SubjectsPanel'), 'the detail draws the subjects');
+ok(detailPanelsCode.includes('title="Assigned subjects"'), 'and the subjects panel carries it');
+ok(detailPanelsCode.includes('title="Classes"'), 'and the classes panel too');
 ok(detailCode.includes('<InsightGauge'), 'the detail draws the insight gauge');
 ok(detailCode.includes('<InsightBreakdown'), 'the detail draws the insight breakdown');
 ok(detailCode.includes('<WorkloadBar'), 'the detail draws the workload bar');
