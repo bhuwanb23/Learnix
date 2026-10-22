@@ -564,7 +564,7 @@ export const hodApi = {
   requestSyllabusChanges: (id, feedback) =>
     api.post(`/hod/syllabus/${id}/request-changes`, { feedback }),
   students: (year) => api.get(`/hod/students${year ? `?year=${year}` : ''}`),
-  // HD-02 the Courses desk (docs/users/11 §3.3).
+  // HD-06 the Courses desk (docs/users/11 §3.3).
   //
   // `courses()` and `courseDetail()` are the OLD, thin pair and they stay: `courses()` returns the
   // flat `{ stats, courses }` the old screen used, and `courseDetail()` returns the old shape.

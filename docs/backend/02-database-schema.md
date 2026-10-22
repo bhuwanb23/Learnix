@@ -34,7 +34,9 @@
 | `programs` | departmentId, name, code, level(UG/PG), durationYears, totalSemesters | 03 §3.4 |
 | `batches` | programId, name("CSE 2027"), startYear, graduationYear | 03 §3.2 · 11 |
 | `sections` | programId, batchId, name("Section A"), currentSemester | The "class" in teacher app (02 §3.2 SEC-042) |
-| `courses` | departmentId, code(uq per inst), name, credits, semester, type(CORE/ELECTIVE) | 03 §3.4 |
+| `courses` | departmentId, code(uq per inst), name, credits, semester, type(CORE/ELECTIVE), **status(ACTIVE/ARCHIVED/DRAFT)** | 03 §3.4 · **11 §3.3 (HD-06)** — the course's own lifecycle, and the **first course write path in the platform** |
+| **`program_courses`** | programId, courseId, semester, type(CORE/ELECTIVE), isElective | **NEW — HD-06.** The curriculum the department **DECLARES**. uq(programId, courseId). A course can be core in one programme and an elective in another, which is why the mapping carries its own type |
+| **`course_prerequisites`** | courseId, prerequisiteCourseId, type(REQUIRED/RECOMMENDED) | **NEW — HD-06.** A **self-relation with a kind on it**, so it cannot be a pair of columns. uq(courseId, prerequisiteCourseId). The graph is kept acyclic by the service |
 | `course_offerings` | courseId, sectionId, teacherUserId, semester, academicYearId | **Central join** — teacher's subject↔section matrix (02 §3.9), student classes, attendance, timetable all hang off this |
 | `offering_schedule_slots` | offeringId, dayOfWeek, startTime, endTime, room | Weekly timetable per class (02 §3.10, 03 §3.7) |
 | `timetable_slots` | sectionId, offeringId, dayOfWeek, startTime, endTime, room, lockedByAdmin | 03 §3.7 master grid |
@@ -209,9 +211,11 @@
 
 ---
 
-## 🏁 SCHEMA COMPLETE — 125 tables across 12 domains (A–L)
+## 🏁 SCHEMA COMPLETE — 127 tables across 12 domains (A–L)
 
 > Blueprint estimated ~96; the role-doc paste specs grew B (23) and I (13). Every cross-domain scalar from the blueprint that could become an FK **is now one** (fine_payments→BookIssue, hostel_rent_dues→HostelAllocation, donation_payments→Donation, donations→User, mentorship→User, profiles→AcademicYear anchors). Remaining deliberate scalars: actor stamps (createdBy/gradedBy/approvedBy… — services validate), fileId pointer rows whose `files` FK is by-id lookups (logoFileId, coverFileId, payslipFileId, avatarFileId, fines.paidPaymentId, scholarship_awards.disbursedPaymentId), deferred masters (roomId until venue sync, HodUser, drivers.staffUserId), and Domain-B placeholders (programId/batchId/departmentId/companyId) awaiting their owning-module FKs by design choice.
+>
+> **+2 in Domain B (HD-06, the Courses desk):** `program_courses` and `course_prerequisites`, plus `courses.status`. The curriculum had to be a table because the offerings report what *happened* and a curriculum says what *should* happen; the prerequisite graph is a self-relation with a kind on it, and the graph is kept acyclic by the service.
 
 | Table | Key fields | Notes |
 |---|---|---|

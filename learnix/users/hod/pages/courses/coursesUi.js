@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the pieces the desk draws with.
+ * HD-06 — The HOD's Courses desk: the pieces the desk draws with.
  * Docs: 11-hod.md §3.3
  *
  * WHY THESE LIVE HERE AND NOT IN THE SCREEN

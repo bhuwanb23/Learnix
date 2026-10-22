@@ -186,7 +186,7 @@
 | HD-03 | Syllabus approvals: SUBMITTED → HOD_APPROVED / CHANGES_REQUESTED (+feedback) | B syllabus_versions | ✅ 1 waiting |
 | HD-04 | Leave requests: approve/reject (+substitute arrangement) | A users*, leave table pending** | — |
 | HD-05 | Students by year/section (department scope) | A student_profiles, B sections | ✅ (1) |
-| HD-06 | Course offerings oversight for department | B course_offerings/courses | ✅ |
+| HD-06 | Course offerings oversight for department — **built out in full as the Courses desk**: a directory with the health badge on every row, the whole course in one call, the curriculum mapping, the prerequisite graph, and the Course Health Indicator | B course_offerings/courses, **new** `program_courses` + `course_prerequisites` | ✅ 6 courses, 2 programmes, 6 mappings, 4 edges |
 | HD-07 | Department results/attendance analytics | B/C aggregates | ✅ folded into HD-01 |
 | HD-08 | Notifications + profile | K, A | ✅ |
 
@@ -198,6 +198,33 @@ department's leave — and the workload query was teacher-scoped, so a cross-dep
 inflated this department's utilisation. The **attendance threshold** now comes from
 `SystemConfig.attendanceThreshold` (the schema named the key and nothing read it) with 75 as the
 fallback, so the HOD's desk and the teacher's desk agree about the same student.
+
+**HD-06 is the Courses desk, built out in full.** The old `GET /hod/courses` pair still answers,
+unchanged; the desk is a new set of paths (`/courses/catalogue`, `/courses/directory`,
+`/courses/:courseId/detail`) mounted before it, so a caller holding the old path gets the old
+document rather than a quietly different one.
+- **Two new tables.** `program_courses` is the curriculum the department **declares** — which
+  programme runs which course, in which semester, as core or elective. It had to be a table and
+  not a query, because the offerings report what *happened* and a curriculum says what *should*
+  happen; a course taught but never declared is now reported as `unmapped`, which nothing else in
+  the platform could see. `course_prerequisites` is a **self-relation with a kind on it**, so it
+  cannot be a pair of columns, and the graph is kept acyclic — the server refuses an edge that
+  would close a loop.
+- **`courses.status`** (`ACTIVE|ARCHIVED|DRAFT`) is the course's own lifecycle, and there was
+  **no course write path anywhere in the platform** before this. The HOD edits, archives and
+  maps; the **Admin creates**, and the screen says so rather than offering a button that opens
+  an alert.
+- **The Course Health Indicator** — attendance 35% / syllabus 35% / results 30%, with the same
+  bands as the Department Health Score. **A leg with no data is EXCLUDED and re-weighted, never
+  scored as zero**; a course with no data at all has no score and no band, because an unmeasured
+  course is not an unhealthy one. The grade behind the pass rate is re-derived from the marks
+  through `gradeFor`, not read off the denormalised column.
+- **The HOD shell grew a param channel** (`route.params`), which is what makes a course detail
+  reachable at all — without it a sub-screen cannot be told WHICH record it is showing, and the
+  old course detail was registered but unreachable.
+- The dashboard's `LOW_ATTENDANCE` and `POOR_PERFORMANCE` alerts both route to the Courses tab,
+  and the tab now shows the attendance and the pass rate on every row — an alert that routes to
+  a screen which cannot show the figure it fired about is a broken route.
 
 ## Alumni Relations (AL) — docs/users/12 · tables: J, I, E
 

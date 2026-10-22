@@ -92,10 +92,77 @@ Department faculty with **workload bars** (red > 90%, amber > 75%) and status �
 | classes | [{ name, attendance }] |
 | leaveBalance | number |
 
-### 3.3 Courses (tab)
-Department courses with syllabus status chips → **course detail**: credits/students/pass rate, teacher card, **syllabus approve / request changes** actions, unit-by-unit syllabus progress.
+### 3.3 Courses (tab) — HD-06
 
-**Entity `dept_course`**: id, name, code, semester, credits, students, passRate, teacherId, syllabusStatus.
+The HOD's course desk. A **directory** of the department's courses, each carrying its health, its attendance and its pass rate, and a **course detail** that opens the whole chain in one call.
+
+> **"Subject" IS "Course".** There is no `Subject` entity in this platform. `Evaluation.subjectOffering` is a `CourseOffering`, the exam cell's "course & subject allocation" block compares `ExamSlot.offerings` against the course offerings, and every "subject" is a course taught to one section by one teacher. So the desk says COURSE, and a subject allocation is a course allocation.
+
+**The ten features**
+
+| # | Feature | What it is |
+|---|---------|-----------|
+| 1 | Course directory | The department's courses, with filters (status, type, search, sort) and pagination |
+| 2 | Course detail | The whole course in one call — eleven panels |
+| 3 | Curriculum mapping | Which programmes the department **declares** this course for, and in which semester |
+| 4 | Prerequisite graph | What this course demands first, and who is waiting for it |
+| 5 | Faculty assignment | Who teaches each offering, and how much of the course is theirs |
+| 6 | Student enrolment | The roll, and the state of each enrolment |
+| 7 | Timetable | When the course meets, and for how long |
+| 8 | Syllabus | The version, its state, its completion, and how long it has been sitting still |
+| 9 | Attendance & performance | The register, the pass rate, the average, the grade spread |
+| 10 | History | Every change to the course, and who made it |
+
+**The chain**: `Course → Subjects → Faculty → Students → Timetable → Syllabus → Attendance → Performance → History`
+
+**The Course Health Indicator** — three legs, and the same bands as the Department Health Score:
+
+| Leg | Weight | Measured from |
+|-----|--------|---------------|
+| Attendance | 35% | The `AttendanceRecord` rows of the course's offerings. `PRESENT` and `LATE` both count as being in the room |
+| Syllabus completion | 35% | Completed topics over total, on the course's **latest** syllabus version |
+| Results | 30% | The per-course pass rate. The grade is **re-derived** from the marks through `gradeFor`, never read off the stored column |
+
+Bands: `HEALTHY ≥ 80`, `WATCH ≥ 60`, `AT_RISK < 60`.
+
+> **A leg with no data is EXCLUDED, never scored as zero.** A course in its first fortnight has no results and no attendance yet; scoring those as zero reports a brand-new course as a failing one — *confidently*, because the number looks like a measurement rather than the absence of one. The score is a weighted mean over the legs that **have** data, the weights are re-normalised over those legs, and the response names the legs left out and the weakest leg counted. A course with no data at all has **no score and no band** — it is unmeasured, not unhealthy.
+
+**What the HOD may write**: edit a course, change its status, map it to a programme, unmap it, add a prerequisite, remove a prerequisite. What the HOD may **not** write: create a course — that is the Admin's, and the screen says so rather than offering a button that opens an alert. Every write leaves an audit row, and the History panel reads that table.
+
+**Entity `course`** (added to `b1_structure.prisma`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id, code, name | string | `code` unique per institution |
+| departmentId, institutionId | string | The department is the tenancy boundary, not the college |
+| credits, semester | number | |
+| type | string | `CORE \| ELECTIVE` — the course's **default** |
+| **status** | string | `ACTIVE \| ARCHIVED \| DRAFT` — the course's own lifecycle, and NOT the exam's or the syllabus's |
+
+**Entity `program_course`** (new — `c5_courses.prisma`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | |
+| programId, courseId | string | The **declaration**: which programme runs this course |
+| semester | number | |
+| type | string | `CORE \| ELECTIVE` — **in this programme**; a course can be core in one programme and an elective in another |
+| isElective | boolean | Students choose it |
+
+**Entity `course_prerequisite`** (new — `c5_courses.prisma`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | |
+| courseId | string | The course that DEMANDS |
+| prerequisiteCourseId | string | The course that must come FIRST |
+| type | string | `REQUIRED \| RECOMMENDED` |
+
+> **Why the curriculum is a table and not a query.** Before this, "which programme runs which course" could only be answered *retrospectively*, from the offerings that had actually been created. That reports what **happened**, never what **should happen**, and it makes a course that was never offered indistinguishable from one that does not exist. So the department **declares** its curriculum and the offerings are the evidence it was carried out. A declared course with no offering is a gap; an offering with no declaration is an accident — and the detail panel reports the second one as `unmapped`.
+
+> **Why a prerequisite is its own table.** A course that demands another course is a **self-relation with a kind on it**, and a self-relation cannot be a pair of columns: a list of ids in a scalar cannot be indexed, cannot be joined, and cannot carry a kind. The graph is kept acyclic — the server refuses an edge that would close a loop, because a loop makes "what must come first" unanswerable.
+
+**The old route stays.** `GET /api/v1/hod/courses` and `GET /api/v1/hod/courses/:courseId` still answer, unchanged. The desk is a new set of paths (`/courses/catalogue`, `/courses/directory`, `/courses/:courseId/detail`), so a caller holding the old path gets the old document rather than a quietly different one.
 
 ### 3.4 Students (tab)
 Department stats (students, avg CGPA, at risk), **performance by year bars** (color-coded by CGPA), year filters, student list with Top/Good/At Risk status.
@@ -125,7 +192,16 @@ GET  /api/hod/dashboard/overview          all nine sections in one call (?academ
 GET  /api/hod/dashboard/blocks/:block     one section on its own
 GET  /api/hod/faculty                     (+ /{id})
 POST /api/hod/faculty/{id}/evaluate|reassign
-GET  /api/hod/courses                     (+ /{id})
+GET  /api/hod/courses                     (+ /{id})   the OLD pair — unchanged
+GET  /api/hod/courses/catalogue           the vocabulary: statuses, types, sorts, the health legs and bands, the thresholds
+GET  /api/hod/courses/directory           the list, with the health on every row (?status=&type=&search=&sort=&page=)
+GET  /api/hod/courses/{courseId}/detail   the whole course: the chain, the curriculum, the graph, the history
+PATCH /api/hod/courses/{courseId}         { name?, credits?, semester?, type?, status? }
+PUT  /api/hod/courses/{courseId}/status   { status: ACTIVE|ARCHIVED|DRAFT }
+POST /api/hod/courses/{courseId}/curriculum      { programId, semester, type, isElective? }
+DEL  /api/hod/courses/{courseId}/curriculum/{programId}
+POST /api/hod/courses/{courseId}/prerequisites   { prerequisiteCourseId, type }
+DEL  /api/hod/courses/{courseId}/prerequisites/{prerequisiteCourseId}
 POST /api/hod/syllabus/{id}/approve|request-changes   { feedback }
 GET  /api/hod/students                    (?year=)
 GET  /api/hod/leave                     (POST /{id}/approve|reject { substituteId })
@@ -165,6 +241,32 @@ Final API surface (vs §4 sketch):
 - Leave `GET /leave`; `POST /leave/{id}/approve { substituteUserId? }` and `/reject`
 - Students `GET /students?year={semester}` — department programs scope
 - Courses `GET /courses` + `GET /courses/{id}` — offerings oversight with latest syllabus status
+  (the OLD pair, still answering unchanged)
+
+**The Courses desk (HD-06)** — `GET /courses/catalogue`, `GET /courses/directory` and
+`GET /courses/{id}/detail`, mounted BEFORE the old HOD router on its own paths so the old pair
+keeps answering. The detail is **one call**: the chain is a chain, and six round trips to
+assemble one screen is six chances to show a half-drawn course.
+- **The Course Health Indicator** — attendance 35% / syllabus 35% / results 30%, with the SAME
+  bands as the Department Health Score so the two read as one family. **A leg with no data is
+  EXCLUDED and re-weighted, never scored as zero**; a course with no data at all has no score
+  and no band, because an unmeasured course is not an unhealthy one. The grade behind the pass
+  rate is re-derived from the marks through `gradeFor`, not read off the denormalised column.
+- **The curriculum is a DECLARATION** — `program_courses` says which programmes the department
+  runs a course in, and the offerings are the evidence it was carried out. A course that is
+  taught but never declared is reported as `unmapped`; nothing else in the platform could see it.
+- **The prerequisite graph** is kept acyclic: a course cannot be its own prerequisite, and an
+  edge that would close a loop is refused with a 422 rather than discovered later.
+- **The HOD edits, archives and maps; the Admin creates.** There is no course write path
+  anywhere in the platform, so this desk adds the first one — and the screen says the Admin
+  creates courses rather than offering a "New Course" button that opens an alert.
+- **The HOD shell grew a param channel** (`route.params`), which is what makes a course detail
+  reachable at all: without it a sub-screen cannot be told WHICH record it is showing, and the
+  old course detail was registered but unreachable.
+- The dashboard's `LOW_ATTENDANCE` and `POOR_PERFORMANCE` alerts both route to the Courses tab,
+  and the tab now **shows the attendance and the pass rate on every row** — an alert that routes
+  to a screen which cannot show the figure it fired about is a broken route.
+
 
 **Two tenancy fixes landed with the dashboard** (both asserted by `check-hod-dashboard.ts`):
 the leave queries are now scoped to the department's staff, and the workload queries are now scoped
@@ -182,5 +284,5 @@ the HOD's desk and the teacher's desk agree about the same student.
   `POST /broadcasts { audience: ALL_FACULTY | DEPT_STUDENTS, title, body }`
 - Profile `GET /profile` — real user, roles, designation, department
 
-HD-02/HD-06 evaluation-score and message/reassign alerts remain UI-phase features; leave
-balance cards on faculty detail arrive with the leave-accrual policy.
+HD-02 evaluation-score and message/reassign alerts remain UI-phase features; leave balance cards
+on faculty detail arrive with the leave-accrual policy.

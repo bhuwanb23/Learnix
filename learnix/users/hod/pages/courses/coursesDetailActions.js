@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the sheets.
+ * HD-06 — The HOD's Courses desk: the sheets.
  * Docs: 11-hod.md §3.3
  *
  * THE THREE SHEETS

@@ -561,3 +561,57 @@ A student with no attendance record and no result is **unmeasured**: not safe, a
 risk section reports the three counts separately, and the attendance threshold comes from
 `SystemConfig.attendanceThreshold` with 75 as the fallback — the same number the teacher's desk
 uses, so the two desks agree about the same student.
+## 14. The Course Health Indicator (HD-06)
+
+A course's health is three measures, and it is a **weighted mean over the measures that have
+data** — exactly as the Department Health Score is, so the two read as one family.
+
+| Leg | Weight | Measured from |
+|-----|--------|---------------|
+| Attendance | 35% | The `AttendanceRecord` rows of the course's offerings. `PRESENT` **and** `LATE` both count as being in the room; `ABSENT` is the only absence |
+| Syllabus completion | 35% | Completed topics over total, on the course's **latest** `SyllabusVersion` |
+| Results | 30% | The per-course pass rate. The grade is **re-derived** from the marks through `gradeFor` — the stored `Result.grade` / `Result.isPass` columns are denormalised and can drift from their own marks |
+
+The bands are the **same** as the Department's: `HEALTHY` >= 80, `WATCH` >= 60, `AT_RISK` < 60.
+
+### The rule that makes it honest
+
+**A leg with NO DATA IS EXCLUDED, never scored as zero.**
+
+A course in its first fortnight has no results and no attendance yet. Scoring those as zero
+reports a brand-new course as a failing one — and reports it *confidently*, because the number
+looks like a measurement rather than an absence of one. The score is a **weighted mean over the
+legs that have data**, the weights are re-normalised over those legs, and the response names the
+legs left out and the **weakest leg counted**.
+
+A course with no data at all has **no score and no band**. It is *unmeasured*, not *unhealthy*,
+and banding it `AT_RISK` is a false alarm that teaches the reader to ignore the alarm colour.
+
+### The course's own lifecycle
+
+`Course.status` is `ACTIVE | ARCHIVED | DRAFT`, and it is the course's **own** state — not
+the exam's, not the syllabus's.
+
+| From | To | Who | What it means |
+|------|----|-----|---------------|
+| `DRAFT` | `ACTIVE` | HOD | The course is taught |
+| `ACTIVE` | `ARCHIVED` | HOD | Retired from the curriculum. Its history stays readable |
+| `ARCHIVED` | `ACTIVE` | HOD | Restored |
+
+Before this column there was **no course write path anywhere in the platform**, so a course's
+status could only be inferred from the syllabus and the exams — and a course that had never been
+examined looked identical to one that had been retired.
+
+**The HOD edits, archives and maps. The Admin creates.** There is no `createCourse`: a course is
+created by the Admin, and the HOD's power is over the *department's curriculum*, not over the
+institution's course catalogue. The screen says so rather than offering a "New Course" button
+that opens an alert.
+
+### The curriculum and the graph
+
+`program_courses` is the **declaration** and the offerings are the **evidence**. A course that
+is taught but never declared is reported as `unmapped`.
+
+`course_prerequisites` is a self-relation with a kind on it, and the graph is kept **acyclic**:
+the server refuses an edge that would close a loop, because a loop makes "what must come first"
+unanswerable.

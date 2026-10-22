@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the detail panels.
+ * HD-06 — The HOD's Courses desk: the detail panels.
  * Docs: 11-hod.md §3.3
  *
  * THE CHAIN, IN PANELS
@@ -102,8 +102,7 @@ export function SubjectsPanel({ course, onAssign }) {
           color={THEME}
           onPress={onAssign}
         />
-      ) : null}
-    </Section>
+      ) : null}    </Section>
   );
 }
 
@@ -414,7 +413,7 @@ export function PerformancePanel({ course }) {
                   style={[
                     styles.gradeBarFill,
                     {
-                      width: `${Math.round((g.count / p.results) * 100)}%`,
+                      width: `${g.percent}%`,
                       backgroundColor: g.grade === 'F' ? RED : THEME,
                     },
                   ]}

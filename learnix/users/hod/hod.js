@@ -21,7 +21,7 @@ import SyllabusModule from './pages/syllabus/syllabus';
 import LeaveModule from './pages/leave/leave';
 import NotificationsScreen from './pages/notifications/notifications';
 
-// HD-02 the Courses desk: the course detail, opened from a course row on the
+// HD-06 the Courses desk: the course detail, opened from a course row on the
 // Courses tab. It needs to know WHICH course it is showing, so it is opened
 // with a PARAM and the shell carries it.
 //
@@ -58,7 +58,7 @@ export default function HODScreen({ navigation }) {
   setDemoUser('hod@learnix.dev');
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [currentScreen, setCurrentScreen] = useState('main');
-  // THE PARAM CHANNEL (HD-02).
+  // THE PARAM CHANNEL (HD-06).
   //
   // The shell's `navigate` used to take a screen name and nothing else, so a sub-screen that
   // needed to know WHICH record it was showing could not be told. That is why the course detail

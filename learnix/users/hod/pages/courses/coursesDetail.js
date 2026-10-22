@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the course detail.
+ * HD-06 — The HOD's Courses desk: the course detail.
  * Docs: 11-hod.md §3.3
  *
  * THE WHOLE COURSE, IN ONE SCREEN
@@ -67,8 +67,7 @@ import {
 } from './coursesDetailPanels';
 
 export default function CourseDetailScreen({ navigation, route }) {
-  const params = route?.params ?? {};
-  const courseId = params.courseId ?? null;
+  const courseId = route?.params?.courseId ?? null;
 
   const [sheet, setSheet] = useState(null); // 'edit' | 'map' | 'prereq' | null
   const [saving, setSaving] = useState(false);
@@ -209,7 +208,10 @@ export default function CourseDetailScreen({ navigation, route }) {
       </Section>
 
       {/* ── The chain ───────────────────────────────────────────────────── */}
-      <SubjectsPanel course={data} />
+      <SubjectsPanel
+        course={data}
+        onAssign={() => navigation?.switchTab?.('Faculty')}
+      />
       <FacultyPanel course={data} />
       <StudentsPanel course={data} />
       <TimetablePanel course={data} />

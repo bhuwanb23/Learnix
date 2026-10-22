@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the client mirror of the server's vocabulary.
+ * HD-06 — The HOD's Courses desk: the client mirror of the server's vocabulary.
  * Docs: 11-hod.md §3.3
  *
  * THIS IS A MIRROR OF `hod-courses.rules.ts`, and it exists so a row can be coloured and labelled
@@ -281,3 +281,4 @@ export function statusActionIcon(status) {
   if (status === 'DRAFT') return 'play-outline';
   return 'archive-outline';
 }
+

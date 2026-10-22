@@ -1,5 +1,5 @@
 /**
- * HD-02 — The HOD's Courses desk: the directory.
+ * HD-06 — The HOD's Courses desk: the directory.
  * Docs: 11-hod.md §3.3
  *
  * THE SCREEN, AND WHAT IT IS FOR
@@ -41,6 +41,9 @@ import {
 } from './coursesUi';
 import {
   AMBER,
+  COURSE_SORTS,
+  COURSE_STATUSES,
+  COURSE_TYPES,
   GREEN,
   RED,
   SLATE,
@@ -94,17 +97,17 @@ export default function CoursesModule({ navigation }) {
     directory.reload();
   }, [catalogue, directory]);
 
-  // THE VOCABULARY, preferring the server's list and falling back to the mirror.
+  // THE VOCABULARY, preferring the server's list and falling back to the MIRROR.
+  //
+  // The fallback is the mirror in `coursesMeta.js` — ONE list, not a second copy written here.
+  // A second copy in the screen is a list that eventually disagrees with the mirror, and the
+  // mirror is the thing the audit script checks against the server.
   const statusOptions = useMemo(() => {
     const server = catalogue.data?.statuses;
     if (Array.isArray(server) && server.length) {
       return server.map((s) => ({ id: s.id, label: s.label, color: s.color }));
     }
-    return [
-      { id: 'ACTIVE', label: 'Active', color: GREEN },
-      { id: 'ARCHIVED', label: 'Archived', color: SLATE },
-      { id: 'DRAFT', label: 'Draft', color: AMBER },
-    ];
+    return COURSE_STATUSES.map((s) => ({ id: s.id, label: s.label, color: s.color }));
   }, [catalogue.data]);
 
   const typeOptions = useMemo(() => {
@@ -116,10 +119,7 @@ export default function CoursesModule({ navigation }) {
         color: t.color ?? courseTypeMeta(t.id)?.color ?? THEME,
       }));
     }
-    return [
-      { id: 'CORE', label: 'Core', color: THEME },
-      { id: 'ELECTIVE', label: 'Elective', color: '#7c3aed' },
-    ];
+    return COURSE_TYPES.map((t) => ({ id: t.id, label: t.label, color: t.color }));
   }, [catalogue.data]);
 
   const sortOptions = useMemo(() => {
@@ -127,14 +127,7 @@ export default function CoursesModule({ navigation }) {
     if (Array.isArray(server) && server.length) {
       return server.map((s) => ({ id: s.id, label: s.label }));
     }
-    return [
-      { id: 'code', label: 'Code' },
-      { id: 'name', label: 'Name' },
-      { id: 'semester', label: 'Semester' },
-      { id: 'credits', label: 'Credits' },
-      { id: 'attendance', label: 'Attendance' },
-      { id: 'health', label: 'Health' },
-    ];
+    return COURSE_SORTS.map((s) => ({ id: s.id, label: s.label }));
   }, [catalogue.data]);
 
   const data = directory.data;
