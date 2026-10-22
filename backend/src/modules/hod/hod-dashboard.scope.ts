@@ -25,8 +25,13 @@ export type HodScope = {
   institutionId: string;
   department: { id: string; name: string; code: string };
   programIds: string[];
-  /** The academic years the department's offerings belong to, with their start dates. */
-  academicYears: { id: string; name: string; startDate: Date | null }[];
+  /** The academic years the department's offerings belong to, with their start and end dates. */
+  academicYears: {
+    id: string;
+    name: string;
+    startDate: Date | null;
+    endDate: Date | null;
+  }[];
   staff: {
     userId: string;
     name: string;
@@ -103,7 +108,7 @@ export async function resolveHodScope(
     }),
     prisma.academicYear.findMany({
       where: { institutionId },
-      select: { id: true, name: true, startDate: true },
+      select: { id: true, name: true, startDate: true, endDate: true },
     }),
   ]);
 
@@ -115,6 +120,7 @@ export async function resolveHodScope(
       id: y.id,
       name: y.name,
       startDate: y.startDate,
+      endDate: y.endDate,
     })),
     staff: staff.map((s) => ({
       userId: s.userId,

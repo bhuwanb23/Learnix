@@ -132,6 +132,7 @@ export async function dashboardOverview(
       color: kind.color,
       severity: kind.severity,
       route: kind.route,
+      isTab: kind.isTab,
       count,
       // A ZERO IS CLEAR. The kind is still listed, so the section can answer "is anything wrong?".
       tone: alertTone(count),

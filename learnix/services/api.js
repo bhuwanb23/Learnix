@@ -532,7 +532,30 @@ export const transportApi = {
 
 // ── HOD endpoints (docs/users/11 §4) ──
 export const hodApi = {
-  dashboard: () => api.get('/hod/dashboard'),
+  // HD-01 the nine-section dashboard (docs/users/11 §HD-01).
+  //
+  // The old `dashboard()` returned a flat `{ department, engagement, stats, alerts }` — a hero,
+  // four counters and a list of PROSE STRINGS. It counted the leave requests institution-wide, so
+  // an HOD's "pending" figure included other departments' leave, and its workload query was not
+  // department-scoped, so a teacher who also taught in another department inflated this
+  // department's utilisation.
+  //
+  // It is GONE rather than re-pointed: `GET /hod/dashboard` is a 404 now.
+  dashboardCatalogue: () => api.get('/hod/dashboard/catalogue'),
+  dashboardOverview: (params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(`/hod/dashboard/overview${qs ? `?${qs}` : ''}`);
+  },
+  dashboardBlock: (block, params = {}) => {
+    const qs = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
+    ).toString();
+    return api.get(
+      `/hod/dashboard/blocks/${encodeURIComponent(block)}${qs ? `?${qs}` : ''}`,
+    );
+  },
   faculty: () => api.get('/hod/faculty'),
   reassign: (offeringId, toUserId) =>
     api.post(`/hod/offerings/${offeringId}/reassign`, { toUserId }),

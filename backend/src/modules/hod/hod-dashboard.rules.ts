@@ -234,7 +234,17 @@ export type HodAlertKind = {
   icon: string;
   color: string;
   severity: 'HIGH' | 'MEDIUM' | 'LOW';
+  /**
+   * WHERE THE ALERT GOES.
+   *
+   * It has to be a REAL destination. A route naming a section — `AttendanceSnapshot` — is not a
+   * screen, and `openModule` on an unregistered key renders NOTHING: `renderContent` finds no
+   * component, falls through to the tab switcher, and the HOD lands back on the dashboard with no
+   * error anywhere. So every route here names a tab or a registered sub-screen, and `isTab` says
+   * which.
+   */
   route: string;
+  isTab: boolean;
 };
 
 export const HOD_ALERT_KINDS: readonly HodAlertKind[] = [
@@ -246,6 +256,7 @@ export const HOD_ALERT_KINDS: readonly HodAlertKind[] = [
     color: '#dc2626',
     severity: 'HIGH',
     route: 'Faculty',
+    isTab: true,
   },
   {
     id: 'LOW_ATTENDANCE',
@@ -254,7 +265,8 @@ export const HOD_ALERT_KINDS: readonly HodAlertKind[] = [
     icon: 'checkbox-outline',
     color: '#ea580c',
     severity: 'HIGH',
-    route: 'AttendanceSnapshot',
+    route: 'Courses',
+    isTab: true,
   },
   {
     id: 'POOR_PERFORMANCE',
@@ -263,7 +275,8 @@ export const HOD_ALERT_KINDS: readonly HodAlertKind[] = [
     icon: 'trending-down-outline',
     color: '#c2410c',
     severity: 'HIGH',
-    route: 'PerformanceTrends',
+    route: 'Courses',
+    isTab: true,
   },
   {
     id: 'AT_RISK_STUDENTS',
@@ -272,7 +285,8 @@ export const HOD_ALERT_KINDS: readonly HodAlertKind[] = [
     icon: 'alert-circle-outline',
     color: '#b91c1c',
     severity: 'MEDIUM',
-    route: 'StudentRisk',
+    route: 'Students',
+    isTab: true,
   },
   {
     id: 'STALLED_SYLLABUS',
@@ -282,6 +296,7 @@ export const HOD_ALERT_KINDS: readonly HodAlertKind[] = [
     color: '#7c3aed',
     severity: 'MEDIUM',
     route: 'Syllabus',
+    isTab: false,
   },
   {
     id: 'PENDING_APPROVALS',
@@ -291,6 +306,7 @@ export const HOD_ALERT_KINDS: readonly HodAlertKind[] = [
     color: '#d97706',
     severity: 'MEDIUM',
     route: 'Leave',
+    isTab: false,
   },
 ];
 

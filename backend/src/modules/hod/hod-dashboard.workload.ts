@@ -37,21 +37,45 @@ import { hodStudentScope, type HodScope } from './hod-dashboard.scope.js';
  * blocks the move are the same number.
  */
 export async function facultyWorkloadSection(scope: HodScope, now: Date = new Date()) {
-  // THE SCHEDULE HOURS PER OFFERING, so a finalized session can be turned into hours.
-  const slotHours = new Map<string, number>();
+  // THE SCHEDULE, grouped by offering AND weekday.
+  //
+  // The weekday matters, and getting it wrong is a real error rather than a rounding one: an
+  // offering with one slot a day from Monday to Friday meets for ONE hour at a time, so a
+  // single class meeting is one hour and not the offering's whole five-hour week. Adding the
+  // offering's total weekly hours per session reported 270 hours taught for 51 classes — which
+  // is 5.3 hours for every one-hour lecture.
+  const slotsByOffering = new Map<
+    string,
+    { byDay: Map<number, number>; total: number; days: number }
+  >();
   if (scope.offeringIds.length) {
     const slots = await prisma.offeringScheduleSlot.findMany({
       where: { offeringId: { in: scope.offeringIds } },
-      select: { offeringId: true, startTime: true, endTime: true },
+      select: { offeringId: true, dayOfWeek: true, startTime: true, endTime: true },
     });
-    const totals = new Map<string, number>();
     for (const s of slots) {
       const h = durationHours(s.startTime, s.endTime);
-      totals.set(s.offeringId, (totals.get(s.offeringId) ?? 0) + h);
+      const entry =
+        slotsByOffering.get(s.offeringId) ??
+        { byDay: new Map<number, number>(), total: 0, days: 0 };
+      entry.byDay.set(s.dayOfWeek, (entry.byDay.get(s.dayOfWeek) ?? 0) + h);
+      entry.total += h;
+      slotsByOffering.set(s.offeringId, entry);
     }
-    slotHours.clear();
-    for (const [k, v] of totals) slotHours.set(k, v);
+    for (const entry of slotsByOffering.values()) entry.days = entry.byDay.size;
   }
+
+  // THE HOURS OF ONE CLASS MEETING, for the offering and the weekday it met on.
+  const hoursForMeeting = (offeringId: string, dayOfWeek: number): number => {
+    const entry = slotsByOffering.get(offeringId);
+    if (!entry) return 0;
+    const onDay = entry.byDay.get(dayOfWeek);
+    if (onDay !== undefined) return onDay;
+    // The offering meets on days the schedule does not cover — a make-up class, or a slot added
+    // after the term started. The AVERAGE slot is the honest answer there, because any one slot
+    // would be a guess.
+    return entry.days > 0 ? entry.total / entry.days : 0;
+  };
 
   // THE CLASSES THAT WERE ACTUALLY HELD. A FINALIZED attendance session is a class that
   // happened; an OPEN one has not been closed out yet and is not counted as delivered.
@@ -64,9 +88,10 @@ export async function facultyWorkloadSection(scope: HodScope, now: Date = new Da
 
   const deliveredByOffering = new Map<string, number>();
   for (const s of finalized) {
+    const hours = hoursForMeeting(s.offeringId, new Date(s.date).getDay());
     deliveredByOffering.set(
       s.offeringId,
-      (deliveredByOffering.get(s.offeringId) ?? 0) + (slotHours.get(s.offeringId) ?? 0),
+      (deliveredByOffering.get(s.offeringId) ?? 0) + hours,
     );
   }
 
@@ -95,12 +120,39 @@ export async function facultyWorkloadSection(scope: HodScope, now: Date = new Da
   // THE WEEKS OF THE TERM THAT HAVE PASSED. The academic year's start date is the anchor, and a
   // term that has not started has NO elapsed weeks — which is a different thing from a term with
   // no teaching in it.
-  const yearStart = scope.academicYears.find((y) =>
+  //
+  // CAPPED AT THE YEAR'S OWN END. A term cannot run longer than the academic year it belongs to,
+  // and without the cap a year that ended months ago reports its full length as "elapsed".
+  const academicYear = scope.academicYears.find((y) =>
     scope.offerings.some((o) => o.academicYearId === y.id),
-  )?.startDate;
-  const weeksElapsed =
-    yearStart && now > yearStart
-      ? Math.max(0, (now.getTime() - yearStart.getTime()) / (7 * 86400000))
+  );
+  const yearStart = academicYear?.startDate ?? null;
+  const yearEnd = academicYear?.endDate ?? null;
+  const rawWeeks =
+    yearStart && now > yearStart ? (now.getTime() - yearStart.getTime()) / (7 * 86400000) : 0;
+  const totalWeeks =
+    yearStart && yearEnd
+      ? Math.max(1, (yearEnd.getTime() - yearStart.getTime()) / (7 * 86400000))
+      : null;
+  const weeksElapsed = Math.min(rawWeeks, totalWeeks === null ? rawWeeks : totalWeeks);
+
+  // THE WEEKS THE ATTENDANCE ACTUALLY COVERS.
+  //
+  // This is the denominator that makes the two figures comparable. "Assigned" is a WEEKLY figure
+  // and "delivered" is a TERM-TO-DATE total, so dividing one by the other is a category error —
+  // 28 weekly hours against 270 delivered hours is not "961% delivered". The comparison that means
+  // something is delivered hours against the hours the timetable scheduled over the period the
+  // attendance record actually covers.
+  //
+  // AND THE COVERAGE IS REPORTED, because a department whose attendance has been recorded for two
+  // weeks of a forty-eight-week term has a 91% delivery figure and a 4% RECORD — and a HOD who saw
+  // only the first would think the teaching had collapsed.
+  const sessionDates = finalized.map((s) => new Date(s.date).getTime());
+  const firstSession = sessionDates.length ? Math.min(...sessionDates) : null;
+  const lastSession = sessionDates.length ? Math.max(...sessionDates) : null;
+  const recordedWeeks =
+    firstSession !== null && lastSession !== null
+      ? Math.max(1, (lastSession - firstSession) / (7 * 86400000))
       : 0;
 
   const faculty = scope.staff.map((s) => {
@@ -109,10 +161,9 @@ export async function facultyWorkloadSection(scope: HodScope, now: Date = new Da
     const max = s.maxWorkloadHours;
     const utilizationPct = max === 0 ? 0 : Math.round((assignedWeekly / max) * 100);
 
-    // THE HOURS SCHEDULED SO FAR — the weekly hours multiplied by the weeks elapsed. This is the
-    // denominator the delivered hours are measured against, and it is what makes the two figures
-    // comparable at all.
-    const scheduledToDate = Math.round(assignedWeekly * weeksElapsed * 10) / 10;
+    // THE HOURS SCHEDULED OVER THE RECORDED PERIOD — the weekly hours multiplied by the weeks
+    // the attendance covers. This is the denominator the delivered hours are measured against.
+    const scheduledInPeriod = Math.round(assignedWeekly * recordedWeeks * 10) / 10;
 
     return {
       userId: s.userId,
@@ -120,16 +171,16 @@ export async function facultyWorkloadSection(scope: HodScope, now: Date = new Da
       designation: s.designation,
       assignedWeeklyHours: assignedWeekly,
       deliveredHours: Math.round(delivered * 10) / 10,
-      scheduledToDateHours: scheduledToDate,
+      scheduledToDateHours: scheduledInPeriod,
       maxWorkloadHours: max,
       utilizationPct,
       overloaded: assignedWeekly > max,
-      // How much of the scheduled-so-far load has actually been delivered. `null` when there is
-      // no elapsed term to measure against — which is a different thing from "delivered none of
+      // How much of the scheduled load has actually been delivered. `null` when there is no
+      // recorded period to measure against — which is a different thing from "delivered none of
       // it", and the section says which.
       deliveryPct:
-        scheduledToDate > 0
-          ? Math.min(100, Math.round((delivered / scheduledToDate) * 100))
+        scheduledInPeriod > 0
+          ? Math.min(100, Math.round((delivered / scheduledInPeriod) * 100))
           : delivered > 0
             ? 100
             : null,
@@ -160,6 +211,13 @@ export async function facultyWorkloadSection(scope: HodScope, now: Date = new Da
           ),
         );
 
+  const coverageNote =
+    recordedWeeks > 0 && weeksElapsed > recordedWeeks + 0.5
+      ? `Attendance has been recorded for ${Math.round(recordedWeeks)} of ${Math.round(
+          weeksElapsed,
+        )} elapsed weeks. Delivery is measured over the recorded period, not the whole term.`
+      : null;
+
   return {
     faculty: faculty.sort((a, b) => b.utilizationPct - a.utilizationPct),
     total: faculty.length,
@@ -176,6 +234,8 @@ export async function facultyWorkloadSection(scope: HodScope, now: Date = new Da
           ? 100
           : null,
     weeksElapsed: Math.round(weeksElapsed * 10) / 10,
+    recordedWeeks: Math.round(recordedWeeks * 10) / 10,
+    coverageNote,
     overloaded: overloaded.length,
     overloadedNames: overloaded.map((f) => f.name),
     sessionsFinalized: finalized.length,
