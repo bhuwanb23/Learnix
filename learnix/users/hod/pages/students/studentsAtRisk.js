@@ -18,7 +18,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
-import { NoteStrip, RiskChip, Section, SignalChips, StudentsEmpty } from './studentsUi';
+import { NoteStrip, Section, SignalChips, StudentsEmpty } from './studentsUi';
 import { RED, count, percent, plural } from './studentsMeta';
 
 const styles = StyleSheet.create({

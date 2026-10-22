@@ -16,10 +16,10 @@
  * pre-filled with the kind, the title and the notes the desk derived — and the HOD presses Save.
  */
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
-import { ActionButton, NoteStrip, Section, Tag, StudentsEmpty } from './studentsUi';
+import { ActionButton, Section, Tag, StudentsEmpty } from './studentsUi';
 import { interventionStatusMeta, interventionTypeMeta, timeAgo } from './studentsMeta';
 
 const styles = StyleSheet.create({

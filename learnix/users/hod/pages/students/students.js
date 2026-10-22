@@ -1,321 +1,221 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+/**
+ * HD-05 — The HOD's Students desk: the directory screen.
+ * Docs: 11-hod.md §3.4
+ *
+ * THE SCREEN, AND WHAT IT IS FOR
+ * ------------------------------
+ * A HOD opens this tab to answer "who needs me this term?". So the screen opens with the ANSWER —
+ * the at-risk list — and the directory of every student is under it, because the list is the work
+ * and the directory is the context.
+ *
+ * THE FILTERS ARE THE SERVER'S
+ * -----------------------------
+ * The risk states, the sorts and the thresholds come from `GET /hod/students/catalogue`. The
+ * mirror in `studentsMeta.js` is the fallback for the frame before the catalogue lands, and the
+ * audit script asserts the two never drift.
+ */
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { hodApi } from '../../../../services/api';
-import { AnimatedCard, EmptyState, SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
-
-const COLORS = ['#059669', '#2563eb', '#0891b2', '#d97706', '#dc2626', '#7c3aed'];
+import {
+  ChipRow,
+  NoteStrip,
+  SearchBox,
+  StatRow,
+  StatTile,
+  StudentsEmpty,
+} from './studentsUi';
+import { StudentsScreen, useStudents } from './studentsFrame';
+import { AtRiskPanel } from './studentsAtRisk';
+import { StudentRow } from './studentsRow';
+import {
+  AMBER,
+  GREEN,
+  RED,
+  SLATE,
+  THEME,
+  count,
+  countTone,
+  RISK_STATES,
+  STUDENT_SORTS,
+} from './studentsMeta';
 
 export default function StudentsModule({ navigation }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-  const [year, setYear] = useState(null); // null = All
+  const [risk, setRisk] = useState(null);
+  const [semester, setSemester] = useState(null);
+  const [sort, setSort] = useState('name');
+  const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
 
-  const load = useCallback(async (showSpinner = true) => {
-    try {
-      if (showSpinner) setLoading(true);
-      setError(null);
-      const d = await hodApi.students(year ?? undefined);
-      setData(d);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  // THE CATALOGUE, once. It is the SERVER's vocabulary and it does not change when the filter does.
+  const catalogue = useStudents(() => hodApi.studentsCatalogue(), []);
+
+  // THE DIRECTORY, and it reloads whenever a filter changes.
+  const queryKey = `${risk ?? ''}|${semester ?? ''}|${sort}|${query}`;
+  const directory = useStudents(
+    () =>
+      hodApi.studentsDirectory({
+        risk: risk ?? undefined,
+        semester: semester ?? undefined,
+        sort,
+        search: query || undefined,
+      }),
+    [queryKey],
+  );
+
+  // THE SEARCH IS DEBOUNCED, because a search that fires a request per keystroke is a search
+  // that queues behind itself on a slow connection.
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const reload = useCallback(() => {
+    catalogue.reload();
+    directory.reload();
+  }, [catalogue, directory]);
+
+  // THE VOCABULARY, preferring the server's lists and falling back to the MIRROR.
+  const riskOptions = useMemo(() => {
+    const server = catalogue.data?.riskStates;
+    if (Array.isArray(server) && server.length) {
+      return server.map((s: any) => ({ id: s.id, label: s.label, color: s.color }));
     }
-  }, [year]);
+    return RISK_STATES.map((s) => ({ id: s.id, label: s.label, color: s.color }));
+  }, [catalogue.data]);
 
-  React.useEffect(() => {
-    load();
-  }, [load]);
+  const sortOptions = useMemo(() => {
+    const server = catalogue.data?.sorts;
+    if (Array.isArray(server) && server.length) {
+      return server.map((s: any) => ({ id: s.id, label: s.label }));
+    }
+    return STUDENT_SORTS.map((s) => ({ id: s.id, label: s.label }));
+  }, [catalogue.data]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    load(false);
+  const data = directory.data;
+  const totals = data?.totals ?? {};
+  const students = data?.students ?? [];
+  const semesters = data?.filters2?.semesters ?? [];
+
+  const openStudent = (studentProfileId) => {
+    // THE PARAM CHANNEL. The shell carries `route.params` to the module, so the detail screen
+    // knows WHICH student it is showing.
+    navigation?.openModule?.('StudentDetail', { studentProfileId });
   };
 
-  if (loading && !data) {
-    return (
-      <View style={styles.center}>
-        <SkeletonStatRow style={{ marginTop: 16 }} />
-        <View style={{ marginTop: 14 }}>
-          {[1, 2, 3, 4].map((i) => (
-            <SkeletonCard key={i} style={{ marginBottom: 8 }} />
-          ))}
-        </View>
-      </View>
-    );
-  }
-
-  if (error && !data) {
-    return (
-      <View style={styles.center}>
-        <Ionicons name="cloud-offline-outline" size={40} color={theme.colors.textMuted} />
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={() => load()}>
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const stats = data?.stats ?? { total: 0, bySemester: [] };
-  const students = data?.students ?? [];
-
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    <StudentsScreen
+      loading={directory.loading && !data}
+      refreshing={directory.refreshing}
+      error={directory.error}
+      onRetry={directory.reload}
+      onRefresh={reload}
     >
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Students</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{stats.bySemester.length}</Text>
-          <Text style={styles.statLabel}>Semesters</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{students.filter((s) => s.status !== 'ACTIVE').length}</Text>
-          <Text style={styles.statLabel}>Inactive</Text>
+      {/* ── The counters ─────────────────────────────────────────────────── */}
+      <StatRow>
+        <StatTile
+          label="Students"
+          value={count(totals.students)}
+          hint={`${count(totals.unmeasured)} not measured`}
+          icon="people-outline"
+          color={THEME}
+        />
+        <StatTile
+          label="At risk"
+          value={count(totals.atRisk)}
+          hint={`${count(totals.watch)} to watch`}
+          icon="alert-circle-outline"
+          color={RED}
+          tone={countTone(totals.atRisk)}
+        />
+        <StatTile
+          label="Interventions"
+          value={count(totals.interventions)}
+          hint={`${count(totals.openInterventions)} open`}
+          icon="medkit-outline"
+          color={AMBER}
+          tone={countTone(totals.openInterventions)}
+        />
+      </StatRow>
+
+      {/* ── The at-risk detection ─────────────────────────────────────────── */}
+      <AtRiskPanel atRisk={data?.atRisk} totals={totals} onOpen={openStudent} />
+
+      {/* ── The filters ──────────────────────────────────────────────────── */}
+      <View style={styles.filterBlock}>
+        <SearchBox
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search by name or roll number"
+        />
+        <ChipRow
+          options={[{ id: null, label: 'Everyone', color: THEME }, ...riskOptions]}
+          value={risk}
+          onChange={setRisk}
+        />
+        {semesters.length > 1 ? (
+          <ChipRow
+            options={[
+              { id: null, label: 'All semesters', color: THEME },
+              ...semesters.map((s: number) => ({ id: s, label: `Sem ${s}`, color: GREEN })),
+            ]}
+            value={semester}
+            onChange={setSemester}
+          />
+        ) : null}
+        <View style={styles.sortRow}>
+          <Text style={styles.sortLabel}>Sort</Text>
+          <ChipRow options={sortOptions} value={sort} onChange={setSort} />
         </View>
       </View>
 
-      {stats.bySemester.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
-          {[null, ...stats.bySemester.map((s) => s.semester)].map((y) => (
-            <TouchableOpacity
-              key={y ?? 'all'}
-              style={[styles.chip, year === y && styles.chipActive]}
-              onPress={() => setYear(y)}
-            >
-              <Text style={[styles.chipText, year === y && styles.chipTextActive]}>
-                {y === null ? 'All Years' : `Sem ${y}`}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {/* ── The directory ─────────────────────────────────────────────────── */}
+      {students.length === 0 ? (
+        <StudentsEmpty
+          icon="school-outline"
+          title={totals.students === 0 ? 'No students yet' : 'Nothing matches'}
+          message={
+            totals.students === 0
+              ? 'Students appear here once they are enrolled in one of your programmes.'
+              : 'No student matches these filters. Clear the search or the filters to see them all.'
+          }
+        />
+      ) : (
+        students.map((s: any) => (
+          <StudentRow key={s.studentProfileId} student={s} onPress={() => openStudent(s.studentProfileId)} />
+        ))
       )}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Performance by Semester</Text>
-        {stats.bySemester.map((s, idx) => {
-          const color = COLORS[idx % COLORS.length];
-          return (
-            <View key={s.semester} style={styles.yearCard}>
-              <Text style={styles.yearLabel}>Semester {s.semester}</Text>
-              <View style={styles.yearMeta}>
-                <Text style={styles.yearSub}>{s.count} students</Text>
-              </View>
-              <View style={styles.yearBarRow}>
-                <Text style={styles.yearBarLabel}>Share</Text>
-                <View style={styles.yearTrack}>
-                  <View
-                    style={[
-                      styles.yearFill,
-                      {
-                        width: `${stats.total === 0 ? 0 : Math.round((s.count / stats.total) * 100)}%`,
-                        backgroundColor: color,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.yearValue}>
-                  {stats.total === 0 ? 0 : Math.round((s.count / stats.total) * 100)}%
-                </Text>
-              </View>
-            </View>
-          );
-        })}
-        {stats.bySemester.length === 0 && (
-          <EmptyState icon="school-outline" title="No students enrolled" subtitle="Students will appear here once enrolled" color="#4f46e5" />
-        )}
-      </View>
+      {/* ── The footnote ─────────────────────────────────────────────────── */}
+      <NoteStrip>
+        A student with no register and no results is NOT on track — they are not measured. The
+        unmeasured are counted separately, because a list of students at risk that quietly includes
+        everybody the department knows nothing about is a list nobody can act on.
+      </NoteStrip>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Student List</Text>
-        {students.map((s, idx) => {
-          const color = COLORS[idx % COLORS.length];
-          return (
-            <AnimatedCard key={s.id} delay={idx * 30} style={styles.card}>
-              <View style={[styles.avatar, { backgroundColor: color + '1a' }]}>
-                <Text style={[styles.avatarText, { color }]}>{s.name.charAt(0)}</Text>
-              </View>
-              <View style={styles.cardBody}>
-                <Text style={styles.name}>{s.name}</Text>
-                <Text style={styles.meta}>
-                  {s.rollNo}
-                  {s.section ? ` · Section ${s.section}` : ''}
-                  {s.semester ? ` · Sem ${s.semester}` : ''}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.statusChip,
-                  { backgroundColor: s.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9' },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: s.status === 'ACTIVE' ? '#059669' : '#64748b' },
-                  ]}
-                >
-                  {s.status}
-                </Text>
-              </View>
-            </AnimatedCard>
-          );
-        })}
-        {students.length === 0 && (
-          <EmptyState icon="people-outline" title="No students found" subtitle="Try a different semester filter" color="#4f46e5" />
-        )}
+      <View style={styles.createNote}>
+        <Ionicons name="information-circle-outline" size={14} color={SLATE} />
+        <Text style={styles.createText}>
+          Enrolment and admission are the Admin's. You can watch every student, and record what the
+          department does about the ones who need it.
+        </Text>
       </View>
-    </ScrollView>
+    </StudentsScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background, paddingHorizontal: 16 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
-  errorText: { marginTop: 12, fontSize: 13, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingHorizontal: 32 },
-  retryBtn: { marginTop: 16, backgroundColor: '#4f46e5', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
-  retryText: { color: '#fff', fontFamily: 'Manrope-Bold', fontSize: 13 },
-  emptyText: { fontSize: 12, fontFamily: 'Manrope-Medium', color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 16 },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 12,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  statValue: {
-    fontSize: 16,
-    fontFamily: 'Manrope-ExtraBold',
-    color: theme.colors.text,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  chipsRow: { flexGrow: 0, marginTop: 14 },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: theme.colors.surfaceMuted,
-    marginRight: 8,
-  },
-  chipActive: { backgroundColor: theme.colors.primary },
-  chipText: {
-    fontSize: 12,
-    fontFamily: 'Manrope-SemiBold',
-    color: theme.colors.textMuted,
-  },
-  chipTextActive: { color: '#fff' },
-  section: { marginTop: 18 },
-  sectionTitle: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-    marginBottom: 10,
-  },
-  yearCard: {
-    padding: 12,
-    marginBottom: 8,
-  },
-  yearLabel: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  yearMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-  yearSub: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-  },
-  yearBarRow: {
+  filterBlock: { marginTop: theme.spacing.md, marginBottom: theme.spacing.sm },
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+  sortLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted },
+  createNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    gap: 8,
+    marginTop: theme.spacing.md,
+    paddingHorizontal: 4,
   },
-  yearBarLabel: {
-    width: 40,
-    fontSize: 10,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-  },
-  yearTrack: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.surfaceMuted,
-    overflow: 'hidden',
-    marginRight: 8,
-  },
-  yearFill: { height: 6, borderRadius: 3 },
-  yearValue: {
-    fontSize: 12,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    fontSize: 15,
-    fontFamily: 'Manrope-Bold',
-  },
-  cardBody: { flex: 1 },
-  name: {
-    fontSize: 13,
-    fontFamily: 'Manrope-Bold',
-    color: theme.colors.text,
-  },
-  meta: {
-    fontSize: 11,
-    fontFamily: 'Manrope-Medium',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  statusChip: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  statusText: {
-    fontSize: 10,
-    fontFamily: 'Manrope-Bold',
-  },
+  createText: { flex: 1, fontSize: 10, color: theme.colors.textMuted, lineHeight: 14 },
 });

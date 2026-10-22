@@ -39,6 +39,15 @@ const FILES = [
   'pages/faculty/facultyDetailPanels.js',
   'pages/faculty/facultyDirectory.js',
   'pages/faculty/facultyDetail.js',
+  'pages/students/students.js',
+  'pages/students/studentsMeta.js',
+  'pages/students/studentsStyles.js',
+  'pages/students/studentsUi.js',
+  'pages/students/studentsFrame.js',
+  'pages/students/studentsRow.js',
+  'pages/students/studentsAtRisk.js',
+  'pages/students/studentsInterventions.js',
+  'pages/students/studentsDetail.js',
   'hod.js',
 ];
 
