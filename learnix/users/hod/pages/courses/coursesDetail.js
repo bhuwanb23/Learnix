@@ -31,13 +31,12 @@ import { hodApi } from '../../../../services/api';
 import {
   ActionButton,
   CoursesScreen,
-  HealthBreakdown,
-  HealthGauge,
   NoteStrip,
   Section,
   Tag,
   useCourses,
 } from './coursesUi';
+import { HealthBreakdown, HealthGauge } from './coursesHealth';
 import {
   AMBER,
   GREEN,
@@ -56,10 +55,12 @@ import {
 import {
   AttendancePanel,
   CurriculumPanel,
-  FacultyPanel,
   HistoryPanel,
   PerformancePanel,
   PrerequisitesPanel,
+} from './coursesDetailResults';
+import {
+  FacultyPanel,
   StudentsPanel,
   SubjectsPanel,
   SyllabusPanel,

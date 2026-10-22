@@ -1,11 +1,10 @@
 /**
- * HD-06 — The HOD's Courses desk: the detail panels.
+ * HD-06 — The HOD's Courses desk: the detail's panels.
  * Docs: 11-hod.md §3.3
  *
- * THE CHAIN, IN PANELS
- * --------------------
- *   Subjects → Faculty → Students → Timetable → Syllabus → Attendance → Performance
- *            → Curriculum → Prerequisites → History
+ * THE COURSE ITSELF
+ * -----------------
+ *   Subjects → Faculty → Students → Timetable → Syllabus
  *
  * "SUBJECTS" ARE THE COURSE'S OFFERINGS, and that is not a renaming — it is what the platform
  * means. `Evaluation.subjectOffering` is a `CourseOffering`, the exam cell's "course & subject
@@ -13,20 +12,19 @@
  * "subject" in this platform is a course taught to one section by one teacher. So the Subjects
  * panel lists the course's offerings, each with its section, its teacher and its student count.
  *
+ * THE MEASUREMENTS AND THE GRAPH
+ * ------------------------------
+ * Attendance, performance, the curriculum, the prerequisites and the history live in
+ * `coursesDetailResults.js` — they are the same shapes drawn from a different part of the
+ * response, and the file that draws the course itself is already long enough.
+ *
  * THE COUNTS ARE TRUE COUNTS
  * --------------------------
  * A panel that says "12 students" because it fetched 12 students is worse than one that says
  * nothing, because it looks measured. So every count here is the server's total.
- *
- * A NUMBER WITH NO DATA IS AN EM DASH, NOT A ZERO
- * ------------------------------------------------
- * A course with no results has NO pass rate. Drawing "0%" reports a failing course where the
- * truth is an unexamined one, and the reader has no way to tell those apart.
  */
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../../../constants/theme';
+import { Text, View } from 'react-native';
 import {
   ActionButton,
   CoursesEmpty,
@@ -38,22 +36,8 @@ import {
   StatTile,
   Tag,
 } from './coursesUi';
-import {
-  AMBER,
-  CYAN,
-  GREEN,
-  MUTED,
-  RED,
-  SLATE,
-  THEME,
-  VIOLET,
-  count,
-  dayName,
-  percent,
-  plural,
-  prerequisiteTypeMeta,
-  timeAgo,
-} from './coursesMeta';
+import { AMBER, GREEN, SLATE, THEME, VIOLET, count, dayName, percent, plural } from './coursesMeta';
+import { styles } from './coursesDetailStyles';
 
 // ── 1. Subjects (the course's offerings) ───────────────────────────────────
 
@@ -77,10 +61,7 @@ export function SubjectsPanel({ course, onAssign }) {
           <View key={s.id} style={styles.rowCard}>
             <View style={styles.rowHead}>
               <Text style={styles.rowTitle}>{s.section}</Text>
-              <Tag
-                label={`${plural(s.students ?? 0, 'student', 'students')}`}
-                color={THEME}
-              />
+              <Tag label={`${plural(s.students ?? 0, 'student', 'students')}`} color={THEME} />
             </View>
             <DetailRow label="Teacher" value={s.teacherName} />
             <DetailRow label="Weekly slots" value={count(s.weeklySlots)} />
@@ -89,9 +70,7 @@ export function SubjectsPanel({ course, onAssign }) {
               value={count(s.weeklyHours)}
               tone={s.weeklyHours === 0 ? AMBER : null}
             />
-            {s.teacherEmail ? (
-              <DetailRow label="Contact" value={s.teacherEmail} />
-            ) : null}
+            {s.teacherEmail ? <DetailRow label="Contact" value={s.teacherEmail} /> : null}
           </View>
         ))
       )}
@@ -102,7 +81,8 @@ export function SubjectsPanel({ course, onAssign }) {
           color={THEME}
           onPress={onAssign}
         />
-      ) : null}    </Section>
+      ) : null}
+    </Section>
   );
 }
 
@@ -206,7 +186,7 @@ export function TimetablePanel({ course }) {
       title="Timetable"
       blurb="When this course meets, and for how long."
       icon="calendar-outline"
-      color={CYAN}
+      color="#0891b2"
     >
       {slots.length === 0 ? (
         <CoursesEmpty
@@ -297,380 +277,3 @@ export function SyllabusPanel({ course }) {
     </Section>
   );
 }
-
-// ── 6. Attendance ──────────────────────────────────────────────────────────
-
-export function AttendancePanel({ course }) {
-  const a = course?.attendance;
-  if (!a || a.records === 0) {
-    return (
-      <Section
-        title="Attendance"
-        blurb="The register across this course's classes."
-        icon="checkbox-outline"
-        color={GREEN}
-      >
-        <CoursesEmpty
-          icon="checkbox-outline"
-          title="No attendance recorded"
-          message="No class has been marked for this course, so it has no attendance figure — it is not at zero percent."
-        />
-      </Section>
-    );
-  }
-  return (
-    <Section
-      title="Attendance"
-      blurb="The register across this course's classes."
-      icon="checkbox-outline"
-      color={GREEN}
-    >
-      <StatRow>
-        <StatTile label="Present" value={count(a.present)} icon="checkmark-outline" color={GREEN} />
-        <StatTile label="Late" value={count(a.late)} icon="time-outline" color={AMBER} />
-        <StatTile label="Absent" value={count(a.absent)} icon="close-outline" color={RED} />
-      </StatRow>
-      <ProgressBar
-        percent={a.attendancePct}
-        color={a.belowThreshold ? RED : GREEN}
-        label={`${percent(a.attendancePct)} attended — the threshold is ${a.threshold}%`}
-      />
-      {a.belowThreshold ? (
-        <NoteStrip tone="bad">
-          This course is below the {a.threshold}% attendance threshold. The dashboard's low
-          attendance alert points here.
-        </NoteStrip>
-      ) : null}
-    </Section>
-  );
-}
-
-// ── 7. Performance ─────────────────────────────────────────────────────────
-
-export function PerformancePanel({ course }) {
-  const p = course?.performance;
-  if (!p || p.results === 0) {
-    return (
-      <Section
-        title="Performance"
-        blurb="How the students who sat this course's exam did."
-        icon="trophy-outline"
-        color={THEME}
-      >
-        <CoursesEmpty
-          icon="trophy-outline"
-          title="No results yet"
-          message="This course has not been examined, so it has no pass rate — it is not at zero percent."
-        />
-      </Section>
-    );
-  }
-  return (
-    <Section
-      title="Performance"
-      blurb="How the students who sat this course's exam did."
-      icon="trophy-outline"
-      color={THEME}
-    >
-      <StatRow>
-        <StatTile
-          label="Pass rate"
-          value={percent(p.passPercent)}
-          hint={`threshold ${p.threshold}%`}
-          icon="trending-up-outline"
-          color={p.belowThreshold ? RED : GREEN}
-          tone={p.belowThreshold ? 'bad' : 'good'}
-        />
-        <StatTile
-          label="Passed"
-          value={count(p.passed)}
-          hint={`of ${count(p.results)}`}
-          icon="checkmark-outline"
-          color={GREEN}
-        />
-        <StatTile
-          label="Average"
-          value={count(p.averageMarks)}
-          hint={`${percent(p.averagePercent)} of the marks`}
-          icon="calculator-outline"
-          color={SLATE}
-        />
-      </StatRow>
-      {p.belowThreshold ? (
-        <NoteStrip tone="bad">
-          This course is below the {p.threshold}% pass threshold. The dashboard's poor performance
-          alert points here.
-        </NoteStrip>
-      ) : null}
-      {(p.distribution ?? []).length > 0 ? (
-        <>
-          <Text style={styles.subLabel}>Grade spread</Text>
-          {p.distribution.map((g) => (
-            <View key={g.grade} style={styles.gradeRow}>
-              <Text style={styles.gradeLetter}>{g.grade}</Text>
-              <View style={styles.gradeBarTrack}>
-                <View
-                  style={[
-                    styles.gradeBarFill,
-                    {
-                      width: `${g.percent}%`,
-                      backgroundColor: g.grade === 'F' ? RED : THEME,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.gradeCount}>{g.count}</Text>
-            </View>
-          ))}
-        </>
-      ) : null}
-    </Section>
-  );
-}
-
-// ── 8. Curriculum ──────────────────────────────────────────────────────────
-
-export function CurriculumPanel({ course, onMap, onUnmap }) {
-  const c = course?.curriculum;
-  const declared = c?.declared ?? [];
-  return (
-    <Section
-      title="Curriculum"
-      blurb="The programmes the department DECLARES this course for. A curriculum is decided before it is taught."
-      icon="git-branch-outline"
-      color={CYAN}
-      right={
-        onMap ? (
-          <TouchableOpacity onPress={onMap} activeOpacity={0.75}>
-            <Ionicons name="add-circle-outline" size={20} color={THEME} />
-          </TouchableOpacity>
-        ) : null
-      }
-    >
-      {declared.length === 0 ? (
-        <CoursesEmpty
-          icon="git-branch-outline"
-          title="Not mapped"
-          message="No programme declares this course yet."
-        />
-      ) : (
-        declared.map((d) => (
-          <View key={d.programId} style={styles.rowCard}>
-            <View style={styles.rowHead}>
-              <Text style={styles.rowTitle}>{d.programName}</Text>
-              <Tag
-                label={d.type === 'ELECTIVE' ? 'Elective' : 'Core'}
-                color={d.type === 'ELECTIVE' ? VIOLET : THEME}
-              />
-            </View>
-            <DetailRow label="Semester" value={count(d.semester)} />
-            {d.isElective ? <DetailRow label="Elective choice" value="Yes" /> : null}
-            {onUnmap ? (
-              <ActionButton
-                label="Unmap"
-                icon="unlink-outline"
-                color={RED}
-                onPress={() => onUnmap(d.programId)}
-              />
-            ) : null}
-          </View>
-        ))
-      )}
-      {c?.unmapped ? (
-        <NoteStrip tone="warn">
-          This course is TAUGHT but no programme DECLARES it. The offering is the evidence; the
-          declaration is the intent — and this one is missing.
-        </NoteStrip>
-      ) : null}
-    </Section>
-  );
-}
-
-// ── 9. Prerequisites ───────────────────────────────────────────────────────
-
-export function PrerequisitesPanel({ course, onAdd, onRemove }) {
-  const requires = course?.prerequisites ?? [];
-  const requiredBy = course?.prerequisiteFor ?? [];
-  return (
-    <Section
-      title="Prerequisites"
-      blurb="What this course demands first, and who is waiting for it."
-      icon="git-compare-outline"
-      color={AMBER}
-      right={
-        onAdd ? (
-          <TouchableOpacity onPress={onAdd} activeOpacity={0.75}>
-            <Ionicons name="add-circle-outline" size={20} color={THEME} />
-          </TouchableOpacity>
-        ) : null
-      }
-    >
-      <Text style={styles.subLabel}>This course demands</Text>
-      {requires.length === 0 ? (
-        <Text style={styles.plainLine}>
-          Nothing. This course has no prerequisites.
-        </Text>
-      ) : (
-        requires.map((p) => {
-          const meta = prerequisiteTypeMeta(p.type);
-          return (
-            <View key={p.id} style={styles.prereqRow}>
-              <Ionicons name="arrow-up-circle-outline" size={15} color={meta?.color ?? SLATE} />
-              <View style={styles.flex}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {p.name}
-                </Text>
-                <Text style={styles.rowMeta}>{p.code}</Text>
-              </View>
-              <Tag label={meta?.label ?? p.type} color={meta?.color ?? SLATE} />
-              {onRemove ? (
-                <TouchableOpacity onPress={() => onRemove(p.courseId)} activeOpacity={0.75}>
-                  <Ionicons name="close-circle-outline" size={16} color={MUTED} />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          );
-        })
-      )}
-
-      <Text style={styles.subLabel}>Waiting for this course</Text>
-      {requiredBy.length === 0 ? (
-        <Text style={styles.plainLine}>
-          Nothing. No course in the department demands this one yet.
-        </Text>
-      ) : (
-        requiredBy.map((p) => {
-          const meta = prerequisiteTypeMeta(p.type);
-          return (
-            <View key={p.id} style={styles.prereqRow}>
-              <Ionicons name="arrow-down-circle-outline" size={15} color={meta?.color ?? SLATE} />
-              <View style={styles.flex}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {p.name}
-                </Text>
-                <Text style={styles.rowMeta}>{p.code}</Text>
-              </View>
-              <Tag label={meta?.label ?? p.type} color={meta?.color ?? SLATE} />
-            </View>
-          );
-        })
-      )}
-    </Section>
-  );
-}
-
-// ── 10. History ────────────────────────────────────────────────────────────
-
-export function HistoryPanel({ course }) {
-  const h = course?.history;
-  const entries = h?.entries ?? [];
-  return (
-    <Section
-      title="History"
-      blurb="Every change to this course, and who made it."
-      icon="time-outline"
-      color={SLATE}
-    >
-      {entries.length === 0 ? (
-        <CoursesEmpty
-          icon="time-outline"
-          title="Nothing recorded yet"
-          message="The first edit, archive or curriculum change will appear here."
-        />
-      ) : (
-        entries.map((e) => (
-          <View key={e.id} style={styles.historyRow}>
-            <View style={styles.historyDot} />
-            <View style={styles.flex}>
-              <Text style={styles.rowTitle}>{e.action}</Text>
-              <Text style={styles.rowMeta}>
-                {e.actorName} · {timeAgo(e.createdAt)}
-              </Text>
-            </View>
-          </View>
-        ))
-      )}
-    </Section>
-  );
-}
-
-const styles = StyleSheet.create({
-  flex: { flex: 1 },
-
-  rowCard: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
-    backgroundColor: theme.colors.background,
-  },
-  rowHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  rowTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
-  rowMeta: { fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
-
-  rollRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 7,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  rollMain: { flex: 1 },
-
-  dayRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    paddingVertical: 5,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  dayLabel: { fontSize: 11, fontWeight: '700', color: theme.colors.textMuted, width: 34 },
-  slotText: { fontSize: 12, color: theme.colors.text, fontWeight: '600' },
-
-  subLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.textMuted,
-    marginTop: theme.spacing.md,
-  },
-  plainLine: { fontSize: 12, color: theme.colors.textMuted, marginTop: 4 },
-
-  gradeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  gradeLetter: { fontSize: 12, fontWeight: '800', color: theme.colors.text, width: 18 },
-  gradeBarTrack: {
-    flex: 1,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: theme.colors.border,
-    overflow: 'hidden',
-  },
-  gradeBarFill: { height: 7, borderRadius: 4 },
-  gradeCount: { fontSize: 11, fontWeight: '700', color: theme.colors.text, width: 22, textAlign: 'right' },
-
-  prereqRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 7,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-
-  historyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 7,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  historyDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: SLATE },
-});

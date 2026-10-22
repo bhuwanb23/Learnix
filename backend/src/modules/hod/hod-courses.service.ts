@@ -149,6 +149,13 @@ export async function courseDirectory(
 
   const sorted = [...rows].sort(SORTED[sort] ?? SORTED.code!);
 
+  // THE ACTIVE COURSES' HEALTH, for the strip. The health is computed for every course — the
+  // numbers are real for a retired one too — but only the taught ones are COUNTED.
+  const activeIds = new Set(rows.filter((c) => c.status === 'ACTIVE').map((c) => c.id));
+  const activeHealth = [...health.entries()]
+    .filter(([id]) => activeIds.has(id))
+    .map(([, h]) => h);
+
   const total = sorted.length;
   const totalPages = Math.max(1, Math.ceil(total / COURSE_PAGE_SIZE));
   const pageRows = sorted.slice((page - 1) * COURSE_PAGE_SIZE, page * COURSE_PAGE_SIZE);
@@ -179,10 +186,19 @@ export async function courseDirectory(
       draft: scope.courses.filter((c) => c.status === 'DRAFT').length,
       programs: scope.programs.length,
       offerings: scope.offerings.length,
-      // The health counts, across the FILTERED list — so the strip describes what is on screen.
-      healthy: [...health.values()].filter((h) => h.band === 'HEALTHY').length,
-      watch: [...health.values()].filter((h) => h.band === 'WATCH').length,
-      atRisk: [...health.values()].filter((h) => h.band === 'AT_RISK').length,
+      // THE HEALTH COUNTS — and they count the ACTIVE courses ONLY.
+      //
+      // A retired course's last term is real data, and the row shows its badge so a HOD can read
+      // how it ended. But a course that is no longer taught is not a problem to fix, and counting
+      // it would put a healthy ARCHIVED course in the "healthy" strip and quietly flatter the
+      // department. So the strip describes the courses the department is actually teaching.
+      healthy: activeHealth.filter((h) => h.band === 'HEALTHY').length,
+      watch: activeHealth.filter((h) => h.band === 'WATCH').length,
+      atRisk: activeHealth.filter((h) => h.band === 'AT_RISK').length,
+      // How many of the active courses have a score at all. The rest are unmeasured, and the
+      // difference between "measured and healthy" and "not measured" is the difference between a
+      // report and a decoration.
+      measured: activeHealth.filter((h) => h.score !== null).length,
     },
     pagination: {
       page,

@@ -9,8 +9,9 @@
  * "watch" course looks like — and the symptom of that disagreement is a directory where a course
  * is amber and a detail page where the same course is red.
  *
- * So the badge, the gauge, the section, the chip, the progress bar, the empty state and the
- * screen frame live here, and the screens compose them.
+ * So the badge, the section, the chip, the progress bar, the empty state and the screen frame
+ * live here, and the screens compose them. The health gauge and its breakdown live in
+ * `coursesHealth.js`, and the stylesheet is shared through `coursesStyles.js`.
  *
  * THE FETCH HOOK
  * --------------
@@ -28,21 +29,13 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
-  StyleSheet,
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../../../constants/theme';
 import { SkeletonCard, SkeletonStatRow } from '../../../../components/ui';
-import {
-  MUTED,
-  SLATE,
-  healthBandMeta,
-  healthColor,
-  healthIcon,
-  percent,
-  toneMeta,
-} from './coursesMeta';
+import { MUTED, SLATE, healthBandMeta, toneMeta } from './coursesMeta';
+import { styles } from './coursesStyles';
 
 // ── The fetch hook ─────────────────────────────────────────────────────────
 
@@ -205,83 +198,6 @@ export function HealthBadge({ score, band, weakest, small }) {
   );
 }
 
-// ── The health gauge ───────────────────────────────────────────────────────
-
-/**
- * THE COURSE HEALTH INDICATOR, as a gauge.
- *
- * The note under it names the legs that were LEFT OUT, because a score of 70 that was computed
- * from two of three measures is a different claim from a score of 70 computed from all three, and
- * a reader who cannot tell the difference cannot trust either.
- */
-export function HealthGauge({ health }) {
-  if (!health) return null;
-  const band = health.band ? healthBandMeta(health.band) : null;
-  const color = band?.color ?? MUTED;
-  const value = health.score === null || health.score === undefined ? null : Math.round(health.score);
-  const weakest = (health.breakdown ?? []).find((b) => b.id === health.weakest);
-
-  return (
-    <View style={styles.gauge}>
-      <View style={styles.gaugeRow}>
-        <View style={styles.flex}>
-          <Text style={styles.gaugeLabel}>Course health</Text>
-          <Text style={[styles.gaugeBand, { color }]}>
-            {value === null ? 'Not enough data' : band?.label ?? health.band}
-          </Text>
-          {weakest ? (
-            <Text style={styles.gaugeWeakest}>
-              Weakest: {weakest.label} ({percent(weakest.value)})
-            </Text>
-          ) : null}
-        </View>
-        <View style={[styles.gaugeScore, { borderColor: color, backgroundColor: `${color}14` }]}>
-          <Text style={[styles.gaugeValue, { color }]}>{value === null ? '—' : value}</Text>
-        </View>
-      </View>
-      {health.note ? <Text style={styles.gaugeNote}>{health.note}</Text> : null}
-    </View>
-  );
-}
-
-// ── The health breakdown ───────────────────────────────────────────────────
-
-/**
- * The three legs, and which of them counted.
- *
- * A leg with no data says so and is left out of the score. A leg with a number says what share of
- * the score it carries.
- */
-export function HealthBreakdown({ health }) {
-  if (!health) return null;
-  return (
-    <View style={styles.breakdown}>
-      {(health.breakdown ?? []).map((b) => (
-        <View key={b.id} style={styles.legRow}>
-          <View style={[styles.legIcon, { backgroundColor: `${b.color ?? SLATE}18` }]}>
-            <Ionicons
-              name={b.icon ?? healthIcon(b.id)}
-              size={14}
-              color={b.color ?? healthColor(b.id)}
-            />
-          </View>
-          <View style={styles.flex}>
-            <Text style={styles.legLabel}>{b.label}</Text>
-            <Text style={styles.legMeta}>
-              {b.included
-                ? `${percent(b.value)} · ${Math.round((b.weight ?? 0) * 100)}% of the score`
-                : 'no data yet — left out of the score'}
-            </Text>
-          </View>
-          <Text style={[styles.legValue, { color: b.included ? (b.color ?? SLATE) : MUTED }]}>
-            {b.included ? percent(b.value) : '—'}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 // ── A stat tile ────────────────────────────────────────────────────────────
 
 /** One number with its label. A clear count is green rather than alarming. */
@@ -414,7 +330,7 @@ export function ChipRow({ options, value, onChange, scrollable }) {
     const active = o.id === value;
     return (
       <TouchableOpacity
-        key={o.id}
+        key={String(o.id)}
         style={[
           styles.chip,
           active && { backgroundColor: `${o.color ?? '#2563eb'}18`, borderColor: o.color ?? '#2563eb' },
@@ -422,12 +338,7 @@ export function ChipRow({ options, value, onChange, scrollable }) {
         onPress={() => onChange?.(o.id)}
         activeOpacity={0.75}
       >
-        <Text
-          style={[
-            styles.chipText,
-            active ? { color: o.color ?? '#2563eb' } : null,
-          ]}
-        >
+        <Text style={[styles.chipText, active ? { color: o.color ?? '#2563eb' } : null]}>
           {o.label}
         </Text>
       </TouchableOpacity>
@@ -461,9 +372,7 @@ export function ActionButton({ label, icon, color = '#2563eb', onPress, disabled
       onPress={disabled ? undefined : onPress}
       activeOpacity={0.75}
     >
-      {icon ? (
-        <Ionicons name={icon} size={13} color={filled ? '#fff' : color} />
-      ) : null}
+      {icon ? <Ionicons name={icon} size={13} color={filled ? '#fff' : color} /> : null}
       <Text style={[styles.btnText, { color: filled ? '#fff' : color }]}>{label}</Text>
     </TouchableOpacity>
   );
@@ -477,210 +386,3 @@ export function CoursesLoader() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: theme.colors.background },
-  pad: { padding: theme.spacing.md, paddingBottom: 32 },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-  },
-  errorText: {
-    marginTop: 12,
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.colors.textMuted,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
-  retryBtn: {
-    marginTop: 16,
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  retryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
-  flex: { flex: 1 },
-
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  sectionIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
-  sectionBlurb: { fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },
-
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
-  },
-  badgeNone: { backgroundColor: '#f8fafc' },
-  badgeText: { fontSize: 10, fontWeight: '700' },
-  badgeWeakest: { fontSize: 9, fontWeight: '600', opacity: 0.8 },
-
-  gauge: {
-    backgroundColor: '#fff',
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
-  gaugeRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  gaugeLabel: { fontSize: 12, color: theme.colors.textMuted, fontWeight: '600' },
-  gaugeBand: { fontSize: 17, fontWeight: '800', marginTop: 1 },
-  gaugeWeakest: { fontSize: 11, color: theme.colors.textMuted, marginTop: 3 },
-  gaugeNote: { fontSize: 10, color: theme.colors.textMuted, marginTop: 6, lineHeight: 14 },
-  gaugeScore: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gaugeValue: { fontSize: 20, fontWeight: '800' },
-
-  breakdown: { marginTop: theme.spacing.sm },
-  legRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    paddingVertical: 5,
-  },
-  legIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  legLabel: { fontSize: 13, fontWeight: '600', color: theme.colors.text },
-  legMeta: { fontSize: 10, color: theme.colors.textMuted, marginTop: 1 },
-  legValue: { fontSize: 14, fontWeight: '700' },
-
-  statRow: { flexDirection: 'row', gap: theme.spacing.sm },
-  tile: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    padding: theme.spacing.sm,
-    alignItems: 'center',
-  },
-  tileIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  tileValue: { fontSize: 16, fontWeight: '800', color: theme.colors.text },
-  tileLabel: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2, textAlign: 'center' },
-  tileHint: { fontSize: 9, color: MUTED, marginTop: 2, textAlign: 'center' },
-
-  tag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  tagText: { fontSize: 10, fontWeight: '700' },
-
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 5,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  detailLabel: { fontSize: 12, color: theme.colors.textMuted },
-  detailValue: { fontSize: 12, fontWeight: '700', color: theme.colors.text },
-
-  barWrap: { marginTop: 6 },
-  barTrack: {
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: theme.colors.border,
-    overflow: 'hidden',
-  },
-  barFill: { height: 7, borderRadius: 4 },
-  barLabel: { fontSize: 10, color: theme.colors.textMuted, marginTop: 3 },
-  barOver: { fontSize: 9, color: '#dc2626', marginTop: 2 },
-
-  empty: { alignItems: 'center', paddingVertical: 26 },
-  emptyTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.text, marginTop: 8 },
-  emptyMessage: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    marginTop: 4,
-    textAlign: 'center',
-    paddingHorizontal: 18,
-    lineHeight: 16,
-  },
-
-  note: {
-    borderLeftWidth: 3,
-    borderRadius: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    marginTop: theme.spacing.sm,
-    backgroundColor: theme.colors.background,
-  },
-  noteText: { fontSize: 11, lineHeight: 15 },
-
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  searchInput: { flex: 1, fontSize: 13, color: theme.colors.text, padding: 0 },
-
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingVertical: 4 },
-  chip: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 11,
-    paddingVertical: 5,
-    backgroundColor: '#fff',
-  },
-  chipText: { fontSize: 11, fontWeight: '600', color: theme.colors.textMuted },
-
-  btn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: 9,
-    borderWidth: 1,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-    backgroundColor: '#fff',
-  },
-  btnDisabled: { opacity: 0.45 },
-  btnText: { fontSize: 11, fontWeight: '700' },
-
-  loader: { paddingVertical: 24, alignItems: 'center' },
-});
