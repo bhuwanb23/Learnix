@@ -203,6 +203,13 @@ export async function resolveFacultyScope(
 
   return {
     ...base,
+    // THE FACULTY LIST IS RE-CHECKED AGAINST THE DEPARTMENT.
+    //
+    // The dashboard's scope already filters the staff by department, so this is belt and braces —
+    // and belt and braces is exactly what a tenancy boundary wants. A colleague in the next
+    // department of the same college has a `StaffProfile` in the same institution, and the
+    // institution is NOT the boundary: the DEPARTMENT is.
+    staff: base.staff.filter((s) => s.departmentId === departmentId),
     slots: slotsWithTeacher,
     leaves: leaves.map((l) => ({
       id: l.id,

@@ -37,6 +37,7 @@ export type HodScope = {
     name: string;
     designation: string | null;
     maxWorkloadHours: number;
+    departmentId: string | null;
   }[];
   staffUserIds: string[];
   /** The department's course offerings, with the fields the workload and teaching sections need. */
@@ -85,6 +86,9 @@ export async function resolveHodScope(
         userId: true,
         maxWorkloadHours: true,
         designation: true,
+        // The department the teacher belongs to. It is already the filter, and carrying it makes
+        // the boundary explicit to a reader — and lets a caller re-check it rather than trust it.
+        departmentId: true,
         user: { select: { fullName: true } },
       },
       orderBy: { user: { fullName: 'asc' } },
@@ -127,6 +131,7 @@ export async function resolveHodScope(
       name: s.user.fullName,
       designation: s.designation,
       maxWorkloadHours: s.maxWorkloadHours,
+      departmentId: s.departmentId,
     })),
     staffUserIds: staff.map((s) => s.userId),
     offerings: offerings.map((o) => ({
